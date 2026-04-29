@@ -1,0 +1,36 @@
+name: Update Market Data
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Every 4 hours
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Scraper
+        env:
+          IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
+          SCRAPE_ONCE: "true"
+        run: node scraper.mjs
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add public/market-data.json public/scraper-status.json
+          git commit -m "Auto-update market data [skip ci]" || echo "No changes to commit"
+          git push

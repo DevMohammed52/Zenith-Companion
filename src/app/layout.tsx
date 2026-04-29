@@ -1,0 +1,45 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import Sidebar from "@/components/Sidebar";
+import GlobalSearch from "@/components/GlobalSearch";
+
+export const metadata: Metadata = {
+  title: "Zenith Companion Suite",
+  description: "Helpful Tools for Idle MMO",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body>
+        <div style={{ display: 'flex' }}>
+          <Sidebar />
+          <div className="main-content">
+            <GlobalSearch />
+            {children}
+          </div>
+        </div>
+        <style>{`
+          .main-content {
+            margin-left: var(--sidebar-width);
+            width: 100%;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+          }
+          @media (max-width: 768px) {
+            .main-content {
+              margin-left: 0;
+            }
+          }
+        `}</style>
+      </body>
+    </html>
+  );
+}

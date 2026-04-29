@@ -1,0 +1,123 @@
+Retrieve a list of all currently available dungeons including their loot drops, experience rewards, and requirements.
+
+Endpoint URL
+https://api.idle-mmo.com/v1/combat/dungeons/list
+Required Scope
+v1.combat.dungeons.list
+Example Request
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "User-Agent: YourApp/1.0" \
+     https://api.idle-mmo.com/v1/combat/dungeons/list
+Example Response
+{
+    "dungeons": [
+        {
+            "id": 1,
+            "name": "Crystal Caverns",
+            "description": "A mysterious cavern filled with glowing crystals and dangerous creatures.",
+            "image_url": "https://cdn.idle-mmo.com/images/crystal-caverns.png",
+            "level_required": 1,
+            "difficulty": 100,
+            "length": 60000,
+            "cost": 100,
+            "shards": 5,
+            "completion_requirement": 10,
+            "location": {
+                "id": 1,
+                "name": "Simpletopia"
+            },
+            "loot": [
+                {
+                    "hashed_item_id": "abc123def456",
+                    "name": "Crystal Shard",
+                    "image_url": "https://cdn.idle-mmo.com/images/crystal-shard.png",
+                    "quality": "COMMON",
+                    "quantity": 1,
+                    "chance": 25
+                },
+                {
+                    "hashed_item_id": "ghi789jkl012",
+                    "name": "Ancient Rune",
+                    "image_url": "https://cdn.idle-mmo.com/images/ancient-rune.png",
+                    "quality": "EPIC",
+                    "quantity": 1,
+                    "chance": 5
+                }
+            ],
+            "experience": {
+                "skills": {
+                    "combat": 100,
+                    "dungeoneering": 50
+                }
+            }
+        }
+    ],
+    "endpoint_updates_at": "2025-12-21T13:00:00.000000Z"
+}
+Response Fields
+dungeons
+•
+array
+dungeons.*.id
+•
+integer
+dungeons.*.name
+•
+string
+dungeons.*.description
+•
+string|null
+dungeons.*.image_url
+•
+string
+dungeons.*.level_required
+•
+integer
+dungeons.*.difficulty
+•
+integer
+dungeons.*.length
+•
+integer
+dungeons.*.cost
+•
+integer
+dungeons.*.shards
+•
+integer
+dungeons.*.completion_requirement
+•
+integer
+dungeons.*.location.id
+•
+integer
+dungeons.*.location.name
+•
+string
+dungeons.*.loot
+•
+array
+dungeons.*.loot.*.hashed_item_id
+•
+string
+dungeons.*.loot.*.name
+•
+string
+dungeons.*.loot.*.image_url
+•
+string|null
+dungeons.*.loot.*.quality
+•
+string
+dungeons.*.loot.*.quantity
+•
+integer
+dungeons.*.loot.*.chance
+•
+float
+dungeons.*.experience.skills
+•
+object
+endpoint_updates_at
+•
+string

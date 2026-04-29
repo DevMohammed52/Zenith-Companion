@@ -1,0 +1,4958 @@
+{
+  "enemies": [
+    {
+      "id": 1,
+      "name": "Rabbit",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/BbFrAHBkgPgeIoH3CYPBgftF9xVAsZ-metacmFiYml0LnBuZw==-.png",
+      "level": 1,
+      "experience": 3,
+      "health": 23,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZjlPA8v9NMyyNEyMe2Oa",
+          "name": "Lucky Rabbit Foot",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/U91devJnueuqYNKWWzC2D2D91C79K6-metacmFiYml0LnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp38L2wgA5jD",
+          "name": "Blue Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCHGZWPTR0PQJKV49CWP2C.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 80
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Goblin",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/g1C5bzqltirL8kOyRh0YivzykocuS5-metaZ29ibGluLnBuZw==-.png",
+      "level": 2,
+      "experience": 3,
+      "health": 31,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "P1vlVrzjLrgwQao8mGKM",
+          "name": "Goblin Totem",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/TXDNHhiP4VybkFEfOb6YQoOHSH449S-metaZ29ibGluLXRvdGVtLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 60
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLy26QpV5AGXm",
+          "name": "Goblin Pouch",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/OnzwTUSqTngzDh2Dzpo0jxg73TVlzF-metaZ29ibGluLXBvdWNoLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "27gw0k38L4qZQWevJxyK",
+          "name": "Goblin Scraps",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/JeuoK4lDqSZxDNIQPsn9tfSwiE2zGB-metaZ29ibGluLXNjcmFwcy5wbmc=-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 11
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp38L2wgA5jD",
+          "name": "Blue Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCHGZWPTR0PQJKV49CWP2C.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 9
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Duck",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/twGfp1Ijkvy2RoDyfxI4pNQV22S9OM-metaZHVjay5wbmc=-.png",
+      "level": 4,
+      "experience": 4,
+      "health": 47,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "P1vlVrzjLrgDQao8mGKM",
+          "name": "Ducks Mouth",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xAs8n3ZaRiTJIAIHj55POYTahdlufv-metaZHVjaydzIGJlYWsucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp38L2wgA5jD",
+          "name": "Blue Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCHGZWPTR0PQJKV49CWP2C.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 80
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Goblin King",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/MJyIgbYBnhEGoUIROnsjVpyrXqAn5N-metaa2luZyBnb2JsaW4ucG5n-.png",
+      "level": 6,
+      "experience": 5,
+      "health": 63,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "P1vlVrzjLrgwQao8mGKM",
+          "name": "Goblin Totem",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/TXDNHhiP4VybkFEfOb6YQoOHSH449S-metaZ29ibGluLXRvdGVtLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 60
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLy26QpV5AGXm",
+          "name": "Goblin Pouch",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/OnzwTUSqTngzDh2Dzpo0jxg73TVlzF-metaZ29ibGluLXBvdWNoLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "27gw0k38L4qZQWevJxyK",
+          "name": "Goblin Scraps",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/JeuoK4lDqSZxDNIQPsn9tfSwiE2zGB-metaZ29ibGluLXNjcmFwcy5wbmc=-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 11
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5M6N9P1nyrv",
+          "name": "Goblin Crown",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZeDBxGzVvLcDsXPEDani3I76V5CLHO-metaZ29ibGluLWNyb3duLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp38L2wgA5jD",
+          "name": "Blue Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCHGZWPTR0PQJKV49CWP2C.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 6
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Boar",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/s6U8V5YpxRaaEDyQRzXT50r1jzo6IQ-metaYm9hci5wbmc=-.png",
+      "level": 8,
+      "experience": 6,
+      "health": 80,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "27gw0k38L4qrQWevJxyK",
+          "name": "Boar Tusk",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/lNZKZ0d5pp8EaiBXXG8P3gvjnTA4Co-metaYm9hcidzIHR1c2sucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 6
+        },
+        {
+          "hashed_item_id": "dgBq1boWYew9QkJ3rXaD",
+          "name": "Feather",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCMWEJE95AAET3R1EWQN33.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 94
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Deer",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/nPkp0ZRC5w1geeiPrSErVF9XzNHtK1-metaZGVlci5wbmc=-.png",
+      "level": 10,
+      "experience": 7,
+      "health": 96,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "Z6aDoyRnLy2yQpV5AGXm",
+          "name": "Deer Antler",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/5q3CHIUCTQLgegp5Sp3JBGxcerlWKD-metaZGVlcidzIGFudGxlci5wbmc=-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "dgBq1boWYew9QkJ3rXaD",
+          "name": "Feather",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCMWEJE95AAET3R1EWQN33.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Cultist",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/iR395gp1qTHRoLAGJQ7gbtFaewpgue-metad2l6YXJkLnBuZw==-.png",
+      "level": 12,
+      "experience": 8,
+      "health": 112,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "JZdg5V3PQoD9NEyWq0zl",
+          "name": "Ruined Robes",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/NfnaEEhMYWpLgMkSuBNGJtB6eKXOST-metacnVpbmVkLXJvYmVzLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 23
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZW5N80q6WDG",
+          "name": "Forbidden Tome",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/7oy93jIsRItc0j8SQK2fZICYX4STAv-metaZm9yYmlkZGVuLXRvbWUucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 8
+        },
+        {
+          "hashed_item_id": "93R0qXalLlDyLAbn8DBg",
+          "name": "Essence of Shadows",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/6L1rwdWPLd5vIwsGUIGu5aEGdCJG6S-metaZXNzZW5jZS1vZi1zaGFkb3dzLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvkwLk9joDmG",
+          "name": "Cursed Talisman",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/NqlgLAHW7eI71TFIij2CPB1DBGxhgS-metaY3Vyc2VkLXRhbGlzbWFuLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "dgBq1boWYew9QkJ3rXaD",
+          "name": "Feather",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCMWEJE95AAET3R1EWQN33.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 41
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Gorgon",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qcvqFhkILdQw7KERMGuSbYwwKw9UO5-metaZ29yZ29uLnBuZw==-.png",
+      "level": 14,
+      "experience": 9,
+      "health": 128,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "3Zbym56qLxg5YBRp7Eek",
+          "name": "Snakes Head",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/8g6G8hQHhOSRFpjqxxF3dO76gDMYwG-metac25ha2UncyBoZWFkLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 45
+        },
+        {
+          "hashed_item_id": "oZwey82VNAKnLD0dXM3g",
+          "name": "Venom Extract",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/RfJVL07gcdkGEZ4M25MxbfdpAKuPWJ-metadmVub20tZXh0cmFjdC5wbmc=-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "dgBq1boWYew9QkJ3rXaD",
+          "name": "Feather",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCMWEJE95AAET3R1EWQN33.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 50
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Djinn",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/yQeoiiEKR3Pz5gELIENMMTUaNtQKi4-metaZ2VuaWUucG5n-.png",
+      "level": 16,
+      "experience": 10,
+      "health": 145,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZqEegBydNwJ0QkA59J61",
+          "name": "Djinn's Bottle",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/UwlrLYSN4n3AEtUxzVL586himvD6PP-metaZ2VuaWUtYm90dGxlLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 65
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRVrQzb62qKv",
+          "name": "Fossil",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCN2MDRDHWTKSDG253PAP2.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 35
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Spectre",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/E2NtgabSRR5dN7u0skGQbfYSIE4nGS-metad3JhaXRoIG5ldy5wbmc=-.png",
+      "level": 18,
+      "experience": 11,
+      "health": 161,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "oaJydnOmQWlZNbgRe5ME",
+          "name": "Vial of Spectre Ectoplasm",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/p9YlVcbJ4TIa1PdBl989XJY3Cq2MWI-metac3BlY3RyZS1lY3Ryb3BsYXNtLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVq3QaW0kv53",
+          "name": "Green Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNAW34VAMDCQ5JQHNPHRK.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 97
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Ogre",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/vjbKfYYvK5rzBDN9bWCRZlFrgFMOtd-metab3JnZS5wbmc=-.png",
+      "level": 20,
+      "experience": 12,
+      "health": 177,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "gGZ2J71yYKMyQMmjbown",
+          "name": "Raw Onion",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/6b47wL9c6XPwFGRntA7bpqvlolvDr7-metab25pb24ucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 35
+        },
+        {
+          "hashed_item_id": "yav4OK1wNER2YZP7rzJb",
+          "name": "Swamp Juice",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/t7MCHqXZI7R0fU8YrihxvZDI581fDE-metaYm90dGxlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVq3QaW0kv53",
+          "name": "Green Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNAW34VAMDCQ5JQHNPHRK.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 40
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Buffalo",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/Zx8R3Xy0k8yV04SmReHDfCMamGXJ0T-metaYnVmZmFsby5wbmc=-.png",
+      "level": 22,
+      "experience": 13,
+      "health": 194,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7eA59WrBQRlKYzb62qKv",
+          "name": "Buffalo Horn",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YzWcy1f17DeA6vCVMO6Sq1yPbTHkUg-metaYnVmZmFsbydzIGhvcm4ucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVq3QaW0kv53",
+          "name": "Green Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNAW34VAMDCQ5JQHNPHRK.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 80
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Slimeball",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/b5gPdhGIxCJbeQEqQZly8waX98EYtN-metac2xpbWUgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+      "level": 24,
+      "experience": 14,
+      "health": 210,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "BRn3x72JQ26lQzOMok41",
+          "name": "Slime Extract",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZZ7xV1w9UnM2NHxC21T0P5qDv6kRd4-metac2xpbWUtZXh0cmFjdC5wbmc=-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 90
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVq3QaW0kv53",
+          "name": "Green Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNAW34VAMDCQ5JQHNPHRK.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Pirate",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/0tPQgRb3d7O1hd5vV2zWDG9h283sSW-metacGlyYXRlLnBuZw==-.png",
+      "level": 26,
+      "experience": 15,
+      "health": 226,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "lrx463VdQgD9N5w1zWKP",
+          "name": "Pirates Code",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/fxhcXxVLkFz0ncFVxUGK9mSqCXxkPW-metacGlyYXRlcy1jb2RlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 21
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY0VjQ8BAdKX0",
+          "name": "Parchment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YCajkYj0EC4Sxlq8wS51jUjfJcooHr-metacGFyY2htZW50LnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 12
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOl3Ll6XeVKp",
+          "name": "Chest of Scraps",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/6W9SmgmuceZYwpKXWT3iNHaAHIyBha-metaY2hlc3Qtb2Ytc2NyYXBzLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjlnQB80gWlP",
+          "name": "Human Remains",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNKEAWVXNH95ZS5AJ9ZF5.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 37
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Skeleton Warrior",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wpwz5FQLd6zUlqcdrjb3n4IkqxyJjT-metac2tlbGV0b24ucG5n-.png",
+      "level": 28,
+      "experience": 16,
+      "health": 243,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "DBngxedVYJqlNX64wW8o",
+          "name": "Bone Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/q8x5No8F6CEoQpjrCiN8HvzUKzqvsw-metaYm9uZS1mcmFnbWVudC5wbmc=-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 85
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjlnQB80gWlP",
+          "name": "Human Remains",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNKEAWVXNH95ZS5AJ9ZF5.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 15
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Zombie",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/y5a9vDL55uqi64fhNCFR7Cd5Dqx4pq-metaem9tYmllIChyZXBsYWNlIHRoZSBvbGQgb25lIGNvbXBsZXRlbHkpLnBuZw==-.png",
+      "level": 32,
+      "experience": 18,
+      "health": 275,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "jGXBy7a4LbWzQ0Pw6Vdg",
+          "name": "Long Forgotten Necklace",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/43ksrJ82GlmYWtF5REu6CJ4PLPxIoM-metabG9uZy1mb3Jnb3R0ZW4tbmVja2xhY2UucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 80
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6OJQveGxXOy",
+          "name": "Magnifying Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNYGPWERYJYRB659CD42M.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 20
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Shadow Beast",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/uRelsuUwFtCbTCzhHBwJFJUS36ahLn-metaYmVhc3QgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+      "level": 35,
+      "experience": 20,
+      "health": 300,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "BPjze3x2Q31OYR85vgZV",
+          "name": "Umbral Claw",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/V93AUPX3AIEEglFQa4ar4xaxvjkBI8-metadW1icmFsLWNsYXcucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 22
+        },
+        {
+          "hashed_item_id": "0kK49j1VN9mxNq6B2doa",
+          "name": "Abyssal Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qNtyrgxu2W1Yf3SogO0pvOW5Vf2Acl-metaYWJ5c3NhbC1zY3JvbGwucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6OJQveGxXOy",
+          "name": "Magnifying Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNYGPWERYJYRB659CD42M.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 76.5
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Elephant",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/F7ZGrBIQoYKvsDZuZjZIStEqoM5Flo-metaZWxlcGhhbnQucG5n-.png",
+      "level": 36,
+      "experience": 20,
+      "health": 308,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "XyeZRGx9YjD4QB80gWlP",
+          "name": "Ivory",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/N8c9pDs1d8M9q1APfZz8f2Jk73GY9A-metaZWxlcGhhbnQucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 8
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6OJQveGxXOy",
+          "name": "Magnifying Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNYGPWERYJYRB659CD42M.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 92
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Elk",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/VYjiuEvsxGQ2yLtVxJIYCNSPzgeHhQ-metaZWxrLnBuZw==-.png",
+      "level": 38,
+      "experience": 21,
+      "health": 324,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "O2xMjGdBN5MqN9P1nyrv",
+          "name": "Elk Antler",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/BBL2qP2S6XRCDse2au122G3iQrJVvE-metaZWxrLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 17
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7J9QKAp0Mdl",
+          "name": "Mysterious Rune",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCP8ME0MMPMSG0T1YYP445.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 83
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Siren",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/UjVdU3rHDGLivlXSym2tnFq3q7Q1zf-metac2lyZW4ucG5n-.png",
+      "level": 42,
+      "experience": 23,
+      "health": 357,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "q9pwa0kxLBVpLgVj136l",
+          "name": "Siren's Scales",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/dAhxQhcYPpsozISebAQPD9EyyrFpN5-metac2lyZW5zLXNjYWxlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 35
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y8mWL3RaAylw",
+          "name": "Siren's Soulstone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/HBKNeNeWvYNYeAVVOTIG6TSPiqmnnu-metac2lyZW5zLXNvdWxzdG9uZS5wbmc=-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 11
+        },
+        {
+          "hashed_item_id": "PjVDJez3LD6zNKWO08Ga",
+          "name": "Oceanic Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/4eBNHufqcgwtGaX78d8j8bocsPhlmz-metab2NlYW5pYy1lc3NlbmNlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7J9QKAp0Mdl",
+          "name": "Mysterious Rune",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCP8ME0MMPMSG0T1YYP445.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 51
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Lion",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZLn8peQTVyCw5p6puE40UOtZ3arRgm-metabGlvbiAyIChJIHByZWZlciB0aGlzIG9uZSkucG5n-.png",
+      "level": 48,
+      "experience": 26,
+      "health": 406,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "Ro31P7kZL6r6LveGxXOy",
+          "name": "Lions Teeth",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ClLXEfpoyW74srBgag0JjEGWKYDDYE-metabGlvbidzIHRvb3RoLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 23
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7J9QKAp0Mdl",
+          "name": "Mysterious Rune",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCP8ME0MMPMSG0T1YYP445.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 77
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Wraith",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/v6qAQB4G3jw28mgydXedXFuRL1NE57-metad3JhaXRoLnBuZw==-.png",
+      "level": 52,
+      "experience": 28,
+      "health": 438,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "y7Do6jgkY01jL8BAdKX0",
+          "name": "Vial of Wraith Ectoplasm",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/cD729oSyZkSatBLNHmkBIUwyJIfvkc-metad3JhaXRoLWVjdG9wbGFzbS5wbmc=-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 11
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7J9QKAp0Mdl",
+          "name": "Mysterious Rune",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCP8ME0MMPMSG0T1YYP445.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 89
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Moose",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/lKgNiUWlt32iGD7NElSYzaITgOT9Xw-metabW9vc2UucG5n-.png",
+      "level": 54,
+      "experience": 29,
+      "health": 455,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "dgBq1boWYek4QkJ3rXaD",
+          "name": "Moose Antler",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/yxyXTTSXWTsrZCWQnuHwYAeJgpXC3w-metabW9vc2UgYW50bGVyLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 21
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqa0QnakeJj5",
+          "name": "Red Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPETK3C5B13QR42EC2DNN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 79
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Golem",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/QcyyCC3Ona4hnDgnfIJhuSwToarK4V-metaZ29sZW0gMS5wbmc=-.png",
+      "level": 58,
+      "experience": 31,
+      "health": 487,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "XjEaOeBkLayrLlGwxVPq",
+          "name": "Golem Core Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/7MQfZgS66dOPS1YDYAeY2UCjz59VUQ-metaZ29sZW0tY29yZS1mcmFnbWVudC5wbmc=-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 40
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXeAQ06ZOX79",
+          "name": "Enigmatic Stone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZLY331qYttUJmFCHprz9E4TEKsw2hl-metaZW5pZ21hdGljLXN0b25lLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmORLj1xJrXk",
+          "name": "Stoneheart Core",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wmXiY1QMpxvMBkjvlFsWGqN3BINbg4-metac3RvbmVoZWFydC1jb3JlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqa0QnakeJj5",
+          "name": "Red Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPETK3C5B13QR42EC2DNN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 42
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Polar Bear",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/Sx3vIBYhgB8QWbMncmMFa4MWhSEbdI-metacG9sYXIgYmVhci5wbmc=-.png",
+      "level": 60,
+      "experience": 32,
+      "health": 503,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "brz9RZnWN7yBLKAp0Mdl",
+          "name": "Polar Bear Pelt",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/EQVpvRpzu44l4wtBtZCotMdXGf6f5u-metacG9sYXIgYmVhcidzIGZ1ci5wbmc=-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 23
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqa0QnakeJj5",
+          "name": "Red Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPETK3C5B13QR42EC2DNN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 77
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Witch",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/iKRlATGhRfa8YYKfXGtxMrHXOVrPvq-metad2l0Y2ggMS5wbmc=-.png",
+      "level": 62,
+      "experience": 33,
+      "health": 520,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "2xMjGdBN5GK3L9P1nyrv",
+          "name": "Unknown Keys",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8NSD46Y57ZTH9XN3QXB33.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdOxQWG8xJe9",
+          "name": "Void Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ox8hTiCaC6NmWLUArAB5iqecZhiyjf-metadm9pZC1lc3NlbmNlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 4
+        },
+        {
+          "hashed_item_id": "6leApVoENkKlN7nRPy2D",
+          "name": "Grimoire of Shadows",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/rJeFaZ1miJcrVrQZyBmUqEpCfKBaQK-metaZ3JpbW9pcmUtb2Ytc2hhZG93cy5wbmc=-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.5
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqa0QnakeJj5",
+          "name": "Red Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPETK3C5B13QR42EC2DNN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 80.5
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Raccoon",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/6VCol9GSwR7FNv91foGSJ6L7zChlVK-metacmFjY29vbi5wbmc=-.png",
+      "level": 64,
+      "experience": 34,
+      "health": 536,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "bAB1E9poQqDbLnakeJj5",
+          "name": "Raccoon Fur",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/RQknYCc447lo6MuXus9XAeH8bz4Vbi-metacmFjb29uJ3MgZnVyLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMkpLEyMe2Oa",
+          "name": "Rolix Shell",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPXE5VZPXWQSSTBQYJJ1R.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "name": "Dwarven Warrior",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/psCPzsvwEo8A0Gc8sdF7xxqIhGMAlX-metad2Fycmlvci5wbmc=-.png",
+      "level": 68,
+      "experience": 36,
+      "health": 569,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7gw0k38L4AbzQWevJxyK",
+          "name": "Torch",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8NJDRY9ENWSRCBB4TNB5X.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "doyA279pNzlRLKRDEWm8",
+          "name": "Dwarven Whetstone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/EsATWBe7PjKSaF6Ag6lEAiN7rCwm23-metaZHdhcnZlbi13ZXRzdG9uZS5wbmc=-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 45
+        },
+        {
+          "hashed_item_id": "j98bO5w1QPvlY3xkREVJ",
+          "name": "Broken Dwarven Plate",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YFdnW0Qgot7hiwtBb2Uka49cTfxo5M-metaZHdhcnZlbi1wbGF0ZS5wbmc=-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 9
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrXbNao8mGKM",
+          "name": "Rose",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQ3XGVFD8N432ARVN2Q11.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 31
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Wolf",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GAKG3KLwFj5am69wrnCOO1YvrtDp1I-metad29sZi5wbmc=-.png",
+      "level": 69,
+      "experience": 37,
+      "health": 577,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZjlPA8v9NMybNEyMe2Oa",
+          "name": "Wolf Pelt",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qWjyVXVN1XU7V5wHcMvsj3Fpic5Dv9-metad29sZidzIGZ1ci5wbmc=-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrXbNao8mGKM",
+          "name": "Rose",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQ3XGVFD8N432ARVN2Q11.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Black Bear",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/aLbbZSUnDP6vmBR2VJu9utSIvHKCTa-metaYmxhY2sgYmVhci5wbmc=-.png",
+      "level": 70,
+      "experience": 37,
+      "health": 585,
+      "chance_of_loot": 26,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ElzPeorXNVlxLaW0kv53",
+          "name": "Black Bear Pelt",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/pOAm2HbpXaSGD5xzCKG1D7AakTkR4J-metaYmVhcidzIGZ1ci5wbmc=-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 22
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrXbNao8mGKM",
+          "name": "Rose",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQ3XGVFD8N432ARVN2Q11.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 78
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Minotaur",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZPZEceAsRjFx1eqIAu2GtxW7aMMuj2-metabWlub3RhdXIucG5n-.png",
+      "level": 72,
+      "experience": 38,
+      "health": 601,
+      "chance_of_loot": 26,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "EWGwnXPlY111YJqekZ2R",
+          "name": "Minotaurs Horn",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ak5yaGnVqF4ngiQi782ZskUpOxv51K-metabWlub3RhdXItaG9ybi5wbmc=-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 70
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnEGLqy32jpG",
+          "name": "Minotaur Hide",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/lnL7uodfYIGmrrX00Z0rE7776b2uOG-metabWlub3RhdXItaGlkZS5wbmc=-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrXbNao8mGKM",
+          "name": "Rose",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQ3XGVFD8N432ARVN2Q11.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 10
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Reaper",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qvS1L55PITUAPf9GxZInnME9sn2zEW-metad3JhaXRoIDIucG5n-.png",
+      "level": 74,
+      "experience": 39,
+      "health": 618,
+      "chance_of_loot": 27,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "AB1E9poQqZvnNnakeJj5",
+          "name": "Bag of Scrolls",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8MNSQP2G9R0C1GF93N2JF.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 8
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGM2QrOzDRGV",
+          "name": "Cursed Cloth",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/usOU6sTaUKtAIfQDGhRFQcIuUj4FZj-metaY3Vyc2VkLWNsb3RoLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 67
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLynJQpV5AGXm",
+          "name": "Toy Ghost",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQB630V4FV9QKH5EH43FN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 25
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Harpy",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/jWyatsLxYjP5FxfMgUawYnu0cEllDG-metad2l0Y2gucG5n-.png",
+      "level": 76,
+      "experience": 40,
+      "health": 634,
+      "chance_of_loot": 28,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "gBq1boWYed0lNkJ3rXaD",
+          "name": "Lantern",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8JV1EQ0BECNV3DV5GEJWN.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQpGwL2wgA5jD",
+          "name": "Harpy's Wings",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/1FP2VCTrKxdZFJabNjSoRrWTpusi8t-metaaGFycHktd2luZ3MucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 65
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLynJQpV5AGXm",
+          "name": "Toy Ghost",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQB630V4FV9QKH5EH43FN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 20
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Undead Knight",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/2nO3rMd1U2g1xnSaBiSXViTTYloSAj-metadW5kZWFkIGtuaWdodCAocmVwbGFjZSkucG5n-.png",
+      "level": 78,
+      "experience": 41,
+      "health": 650,
+      "chance_of_loot": 29,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "1vlVrzjLrW4AQao8mGKM",
+          "name": "Shrine Sigil",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8N4VA6EXS4DWYRXMY420Q.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "dgBq1boWYem4YkJ3rXaD",
+          "name": "Cursed Blade Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/e0E2e2upZmq1a0idBLoFtHEhFRG6H5-metaY3Vyc2VkLWJsYWRlLWZyYWdtZW50LnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRvKQzb62qKv",
+          "name": "Undying Crest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/efpdhgGGFgVzXQNxGp2AZ5dESX4tdU-metadW5keWluZy1jcmVzdC5wbmc=-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLynJQpV5AGXm",
+          "name": "Toy Ghost",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQB630V4FV9QKH5EH43FN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 69
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Wizard of the South",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/uu9rIRhXvKGY1XUxaZ4HrHVW9iN2kb-metad2l6YXJkIG9yIG1hZ2UucG5n-.png",
+      "level": 82,
+      "experience": 43,
+      "health": 683,
+      "chance_of_loot": 32,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "jlPA8v9NM9AENEyMe2Oa",
+          "name": "Seers Charm",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8MYDA1N0C70CW10E4WGVE.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVvxNaW0kv53",
+          "name": "Orb of Elemental Conjuring",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/VAOY4UR7FsEq7TbLlaqyKukgdcJcmJ-metab3JiLW9mLWVsZW1lbnQtY29uanVyaW5nLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjW4LB80gWlP",
+          "name": "Arcane Starstone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/rSv2QgzYlLy4EQnKrT0ITgv5eO5ZIf-metaYXJjYW5lLXN0YXJzdG9uZS5wbmc=-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoD9NEyWq0zl",
+          "name": "Ruined Robes",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/NfnaEEhMYWpLgMkSuBNGJtB6eKXOST-metacnVpbmVkLXJvYmVzLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 35
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLynJQpV5AGXm",
+          "name": "Toy Ghost",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQB630V4FV9QKH5EH43FN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 43
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Air Elemental",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/bbrPnb6Cmxq5lzq2m4CxGvlwlBlfs0-metaYWlyIGVsZW1lbnRhbC5wbmc=-.png",
+      "level": 84,
+      "experience": 44,
+      "health": 699,
+      "chance_of_loot": 33,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "98bO5w1QP8ogQ3xkREVJ",
+          "name": "Ancient Knife",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8HHCRX3231R970WNCCQNV.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6m6YveGxXOy",
+          "name": "Air Elemental Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/uWCrULyh5n4U9sgFiCApGBjsEAUF1V-metaYWlyLWVsZW1lbnRhbC5wbmc=-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 7
+        },
+        {
+          "hashed_item_id": "27gw0k38L4gEYWevJxyK",
+          "name": "Weak Scissors",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQMWVZ9ZM3B7QA8PT4ST9.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 88
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Water Elemental",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/pptz6PgyGKs8BssYU5727fprzIZVGx-metad2F0ZXIgZWxlbWVudGFsLnBuZw==-.png",
+      "level": 86,
+      "experience": 45,
+      "health": 715,
+      "chance_of_loot": 33,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "6aDoyRnLyrjzQpV5AGXm",
+          "name": "Stilldrop",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8NBXWTBDSDKYDN312NFGM.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMvbYEyMe2Oa",
+          "name": "Water Elemental Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wnOvjK40NVqgoqSrnLZQjQlIaaoLGl-metad2F0ZXItZWxlbWVudGFsLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 7
+        },
+        {
+          "hashed_item_id": "27gw0k38L4gEYWevJxyK",
+          "name": "Weak Scissors",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQMWVZ9ZM3B7QA8PT4ST9.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 88
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Fire Elemental",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YoNEhAsB3zoTge1YxRB9ldTJSXsYBg-metaZmlyZSBiYWxsLnBuZw==-.png",
+      "level": 89,
+      "experience": 47,
+      "health": 740,
+      "chance_of_loot": 33,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yeZRGx9YjBdDYB80gWlP",
+          "name": "Old Palmguard",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8KWY5J6FXFGT9XFDRQVWS.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 8
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7mBLKAp0Mdl",
+          "name": "Fire Elemental Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/oZmW3AibTSSOlDljRZZLANi5JohRVz-metaZmlyZS1lbGVtZW50YWwucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 7
+        },
+        {
+          "hashed_item_id": "27gw0k38L4gEYWevJxyK",
+          "name": "Weak Scissors",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQMWVZ9ZM3B7QA8PT4ST9.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 85
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Basilisk",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/57khUulUqwTkDkrcyVzOdJIWZ64e7Y-metaYmFzaWxpc2sucG5n-.png",
+      "level": 92,
+      "experience": 48,
+      "health": 764,
+      "chance_of_loot": 34,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "WGwnXPlY1BdzLJqekZ2R",
+          "name": "Ashspore",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8HS7BJDYZHWKSGW9048NB.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "27gw0k38L4mZQWevJxyK",
+          "name": "Petrifying Gaze Crystal",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/KCr86jKSXUL7f7irF1XDFvugdvMCte-metacGV0cmlmeWluZy1nYXplLWNyeXN0YWwgLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5m6N9P1nyrv",
+          "name": "Basilisk Venom Vial",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/6bm3bkFiBLEl8XtBuCK9IyMYAA63vC-metaYmFzaWxpc2stdmVub20ucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.5
+        },
+        {
+          "hashed_item_id": "27gw0k38L4gEYWevJxyK",
+          "name": "Weak Scissors",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQMWVZ9ZM3B7QA8PT4ST9.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 93.8
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Griffon",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/nAhwx9ntOYrjdE3RYAwf96S0YklPjZ-metaZ3JpZmZvbi5wbmc=-.png",
+      "level": 94,
+      "experience": 49,
+      "health": 781,
+      "chance_of_loot": 35,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrJbNrOzDRGV",
+          "name": "Florin",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8J95C8SP8B78S9G0ESYDB.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 8
+        },
+        {
+          "hashed_item_id": "lrx463VdQgO9Q5w1zWKP",
+          "name": "Aetherial Feather Quill",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GXr4wojoV8c6PsozHK523BHX6TRcSI-metaYWV0aGVyaWFsLWZlYXRoZXItcXVpbGwucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 57
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN50nQ9P1nyrv",
+          "name": "Wings",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQY3F9TDBZMXVR85M64B0.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 35
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Earth Elemental",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/2FLw66H2hwRrDyK9TDp3nazHz8IayQ-metaZWFydGggZWxlbWVudGFsLnBuZw==-.png",
+      "level": 98,
+      "experience": 51,
+      "health": 813,
+      "chance_of_loot": 36,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "eA59WrBQRp86Yzb62qKv",
+          "name": "Lovegrit",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8K22W9J2WJZR9CNCPM5MC.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqGbYnakeJj5",
+          "name": "Earth Elemental Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/5QXRJO3FpElq3CJyOTdPyS2x0XODR1-metaZWFydGgtZWxlbWVudGFsLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 7
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN50nQ9P1nyrv",
+          "name": "Wings",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQY3F9TDBZMXVR85M64B0.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 92
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Werewolf",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/mVEeZNxqeCRuUKOs5qiiwZQewVi5Uy-metad2FyZXdvbGYucG5n-.png",
+      "level": 99,
+      "experience": 52,
+      "health": 821,
+      "chance_of_loot": 38,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "oyA279pNz6yXNKRDEWm8",
+          "name": "Four Leaf Clover",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8H798XR14MQ0Y1CJQFBT5.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrDwNao8mGKM",
+          "name": "Claw of the Alpha",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/c8Un2VYqJXB8IvyEJLDcp8dRPPcLE3-metaY2xhdy1vZi10aGUtYWxwaGEucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 65
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLy06YpV5AGXm",
+          "name": "Moonblood Tincture",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/s7LPLcmyDzNRlXnuuRxBxRsZHmhNEd-metabW9vbmJsb29kLXRpbmN0dXJlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrXbNao8mGKM",
+          "name": "Rose",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQ3XGVFD8N432ARVN2Q11.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 33.9
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "name": "Arvendor Guardian",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JX2N0GEBTGAWQTGR1XNBGJJV.png",
+      "level": 100,
+      "experience": 60,
+      "health": 954,
+      "chance_of_loot": 42,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "rz9RZnWN7eXGLKAp0Mdl",
+          "name": "Runemark of Eternity",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8MDJQAZ35RRTTYQ9WMTX7.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXeAQ06ZOX79",
+          "name": "Enigmatic Stone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ZLY331qYttUJmFCHprz9E4TEKsw2hl-metaZW5pZ21hdGljLXN0b25lLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmORLj1xJrXk",
+          "name": "Stoneheart Core",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wmXiY1QMpxvMBkjvlFsWGqN3BINbg4-metac3RvbmVoZWFydC1jb3JlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7J9QKAp0Mdl",
+          "name": "Mysterious Rune",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCP8ME0MMPMSG0T1YYP445.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 81.9
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Banshee",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JX2MYGXCCB615J1PB36D1QK3.png",
+      "level": 100,
+      "experience": 59,
+      "health": 929,
+      "chance_of_loot": 41,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "lzPeorXNVDR7LaW0kv53",
+          "name": "Lovers Core",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8KK0SMBT4RJ0V71A8X7JX.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvkwLk9joDmG",
+          "name": "Cursed Talisman",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/NqlgLAHW7eI71TFIij2CPB1DBGxhgS-metaY3Vyc2VkLXRhbGlzbWFuLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWlZNbgRe5ME",
+          "name": "Vial of Spectre Ectoplasm",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/p9YlVcbJ4TIa1PdBl989XJY3Cq2MWI-metac3BlY3RyZS1lY3Ryb3BsYXNtLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVq3QaW0kv53",
+          "name": "Green Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNAW34VAMDCQ5JQHNPHRK.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 71.9
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "name": "Kikimora",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JX2N0X289EDM1XFFEFRMA0FJ.png",
+      "level": 100,
+      "experience": 55,
+      "health": 871,
+      "chance_of_loot": 40,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZvrGV8RQp246Y2wgA5jD",
+          "name": "Isadora's Hat",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8JHNFBRQSSHHH0EWZFVST.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "3Zbym56qLxg5YBRp7Eek",
+          "name": "Snakes Head",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/8g6G8hQHhOSRFpjqxxF3dO76gDMYwG-metac25ha2UncyBoZWFkLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 45
+        },
+        {
+          "hashed_item_id": "oZwey82VNAKnLD0dXM3g",
+          "name": "Venom Extract",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/RfJVL07gcdkGEZ4M25MxbfdpAKuPWJ-metadmVub20tZXh0cmFjdC5wbmc=-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqa0QnakeJj5",
+          "name": "Red Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPETK3C5B13QR42EC2DNN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 49.4
+        },
+        {
+          "hashed_item_id": "6leApVoENkKlN7nRPy2D",
+          "name": "Grimoire of Shadows",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/rJeFaZ1miJcrVrQZyBmUqEpCfKBaQK-metaZ3JpbW9pcmUtb2Ytc2hhZG93cy5wbmc=-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.5
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "name": "Man Moth",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JX2N16CQJCBFA0RWXNM13V3G.png",
+      "level": 100,
+      "experience": 57,
+      "health": 899,
+      "chance_of_loot": 41,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "Z6aDoyRnLy06YpV5AGXm",
+          "name": "Moonblood Tincture",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/s7LPLcmyDzNRlXnuuRxBxRsZHmhNEd-metabW9vbmJsb29kLXRpbmN0dXJlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "v5g4z1dQnkZJNqy32jpG",
+          "name": "Bestial Record",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8J10S832DSYFH5H3M3D4K.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGM2QrOzDRGV",
+          "name": "Cursed Cloth",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/usOU6sTaUKtAIfQDGhRFQcIuUj4FZj-metaY3Vyc2VkLWNsb3RoLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLynJQpV5AGXm",
+          "name": "Toy Ghost",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCQB630V4FV9QKH5EH43FN.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 24.8
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "name": "Will-o'-the-wisp",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JX2MZ87QJXM12655XNXMX9CH.png",
+      "level": 100,
+      "experience": 53,
+      "health": 830,
+      "chance_of_loot": 40,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "o31P7kZL6WomQveGxXOy",
+          "name": "Puppet Charm",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JZZ8M5HFYB8D1STCNAGA4WXT.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdOxQWG8xJe9",
+          "name": "Void Essence",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/ox8hTiCaC6NmWLUArAB5iqecZhiyjf-metadm9pZC1lc3NlbmNlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 4
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVvxNaW0kv53",
+          "name": "Orb of Elemental Conjuring",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/VAOY4UR7FsEq7TbLlaqyKukgdcJcmJ-metab3JiLW9mLWVsZW1lbnQtY29uanVyaW5nLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp38L2wgA5jD",
+          "name": "Blue Scroll",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCHGZWPTR0PQJKV49CWP2C.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75.9
+        }
+      ]
+    }
+  ],
+  "dungeons": [
+    {
+      "id": 1,
+      "name": "Millstone Mines",
+      "description": "A network of tunnels beneath a windmill-covered landscape, once used for milling precious ores but now harboring dangerous secrets and mechanical foes",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/oBMoNPGBgzuTQvuhza2EzfHTlTk6Jx-metabWluZXMucG5n-.png",
+      "level_required": 1,
+      "difficulty": 20,
+      "length": 7200000,
+      "cost": 300,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "JZdg5V3PQo4vNEyWq0zl",
+          "name": "Improved Fishing Rod Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLa3ONlGwxVPq",
+          "name": "Improved Pickaxe Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "mK5jqPopYG38YrOzDRGV",
+          "name": "Improved Felling axe Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "27gw0k38L4K9YWevJxyK",
+          "name": "Millstone Mines Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 20
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 900,
+          "dungeoneering": 5400
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "Vineyard Labyrinth",
+      "description": "A subterranean labyrinth beneath a sprawling vineyard, filled with aged wines, but also the spirits and illusions of its previous owners.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/CEH2SKm6C0IZ4DJIKn4VmjYf5HtPWK-metadmluZXlhcmQucG5n-.png",
+      "level_required": 10,
+      "difficulty": 50,
+      "length": 7400000,
+      "cost": 1200,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "JVM29l7kQZ3MN80q6WDG",
+          "name": "Rivertamer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "njoPWKDkLX3VY06ZOX79",
+          "name": "Veinseeker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQp5BN2wgA5jD",
+          "name": "Timberfall Talon Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5W2L9P1nyrv",
+          "name": "Vineyard Labyrinth Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 30
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1110,
+          "dungeoneering": 6660
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "Verdant Veil",
+      "description": "A mystical forest where nature has woven a dense tapestry of enchantments, challenging adventurers to navigate through ever-shifting paths.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/IyCODYxmT1n7LBVTOvRMJIhYT3qNMm-metaZm9yZXN0LnBuZw==-.png",
+      "level_required": 25,
+      "difficulty": 100,
+      "length": 7600000,
+      "cost": 2400,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "93R0qXalLlMdQAbn8DBg",
+          "name": "Seasong's Lure Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmrKYj1xJrXk",
+          "name": "Ironbite Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "dgBq1boWYeerYkJ3rXaD",
+          "name": "Wildwood Chopper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "dgBq1boWYeDlNkJ3rXaD",
+          "name": "Verdant Veil Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 35
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1748,
+          "dungeoneering": 10260
+        }
+      }
+    },
+    {
+      "id": 4,
+      "name": "Sylvan Sanctum",
+      "description": "A sacred grove deep within the woods, guarded by ancient tree spirits and inhabited by creatures that protect the heart of the forest.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/LyA2pZrTY0mWATkBi4cm7OiHwlTiSq-metac3lsdmFuLXNhbmN0dW0ucG5n-.png",
+      "level_required": 40,
+      "difficulty": 250,
+      "length": 7800000,
+      "cost": 3600,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "1rZXlwg5Yv2GYk9joDmG",
+          "name": "Moonshimmer Hook Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNd3yQWG8xJe9",
+          "name": "Boulder Breaker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "7eA59WrBQR3JNzb62qKv",
+          "name": "Leafblade Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRm6Lzb62qKv",
+          "name": "Sylvan Sanctum Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 26
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 2711,
+          "dungeoneering": 15912
+        }
+      }
+    },
+    {
+      "id": 5,
+      "name": "Whispering Catacombs",
+      "description": "A sprawling network of interconnected tunnels cocooned in sticky spider silk, where monstrous arachnids patiently await their prey.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/MbHQI1Ktn7Q7qPSKMzdbHtfpLUnbOg-metad2hpc3BlcmluZyBjYXRhY29tYnMucG5n-.png",
+      "level_required": 60,
+      "difficulty": 400,
+      "length": 8000000,
+      "cost": 5000,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "lrx463VdQgGAQ5w1zWKP",
+          "name": "Shadowbane Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "6leApVoENkXoY7nRPy2D",
+          "name": "Shadowstrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "gGZ2J71yYKd4LMmjbown",
+          "name": "Whisperwind Bow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "lrx463VdQggxQ5w1zWKP",
+          "name": "Ironclad Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQpw8L2wgA5jD",
+          "name": "Radiant Crest Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "6leApVoENkA2L7nRPy2D",
+          "name": "Stormguard Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "gGZ2J71yYKapQMmjbown",
+          "name": "Stormstrider Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQpzmY2wgA5jD",
+          "name": "Swiftwind Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "lrx463VdQgwaQ5w1zWKP",
+          "name": "Aegis of the Seraph Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 2
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY0zpQ8BAdKX0",
+          "name": "Soulrender Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "doyA279pNzDjLKRDEWm8",
+          "name": "Venomfang Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "yav4OK1wNEzxYZP7rzJb",
+          "name": "Stormcaster Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "dgBq1boWYeA9YkJ3rXaD",
+          "name": "Shadow Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "doyA279pNzGxYKRDEWm8",
+          "name": "Dragonheart Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "yav4OK1wNEvzYZP7rzJb",
+          "name": "Shadowstep Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY0EKL8BAdKX0",
+          "name": "Stormguard Shield Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.9
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVe7QaW0kv53",
+          "name": "Whispering Catacombs Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 14
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 4800,
+          "dungeoneering": 28400
+        }
+      }
+    },
+    {
+      "id": 6,
+      "name": "Cursed Asylum",
+      "description": "A long-abandoned asylum plagued by restless spirits, twisted experiments, and forgotten patients, offering a haunting challenge for brave adventurers.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/UrbZQEvnsoXo48hFVZBGuSknJDzwI0-metaY3Vyc2VkIGFzeWx1bS5wbmc=-.png",
+      "level_required": 62,
+      "difficulty": 500,
+      "length": 8200000,
+      "cost": 6000,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "q9pwa0kxLBZRLgVj136l",
+          "name": "Hydra's Coil Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 4
+        },
+        {
+          "hashed_item_id": "6leApVoENkqZL7nRPy2D",
+          "name": "Earthshaker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 4
+        },
+        {
+          "hashed_item_id": "ElzPeorXNV3BYaW0kv53",
+          "name": "Grove Cleaver Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 4
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOqxQl6XeVKp",
+          "name": "Frostbite Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "j98bO5w1QPwEL3xkREVJ",
+          "name": "Bloodletter Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWEaYbgRe5ME",
+          "name": "Shadow Shot Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY07BN8BAdKX0",
+          "name": "Dragonfire Grasp Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRErLzb62qKv",
+          "name": "Frostguard Visage Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOdDLl6XeVKp",
+          "name": "Shadowstrike Grips Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "j98bO5w1QP2BY3xkREVJ",
+          "name": "Shadowcloak Vestments Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWodQbgRe5ME",
+          "name": "Frostbite Legguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "dgBq1boWYe8wNkJ3rXaD",
+          "name": "Shadowstep Footwear Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOa6Ql6XeVKp",
+          "name": "Soulward Barrier Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.8
+        },
+        {
+          "hashed_item_id": "DBngxedVYJREYX64wW8o",
+          "name": "Stormbringer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY178QJqekZ2R",
+          "name": "Whisperblade Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "ZqEegBydNwvoQkA59J61",
+          "name": "Frostbite Shot Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVZ3NaW0kv53",
+          "name": "Sentinel's Gaze Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "DBngxedVYJJqYX64wW8o",
+          "name": "Frostbite Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1qAYJqekZ2R",
+          "name": "Frostbite Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "ZqEegBydNwzzQkA59J61",
+          "name": "Sentinel's Resolve Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "XyeZRGx9Yj1DNB80gWlP",
+          "name": "Cursed Asylum Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 14
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 5207,
+          "dungeoneering": 30832
+        }
+      }
+    },
+    {
+      "id": 7,
+      "name": "Forgotten Archives",
+      "description": "An ancient library buried deep beneath the city, where forbidden tomes and lost knowledge lie, guarded by spectral entities and arcane traps.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/HVDgxs0ucyEOXfoD26oUsYFDn3ltNS-metaZm9yZ290dGVuIGFyY2hpdmVzLnBuZw==-.png",
+      "level_required": 65,
+      "difficulty": 600,
+      "length": 8400000,
+      "cost": 9000,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7eA59WrBQRKjNzb62qKv",
+          "name": "Frostbite Walkers Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "DBngxedVYJa0NX64wW8o",
+          "name": "Flamebreaker Buckler Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "jGXBy7a4Lbg1Q0Pw6Vdg",
+          "name": "Doomblade Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnXKYqy32jpG",
+          "name": "Serpent's Kiss Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "3Zbym56qLxb1NBRp7Eek",
+          "name": "Serpent's Arrow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "XyeZRGx9Yj2nYB80gWlP",
+          "name": "Celestial Crown Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "jGXBy7a4LbM4Y0Pw6Vdg",
+          "name": "Titan's Embrace Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnm6Lqy32jpG",
+          "name": "Sentinel's Embrace Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "3Zbym56qLxzyNBRp7Eek",
+          "name": "Celestial Striders Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVK8YaW0kv53",
+          "name": "Guardian's Stride Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "jGXBy7a4LbP7N0Pw6Vdg",
+          "name": "Shadowbound Ward Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "BRn3x72JQ2qXLzOMok41",
+          "name": "Serpentstrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.3
+        },
+        {
+          "hashed_item_id": "mK5jqPopYG2KNrOzDRGV",
+          "name": "Moonshadow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.3
+        },
+        {
+          "hashed_item_id": "oZwey82VNAdPQD0dXM3g",
+          "name": "Viper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.3
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6MJYveGxXOy",
+          "name": "Emberfire Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.3
+        },
+        {
+          "hashed_item_id": "BRn3x72JQ2MJLzOMok41",
+          "name": "Celestial Touch Gloves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.3
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6xmNveGxXOy",
+          "name": "Forgotten Archives Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 10
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 5796,
+          "dungeoneering": 34356
+        }
+      }
+    },
+    {
+      "id": 8,
+      "name": "Crystal Forge",
+      "description": "An ancient forge deep within the Crystal Caverns, where powerful artifacts were crafted, guarded by crystalline constructs and the remnants of skilled artisans.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/DnsQpCIUzbuB2Ouo3Adulh1CMMjoWm-metaY3J5c3RhbCBmb3JnZS5wbmc=-.png",
+      "level_required": 70,
+      "difficulty": 700,
+      "length": 8600000,
+      "cost": 12000,
+      "shards": 80,
+      "completion_requirement": 50,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "zvjoJW96Y8JXQ3RaAylw",
+          "name": "Ocean's Whisper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "doyA279pNzw5YKRDEWm8",
+          "name": "Stone Splinter Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "XyeZRGx9Yj7PLB80gWlP",
+          "name": "Branchbane Hatchet Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGgeYrOzDRGV",
+          "name": "Celestial Radiance Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "oZwey82VNAEMND0dXM3g",
+          "name": "Emberfoot Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjZ1YB80gWlP",
+          "name": "Celestial Ascenders Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "BRn3x72JQ2xrYzOMok41",
+          "name": "Frostbite Guard Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "gGZ2J71yYKp4LMmjbown",
+          "name": "Celestial Edge Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.2
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQpX8Q2wgA5jD",
+          "name": "Quickstrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQobyLEyWq0zl",
+          "name": "Moonshot Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7r9QKAp0Mdl",
+          "name": "Thunder Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "gGZ2J71yYKEpQMmjbown",
+          "name": "Emberfist Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "3ZvrGV8RQpAmN2wgA5jD",
+          "name": "Ironbark Cuirass Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoz1LEyWq0zl",
+          "name": "Thunderclash Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6EoYveGxXOy",
+          "name": "Emberfoot Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "gGZ2J71yYK9xQMmjbown",
+          "name": "Sentinel's Bulwark Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "yav4OK1wNEmxNZP7rzJb",
+          "name": "Bloodmoon Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "dgBq1boWYeX9NkJ3rXaD",
+          "name": "Runeblade Dagger Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZDmY80q6WDG",
+          "name": "Stormsong Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7oGNKAp0Mdl",
+          "name": "Crystal Forge Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 10
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 6794,
+          "dungeoneering": 40334
+        }
+      }
+    },
+    {
+      "id": 9,
+      "name": "Frostbite Spire",
+      "description": "A treacherous icy tower atop the mountain, encased in perpetual frost and inhabited by frost elementals and icy guardians.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/I8XIKYJSxhKYL0V5Jw1gX9hmtdgGdF-metaZnJvc3RiaXRlIHNwcml0ZS5wbmc=-.png",
+      "level_required": 74,
+      "difficulty": 800,
+      "length": 8800000,
+      "cost": 16000,
+      "shards": 100,
+      "completion_requirement": 50,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "bAB1E9poQqx0LnakeJj5",
+          "name": "Otto's Mask Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "yav4OK1wNE4zQZP7rzJb",
+          "name": "Thunderclap Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "dgBq1boWYe4wNkJ3rXaD",
+          "name": "Flameguard Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZXKY80q6WDG",
+          "name": "Soulforge Legplates Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7EeLKAp0Mdl",
+          "name": "Thunderstrike Steps Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "yav4OK1wNEaWNZP7rzJb",
+          "name": "Celestial Aegis Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 1
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWRaLbgRe5ME",
+          "name": "Whisperwind Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRArLzb62qKv",
+          "name": "Shadowfang Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "93R0qXalLl2xNAbn8DBg",
+          "name": "Emberheart Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMEpNEyMe2Oa",
+          "name": "Shadowbane Visor Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWddNbgRe5ME",
+          "name": "Soulgrasp Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "7eA59WrBQR2jQzb62qKv",
+          "name": "Stormbreaker Mail Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "93R0qXalLlZ5NAbn8DBg",
+          "name": "Shadowbane Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqVENnakeJj5",
+          "name": "Soulwalkers Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.75
+        },
+        {
+          "hashed_item_id": "oaJydnOmQWx9NbgRe5ME",
+          "name": "Thunderstrike Barrier Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "ZqEegBydNwdoYkA59J61",
+          "name": "Voidslayer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "bAB1E9poQq5nQnakeJj5",
+          "name": "Frostbite Spire Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 7766,
+          "dungeoneering": 46552
+        }
+      }
+    },
+    {
+      "id": 10,
+      "name": "Zenith's Sanctum",
+      "description": "A secluded sanctuary atop the mountain, where wise sages and enlightened beings meditate, imparting ancient knowledge and spiritual trials.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/9Mr7ib1FqqYKhZ4meZn6qpTAr40rCF-metaemVuaXRocyBzcGlyZS5wbmc=-.png",
+      "level_required": 76,
+      "difficulty": 900,
+      "length": 9000000,
+      "cost": 20000,
+      "shards": 120,
+      "completion_requirement": 50,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ElzPeorXNVp3LaW0kv53",
+          "name": "Flamebrand Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvbkYk9joDmG",
+          "name": "Piercer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrdbNao8mGKM",
+          "name": "Windborne Casque Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "ZqEegBydNwpzYkA59J61",
+          "name": "Shadowstep Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVd8LaW0kv53",
+          "name": "Shadeweave Raiment Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "1rZXlwg5Yv1aNk9joDmG",
+          "name": "Windrider Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMxmQEyMe2Oa",
+          "name": "Shadowbane Footguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "ZqEegBydNwrmQkA59J61",
+          "name": "Essenceweave Shield Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "3Zbym56qLxG1YBRp7Eek",
+          "name": "Sunfire Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjXnQB80gWlP",
+          "name": "Soulshard Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLBdVNgVj136l",
+          "name": "Sunseeker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLylJYpV5AGXm",
+          "name": "Stormbreaker Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "3Zbym56qLxAyQBRp7Eek",
+          "name": "Sentinel's Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjJ1YB80gWlP",
+          "name": "Crystalheart Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLBE8YgVj136l",
+          "name": "Stormbreaker Treads Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrjZLao8mGKM",
+          "name": "Windrider Striders Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMZEYEyMe2Oa",
+          "name": "Zenith's Sanctum Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 3.5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 8393,
+          "dungeoneering": 50490
+        }
+      }
+    },
+    {
+      "id": 11,
+      "name": "Mirage Citadel",
+      "description": "A grand fortress that appears as a mirage in the desert, housing a band of illusionists and testing adventurers with perplexing illusions and shifting realities.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qpn69D3MoxTXn7xWde8WnGFuVJ9jgA-metabWlyYWdlIGNpdGFkZWwucG5n-.png",
+      "level_required": 78,
+      "difficulty": 1000,
+      "length": 9200000,
+      "cost": 26000,
+      "shards": 130,
+      "completion_requirement": 50,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "3Zbym56qLxyEQBRp7Eek",
+          "name": "Moonshadow Guard Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "oZwey82VNA9PND0dXM3g",
+          "name": "Thunderstrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL64JNveGxXOy",
+          "name": "Night's Whisper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y8yzL3RaAylw",
+          "name": "Thundershot Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "27gw0k38L47EYWevJxyK",
+          "name": "Voidwalker Cowl Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "oZwey82VNAqMND0dXM3g",
+          "name": "Flameguard Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6aoYveGxXOy",
+          "name": "Serpent Scale Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y8dOY3RaAylw",
+          "name": "Voidwalker Striders Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLy4oYpV5AGXm",
+          "name": "Stormbreaker Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "oZwey82VNAX2QD0dXM3g",
+          "name": "Ashenfire Ward Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.55
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoPyNEyWq0zl",
+          "name": "Nightfall Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "brz9RZnWN759LKAp0Mdl",
+          "name": "Eclipse Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDkwYKWO08Ga",
+          "name": "Nightshade Bow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5qnN9P1nyrv",
+          "name": "Lunar Radiance Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoA1YEyWq0zl",
+          "name": "Stormbreaker Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7DeYKAp0Mdl",
+          "name": "Phoenix Soulplate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLr0ANao8mGKM",
+          "name": "Mirage Citadel Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1.5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 9062,
+          "dungeoneering": 54740
+        }
+      }
+    },
+    {
+      "id": 12,
+      "name": "Eden's Embrace",
+      "description": "A floating paradise of exotic plants and soothing melodies, where harmonious puzzles and trials of balance challenge visitors to prove their worth.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/XLbw1p51kxB1TbaXwwej3z6a8f2JBw-metaZWRlbnMgZW1icmFjZS5wbmc=-.png",
+      "level_required": 82,
+      "difficulty": 1100,
+      "length": 9400000,
+      "cost": 31000,
+      "shards": 150,
+      "completion_requirement": 50,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "PjVDJez3LDvoNKWO08Ga",
+          "name": "Rune-etched Reeler Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "j98bO5w1QP3PL3xkREVJ",
+          "name": "Corestrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL60jNveGxXOy",
+          "name": "Silvan Splitter Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDPJLKWO08Ga",
+          "name": "Lunarweave Leggings Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "27gw0k38L4z9NWevJxyK",
+          "name": "Voidstep Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoerYEyWq0zl",
+          "name": "Runebound Bulwark Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZ6mQ80q6WDG",
+          "name": "Dawnbreaker Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqn0NnakeJj5",
+          "name": "Duskblade Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "0kK49j1VN944Qq6B2doa",
+          "name": "Dawnbreaker Bow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "dgBq1boWYeAwYkJ3rXaD",
+          "name": "Ashenfire Crown Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZ2KQ80q6WDG",
+          "name": "Voidrend Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDwwYKWO08Ga",
+          "name": "Runeblade Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5ynN9P1nyrv",
+          "name": "Silent Reaper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNd2aLWG8xJe9",
+          "name": "Silverthorn Bow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7geNKAp0Mdl",
+          "name": "Nightshade Mask Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDyJQKWO08Ga",
+          "name": "Windrider Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5D2Q9P1nyrv",
+          "name": "Echosteel Breastplate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdZzLWG8xJe9",
+          "name": "Nightshade Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7EGLKAp0Mdl",
+          "name": "Nightshade Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDamQKWO08Ga",
+          "name": "Shadewalker Bulwark Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLyvzQpV5AGXm",
+          "name": "Eden's Embrace Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1.5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 10340,
+          "dungeoneering": 66270
+        }
+      }
+    },
+    {
+      "id": 13,
+      "name": "Arboreal Labyrinth",
+      "description": "A sprawling maze within the floating garden, where colossal trees and ever-shifting paths test explorers' navigation skills amidst a magical arboreal realm.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/iZS0jV2cVhCjrBOZA5UWbXJQ1sSRJB-metaYXJib3JlYWwgbGFieXJpbnRoLnBuZw==-.png",
+      "level_required": 84,
+      "difficulty": 1200,
+      "length": 9600000,
+      "cost": 33000,
+      "shards": 170,
+      "completion_requirement": 50,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "93R0qXalLlA5QAbn8DBg",
+          "name": "Lunarweave Gloves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMKmLEyMe2Oa",
+          "name": "Guardian's Valor Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q3DeNR85vgZV",
+          "name": "Runebound Shinplates Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "dgBq1boWYe1lYkJ3rXaD",
+          "name": "Ashenfire Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "93R0qXalLlmrQAbn8DBg",
+          "name": "Bloodbane Barrier Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvxkQk9joDmG",
+          "name": "Starshard Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrabYao8mGKM",
+          "name": "Ghostwalker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLaGZNlGwxVPq",
+          "name": "Starshower Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVZ8NaW0kv53",
+          "name": "Verdant Guardian Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvAaNk9joDmG",
+          "name": "Bloodforged Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.45
+        },
+        {
+          "hashed_item_id": "0kK49j1VN904Qq6B2doa",
+          "name": "Phoenix Requiem Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "lrx463VdQgkAQ5w1zWKP",
+          "name": "Silvermist Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "6leApVoENkboQ7nRPy2D",
+          "name": "Bloodmoon Bow Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "bAB1E9poQq1EQnakeJj5",
+          "name": "Glimmersteel Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "0kK49j1VN9OrLq6B2doa",
+          "name": "Grasps of Protection Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "lrx463VdQgZxL5w1zWKP",
+          "name": "Verdant Chainmail Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "6leApVoENkZ2Q7nRPy2D",
+          "name": "Glimmersteel Pathguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqVnNnakeJj5",
+          "name": "Glimmersteel Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "0kK49j1VN9anNq6B2doa",
+          "name": "Stormbringer Buckler Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.12
+        },
+        {
+          "hashed_item_id": "27gw0k38L4KzYWevJxyK",
+          "name": "Arboreal Labyrinth Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1.5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 11160,
+          "dungeoneering": 69120
+        }
+      }
+    },
+    {
+      "id": 14,
+      "name": "Bloodmoon Manor",
+      "description": "A foreboding mansion inhabited by a sinister vampire lord, its corridors filled with bloodthirsty minions and guarded by deadly enchantments.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/oLz7D0i9vuKc0BsUBl8vdZqjUxR7s4-metaYmxvb2Rtb29uIG1hbm9yLnBuZw==-.png",
+      "level_required": 86,
+      "difficulty": 1400,
+      "length": 9800000,
+      "cost": 35500,
+      "shards": 200,
+      "completion_requirement": 60,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "njoPWKDkLXoXY06ZOX79",
+          "name": "Fury Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "XyeZRGx9Yj21YB80gWlP",
+          "name": "Bloodforged Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLBM8YgVj136l",
+          "name": "Phoenixclaw Gauntlets Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLyzoQpV5AGXm",
+          "name": "Dreadbane Armor Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmznYj1xJrXk",
+          "name": "Phoenix Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVx7LaW0kv53",
+          "name": "Verdant Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLBz6LgVj136l",
+          "name": "Phoenixguard Shield Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y8gzN3RaAylw",
+          "name": "Grimslayer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.4
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q3MrYR85vgZV",
+          "name": "Death's Embrace Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY06pQ8BAdKX0",
+          "name": "Nightfall Dagger Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "doyA279pNzmjQKRDEWm8",
+          "name": "Death's Touch Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NM2mYEyMe2Oa",
+          "name": "Soul Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q3reLR85vgZV",
+          "name": "Gloves of the Protector Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY0DBY8BAdKX0",
+          "name": "Ashenplate Cuirass Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "doyA279pNzzxNKRDEWm8",
+          "name": "Soulshield Legplates Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMxEQEyMe2Oa",
+          "name": "Soulshield Treads Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q3m5YR85vgZV",
+          "name": "Ironbark Protector Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "brz9RZnWN7O4NKAp0Mdl",
+          "name": "Arboreal Ender Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5W3L9P1nyrv",
+          "name": "Bloodmoon Manor Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 12054,
+          "dungeoneering": 73304
+        }
+      }
+    },
+    {
+      "id": 15,
+      "name": "Ruins of Old Ranhor",
+      "description": "Ancient ruins on a remote island, where crumbling structures and forgotten temples hold relics of a lost civilization, shrouded in mystery and guarded by ancient spirits.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/s8bybq9f3CuxHd0FZUhxOyl5H84gFu-metacnVpbnMgb2Ygb2xkIHJhbmhvci5wbmc=-.png",
+      "level_required": 88,
+      "difficulty": 1600,
+      "length": 10000000,
+      "cost": 36000,
+      "shards": 220,
+      "completion_requirement": 70,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "27gw0k38L4rENWevJxyK",
+          "name": "Starglitter Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.3
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmK0Lj1xJrXk",
+          "name": "Grimwood Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.3
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL65oYveGxXOy",
+          "name": "Phoenix Crown Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.3
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y80OY3RaAylw",
+          "name": "Nightshade Grips Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.3
+        },
+        {
+          "hashed_item_id": "0kK49j1VN9bAYq6B2doa",
+          "name": "Kraken's Grasp Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLa5ZLlGwxVPq",
+          "name": "Silverthorn Sword Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOwxYl6XeVKp",
+          "name": "Widow's Kiss Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "j98bO5w1QPaEN3xkREVJ",
+          "name": "Soulstring Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrAZYao8mGKM",
+          "name": "Whispersong Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLaqALlGwxVPq",
+          "name": "Sacred Grasp Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "3yE1A84kYOADQl6XeVKp",
+          "name": "Soulguard Armor Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "j98bO5w1QPdBQ3xkREVJ",
+          "name": "Whisperstep Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrjALao8mGKM",
+          "name": "Whisperwind Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLavKQlGwxVPq",
+          "name": "Soulshield of Redemption Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        },
+        {
+          "hashed_item_id": "lrx463VdQgXaN5w1zWKP",
+          "name": "Ruins of Old Ranhor Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.8
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 13000,
+          "dungeoneering": 84100
+        }
+      }
+    },
+    {
+      "id": 16,
+      "name": "Volcanic Depths",
+      "description": "A subterranean labyrinth formed by volcanic activity, hidden beneath the island's fiery peak, filled with lava flows and menacing fire-based creatures.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/PyXxyjej0nrnP6Bmy4HPPYMriXP9U2-metadm9sY2FuaWMgZGVwdGhzLnBuZw==-.png",
+      "level_required": 90,
+      "difficulty": 1750,
+      "length": 10200000,
+      "cost": 39000,
+      "shards": 250,
+      "completion_requirement": 80,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "bAB1E9poQqzENnakeJj5",
+          "name": "Bloodforged Harness Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "0kK49j1VN9DrQq6B2doa",
+          "name": "Ashenfire Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5E2N9P1nyrv",
+          "name": "Lunarweave Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZxeY80q6WDG",
+          "name": "Verdant Sentinel Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "93R0qXalLlXxLAbn8DBg",
+          "name": "Emberfang Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMwpLEyMe2Oa",
+          "name": "Bloodthorn Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q36rLR85vgZV",
+          "name": "Ashenwind Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "7eA59WrBQREjLzb62qKv",
+          "name": "Runebound Helm Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1rwLJqekZ2R",
+          "name": "Boulder's Bane Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXVXN06ZOX79",
+          "name": "Bloodthirst Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "DBngxedVYJmENX64wW8o",
+          "name": "Fatebreaker Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1V8LJqekZ2R",
+          "name": "Archdemon Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLydoYpV5AGXm",
+          "name": "Balthazar's Head Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXD3L06ZOX79",
+          "name": "Warfists Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "DBngxedVYJpqQX64wW8o",
+          "name": "Windrider Harness Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1DANJqekZ2R",
+          "name": "Twilight Veilguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLy4zYpV5AGXm",
+          "name": "Twilight Veilwalkers Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXX9L06ZOX79",
+          "name": "Deathgate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.08
+        },
+        {
+          "hashed_item_id": "y7Do6jgkY04KY8BAdKX0",
+          "name": "Volcanic Depths Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.7
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 14000,
+          "dungeoneering": 95268
+        }
+      }
+    },
+    {
+      "id": 17,
+      "name": "Celestial Enclave",
+      "description": "A celestial realm hidden beneath the city, filled with radiant crystalline formations and guarded by celestial beings, offering otherworldly challenges.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/48xbZUHzPQsF1S39VUGAN4Xyr5r4w9-metaY2VsZXN0aWFsIGVuY2xhdmUucG5n-.png",
+      "level_required": 92,
+      "difficulty": 2000,
+      "length": 10500000,
+      "cost": 42000,
+      "shards": 270,
+      "completion_requirement": 90,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "P1vlVrzjLrzZLao8mGKM",
+          "name": "Starfire Plate Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLaZAQlGwxVPq",
+          "name": "Verdant Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRx6Yzb62qKv",
+          "name": "Runebound Footwraps Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvM9Nk9joDmG",
+          "name": "Twilight Sanctum Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLB3VQgVj136l",
+          "name": "Tempest's Fury Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "Z6aDoyRnLymJLpV5AGXm",
+          "name": "Emberstrike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmX0Qj1xJrXk",
+          "name": "Everflame Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "jGXBy7a4Lb21L0Pw6Vdg",
+          "name": "Dreadspike Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnbKQqy32jpG",
+          "name": "Sting Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "27gw0k38L4y9QWevJxyK",
+          "name": "Thunder Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmAnNj1xJrXk",
+          "name": "Nature's Grip Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "jGXBy7a4LbZ4L0Pw6Vdg",
+          "name": "Twilight Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnz6Qqy32jpG",
+          "name": "Stormbringer Greaves Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "27gw0k38L4zzNWevJxyK",
+          "name": "Stormbringer Striders Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmwjLj1xJrXk",
+          "name": "Brute Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q341NR85vgZV",
+          "name": "Aqua Reaper Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.04
+        },
+        {
+          "hashed_item_id": "3yE1A84kYO86Ll6XeVKp",
+          "name": "Celestial Enclave Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.6
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 15225,
+          "dungeoneering": 99750
+        }
+      }
+    },
+    {
+      "id": 18,
+      "name": "The Nexus",
+      "description": "A radiant chamber pulsating with raw magical energy, at the very epicenter of the city, accessible only through intricate rituals and guarded by elemental manifestations.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qSyJaf0gE3AzNKoDHtEsrDulXygXOR-metadGhlIG5leHVzLnBuZw==-.png",
+      "level_required": 95,
+      "difficulty": 2300,
+      "length": 10800000,
+      "cost": 45000,
+      "shards": 300,
+      "completion_requirement": 100,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "27gw0k38L4D9LWevJxyK",
+          "name": "Moonshadow Vestment Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "njoPWKDkLXW3Y06ZOX79",
+          "name": "Bloodforged Legguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "XyeZRGx9YjwDLB80gWlP",
+          "name": "Bloodforged Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6EmYveGxXOy",
+          "name": "Phoenix Boots Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y8EoL3RaAylw",
+          "name": "Glimmersteel Ward Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdXaNWG8xJe9",
+          "name": "Excalibur Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.005
+        },
+        {
+          "hashed_item_id": "BRn3x72JQ2jXQzOMok41",
+          "name": "Moonlance Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGdKLrOzDRGV",
+          "name": "Divinity Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN542Q9P1nyrv",
+          "name": "Fortune Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdyzYWG8xJe9",
+          "name": "Fists of Fury Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "BRn3x72JQ2DJYzOMok41",
+          "name": "Corruption Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.005
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGmeQrOzDRGV",
+          "name": "Dirella's Protection Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "O2xMjGdBN5E3N9P1nyrv",
+          "name": "Fatebreaker Footguards Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNd6mLWG8xJe9",
+          "name": "Colossus Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "Rv5g4z1dQnyoLqy32jpG",
+          "name": "Earth Destroyer Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqggYnakeJj5",
+          "name": "Forest Reaver Recipe",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/xsEMoJTtsDFbxlYt120rt2p20MIWpc-metacmVjaXBlLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.015
+        },
+        {
+          "hashed_item_id": "DBngxedVYJE0NX64wW8o",
+          "name": "The Nexus Alchemy Chest",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.5
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 17010,
+          "dungeoneering": 105084
+        }
+      }
+    }
+  ],
+  "world_bosses": [
+    {
+      "id": 1,
+      "name": "Isadora",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/slGUwMeiU4U6cvDSxAXLxMHKt1qCXb-metaaXNhZG9yYS5wbmc=-.png",
+      "level": 1,
+      "location": {
+        "id": 1,
+        "name": "Bluebell Hollow"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZjlPA8v9NM1eNEyMe2Oa",
+          "name": "Fluffy Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 34
+        },
+        {
+          "hashed_item_id": "oaJydnOmQW1pYbgRe5ME",
+          "name": "Aquarion Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/30aR1jUo4Dhs3bQ7IlQgvSZQwQbv0c-metaZWdnLTEucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 17
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 49
+        }
+      ],
+      "status": "IN_PROGRESS",
+      "battle_starts_at": "2026-04-29T09:28:46+00:00",
+      "battle_ends_at": "2026-04-29T09:38:46+00:00"
+    },
+    {
+      "id": 6,
+      "name": "Petrok the Guardian",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/9yfF0BTES4a376lk1WmCsUC2pfPMho-metaMS5wbmc=-.png",
+      "level": 50,
+      "location": {
+        "id": 6,
+        "name": "Enchanted Oasis"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "njoPWKDkLX1VQ06ZOX79",
+          "name": "Wrex Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/Fy4RpMvmNeg5WBZG4UrlpfzYkUIhjj-metaZWdnLTcucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 8.7
+        },
+        {
+          "hashed_item_id": "doyA279pNzv5NKRDEWm8",
+          "name": "Vulpina Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/mRDlGD8Tq6u9Ele0tGBAqcDFGyshik-metaZWdnLTkucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 2.5
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 57.8
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T12:01:29+00:00",
+      "battle_ends_at": "2026-04-29T12:19:49+00:00"
+    },
+    {
+      "id": 9,
+      "name": "Skarn the Dreadwake",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/KY23NluIBdp907ppVkWlhNIBJ11e4d-metaYmVhc3QucG5n-.png",
+      "level": 80,
+      "location": {
+        "id": 9,
+        "name": "Isle of Whispers"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "6leApVoENkmZL7nRPy2D",
+          "name": "Vexalia Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/mRDlGD8Tq6u9Ele0tGBAqcDFGyshik-metaZWdnLTkucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 6.5
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY10wNJqekZ2R",
+          "name": "Zephyrix Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 6.5
+        },
+        {
+          "hashed_item_id": "PjVDJez3LDZoNKWO08Ga",
+          "name": "Pyroflare Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/2wirtAI9gGA1T7dlfhympGJ5iHHarW-metaZWdnLTUucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.6
+        },
+        {
+          "hashed_item_id": "oZwey82VNAD5QD0dXM3g",
+          "name": "Drakeling Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qJuchiGSdQ1FUPclodcN29eDIiCz8E-metaZWdnLTIucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.19
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 53.3
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T12:40:25+00:00",
+      "battle_ends_at": "2026-04-29T13:03:45+00:00"
+    },
+    {
+      "id": 3,
+      "name": "Obsidianus",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/AYzG7bQA2PryP8KC8Ayywi2d2284uY-metab2JzaWRpYW51cy5wbmc=-.png",
+      "level": 20,
+      "location": {
+        "id": 3,
+        "name": "Eldoria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "j98bO5w1QPJPY3xkREVJ",
+          "name": "Whiskers Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "q9pwa0kxLBDRNgVj136l",
+          "name": "Leafy Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YcUJ05jgAA2wKPXElfvoMHSBEEOx4C-metaZWdnLTQucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "P1vlVrzjLrwXQao8mGKM",
+          "name": "Shadowscale Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 25
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T13:26:27+00:00",
+      "battle_ends_at": "2026-04-29T13:39:47+00:00"
+    },
+    {
+      "id": 4,
+      "name": "Shadowmire",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/IBzH3zhbJJOZwXGzJnBVbVPzPsOvde-metac2hhZG93bWlyZS5wbmc=-.png",
+      "level": 30,
+      "location": {
+        "id": 4,
+        "name": "Crystal Caverns"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "ZqEegBydNwo5NkA59J61",
+          "name": "Aquastar Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/30aR1jUo4Dhs3bQ7IlQgvSZQwQbv0c-metaZWdnLTEucG5n-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 29
+        },
+        {
+          "hashed_item_id": "bAB1E9poQqW6YnakeJj5",
+          "name": "Nutwhisker Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 56
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T14:08:09+00:00",
+      "battle_ends_at": "2026-04-29T14:23:09+00:00"
+    },
+    {
+      "id": 7,
+      "name": "Lurka Stonefist",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/MNVUKGfAVa0UZFx1vx1gvAd4x070CM-metab3JjLnBuZw==-.png",
+      "level": 60,
+      "location": {
+        "id": 7,
+        "name": "Floating Gardens of Aetheria"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "3Zbym56qLxoPYBRp7Eek",
+          "name": "Draconis Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/30aR1jUo4Dhs3bQ7IlQgvSZQwQbv0c-metaZWdnLTEucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 5.6
+        },
+        {
+          "hashed_item_id": "JVM29l7kQZMML80q6WDG",
+          "name": "Fangor Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/oa8r4XyzYPZtgEWRNm28gFxF7ifV3a-metaZWdnLTMucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 2.8
+        },
+        {
+          "hashed_item_id": "93R0qXalLlWdYAbn8DBg",
+          "name": "Florien Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/oa8r4XyzYPZtgEWRNm28gFxF7ifV3a-metaZWdnLTMucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.3
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 56
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T14:37:06+00:00",
+      "battle_ends_at": "2026-04-29T14:57:06+00:00"
+    },
+    {
+      "id": 2,
+      "name": "Malgazar",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/hYWjCxJenGKwSf8yQnlRBqnWv9XxWf-metabWFsZ2F6YXIucG5n-.png",
+      "level": 10,
+      "location": {
+        "id": 2,
+        "name": "Whispering Woods"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "brz9RZnWN7dAYKAp0Mdl",
+          "name": "Shelly Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 32
+        },
+        {
+          "hashed_item_id": "1rZXlwg5YvoGLk9joDmG",
+          "name": "Furbella Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/YcUJ05jgAA2wKPXElfvoMHSBEEOx4C-metaZWdnLTQucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 16
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 52
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T16:02:19+00:00",
+      "battle_ends_at": "2026-04-29T16:13:59+00:00"
+    },
+    {
+      "id": 5,
+      "name": "Rogoth",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/cDkJRKhUyZsJ0HkTql3NCiewsoyeoJ-metacm9nb3RoLnBuZw==-.png",
+      "level": 40,
+      "location": {
+        "id": 5,
+        "name": "Skyreach Peak"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "Z6aDoyRnLyZRQpV5AGXm",
+          "name": "Blooplord Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "RVrBKlPdNdJyLWG8xJe9",
+          "name": "Stardust Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/lzgfI5IM4Y61coN1djns7YZAb9w6pO-metaZWdnLTgucG5n-.png",
+          "quality": "REFINED",
+          "quantity": 1,
+          "chance": 15
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 60
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-29T18:41:25+00:00",
+      "battle_ends_at": "2026-04-29T18:58:05+00:00"
+    },
+    {
+      "id": 8,
+      "name": "Nethrax",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/TGpOG82CI5QJdj3pGeOgqyMgUBZI9G-metaYmVhc3QgMy5wbmc=-.png",
+      "level": 70,
+      "location": {
+        "id": 8,
+        "name": "Celestial Observatory"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "0kK49j1VN9vAYq6B2doa",
+          "name": "Raptora Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/A4XSIEHMB2XXtto8ZCXo4q3rDx6maF-metaZWdnLTYucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 2.7
+        },
+        {
+          "hashed_item_id": "zvjoJW96Y89XL3RaAylw",
+          "name": "Lumi Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/2wirtAI9gGA1T7dlfhympGJ5iHHarW-metaZWdnLTUucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 2.7
+        },
+        {
+          "hashed_item_id": "JZdg5V3PQoZvLEyWq0zl",
+          "name": "Emberwhisp Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/qJuchiGSdQ1FUPclodcN29eDIiCz8E-metaZWdnLTIucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.1
+        },
+        {
+          "hashed_item_id": "ElzPeorXNVEjQaW0kv53",
+          "name": "Leovar Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 54.5
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-30T00:24:48+00:00",
+      "battle_ends_at": "2026-04-30T00:46:28+00:00"
+    },
+    {
+      "id": 11,
+      "name": "Thal'guth",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/SrDKZ5l5oc8JtQGJNNKL0Cb1fHrMsq-metaZmlyZSBiZWFzdC5wbmc=-.png",
+      "level": 95,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "O2xMjGdBN5aWN9P1nyrv",
+          "name": "Starmane Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.7
+        },
+        {
+          "hashed_item_id": "BPjze3x2Q3A1YR85vgZV",
+          "name": "Sauronix Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/A4XSIEHMB2XXtto8ZCXo4q3rDx6maF-metaZWdnLTYucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        {
+          "hashed_item_id": "dgBq1boWYey0YkJ3rXaD",
+          "name": "Wyrmshadow Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.03
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 68.6
+        },
+        {
+          "hashed_item_id": "mK5jqPopYGvDNrOzDRGV",
+          "name": "Dragon Soulstone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVFKQKPC4N8XM0RN3X9CSPH.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 1.5
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-30T01:47:58+00:00",
+      "battle_ends_at": "2026-04-30T02:16:18+00:00"
+    },
+    {
+      "id": 10,
+      "name": "Voragor",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/Q27hfNERAfFQ96HeM86hIdxZDMHYKh-metaYmVhc3QgMS5wbmc=-.png",
+      "level": 90,
+      "location": {
+        "id": 10,
+        "name": "The Citadel"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7eA59WrBQRJpQzb62qKv",
+          "name": "Aerion Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 1.5
+        },
+        {
+          "hashed_item_id": "B2WEpv54NmJKYj1xJrXk",
+          "name": "Solarix Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/lzgfI5IM4Y61coN1djns7YZAb9w6pO-metaZWdnLTgucG5n-.png",
+          "quality": "EPIC",
+          "quantity": 1,
+          "chance": 0.6
+        },
+        {
+          "hashed_item_id": "XjEaOeBkLarOQlGwxVPq",
+          "name": "Scalethorn Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/Fy4RpMvmNeg5WBZG4UrlpfzYkUIhjj-metaZWdnLTcucG5n-.png",
+          "quality": "LEGENDARY",
+          "quantity": 1,
+          "chance": 0.14
+        },
+        {
+          "hashed_item_id": "27gw0k38L48kLWevJxyK",
+          "name": "Thunderhoof Egg",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.03
+        },
+        {
+          "hashed_item_id": "EWGwnXPlY1mzYJqekZ2R",
+          "name": "Chest of Upgrade Stones",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/38avw63VJGEzqigMNONsHxYmgq4Fll-metaY2hlc3QucG5n-.png",
+          "quality": "PREMIUM",
+          "quantity": 1,
+          "chance": 55.4
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-04-30T02:22:06+00:00",
+      "battle_ends_at": "2026-04-30T02:47:06+00:00"
+    }
+  ]
+}

@@ -1,0 +1,304 @@
+Get detailed information about a specific item including stats, effects, requirements, and more.
+
+To obtain the hashed_item_id, enable "Show Hashed IDs" in your account settings. The hashed_item_id can be found on the item inspection page in-game.
+
+Endpoint URL
+https://api.idle-mmo.com/v1/item/{hashed_item_id}/inspect
+Required Scope
+v1.item.inspect
+Example Request
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "User-Agent: YourApp/1.0" \
+     https://api.idle-mmo.com/v1/item/{hashed_item_id}/inspect
+Example Response
+{
+    "item": {
+        "hashed_id": "abc123def456",
+        "name": "Bow",
+        "description": "A sturdy bow made from ancient wood",
+        "image_url": "https://cdn.idle-mmo.com/images/bow.png",
+        "type": "WEAPON",
+        "quality": "COMMON",
+        "vendor_price": 100,
+        "is_tradeable": true,
+        "max_tier": 5,
+        "requirements": {
+            "level": 10,
+            "strength": 15
+        },
+        "stats": {
+            "damage": 10,
+            "accuracy": 5
+        },
+        "effects": [
+            {
+                "attribute": "experience",
+                "target": "dungeon",
+                "value": 5,
+                "value_type": "percentage"
+            }
+        ],
+        "tier_modifiers": {
+            "2": 1.2,
+            "3": 1.4,
+            "4": 1.6,
+            "5": 1.8
+        },
+        "upgrade_requirements": [
+            {
+                "item_id": 123,
+                "quantity": 2
+            }
+        ],
+        "health_restore": null,
+        "hunger_restore": null,
+        "recipe": {
+            "skill": "Crafting",
+            "level_required": 10,
+            "max_uses": 5,
+            "experience": {
+                "skills": {
+                    "forge": 500
+                },
+                "stats": {
+                    "strength": 20
+                }
+            },
+            "materials": [
+                {
+                    "hashed_item_id": "xyz789abc123",
+                    "item_name": "Oak Wood",
+                    "quantity": 3
+                }
+            ],
+            "result": {
+                "hashed_item_id": "result123",
+                "item_name": "Refined Bow"
+            }
+        },
+        "chest_drops": [
+            {
+                "hashed_item_id": "l43p249",
+                "item_name": "Coin",
+                "quantity": 100,
+                "chance": 25.5
+            },
+            {
+                "hashed_item_id": "hj324lu2",
+                "item_name": "Gem",
+                "quantity": 1,
+                "chance": 5
+            }
+        ],
+        "pet": {
+            "id": 15,
+            "hashed_id": "pet789xyz",
+            "name": "Fire Dragon",
+            "description": "A majestic dragon with blazing scales",
+            "image_url": "https://cdn.idle-mmo.com/images/pets/fire-dragon.png"
+        },
+        "where_to_find": {
+            "enemies": [
+                {
+                    "id": 123,
+                    "name": "Goblin",
+                    "level": 8
+                }
+            ],
+            "dungeons": [
+                {
+                    "id": 456,
+                    "name": "Vineyard Labyrinth"
+                }
+            ],
+            "world_bosses": [
+                {
+                    "id": 789,
+                    "name": "Isadora"
+                }
+            ]
+        }
+    },
+    "endpoint_updates_at": "2025-12-21T13:30:00.000000Z"
+}
+Response Fields
+item
+•
+object
+item.hashed_id
+•
+string
+item.name
+•
+string
+item.description
+•
+string
+item.image_url
+•
+string
+item.type
+•
+string
+item.quality
+•
+string
+item.vendor_price
+•
+integer
+item.is_tradeable
+•
+boolean
+item.max_tier
+•
+integer
+item.requirements
+•
+object|null
+item.stats
+•
+object|null
+item.effects
+•
+array|null
+item.effects.*.attribute
+•
+string
+item.effects.*.target
+•
+string
+item.effects.*.value
+•
+integer|float
+item.effects.*.value_type
+•
+string
+item.tier_modifiers
+•
+object|null
+item.upgrade_requirements
+•
+array|null
+item.upgrade_requirements.*.item_id
+•
+integer
+item.upgrade_requirements.*.quantity
+•
+integer
+item.health_restore
+•
+integer|null
+item.hunger_restore
+•
+integer|null
+item.recipe
+•
+object|null
+item.recipe.skill
+•
+string
+item.recipe.level_required
+•
+integer
+item.recipe.max_uses
+•
+integer
+item.recipe.experience
+•
+object
+item.recipe.experience.skills
+•
+object
+item.recipe.experience.stats
+•
+object
+item.recipe.materials
+•
+array
+item.recipe.materials.*.hashed_item_id
+•
+string
+item.recipe.materials.*.item_name
+•
+string
+item.recipe.materials.*.quantity
+•
+integer
+item.recipe.result
+•
+object
+item.recipe.result.hashed_item_id
+•
+string
+item.recipe.result.item_name
+•
+string
+item.chest_drops
+•
+array|null
+item.chest_drops.*.hashed_item_id
+•
+string
+item.chest_drops.*.item_name
+•
+string
+item.chest_drops.*.quantity
+•
+integer
+item.chest_drops.*.chance
+•
+float|null
+item.pet
+•
+object|null
+item.pet.id
+•
+integer
+item.pet.hashed_id
+•
+string
+item.pet.name
+•
+string
+item.pet.description
+•
+string
+item.pet.image_url
+•
+string
+item.where_to_find
+•
+object|null
+item.where_to_find.enemies
+•
+array
+item.where_to_find.enemies.*.id
+•
+integer
+item.where_to_find.enemies.*.name
+•
+string
+item.where_to_find.enemies.*.level
+•
+integer
+item.where_to_find.dungeons
+•
+array
+item.where_to_find.dungeons.*.id
+•
+integer
+item.where_to_find.dungeons.*.name
+•
+string
+item.where_to_find.world_bosses
+•
+array
+item.where_to_find.world_bosses.*.id
+•
+integer
+item.where_to_find.world_bosses.*.name
+•
+string
+endpoint_updates_at
+•
+string
