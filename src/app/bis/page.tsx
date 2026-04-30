@@ -36,6 +36,7 @@ const QUALITY_COLOR: Record<string, string> = {
 const SORT_OPTIONS = [
     { key: "auto",          label: "Auto (ATK/DEF)" },
     { key: "total",         label: "Total Power" },
+    { key: "price",         label: "Market Price (Low to High)" },
     { key: "attack_power",  label: "Attack Power" },
     { key: "protection",    label: "Protection" },
     { key: "agility",       label: "Agility" },
@@ -60,7 +61,11 @@ interface GearItem {
     recipe_hashed_id: string;
 }
 
-function getRankValue(item: GearItem, sortKey: string, defaultStat: string): number {
+function getRankValue(item: GearItem, sortKey: string, defaultStat: string, marketData: any): number {
+    if (sortKey === "price") {
+        const p = marketData?.[item.name]?.avg_3;
+        return p ? -p : -999999999; // Negative so cheaper items rank higher
+    }
     if (!item.stats) return 0;
     if (sortKey === "auto") return item.stats[defaultStat] || 0;
     if (sortKey === "total") return Object.values(item.stats).reduce((s, v) => s + v, 0);
@@ -124,16 +129,23 @@ export default function BISPage() {
         const result: Record<string, { best: GearItem; alts: GearItem[]; nextUp: GearItem | null }> = {};
         for (const [type, items] of Object.entries(groups)) {
             const defaultStat = SLOT_CONFIG[type].defaultStat;
-            const sorter = (a: GearItem, b: GearItem) => getRankValue(b, sortBy, defaultStat) - getRankValue(a, sortBy, defaultStat);
+            const sorter = (a: GearItem, b: GearItem) => 
+                getRankValue(b, sortBy, defaultStat, marketData) - getRankValue(a, sortBy, defaultStat, marketData);
 
-            const eligible = items.filter(i => i.combat_req === null || i.combat_req <= level).sort(sorter);
-            const locked   = items.filter(i => i.combat_req !== null && i.combat_req > level).sort((a, b) => (a.combat_req || 0) - (b.combat_req || 0));
+            const eligible = items.filter(i => {
+                const levelMatch = i.combat_req === null || i.combat_req <= (Number(combatLevel) || 1);
+                const strMatch = i.strength_req === null || i.strength_req <= 999; // Default high, adjust if we add player stats
+                return levelMatch && strMatch;
+            }).sort(sorter);
+
+            const locked = items.filter(i => i.combat_req !== null && i.combat_req > (Number(combatLevel) || 1))
+                .sort((a, b) => (a.combat_req || 0) - (b.combat_req || 0));
 
             if (eligible.length === 0) continue;
             result[type] = { best: eligible[0], alts: eligible.slice(1, 5), nextUp: locked[0] || null };
         }
         return result;
-    }, [gearData, level, sortBy]);
+    }, [gearData, combatLevel, sortBy, marketData]);
 
     const slotOrder = ["SWORD", "DAGGER", "BOW", "SHIELD", "HELMET", "CHESTPLATE", "GREAVES", "BOOTS", "GAUNTLETS"];
 

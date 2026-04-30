@@ -78,26 +78,40 @@ export default function CombatPage() {
         let filtered = searchTerm 
             ? calculated.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.location?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
             : calculated;
+
         filtered = filtered.filter((e) => {
+            const hasMarket = Object.keys(marketData).length > 0;
             if ((e.level || 0) < minLevel) return false;
             if ((e.level || 0) > maxLevel) return false;
-            if ((e.ev || 0) < minEv) return false;
-            if (showPositiveOnly && (e.profitPerHour || 0) <= 0) return false;
+            
+            if (hasMarket) {
+                if ((e.ev || 0) < minEv) return false;
+                if (showPositiveOnly && (e.profitPerHour || 0) <= 0) return false;
+            }
             return true;
         });
 
         // Sort
         filtered.sort((a, b) => {
             if (!sortCol) return b.ev - a.ev;
-            let valA = a[sortCol] || 0;
-            let valB = b[sortCol] || 0;
-            if (sortCol === 'name' || sortCol === 'location') {
-                valA = sortCol === 'location' ? (a.location?.name || '') : a.name;
-                valB = sortCol === 'location' ? (b.location?.name || '') : b.name;
+            
+            let valA: any = a[sortCol];
+            let valB: any = b[sortCol];
+            
+            if (sortCol === "location") {
+                valA = a.location?.name || "";
+                valB = b.location?.name || "";
             }
-            if (valA < valB) return sortDesc ? 1 : -1;
-            if (valA > valB) return sortDesc ? -1 : 1;
-            return 0;
+
+            if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = (valB || '').toLowerCase();
+                return sortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+            }
+            
+            valA = valA || 0;
+            valB = valB || 0;
+            return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
     }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm, minLevel, maxLevel, minEv, showPositiveOnly]);

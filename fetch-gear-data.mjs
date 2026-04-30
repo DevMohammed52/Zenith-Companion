@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = 5000;
+const API_DELAY_MS = 3100;
 const OUT_FILE = path.join(__dirname, 'public', 'gear-data.json');
 
 if (!API_KEY) { console.error("No IDLEMMO_API_KEY in .env"); process.exit(1); }

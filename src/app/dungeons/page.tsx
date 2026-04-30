@@ -71,21 +71,34 @@ export default function DungeonsPage() {
         }
 
         const filtered = calculated.filter((row) => {
+            // Only apply strict EV filters if market data has actually loaded
+            const hasMarket = Object.keys(marketData).length > 0;
+            
             if ((row.level_required || 0) < minLevelReq) return false;
             if ((row.durationMins || 0) > maxDurationMins) return false;
-            if ((row.netProfit || 0) < minNetProfit) return false;
-            if (showPositiveOnly && (row.netProfit || 0) <= 0) return false;
+            
+            if (hasMarket) {
+                if ((row.netProfit || 0) < minNetProfit) return false;
+                if (showPositiveOnly && (row.netProfit || 0) <= 0) return false;
+            }
             return true;
         });
 
         filtered.sort((a, b) => {
             if (!sortCol) return b.netProfit - a.netProfit;
-            let valA = a[sortCol] || 0;
-            let valB = b[sortCol] || 0;
-            if (sortCol === "name") { valA = a.name; valB = b.name; }
-            if (valA < valB) return sortDesc ? 1 : -1;
-            if (valA > valB) return sortDesc ? -1 : 1;
-            return 0;
+            let valA = a[sortCol];
+            let valB = b[sortCol];
+            
+            // Handle strings vs numbers
+            if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = (valB || '').toLowerCase();
+                return sortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+            }
+            
+            valA = valA || 0;
+            valB = valB || 0;
+            return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
     }, [staticData, marketData, preferences.showEventDungeons, sortCol, sortDesc, minLevelReq, maxDurationMins, minNetProfit, showPositiveOnly]);

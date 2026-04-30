@@ -84,20 +84,34 @@ export default function BossesPage() {
         }
 
         const filtered = calculated.filter((row) => {
+            const hasMarket = Object.keys(marketData).length > 0;
             if ((row.level || 0) < minLevel) return false;
             if ((row.dropsCount || 0) < minDrops) return false;
-            if ((row.ev || 0) < minEv) return false;
+            if (hasMarket && (row.ev || 0) < minEv) return false;
             return true;
         });
 
         filtered.sort((a, b) => {
             if (!sortCol) return b.ev - a.ev;
-            let valA = a[sortCol] || 0;
-            let valB = b[sortCol] || 0;
-            if (sortCol === "name") { valA = a.name; valB = b.name; }
-            if (valA < valB) return sortDesc ? 1 : -1;
-            if (valA > valB) return sortDesc ? -1 : 1;
-            return 0;
+            
+            let valA: any = a[sortCol];
+            let valB: any = b[sortCol];
+            
+            // Special case for location object
+            if (sortCol === "location") {
+                valA = a.location?.name || "";
+                valB = b.location?.name || "";
+            }
+            
+            if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = (valB || '').toLowerCase();
+                return sortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+            }
+            
+            valA = valA || 0;
+            valB = valB || 0;
+            return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
     }, [staticData, marketData, preferences.showEventBosses, sortCol, sortDesc, minLevel, minDrops, minEv]);
