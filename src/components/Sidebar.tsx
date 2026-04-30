@@ -1,16 +1,18 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings, ShoppingCart, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const NAV_ITEMS = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/alchemy', label: 'Alchemy', icon: FlaskConical },
+    { href: '/crafting', label: 'Crafting Queue', icon: ShoppingCart },
     { href: '/combat', label: 'Combat', icon: Swords },
     { href: '/dungeons', label: 'Dungeons', icon: Castle },
     { href: '/bosses', label: 'World Bosses', icon: Skull },
     { href: '/items', label: 'Market Items', icon: Package, matchPrefix: true },
+    { href: '/bis', label: 'Best-in-Slot', icon: Shield },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

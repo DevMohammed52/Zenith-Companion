@@ -63,6 +63,25 @@ if (fs.existsSync(STATIC_DATA_FILE)) {
     }
 }
 
+// Also add crafted gear items from gear-data.json (so they appear in Items DB with live prices)
+const SKILL_TOOL_TYPES = new Set(['FISHING_ROD', 'PICKAXE', 'FELLING_AXE']);
+const GEAR_DATA_FILE = path.join(__dirname, 'public', 'gear-data.json');
+if (fs.existsSync(GEAR_DATA_FILE)) {
+    try {
+        const gearData = JSON.parse(fs.readFileSync(GEAR_DATA_FILE, 'utf8'));
+        let gearCount = 0;
+        for (const item of Object.values(gearData)) {
+            if (item.is_tradeable && item.name && !SKILL_TOOL_TYPES.has(item.type)) {
+                itemsToFetch.add(item.name);
+                gearCount++;
+            }
+        }
+        console.log(`Added ${gearCount} gear items to scrape list. Total items: ${itemsToFetch.size}`);
+    } catch (e) {
+        console.error("Error reading gear data:", e.message);
+    }
+}
+
 const STATUS_FILE = path.join(__dirname, 'public', 'scraper-status.json');
 
 const itemsArray = Array.from(itemsToFetch);

@@ -12,6 +12,9 @@ export default function BossesPage() {
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const { preferences, setPreferences } = usePreferences();
+    const [minLevel, setMinLevel] = useState(0);
+    const [minDrops, setMinDrops] = useState(0);
+    const [minEv, setMinEv] = useState(0);
 
     useEffect(() => {
         fetch('/static-data.json').then(r => r.json()).then(setStaticData);
@@ -80,7 +83,14 @@ export default function BossesPage() {
             });
         }
 
-        calculated.sort((a, b) => {
+        const filtered = calculated.filter((row) => {
+            if ((row.level || 0) < minLevel) return false;
+            if ((row.dropsCount || 0) < minDrops) return false;
+            if ((row.ev || 0) < minEv) return false;
+            return true;
+        });
+
+        filtered.sort((a, b) => {
             if (!sortCol) return b.ev - a.ev;
             let valA = a[sortCol] || 0;
             let valB = b[sortCol] || 0;
@@ -89,8 +99,8 @@ export default function BossesPage() {
             if (valA > valB) return sortDesc ? -1 : 1;
             return 0;
         });
-        return calculated;
-    }, [staticData, marketData, preferences.showEventBosses, sortCol, sortDesc]);
+        return filtered;
+    }, [staticData, marketData, preferences.showEventBosses, sortCol, sortDesc, minLevel, minDrops, minEv]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -135,6 +145,18 @@ export default function BossesPage() {
                     <input type="checkbox" checked={preferences.showEventBosses} onChange={e => setPreferences({ showEventBosses: e.target.checked })} style={{ display: 'none' }} />
                     Show Event Bosses
                 </label>
+                <div className="control-group" style={{ marginLeft: '1rem' }}>
+                    <label className="control-label">Min Level</label>
+                    <input type="number" className="control-input" value={minLevel} onChange={e => setMinLevel(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group" style={{ marginLeft: '0.75rem' }}>
+                    <label className="control-label">Min Drops</label>
+                    <input type="number" className="control-input" value={minDrops} onChange={e => setMinDrops(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group" style={{ marginLeft: '0.75rem' }}>
+                    <label className="control-label">Min EV / Kill</label>
+                    <input type="number" className="control-input" value={minEv} onChange={e => setMinEv(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
             </div>
 
             <div className="table-container">

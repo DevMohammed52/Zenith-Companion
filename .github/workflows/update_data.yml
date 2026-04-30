@@ -23,7 +23,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Scraper
+      - name: Fetch Gear Static Data (if missing or weekly refresh)
+        env:
+          IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
+        run: |
+          if [ ! -f public/gear-data.json ]; then
+            echo "gear-data.json not found. Running full gear fetch..."
+            node --env-file=.env fetch-gear-data.mjs
+          else
+            echo "gear-data.json exists. Skipping gear fetch (run manually to refresh)."
+          fi
+
+      - name: Run Market Scraper
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
           SCRAPE_ONCE: "true"
@@ -33,6 +44,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add public/market-data.json public/scraper-status.json
+          git add public/market-data.json public/scraper-status.json public/gear-data.json
           git commit -m "Auto-update market data [skip ci]" || echo "No changes to commit"
           git push

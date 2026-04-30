@@ -12,6 +12,10 @@ export default function CombatPage() {
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [minLevel, setMinLevel] = useState(0);
+    const [maxLevel, setMaxLevel] = useState(9999);
+    const [minEv, setMinEv] = useState(0);
+    const [showPositiveOnly, setShowPositiveOnly] = useState(false);
 
     useEffect(() => {
         const search = new URLSearchParams(window.location.search).get("search");
@@ -71,9 +75,16 @@ export default function CombatPage() {
         }
 
         // Filter by search
-        const filtered = searchTerm 
+        let filtered = searchTerm 
             ? calculated.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.location?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
             : calculated;
+        filtered = filtered.filter((e) => {
+            if ((e.level || 0) < minLevel) return false;
+            if ((e.level || 0) > maxLevel) return false;
+            if ((e.ev || 0) < minEv) return false;
+            if (showPositiveOnly && (e.profitPerHour || 0) <= 0) return false;
+            return true;
+        });
 
         // Sort
         filtered.sort((a, b) => {
@@ -89,7 +100,7 @@ export default function CombatPage() {
             return 0;
         });
         return filtered;
-    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm]);
+    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm, minLevel, maxLevel, minEv, showPositiveOnly]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -140,6 +151,25 @@ export default function CombatPage() {
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
+                </div>
+                <div className="control-group">
+                    <label className="control-label">Min Level</label>
+                    <input type="number" className="control-input" value={minLevel} onChange={(e) => setMinLevel(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group">
+                    <label className="control-label">Max Level</label>
+                    <input type="number" className="control-input" value={maxLevel} onChange={(e) => setMaxLevel(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group">
+                    <label className="control-label">Min EV / Kill</label>
+                    <input type="number" className="control-input" value={minEv} onChange={(e) => setMinEv(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group" style={{ justifyContent: "flex-end" }}>
+                    <label className="control-label" style={{ marginBottom: "0.5rem" }}>Advanced</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={showPositiveOnly} onChange={(e) => setShowPositiveOnly(e.target.checked)} />
+                        <span className="text-muted">Only Positive Gold/Hour</span>
+                    </label>
                 </div>
             </div>
 

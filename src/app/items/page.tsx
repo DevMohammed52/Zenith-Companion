@@ -217,11 +217,11 @@ function ItemsContent() {
                             <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
                                 <div className="stat-card">
                                     <div className="stat-label">Vendor Price</div>
-                                    <div className="stat-value mono">{mData.vendor_price > 0 ? `${mData.vendor_price.toLocaleString()}g` : 'N/A'}</div>
+                                    <div className="stat-value mono">{mData.vendor_price > 0 ? `${mData.vendor_price.toLocaleString(undefined, { maximumFractionDigits: 0 })}g` : 'N/A'}</div>
                                 </div>
                                 <div className="stat-card highlight">
                                     <div className="stat-label">3-Day Avg</div>
-                                    <div className="stat-value mono">{mData.avg_3 ? `${mData.avg_3.toLocaleString()}g` : 'N/A'}</div>
+                                    <div className="stat-value mono">{mData.avg_3 ? `${mData.avg_3.toLocaleString(undefined, { maximumFractionDigits: 0 })}g` : 'N/A'}</div>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-label">3D Volume</div>
@@ -230,7 +230,7 @@ function ItemsContent() {
                             </div>
 
                             {/* Extended averages */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
                                 {[
                                     { label: '7D Avg', val: mData.avg_7 },
                                     { label: '14D Avg', val: mData.avg_14 },
@@ -242,6 +242,56 @@ function ItemsContent() {
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Price Trend Sparkline */}
+                            {(() => {
+                                const points = [
+                                    { label: '30D', val: mData.avg_30 },
+                                    { label: '14D', val: mData.avg_14 },
+                                    { label: '7D',  val: mData.avg_7 },
+                                    { label: '3D',  val: mData.avg_3 },
+                                ].filter(p => p.val);
+                                if (points.length < 2) return null;
+                                const vals = points.map(p => p.val as number);
+                                const min = Math.min(...vals);
+                                const max = Math.max(...vals);
+                                const range = max - min || 1;
+                                const W = 100, H = 40, PAD = 4;
+                                const toX = (i: number) => PAD + (i / (points.length - 1)) * (W - PAD * 2);
+                                const toY = (v: number) => H - PAD - ((v - min) / range) * (H - PAD * 2);
+                                const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i).toFixed(1)},${toY(p.val as number).toFixed(1)}`).join(' ');
+                                const areaPath = `${linePath} L${toX(points.length - 1).toFixed(1)},${H} L${toX(0).toFixed(1)},${H} Z`;
+                                const isUp = (mData.avg_3 || 0) >= (mData.avg_30 || mData.avg_3 || 0);
+                                const color = isUp ? '#4ade80' : '#f87171';
+                                return (
+                                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '2rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', letterSpacing: '0.06em' }}>PRICE TREND</span>
+                                            <span style={{ fontSize: '0.78rem', color, fontWeight: 600 }}>
+                                                {isUp ? '▲' : '▼'} {Math.abs(((mData.avg_3 - (mData.avg_30 || mData.avg_3)) / (mData.avg_30 || mData.avg_3)) * 100).toFixed(1)}% vs 30D
+                                            </span>
+                                        </div>
+                                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '56px', overflow: 'visible' }}>
+                                            <defs>
+                                                <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                                                    <stop offset="100%" stopColor={color} stopOpacity="0" />
+                                                </linearGradient>
+                                            </defs>
+                                            <path d={areaPath} fill="url(#sparkGrad)" />
+                                            <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            {points.map((p, i) => (
+                                                <circle key={i} cx={toX(i)} cy={toY(p.val as number)} r="2.5" fill={color} />
+                                            ))}
+                                        </svg>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                                            {points.map((p, i) => (
+                                                <span key={i} style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{p.label}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Alchemy Recipe Breakdown */}
                             {alchemyRecipe && (

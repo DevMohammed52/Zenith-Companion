@@ -37,6 +37,9 @@ type RowData = {
 export default function Home() {
   const [data, setData] = useState<AllData | null>(null);
   const { preferences, setPreferences } = usePreferences();
+  const [minRoi, setMinRoi] = useState(0);
+  const [minVolume, setMinVolume] = useState(0);
+  const [showProfitableOnly, setShowProfitableOnly] = useState(false);
   
   const [sortCol, setSortCol] = useState<keyof RowData | "">("");
   const [sortDesc, setSortDesc] = useState<boolean>(true);
@@ -156,8 +159,16 @@ export default function Home() {
       });
     }
 
+    const filtered = calculated.filter((row) => {
+      if (row.loading) return true;
+      if (showProfitableOnly && row.profit <= 0) return false;
+      if (row.roi < minRoi) return false;
+      if (row.vol_3 < minVolume) return false;
+      return true;
+    });
+
     // Sort
-    calculated.sort((a, b) => {
+    filtered.sort((a, b) => {
       if (a.loading) return 1;
       if (b.loading) return -1;
       if (!sortCol) return b.profit - a.profit; // default sort
@@ -170,8 +181,8 @@ export default function Home() {
       return 0;
     });
 
-    return calculated;
-  }, [data, preferences.barteringBoost, preferences.activeHours, sortCol, sortDesc]);
+    return filtered;
+  }, [data, preferences.barteringBoost, preferences.activeHours, sortCol, sortDesc, showProfitableOnly, minRoi, minVolume]);
 
   useEffect(() => {
     const recipe = new URLSearchParams(window.location.search).get("recipe");
@@ -222,6 +233,38 @@ export default function Home() {
             max="24"
             step="0.5"
           />
+        </div>
+        <div className="control-group">
+          <label className="control-label">Min ROI %</label>
+          <input
+            type="number"
+            className="control-input"
+            value={minRoi}
+            onChange={(e) => setMinRoi(Math.max(0, Number(e.target.value) || 0))}
+            min="0"
+            step="0.1"
+          />
+        </div>
+        <div className="control-group">
+          <label className="control-label">Min 3D Volume</label>
+          <input
+            type="number"
+            className="control-input"
+            value={minVolume}
+            onChange={(e) => setMinVolume(Math.max(0, Number(e.target.value) || 0))}
+            min="0"
+          />
+        </div>
+        <div className="control-group" style={{ justifyContent: "flex-end" }}>
+          <label className="control-label" style={{ marginBottom: "0.5rem" }}>Advanced</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={showProfitableOnly}
+              onChange={(e) => setShowProfitableOnly(e.target.checked)}
+            />
+            <span className="text-muted">Only Profitable</span>
+          </label>
         </div>
       </div>
 

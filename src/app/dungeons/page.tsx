@@ -12,6 +12,10 @@ export default function DungeonsPage() {
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const { preferences, setPreferences } = usePreferences();
+    const [minLevelReq, setMinLevelReq] = useState(0);
+    const [maxDurationMins, setMaxDurationMins] = useState(9999);
+    const [minNetProfit, setMinNetProfit] = useState(0);
+    const [showPositiveOnly, setShowPositiveOnly] = useState(false);
 
     useEffect(() => {
         fetch('/static-data.json').then(r => r.json()).then(setStaticData);
@@ -66,7 +70,15 @@ export default function DungeonsPage() {
             });
         }
 
-        calculated.sort((a, b) => {
+        const filtered = calculated.filter((row) => {
+            if ((row.level_required || 0) < minLevelReq) return false;
+            if ((row.durationMins || 0) > maxDurationMins) return false;
+            if ((row.netProfit || 0) < minNetProfit) return false;
+            if (showPositiveOnly && (row.netProfit || 0) <= 0) return false;
+            return true;
+        });
+
+        filtered.sort((a, b) => {
             if (!sortCol) return b.netProfit - a.netProfit;
             let valA = a[sortCol] || 0;
             let valB = b[sortCol] || 0;
@@ -75,8 +87,8 @@ export default function DungeonsPage() {
             if (valA > valB) return sortDesc ? -1 : 1;
             return 0;
         });
-        return calculated;
-    }, [staticData, marketData, preferences.showEventDungeons, sortCol, sortDesc]);
+        return filtered;
+    }, [staticData, marketData, preferences.showEventDungeons, sortCol, sortDesc, minLevelReq, maxDurationMins, minNetProfit, showPositiveOnly]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -109,6 +121,22 @@ export default function DungeonsPage() {
                     </div>
                     <input type="checkbox" checked={preferences.showEventDungeons} onChange={e => setPreferences({ showEventDungeons: e.target.checked })} style={{ display: 'none' }} />
                     Show Event Dungeons
+                </label>
+                <div className="control-group" style={{ marginLeft: '1rem' }}>
+                    <label className="control-label">Min Level Req</label>
+                    <input type="number" className="control-input" value={minLevelReq} onChange={e => setMinLevelReq(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group" style={{ marginLeft: '0.75rem' }}>
+                    <label className="control-label">Max Duration (m)</label>
+                    <input type="number" className="control-input" value={maxDurationMins} onChange={e => setMaxDurationMins(Math.max(0, Number(e.target.value) || 0))} />
+                </div>
+                <div className="control-group" style={{ marginLeft: '0.75rem' }}>
+                    <label className="control-label">Min Net Profit</label>
+                    <input type="number" className="control-input" value={minNetProfit} onChange={e => setMinNetProfit(Number(e.target.value) || 0)} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginLeft: '1rem' }}>
+                    <input type="checkbox" checked={showPositiveOnly} onChange={e => setShowPositiveOnly(e.target.checked)} />
+                    <span className="text-muted">Only Positive</span>
                 </label>
             </div>
 
