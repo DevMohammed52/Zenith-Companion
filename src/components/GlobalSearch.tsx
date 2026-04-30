@@ -20,6 +20,8 @@ const navShortcuts: Record<string, string> = {
   "4": "/combat",
   "5": "/dungeons",
   "6": "/bosses",
+  "7": "/bis",
+  "8": "/crafting",
   s: "/settings",
 };
 
@@ -97,32 +99,34 @@ export default function GlobalSearch() {
   const results = useMemo<SearchResult[]>(() => {
     const next: SearchResult[] = [
       { label: "Dashboard", type: "Page", href: "/", detail: "Overview" },
-      { label: "Alchemy", type: "Page", href: "/alchemy", detail: "Profit calculator" },
-      { label: "Market Items", type: "Page", href: "/items", detail: "Item database" },
-      { label: "Combat", type: "Page", href: "/combat", detail: "Enemy EV" },
-      { label: "Dungeons", type: "Page", href: "/dungeons", detail: "Dungeon EV" },
-      { label: "World Bosses", type: "Page", href: "/bosses", detail: "Boss loot" },
-      { label: "Settings", type: "Page", href: "/settings", detail: "Preferences and shortcuts" },
+      { label: "Alchemy Profit", type: "Page", href: "/alchemy", detail: "Profit calculator" },
+      { label: "Crafting Queue", type: "Page", href: "/crafting", detail: "Shopping list and batching" },
+      { label: "Items Database", type: "Page", href: "/items", detail: "Market data repository" },
+      { label: "Combat", type: "Page", href: "/combat", detail: "Enemy drops and profit" },
+      { label: "Dungeons", type: "Page", href: "/dungeons", detail: "Loot tables and efficiency" },
+      { label: "World Bosses", type: "Page", href: "/bosses", detail: "Rare drops and locations" },
+      { label: "BiS Recommender", type: "Page", href: "/bis", detail: "Best-in-slot gear logic" },
+      { label: "Settings", type: "Page", href: "/settings", detail: "Preferences and theme" },
     ];
 
     Object.keys(ALCHEMY_ITEMS).forEach(name => {
-      next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy recipe" });
+      next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
     });
 
     if (marketData) {
       Object.keys(marketData)
         .filter(name => !name.startsWith("_"))
-        .forEach(name => next.push({ label: name, type: "Item", href: `/items?name=${encodeURIComponent(name)}`, detail: "Market item" }));
+        .forEach(name => next.push({ label: name, type: "Item", href: `/items?name=${encodeURIComponent(name)}`, detail: "Market price" }));
     }
 
     staticData?.enemies?.forEach((enemy: any) => {
       next.push({ label: enemy.name, type: "Enemy", href: `/combat?search=${encodeURIComponent(enemy.name)}`, detail: enemy.location?.name });
     });
     staticData?.dungeons?.forEach((dungeon: any) => {
-      next.push({ label: dungeon.name, type: "Dungeon", href: "/dungeons", detail: dungeon.location?.name });
+      next.push({ label: dungeon.name, type: "Dungeon", href: `/dungeons?search=${encodeURIComponent(dungeon.name)}`, detail: dungeon.location?.name });
     });
     staticData?.world_bosses?.forEach((boss: any) => {
-      next.push({ label: boss.name, type: "Boss", href: "/bosses", detail: boss.location?.name });
+      next.push({ label: boss.name, type: "Boss", href: `/bosses?search=${encodeURIComponent(boss.name)}`, detail: boss.location?.name });
     });
 
     return next;
@@ -173,7 +177,7 @@ export default function GlobalSearch() {
                   <em>{result.type}</em>
                 </button>
               ))}
-              {filteredResults.length === 0 && <div className="dashboard-empty">No matches found.</div>}
+              {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for "{query}"</div>}
             </div>
           </div>
         </div>

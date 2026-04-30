@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart } from "lucide-react";
 import Link from 'next/link';
 import { usePreferences } from "@/lib/preferences";
 
@@ -12,10 +12,6 @@ export default function CombatPage() {
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [minLevel, setMinLevel] = useState(0);
-    const [maxLevel, setMaxLevel] = useState(9999);
-    const [minEv, setMinEv] = useState(0);
-    const [showPositiveOnly, setShowPositiveOnly] = useState(false);
 
     useEffect(() => {
         const search = new URLSearchParams(window.location.search).get("search");
@@ -49,19 +45,15 @@ export default function CombatPage() {
                 for (const drop of enemy.loot) {
                     const mData = marketData[drop.name];
                     const price = mData ? mData.avg_3 : 0;
-                    // Formula: (Drop Chance / 100) * Quantity * Market Price
                     const dropChance = (drop.chance || 0) / 100;
                     evPerKill += dropChance * (drop.quantity || 1) * price;
                 }
             }
             
-            // Multiply by the base chance of getting ANY loot (if that's how IdleMMO works, 
-            // usually it is base_chance * individual_chances, but some games treat them as independent.
-            // Based on the screenshot math earlier, the total EV is multiplied by Loot Chance)
             const finalEv = evPerKill * chanceOfLoot;
 
             calculated.push({
-                ...enemy, // Keep full enemy data for modal
+                ...enemy,
                 ev: finalEv,
                 profitPerHour: finalEv * parsedKph,
                 dropsCount: enemy.loot?.length || 0,
@@ -74,22 +66,10 @@ export default function CombatPage() {
             });
         }
 
-        // Filter by search
+        // Search Filter
         let filtered = searchTerm 
             ? calculated.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.location?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
             : calculated;
-
-        filtered = filtered.filter((e) => {
-            const hasMarket = Object.keys(marketData).length > 0;
-            if ((e.level || 0) < minLevel) return false;
-            if ((e.level || 0) > maxLevel) return false;
-            
-            if (hasMarket) {
-                if ((e.ev || 0) < minEv) return false;
-                if (showPositiveOnly && (e.profitPerHour || 0) <= 0) return false;
-            }
-            return true;
-        });
 
         // Sort
         filtered.sort((a, b) => {
@@ -114,7 +94,7 @@ export default function CombatPage() {
             return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
-    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm, minLevel, maxLevel, minEv, showPositiveOnly]);
+    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -148,7 +128,8 @@ export default function CombatPage() {
                         className="control-input"
                         value={preferences.killsPerHour}
                         onChange={(e) => {
-                            setPreferences({ killsPerHour: Math.max(0, Number(e.target.value) || 0) });
+                            const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value) || 0);
+                            setPreferences({ killsPerHour: val });
                         }}
                     />
                 </div>
@@ -159,31 +140,12 @@ export default function CombatPage() {
                         <input 
                             type="text" 
                             className="control-input"
-                            placeholder="Enemy or location..."
+                            placeholder="Search enemy or location..."
                             style={{ width: '100%', paddingLeft: '2rem' }}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                </div>
-                <div className="control-group">
-                    <label className="control-label">Min Level</label>
-                    <input type="number" className="control-input" value={minLevel} onChange={(e) => setMinLevel(Math.max(0, Number(e.target.value) || 0))} />
-                </div>
-                <div className="control-group">
-                    <label className="control-label">Max Level</label>
-                    <input type="number" className="control-input" value={maxLevel} onChange={(e) => setMaxLevel(Math.max(0, Number(e.target.value) || 0))} />
-                </div>
-                <div className="control-group">
-                    <label className="control-label">Min EV / Kill</label>
-                    <input type="number" className="control-input" value={minEv} onChange={(e) => setMinEv(Math.max(0, Number(e.target.value) || 0))} />
-                </div>
-                <div className="control-group" style={{ justifyContent: "flex-end" }}>
-                    <label className="control-label" style={{ marginBottom: "0.5rem" }}>Advanced</label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={showPositiveOnly} onChange={(e) => setShowPositiveOnly(e.target.checked)} />
-                        <span className="text-muted">Only Positive Gold/Hour</span>
-                    </label>
                 </div>
             </div>
 
@@ -212,9 +174,14 @@ export default function CombatPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.slice(0, 50).map((row, i) => (
+                        {rows.map((row, i) => (
                             <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)}>
-                                <td className="item-name left-align">{row.name}</td>
+                                <td className="item-name left-align">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
+                                        <span>{row.name}</span>
+                                    </div>
+                                </td>
                                 <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
                                 <td className="mono">{row.level}</td>
                                 <td className="mono">{row.dropsCount}</td>
@@ -226,14 +193,6 @@ export default function CombatPage() {
                                 </td>
                             </tr>
                         ))}
-                        {rows.length === 0 && (
-                            <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                    <Activity className="animate-spin" style={{ margin: '0 auto', marginBottom: '1rem' }} />
-                                    Loading Combat Data & Real-Time Market Prices...
-                                </td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>
@@ -252,9 +211,17 @@ export default function CombatPage() {
                                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                                         {selectedEnemy.name}
                                     </h2>
-                                    <span className="text-muted" style={{ fontSize: '0.9rem' }}>
-                                        {selectedEnemy.location?.name} • Level {selectedEnemy.level} • {selectedEnemy.health} HP
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                                            <MapPin size={12} color="var(--text-accent)" /> {selectedEnemy.location?.name}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                                            <Shield size={12} color="var(--text-accent)" /> Level {selectedEnemy.level}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                                            <Heart size={12} color="#f87171" /> {selectedEnemy.health} HP
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <button className="close-btn" onClick={() => setSelectedEnemy(null)}>

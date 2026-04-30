@@ -5,12 +5,17 @@ import { useEffect, useState } from "react";
 export type ThemeName = "ember" | "forest" | "arcane" | "frost";
 
 export type Preferences = {
-  barteringBoost: number;
-  activeHours: number;
-  killsPerHour: number;
+  barteringBoost: number | "";
+  activeHours: number | "";
+  killsPerHour: number | "";
   showEventBosses: boolean;
   showEventDungeons: boolean;
   theme: ThemeName;
+  combatLevel: number | "";
+  strStat: number | "";
+  dexStat: number | "";
+  defStat: number | "";
+  combatStyle: string;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -20,67 +25,63 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showEventBosses: true,
   showEventDungeons: true,
   theme: "ember",
+  combatLevel: 96,
+  strStat: 80,
+  dexStat: 80,
+  defStat: 80,
+  combatStyle: "sword_shield",
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";
 export const WATCHLIST_STORAGE_KEY = "zenith_watchlist";
 
-const legacyBoolean = (value: string | null, fallback: boolean) => {
-  if (value === null) return fallback;
-  return value === "true";
-};
-
 const readPreferences = (): Preferences => {
   const next = { ...DEFAULT_PREFERENCES };
-
   try {
     const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
     if (stored) Object.assign(next, JSON.parse(stored));
-
-    const legacyBartering = localStorage.getItem("zenith_bartering");
-    const legacyActiveHours = localStorage.getItem("zenith_activeHours");
-    const legacyKph = localStorage.getItem("zenith_kph");
-    const legacyEvents = localStorage.getItem("zenith_show_events");
-
-    if (!stored && legacyBartering !== null) next.barteringBoost = Number(legacyBartering) || 0;
-    if (!stored && legacyActiveHours !== null) next.activeHours = Number(legacyActiveHours) || 18;
-    if (!stored && legacyKph !== null) next.killsPerHour = Number(legacyKph) || 360;
-    if (!stored && legacyEvents !== null) {
-      next.showEventBosses = legacyBoolean(legacyEvents, true);
-      next.showEventDungeons = legacyBoolean(legacyEvents, true);
-    }
   } catch (e) {}
-
-  next.barteringBoost = Math.min(20, Math.max(0, Number(next.barteringBoost) || 0));
-  next.activeHours = Math.min(24, Math.max(0, Number(next.activeHours) || 0));
-  next.killsPerHour = Math.max(0, Number(next.killsPerHour) || 0);
   return next;
 };
 
 export const applyTheme = (theme: ThemeName) => {
-  document.documentElement.dataset.theme = theme;
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = theme;
+  }
 };
 
 export function usePreferences() {
   const [preferences, setPreferencesState] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [loaded, setLoaded] = useState(false);
 
+  // Load initial and listen for cross-tab/cross-component updates
   useEffect(() => {
-    const next = readPreferences();
-    setPreferencesState(next);
-    applyTheme(next.theme);
+    const handleUpdate = () => {
+      const next = readPreferences();
+      setPreferencesState(next);
+      applyTheme(next.theme);
+    };
+
+    handleUpdate(); // Initial load
     setLoaded(true);
+
+    window.addEventListener("zenith-preferences-updated", handleUpdate);
+    window.addEventListener("storage", (e) => {
+        if (e.key === PREFERENCE_STORAGE_KEY) handleUpdate();
+    });
+
+    return () => {
+      window.removeEventListener("zenith-preferences-updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const setPreferences = (patch: Partial<Preferences>) => {
     setPreferencesState(current => {
       const next = { ...current, ...patch };
       localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(next));
-      localStorage.setItem("zenith_bartering", String(next.barteringBoost));
-      localStorage.setItem("zenith_activeHours", String(next.activeHours));
-      localStorage.setItem("zenith_kph", String(next.killsPerHour));
-      localStorage.setItem("zenith_show_events", String(next.showEventBosses || next.showEventDungeons));
       applyTheme(next.theme);
+      // Notify other instances of usePreferences in the same tab
       window.dispatchEvent(new Event("zenith-preferences-updated"));
       return next;
     });
@@ -93,10 +94,15 @@ export function useWatchlist() {
   const [watchlist, setWatchlistState] = useState<string[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
-      if (stored) setWatchlistState(JSON.parse(stored));
-    } catch (e) {}
+    const handleUpdate = () => {
+        try {
+            const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
+            if (stored) setWatchlistState(JSON.parse(stored));
+        } catch (e) {}
+    };
+    handleUpdate();
+    window.addEventListener("zenith-watchlist-updated", handleUpdate);
+    return () => window.removeEventListener("zenith-watchlist-updated", handleUpdate);
   }, []);
 
   const setWatchlist = (next: string[]) => {

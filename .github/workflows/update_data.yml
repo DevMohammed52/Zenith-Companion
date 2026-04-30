@@ -1,8 +1,8 @@
-name: Update Market Data
+name: Update Market & Boss Data
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Every 4 hours
+    - cron: '0 */6 * * *' # Runs every 6 hours
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -23,18 +23,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Fetch Gear Static Data (if missing or weekly refresh)
+      - name: Fetch Gear Static Data (if missing)
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
         run: |
           if [ ! -f public/gear-data.json ]; then
             echo "gear-data.json not found. Running full gear fetch..."
-            node --env-file=.env fetch-gear-data.mjs
+            node fetch-gear-data.mjs
           else
-            echo "gear-data.json exists. Skipping gear fetch (run manually to refresh)."
+            echo "gear-data.json exists. Skipping gear fetch."
           fi
 
-      - name: Run Market Scraper
+      - name: Run Market & Boss Scraper
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
           SCRAPE_ONCE: "true"
@@ -44,6 +44,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add public/market-data.json public/scraper-status.json public/gear-data.json
-          git commit -m "Auto-update market data [skip ci]" || echo "No changes to commit"
+          git add public/market-data.json public/static-data.json public/scraper-status.json public/gear-data.json
+          git commit -m "chore: auto-update market data and boss schedules [skip ci]" || echo "No changes to commit"
           git push

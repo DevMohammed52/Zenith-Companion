@@ -11,6 +11,7 @@ const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
 const API_DELAY_MS = 3100;
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
+const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 
 const ALCHEMY_ITEMS = {
     "Yggdrasil Essence Crystal": {"materials": {"Goblin Crown": 1, "Bone Fragment": 20}},
@@ -38,32 +39,36 @@ for (const [potion, data] of Object.entries(ALCHEMY_ITEMS)) {
     }
 }
 
-const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
-if (fs.existsSync(STATIC_DATA_FILE)) {
-    try {
-        const staticData = JSON.parse(fs.readFileSync(STATIC_DATA_FILE, 'utf8'));
-        
-        const addLootItems = (entityList) => {
-            if (!entityList) return;
-            for (const entity of entityList) {
-                if (entity.loot && Array.isArray(entity.loot)) {
-                    for (const drop of entity.loot) {
-                        itemsToFetch.add(drop.name);
-                    }
-                }
-            }
-        };
-
-        addLootItems(staticData.enemies);
-        addLootItems(staticData.dungeons);
-        addLootItems(staticData.world_bosses);
-        console.log(`Added combat items to scrape list. Total items: ${itemsToFetch.size}`);
-    } catch (e) {
-        console.error("Error reading static data:", e.message);
+function loadStaticData() {
+    if (fs.existsSync(STATIC_DATA_FILE)) {
+        try {
+            return JSON.parse(fs.readFileSync(STATIC_DATA_FILE, 'utf8'));
+        } catch (e) {
+            console.error("Error reading static data:", e.message);
+        }
     }
+    return null;
 }
 
-// Also add crafted gear items from gear-data.json (so they appear in Items DB with live prices)
+const staticData = loadStaticData();
+if (staticData) {
+    const addLootItems = (entityList) => {
+        if (!entityList) return;
+        for (const entity of entityList) {
+            if (entity.loot && Array.isArray(entity.loot)) {
+                for (const drop of entity.loot) {
+                    itemsToFetch.add(drop.name);
+                }
+            }
+        }
+    };
+    addLootItems(staticData.enemies);
+    addLootItems(staticData.dungeons);
+    addLootItems(staticData.world_bosses);
+    console.log(`Added combat items to scrape list. Total items: ${itemsToFetch.size}`);
+}
+
+// Also add crafted gear items from gear-data.json
 const SKILL_TOOL_TYPES = new Set(['FISHING_ROD', 'PICKAXE', 'FELLING_AXE']);
 const GEAR_DATA_FILE = path.join(__dirname, 'public', 'gear-data.json');
 if (fs.existsSync(GEAR_DATA_FILE)) {
@@ -83,7 +88,6 @@ if (fs.existsSync(GEAR_DATA_FILE)) {
 }
 
 const STATUS_FILE = path.join(__dirname, 'public', 'scraper-status.json');
-
 const itemsArray = Array.from(itemsToFetch);
 
 const headers = {
@@ -102,6 +106,45 @@ if (fs.existsSync(DATA_FILE)) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function fetchLiveWorldBosses() {
+    try {
+        console.log("Fetching live world boss data...");
+        const res = await fetch(`${BASE_URL}/combat/world_bosses/list`, { headers });
+        if (!res.ok) {
+            console.error(`Failed to fetch world bosses: ${res.status}`);
+            return;
+        }
+        const data = await res.json();
+        if (data && data.world_bosses) {
+            const currentStatic = loadStaticData();
+            if (currentStatic) {
+                // Update specific fields from API while preserving our augmented data
+                const updatedBosses = currentStatic.world_bosses.map(boss => {
+                    const live = data.world_bosses.find(lb => lb.id === boss.id || lb.name === boss.name);
+                    if (live) {
+                        return {
+                            ...boss,
+                            status: live.status,
+                            battle_starts_at: live.battle_starts_at,
+                            battle_ends_at: live.battle_ends_at,
+                            // Optionally update level/location if they change
+                            level: live.level || boss.level,
+                            image_url: live.image_url || boss.image_url
+                        };
+                    }
+                    return boss;
+                });
+                
+                currentStatic.world_bosses = updatedBosses;
+                fs.writeFileSync(STATIC_DATA_FILE, JSON.stringify(currentStatic, null, 2));
+                console.log("✅ World boss status & schedules updated from API.");
+            }
+        }
+    } catch (e) {
+        console.error("Error updating world bosses:", e.message);
+    }
+}
 
 async function fetchItem(itemName) {
     try {
@@ -174,13 +217,16 @@ async function start() {
         console.log("No IDLEMMO_API_KEY provided in .env. Scraper paused.");
         return;
     }
-    console.log("Starting background API scraper...");
     
     // Create public dir if missing
     const publicDir = path.dirname(DATA_FILE);
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
     while (true) {
+        // Fetch live boss data at the start of each cycle
+        await fetchLiveWorldBosses();
+        await sleep(API_DELAY_MS);
+
         for (let i = 0; i < itemsArray.length; i++) {
             const item = itemsArray[i];
             
