@@ -477,20 +477,41 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               View Recipe Item
                             </button>
                           )}
+                          {item.type === 'RECIPE' && item.recipe_yield && (
+                            <button 
+                              onClick={() => openItemByName?.(item.recipe_yield.item_name)}
+                              className="recipe-link-btn"
+                              style={{ 
+                                background: 'rgba(168,85,247,0.1)', 
+                                border: '1px solid rgba(168,85,247,0.2)', 
+                                color: '#a855f7',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                textTransform: 'uppercase'
+                              }}
+                            >
+                              View Crafted Item
+                            </button>
+                          )}
                           {resultPrice > 0 && (
                             <div className={`roi-badge ${isProfitable ? 'pos' : 'neg'}`}>
                               {isProfitable ? 'PROFITABLE' : 'POTENTIAL LOSS'}
                             </div>
                           )}
-                          <button 
-                            onClick={() => {
-                              const targetName = item.type === 'RECIPE' ? (item.recipe_yield?.item_name || item.name) : item.name;
-                              addToQueue(targetName);
-                            }}
-                            className="add-queue-btn"
-                          >
-                            <Plus size={12} /> QUEUE
-                          </button>
+                          {recipeSkill?.toUpperCase() === 'ALCHEMY' && (
+                            <button 
+                              onClick={() => {
+                                const targetName = item.type === 'RECIPE' ? (item.recipe_yield?.item_name || item.name) : item.name;
+                                addToQueue(targetName);
+                              }}
+                              className="add-queue-btn"
+                            >
+                              <Plus size={12} /> QUEUE
+                            </button>
+                          )}
                         </div>
                       </div>
                       
