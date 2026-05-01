@@ -66,7 +66,13 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
         const base = name.replace('Recipe: ', '');
         variants.push(base + ' Recipe');
         variants.push(base + ' Recipe (Untradable)');
-        variants.push(base + ' (Untradable)'); // Handle items like Earthcore Essence Crystal (Untradable)
+        variants.push(base + ' (Untradable)');
+        
+        // Handle common suffix omissions (e.g., "Earthcore Essence" -> "Earthcore Essence Crystal")
+        if (!base.toLowerCase().includes('crystal')) {
+          variants.push(base + ' Crystal (Untradable)');
+          variants.push(base + ' Crystal Recipe');
+        }
       } else if (name.endsWith(' Recipe')) {
         const base = name.replace(' Recipe', '');
         variants.push('Recipe: ' + base);

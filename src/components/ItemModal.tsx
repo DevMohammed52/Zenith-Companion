@@ -478,7 +478,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               View Recipe Item
                             </button>
                           )}
-                          {item.type === 'RECIPE' && item.recipe_yield && (
+                          {item.recipe_yield && (
                             <button 
                               onClick={() => openItemByName?.(item.recipe_yield.item_name)}
                               className="recipe-link-btn"
