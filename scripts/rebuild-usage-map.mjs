@@ -47,42 +47,61 @@ async function rebuild() {
   mapDrops(staticData.dungeons, 'DUNGEON');
   mapDrops(staticData.world_bosses, 'BOSS');
 
-  // 2. Map ALL Recipes and Chests (from all-items-db.json)
+  // 1. Initialize ALL items from DB to ensure no 'undefined' lookups
+  Object.values(allItemsDb).forEach(item => {
+    if (item.name) getEntry(item.name);
+  });
+
+  // 2. Map ALL Recipes and Chests
   Object.values(allItemsDb).forEach(item => {
     // --- RECIPE LOGIC ---
-    if (item.type === 'RECIPE' || item.recipe) {
-      const isAlchemy = item.name?.toLowerCase().includes('essence') || item.name?.toLowerCase().includes('elixir') || item.name?.toLowerCase().includes('potion') || item.recipe?.skill === 'ALCHEMY';
+    // We check item.recipe (for actual crafting data) 
+    // OR item.type === 'RECIPE' (for blueprint items)
+    if (item.recipe || item.type === 'RECIPE') {
+      const isAlchemy = item.recipe?.skill === 'ALCHEMY' || item.name?.toLowerCase().includes('essence') || item.name?.toLowerCase().includes('elixir');
       const isMythic = item.quality === 'MYTHIC';
-      const isForge = item.recipe?.skill === 'FORGING' || item.name?.toLowerCase().includes('forging');
+      const isForge = item.recipe?.skill === 'FORGING';
       
       let uses = 'Infinite';
       if (isForge) uses = 1;
       if (isAlchemy && isMythic) uses = 30;
 
-      // Map what this recipe creates
-      const resultName = (item.recipe?.result?.item_name || item.name)
+      // Determine the Product Name (Tradeable version preferred)
+      let resultName = item.recipe?.result?.item_name || item.name
         .replace(/^Recipe:\s*/i, '')
         .replace(/\s*Recipe$/i, '')
         .replace(/\s*\(Untradable\)$/i, '')
         .trim();
-        
-      const entry = getEntry(item.name);
-      entry.recipe_yield = {
+
+      // If we are on the Blueprint, store its yield
+      const blueprintEntry = getEntry(item.name);
+      blueprintEntry.recipe_yield = {
         item_name: resultName,
         uses: uses
       };
 
-      // Map ingredients (Where-used)
-      const recipeData = item.recipe;
-      if (recipeData) {
-        const skill = recipeData.skill || 'CRAFTING';
-        const mats = recipeData.ingredients || recipeData.materials || [];
+      // If we have actual crafting ingredients, link the Product back to this Blueprint
+      if (item.recipe && (item.recipe.ingredients || item.recipe.materials)) {
+        const productEntry = getEntry(resultName);
+        const mats = item.recipe.ingredients || item.recipe.materials || [];
+        
+        productEntry.produced_from = {
+          skill: item.recipe.skill || 'CRAFTING',
+          level: item.recipe.level_required || item.recipe.level || 1,
+          recipe_name: item.name, // Link back to THIS specific blueprint
+          mats: mats.map(m => ({
+            name: m.item_name || m.name,
+            amount: m.quantity || m.amount || 1
+          }))
+        };
+
+        // Map ingredients (Where-used)
         mats.forEach(mat => {
           const mName = mat.item_name || mat.name;
-          const entry = getEntry(mName);
-          if (!entry.required_for.find(r => r.name === item.name)) {
-            entry.required_for.push({
-              type: skill.toUpperCase(),
+          const matEntry = getEntry(mName);
+          if (!matEntry.required_for.find(r => r.name === item.name)) {
+            matEntry.required_for.push({
+              type: (item.recipe.skill || 'CRAFTING').toUpperCase(),
               name: item.name,
               amount: mat.quantity || mat.amount || 1
             });
@@ -99,49 +118,6 @@ async function rebuild() {
         chance: d.chance,
         quantity: d.quantity
       }));
-      
-      // Link chest back to dungeon if data exists
-      if (item.where_to_find?.dungeons) {
-        item.where_to_find.dungeons.forEach(d => {
-          if (!entry.dropped_by.find(existing => existing.name === d.name)) {
-            const realDungeon = staticData.dungeons?.find(rd => rd.name === d.name);
-            entry.dropped_by.push({
-              type: 'DUNGEON',
-              name: d.name,
-              chance: 'Unknown',
-              location: realDungeon?.location?.name || d.name
-            });
-          }
-        });
-      }
-    }
-
-    // --- PRODUCES LOGIC (Reverse Recipe) ---
-    if (item.recipe && (item.recipe.ingredients || item.recipe.materials)) {
-      let resultName = item.recipe.result?.item_name;
-      
-      if (!resultName) {
-        // If no explicit result, and it's a blueprint-style item, the result is the item name without suffixes
-        resultName = item.name
-          .replace(/^Recipe:\s*/i, '')
-          .replace(/\s*Recipe$/i, '')
-          .replace(/\s*\(Untradable\)$/i, '')
-          .trim();
-      }
-
-      if (resultName) {
-        const entry = getEntry(resultName);
-        const mats = item.recipe.ingredients || item.recipe.materials || [];
-        entry.produced_from = {
-          skill: item.recipe.skill || 'CRAFTING',
-          level: item.recipe.level_required || item.recipe.level || 1,
-          recipe_name: item.name, // Store the blueprint name explicitly
-          mats: mats.map(m => ({
-            name: m.item_name || m.name,
-            amount: m.quantity || m.amount || 1
-          }))
-        };
-      }
     }
   });
 

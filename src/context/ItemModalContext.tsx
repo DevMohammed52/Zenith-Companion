@@ -59,7 +59,7 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
   const openItemByName = React.useCallback((name: string) => {
     let found = searchIndex.find(i => i.name.toLowerCase() === name.toLowerCase());
     
-    // Fuzzy fallback for recipes
+    // Fuzzy fallback for recipes if exact name match fails
     if (!found) {
       const variants = [];
       if (name.startsWith('Recipe: ')) {
@@ -68,7 +68,6 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
         variants.push(base + ' Recipe (Untradable)');
         variants.push(base + ' (Untradable)');
         
-        // Handle common suffix omissions (e.g., "Earthcore Essence" -> "Earthcore Essence Crystal")
         if (!base.toLowerCase().includes('crystal')) {
           variants.push(base + ' Crystal (Untradable)');
           variants.push(base + ' Crystal Recipe');
@@ -88,6 +87,7 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
     if (found) {
       setActiveId(found.id);
     }
+  }, [searchIndex]);
   }, [searchIndex]);
 
   const closeItem = React.useCallback(() => {
