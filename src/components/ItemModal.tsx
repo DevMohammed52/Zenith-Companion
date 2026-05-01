@@ -458,52 +458,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <div className="recipe-header-flex">
                         <div className="recipe-req">Lvl {recipeLevel} {recipeSkill}</div>
                         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {item.produced_from && (
-                            <button 
-                              onClick={() => {
-                                if (item.produced_from?.recipe_name) {
-                                  openItemByName?.(item.produced_from.recipe_name);
-                                } else {
-                                  openItemByName?.(`Recipe: ${item.name}`);
-                                }
-                              }}
-                              className="recipe-link-btn"
-                              style={{ 
-                                background: 'rgba(56,189,248,0.1)', 
-                                border: '1px solid rgba(56,189,248,0.2)', 
-                                color: 'var(--text-accent)',
-                                fontSize: '10px',
-                                fontWeight: 800,
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                textTransform: 'uppercase',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              View Recipe Item
-                            </button>
-                          )}
-                          {item.recipe_yield && (
-                            <button 
-                              onClick={() => openItemByName?.(item.recipe_yield.item_name)}
-                              className="recipe-link-btn"
-                              style={{ 
-                                background: 'rgba(168,85,247,0.1)', 
-                                border: '1px solid rgba(168,85,247,0.2)', 
-                                color: '#a855f7',
-                                fontSize: '10px',
-                                fontWeight: 800,
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                textTransform: 'uppercase',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              View Crafted Item
-                            </button>
-                          )}
                           {resultPrice > 0 && (
                             <div className={`roi-badge ${isProfitable ? 'pos' : 'neg'}`} style={{ whiteSpace: 'nowrap' }}>
                               {isProfitable ? 'PROFITABLE' : 'LOSS'}
