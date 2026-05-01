@@ -457,7 +457,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     <div className="recipe-box">
                       <div className="recipe-header-flex">
                         <div className="recipe-req">Lvl {recipeLevel} {recipeSkill}</div>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           {item.produced_from && (
                             <button 
                               onClick={() => openItemByName?.(`Recipe: ${item.name}`)}
@@ -468,10 +468,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 color: 'var(--text-accent)',
                                 fontSize: '10px',
                                 fontWeight: 800,
-                                padding: '2px 8px',
-                                borderRadius: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
                                 cursor: 'pointer',
-                                textTransform: 'uppercase'
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               View Recipe Item
@@ -487,18 +488,19 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 color: '#a855f7',
                                 fontSize: '10px',
                                 fontWeight: 800,
-                                padding: '2px 8px',
-                                borderRadius: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
                                 cursor: 'pointer',
-                                textTransform: 'uppercase'
+                                textTransform: 'uppercase',
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               View Crafted Item
                             </button>
                           )}
                           {resultPrice > 0 && (
-                            <div className={`roi-badge ${isProfitable ? 'pos' : 'neg'}`}>
-                              {isProfitable ? 'PROFITABLE' : 'POTENTIAL LOSS'}
+                            <div className={`roi-badge ${isProfitable ? 'pos' : 'neg'}`} style={{ whiteSpace: 'nowrap' }}>
+                              {isProfitable ? 'PROFITABLE' : 'LOSS'}
                             </div>
                           )}
                           {recipeSkill?.toUpperCase() === 'ALCHEMY' && (
@@ -508,6 +510,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 addToQueue(targetName);
                               }}
                               className="add-queue-btn"
+                              style={{ whiteSpace: 'nowrap' }}
                             >
                               <Plus size={12} /> QUEUE
                             </button>

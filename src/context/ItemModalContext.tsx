@@ -63,10 +63,14 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
     if (!found) {
       const variants = [];
       if (name.startsWith('Recipe: ')) {
-        variants.push(name.replace('Recipe: ', '') + ' Recipe');
-        variants.push(name.replace('Recipe: ', '') + ' Recipe (Untradable)');
+        const base = name.replace('Recipe: ', '');
+        variants.push(base + ' Recipe');
+        variants.push(base + ' Recipe (Untradable)');
+        variants.push(base + ' (Untradable)'); // Handle items like Earthcore Essence Crystal (Untradable)
       } else if (name.endsWith(' Recipe')) {
-        variants.push('Recipe: ' + name.replace(' Recipe', ''));
+        const base = name.replace(' Recipe', '');
+        variants.push('Recipe: ' + base);
+        variants.push(base + ' (Untradable)');
       }
       
       for (const variant of variants) {
