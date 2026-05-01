@@ -59,20 +59,18 @@ async function rebuild() {
       if (isForge) uses = 1;
       if (isAlchemy && isMythic) uses = 30;
 
-      // Map what this recipe creates (if it's a recipe item)
-      if (item.type === 'RECIPE') {
-        const resultName = item.name
-          .replace(/^Recipe:\s*/i, '')
-          .replace(/\s*Recipe$/i, '')
-          .replace(/\s*\(Untradable\)$/i, '')
-          .trim();
-          
-        const entry = getEntry(item.name);
-        entry.recipe_yield = {
-          item_name: resultName,
-          uses: uses
-        };
-      }
+      // Map what this recipe creates
+      const resultName = (item.recipe?.result?.item_name || item.name)
+        .replace(/^Recipe:\s*/i, '')
+        .replace(/\s*Recipe$/i, '')
+        .replace(/\s*\(Untradable\)$/i, '')
+        .trim();
+        
+      const entry = getEntry(item.name);
+      entry.recipe_yield = {
+        item_name: resultName,
+        uses: uses
+      };
 
       // Map ingredients (Where-used)
       const recipeData = item.recipe;
