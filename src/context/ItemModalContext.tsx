@@ -88,7 +88,6 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
       setActiveId(found.id);
     }
   }, [searchIndex]);
-  }, [searchIndex]);
 
   const closeItem = React.useCallback(() => {
     setActiveId(null);
