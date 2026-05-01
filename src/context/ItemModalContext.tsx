@@ -36,7 +36,7 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
 
   const prefetchItem = React.useCallback(async (idOrName: string) => {
     let id = idOrName;
-    if (!idOrName.includes('-') && idOrName.length < 15) {
+    if (!idOrName.includes('-') && idOrName.length < 50) {
         const found = searchIndex.find(i => i.name.toLowerCase() === idOrName.toLowerCase());
         if (found) id = found.id;
     }
@@ -57,7 +57,24 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const openItemByName = React.useCallback((name: string) => {
-    const found = searchIndex.find(i => i.name.toLowerCase() === name.toLowerCase());
+    let found = searchIndex.find(i => i.name.toLowerCase() === name.toLowerCase());
+    
+    // Fuzzy fallback for recipes
+    if (!found) {
+      const variants = [];
+      if (name.startsWith('Recipe: ')) {
+        variants.push(name.replace('Recipe: ', '') + ' Recipe');
+        variants.push(name.replace('Recipe: ', '') + ' Recipe (Untradable)');
+      } else if (name.endsWith(' Recipe')) {
+        variants.push('Recipe: ' + name.replace(' Recipe', ''));
+      }
+      
+      for (const variant of variants) {
+        found = searchIndex.find(i => i.name.toLowerCase() === variant.toLowerCase());
+        if (found) break;
+      }
+    }
+
     if (found) {
       setActiveId(found.id);
     }
