@@ -1,37 +1,80 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { Castle, X, ChevronDown, ChevronUp, Search, ExternalLink, MapPin, Zap } from "lucide-react";
-import Link from 'next/link';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
+import { useItemModal } from "@/context/ItemModalContext";
 
-export default function DungeonsPage() {
+function DungeonsContent() {
+    const searchParams = useSearchParams();
     const [staticData, setStaticData] = useState<any>(null);
     const [marketData, setMarketData] = useState<any>(null);
+    const [usageMap, setUsageMap] = useState<any>(null);
     const { preferences } = usePreferences();
+    const { openItemByName } = useItemModal();
     const [selectedDungeon, setSelectedDungeon] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        const search = new URLSearchParams(window.location.search).get("search");
-        if (search) setSearchTerm(search);
-        
-        fetch('/static-data.json').then(r => r.json()).then(setStaticData);
+        const searchParam = searchParams.get("search");
+        if (searchParam) setSearchTerm(searchParam);
+    }, [searchParams]);
+
+    useEffect(() => {
+        fetch('/static-data.json').then(r => r.json()).then(data => setStaticData(data));
+        fetch('/usage-map.json').then(r => r.json()).then(data => setUsageMap(data));
+
         const fetchMarket = async () => {
             try {
                 const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) setMarketData(await res.json());
+                if (res.ok) {
+                    const data = await res.json();
+                    setMarketData((prev: any) => {
+                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
+                        return data;
+                    });
+                }
             } catch (e) {}
         };
         fetchMarket();
-        const interval = setInterval(fetchMarket, 3000);
+        const interval = setInterval(fetchMarket, 30000); 
         return () => clearInterval(interval);
     }, []);
 
     const rows = useMemo(() => {
-        if (!staticData || !marketData) return [];
+        if (!staticData || !marketData || !usageMap) return [];
         const calculated = [];
+
+        // Helper to find the "True Value" of an item (handles recipes/chests)
+        const getItemTrueValue = (name: string, depth = 0): number => {
+            if (depth > 2) return 0; // Prevent infinite loops
+            
+            const rel = usageMap[name];
+            const market = marketData[name];
+
+            // 1. If it's a Recipe, value it by (Result Price * Uses)
+            if (rel?.recipe_yield) {
+                const resultPrice = marketData[rel.recipe_yield.item_name]?.avg_3 || 0;
+                const uses = rel.recipe_yield.uses === 'Infinite' ? 1 : (rel.recipe_yield.uses || 1);
+                return resultPrice * uses;
+            }
+
+            // 2. If it's a Chest, value it by its loot table EV
+            if (rel?.loot_table) {
+                let chestEv = 0;
+                for (const drop of rel.loot_table) {
+                    const val = getItemTrueValue(drop.name, depth + 1);
+                    chestEv += (drop.chance / 100) * (drop.quantity || 1) * val;
+                }
+                return chestEv;
+            }
+
+            // 3. Normal Item
+            return market?.avg_3 || 0;
+        };
 
         for (const dungeon of staticData.dungeons) {
             if (dungeon.is_event && !preferences.showEventDungeons) continue;
@@ -39,19 +82,15 @@ export default function DungeonsPage() {
             let totalEv = 0;
             if (dungeon.loot) {
                 for (const drop of dungeon.loot) {
-                    const mData = marketData[drop.name];
-                    const price = mData ? mData.avg_3 : 0;
+                    const trueValue = getItemTrueValue(drop.name);
                     const dropChance = (drop.chance || 0) / 100;
-                    totalEv += dropChance * (drop.quantity || 1) * price;
+                    totalEv += dropChance * (drop.quantity || 1) * trueValue;
                 }
             }
             
-            // Duration is in milliseconds in static-data.json
             const durationMins = Math.floor((dungeon.length || 0) / 60000);
             const entryCost = dungeon.cost || 0;
             const netProfitPerRun = totalEv - entryCost;
-            
-            // Profit per hour based on duration
             const runsPerHour = durationMins > 0 ? (60 / durationMins) : 0;
             const profitPerHour = netProfitPerRun * runsPerHour;
 
@@ -64,10 +103,11 @@ export default function DungeonsPage() {
                 profitPerHour,
                 dropsCount: dungeon.loot?.length || 0,
                 lootDetails: dungeon.loot?.map((drop: any) => {
-                    const price = marketData[drop.name]?.avg_3 || 0;
+                    const trueValue = getItemTrueValue(drop.name);
+                    const marketPrice = marketData[drop.name]?.avg_3 || 0;
                     const dropChance = (drop.chance || 0) / 100;
-                    const expectedVal = dropChance * (drop.quantity || 1) * price;
-                    return { ...drop, price, expectedVal };
+                    const expectedVal = dropChance * (drop.quantity || 1) * trueValue;
+                    return { ...drop, trueValue, marketPrice, expectedVal };
                 }) || []
             });
         }
@@ -94,7 +134,20 @@ export default function DungeonsPage() {
             return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
-    }, [staticData, marketData, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
+    }, [staticData, marketData, usageMap, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
+
+    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+    useEffect(() => {
+        if (deepLinkHandled) return;
+        const dungeonParam = searchParams.get("dungeon") || searchParams.get("search");
+        if (dungeonParam && rows.length > 0 && !selectedDungeon) {
+            const found = rows.find(r => r.name.toLowerCase() === dungeonParam.toLowerCase());
+            if (found) {
+                setSelectedDungeon(found);
+                setDeepLinkHandled(true);
+            }
+        }
+    }, [rows, selectedDungeon, deepLinkHandled, searchParams]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -159,10 +212,10 @@ export default function DungeonsPage() {
                                 <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
                                 <td className="mono">{row.durationMins}m</td>
                                 <td className={`mono ${row.netProfitPerRun >= 0 ? 'profit-positive' : 'profit-negative'}`}>
-                                    {row.netProfitPerRun >= 0 ? '+' : ''}{row.netProfitPerRun.toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                    {row.netProfitPerRun >= 0 ? '+' : ''}{(row.netProfitPerRun || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
                                 </td>
                                 <td className={`mono font-bold ${row.profitPerHour >= 0 ? 'profit-positive' : 'profit-negative'}`}>
-                                    {row.profitPerHour >= 0 ? '+' : ''}{row.profitPerHour.toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                    {row.profitPerHour >= 0 ? '+' : ''}{(row.profitPerHour || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
                                 </td>
                             </tr>
                         ))}
@@ -205,7 +258,7 @@ export default function DungeonsPage() {
                                 <div className="stat-card highlight">
                                     <div className="stat-label">NET PROFIT / RUN</div>
                                     <div className="stat-value" style={{ color: selectedDungeon.netProfitPerRun >= 0 ? 'var(--text-success)' : '#f87171' }}>
-                                        {selectedDungeon.netProfitPerRun >= 0 ? '+' : ''}{selectedDungeon.netProfitPerRun.toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                        {selectedDungeon.netProfitPerRun >= 0 ? '+' : ''}{(selectedDungeon.netProfitPerRun || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
                                     </div>
                                 </div>
                             </div>
@@ -213,28 +266,32 @@ export default function DungeonsPage() {
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table</h3>
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {selectedDungeon.lootDetails?.sort((a:any, b:any) => b.expectedVal - a.expectedVal).map((drop: any, i: number) => (
-                                    <div key={i} style={{ 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-                                        padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
-                                        borderRadius: '6px' 
-                                    }}>
+                                {selectedDungeon.lootDetails?.sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).map((drop: any, i: number) => (
+                                    <div 
+                                        key={i} 
+                                        onClick={() => openItemByName(drop.name)}
+                                        className="clickable-row group-loot"
+                                        style={{ 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                            padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
+                                            borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s'
+                                        }}
+                                    >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
                                             <div>
-                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
+                                                <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ color: 'var(--text-success)', fontWeight: 600, fontSize: '0.9rem' }}>
-                                                ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/run</span>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ color: 'var(--text-success)', fontWeight: 600, fontSize: '0.9rem' }}>
+                                                    ~{(drop.expectedVal || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/run</span>
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                    View Market ({(drop.marketPrice || 0).toLocaleString()}g avg) <ExternalLink size={10} />
+                                                </div>
                                             </div>
-                                            <Link href={`/items?name=${encodeURIComponent(drop.name)}`} 
-                                                  style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px' }}>
-                                                View Market ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
-                                            </Link>
-                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -243,5 +300,13 @@ export default function DungeonsPage() {
                 </div>
             )}
         </main>
+    );
+}
+
+export default function DungeonsPage() {
+    return (
+        <Suspense fallback={<div>Loading Dungeons...</div>}>
+            <DungeonsContent />
+        </Suspense>
     );
 }

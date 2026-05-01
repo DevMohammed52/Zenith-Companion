@@ -6,6 +6,9 @@ import { Activity, ArrowRight, Castle, FlaskConical, Package, Skull, Star, Sword
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../constants";
 import { formatGold } from "@/lib/format";
 import { useWatchlist } from "@/lib/preferences";
+import { useData } from "@/context/DataContext";
+import { useItemModal } from "@/context/ItemModalContext";
+import { useRouter } from "next/navigation";
 
 type MarketItem = {
   avg_3?: number;
@@ -35,28 +38,10 @@ const toolLinks = [
 ];
 
 export default function DashboardPage() {
-  const [marketData, setMarketData] = useState<MarketData | null>(null);
-  const [staticData, setStaticData] = useState<StaticData | null>(null);
-  const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
-  const { watchlist, toggleWatch } = useWatchlist();
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [marketRes, staticRes] = await Promise.all([
-          fetch("/market-data.json?t=" + Date.now()),
-          fetch("/static-data.json?t=" + Date.now()),
-        ]);
-
-        if (marketRes.ok) setMarketData(await marketRes.json());
-        if (staticRes.ok) setStaticData(await staticRes.json());
-      } catch (e) {}
-    };
-
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const router = useRouter();
+  const { marketData, staticData } = useData();
+  const { openItemByName, prefetchItem } = useItemModal();
+  const { watchlist } = useWatchlist();
 
   const profitableAlchemy = useMemo(() => {
     if (!marketData) return [];
@@ -67,6 +52,7 @@ export default function DashboardPage() {
         let craftCost = VIAL_COSTS[recipe.vial] || 0;
         let hasAllPrices = sellPrice > 0;
 
+        // Add material costs
         for (const [material, qty] of Object.entries(recipe.materials)) {
           const materialPrice = marketData[material]?.avg_3 || 0;
           if (materialPrice <= 0) {
@@ -74,6 +60,15 @@ export default function DashboardPage() {
             break;
           }
           craftCost += materialPrice * qty;
+        }
+
+        // Add recipe cost for Mythics (amortized over 30 uses)
+        const recipeName = `Recipe: ${name}`;
+        const recipePrice = marketData[recipeName]?.avg_3 || 0;
+        const isMythic = marketData[name]?.quality === 'MYTHIC';
+        
+        if (isMythic && recipePrice > 0) {
+          craftCost += (recipePrice / 30);
         }
 
         const netRevenue = sellPrice * 0.88;
@@ -101,19 +96,19 @@ export default function DashboardPage() {
       </div>
 
       <section className="dashboard-metrics">
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => router.push('/items')}>
           <span className="stat-label">Tracked Items</span>
           <span className="stat-value mono">{marketItems.length.toLocaleString()}</span>
         </div>
-        <div className="stat-card highlight">
+        <div className="stat-card highlight clickable" onClick={() => router.push('/alchemy')}>
           <span className="stat-label">Profitable Alchemy</span>
           <span className="stat-value mono">{profitableAlchemy.length.toLocaleString()}</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => router.push('/combat')}>
           <span className="stat-label">Combat Sources</span>
           <span className="stat-value mono">{((staticData?.enemies?.length || 0) + (staticData?.dungeons?.length || 0) + (staticData?.world_bosses?.length || 0)).toLocaleString()}</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => router.push('/alchemy')}>
           <span className="stat-label">Alchemy Recipes</span>
           <span className="stat-value mono">{Object.keys(ALCHEMY_ITEMS).length.toLocaleString()}</span>
         </div>
@@ -127,8 +122,14 @@ export default function DashboardPage() {
           </div>
           <div className="dashboard-list">
             {profitableAlchemy.length > 0 ? profitableAlchemy.map(item => (
-              <button key={item.name} type="button" className="dashboard-row dashboard-row-button" onClick={() => setSelectedRecipe(item)}>
-                <span>{item.name}</span>
+              <button 
+                key={item.name} 
+                type="button" 
+                className="dashboard-row dashboard-row-button group" 
+                onClick={() => openItemByName(item.name)}
+                onMouseEnter={() => prefetchItem(item.name)}
+              >
+                <span className="group-hover:text-accent transition-colors">{item.name}</span>
                 <span className="mono profit-positive">+{formatGold(item.profit)}g</span>
               </button>
             )) : (
@@ -166,75 +167,37 @@ export default function DashboardPage() {
             {watchedRecipes.length > 0 ? watchedRecipes.map(name => {
               const match = profitableAlchemy.find(item => item.name === name);
               return (
-                <button key={name} type="button" className="dashboard-row dashboard-row-button" onClick={() => setSelectedRecipe(match || { name })}>
-                  <span>{name}</span>
+                <button 
+                    key={name} 
+                    type="button" 
+                    className="dashboard-row dashboard-row-button group" 
+                    onClick={() => openItemByName(name)}
+                    onMouseEnter={() => prefetchItem(name)}
+                >
+                  <span className="group-hover:text-accent transition-colors">{name}</span>
                   <span className={match?.profit ? "mono profit-positive" : "mono text-muted"}>
-                    {match?.profit ? `+${formatGold(match.profit)}g` : "Open recipe"}
+                    {match?.profit ? `+${formatGold(match.profit)}g` : "Inspect"}
                   </span>
                 </button>
               );
             }) : (
-              <div className="dashboard-empty">Pin recipes from the detail drawer to keep them here.</div>
+              <div className="dashboard-empty">Pin items to your watchlist to track them here.</div>
             )}
           </div>
         </div>
       </section>
 
-      {selectedRecipe && (
-        <div className="modal-overlay" onClick={() => setSelectedRecipe(null)}>
-          <div className="modal-content" onClick={event => event.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedRecipe.name}</h2>
-              <button className="close-btn" type="button" onClick={() => setSelectedRecipe(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="stats-grid">
-                <div className="stat-card highlight">
-                  <span className="stat-label">Net Profit</span>
-                  <span className={`stat-value mono ${(selectedRecipe.profit || 0) > 0 ? "profit-positive" : "text-muted"}`}>
-                    {(selectedRecipe.profit || 0) > 0 ? "+" : ""}{formatGold(selectedRecipe.profit || 0)}g
-                  </span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-label">ROI</span>
-                  <span className="stat-value mono">{formatGold(selectedRecipe.roi || 0, 1)}%</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-label">3D Volume</span>
-                  <span className="stat-value mono">{formatGold(selectedRecipe.volume || 0)}</span>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="section-title"><FlaskConical size={16} /> Materials</h3>
-                <div className="materials-list">
-                  {Object.entries(ALCHEMY_ITEMS[selectedRecipe.name]?.materials || {}).map(([material, qty]) => {
-                    const price = marketData?.[material]?.avg_3 || 0;
-                    return (
-                      <Link key={material} className="source-row" href={`/items?name=${encodeURIComponent(material)}`}>
-                        <span><span className="text-muted">{String(qty)}x</span> {material}</span>
-                        <span className="mono">{formatGold(price * Number(qty))}g</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                <button className="primary-action" type="button" onClick={() => toggleWatch(selectedRecipe.name)}>
-                  <Star size={15} />
-                  {watchlist.includes(selectedRecipe.name) ? "Remove From Watchlist" : "Add To Watchlist"}
-                </button>
-                <Link className="secondary-action" href={`/alchemy?recipe=${encodeURIComponent(selectedRecipe.name)}`}>
-                  Open In Alchemy
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <style jsx>{`
+        .stat-card.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .stat-card.clickable:hover {
+            border-color: var(--text-accent);
+            background: rgba(255,255,255,0.05);
+            transform: translateY(-2px);
+        }
+      `}</style>
     </main>
   );
 }

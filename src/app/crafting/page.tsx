@@ -3,26 +3,26 @@ import { useEffect, useState, useMemo } from "react";
 import { FlaskConical, ShoppingCart, Trash2, Plus, Minus, ChevronDown, Package } from "lucide-react";
 import Link from "next/link";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
+import { useItemModal } from "@/context/ItemModalContext";
+import { useCrafting } from "@/context/CraftingContext";
 
 export default function CraftingPage() {
+    const { openItemByName, prefetchItem } = useItemModal();
+    const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
     const [marketData, setMarketData] = useState<any>(null);
-    const [queue, setQueue] = useState<Record<string, number>>({});
     const [adding, setAdding] = useState("");
-
-    useEffect(() => {
-        const saved = localStorage.getItem("zenith_craft_queue");
-        if (saved) { try { setQueue(JSON.parse(saved)); } catch {} }
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem("zenith_craft_queue", JSON.stringify(queue));
-    }, [queue]);
 
     useEffect(() => {
         const fetch_ = async () => {
             try {
                 const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) setMarketData(await res.json());
+                if (res.ok) {
+                    const data = await res.json();
+                    setMarketData((prev: any) => {
+                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
+                        return data;
+                    });
+                }
             } catch {}
         };
         fetch_();
@@ -30,36 +30,38 @@ export default function CraftingPage() {
         return () => clearInterval(iv);
     }, []);
 
-    const setQty = (name: string, qty: number) => {
-        if (qty <= 0) {
-            const next = { ...queue };
-            delete next[name];
-            setQueue(next);
-        } else {
-            setQueue(prev => ({ ...prev, [name]: qty }));
-        }
-    };
-
     const addRecipe = (name: string) => {
         if (!name || !ALCHEMY_ITEMS[name]) return;
-        setQueue(prev => ({ ...prev, [name]: (prev[name] || 0) + 1 }));
+        addToQueue(name);
         setAdding("");
     };
 
     // Aggregate all materials needed
-    const { shoppingList, vialList, totalCost, totalRevenue, totalProfit } = useMemo(() => {
+    const { shoppingList, recipeList, vialList, totalCost, totalRevenue, totalProfit } = useMemo(() => {
         const materials: Record<string, number> = {};
         const vials: Record<string, number> = {};
+        const recipes: Record<string, number> = {};
         let cost = 0;
         let revenue = 0;
 
         for (const [recipeName, qty] of Object.entries(queue)) {
             const recipe = ALCHEMY_ITEMS[recipeName];
             if (!recipe) continue;
+            
             // Vials
             vials[recipe.vial] = (vials[recipe.vial] || 0) + qty;
             const vialCost = (VIAL_COSTS[recipe.vial] || 0) * qty;
             cost += vialCost;
+
+            // Recipe Cost (Mythics only, 30 uses per recipe)
+            const isMythic = marketData?.[recipeName]?.quality === 'MYTHIC';
+            if (isMythic) {
+                const scrollName = `Recipe: ${recipeName}`;
+                const scrollsNeeded = Math.ceil(qty / 30);
+                recipes[scrollName] = (recipes[scrollName] || 0) + scrollsNeeded;
+                cost += (marketData?.[scrollName]?.avg_3 || 0) * scrollsNeeded;
+            }
+
             // Materials
             for (const [mat, matQty] of Object.entries(recipe.materials)) {
                 materials[mat] = (materials[mat] || 0) + (matQty * qty);
@@ -83,6 +85,7 @@ export default function CraftingPage() {
 
         return {
             shoppingList: sortedMaterials,
+            recipeList: Object.entries(recipes),
             vialList: Object.entries(vials),
             totalCost: cost,
             totalRevenue: revenue,
@@ -91,7 +94,6 @@ export default function CraftingPage() {
     }, [queue, marketData]);
 
     const queueEntries = Object.entries(queue);
-    const availableToAdd = Object.keys(ALCHEMY_ITEMS).filter(k => !queue[k] || queue[k] === 0);
 
     return (
         <main className="container">
@@ -172,35 +174,40 @@ export default function CraftingPage() {
                                             padding: '0.75rem', background: 'rgba(255,255,255,0.02)',
                                             border: '1px solid var(--border-subtle)', borderRadius: '8px'
                                         }}>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.9rem' }}>{name}</div>
+                                            <div 
+                                                onClick={() => openItemByName(name)}
+                                                onMouseEnter={() => prefetchItem(name)}
+                                                style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                                                className="group"
+                                            >
+                                                <div className="group-hover:text-accent transition-colors" style={{ fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.9rem' }}>{name}</div>
                                                 <div style={{ fontSize: '0.75rem', color: profit >= 0 ? 'var(--text-success)' : 'var(--text-danger)', marginTop: '0.15rem' }}>
                                                     {profit >= 0 ? '+' : ''}{profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}g total
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                <button onClick={() => setQty(name, qty - 1)} style={{ width: '28px', height: '28px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <button onClick={() => setQueueQty(name, qty - 1)} style={{ width: '28px', height: '28px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <Minus size={12} />
                                                 </button>
                                                 <input
                                                     type="number"
                                                     value={qty}
                                                     min={1}
-                                                    onChange={e => setQty(name, Math.max(1, parseInt(e.target.value) || 1))}
+                                                    onChange={e => setQueueQty(name, Math.max(1, parseInt(e.target.value) || 1))}
                                                     style={{ width: '52px', textAlign: 'center', background: 'var(--bg-card)', border: '1px solid var(--border-focus)', borderRadius: '4px', color: '#fff', padding: '4px', fontSize: '0.9rem' }}
                                                 />
-                                                <button onClick={() => setQty(name, qty + 1)} style={{ width: '28px', height: '28px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <button onClick={() => setQueueQty(name, qty + 1)} style={{ width: '28px', height: '28px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <Plus size={12} />
                                                 </button>
                                             </div>
-                                            <button onClick={() => setQty(name, 0)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}>
+                                            <button onClick={() => setQueueQty(name, 0)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', borderRadius: '4px' }}>
                                                 <Trash2 size={15} />
                                             </button>
                                         </div>
                                     );
                                 })}
                                 <button
-                                    onClick={() => setQueue({})}
+                                    onClick={() => clearQueue()}
                                     style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'transparent', border: '1px solid var(--border-subtle)', borderRadius: '6px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
                                 >
                                     <Trash2 size={13} /> Clear All
@@ -232,6 +239,31 @@ export default function CraftingPage() {
                         </div>
                     </div>
 
+                    {/* Recipes */}
+                    {recipeList.length > 0 && (
+                        <div className="table-container" style={{ padding: '1.25rem' }}>
+                            <h3 style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', letterSpacing: '0.06em' }}>
+                                RECIPES NEEDED
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {recipeList.map(([recipe, qty]) => (
+                                    <div 
+                                        key={recipe} 
+                                        onClick={() => openItemByName(recipe)}
+                                        onMouseEnter={() => prefetchItem(recipe)}
+                                        style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                                        className="group"
+                                    >
+                                        <span className="group-hover:text-accent transition-colors" style={{ color: '#fff', fontSize: '0.9rem' }}>{qty}x {recipe}</span>
+                                        <span className="mono" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                            {((marketData?.[recipe]?.avg_3 || 0) * qty).toLocaleString()}g
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Vials */}
                     {vialList.length > 0 && (
                         <div className="table-container" style={{ padding: '1.25rem' }}>
@@ -240,8 +272,14 @@ export default function CraftingPage() {
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 {vialList.map(([vial, qty]) => (
-                                    <div key={vial} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
-                                        <span style={{ color: '#fff', fontSize: '0.9rem' }}>{qty}x {vial}</span>
+                                    <div 
+                                        key={vial} 
+                                        onClick={() => openItemByName(vial)}
+                                        onMouseEnter={() => prefetchItem(vial)}
+                                        style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                                        className="group"
+                                    >
+                                        <span className="group-hover:text-accent transition-colors" style={{ color: '#fff', fontSize: '0.9rem' }}>{qty}x {vial}</span>
                                         <span className="mono" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                             {((VIAL_COSTS[vial] || 0) * qty).toLocaleString()}g
                                         </span>
@@ -266,14 +304,16 @@ export default function CraftingPage() {
                                     const price = marketData?.[mat]?.avg_3 || 0;
                                     const totalMatCost = price * qty;
                                     return (
-                                        <Link
+                                        <div
                                             key={mat}
-                                            href={`/items?name=${encodeURIComponent(mat)}`}
-                                            className="source-row"
+                                            onClick={() => openItemByName(mat)}
+                                            onMouseEnter={() => prefetchItem(mat)}
+                                            className="source-row group"
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                 <Package size={13} color="var(--text-muted)" />
-                                                <span style={{ color: '#fff' }}><span className="text-muted">{qty}x</span> {mat}</span>
+                                                <span className="group-hover:text-accent transition-colors" style={{ color: '#fff' }}><span className="text-muted">{qty}x</span> {mat}</span>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
                                                 <div className="mono" style={{ color: 'var(--text-accent)', fontSize: '0.9rem' }}>
@@ -283,7 +323,7 @@ export default function CraftingPage() {
                                                     {price > 0 ? price.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'g ea' : 'No data'}
                                                 </div>
                                             </div>
-                                        </Link>
+                                        </div>
                                     );
                                 })}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', borderTop: '1px solid var(--border-subtle)', marginTop: '0.25rem', fontWeight: 600 }}>

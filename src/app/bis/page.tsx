@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Shield, Sword, Target, Zap, HardHat, Layers, MoveDown, ArrowDown, Hand, ExternalLink, ShoppingCart, Info, ChevronDown, ChevronUp, Swords, Crosshair } from "lucide-react";
 import Link from "next/link";
 import { usePreferences } from "@/lib/preferences";
+import { useItemModal } from "@/context/ItemModalContext";
 
 const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: React.ReactNode }> = {
     SWORD:      { label: "Sword",      defaultStat: "attack_power", icon: <Sword size={15} /> },
@@ -68,6 +69,7 @@ function getRankValue(item: GearItem, sortKey: string, defaultStat: string, mark
 }
 
 export default function BISPage() {
+    const { openItemByName, prefetchItem } = useItemModal();
     const [gearData, setGearData]     = useState<Record<string, GearItem> | null>(null);
     const [marketData, setMarketData] = useState<any>(null);
     const { preferences, setPreferences } = usePreferences();
@@ -250,8 +252,8 @@ export default function BISPage() {
                             </div>
                             {!entry ? <div className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>No items meet your requirements</div> : (
                                 <>
-                                    <GearCard item={entry.best} price={getPrice(entry.best)} sortBy={sortBy} cfg={cfg} isBest />
-                                    {isExpanded && entry.alts.map(alt => <GearCard key={alt.hashed_id} item={alt} price={getPrice(alt)} sortBy={sortBy} cfg={cfg} isBest={false} />)}
+                                    <GearCard item={entry.best} price={getPrice(entry.best)} sortBy={sortBy} cfg={cfg} isBest openItem={openItemByName} prefetch={prefetchItem} />
+                                    {isExpanded && entry.alts.map(alt => <GearCard key={alt.hashed_id} item={alt} price={getPrice(alt)} sortBy={sortBy} cfg={cfg} isBest={false} openItem={openItemByName} prefetch={prefetchItem} />)}
                                 </>
                             )}
                         </div>
@@ -275,10 +277,16 @@ export default function BISPage() {
                         const totalStats = Object.values(item.stats || {}).reduce((s, v) => s + v, 0);
 
                         return (
-                            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                            <div 
+                                key={type} 
+                                onClick={() => openItemByName(item.name)}
+                                onMouseEnter={() => prefetchItem(item.name)}
+                                className="clickable-row group"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                            >
                                 <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', width: '16px', justifyContent: 'center' }}>{cfg.icon}</div>
                                 <div style={{ width: '85px', fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>{cfg.label}{isDual && " (x2)"}</div>
-                                <div style={{ flex: 1, fontWeight: 500, color: '#fff', fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <div className="group-hover:text-accent transition-colors" style={{ flex: 1, fontWeight: 500, color: '#fff', fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {item.name}
                                 </div>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', minWidth: '60px' }}>
@@ -288,9 +296,9 @@ export default function BISPage() {
                                     <span className="mono" style={{ fontSize: '0.88rem', color: price ? 'var(--text-success)' : 'var(--text-muted)' }}>
                                         {price ? (isDual ? price * 2 : price).toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'g' : '—'}
                                     </span>
-                                    <Link href={`/items?name=${encodeURIComponent(item.name)}`} style={{ color: 'var(--text-muted)', display: 'flex' }}>
+                                    <div style={{ color: 'var(--text-muted)', display: 'flex' }}>
                                         <ExternalLink size={11} />
-                                    </Link>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -317,22 +325,29 @@ export default function BISPage() {
     );
 }
 
-function GearCard({ item, price, sortBy, cfg, isBest }: { item: GearItem; price: number | null; sortBy: string; cfg: any; isBest: boolean; }) {
+function GearCard({ item, price, sortBy, cfg, isBest, openItem, prefetch }: { item: GearItem; price: number | null; sortBy: string; cfg: any; isBest: boolean; openItem: any; prefetch: any }) {
     const qualityColor = QUALITY_COLOR[item.quality] || '#a1a1aa';
     const totalStats = Object.values(item.stats || {}).reduce((s, v) => s + v, 0);
 
     return (
-        <div style={{
-            padding: '0.75rem', marginTop: isBest ? 0 : '0.5rem',
-            background: isBest ? 'rgba(245,176,65,0.05)' : 'rgba(255,255,255,0.02)',
-            border: `1px solid ${isBest ? 'rgba(245,176,65,0.18)' : 'var(--border-subtle)'}`,
-            borderRadius: '8px',
-        }}>
+        <div 
+            onClick={() => openItem(item.name)}
+            onMouseEnter={() => prefetch(item.name)}
+            className="gear-card group"
+            style={{
+                padding: '0.75rem', marginTop: isBest ? 0 : '0.5rem',
+                background: isBest ? 'rgba(245,176,65,0.05)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${isBest ? 'rgba(245,176,65,0.18)' : 'var(--border-subtle)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+            }}
+        >
             <div style={{ display: 'flex', gap: '0.65rem' }}>
                 <img src={item.image_url} alt={item.name} style={{ width: '38px', height: '38px', borderRadius: '4px' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.88rem' }}>{item.name}</div>
+                        <div className="group-hover:text-accent transition-colors" style={{ fontWeight: 600, color: '#fff', fontSize: '0.88rem' }}>{item.name}</div>
                         <div style={{ fontWeight: 700, color: 'var(--text-accent)' }}>{totalStats} PWR</div>
                     </div>
                     <div style={{ fontSize: '0.65rem', color: qualityColor, fontWeight: 700, marginTop: '0.1rem' }}>{item.quality} • LV.{item.combat_req}</div>
@@ -345,6 +360,13 @@ function GearCard({ item, price, sortBy, cfg, isBest }: { item: GearItem; price:
                     </div>
                 </div>
             </div>
+            <style jsx>{`
+                .gear-card:hover {
+                    border-color: var(--text-accent) !important;
+                    background: rgba(245,176,65,0.1) !important;
+                    transform: translateY(-1px);
+                }
+            `}</style>
         </div>
     );
 }

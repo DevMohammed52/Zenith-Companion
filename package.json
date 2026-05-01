@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
-    "build": "next build",
+    "dev": "next dev",
+    "dev:full": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
+    "build": "node scripts/rebuild-usage-map.mjs && next build",
     "start": "next start",
     "lint": "next lint",
-    "scrape": "SCRAPE_ONCE=true node scraper.mjs"
+    "rebuild": "node scripts/rebuild-usage-map.mjs",
+    "scrape": "SCRAPE_ONCE=true node scraper.mjs",
+    "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

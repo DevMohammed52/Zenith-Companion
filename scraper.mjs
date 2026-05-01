@@ -14,6 +14,51 @@ const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 
 const ALCHEMY_ITEMS = {
+    // Level 1-10
+    "Battle Potion": {"materials": {"Lucky Rabbit Foot": 2}},
+    "Lumberjack Essence Crystal": {"materials": {"Goblin Totem": 6}},
+    "Miners Essence Crystal": {"materials": {"Ducks Mouth": 2}},
+    "Anglers Essence Crystal": {"materials": {"Boar Tusk": 1}},
+    "Smelting Essence Crystal": {"materials": {"Goblin Pouch": 3}},
+    "Chefs Essence Crystal": {"materials": {"Goblin Scraps": 2}},
+    "Dungeon Potion": {"materials": {"Goblin Crown": 1}},
+    "Timberfall Essence Crystal": {"materials": {"Deer Antler": 5}},
+
+    // Level 12-20
+    "Rocksplitter Essence Crystal": {"materials": {"Cursed Talisman": 5}},
+    "Deepsea Essence Crystal": {"materials": {"Ruined Robes": 10}},
+    "Bastion Essence": {"materials": {"Boar Tusk": 2}},
+    "Falcon's Grace Essence": {"materials": {"Snakes Head": 10}},
+    "Galeforce Speed Essence": {"materials": {"Forbidden Tome": 2}},
+    "Herculean Strength Essence": {"materials": {"Goblin Crown": 1}},
+    "Hammerfell Essence Crystal": {"materials": {"Snakes Head": 12}},
+    "Flavorburst Essence Crystal": {"materials": {"Snakes Head": 5, "Venom Extract": 1}},
+    "Protection Potion": {"materials": {"Raw Onion": 13}},
+    "Felling Essence Crystal": {"materials": {"Djinn's Bottle": 23}},
+
+    // Level 25-30
+    "Attack Power Potion": {"materials": {"Slime Extract": 20, "Raw Onion": 5}},
+    "Merfolk Essence Crystal": {"materials": {"Chest of Scraps": 12}},
+    "Precision Essence": {"materials": {"Bone Fragment": 30}},
+    "Quickstep Essence": {"materials": {"Pirates Code": 4, "Chest of Scraps": 5}},
+    "Fortified Essence": {"materials": {"Buffalo Horn": 8}},
+    "Titan Power Essence": {"materials": {"Slime Extract": 38}},
+    "Oreseeker Essence Crystal": {"materials": {"Swamp Juice": 12}},
+    "Molten Core Essence Crystal": {"materials": {"Long Forgotten Necklace": 38}},
+    "Vortex Brew": {"materials": {"Djinn's Bottle": 18, "Venom Extract": 1}},
+    "Spicefinder Essence Crystal": {"materials": {"Umbral Claw": 11}},
+
+    // Level 35-50
+    "Bulwark Brew": {"materials": {"Goblin Scraps": 3, "Slime Extract": 20}},
+    "Bladeburst Elixir": {"materials": {"Goblin Crown": 1, "Siren's Scales": 4}},
+    "Ironclad Essence": {"materials": {"Goblin Totem": 12, "Goblin Crown": 1}},
+    "Acrobatic's Essence": {"materials": {"Moose Antler": 10}},
+    "Strike Essence": {"materials": {"Siren's Soulstone": 6}},
+    "Impenetrable Essence": {"materials": {"Goblin Totem": 7, "Goblin Pouch": 9}},
+    "Windrider Essence": {"materials": {"Elk Antler": 9}},
+    "Dungeon Master's Tonic": {"materials": {"Lions Teeth": 11}},
+
+    // Level 52-70
     "Yggdrasil Essence Crystal": {"materials": {"Goblin Crown": 1, "Bone Fragment": 20}},
     "Earthcore Essence Crystal": {"materials": {"Ivory": 6, "Parchment": 6}},
     "Riverbend Essence Crystal": {"materials": {"Polar Bear Pelt": 20, "Djinn's Bottle": 30}},
@@ -24,6 +69,8 @@ const ALCHEMY_ITEMS = {
     "Twinstrike Elixir": {"materials": {"Dwarven Whetstone": 35, "Cursed Blade Fragment": 25}},
     "Stoneheart Solution": {"materials": {"Raccoon Fur": 10, "Goblin Scraps": 10}},
     "Frenzy Potion": {"materials": {"Wolf Pelt": 14, "Goblin Totem": 60}},
+
+    // Level 80-85
     "Dragonblood Tonic": {"materials": {"Lions Teeth": 25, "Minotaurs Horn": 25}},
     "Gourmet Essence": {"materials": {"Elk Antler": 15, "Enigmatic Stone": 12}},
     "Wraithbane Essence": {"materials": {"Moose Antler": 15, "Minotaur Hide": 20}},
@@ -31,33 +78,70 @@ const ALCHEMY_ITEMS = {
     "Cosmic Tear": {"materials": {"Harpy's Wings": 40, "Air Elemental Essence": 12}}
 };
 
+const IS_PRIORITY_ONLY = process.argv.includes('--priority');
+const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
+
 const itemsToFetch = new Set();
+
+// 1. Always add Alchemy-related items (Highest priority)
 for (const [potion, data] of Object.entries(ALCHEMY_ITEMS)) {
     itemsToFetch.add(potion);
+    itemsToFetch.add(`Recipe: ${potion}`); // Add the recipe item itself
     for (const mat of Object.keys(data.materials)) {
         itemsToFetch.add(mat);
     }
 }
 
-function loadStaticData() {
-    if (fs.existsSync(STATIC_DATA_FILE)) {
+// 2. Load static and priority data
+function loadJson(filePath) {
+    if (fs.existsSync(filePath)) {
         try {
-            return JSON.parse(fs.readFileSync(STATIC_DATA_FILE, 'utf8'));
+            return JSON.parse(fs.readFileSync(filePath, 'utf8'));
         } catch (e) {
-            console.error("Error reading static data:", e.message);
+            console.error(`Error reading ${path.basename(filePath)}:`, e.message);
         }
     }
     return null;
 }
 
-const staticData = loadStaticData();
+const staticData = loadJson(STATIC_DATA_FILE);
+const priorityData = loadJson(PRIORITY_FILE);
+
+async function safeWriteJson(filePath, data) {
+    const tempFile = filePath + '.tmp';
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+        try {
+            fs.writeFileSync(tempFile, JSON.stringify(data, null, 2));
+            fs.renameSync(tempFile, filePath);
+            return true;
+        } catch (e) {
+            attempts++;
+            if (e.code === 'EPERM' || e.code === 'EBUSY') {
+                // File is locked by another process (likely Next.js reading it)
+                await sleep(100 * attempts);
+                continue;
+            }
+            console.error(`Failed to write to ${path.basename(filePath)}:`, e.message);
+            return false;
+        }
+    }
+    return false;
+}
+
+// 3. Add drops from enemies/dungeons/bosses
 if (staticData) {
     const addLootItems = (entityList) => {
         if (!entityList) return;
         for (const entity of entityList) {
             if (entity.loot && Array.isArray(entity.loot)) {
                 for (const drop of entity.loot) {
-                    itemsToFetch.add(drop.name);
+                    // In priority mode, only add if it's in the priority list
+                    if (!IS_PRIORITY_ONLY || priorityData?.high_priority_items?.includes(drop.name)) {
+                        itemsToFetch.add(drop.name);
+                    }
                 }
             }
         }
@@ -65,25 +149,53 @@ if (staticData) {
     addLootItems(staticData.enemies);
     addLootItems(staticData.dungeons);
     addLootItems(staticData.world_bosses);
+
+    // 4. In FULL mode, we could add even more items if needed, but for now 
+    // we stick to items linked to core gameplay (combat/alchemy).
+
+    if (IS_PRIORITY_ONLY) {
+        console.log(`Running in PRIORITY mode. Targeting ${itemsToFetch.size} velocity items.`);
+    } else {
+        console.log(`Running in FULL mode. Targeting ${itemsToFetch.size} gameplay items.`);
+    }
     console.log(`Added combat items to scrape list. Total items: ${itemsToFetch.size}`);
 }
 
-// Also add crafted gear items from gear-data.json
-const SKILL_TOOL_TYPES = new Set(['FISHING_ROD', 'PICKAXE', 'FELLING_AXE']);
-const GEAR_DATA_FILE = path.join(__dirname, 'public', 'gear-data.json');
-if (fs.existsSync(GEAR_DATA_FILE)) {
+// 4. Load ALL items from global database to ensure 100% coverage
+const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
+const VENDOR_ONLY_EXCLUSIONS = new Set([
+    'Bait', 'Empty Essence Crystal', 'Empty Essence Vial', 'Blank Scroll', 
+    'Small Bait', 'Medium Bait', 'Large Bait', 'Master Bait', 'Legendary Bait',
+    'Empty Crystal', 'Blank Scroll',
+    'Cheap Vial', 'Tarnished Vial', 'Gleaming Vial', 'Elemental Vial', 'Eldritch Vial', 'Arcane Vial',
+    'Cheap Crystal', 'Tarnished Crystal', 'Gleaming Crystal', 'Elemental Crystal', 'Eldritch Crystal', 'Arcane Crystal'
+]);
+
+if (fs.existsSync(ALL_ITEMS_DB_FILE)) {
     try {
-        const gearData = JSON.parse(fs.readFileSync(GEAR_DATA_FILE, 'utf8'));
-        let gearCount = 0;
-        for (const item of Object.values(gearData)) {
-            if (item.is_tradeable && item.name && !SKILL_TOOL_TYPES.has(item.type)) {
-                itemsToFetch.add(item.name);
-                gearCount++;
+        const allItems = JSON.parse(fs.readFileSync(ALL_ITEMS_DB_FILE, 'utf8'));
+        let addedCount = 0;
+        for (const item of Object.values(allItems)) {
+            const name = item.name;
+            if (!name) continue;
+            
+            // Skip untradable items
+            if (item.is_tradeable === false) continue;
+            
+            // Skip known vendor-only items that can't be listed unless specifically requested
+            if (VENDOR_ONLY_EXCLUSIONS.has(name)) continue;
+            if (name.includes('Crystal') && item.vendor_price < 100 && !itemsToFetch.has(name)) continue;
+
+            if (!IS_PRIORITY_ONLY || priorityData?.high_priority_items?.includes(name)) {
+                if (!itemsToFetch.has(name)) {
+                    itemsToFetch.add(name);
+                    addedCount++;
+                }
             }
         }
-        console.log(`Added ${gearCount} gear items to scrape list. Total items: ${itemsToFetch.size}`);
+        console.log(`Added ${addedCount} tradeable items from global DB. Total items: ${itemsToFetch.size}`);
     } catch (e) {
-        console.error("Error reading gear data:", e.message);
+        console.error("Error reading global items DB:", e.message);
     }
 }
 
@@ -117,7 +229,7 @@ async function fetchLiveWorldBosses() {
         }
         const data = await res.json();
         if (data && data.world_bosses) {
-            const currentStatic = loadStaticData();
+            const currentStatic = loadJson(STATIC_DATA_FILE);
             if (currentStatic) {
                 // Update specific fields from API while preserving our augmented data
                 const updatedBosses = currentStatic.world_bosses.map(boss => {
@@ -137,8 +249,8 @@ async function fetchLiveWorldBosses() {
                 });
                 
                 currentStatic.world_bosses = updatedBosses;
-                fs.writeFileSync(STATIC_DATA_FILE, JSON.stringify(currentStatic, null, 2));
-                console.log("✅ World boss status & schedules updated from API.");
+                await safeWriteJson(STATIC_DATA_FILE, currentStatic);
+                console.log("World boss status & schedules updated from API.");
             }
         }
     } catch (e) {
@@ -212,6 +324,8 @@ async function fetchItem(itemName) {
     }
 }
 
+import { execSync } from 'child_process';
+
 async function start() {
     if (!API_KEY) {
         console.log("No IDLEMMO_API_KEY provided in .env. Scraper paused.");
@@ -244,19 +358,26 @@ async function start() {
             if (data) {
                 marketData[item] = data;
                 marketData["_meta"] = { currently_fetching: item, last_updated: new Date().toISOString() };
-                const tempFile = DATA_FILE + '.tmp';
-                fs.writeFileSync(tempFile, JSON.stringify(marketData, null, 2));
-                fs.renameSync(tempFile, DATA_FILE);
+                await safeWriteJson(DATA_FILE, marketData);
             }
             await sleep(API_DELAY_MS);
         }
+
+        // --- RELATIONAL LINKER TRIGGER ---
+        console.log("Full scrape cycle completed. Rebuilding usage map...");
+        try {
+            execSync('node scripts/rebuild-usage-map.mjs', { stdio: 'inherit' });
+            console.log("Usage map rebuilt successfully.");
+        } catch (e) {
+            console.error("Failed to rebuild usage map:", e.message);
+        }
         
         if (process.env.SCRAPE_ONCE === "true") {
-            console.log("Full scrape cycle completed. SCRAPE_ONCE is true, exiting.");
+            console.log("Process complete. Exiting.");
             process.exit(0);
         }
 
-        console.log("Completed full scrape cycle. Restarting in 60s...");
+        console.log("Cycle finished. Restarting in 60s...");
         await sleep(60000);
     }
 }

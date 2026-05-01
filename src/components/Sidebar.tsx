@@ -48,27 +48,17 @@ const NAV_GROUPS: NavGroup[] = [
     }
 ];
 
+import { useData } from '@/context/DataContext';
+
 export default function Sidebar() {
     const pathname = usePathname();
-    const [scraperStatus, setScraperStatus] = useState<any>(null);
+    const { scraperStatus } = useData();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         'General': true,
         'Skills': true,
         'Combat': true
     });
-
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const res = await fetch("/scraper-status.json?t=" + Date.now());
-                if (res.ok) setScraperStatus(await res.json());
-            } catch (e) {}
-        };
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 3000);
-        return () => clearInterval(interval);
-    }, []);
 
     const toggleGroup = (label: string) => {
         setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -102,7 +92,7 @@ export default function Sidebar() {
                     <h2 style={{ fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
                         <Activity size={18} color="var(--text-accent)" /> ZENITH
                     </h2>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem', letterSpacing: '0.1em' }}>ANALYTICS SUITE</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem', letterSpacing: '0.1em' }}>COMPANION SUITE</p>
                 </div>
 
                 <nav style={{ 

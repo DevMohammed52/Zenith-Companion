@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { ALCHEMY_ITEMS } from "@/constants";
+import { useItemModal } from "@/context/ItemModalContext";
 import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from "@/lib/preferences";
 
 type SearchResult = {
@@ -25,47 +26,14 @@ const navShortcuts: Record<string, string> = {
   s: "/settings",
 };
 
+import { useData } from "@/context/DataContext";
+
 export default function GlobalSearch() {
   const router = useRouter();
+  const { openItemByName, prefetchItem } = useItemModal();
+  const { marketData, staticData } = useData();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [marketData, setMarketData] = useState<any>(null);
-  const [staticData, setStaticData] = useState<any>(null);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
-      const theme = stored ? JSON.parse(stored).theme : DEFAULT_PREFERENCES.theme;
-      applyTheme(theme || DEFAULT_PREFERENCES.theme);
-    } catch (e) {
-      applyTheme(DEFAULT_PREFERENCES.theme);
-    }
-
-    const refreshTheme = () => {
-      try {
-        const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
-        if (stored) applyTheme(JSON.parse(stored).theme || DEFAULT_PREFERENCES.theme);
-      } catch (e) {}
-    };
-
-    window.addEventListener("zenith-preferences-updated", refreshTheme);
-    return () => window.removeEventListener("zenith-preferences-updated", refreshTheme);
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [marketRes, staticRes] = await Promise.all([
-          fetch("/market-data.json?t=" + Date.now()),
-          fetch("/static-data.json?t=" + Date.now()),
-        ]);
-        if (marketRes.ok) setMarketData(await marketRes.json());
-        if (staticRes.ok) setStaticData(await staticRes.json());
-      } catch (e) {}
-    };
-
-    fetchData();
-  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -132,16 +100,34 @@ export default function GlobalSearch() {
     return next;
   }, [marketData, staticData]);
 
-  const filteredResults = query.trim()
-    ? results
-        .filter(result => `${result.label} ${result.type} ${result.detail || ""}`.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 12)
-    : results.slice(0, 7);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const openResult = (href: string) => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 150);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const filteredResults = useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+    if (!q) return results.slice(0, 7);
+    
+    return results
+      .filter(result => 
+        result.label.toLowerCase().includes(q) || 
+        result.type.toLowerCase().includes(q) || 
+        (result.detail && result.detail.toLowerCase().includes(q))
+      )
+      .slice(0, 12);
+  }, [results, debouncedQuery]);
+
+  const openResult = (result: SearchResult) => {
     setOpen(false);
     setQuery("");
-    router.push(href);
+    if (result.type === "Item" || result.type === "Recipe") {
+      openItemByName(result.label);
+    } else {
+      router.push(result.href);
+    }
   };
 
   return (
@@ -169,7 +155,12 @@ export default function GlobalSearch() {
             </div>
             <div className="command-results">
               {filteredResults.map(result => (
-                <button key={`${result.type}-${result.label}`} type="button" onClick={() => openResult(result.href)}>
+                <button 
+                  key={`${result.type}-${result.label}`} 
+                  type="button" 
+                  onClick={() => openResult(result)}
+                  onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
+                >
                   <span>
                     <strong>{result.label}</strong>
                     <small>{result.detail || result.href}</small>

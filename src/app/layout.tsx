@@ -4,9 +4,13 @@ import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 
 export const metadata: Metadata = {
-  title: "Zenith Companion Suite",
+  title: "Zenith Companion",
   description: "Helpful Tools for Idle MMO",
 };
+
+import { ItemModalProvider } from "@/context/ItemModalContext";
+import { DataProvider } from "@/context/DataContext";
+import { CraftingProvider } from "@/context/CraftingContext";
 
 export default function RootLayout({
   children,
@@ -19,13 +23,19 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <div style={{ display: 'flex' }}>
-          <Sidebar />
-          <div className="main-content">
-            <GlobalSearch />
-            {children}
-          </div>
-        </div>
+        <DataProvider>
+          <CraftingProvider>
+            <ItemModalProvider>
+              <div style={{ display: 'flex' }}>
+                <Sidebar />
+                <div className="main-content">
+                  <GlobalSearch />
+                  {children}
+                </div>
+              </div>
+            </ItemModalProvider>
+          </CraftingProvider>
+        </DataProvider>
         <style>{`
           .main-content {
             margin-left: var(--sidebar-width);

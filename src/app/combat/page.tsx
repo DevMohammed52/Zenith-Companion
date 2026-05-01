@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart } from "lucide-react";
-import Link from 'next/link';
+import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink } from "lucide-react";
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
+import { useItemModal } from "@/context/ItemModalContext";
 
-export default function CombatPage() {
+function CombatContent() {
+    const { openItemByName, prefetchItem } = useItemModal();
+    const searchParams = useSearchParams();
     const [staticData, setStaticData] = useState<any>(null);
     const [marketData, setMarketData] = useState<any>(null);
     const { preferences, setPreferences } = usePreferences();
@@ -14,9 +18,9 @@ export default function CombatPage() {
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        const search = new URLSearchParams(window.location.search).get("search");
+        const search = searchParams.get("search");
         if (search) setSearchTerm(search);
-    }, []);
+    }, [searchParams]);
 
     useEffect(() => {
         fetch('/static-data.json').then(r => r.json()).then(setStaticData);
@@ -24,13 +28,27 @@ export default function CombatPage() {
         const fetchMarket = async () => {
             try {
                 const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) setMarketData(await res.json());
+                if (res.ok) {
+                    const data = await res.json();
+                    setMarketData((prev: any) => {
+                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
+                        return data;
+                    });
+                }
             } catch (e) {}
         };
         fetchMarket();
         const interval = setInterval(fetchMarket, 3000);
         return () => clearInterval(interval);
     }, []);
+
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchTerm), 150);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
     const rows = useMemo(() => {
         if (!staticData || !marketData) return [];
@@ -67,8 +85,9 @@ export default function CombatPage() {
         }
 
         // Search Filter
-        let filtered = searchTerm 
-            ? calculated.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.location?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
+        const q = debouncedSearch.toLowerCase();
+        let filtered = q 
+            ? calculated.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
             : calculated;
 
         // Sort
@@ -93,8 +112,21 @@ export default function CombatPage() {
             valB = valB || 0;
             return sortDesc ? valB - valA : valA - valB;
         });
+
         return filtered;
-    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, searchTerm]);
+    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, debouncedSearch]);
+
+    useEffect(() => {
+        if (deepLinkHandled || rows.length === 0) return;
+        const search = searchParams.get("search");
+        if (search) {
+            const found = rows.find(r => r.name.toLowerCase() === search.toLowerCase());
+            if (found) {
+                setSelectedEnemy(found);
+                setDeepLinkHandled(true);
+            }
+        }
+    }, [rows, searchParams, deepLinkHandled]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -175,7 +207,7 @@ export default function CombatPage() {
                     </thead>
                     <tbody>
                         {rows.map((row, i) => (
-                            <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)}>
+                            <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)} onMouseEnter={() => prefetchItem(row.name)}>
                                 <td className="item-name left-align">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
@@ -248,31 +280,49 @@ export default function CombatPage() {
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {selectedEnemy.lootDetails?.sort((a:any, b:any) => b.expectedVal - a.expectedVal).map((drop: any, i: number) => (
-                                    <div key={i} style={{ 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)',
-                                        borderRadius: '6px'
-                                    }}>
-                                        <div>
-                                            <div style={{ fontWeight: 500, color: '#fff' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>x{drop.quantity || 1}</span></div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ color: 'var(--text-success)', fontWeight: 600 }}>
-                                                ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
-                                            </div>
-                                            <Link href={`/items?name=${encodeURIComponent(drop.name)}`} 
-                                                  style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
-                                                View Market ({drop.price.toLocaleString()}g avg)
-                                            </Link>
-                                        </div>
-                                    </div>
+                                     <div 
+                                         key={i} 
+                                         onClick={() => openItemByName(drop.name)}
+                                         className="clickable-row group-loot"
+                                         style={{ 
+                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                             padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
+                                             borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s'
+                                         }}
+                                     >
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                             {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
+                                             <div>
+                                                 <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
+                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
+                                             </div>
+                                         </div>
+                                         <div style={{ textAlign: 'right' }}>
+                                             <div style={{ color: 'var(--text-success)', fontWeight: 600, fontSize: '0.9rem' }}>
+                                                 ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
+                                             </div>
+                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                 Inspect Item ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
+                                             </div>
+                                         </div>
+                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+            <style jsx>{`
+                .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
+            `}</style>
         </main>
+    );
+}
+
+export default function CombatPage() {
+    return (
+        <Suspense fallback={<div>Loading Combat Data...</div>}>
+            <CombatContent />
+        </Suspense>
     );
 }

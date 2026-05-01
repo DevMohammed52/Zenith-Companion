@@ -1,25 +1,43 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { Skull, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Clock, ExternalLink } from "lucide-react";
-import Link from 'next/link';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
+import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES, EVENT_BOSSES } from "../../constants/events";
 
-export default function BossesPage() {
+function BossesContent() {
+    const searchParams = useSearchParams();
     const [staticData, setStaticData] = useState<any>(null);
     const [marketData, setMarketData] = useState<any>(null);
     const { preferences } = usePreferences();
+    const { openItemByName } = useItemModal();
     const [selectedBoss, setSelectedBoss] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        fetch('/static-data.json').then(r => r.json()).then(setStaticData);
+        const searchParam = searchParams.get("search");
+        if (searchParam) setSearchTerm(searchParam);
+    }, [searchParams]);
+
+    useEffect(() => {
+        fetch('/static-data.json').then(r => r.json()).then(data => {
+            setStaticData(data);
+        });
+
         const fetchMarket = async () => {
             try {
                 const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) setMarketData(await res.json());
+                if (res.ok) {
+                    const data = await res.json();
+                    setMarketData((prev: any) => {
+                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
+                        return data;
+                    });
+                }
             } catch (e) {}
         };
         fetchMarket();
@@ -101,7 +119,21 @@ export default function BossesPage() {
             return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
-    }, [staticData, marketData, searchTerm, sortCol, sortDesc]);
+    }, [staticData, marketData, searchTerm, sortCol, sortDesc, preferences.showEventBosses]);
+
+    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+    useEffect(() => {
+        if (deepLinkHandled) return;
+        const searchParam = searchParams.get("search");
+        const bossParam = searchParams.get("boss") || searchParam;
+        if (bossParam && rows.length > 0 && !selectedBoss) {
+            const found = rows.find(r => r.name.toLowerCase() === bossParam.toLowerCase());
+            if (found) {
+                setSelectedBoss(found);
+                setDeepLinkHandled(true);
+            }
+        }
+    }, [rows, selectedBoss, deepLinkHandled, searchParams]);
 
     const generateTimetable = (boss: any) => {
         if (!boss.nextSpawnTime || !boss.scheduleInfo) return [];
@@ -247,32 +279,36 @@ export default function BossesPage() {
                             
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table</h3>
                             
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {selectedBoss.lootDetails?.sort((a:any, b:any) => b.expectedVal - a.expectedVal).map((drop: any, i: number) => (
-                                    <div key={i} style={{ 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-                                        padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
-                                        borderRadius: '6px' 
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
-                                            <div>
-                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ color: 'var(--text-success)', fontWeight: 600, fontSize: '0.9rem' }}>
-                                                ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
-                                            </div>
-                                            <Link href={`/items?name=${encodeURIComponent(drop.name)}`} 
-                                                  style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px' }}>
-                                                View Market ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                 {selectedBoss.lootDetails?.sort((a:any, b:any) => b.expectedVal - a.expectedVal).map((drop: any, i: number) => (
+                                     <div 
+                                         key={i} 
+                                         onClick={() => openItemByName(drop.name)}
+                                         className="clickable-row group-loot"
+                                         style={{ 
+                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                                             padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
+                                             borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s'
+                                         }}
+                                     >
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                             {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
+                                             <div>
+                                                 <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
+                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
+                                             </div>
+                                         </div>
+                                         <div style={{ textAlign: 'right' }}>
+                                             <div style={{ color: 'var(--text-success)', fontWeight: 600, fontSize: '0.9rem' }}>
+                                                 ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
+                                             </div>
+                                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                                 View Market ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
+                                             </div>
+                                         </div>
+                                     </div>
+                                 ))}
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -289,7 +325,16 @@ export default function BossesPage() {
                 .spawn-day { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.25rem; letter-spacing: 0.05em; }
                 .spawn-time { font-size: 1.1rem; font-weight: 700; color: #fff; font-family: 'Outfit', sans-serif; }
                 .spawn-box.active .spawn-time { color: var(--text-accent); }
+                .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
             `}</style>
         </main>
+    );
+}
+
+export default function BossesPage() {
+    return (
+        <Suspense fallback={<div>Loading Bosses...</div>}>
+            <BossesContent />
+        </Suspense>
     );
 }
