@@ -120,13 +120,24 @@ async function rebuild() {
 
     // --- PRODUCES LOGIC (Reverse Recipe) ---
     if (item.recipe && (item.recipe.ingredients || item.recipe.materials)) {
-      const resultName = item.recipe.result?.item_name || (item.type !== 'RECIPE' ? item.name : null);
+      let resultName = item.recipe.result?.item_name;
+      
+      if (!resultName) {
+        // If no explicit result, and it's a blueprint-style item, the result is the item name without suffixes
+        resultName = item.name
+          .replace(/^Recipe:\s*/i, '')
+          .replace(/\s*Recipe$/i, '')
+          .replace(/\s*\(Untradable\)$/i, '')
+          .trim();
+      }
+
       if (resultName) {
         const entry = getEntry(resultName);
         const mats = item.recipe.ingredients || item.recipe.materials || [];
         entry.produced_from = {
           skill: item.recipe.skill || 'CRAFTING',
           level: item.recipe.level_required || item.recipe.level || 1,
+          recipe_name: item.name, // Store the blueprint name explicitly
           mats: mats.map(m => ({
             name: m.item_name || m.name,
             amount: m.quantity || m.amount || 1

@@ -460,7 +460,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                           {item.produced_from && (
                             <button 
-                              onClick={() => openItemByName?.(`Recipe: ${item.name}`)}
+                              onClick={() => {
+                                if (item.produced_from?.recipe_name) {
+                                  openItemByName?.(item.produced_from.recipe_name);
+                                } else {
+                                  openItemByName?.(`Recipe: ${item.name}`);
+                                }
+                              }}
                               className="recipe-link-btn"
                               style={{ 
                                 background: 'rgba(56,189,248,0.1)', 
