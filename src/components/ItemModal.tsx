@@ -13,6 +13,7 @@ import { usePreferences } from '@/lib/preferences';
 import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
+import { VENDOR_ITEMS } from '@/constants';
 
 interface ItemModalProps {
   id: string;
@@ -202,6 +203,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const recipeMats = recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [];
   const recipeSkill = recipeData?.skill || 'CRAFTING';
   const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
+  const vendorInfo = item ? VENDOR_ITEMS[item.name] : null;
 
   return (
     <div className="modal-container">
@@ -257,6 +259,16 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             </div>
           ) : (
             <div className="bento-grid">
+              {vendorInfo && (
+                <div className="bento-card vendor-info-card full-width">
+                  <div className="card-label"><Package size={14} /> VENDOR EXCLUSIVE</div>
+                  <div className="vendor-message">
+                    This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
+                    <p className="vendor-warning">You cannot obtain this from the market and cannot sell it on the market as well and it is not tradable as well.</p>
+                  </div>
+                </div>
+              )}
+
               {showMarket && (
                 <div className="bento-card market-card">
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
@@ -475,6 +487,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <div className="description-text">"{item?.description || 'No database entry available for this artifact.'}"</div>
               </div>
 
+
               {/* Recipe Card (Unified) */}
               {showRecipe && (() => {
                 const totalMatCost = recipeMats.reduce((acc: number, m: any) => acc + ((m.price || 0) * (m.amount || m.quantity || 1)), 0);
@@ -644,6 +657,12 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .full-width-pill { grid-column: span 1; }
 
         .description-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-style: italic; }
+        
+        .vendor-info-card { background: linear-gradient(135deg, rgba(251,191,36,0.1), transparent); border-color: rgba(251,191,36,0.2); }
+        .vendor-message { font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,0.9); }
+        .vendor-link { color: #fbbf24; text-decoration: underline; font-weight: 700; }
+        .vendor-warning { margin-top: 0.75rem; color: #f87171; font-weight: 600; font-size: 0.9rem; }
+
         .restoration-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
         .rest-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
         .rest-badge.health { background: rgba(239, 68, 68, 0.15); color: #f87171; }

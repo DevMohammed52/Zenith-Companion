@@ -13,6 +13,33 @@ export const VIAL_COSTS: Record<string, number> = {
     "Arcane Crystal": 2500
 };
 
+export const VENDOR_ITEMS: Record<string, { price: string; currency: string }> = {
+    "Cheap Vial": { price: "5", currency: "Gold" },
+    "Cheap Crystal": { price: "5", currency: "Gold" },
+    "Tarnished Vial": { price: "10", currency: "Gold" },
+    "Tarnished Crystal": { price: "10", currency: "Gold" },
+    "Gleaming Vial": { price: "50", currency: "Gold" },
+    "Gleaming Crystal": { price: "50", currency: "Gold" },
+    "Elemental Vial": { price: "200", currency: "Gold" },
+    "Elemental Crystal": { price: "200", currency: "Gold" },
+    "Eldritch Vial": { price: "500", currency: "Gold" },
+    "Eldritch Crystal": { price: "500", currency: "Gold" },
+    "Arcane Vial": { price: "2500", currency: "Gold" },
+    "Arcane Crystal": { price: "2500", currency: "Gold" },
+    "Cheap Bait": { price: "2", currency: "Gold" },
+    "Tarnished Bait": { price: "4", currency: "Gold" },
+    "Gleaming Bait": { price: "7", currency: "Gold" },
+    "Elemental Bait": { price: "12", currency: "Gold" },
+    "Eldritch Bait": { price: "16", currency: "Gold" },
+    "Arcane Bait": { price: "25", currency: "Gold" },
+    "Namestone": { price: "500", currency: "Tokens" },
+    "Metamorphite": { price: "500", currency: "Tokens" },
+    "Simple Fishing Rod": { price: "10", currency: "Gold" },
+    "Simple Pickaxe": { price: "10", currency: "Gold" },
+    "Simple Felling Axe": { price: "10", currency: "Gold" },
+    "Blank Scroll": { price: "60,000", currency: "Gold" }
+};
+
 export interface Recipe {
     level: number;
     time: number;
@@ -105,7 +132,5 @@ export const ALCHEMY_ITEMS: Record<string, Recipe> = {
     "Titanwood Crystal": {"level": 90, "time": 1636.4, "vial": "Arcane Crystal", "materials": {"Stoneheart Core": 6, "Elk Antler": 15, "Moonblood Tincture": 1}},
     "Dragon's Essence": {"level": 90, "time": 1636.4, "vial": "Arcane Vial", "materials": {"Ivory": 45, "Vial of Wraith Ectoplasm": 30}},
     "Eternal Feast Essence Crystal": {"level": 90, "time": 1636.4, "vial": "Arcane Crystal", "materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
-    "Cosmic Finesse Tonic": {"level": 90, "time": 1636.4, "vial": "Arcane Vial", "materials": {"Abyssal Scroll": 5, "Lions Teeth": 55}},
-    "Eternal Feast Tonic": {"level": 90, "time": 1636.4, "vial": "Arcane Vial", "materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
     "Sun's Light": {"level": 90, "time": 1636.4, "vial": "Arcane Vial", "materials": {"Ruined Robes": 25, "Enigmatic Stone": 80}}
 };
