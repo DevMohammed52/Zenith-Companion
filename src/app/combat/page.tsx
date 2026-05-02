@@ -195,53 +195,90 @@ function CombatContent() {
                 </div>
             </div>
 
-            <div className="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th className="sortable left-align" onClick={() => handleSort('name')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Enemy {renderSortIcon('name')}</div>
-                            </th>
-                            <th className="sortable left-align" onClick={() => handleSort('location')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Location {renderSortIcon('location')}</div>
-                            </th>
-                            <th className="sortable" onClick={() => handleSort('level')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Level {renderSortIcon('level')}</div>
-                            </th>
-                            <th className="sortable" onClick={() => handleSort('dropsCount')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Drops {renderSortIcon('dropsCount')}</div>
-                            </th>
-                            <th className="sortable" onClick={() => handleSort('ev')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>EV / Kill {renderSortIcon('ev')}</div>
-                            </th>
-                            <th className="sortable" onClick={() => handleSort('profitPerHour')}>
-                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Gold / Hour {renderSortIcon('profitPerHour')}</div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <section className="table-wrapper">
+                {/* Desktop View */}
+                <div className="desktop-only">
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th className="sortable left-align" onClick={() => handleSort('name')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Enemy {renderSortIcon('name')}</div>
+                                    </th>
+                                    <th className="sortable left-align" onClick={() => handleSort('location')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Location {renderSortIcon('location')}</div>
+                                    </th>
+                                    <th className="sortable" onClick={() => handleSort('level')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Level {renderSortIcon('level')}</div>
+                                    </th>
+                                    <th className="sortable" onClick={() => handleSort('dropsCount')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Drops {renderSortIcon('dropsCount')}</div>
+                                    </th>
+                                    <th className="sortable" onClick={() => handleSort('ev')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>EV / Kill {renderSortIcon('ev')}</div>
+                                    </th>
+                                    <th className="sortable" onClick={() => handleSort('profitPerHour')}>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Gold / Hour {renderSortIcon('profitPerHour')}</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, i) => (
+                                    <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)} onMouseEnter={() => prefetchItem(row.name)}>
+                                        <td className="item-name left-align">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
+                                                <span>{row.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
+                                        <td className="mono">{row.level}</td>
+                                        <td className="mono">{row.dropsCount}</td>
+                                        <td className="mono profit-positive">
+                                            ~{row.ev.toLocaleString(undefined, {maximumFractionDigits:1})}
+                                        </td>
+                                        <td className="mono profit-positive font-bold">
+                                            {row.profitPerHour.toLocaleString(undefined, {maximumFractionDigits:0})}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Mobile View */}
+                <div className="mobile-only">
+                    <div className="mobile-card-grid">
                         {rows.map((row, i) => (
-                            <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)} onMouseEnter={() => prefetchItem(row.name)}>
-                                <td className="item-name left-align">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
-                                        <span>{row.name}</span>
+                            <div key={i} className="mobile-alchemy-card" onClick={() => setSelectedEnemy(row)}>
+                                <div className="m-card-header">
+                                    <div className="m-card-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
+                                            <span className="m-name">{row.name}</span>
+                                        </div>
+                                        <span className="m-lvl">{row.location?.name || "Unknown"} • LVL {row.level}</span>
                                     </div>
-                                </td>
-                                <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
-                                <td className="mono">{row.level}</td>
-                                <td className="mono">{row.dropsCount}</td>
-                                <td className="mono profit-positive">
-                                    ~{row.ev.toLocaleString(undefined, {maximumFractionDigits:1})}
-                                </td>
-                                <td className="mono profit-positive font-bold">
-                                    {row.profitPerHour.toLocaleString(undefined, {maximumFractionDigits:0})}
-                                </td>
-                            </tr>
+                                    <div className="m-roi pos">{row.dropsCount} DROPS</div>
+                                </div>
+                                <div className="m-card-body">
+                                    <div className="m-stat">
+                                        <span className="m-label">EV / KILL</span>
+                                        <span className="m-val pos">~{row.ev.toLocaleString(undefined, {maximumFractionDigits:1})}g</span>
+                                    </div>
+                                    <div className="m-stat">
+                                        <span className="m-label">GOLD / HOUR</span>
+                                        <span className="m-val pos font-bold">
+                                            {row.profitPerHour.toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </div>
+            </section>
 
             {selectedEnemy && (
                 <div className="modal-overlay" onClick={() => setSelectedEnemy(null)}>

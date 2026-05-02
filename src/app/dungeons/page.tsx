@@ -156,40 +156,78 @@ function DungeonsContent() {
                 </div>
             </div>
 
-            <div className="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th className="sortable left-align" onClick={() => handleSort('name')}>DUNGEON {renderSortIcon('name')}</th>
-                            <th className="sortable left-align" onClick={() => handleSort('location')}>LOCATION {renderSortIcon('location')}</th>
-                            <th className="sortable" onClick={() => handleSort('durationMins')}>DURATION {renderSortIcon('durationMins')}</th>
-                            <th className="sortable" onClick={() => handleSort('netProfitPerRun')}>PROFIT / RUN {renderSortIcon('netProfitPerRun')}</th>
-                            <th className="sortable" onClick={() => handleSort('runsToDrop')}>RUNS / DROP {renderSortIcon('runsToDrop')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <section className="table-wrapper">
+                {/* Desktop View */}
+                <div className="desktop-only">
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th className="sortable left-align" onClick={() => handleSort('name')}>DUNGEON {renderSortIcon('name')}</th>
+                                    <th className="sortable left-align" onClick={() => handleSort('location')}>LOCATION {renderSortIcon('location')}</th>
+                                    <th className="sortable" onClick={() => handleSort('durationMins')}>DURATION {renderSortIcon('durationMins')}</th>
+                                    <th className="sortable" onClick={() => handleSort('netProfitPerRun')}>PROFIT / RUN {renderSortIcon('netProfitPerRun')}</th>
+                                    <th className="sortable" onClick={() => handleSort('runsToDrop')}>RUNS / DROP {renderSortIcon('runsToDrop')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, i) => (
+                                    <tr key={i} className="clickable-row" onClick={() => setSelectedDungeon(row)}>
+                                        <td className="item-name left-align">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
+                                                <span>{row.name}</span>
+                                                {row.is_event && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
+                                            </div>
+                                        </td>
+                                        <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
+                                        <td className="mono">{row.durationMins}m</td>
+                                        <td className={`mono ${row.netProfitPerRun >= 0 ? 'profit-positive' : 'profit-negative'}`}>
+                                            {row.netProfitPerRun >= 0 ? '+' : ''}{(row.netProfitPerRun || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                        </td>
+                                        <td className="mono text-muted">
+                                            {row.runsToDrop === Infinity ? '—' : row.runsToDrop.toFixed(1)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Mobile View */}
+                <div className="mobile-only">
+                    <div className="mobile-card-grid">
                         {rows.map((row, i) => (
-                            <tr key={i} className="clickable-row" onClick={() => setSelectedDungeon(row)}>
-                                <td className="item-name left-align">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
-                                        <span>{row.name}</span>
-                                        {row.is_event && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
+                            <div key={i} className="mobile-alchemy-card" onClick={() => setSelectedDungeon(row)}>
+                                <div className="m-card-header">
+                                    <div className="m-card-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
+                                            <span className="m-name">{row.name}</span>
+                                            {row.is_event && <span style={{fontSize:'0.5rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 3px', borderRadius:'3px'}}>EVENT</span>}
+                                        </div>
+                                        <span className="m-lvl">{row.location?.name || "Unknown"} • {row.durationMins}m</span>
                                     </div>
-                                </td>
-                                <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
-                                <td className="mono">{row.durationMins}m</td>
-                                <td className={`mono ${row.netProfitPerRun >= 0 ? 'profit-positive' : 'profit-negative'}`}>
-                                    {row.netProfitPerRun >= 0 ? '+' : ''}{(row.netProfitPerRun || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
-                                </td>
-                                <td className="mono text-muted">
-                                    {row.runsToDrop === Infinity ? '—' : row.runsToDrop.toFixed(1)}
-                                </td>
-                            </tr>
+                                    <div className="m-roi pos">{row.runsToDrop === Infinity ? '0' : row.runsToDrop.toFixed(1)} R/D</div>
+                                </div>
+                                <div className="m-card-body">
+                                    <div className="m-stat">
+                                        <span className="m-label">ENTRY COST</span>
+                                        <span className="m-val neg">-{row.entryCost.toLocaleString()}g</span>
+                                    </div>
+                                    <div className="m-stat">
+                                        <span className="m-label">PROFIT / RUN</span>
+                                        <span className={`m-val ${row.netProfitPerRun >= 0 ? 'pos' : 'neg'} font-bold`}>
+                                            {row.netProfitPerRun >= 0 ? '+' : ''}{Math.floor(row.netProfitPerRun || 0).toLocaleString()}g
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </div>
+            </section>
 
             {selectedDungeon && (
                 <div className="modal-overlay" onClick={() => setSelectedDungeon(null)}>

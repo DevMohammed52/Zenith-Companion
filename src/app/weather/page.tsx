@@ -183,9 +183,16 @@ export default function WeatherPage() {
           margin: 0 auto;
         }
 
-        .page-header { margin-bottom: 3.5rem; }
+        .page-header { margin-bottom: 2.5rem; text-align: center; }
         .header-text h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
-        .header-text p { color: rgba(255,255,255,0.5); font-size: 1.1rem; max-width: 650px; }
+        .header-text p { color: rgba(255,255,255,0.5); font-size: 1.1rem; max-width: 650px; margin: 0 auto; }
+
+        @media (max-width: 600px) {
+          .header-text h1 { font-size: 1.8rem; }
+          .header-text p { font-size: 0.9rem; padding: 0 1rem; }
+          .weather-selector { justify-content: flex-start; padding: 0.5rem 1rem; }
+          .bento-grid-weather { padding: 0 1rem; }
+        }
 
         .weather-selector {
           display: flex;
@@ -279,6 +286,27 @@ export default function WeatherPage() {
         .mf-stat .value { font-size: 1.1rem; font-weight: 800; color: #a78bfa; text-shadow: 0 0 15px rgba(167, 139, 250, 0.4); }
 
         .mechanics-panel { display: flex; flex-direction: column; gap: 2rem; }
+        .bento-card-weather {
+          background: rgba(255,255,255,0.02);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 28px;
+          padding: 2rem;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (max-width: 600px) {
+          .bento-card-weather { padding: 1.5rem; border-radius: 20px; }
+          .modifiers-grid { grid-template-columns: 1fr; }
+          .modifier-item { padding: 1rem; }
+        }
+        .mech-item { display: flex; gap: 1.25rem; }
+        .mech-item h4 { color: #fff; font-size: 0.95rem; font-weight: 800; margin-bottom: 0.35rem; }
+        .mech-item p { color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.6; }
+        .mech-item strong { color: var(--text-accent); }
+
         .mechanics-card {
           background: rgba(255,255,255,0.02);
           backdrop-filter: blur(15px);
@@ -287,10 +315,6 @@ export default function WeatherPage() {
           padding: 2rem;
         }
         .mechanics-content { display: flex; flex-direction: column; gap: 2rem; }
-        .mech-item { display: flex; gap: 1.25rem; }
-        .mech-item h4 { color: #fff; font-size: 0.95rem; font-weight: 800; margin-bottom: 0.35rem; }
-        .mech-item p { color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.6; }
-        .mech-item strong { color: var(--text-accent); }
 
         .weather-tip {
           background: linear-gradient(135deg, rgba(245, 176, 65, 0.08), rgba(245, 176, 65, 0.02));

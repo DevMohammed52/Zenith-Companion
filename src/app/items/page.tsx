@@ -161,12 +161,7 @@ function ItemsArchiveContent() {
             <img src={item.image} alt={item.name} style={{ width: '48px', height: '48px', borderRadius: '8px', zIndex: 1 }} />
             
             <div style={{ flex: 1, zIndex: 1 }}>
-              <div style={{ 
-                fontWeight: 600, 
-                fontSize: '1rem', 
-                color: '#fff',
-                marginBottom: '0.25rem'
-              }}>
+              <div className="card-item-name">
                 {item.name}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

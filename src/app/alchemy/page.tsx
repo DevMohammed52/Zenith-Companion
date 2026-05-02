@@ -254,91 +254,148 @@ function AlchemyContent() {
             <input type="number" className="control-input" style={{ width: '100%' }} value={preferences.barteringBoost} onChange={(e) => setPreferences({ barteringBoost: e.target.value === "" ? "" : Math.min(20, Math.max(0, Number(e.target.value) || 0)) })} />
         </div>
       </div>
+      <section className="table-wrapper">
+        {/* Desktop View */}
+        <div className="desktop-only">
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th className="sortable left-align" onClick={() => handleSort("name")}>Asset {renderSortIcon("name")}</th>
+                  <th className="sortable" onClick={() => handleSort("level" as any)}>Level {renderSortIcon("level" as any)}</th>
+                  <th className="sortable" onClick={() => handleSort("trend")}>Trend {renderSortIcon("trend")}</th>
+                  <th className="sortable" onClick={() => handleSort("cost")}>Est. Cost {renderSortIcon("cost")}</th>
+                  <th className="sortable" onClick={() => handleSort("rev")}>Best Revenue {renderSortIcon("rev")}</th>
+                  <th className="sortable" onClick={() => handleSort("profit")}>Net Profit {renderSortIcon("profit")}</th>
+                  <th className="sortable" onClick={() => handleSort("dailyProfit")}>Daily Profit {renderSortIcon("dailyProfit")}</th>
+                  <th className="sortable" onClick={() => handleSort("roi")}>ROI % {renderSortIcon("roi")}</th>
+                  <th className="sortable" onClick={() => handleSort("vol_3")}>3D Vol {renderSortIcon("vol_3")}</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} onClick={() => !row.loading && setSelectedRow(row)} className="clickable-row group">
+                    <td className="item-name left-align">
+                      <span 
+                        onClick={(e) => { 
+                          if (!row.loading) {
+                            e.stopPropagation(); 
+                            openItemByName(row.name); 
+                          }
+                        }}
+                        onMouseEnter={() => !row.loading && prefetchItem(row.name)}
+                        className="hover:text-accent hover:underline cursor-pointer transition-colors"
+                      >
+                        {row.name}
+                      </span>
+                    </td>
+                    <td className="mono text-muted">{row.level}</td>
+                    {row.loading ? (
+                      <>
+                        <td><div className="skeleton-bar" style={{ width: '40px' }}></div></td>
+                        <td><div className="skeleton-bar"></div></td>
+                        <td><div className="skeleton-bar"></div></td>
+                        <td><div className="skeleton-bar"></div></td>
+                        <td><div className="skeleton-bar"></div></td>
+                        <td><div className="skeleton-bar"></div></td>
+                        <td><div className="skeleton-bar" style={{ width: '30px' }}></div></td>
+                        <td><div className="skeleton-bar" style={{ width: '60px' }}></div></td>
+                      </>
+                    ) : (
+                      <>
+                        <td>
+                          {(row as any).noMarketData ? <span className="text-muted/30">—</span> : (
+                            <>
+                              {row.trend === "up" && <span className="trend-up"><ChevronUp size={14} /> RISING</span>}
+                              {row.trend === "down" && <span className="trend-down"><ChevronDown size={14} /> FALLING</span>}
+                              {row.trend === "flat" && <span className="trend-flat"><Minus size={14} /> STABLE</span>}
+                            </>
+                          )}
+                        </td>
+                        <td className="mono text-muted">{row.cost.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
+                        <td className="mono text-muted">{(row as any).noMarketData ? 'N/A' : row.rev.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
+                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.profit > 0 ? 'profit-positive' : 'profit-negative')}`}>
+                            {(row as any).noMarketData ? 'N/A' : (row.profit > 0 ? '+' : '') + row.profit.toLocaleString(undefined, {maximumFractionDigits:0})}
+                        </td>
+                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.dailyProfit > 0 ? 'profit-positive' : 'profit-negative')}`}>
+                            {(row as any).noMarketData ? 'N/A' : (row.dailyProfit > 0 ? '+' : '') + row.dailyProfit.toLocaleString(undefined, {maximumFractionDigits:0})}
+                        </td>
+                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.roi > 0 ? 'profit-positive' : 'profit-negative')}`}>
+                            {(row as any).noMarketData ? 'N/A' : (row.roi > 0 ? '+' : '') + row.roi.toFixed(1) + '%'}
+                        </td>
+                        <td className={`mono ${row.vol_3 > 0 ? 'text-main' : 'text-muted/30'}`}>{(row as any).noMarketData ? '0' : row.vol_3.toLocaleString()}</td>
+                        <td>
+                          {(row as any).noMarketData ? <span className="action-badge action-liquidate">NO DATA</span> : (
+                            <>
+                              {row.action === "CRAFT" && <span className="action-badge action-craft">MARKET</span>}
+                              {row.action === "VENDOR" && <span className="action-badge action-vendor">VENDOR</span>}
+                              {row.action === "LIQUIDATE" && <span className="action-badge action-liquidate">LIQUIDATE</span>}
+                            </>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th className="sortable left-align" onClick={() => handleSort("name")}>Asset {renderSortIcon("name")}</th>
-              <th className="sortable" onClick={() => handleSort("level" as any)}>Level {renderSortIcon("level" as any)}</th>
-              <th className="sortable" onClick={() => handleSort("trend")}>Trend {renderSortIcon("trend")}</th>
-              <th className="sortable" onClick={() => handleSort("cost")}>Est. Cost {renderSortIcon("cost")}</th>
-              <th className="sortable" onClick={() => handleSort("rev")}>Best Revenue {renderSortIcon("rev")}</th>
-              <th className="sortable" onClick={() => handleSort("profit")}>Net Profit {renderSortIcon("profit")}</th>
-              <th className="sortable" onClick={() => handleSort("dailyProfit")}>Daily Profit {renderSortIcon("dailyProfit")}</th>
-              <th className="sortable" onClick={() => handleSort("roi")}>ROI % {renderSortIcon("roi")}</th>
-              <th className="sortable" onClick={() => handleSort("vol_3")}>3D Vol {renderSortIcon("vol_3")}</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
+        {/* Mobile View */}
+        <div className="mobile-only">
+          <div className="mobile-card-grid">
             {rows.map((row, i) => (
-              <tr key={i} onClick={() => !row.loading && setSelectedRow(row)} className="clickable-row group">
-                <td className="item-name left-align">
-                  <span 
-                    onClick={(e) => { 
-                      if (!row.loading) {
-                        e.stopPropagation(); 
-                        openItemByName(row.name); 
-                      }
-                    }}
-                    onMouseEnter={() => !row.loading && prefetchItem(row.name)}
-                    className="hover:text-accent hover:underline cursor-pointer transition-colors"
-                  >
-                    {row.name}
-                  </span>
-                </td>
-                <td className="mono text-muted">{row.level}</td>
-                {row.loading ? (
-                  <>
-                    <td><div className="skeleton-bar" style={{ width: '40px' }}></div></td>
-                    <td><div className="skeleton-bar"></div></td>
-                    <td><div className="skeleton-bar"></div></td>
-                    <td><div className="skeleton-bar"></div></td>
-                    <td><div className="skeleton-bar"></div></td>
-                    <td><div className="skeleton-bar"></div></td>
-                    <td><div className="skeleton-bar" style={{ width: '30px' }}></div></td>
-                    <td><div className="skeleton-bar" style={{ width: '60px' }}></div></td>
-                  </>
-                ) : (
-                  <>
-                    <td>
-                      {(row as any).noMarketData ? <span className="text-muted/30">—</span> : (
-                        <>
-                          {row.trend === "up" && <span className="trend-up"><ChevronUp size={14} /> RISING</span>}
-                          {row.trend === "down" && <span className="trend-down"><ChevronDown size={14} /> FALLING</span>}
-                          {row.trend === "flat" && <span className="trend-flat"><Minus size={14} /> STABLE</span>}
-                        </>
-                      )}
-                    </td>
-                    <td className="mono text-muted">{row.cost.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
-                    <td className="mono text-muted">{(row as any).noMarketData ? 'N/A' : row.rev.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
-                    <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.profit > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                        {(row as any).noMarketData ? 'N/A' : (row.profit > 0 ? '+' : '') + row.profit.toLocaleString(undefined, {maximumFractionDigits:0})}
-                    </td>
-                    <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.dailyProfit > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                        {(row as any).noMarketData ? 'N/A' : (row.dailyProfit > 0 ? '+' : '') + row.dailyProfit.toLocaleString(undefined, {maximumFractionDigits:0})}
-                    </td>
-                    <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.roi > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                        {(row as any).noMarketData ? 'N/A' : (row.roi > 0 ? '+' : '') + row.roi.toFixed(1) + '%'}
-                    </td>
-                    <td className={`mono ${row.vol_3 > 0 ? 'text-main' : 'text-muted/30'}`}>{(row as any).noMarketData ? '0' : row.vol_3.toLocaleString()}</td>
-                    <td>
-                      {(row as any).noMarketData ? <span className="action-badge action-liquidate">NO DATA</span> : (
-                        <>
-                          {row.action === "CRAFT" && <span className="action-badge action-craft">MARKET</span>}
-                          {row.action === "VENDOR" && <span className="action-badge action-vendor">VENDOR</span>}
-                          {row.action === "LIQUIDATE" && <span className="action-badge action-liquidate">LIQUIDATE</span>}
-                        </>
-                      )}
-                    </td>
-                  </>
-                )}
-              </tr>
+              <div key={i} className="mobile-alchemy-card" onClick={() => !row.loading && setSelectedRow(row)}>
+                <div className="m-card-header">
+                  <div className="m-card-title">
+                    <span className="m-name">{row.name}</span>
+                    <span className="m-lvl">LVL {row.level}</span>
+                  </div>
+                  {!row.loading && (
+                    <div className={`m-roi ${row.roi > 0 ? 'pos' : 'neg'}`}>
+                      {row.roi.toFixed(1)}% ROI
+                    </div>
+                  )}
+                </div>
+                
+                <div className="m-card-body">
+                  {row.loading ? (
+                    <div className="skeleton-bar" style={{ width: '100%', height: '40px' }}></div>
+                  ) : (
+                    <>
+                      <div className="m-stat">
+                        <span className="m-label">EST. COST</span>
+                        <span className="m-val">{row.cost.toLocaleString()}g</span>
+                      </div>
+                      <div className="m-stat">
+                        <span className="m-label">NET PROFIT</span>
+                        <span className={`m-val ${row.profit > 0 ? 'pos' : 'neg'}`}>
+                          {row.profit > 0 ? '+' : ''}{row.profit.toLocaleString()}g
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="m-card-footer">
+                  {!row.loading && (
+                    <>
+                      <div className="m-badges">
+                        {row.action === "CRAFT" && <span className="action-badge action-craft">MARKET</span>}
+                        {row.action === "VENDOR" && <span className="action-badge action-vendor">VENDOR</span>}
+                        {row.action === "LIQUIDATE" && <span className="action-badge action-liquidate">LIQUIDATE</span>}
+                      </div>
+                      <div className="m-vol">{row.vol_3.toLocaleString()} VOL</div>
+                    </>
+                  )}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      </section>
 
       {selectedRow && (
         <div className="modal-overlay" onClick={() => setSelectedRow(null)}>

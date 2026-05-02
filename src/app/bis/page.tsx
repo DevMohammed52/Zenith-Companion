@@ -190,7 +190,7 @@ export default function BISPage() {
                 </div>
             </div>
 
-            <div className="controls" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', padding: '1.5rem' }}>
+            <div className="controls bento-controls-stack">
                 <div className="control-group">
                     <label className="control-label">Level (60-96)</label>
                     <input type="number" className="control-input" value={preferences.combatLevel} 
@@ -210,25 +210,25 @@ export default function BISPage() {
                     <label className="control-label">DEF Stat (0-100)</label>
                     <input type="number" className="control-input" value={preferences.defStat} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 0, 100)} />
                 </div>
-                <div className="control-group">
+                <div className="control-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="control-label">Combat Style</label>
-                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                         {COMBAT_STYLES.map(s => (
                             <button key={s.id} onClick={() => setPreferences({ combatStyle: s.id })} style={{
-                                flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                                flex: 1, minWidth: '100px', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-subtle)',
                                 background: preferences.combatStyle === s.id ? 'var(--text-accent)' : 'var(--bg-card)',
                                 color: preferences.combatStyle === s.id ? '#000' : 'var(--text-muted)',
-                                cursor: 'pointer', transition: '0.2s', fontSize: '0.7rem', fontWeight: 600,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
+                                cursor: 'pointer', transition: '0.2s', fontSize: '0.75rem', fontWeight: 600,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
                             }}>
-                                {s.icon} {s.label.split(' ')[0]}
+                                {s.icon} {s.label}
                             </button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '1rem' }}>
+            <div className="bis-gear-grid">
                 {activeSlots.map(type => {
                     const entry = bisSet[type];
                     const cfg   = SLOT_CONFIG[type];

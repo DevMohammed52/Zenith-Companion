@@ -179,45 +179,85 @@ function BossesContent() {
                 </div>
             </div>
 
-            <div className="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th className="sortable left-align" onClick={() => handleSort('name')}>BOSS {renderSortIcon('name')}</th>
-                            <th className="sortable left-align" onClick={() => handleSort('location')}>LOCATION {renderSortIcon('location')}</th>
-                            <th className="sortable" onClick={() => handleSort('level')}>LEVEL {renderSortIcon('level')}</th>
-                            <th>STATUS / NEXT SPAWN</th>
-                            <th className="sortable" onClick={() => handleSort('ev')}>EV / KILL {renderSortIcon('ev')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <section className="table-wrapper">
+                {/* Desktop View */}
+                <div className="desktop-only">
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th className="sortable left-align" onClick={() => handleSort('name')}>BOSS {renderSortIcon('name')}</th>
+                                    <th className="sortable left-align" onClick={() => handleSort('location')}>LOCATION {renderSortIcon('location')}</th>
+                                    <th className="sortable" onClick={() => handleSort('level')}>LEVEL {renderSortIcon('level')}</th>
+                                    <th>STATUS / NEXT SPAWN</th>
+                                    <th className="sortable" onClick={() => handleSort('ev')}>EV / KILL {renderSortIcon('ev')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, i) => (
+                                    <tr key={i} className="clickable-row" onClick={() => setSelectedBoss(row)}>
+                                        <td className="item-name left-align">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
+                                                <span>{row.name}</span>
+                                                {row.isEvent && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
+                                            </div>
+                                        </td>
+                                        <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
+                                        <td className="mono">{row.level}</td>
+                                        <td>
+                                            {row.nextSpawnTime ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.75rem' }}>
+                                                    <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{row.nextSpawnTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                    <span className="text-muted" style={{ fontSize: '0.65rem' }}>Dies ~{row.deathTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                </div>
+                                            ) : <span className="text-muted">Unknown</span>}
+                                        </td>
+                                        <td className="mono profit-positive font-bold">
+                                            ~{row.ev.toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Mobile View */}
+                <div className="mobile-only">
+                    <div className="mobile-card-grid">
                         {rows.map((row, i) => (
-                            <tr key={i} className="clickable-row" onClick={() => setSelectedBoss(row)}>
-                                <td className="item-name left-align">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
-                                        <span>{row.name}</span>
-                                        {row.isEvent && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
-                                    </div>
-                                </td>
-                                <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
-                                <td className="mono">{row.level}</td>
-                                <td>
-                                    {row.nextSpawnTime ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.75rem' }}>
-                                            <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>{row.nextSpawnTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                            <span className="text-muted" style={{ fontSize: '0.65rem' }}>Dies ~{row.deathTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <div key={i} className="mobile-alchemy-card" onClick={() => setSelectedBoss(row)}>
+                                <div className="m-card-header">
+                                    <div className="m-card-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
+                                            <span className="m-name">{row.name}</span>
+                                            {row.isEvent && <span style={{fontSize:'0.5rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 3px', borderRadius:'3px'}}>EVENT</span>}
                                         </div>
-                                    ) : <span className="text-muted">Unknown</span>}
-                                </td>
-                                <td className="mono profit-positive font-bold">
-                                    ~{row.ev.toLocaleString(undefined, {maximumFractionDigits:0})}g
-                                </td>
-                            </tr>
+                                        <span className="m-lvl">{row.location?.name || "Unknown"} • LVL {row.level}</span>
+                                    </div>
+                                    <div className="m-roi pos">~{row.ev.toLocaleString(undefined, {maximumFractionDigits:0})}g</div>
+                                </div>
+                                <div className="m-card-body">
+                                    <div className="m-stat">
+                                        <span className="m-label">NEXT SPAWN</span>
+                                        <span className="m-val pos font-bold">
+                                            {row.nextSpawnTime ? row.nextSpawnTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown'}
+                                        </span>
+                                    </div>
+                                    <div className="m-stat">
+                                        <span className="m-label">EXP. DEATH</span>
+                                        <span className="m-val text-muted">
+                                            {row.deathTime ? row.deathTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </div>
+            </section>
 
             {selectedBoss && (
                 <div className="modal-overlay" onClick={() => setSelectedBoss(null)}>
