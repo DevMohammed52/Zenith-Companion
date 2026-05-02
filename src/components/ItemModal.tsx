@@ -694,8 +694,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .up-name { font-size: 0.75rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .up-qty { font-size: 0.7rem; color: var(--text-accent); font-weight: 800; }
 
-        .list-container { display: flex; flex-direction: column; max-height: 400px; width: 100%; }
-        .scroll-y { overflow-y: auto; padding-right: 0.5rem; }
+        .list-container { display: flex; flex-direction: column; max-height: 400px; width: 100%; padding: 4px; }
+        .scroll-y { overflow-y: auto; padding-right: 0.75rem; }
         .scroll-y::-webkit-scrollbar { width: 4px; }
         .scroll-y::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
@@ -740,12 +740,26 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         }
         .add-queue-btn:active { transform: translateY(0); }
 
-        .ing-row { display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: all 0.2s ease; border-radius: 8px; margin: 0 -0.25rem; }
-        .ing-row:hover { background: rgba(255,255,255,0.05); border-color: var(--text-accent); }
+        .ing-row { 
+          display: flex; 
+          justify-content: space-between; 
+          padding: 0.75rem 1rem; 
+          border: 1px solid rgba(255,255,255,0.03);
+          background: rgba(255,255,255,0.01);
+          cursor: pointer; 
+          transition: all 0.2s ease; 
+          border-radius: 12px; 
+          margin-bottom: 0.5rem;
+        }
+        .ing-row:hover { 
+          background: rgba(255,255,255,0.04); 
+          border-color: var(--text-accent); 
+          transform: translateX(4px);
+        }
         .ing-row:hover .ing-name-link { color: var(--text-accent); }
-        .ing-name-link { font-size: 0.95rem; color: rgba(255,255,255,0.7); display: flex; align-items: baseline; transition: color 0.2s ease; }
-        .ing-price-sub { font-size: 0.7rem; color: rgba(255,255,255,0.2); margin-left: 8px; font-family: monospace; font-weight: 400; }
-        .ing-qty { font-weight: 700; color: var(--text-accent); font-family: monospace; }
+        .ing-name-link { font-size: 0.95rem; color: #fff; display: flex; align-items: baseline; transition: color 0.2s ease; font-weight: 600; }
+        .ing-price-sub { font-size: 0.7rem; color: rgba(255,255,255,0.25); margin-left: 8px; font-family: 'JetBrains Mono', monospace; font-weight: 400; }
+        .ing-qty { font-weight: 800; color: var(--text-accent); font-family: 'JetBrains Mono', monospace; }
 
         .profit-analysis { margin-top: 1rem; background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
         .analysis-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; color: rgba(255,255,255,0.4); font-weight: 600; }
