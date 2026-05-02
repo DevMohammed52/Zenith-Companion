@@ -6,6 +6,7 @@ import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from '@/lib/p
 type DataContextType = {
   marketData: any | null;
   staticData: any | null;
+  allItemsDb: any | null;
   scraperStatus: any | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -16,6 +17,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [marketData, setMarketData] = useState<any>(null);
   const [staticData, setStaticData] = useState<any>(null);
+  const [allItemsDb, setAllItemsDb] = useState<any>(null);
   const [scraperStatus, setScraperStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,15 +49,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const fetchData = async () => {
     try {
       const t = Date.now();
-      const [marketRes, staticRes, statusRes] = await Promise.all([
+      const [marketRes, staticRes, statusRes, itemsRes] = await Promise.all([
         fetch(`/market-data.json?t=${t}`),
         fetch(`/static-data.json?t=${t}`),
-        fetch(`/scraper-status.json?t=${t}`)
+        fetch(`/scraper-status.json?t=${t}`),
+        fetch(`/all-items-db.json?t=${t}`)
       ]);
 
       if (marketRes.ok) setMarketData(await marketRes.json());
       if (staticRes.ok) setStaticData(await staticRes.json());
       if (statusRes.ok) setScraperStatus(await statusRes.json());
+      
+      if (itemsRes.ok) {
+        const data = await itemsRes.json();
+        const byName: any = {};
+        Object.values(data).forEach((item: any) => {
+            if (item.name) byName[item.name] = item;
+        });
+        setAllItemsDb(byName);
+      }
     } catch (e) {
       console.error("Failed to sync Zenith data:", e);
     } finally {
@@ -74,7 +86,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ marketData, staticData, scraperStatus, loading, refresh: fetchData }}>
+    <DataContext.Provider value={{ marketData, staticData, allItemsDb, scraperStatus, loading, refresh: fetchData }}>
       {children}
     </DataContext.Provider>
   );

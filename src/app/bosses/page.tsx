@@ -7,10 +7,12 @@ import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES, EVENT_BOSSES } from "../../constants/events";
 
+import { getItemTrueValue } from "@/lib/ev-logic";
+import { useData } from "@/context/DataContext";
+
 function BossesContent() {
     const searchParams = useSearchParams();
-    const [staticData, setStaticData] = useState<any>(null);
-    const [marketData, setMarketData] = useState<any>(null);
+    const { marketData, staticData, allItemsDb } = useData();
     const { preferences } = usePreferences();
     const { openItemByName } = useItemModal();
     const [selectedBoss, setSelectedBoss] = useState<any>(null);
@@ -23,30 +25,17 @@ function BossesContent() {
         if (searchParam) setSearchTerm(searchParam);
     }, [searchParams]);
 
+    // Keyboard support for Esc
     useEffect(() => {
-        fetch('/static-data.json').then(r => r.json()).then(data => {
-            setStaticData(data);
-        });
-
-        const fetchMarket = async () => {
-            try {
-                const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) {
-                    const data = await res.json();
-                    setMarketData((prev: any) => {
-                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
-                        return data;
-                    });
-                }
-            } catch (e) {}
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSelectedBoss(null);
         };
-        fetchMarket();
-        const interval = setInterval(fetchMarket, 3000);
-        return () => clearInterval(interval);
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
     const rows = useMemo(() => {
-        if (!staticData || !marketData) return [];
+        if (!staticData || !marketData || !allItemsDb) return [];
         const calculated = [];
 
         const allBosses = preferences.showEventBosses ? [...staticData.world_bosses, ...EVENT_BOSSES] : staticData.world_bosses;
@@ -55,10 +44,9 @@ function BossesContent() {
             let evPerRun = 0;
             if (boss.loot) {
                 for (const drop of boss.loot) {
-                    const mData = marketData[drop.name];
-                    const price = mData ? mData.avg_3 : 0;
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb);
                     const dropChance = (drop.chance || 0) / 100;
-                    evPerRun += dropChance * (drop.quantity || 1) * price;
+                    evPerRun += dropChance * (drop.quantity || 1) * trueValue;
                 }
             }
 
@@ -68,7 +56,7 @@ function BossesContent() {
             let deathTime = null;
             if (scheduleInfo && boss.battle_starts_at) {
                 const start = new Date(boss.battle_starts_at).getTime();
-                const cycle = scheduleInfo.respawnHours * 3600000;
+                const cycle = (scheduleInfo.respawnHours || 18) * 3600000;
                 const now = Date.now();
                 let next = start;
                 
@@ -78,7 +66,7 @@ function BossesContent() {
                     next += (cyclesMissed + 1) * cycle;
                 }
                 nextSpawnTime = new Date(next);
-                deathTime = new Date(next + scheduleInfo.lengthSeconds * 1000);
+                deathTime = new Date(next + (scheduleInfo.lengthSeconds || 3600) * 1000);
             }
 
             calculated.push({
@@ -89,10 +77,11 @@ function BossesContent() {
                 nextSpawnTime,
                 deathTime,
                 lootDetails: boss.loot?.map((drop: any) => {
-                    const price = marketData[drop.name]?.avg_3 || 0;
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb);
+                    const marketPrice = marketData[drop.name]?.avg_3 || 0;
                     const dropChance = (drop.chance || 0) / 100;
-                    const expectedVal = dropChance * (drop.quantity || 1) * price;
-                    return { ...drop, price, expectedVal };
+                    const expectedVal = dropChance * (drop.quantity || 1) * trueValue;
+                    return { ...drop, trueValue, marketPrice, expectedVal };
                 }) || []
             });
         }
@@ -119,21 +108,19 @@ function BossesContent() {
             return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
-    }, [staticData, marketData, searchTerm, sortCol, sortDesc, preferences.showEventBosses]);
+    }, [staticData, marketData, allItemsDb, searchTerm, sortCol, sortDesc, preferences.showEventBosses]);
 
-    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
     useEffect(() => {
-        if (deepLinkHandled) return;
+        if (rows.length === 0) return;
         const searchParam = searchParams.get("search");
         const bossParam = searchParams.get("boss") || searchParam;
-        if (bossParam && rows.length > 0 && !selectedBoss) {
+        if (bossParam) {
             const found = rows.find(r => r.name.toLowerCase() === bossParam.toLowerCase());
-            if (found) {
+            if (found && selectedBoss?.name !== found.name) {
                 setSelectedBoss(found);
-                setDeepLinkHandled(true);
             }
         }
-    }, [rows, selectedBoss, deepLinkHandled, searchParams]);
+    }, [rows, searchParams, selectedBoss]);
 
     const generateTimetable = (boss: any) => {
         if (!boss.nextSpawnTime || !boss.scheduleInfo) return [];
@@ -303,7 +290,7 @@ function BossesContent() {
                                                  ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
                                              </div>
                                              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                                 View Market ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
+                                                 {drop.trueValue > drop.marketPrice ? 'Crafting Value' : 'Market Value'} ({(drop.trueValue || 0).toLocaleString()}g) <ExternalLink size={10} />
                                              </div>
                                          </div>
                                      </div>
@@ -323,7 +310,7 @@ function BossesContent() {
                 .spawn-box { min-width: 110px; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.01); text-align: center; flex-shrink: 0; }
                 .spawn-box.active { background: rgba(56,189,248,0.05); border-color: rgba(56,189,248,0.2); }
                 .spawn-day { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.25rem; letter-spacing: 0.05em; }
-                .spawn-time { font-size: 1.1rem; font-weight: 700; color: #fff; font-family: 'Outfit', sans-serif; }
+                .spawn-time { font-size: 1.1rem; font-weight: 700; color: #fff; font-family: var(--font-sans); }
                 .spawn-box.active .spawn-time { color: var(--text-accent); }
                 .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
             `}</style>

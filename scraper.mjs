@@ -71,11 +71,34 @@ const ALCHEMY_ITEMS = {
     "Frenzy Potion": {"materials": {"Wolf Pelt": 14, "Goblin Totem": 60}},
 
     // Level 80-85
-    "Dragonblood Tonic": {"materials": {"Lions Teeth": 25, "Minotaurs Horn": 25}},
-    "Gourmet Essence": {"materials": {"Elk Antler": 15, "Enigmatic Stone": 12}},
+    "Dragonblood Tonic": {"materials": {"Minotaur Hide": 20, "Dragon Bone": 2}},
+    "Gourmet Essence": {"materials": {"Snakes Head": 50, "Cursed Blade Fragment": 25}},
     "Wraithbane Essence": {"materials": {"Moose Antler": 15, "Minotaur Hide": 20}},
     "Thunderfury Brew": {"materials": {"Black Bear Pelt": 25, "Orb of Elemental Conjuring": 20}},
-    "Cosmic Tear": {"materials": {"Harpy's Wings": 40, "Air Elemental Essence": 12}}
+    "Cosmic Tear": {"materials": {"Harpy's Wings": 40, "Air Elemental Essence": 12}},
+    "Titans Essence": {"materials": {"Fire Elemental Essence": 13, "Goblin Crown": 13}},
+    "Cosmic Barrier": {"materials": {"Vial of Spectre Ectoplasm": 15, "Lions Teeth": 30}},
+    "Divine Essence Crystal": {"materials": {"Void Essence": 13, "Pirates Code": 50}},
+    "Potion of the Hunter": {"materials": {"Arcane Starstone": 7, "Goblin Scraps": 50}},
+    "Essence of a Kraken": {"materials": {"Undying Crest": 12, "Goblin Scraps": 50}},
+    "Guardian's Soul": {"materials": {"Petrifying Gaze Crystal": 5, "Broken Dwarven Plate": 25}},
+    "Cosmic Finesse Essence": {"materials": {"Abyssal Scroll": 5, "Lions Teeth": 55}},
+    "Cosmic Crystal": {"materials": {"Abyssal Scroll": 8, "Venom Extract": 20}},
+    "Fallen Star Essence": {"materials": {"Basilisk Venom Vial": 3, "Raccoon Fur": 20}},
+    "Flash Velocity Essence": {"materials": {"Oceanic Essence": 20, "Snakes Head": 20}},
+    "Magma Vein Infusion": {"materials": {"Earth Elemental Essence": 6, "Goblin Crown": 15}},
+    "Mjolnir's Essence Crystal": {"materials": {"Void Essence": 12, "Goblin Crown": 15}},
+    "Neptune's Soul": {"materials": {"Water Elemental Essence": 45, "Snakes Head": 65}},
+    "Omnipotent Might Essence": {"materials": {"Essence of Shadows": 10, "Swamp Juice": 50}},
+    "Phoenix Ashes": {"materials": {"Chest of Scraps": 40, "Grimoire of Shadows": 2}},
+    "Potion of the Gods": {"materials": {"Goblin Crown": 5, "Moonblood Tincture": 1}},
+    "Primordial Timber Crystal": {"materials": {"Void Essence": 8, "Boar Tusk": 30}},
+    "Titanwood Crystal": {"materials": {"Stoneheart Core": 6, "Elk Antler": 15, "Moonblood Tincture": 1}},
+    "Dragon's Essence": {"materials": {"Ivory": 45, "Vial of Wraith Ectoplasm": 30}},
+    "Eternal Feast Essence Crystal": {"materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
+    "Cosmic Finesse Tonic": {"materials": {"Abyssal Scroll": 5, "Lions Teeth": 55}},
+    "Eternal Feast Tonic": {"materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
+    "Sun's Light": {"materials": {"Ruined Robes": 25, "Enigmatic Stone": 80}}
 };
 
 const IS_PRIORITY_ONLY = process.argv.includes('--priority');
@@ -358,7 +381,11 @@ async function start() {
             if (data) {
                 marketData[item] = data;
                 marketData["_meta"] = { currently_fetching: item, last_updated: new Date().toISOString() };
-                await safeWriteJson(DATA_FILE, marketData);
+                
+                // Batch save every 10 items or at the end
+                if (i % 10 === 0 || i === itemsArray.length - 1) {
+                    await safeWriteJson(DATA_FILE, marketData);
+                }
             }
             await sleep(API_DELAY_MS);
         }

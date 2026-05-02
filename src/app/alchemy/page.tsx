@@ -178,14 +178,24 @@ export default function AlchemyPage() {
 
   // Effect to handle deep-linking once rows are calculated
   useEffect(() => {
-    const recipeParam = new URLSearchParams(window.location.search).get("recipe");
-    if (recipeParam && rows.length > 0 && !selectedRow) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const recipeParam = searchParams.get("recipe");
+    if (recipeParam && rows.length > 0) {
         const found = rows.find(r => r.name.toLowerCase() === recipeParam.toLowerCase());
-        if (found && !found.loading) {
+        if (found && !found.loading && selectedRow?.name !== found.name) {
             setSelectedRow(found as RowData);
         }
     }
   }, [rows, selectedRow]);
+
+  // Keyboard support for Esc
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedRow(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   const handleSort = (col: keyof RowData) => {
     if (sortCol === col) setSortDesc(!sortDesc);

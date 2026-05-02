@@ -10,6 +10,10 @@ import { useRouter } from 'next/navigation';
 import { useCrafting } from '@/context/CraftingContext';
 import { usePreferences } from '@/lib/preferences';
 
+import { getRecipeUses } from '@/lib/game-logic';
+import { getItemTrueValue } from '@/lib/ev-logic';
+import { useData } from '@/context/DataContext';
+
 interface ItemModalProps {
   id: string;
   onClose: () => void;
@@ -20,9 +24,24 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const { preferences } = usePreferences();
   const { openItemByName, getCachedItem, setCachedItem } = useItemModal();
   const { addToQueue } = useCrafting();
+  const { marketData, allItemsDb } = useData();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usageMap, setUsageMap] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/usage-map.json').then(r => r.json()).then(setUsageMap).catch(() => {});
+  }, []);
+
+  // Keyboard support for Esc
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   useEffect(() => {
     async function fetchItem() {
@@ -55,6 +74,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     fetchItem();
   }, [id, getCachedItem, setCachedItem]);
 
+  const intrinsicValue = useMemo(() => {
+    if (!item || !marketData || !allItemsDb) return 0;
+    return getItemTrueValue(item.name, marketData, allItemsDb);
+  }, [item, marketData, allItemsDb]);
+
   const formatStatName = (name: string) => {
     return name
       .replace(/_/g, ' ')
@@ -84,10 +108,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     let total = 0;
     const items = recipe.ingredients || recipe.materials || [];
     for (const ing of items) {
-      total += (ing.price || 0) * (ing.amount || ing.quantity || 1);
+      const price = marketData?.[ing.name || ing.item_name]?.avg_3 || 0;
+      total += price * (ing.amount || ing.quantity || 1);
     }
     return total > 0 ? total : null;
-  }, [item]);
+  }, [item, marketData]);
 
   if (error) {
     return (
@@ -130,7 +155,39 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const showMarket = item && item.is_tradeable;
   const showAcquisition = item && item.dropped_by && item.dropped_by.length > 0;
-  const showUtility = item && item.required_for && item.required_for.length > 0;
+  const groupedUtility = useMemo(() => {
+    const direct = Array.isArray(item?.required_for) ? item.required_for : [];
+    const mapEntry = (usageMap && item?.name) ? usageMap[item.name] : null;
+    
+    // Safety check: usageMap[name] should be an object with a required_for array
+    const fromMap = (mapEntry && typeof mapEntry === 'object' && Array.isArray(mapEntry.required_for)) 
+      ? mapEntry.required_for 
+      : [];
+    
+    // Combine and normalize
+    const combined = [...direct];
+    fromMap.forEach((use: any) => {
+      // Handle both string array and object array formats
+      const name = typeof use === 'string' ? use : use.name;
+      if (!combined.find(c => c.name === name)) {
+        combined.push({ 
+          name, 
+          type: typeof use === 'object' ? use.type : 'CRAFTING', 
+          amount: typeof use === 'object' ? use.amount : '?' 
+        });
+      }
+    });
+
+    if (combined.length === 0) return {};
+    return combined.reduce((acc: any, curr: any) => {
+      const type = curr.type || 'OTHER';
+      if (!acc[type]) acc[type] = [];
+      acc[type].push(curr);
+      return acc;
+    }, {});
+  }, [item, usageMap]);
+
+  const showUtility = Object.keys(groupedUtility).length > 0;
   const showRecipe = item && (item.recipe || item.produced_from);
   const showYield = item && item.recipe_yield;
   const showLootTable = (item && item.loot_table && item.loot_table.length > 0) || (item && item.chest_drops && item.chest_drops.length > 0);
@@ -145,16 +202,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const recipeMats = recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [];
   const recipeSkill = recipeData?.skill || 'CRAFTING';
   const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
-
-  const groupedUtility = useMemo(() => {
-    if (!item?.required_for) return {};
-    return item.required_for.reduce((acc: any, curr: any) => {
-      const type = curr.type || 'OTHER';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(curr);
-      return acc;
-    }, {});
-  }, [item]);
 
   return (
     <div className="modal-container">
@@ -215,12 +262,24 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
                   {(item.avg_3 || item.price) ? (
                     <>
-                      <div className="price-row">
-                        <div className="price-main">
-                          {(item.avg_3 || item.price || 0).toLocaleString()}g
+                      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                        <div className="price-row">
+                          <div className="price-main">
+                            {(item.avg_3 || item.price || 0).toLocaleString()}g
+                          </div>
+                          <div className="price-sub">Current Market Price</div>
                         </div>
-                        <div className="price-sub">Current Market Valuation</div>
+
+                        {intrinsicValue > 0 && Math.abs(intrinsicValue - (item.avg_3 || item.price || 0)) > 1 && (
+                          <div className="price-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2rem' }}>
+                            <div className="price-main" style={{ color: 'var(--text-accent)' }}>
+                              {Math.floor(intrinsicValue).toLocaleString()}g
+                            </div>
+                            <div className="price-sub" style={{ color: 'var(--text-accent)' }}>Intrinsic Valuation</div>
+                          </div>
+                        )}
                       </div>
+
                       <div className="market-stats">
                         <div className="m-stat">
                           <span>3D Average</span>
@@ -420,16 +479,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               {showRecipe && (() => {
                 const totalMatCost = recipeMats.reduce((acc: number, m: any) => acc + ((m.price || 0) * (m.amount || m.quantity || 1)), 0);
                 
-                // Uses logic: Forge is 1-time use, Alchemy is infinite except Mythic (30)
-                let uses = 1;
-                const rSkill = (recipeSkill || '').toUpperCase();
-                const rQuality = item.produced_from?.recipe_quality || item.quality;
-                
-                if (rSkill === 'ALCHEMY') {
-                  uses = (rQuality === 'MYTHIC') ? 30 : Infinity;
-                } else {
-                  uses = 1; // Forge, Cooking, Smelting etc
-                }
+                // Uses logic from shared core
+                const rawUses = getRecipeUses(item);
+                const uses = rawUses === 'Infinite' ? Infinity : Number(rawUses);
 
                 const recipePrice = item.type === 'RECIPE' ? (item.avg_3 || item.price || 0) : (item.produced_from?.recipe_price || 0);
                 const resultPrice = item.type === 'RECIPE' ? (item.recipe_yield?.market_price || 0) : (item.avg_3 || item.price || 0);

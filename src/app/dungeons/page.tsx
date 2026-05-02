@@ -6,11 +6,12 @@ import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 
+import { getItemTrueValue } from "@/lib/ev-logic";
+import { useData } from "@/context/DataContext";
+
 function DungeonsContent() {
     const searchParams = useSearchParams();
-    const [staticData, setStaticData] = useState<any>(null);
-    const [marketData, setMarketData] = useState<any>(null);
-    const [usageMap, setUsageMap] = useState<any>(null);
+    const { marketData, staticData, allItemsDb } = useData();
     const { preferences } = usePreferences();
     const { openItemByName } = useItemModal();
     const [selectedDungeon, setSelectedDungeon] = useState<any>(null);
@@ -23,76 +24,37 @@ function DungeonsContent() {
         if (searchParam) setSearchTerm(searchParam);
     }, [searchParams]);
 
+    // Keyboard support for Esc
     useEffect(() => {
-        fetch('/static-data.json').then(r => r.json()).then(data => setStaticData(data));
-        fetch('/usage-map.json').then(r => r.json()).then(data => setUsageMap(data));
-
-        const fetchMarket = async () => {
-            try {
-                const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) {
-                    const data = await res.json();
-                    setMarketData((prev: any) => {
-                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
-                        return data;
-                    });
-                }
-            } catch (e) {}
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSelectedDungeon(null);
         };
-        fetchMarket();
-        const interval = setInterval(fetchMarket, 30000); 
-        return () => clearInterval(interval);
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
     const rows = useMemo(() => {
-        if (!staticData || !marketData || !usageMap) return [];
+        if (!staticData || !marketData || !allItemsDb) return [];
         const calculated = [];
-
-        // Helper to find the "True Value" of an item (handles recipes/chests)
-        const getItemTrueValue = (name: string, depth = 0): number => {
-            if (depth > 2) return 0; // Prevent infinite loops
-            
-            const rel = usageMap[name];
-            const market = marketData[name];
-
-            // 1. If it's a Recipe, value it by (Result Price * Uses)
-            if (rel?.recipe_yield) {
-                const resultPrice = marketData[rel.recipe_yield.item_name]?.avg_3 || 0;
-                const uses = rel.recipe_yield.uses === 'Infinite' ? 1 : (rel.recipe_yield.uses || 1);
-                return resultPrice * uses;
-            }
-
-            // 2. If it's a Chest, value it by its loot table EV
-            if (rel?.loot_table) {
-                let chestEv = 0;
-                for (const drop of rel.loot_table) {
-                    const val = getItemTrueValue(drop.name, depth + 1);
-                    chestEv += (drop.chance / 100) * (drop.quantity || 1) * val;
-                }
-                return chestEv;
-            }
-
-            // 3. Normal Item
-            return market?.avg_3 || 0;
-        };
 
         for (const dungeon of staticData.dungeons) {
             if (dungeon.is_event && !preferences.showEventDungeons) continue;
 
             let totalEv = 0;
+            let combinedDropChance = 0;
             if (dungeon.loot) {
                 for (const drop of dungeon.loot) {
-                    const trueValue = getItemTrueValue(drop.name);
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb);
                     const dropChance = (drop.chance || 0) / 100;
                     totalEv += dropChance * (drop.quantity || 1) * trueValue;
+                    combinedDropChance += dropChance;
                 }
             }
             
             const durationMins = Math.floor((dungeon.length || 0) / 60000);
             const entryCost = dungeon.cost || 0;
             const netProfitPerRun = totalEv - entryCost;
-            const runsPerHour = durationMins > 0 ? (60 / durationMins) : 0;
-            const profitPerHour = netProfitPerRun * runsPerHour;
+            const runsToDrop = combinedDropChance > 0 ? (1 / combinedDropChance) : Infinity;
 
             calculated.push({
                 ...dungeon,
@@ -100,10 +62,10 @@ function DungeonsContent() {
                 durationMins,
                 entryCost,
                 netProfitPerRun,
-                profitPerHour,
+                runsToDrop,
                 dropsCount: dungeon.loot?.length || 0,
                 lootDetails: dungeon.loot?.map((drop: any) => {
-                    const trueValue = getItemTrueValue(drop.name);
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb);
                     const marketPrice = marketData[drop.name]?.avg_3 || 0;
                     const dropChance = (drop.chance || 0) / 100;
                     const expectedVal = dropChance * (drop.quantity || 1) * trueValue;
@@ -117,7 +79,7 @@ function DungeonsContent() {
             : calculated;
 
         filtered.sort((a, b) => {
-            if (!sortCol) return b.profitPerHour - a.profitPerHour;
+            if (!sortCol) return b.netProfitPerRun - a.netProfitPerRun;
             let valA: any = a[sortCol];
             let valB: any = b[sortCol];
             if (sortCol === "location") {
@@ -133,21 +95,20 @@ function DungeonsContent() {
             valB = valB || 0;
             return sortDesc ? valB - valA : valA - valB;
         });
-        return filtered;
-    }, [staticData, marketData, usageMap, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
 
-    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+        return filtered;
+    }, [staticData, marketData, allItemsDb, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
+
     useEffect(() => {
-        if (deepLinkHandled) return;
+        if (rows.length === 0) return;
         const dungeonParam = searchParams.get("dungeon") || searchParams.get("search");
-        if (dungeonParam && rows.length > 0 && !selectedDungeon) {
+        if (dungeonParam) {
             const found = rows.find(r => r.name.toLowerCase() === dungeonParam.toLowerCase());
-            if (found) {
+            if (found && selectedDungeon?.name !== found.name) {
                 setSelectedDungeon(found);
-                setDeepLinkHandled(true);
             }
         }
-    }, [rows, selectedDungeon, deepLinkHandled, searchParams]);
+    }, [rows, searchParams, selectedDungeon]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
@@ -196,7 +157,7 @@ function DungeonsContent() {
                             <th className="sortable left-align" onClick={() => handleSort('location')}>LOCATION {renderSortIcon('location')}</th>
                             <th className="sortable" onClick={() => handleSort('durationMins')}>DURATION {renderSortIcon('durationMins')}</th>
                             <th className="sortable" onClick={() => handleSort('netProfitPerRun')}>PROFIT / RUN {renderSortIcon('netProfitPerRun')}</th>
-                            <th className="sortable" onClick={() => handleSort('profitPerHour')}>PROFIT / HR {renderSortIcon('profitPerHour')}</th>
+                            <th className="sortable" onClick={() => handleSort('runsToDrop')}>RUNS / DROP {renderSortIcon('runsToDrop')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -214,8 +175,8 @@ function DungeonsContent() {
                                 <td className={`mono ${row.netProfitPerRun >= 0 ? 'profit-positive' : 'profit-negative'}`}>
                                     {row.netProfitPerRun >= 0 ? '+' : ''}{(row.netProfitPerRun || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
                                 </td>
-                                <td className={`mono font-bold ${row.profitPerHour >= 0 ? 'profit-positive' : 'profit-negative'}`}>
-                                    {row.profitPerHour >= 0 ? '+' : ''}{(row.profitPerHour || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g
+                                <td className="mono text-muted">
+                                    {row.runsToDrop === Infinity ? '—' : row.runsToDrop.toFixed(1)}
                                 </td>
                             </tr>
                         ))}
@@ -252,8 +213,8 @@ function DungeonsContent() {
                                     <div className="stat-value" style={{ color: '#f87171' }}>-{selectedDungeon.entryCost.toLocaleString()}</div>
                                 </div>
                                 <div className="stat-card">
-                                    <div className="stat-label">DURATION</div>
-                                    <div className="stat-value">{selectedDungeon.durationMins} Mins</div>
+                                    <div className="stat-label">RUNS / DROP</div>
+                                    <div className="stat-value">{selectedDungeon.runsToDrop === Infinity ? '—' : selectedDungeon.runsToDrop.toFixed(1)}</div>
                                 </div>
                                 <div className="stat-card highlight">
                                     <div className="stat-label">NET PROFIT / RUN</div>
@@ -263,7 +224,7 @@ function DungeonsContent() {
                                 </div>
                             </div>
                             
-                            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table</h3>
+                            <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table (Weighted EV)</h3>
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {selectedDungeon.lootDetails?.sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).map((drop: any, i: number) => (
@@ -289,7 +250,7 @@ function DungeonsContent() {
                                                     ~{(drop.expectedVal || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/run</span>
                                                 </div>
                                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                                    View Market ({(drop.marketPrice || 0).toLocaleString()}g avg) <ExternalLink size={10} />
+                                                    {drop.trueValue > drop.marketPrice ? 'Crafting Value' : 'Market Value'} ({(drop.trueValue || 0).toLocaleString()}g) <ExternalLink size={10} />
                                                 </div>
                                             </div>
                                     </div>

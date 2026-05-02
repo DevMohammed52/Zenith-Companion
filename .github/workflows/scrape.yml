@@ -22,6 +22,7 @@ jobs:
       - name: Run Scraper
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
+          SCRAPE_ONCE: "true"
         run: node scraper.mjs --priority
         
       - name: Commit and Push changes

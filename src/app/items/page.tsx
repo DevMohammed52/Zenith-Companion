@@ -22,7 +22,6 @@ function ItemsArchiveContent() {
   const [selectedQuality, setSelectedQuality] = useState('ALL');
   const { openItem } = useItemModal();
 
-  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
   useEffect(() => {
     fetch('/search-index.json')
@@ -30,26 +29,21 @@ function ItemsArchiveContent() {
       .then(data => {
         setIndex(data);
         
-        // Handle deep-linking ONLY ONCE
-        if (!deepLinkHandled) {
-          const nameParam = searchParams.get('name');
-          const idParam = searchParams.get('id');
-          
-          if (idParam) {
-            openItem(idParam);
-            setDeepLinkHandled(true);
-          } else if (nameParam) {
-            setSearchTerm(nameParam);
-            const found = data.find((i: any) => i.name.toLowerCase() === nameParam.toLowerCase());
-            if (found) {
-              openItem(found.id);
-              setDeepLinkHandled(true);
-            }
+        const nameParam = searchParams.get('name');
+        const idParam = searchParams.get('id');
+        
+        if (idParam) {
+          openItem(idParam);
+        } else if (nameParam) {
+          setSearchTerm(nameParam);
+          const found = data.find((i: any) => i.name.toLowerCase() === nameParam.toLowerCase());
+          if (found) {
+            openItem(found.id);
           }
         }
       })
       .catch(console.error);
-  }, [searchParams, openItem, deepLinkHandled]);
+  }, [searchParams, openItem]);
 
   const types = useMemo(() => {
     const t = new Set(index.map(i => i.type));

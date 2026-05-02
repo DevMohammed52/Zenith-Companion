@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { normalizeProductName, getRecipeUses } from '../src/lib/logic-core.mjs';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
@@ -54,24 +55,9 @@ async function rebuild() {
 
   // 2. Map ALL Recipes and Chests
   Object.values(allItemsDb).forEach(item => {
-    // --- RECIPE LOGIC ---
-    // We check item.recipe (for actual crafting data) 
-    // OR item.type === 'RECIPE' (for blueprint items)
     if (item.recipe || item.type === 'RECIPE') {
-      const isAlchemy = item.recipe?.skill === 'ALCHEMY' || item.name?.toLowerCase().includes('essence') || item.name?.toLowerCase().includes('elixir');
-      const isMythic = item.quality === 'MYTHIC';
-      const isForge = item.recipe?.skill === 'FORGING';
-      
-      let uses = 'Infinite';
-      if (isForge) uses = 1;
-      if (isAlchemy && isMythic) uses = 30;
-
-      // Determine the Product Name (Tradeable version preferred)
-      let resultName = item.recipe?.result?.item_name || item.name
-        .replace(/^Recipe:\s*/i, '')
-        .replace(/\s*Recipe$/i, '')
-        .replace(/\s*\(Untradable\)$/i, '')
-        .trim();
+      const uses = getRecipeUses(item);
+      const resultName = normalizeProductName(item.recipe?.result?.item_name || item.name);
 
       // If we are on the Blueprint, store its yield
       const blueprintEntry = getEntry(item.name);
@@ -121,9 +107,21 @@ async function rebuild() {
     }
   });
 
+  // 3. Build Search Index
+  const searchIndex = Object.values(allItemsDb).map(item => ({
+    id: item.hashed_id,
+    name: item.name,
+    type: item.type,
+    quality: item.quality,
+    image: item.image_url
+  }));
+
   fs.writeFileSync(path.join(PUBLIC_DIR, 'usage-map.json'), JSON.stringify(usageMap, null, 2));
+  fs.writeFileSync(path.join(PUBLIC_DIR, 'search-index.json'), JSON.stringify(searchIndex));
+  
   console.log('--- Zenith Relational Linker Finished ---');
   console.log(`Mapped ${Object.keys(usageMap).length} items.`);
+  console.log(`Indexed ${searchIndex.length} items for search.`);
 }
 
 rebuild();

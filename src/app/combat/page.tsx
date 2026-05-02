@@ -38,8 +38,17 @@ function CombatContent() {
             } catch (e) {}
         };
         fetchMarket();
-        const interval = setInterval(fetchMarket, 3000);
+        const interval = setInterval(fetchMarket, 30000);
         return () => clearInterval(interval);
+    }, []);
+
+    // Keyboard support for Esc
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSelectedEnemy(null);
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -48,7 +57,6 @@ function CombatContent() {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
     const rows = useMemo(() => {
         if (!staticData || !marketData) return [];
@@ -117,16 +125,15 @@ function CombatContent() {
     }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, debouncedSearch]);
 
     useEffect(() => {
-        if (deepLinkHandled || rows.length === 0) return;
+        if (rows.length === 0) return;
         const search = searchParams.get("search");
         if (search) {
             const found = rows.find(r => r.name.toLowerCase() === search.toLowerCase());
-            if (found) {
+            if (found && selectedEnemy?.name !== found.name) {
                 setSelectedEnemy(found);
-                setDeepLinkHandled(true);
             }
         }
-    }, [rows, searchParams, deepLinkHandled]);
+    }, [rows, searchParams, selectedEnemy]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);

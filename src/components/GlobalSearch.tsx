@@ -31,9 +31,18 @@ import { useData } from "@/context/DataContext";
 export default function GlobalSearch() {
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
-  const { marketData, staticData } = useData();
+  const { marketData, staticData, allItemsDb } = useData();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [recent, setRecent] = useState<SearchResult[]>([]);
+
+  // Load recent from storage
+  useEffect(() => {
+    const stored = localStorage.getItem('zenith-recent-items');
+    if (stored) {
+      try { setRecent(JSON.parse(stored)); } catch (e) {}
+    }
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -81,7 +90,18 @@ export default function GlobalSearch() {
       next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
     });
 
-    if (marketData) {
+    // Use allItemsDb instead of just marketData to find everything
+    if (allItemsDb) {
+      Object.keys(allItemsDb).forEach(name => {
+          const item = allItemsDb[name];
+          next.push({ 
+            label: name, 
+            type: "Item", 
+            href: `/items?name=${encodeURIComponent(name)}`, 
+            detail: item.type ? item.type.replace(/_/g, ' ') : "Game Item" 
+          });
+      });
+    } else if (marketData) {
       Object.keys(marketData)
         .filter(name => !name.startsWith("_"))
         .forEach(name => next.push({ label: name, type: "Item", href: `/items?name=${encodeURIComponent(name)}`, detail: "Market price" }));
@@ -98,7 +118,7 @@ export default function GlobalSearch() {
     });
 
     return next;
-  }, [marketData, staticData]);
+  }, [marketData, staticData, allItemsDb]);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -109,7 +129,7 @@ export default function GlobalSearch() {
 
   const filteredResults = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
-    if (!q) return results.slice(0, 7);
+    if (!q) return recent.length > 0 ? recent : results.slice(0, 9);
     
     return results
       .filter(result => 
@@ -117,17 +137,37 @@ export default function GlobalSearch() {
         result.type.toLowerCase().includes(q) || 
         (result.detail && result.detail.toLowerCase().includes(q))
       )
-      .slice(0, 12);
-  }, [results, debouncedQuery]);
+      .slice(0, 15);
+  }, [results, debouncedQuery, recent]);
 
   const openResult = (result: SearchResult) => {
     setOpen(false);
     setQuery("");
+    
+    // Save to recent
+    const updatedRecent = [result, ...recent.filter(r => r.label !== result.label)].slice(0, 5);
+    setRecent(updatedRecent);
+    localStorage.setItem('zenith-recent-items', JSON.stringify(updatedRecent));
+
     if (result.type === "Item" || result.type === "Recipe") {
       openItemByName(result.label);
     } else {
       router.push(result.href);
     }
+  };
+
+  const highlightText = (text: string, q: string) => {
+    if (!q) return text;
+    const parts = text.split(new RegExp(`(${q})`, 'gi'));
+    return (
+      <span>
+        {parts.map((part, i) => 
+          part.toLowerCase() === q.toLowerCase() 
+            ? <span key={i} style={{ color: 'var(--text-accent)', textDecoration: 'underline' }}>{part}</span> 
+            : part
+        )}
+      </span>
+    );
   };
 
   return (
@@ -154,6 +194,7 @@ export default function GlobalSearch() {
               </button>
             </div>
             <div className="command-results">
+              {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
               {filteredResults.map(result => (
                 <button 
                   key={`${result.type}-${result.label}`} 
@@ -162,7 +203,7 @@ export default function GlobalSearch() {
                   onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
                 >
                   <span>
-                    <strong>{result.label}</strong>
+                    <strong>{highlightText(result.label, query)}</strong>
                     <small>{result.detail || result.href}</small>
                   </span>
                   <em>{result.type}</em>
