@@ -80,7 +80,7 @@ function ItemsArchiveContent() {
   }, [index, debouncedSearch, selectedType, selectedQuality, marketData]);
 
   const qualityColors: any = {
-    STANDARD: 'var(--text-secondary)',
+    STANDARD: '#fff',
     REFINED: '#4ade80',
     PREMIUM: '#60a5fa',
     EPIC: '#a855f7',

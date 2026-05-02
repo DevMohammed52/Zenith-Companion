@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import { ChevronUp, ChevronDown, Minus, Info, X, Activity, Target, Search } from "lucide-react";
 import Link from "next/link";
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type SearchIndexItem = {
   id: string;
@@ -42,7 +44,7 @@ type RowData = {
 
 import { useData } from "@/context/DataContext";
 
-export default function AlchemyPage() {
+function AlchemyContent() {
   const { marketData: data } = useData();
   const { preferences, setPreferences } = usePreferences();
   const { openItemByName, prefetchItem } = useItemModal();
@@ -110,9 +112,12 @@ export default function AlchemyPage() {
 
       for (const [mName, qty] of Object.entries(recipe.materials)) {
         const mPrice = data?.[mName]?.avg_3 || 0;
-        if (mPrice <= 0) { matsValid = false; break; }
-        matCost += mPrice * qty;
-        matsSellVal += (mPrice * 0.88) * qty;
+        const vPrice = VIAL_COSTS[mName] || 0;
+        const finalPrice = mPrice || vPrice;
+
+        if (finalPrice <= 0) { matsValid = false; break; }
+        matCost += finalPrice * qty;
+        matsSellVal += (finalPrice * 0.88) * qty;
       }
 
       // Add recipe cost for Mythics (amortized over 30 uses)
@@ -178,10 +183,10 @@ export default function AlchemyPage() {
   }, [data, preferences.barteringBoost, preferences.activeHours, sortCol, sortDesc, minRoi, minVolume, searchTerm, minLevel, maxLevel]);
 
   const autoOpenedRef = useRef<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const recipeParam = params.get("recipe");
+    const recipeParam = searchParams.get("recipe");
     if (recipeParam && rows.length > 0) {
         if (recipeParam === autoOpenedRef.current) return;
 
@@ -193,7 +198,7 @@ export default function AlchemyPage() {
     } else {
         autoOpenedRef.current = null;
     }
-  }, [rows]);
+  }, [rows, searchParams]);
 
   // Keyboard support for Esc
   useEffect(() => {
@@ -216,7 +221,7 @@ export default function AlchemyPage() {
   };
 
   return (
-    <main className="container">
+    <>
       <div className="header">
         <h1 className="header-title">
           <Activity size={24} color="var(--text-accent)" /> ALCHEMY PROFIT FINDER
@@ -284,7 +289,18 @@ export default function AlchemyPage() {
                   </span>
                 </td>
                 <td className="mono text-muted">{row.level}</td>
-                {row.loading ? <td colSpan={8}><div className="skeleton-text"></div></td> : (
+                {row.loading ? (
+                  <>
+                    <td><div className="skeleton-bar" style={{ width: '40px' }}></div></td>
+                    <td><div className="skeleton-bar"></div></td>
+                    <td><div className="skeleton-bar"></div></td>
+                    <td><div className="skeleton-bar"></div></td>
+                    <td><div className="skeleton-bar"></div></td>
+                    <td><div className="skeleton-bar"></div></td>
+                    <td><div className="skeleton-bar" style={{ width: '30px' }}></div></td>
+                    <td><div className="skeleton-bar" style={{ width: '60px' }}></div></td>
+                  </>
+                ) : (
                   <>
                     <td>
                       {(row as any).noMarketData ? <span className="text-muted/30">—</span> : (
@@ -429,6 +445,16 @@ export default function AlchemyPage() {
           </div>
         </div>
       )}
-    </main>
+    </>
   );
+}
+
+export default function AlchemyPage() {
+    return (
+        <main className="container">
+            <Suspense fallback={<div className="loading-state">Loading Alchemy Data...</div>}>
+                <AlchemyContent />
+            </Suspense>
+        </main>
+    );
 }

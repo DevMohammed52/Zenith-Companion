@@ -150,7 +150,15 @@ export default function GlobalSearch() {
     localStorage.setItem('zenith-recent-items', JSON.stringify(updatedRecent));
 
     if (result.type === "Item" || result.type === "Recipe") {
-      openItemByName(result.label);
+      // Check if item exists in our item database for modal opening
+      const inDb = allItemsDb && allItemsDb[result.label];
+      
+      if (inDb) {
+        openItemByName(result.label);
+      } else {
+        // If not in DB (e.g. some alchemy results), fallback to page navigation
+        router.push(result.href);
+      }
     } else {
       router.push(result.href);
     }

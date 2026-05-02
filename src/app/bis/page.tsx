@@ -28,7 +28,7 @@ const STAT_LABELS: Record<string, string> = {
 };
 
 const QUALITY_COLOR: Record<string, string> = {
-    LEGENDARY: "#f5b041",
+    LEGENDARY: "var(--text-accent)",
     MYTHIC:    "#a78bfa",
     EPIC:      "#818cf8",
     RARE:      "#38bdf8",

@@ -269,6 +269,15 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 </div>
               )}
 
+              {item?.description && (
+                <div className="bento-card description-card full-width" style={{ background: 'rgba(255,255,255,0.01)', borderStyle: 'dashed' }}>
+                  <div className="card-label"><Info size={14} /> Item Description</div>
+                  <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    "{item.description}"
+                  </div>
+                </div>
+              )}
+
               {showMarket && (
                 <div className="bento-card market-card">
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
@@ -481,11 +490,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   </div>
                 </div>
               )}
-
-              <div className="bento-card description-card full-width">
-                <div className="card-label"><Info size={14} /> Item Description</div>
-                <div className="description-text">"{item?.description || 'No database entry available for this artifact.'}"</div>
-              </div>
 
 
               {/* Recipe Card (Unified) */}

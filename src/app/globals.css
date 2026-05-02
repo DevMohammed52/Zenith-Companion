@@ -8,7 +8,7 @@
   --text-success: #4ade80;
   --text-danger: #f87171;
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-focus: rgba(245, 176, 65, 0.3);
+  --border-focus: color-mix(in srgb, var(--text-accent), transparent 70%);
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --sidebar-width: 260px;
@@ -43,7 +43,7 @@
 
 body {
   background-color: var(--bg-base);
-  background-image: radial-gradient(circle at 50% 0%, rgba(245, 176, 65, 0.06), transparent 50%);
+  background-image: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--text-accent), transparent 94%), transparent 50%);
   color: var(--text-main);
   font-family: var(--font-sans);
   line-height: 1.6;
@@ -229,7 +229,7 @@ input[type="number"] {
 
 .stat-card.highlight {
   border-color: var(--border-focus);
-  background: linear-gradient(180deg, rgba(245, 176, 65, 0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 96%) 0%, transparent 100%);
 }
 
 .stat-label {
@@ -303,7 +303,7 @@ tbody td {
 }
 
 tbody tr:hover {
-  background: rgba(245, 176, 65, 0.04);
+  background: color-mix(in srgb, var(--text-accent), transparent 96%);
 }
 tbody tr:hover td {
   border-color: var(--border-focus);
@@ -367,7 +367,7 @@ th.sortable:hover {
 
 .modal-content {
   background: var(--bg-panel);
-  border: 1px solid rgba(245, 176, 65, 0.15);
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 85%);
   border-radius: 12px;
   width: 100%;
   max-width: 640px;
@@ -497,14 +497,46 @@ th.sortable:hover {
 .skeleton-text {
   height: 14px;
   width: 80%;
-  background: rgba(255,255,255,0.04);
+  background: color-mix(in srgb, var(--text-muted), transparent 90%);
   border-radius: 4px;
-  animation: pulse 1.5s infinite;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.skeleton-bar {
+  height: 12px;
+  width: 70%;
+  background: color-mix(in srgb, var(--text-muted), transparent 90%);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.skeleton-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0,
+    rgba(255, 255, 255, 0.03) 20%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 
 /* ---- Clickable source rows ---- */
@@ -522,7 +554,7 @@ th.sortable:hover {
   color: inherit;
 }
 .source-row:hover {
-  background: rgba(245, 176, 65, 0.04);
+  background: color-mix(in srgb, var(--text-accent), transparent 96%);
   border-color: var(--border-focus);
 }
 
@@ -630,7 +662,7 @@ th.sortable:hover {
 }
 
 .filter-btn-active {
-  background: rgba(245, 176, 65, 0.08);
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
   border-color: var(--border-focus);
   color: #fff;
 }
@@ -740,7 +772,7 @@ th.sortable:hover {
 }
 
 .dashboard-row:hover {
-  background: rgba(245, 176, 65, 0.04);
+  background: color-mix(in srgb, var(--text-accent), transparent 96%);
   border-color: var(--border-focus);
 }
 
@@ -757,7 +789,7 @@ th.sortable:hover {
 }
 
 .primary-action {
-  background: rgba(245, 176, 65, 0.12);
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
   border: 1px solid var(--border-focus);
   color: #fff;
   cursor: pointer;
@@ -796,7 +828,7 @@ th.sortable:hover {
 }
 
 .tool-card:hover {
-  background: rgba(245, 176, 65, 0.04);
+  background: color-mix(in srgb, var(--text-accent), transparent 96%);
   border-color: var(--border-focus);
 }
 
@@ -1012,7 +1044,7 @@ kbd {
 }
 
 .theme-option-active {
-  background: rgba(245, 176, 65, 0.08);
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
   border-color: var(--border-focus);
 }
 

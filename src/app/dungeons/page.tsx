@@ -206,7 +206,7 @@ function DungeonsContent() {
                                             <MapPin size={12} color="var(--text-accent)" /> {selectedDungeon.location?.name}
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
-                                            <Zap size={12} color="#f5b041" /> Difficulty: {selectedDungeon.difficulty}
+                                            <Zap size={12} color="var(--text-accent)" /> Difficulty: {selectedDungeon.difficulty}
                                         </div>
                                     </div>
                                 </div>

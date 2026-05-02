@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { VIAL_COSTS, VENDOR_ITEMS } from '@/constants';
 
 // Singleton caches with timestamps
 let caches: Record<string, { data: any, mtime: number }> = {
@@ -70,14 +71,20 @@ export async function GET(
       if (item.recipe) {
         if (item.recipe.ingredients) {
           item.recipe.ingredients = item.recipe.ingredients.map((ing: any) => {
-            const ingMarket = marketData[ing.name || ing.item_name] || {};
-            return { ...ing, price: ingMarket.avg_3 || 0 };
+            const name = ing.name || ing.item_name;
+            const ingMarket = marketData[name] || {};
+            const vialCost = VIAL_COSTS[name] || 0;
+            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
+            return { ...ing, price: ingMarket.avg_3 || vialCost || vendorCost || 0 };
           });
         }
         if (item.recipe.materials) {
           item.recipe.materials = item.recipe.materials.map((mat: any) => {
-            const matMarket = marketData[mat.item_name || mat.name] || {};
-            return { ...mat, price: matMarket.avg_3 || 0 };
+            const name = mat.item_name || mat.name;
+            const matMarket = marketData[name] || {};
+            const vialCost = VIAL_COSTS[name] || 0;
+            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
+            return { ...mat, price: matMarket.avg_3 || vialCost || vendorCost || 0 };
           });
         }
       }
@@ -86,17 +93,24 @@ export async function GET(
       if (item.produced_from) {
         if (item.produced_from.mats) {
           item.produced_from.mats = item.produced_from.mats.map((mat: any) => {
-            const matMarket = marketData[mat.name] || {};
-            return { ...mat, price: matMarket.avg_3 || 0 };
+            const name = mat.name;
+            const matMarket = marketData[name] || {};
+            const vialCost = VIAL_COSTS[name] || 0;
+            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
+            return { ...mat, price: matMarket.avg_3 || vialCost || vendorCost || 0 };
           });
         }
-        if (item.produced_from.name) {
-          const recipeMarket = marketData[item.produced_from.name] || {};
+        
+        const rName = item.produced_from.recipe_name;
+        if (rName) {
+          const recipeMarket = marketData[rName] || {};
           item.produced_from.recipe_price = recipeMarket.avg_3 || 0;
-          // Also try to find the recipe's quality for 'uses' logic
-          const recipeObj = itemsMap?.[item.produced_from.name] || allItems?.[item.produced_from.name];
+          
+          // To find the recipe's quality, we search by NAME since rName is a string
+          const recipeObj = Object.values(allItems || {}).find((it: any) => it.name === rName) || 
+                            Object.values(itemsMap || {}).find((it: any) => it.name === rName);
           if (recipeObj) {
-            item.produced_from.recipe_quality = recipeObj.quality;
+            item.produced_from.recipe_quality = (recipeObj as any).quality;
           }
         }
       }

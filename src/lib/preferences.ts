@@ -62,17 +62,19 @@ export function usePreferences() {
       applyTheme(next.theme);
     };
 
+    const handleStorageUpdate = (e: StorageEvent) => {
+        if (e.key === PREFERENCE_STORAGE_KEY) handleUpdate();
+    };
+
     handleUpdate(); // Initial load
     setLoaded(true);
 
     window.addEventListener("zenith-preferences-updated", handleUpdate);
-    window.addEventListener("storage", (e) => {
-        if (e.key === PREFERENCE_STORAGE_KEY) handleUpdate();
-    });
+    window.addEventListener("storage", handleStorageUpdate);
 
     return () => {
       window.removeEventListener("zenith-preferences-updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("storage", handleStorageUpdate);
     };
   }, []);
 

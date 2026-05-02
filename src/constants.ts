@@ -105,7 +105,7 @@ export const ALCHEMY_ITEMS: Record<string, Recipe> = {
     "Frenzy Potion": {"level": 70, "time": 1090.9, "vial": "Eldritch Vial", "materials": {"Wolf Pelt": 14, "Goblin Totem": 60}},
 
     // Level 80-85
-    "Dragonblood Tonic": {"level": 80, "time": 1363.6, "vial": "Eldritch Vial", "materials": {"Minotaur Hide": 20, "Dragon Bone": 2}},
+    "Dragonblood Tonic": {"level": 80, "time": 1363.6, "vial": "Eldritch Vial", "materials": {"Minotaurs Horn": 25, "Lions Teeth": 25}},
     "Gourmet Essence": {"level": 80, "time": 1363.6, "vial": "Eldritch Crystal", "materials": {"Snakes Head": 50, "Cursed Blade Fragment": 25}},
     "Wraithbane Essence": {"level": 80, "time": 1363.6, "vial": "Eldritch Vial", "materials": {"Moose Antler": 15, "Minotaur Hide": 20}},
     "Thunderfury Brew": {"level": 85, "time": 1363.6, "vial": "Eldritch Vial", "materials": {"Black Bear Pelt": 25, "Orb of Elemental Conjuring": 20}},
