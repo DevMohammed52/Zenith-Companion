@@ -1299,3 +1299,27 @@ kbd {
   .action-badge { min-width: auto; padding: 0.15rem 0.35rem; }
   .modal-content { margin: 0.5rem; }
 }
+
+.empty-action {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: var(--text-accent) !important;
+  font-weight: 700;
+  text-decoration: none !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+.empty-action:hover {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border-color: var(--text-accent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--text-accent), transparent 90%);
+  transform: translateY(-2px);
+}

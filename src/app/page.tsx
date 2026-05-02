@@ -214,7 +214,10 @@ export default function DashboardPage() {
                 <div className="empty-state centered">
                   <AlertCircle size={24} style={{ opacity: 0.2, marginBottom: '0.5rem' }} />
                   <p>Your queue is currently empty.</p>
-                  <Link href="/alchemy" className="empty-action">Find Profitable Recipes</Link>
+                  <Link href="/alchemy" className="empty-action">
+                    <Sparkles size={14} />
+                    Find Profitable Recipes
+                  </Link>
                 </div>
               )}
             </div>
