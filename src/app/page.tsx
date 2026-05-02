@@ -47,6 +47,7 @@ export default function DashboardPage() {
     if (!marketData) return [];
 
     return Object.entries(ALCHEMY_ITEMS)
+      .filter(([_, recipe]) => recipe.level < 90)
       .map(([name, recipe]) => {
         const sellPrice = marketData[name]?.avg_3 || 0;
         let craftCost = VIAL_COSTS[recipe.vial] || 0;

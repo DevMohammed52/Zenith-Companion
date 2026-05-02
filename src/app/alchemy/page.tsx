@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import { ChevronUp, ChevronDown, Minus, Info, X, Activity, Target, Search } from "lucide-react";
 import Link from "next/link";
@@ -64,6 +64,7 @@ export default function AlchemyPage() {
     for (const [name, recipe] of Object.entries(ALCHEMY_ITEMS)) {
       // Basic Search & Level Filters
       if (searchTerm && !name.toLowerCase().includes(searchTerm.toLowerCase())) continue;
+      if (recipe.level >= 90) continue; // Mythics are now in the Lab
       if (minLevel !== "" && recipe.level < minLevel) continue;
       if (maxLevel !== "" && recipe.level > maxLevel) continue;
 
@@ -176,17 +177,23 @@ export default function AlchemyPage() {
     return filtered;
   }, [data, preferences.barteringBoost, preferences.activeHours, sortCol, sortDesc, minRoi, minVolume, searchTerm, minLevel, maxLevel]);
 
-  // Effect to handle deep-linking once rows are calculated
+  const autoOpenedRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const recipeParam = searchParams.get("recipe");
+    const params = new URLSearchParams(window.location.search);
+    const recipeParam = params.get("recipe");
     if (recipeParam && rows.length > 0) {
+        if (recipeParam === autoOpenedRef.current) return;
+
         const found = rows.find(r => r.name.toLowerCase() === recipeParam.toLowerCase());
-        if (found && !found.loading && selectedRow?.name !== found.name) {
+        if (found && !found.loading) {
             setSelectedRow(found as RowData);
+            autoOpenedRef.current = recipeParam;
         }
+    } else {
+        autoOpenedRef.current = null;
     }
-  }, [rows, selectedRow]);
+  }, [rows]);
 
   // Keyboard support for Esc
   useEffect(() => {

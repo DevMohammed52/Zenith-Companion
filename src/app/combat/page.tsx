@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -124,16 +124,23 @@ function CombatContent() {
         return filtered;
     }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, debouncedSearch]);
 
+    const autoOpenedRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (rows.length === 0) return;
         const search = searchParams.get("search");
         if (search) {
+            if (search === autoOpenedRef.current) return; // Already handled this search param
+            
             const found = rows.find(r => r.name.toLowerCase() === search.toLowerCase());
-            if (found && selectedEnemy?.name !== found.name) {
+            if (found) {
                 setSelectedEnemy(found);
+                autoOpenedRef.current = search;
             }
+        } else {
+            autoOpenedRef.current = null;
         }
-    }, [rows, searchParams, selectedEnemy]);
+    }, [rows, searchParams]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);

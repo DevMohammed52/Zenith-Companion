@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, ChevronRight } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface NavItem {
@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
         icon: FlaskConical,
         items: [
             { href: '/alchemy', label: 'Alchemy Profit', icon: FlaskConical },
+            { href: '/alchemy/mythic', label: 'Mythic Lab', icon: Sparkles, badge: 'LVL 90' },
             { href: '/crafting', label: 'Crafting Queue', icon: ShoppingCart },
         ]
     },

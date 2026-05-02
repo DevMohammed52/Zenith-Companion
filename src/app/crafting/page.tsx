@@ -53,15 +53,6 @@ export default function CraftingPage() {
             const vialCost = (VIAL_COSTS[recipe.vial] || 0) * qty;
             cost += vialCost;
 
-            // Recipe Cost (Mythics only, 30 uses per recipe)
-            const isMythic = marketData?.[recipeName]?.quality === 'MYTHIC';
-            if (isMythic) {
-                const scrollName = `Recipe: ${recipeName}`;
-                const scrollsNeeded = Math.ceil(qty / 30);
-                recipes[scrollName] = (recipes[scrollName] || 0) + scrollsNeeded;
-                cost += (marketData?.[scrollName]?.avg_3 || 0) * scrollsNeeded;
-            }
-
             // Materials
             for (const [mat, matQty] of Object.entries(recipe.materials)) {
                 materials[mat] = (materials[mat] || 0) + (matQty * qty);
@@ -124,9 +115,12 @@ export default function CraftingPage() {
                                     style={{ width: '100%', paddingRight: '2rem', appearance: 'none', cursor: 'pointer' }}
                                 >
                                     <option value="">— Pick a recipe —</option>
-                                    {Object.keys(ALCHEMY_ITEMS).map(name => (
-                                        <option key={name} value={name}>{name}</option>
-                                    ))}
+                                    {Object.entries(ALCHEMY_ITEMS)
+                                        .filter(([_, r]) => r.level < 90)
+                                        .map(([name]) => (
+                                            <option key={name} value={name}>{name}</option>
+                                        ))
+                                    }
                                 </select>
                             </div>
                             <button

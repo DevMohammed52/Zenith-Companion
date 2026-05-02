@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Skull, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Clock, ExternalLink } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -110,17 +110,24 @@ function BossesContent() {
         return filtered;
     }, [staticData, marketData, allItemsDb, searchTerm, sortCol, sortDesc, preferences.showEventBosses]);
 
+    const autoOpenedRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (rows.length === 0) return;
         const searchParam = searchParams.get("search");
         const bossParam = searchParams.get("boss") || searchParam;
         if (bossParam) {
+            if (bossParam === autoOpenedRef.current) return;
+
             const found = rows.find(r => r.name.toLowerCase() === bossParam.toLowerCase());
-            if (found && selectedBoss?.name !== found.name) {
+            if (found) {
                 setSelectedBoss(found);
+                autoOpenedRef.current = bossParam;
             }
+        } else {
+            autoOpenedRef.current = null;
         }
-    }, [rows, searchParams, selectedBoss]);
+    }, [rows, searchParams]);
 
     const generateTimetable = (boss: any) => {
         if (!boss.nextSpawnTime || !boss.scheduleInfo) return [];

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Castle, X, ChevronDown, ChevronUp, Search, ExternalLink, MapPin, Zap } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -99,16 +99,23 @@ function DungeonsContent() {
         return filtered;
     }, [staticData, marketData, allItemsDb, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
 
+    const autoOpenedRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (rows.length === 0) return;
         const dungeonParam = searchParams.get("dungeon") || searchParams.get("search");
         if (dungeonParam) {
+            if (dungeonParam === autoOpenedRef.current) return;
+
             const found = rows.find(r => r.name.toLowerCase() === dungeonParam.toLowerCase());
-            if (found && selectedDungeon?.name !== found.name) {
+            if (found) {
                 setSelectedDungeon(found);
+                autoOpenedRef.current = dungeonParam;
             }
+        } else {
+            autoOpenedRef.current = null;
         }
-    }, [rows, searchParams, selectedDungeon]);
+    }, [rows, searchParams]);
 
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
