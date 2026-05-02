@@ -345,6 +345,38 @@ function AlchemyContent() {
 
         {/* Mobile View */}
         <div className="mobile-only">
+          <div className="mobile-sort-controls" style={{ 
+            marginBottom: '1rem', 
+            padding: '0.75rem', 
+            background: 'rgba(255,255,255,0.02)', 
+            border: '1px solid var(--border-subtle)', 
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sort Strategy</span>
+            <select 
+              value={sortCol} 
+              onChange={(e) => handleSort(e.target.value as any)}
+              style={{ 
+                background: 'var(--bg-card)', 
+                border: '1px solid var(--border-focus)', 
+                color: '#fff', 
+                padding: '0.4rem 0.75rem', 
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                outline: 'none'
+              }}
+            >
+              <option value="profit">Net Profit</option>
+              <option value="roi">ROI %</option>
+              <option value="level">Level</option>
+              <option value="vol_3">3D Volume</option>
+              <option value="name">Name</option>
+              <option value="dailyProfit">Daily Profit</option>
+            </select>
+          </div>
           <div className="mobile-card-grid">
             {rows.map((row, i) => (
               <div key={i} className="mobile-alchemy-card" onClick={() => !row.loading && setSelectedRow(row)}>

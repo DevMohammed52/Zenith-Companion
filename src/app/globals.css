@@ -983,15 +983,16 @@ kbd {
   .container { padding: 0 0.75rem; }
   .header { padding: 1.5rem 0.75rem; }
   .global-search-trigger { 
-    position: fixed;
-    left: 80px;
-    top: 14px;
     margin: 0;
-    width: calc(100% - 96px);
-    z-index: 240;
-    background: rgba(15, 15, 15, 0.85) !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    width: 100%;
+    max-width: none;
+    position: relative;
+    left: auto;
+    top: auto;
+    background: rgba(255,255,255,0.035) !important;
+    backdrop-filter: none;
+    border: 1px solid var(--border-subtle) !important;
+    z-index: auto;
   }
 }
 
@@ -1216,10 +1217,10 @@ kbd {
 }
 
 .mobile-menu-btn {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1100;
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: auto;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   color: #fff;

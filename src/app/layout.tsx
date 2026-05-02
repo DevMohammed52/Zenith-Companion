@@ -37,10 +37,12 @@ export default function RootLayout({
         <DataProvider>
           <CraftingProvider>
             <ItemModalProvider>
-              <div style={{ display: 'flex' }}>
-                <Sidebar />
-                <div className="main-content">
+              <div className="layout-root">
+                <header className="top-navigation">
+                  <Sidebar />
                   <GlobalSearch />
+                </header>
+                <div className="main-content">
                   {children}
                 </div>
               </div>
@@ -48,15 +50,41 @@ export default function RootLayout({
           </CraftingProvider>
         </DataProvider>
         <style>{`
+          .layout-root {
+            display: flex;
+            min-height: 100vh;
+          }
+          .top-navigation {
+            display: none;
+          }
           .main-content {
             margin-left: var(--sidebar-width);
             width: 100%;
-            min-height: 100vh;
             transition: margin-left 0.3s ease;
+            padding-top: 0;
           }
           @media (max-width: 768px) {
+            .layout-root {
+              flex-direction: column;
+            }
+            .top-navigation {
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              padding: 0.75rem 1rem;
+              background: var(--bg-panel);
+              border-bottom: 1px solid var(--border-subtle);
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              z-index: 1000;
+              height: 64px;
+              backdrop-filter: blur(12px);
+            }
             .main-content {
               margin-left: 0;
+              padding-top: 64px;
             }
           }
         `}</style>

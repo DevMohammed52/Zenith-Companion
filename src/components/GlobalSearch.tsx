@@ -181,7 +181,7 @@ export default function GlobalSearch() {
 
   return (
     <>
-      <button className="global-search-trigger" type="button" onClick={() => setOpen(true)}>
+      <button className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }}>
         <Search size={14} />
         <span>Search</span>
         <kbd>Ctrl K</kbd>
