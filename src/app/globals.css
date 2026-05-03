@@ -1233,6 +1233,10 @@ kbd {
 @media (max-width: 600px) {
   .settings-field, .toggle-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .settings-field .control-input { min-width: 0; width: 100%; }
+  .custom-price-builder { grid-template-columns: 1fr; }
+  .custom-price-add { width: 100%; }
+  .custom-price-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .custom-price-row button { grid-column: 1 / -1; width: 100%; }
 }
 
 .settings-field strong,
@@ -1246,6 +1250,109 @@ kbd {
 .toggle-row small {
   color: var(--text-muted);
   font-size: 0.78rem;
+}
+
+.settings-empty-note {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 0.85rem;
+}
+
+.custom-price-builder {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.35fr) auto;
+}
+
+.custom-price-builder label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.custom-price-builder label span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.custom-price-builder .control-input {
+  width: 100%;
+}
+
+.custom-price-add {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 900;
+  gap: 0.4rem;
+  justify-content: center;
+  min-width: 96px;
+}
+
+.custom-price-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.custom-price-row {
+  align-items: center;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 0.65rem 0.75rem;
+}
+
+.custom-price-row span,
+.custom-price-row strong,
+.custom-price-row small {
+  display: block;
+  min-width: 0;
+}
+
+.custom-price-row strong {
+  color: var(--text-main);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.custom-price-row small {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  margin-top: 0.1rem;
+}
+
+.custom-price-row em {
+  color: var(--text-success);
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.custom-price-row button {
+  align-items: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.custom-price-row button:hover {
+  border-color: color-mix(in srgb, var(--text-danger), transparent 60%);
+  color: var(--text-danger);
 }
 
 .toggle-row input {

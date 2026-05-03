@@ -693,6 +693,12 @@ th.left-align .sortButton {
   color: var(--text-success);
 }
 
+.saleCustom {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+  color: var(--text-accent);
+}
+
 .signal {
   gap: 0.25rem;
   min-width: 70px;

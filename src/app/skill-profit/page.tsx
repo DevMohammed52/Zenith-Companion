@@ -47,6 +47,7 @@ const DEFAULT_SETTINGS: SkillProfitSettings = {
   assaultRank: "none",
   ascensionBuffIds: [],
   tools: DEFAULT_TOOL_SELECTIONS,
+  customPrices: {},
   barteringBoost: 0,
 };
 
@@ -113,11 +114,13 @@ export default function SkillProfitPage() {
       classBonus: preferences.skillClassBonus,
       assaultRank: preferences.assaultRank,
       tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
+      customPrices: preferences.customPrices,
       barteringBoost: preferences.barteringBoost,
     }));
   }, [
     preferences.assaultRank,
     preferences.barteringBoost,
+    preferences.customPrices,
     preferences.membership,
     preferences.skillClassBonus,
     preferences.skillTools,
@@ -133,6 +136,7 @@ export default function SkillProfitPage() {
         ...DEFAULT_SETTINGS,
         ...parsed.settings,
         tools: { ...DEFAULT_TOOL_SELECTIONS, ...parsed.settings?.tools },
+        customPrices: preferences.customPrices,
       });
       if (parsed.activeSkill) setActiveSkill(parsed.activeSkill);
       if (parsed.sortKey) setSortKey(parsed.sortKey);
@@ -256,12 +260,13 @@ export default function SkillProfitPage() {
 
   const patchSettings = (patch: Partial<SkillProfitSettings>) => {
     setSettings((current) => ({ ...current, ...patch, tools: { ...current.tools, ...patch.tools } }));
-    if ("membership" in patch || "classBonus" in patch || "assaultRank" in patch || "tools" in patch || "barteringBoost" in patch) {
+    if ("membership" in patch || "classBonus" in patch || "assaultRank" in patch || "tools" in patch || "barteringBoost" in patch || "customPrices" in patch) {
       setPreferences({
         ...(typeof patch.membership === "boolean" ? { membership: patch.membership } : {}),
         ...(typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
         ...(patch.assaultRank ? { assaultRank: patch.assaultRank } : {}),
         ...(patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
+        ...(patch.customPrices ? { customPrices: patch.customPrices } : {}),
         ...(patch.barteringBoost !== undefined ? { barteringBoost: patch.barteringBoost } : {}),
       });
     }
@@ -526,7 +531,7 @@ export default function SkillProfitPage() {
                   <td className="mono">{row.expPerHour.toLocaleString()}</td>
                   <td className="mono">{row.volume3d.toLocaleString()}</td>
                   <td>
-                    <span className={`${styles.saleBadge} ${row.bestSaleSource === "vendor" ? styles.saleVendor : styles.saleMarket}`}>
+                    <span className={`${styles.saleBadge} ${row.bestSaleSource === "vendor" ? styles.saleVendor : row.bestSaleSource === "custom" ? styles.saleCustom : styles.saleMarket}`}>
                       {row.bestSaleSource}
                     </span>
                   </td>
@@ -598,8 +603,8 @@ function SkillStrategyModal({
 }) {
   const { marketData, allItemsDb } = useData();
   const taxRate = membership ? 12 : 15;
-  const grossRevenue = row.saleSource === "market" ? row.salePrice : 0;
-  const taxPaid = row.saleSource === "market" ? grossRevenue - row.marketRevenue : 0;
+  const grossRevenue = row.saleSource === "market" || row.saleSource === "custom" ? row.salePrice : 0;
+  const taxPaid = row.saleSource === "market" || row.saleSource === "custom" ? grossRevenue - row.marketRevenue : 0;
   const item = allItemsDb?.[row.name];
   const market = marketData?.[row.name] || {};
   const itemStats = item?.stats && typeof item.stats === "object" ? Object.entries(item.stats).filter(([, value]) => value !== null && value !== 0 && value !== "") : [];
@@ -659,8 +664,8 @@ function SkillStrategyModal({
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><Info size={16} /> Calculation</div>
               <div className={styles.calcRows}>
-                <CalcRow label="Market gross" value={row.saleSource === "market" ? `${formatGold(grossRevenue)}g` : "No market"} muted={row.saleSource !== "market"} />
-                <CalcRow label={`Market tax (${taxRate}%)`} value={row.saleSource === "market" ? `-${formatGold(taxPaid)}g` : "0g"} muted={row.saleSource !== "market"} />
+                <CalcRow label={row.saleSource === "custom" ? "Custom gross" : "Market gross"} value={row.saleSource === "market" || row.saleSource === "custom" ? `${formatGold(grossRevenue)}g` : "No market"} muted={row.saleSource !== "market" && row.saleSource !== "custom"} />
+                <CalcRow label={`Market tax (${taxRate}%)`} value={row.saleSource === "market" || row.saleSource === "custom" ? `-${formatGold(taxPaid)}g` : "0g"} muted={row.saleSource !== "market" && row.saleSource !== "custom"} />
                 <CalcRow label="Market net" value={`${formatGold(row.marketRevenue)}g`} muted={row.marketRevenue <= 0} />
                 <CalcRow label="Vendor net" value={`${formatGold(row.vendorRevenue)}g`} muted={row.vendorRevenue <= 0} />
                 <CalcRow label="Best sell path" value={row.bestSaleSource.toUpperCase()} tone={row.bestSaleSource === "vendor" ? "good" : undefined} />

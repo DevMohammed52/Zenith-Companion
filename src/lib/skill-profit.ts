@@ -72,6 +72,7 @@ export type SkillProfitSettings = {
   assaultRank: AssaultRank;
   ascensionBuffIds: string[];
   tools: ToolSelections;
+  customPrices?: Record<string, number>;
   barteringBoost: number | "";
 };
 
@@ -92,14 +93,14 @@ export type SkillRecipe = {
 
 export type SkillProfitRow = SkillRecipe & {
   salePrice: number;
-  saleSource: "market" | "vendor" | "missing";
+  saleSource: "custom" | "market" | "vendor" | "missing";
   marketRevenue: number;
   vendorRevenue: number;
-  bestSaleSource: "market" | "vendor" | "missing";
+  bestSaleSource: "custom" | "market" | "vendor" | "missing";
   netRevenue: number;
   inputCost: number;
   inputMissing: string[];
-  ingredientCosts: Array<Ingredient & { unitPrice: number; totalPrice: number; source: "market" | "vendor" | "missing" }>;
+  ingredientCosts: Array<Ingredient & { unitPrice: number; totalPrice: number; source: "custom" | "market" | "vendor" | "missing" }>;
   profitEach: number;
   finalDuration: number;
   itemsPerHour: number;
@@ -516,11 +517,11 @@ export function calculateSkillProfitRows(
   return [...SKILL_RECIPES, ...dynamicRecipes].map((recipe): SkillProfitRow => {
     const buffs = getBuffTotals(settings, recipe.skill !== "Construction", recipe.skill);
     const toolBonus = getToolEfficiencyBonus(settings, recipe.skill);
-    const sale = getPrice(recipe.name, marketData, items);
+    const sale = getPrice(recipe.name, marketData, items, settings.customPrices);
     const vendorBase = getVendorPrice(recipe.name, marketData, items);
     const ingredientPrices = recipe.ingredients.map((ingredient) => ({
       ingredient,
-      price: getPrice(ingredient.name, marketData, items),
+      price: getPrice(ingredient.name, marketData, items, settings.customPrices),
     }));
     const inputMissing = ingredientPrices
       .filter(({ price }) => price.source === "missing")
@@ -535,13 +536,13 @@ export function calculateSkillProfitRows(
       (sum, { ingredient, price }) => sum + price.value * ingredient.quantity,
       0,
     );
-    const marketRevenue = sale.source === "market" ? sale.value * taxMultiplier : 0;
+    const marketRevenue = sale.source === "market" || sale.source === "custom" ? sale.value * taxMultiplier : 0;
     const vendorRevenue = vendorBase * barterMultiplier;
     const bestSaleSource = marketRevenue <= 0 && vendorRevenue <= 0
       ? "missing"
       : vendorRevenue > marketRevenue
         ? "vendor"
-        : "market";
+        : sale.source === "custom" ? "custom" : "market";
     const netRevenue = bestSaleSource === "vendor" ? vendorRevenue : marketRevenue;
     const profitEach = netRevenue - inputCost;
     const finalDuration = recipe.baseDuration / ((buffs.efficiency + toolBonus + 100) / 100);
@@ -588,7 +589,11 @@ function getPrice(
   name: string,
   marketData: MarketData | null,
   items: ItemLookup | null,
-): { value: number; source: "market" | "vendor" | "missing" } {
+  customPrices?: Record<string, number>,
+): { value: number; source: "custom" | "market" | "vendor" | "missing" } {
+  const customPrice = customPrices?.[name];
+  if (Number(customPrice) > 0) return { value: Number(customPrice), source: "custom" };
+
   const marketPrice = marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0;
   if (marketPrice > 0) return { value: marketPrice, source: "market" };
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { BarChart3, Check, Keyboard, Palette, Settings, Swords, FlaskConical, Target, Shield, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BarChart3, Check, Coins, Keyboard, Palette, Plus, Settings, Swords, FlaskConical, Target, Shield, Trash2, Zap } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
+import { useData } from "@/context/DataContext";
 import { ASSAULT_OPTIONS, SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
@@ -19,6 +21,14 @@ const COMBAT_STYLES = [
 
 export default function SettingsPage() {
   const { preferences, setPreferences } = usePreferences();
+  const { allItemsDb, marketData } = useData();
+  const [customItemName, setCustomItemName] = useState("");
+  const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
+  const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
+  const customPriceRows = useMemo(
+    () => Object.entries(preferences.customPrices || {}).sort(([a], [b]) => a.localeCompare(b)),
+    [preferences.customPrices],
+  );
 
   const handleNumChange = (key: string, val: string) => {
     setPreferences({ [key]: val === "" ? "" : Number(val) });
@@ -28,6 +38,21 @@ export default function SettingsPage() {
     if (preferences[key as keyof typeof preferences] !== "") {
         setPreferences({ [key]: Math.max(min, Math.min(max, Number(preferences[key as keyof typeof preferences]))) });
     }
+  };
+
+  const saveCustomPrice = () => {
+    const name = customItemName.trim();
+    const price = Number(customItemPrice);
+    if (!name || !Number.isFinite(price) || price <= 0) return;
+    setPreferences({ customPrices: { ...preferences.customPrices, [name]: Math.round(price * 100) / 100 } });
+    setCustomItemName("");
+    setCustomItemPrice("");
+  };
+
+  const removeCustomPrice = (name: string) => {
+    const next = { ...preferences.customPrices };
+    delete next[name];
+    setPreferences({ customPrices: next });
   };
 
   return (
@@ -153,6 +178,61 @@ export default function SettingsPage() {
               </label>
             ))}
           </div>
+        </div>
+
+        <div className="settings-panel settings-panel-wide">
+          <h2><Coins size={17} /> Custom Item Prices</h2>
+          <div className="custom-price-builder">
+            <label>
+              <span>Item</span>
+              <input
+                className="control-input"
+                list="custom-price-items"
+                placeholder="Search item name"
+                value={customItemName}
+                onChange={e => setCustomItemName(e.target.value)}
+              />
+            </label>
+            <label>
+              <span>Custom value</span>
+              <input
+                className="control-input"
+                min="0"
+                type="number"
+                value={customItemPrice}
+                onChange={e => setCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                placeholder="Gold each"
+              />
+            </label>
+            <button className="control-input custom-price-add" type="button" onClick={saveCustomPrice}>
+              <Plus size={14} /> Add
+            </button>
+            <datalist id="custom-price-items">
+              {itemNames.slice(0, 1353).map(name => <option key={name} value={name} />)}
+            </datalist>
+          </div>
+
+          {customPriceRows.length === 0 ? (
+            <p className="settings-empty-note">No custom prices yet. Skill Profit will use market/vendor values until you add one.</p>
+          ) : (
+            <div className="custom-price-list">
+              {customPriceRows.map(([name, price]) => {
+                const market = marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0;
+                return (
+                  <div className="custom-price-row" key={name}>
+                    <span>
+                      <strong>{name}</strong>
+                      <small>{market > 0 ? `Market ${market.toLocaleString()}g` : "No live market price"}</small>
+                    </span>
+                    <em>{Number(price).toLocaleString()}g</em>
+                    <button type="button" onClick={() => removeCustomPrice(name)} aria-label={`Remove ${name}`}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="settings-panel">

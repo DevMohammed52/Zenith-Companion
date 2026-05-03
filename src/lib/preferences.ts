@@ -10,6 +10,7 @@ export type Preferences = {
   skillClassBonus: boolean;
   assaultRank: AssaultRank;
   skillTools: ToolSelections;
+  customPrices: Record<string, number>;
   barteringBoost: number | "";
   activeHours: number | "";
   killsPerHour: number | "";
@@ -26,6 +27,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   skillClassBonus: false,
   assaultRank: "none",
   skillTools: DEFAULT_TOOL_SELECTIONS,
+  customPrices: {},
   barteringBoost: 0,
   activeHours: 18,
   killsPerHour: 360,
@@ -46,6 +48,7 @@ const readPreferences = (): Preferences => {
     const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
     if (stored) Object.assign(next, JSON.parse(stored));
     next.skillTools = { ...DEFAULT_TOOL_SELECTIONS, ...next.skillTools };
+    next.customPrices = { ...next.customPrices };
   } catch (e) {}
   return next;
 };
