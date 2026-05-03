@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  X, ExternalLink, Shield, Sword, Zap, Package,
+  X, ExternalLink, Shield, Sword, Zap, Package, BookOpen,
   MapPin, Hammer, TrendingUp, Info, Target, Lock, Plus
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
@@ -14,6 +14,7 @@ import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS } from '@/constants';
+import { getLoreEntry, getLoreForItem } from '@/data/lore';
 
 interface ItemModalProps {
   id: string;
@@ -102,6 +103,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   };
 
   const qColor = item ? qualityColors[item.quality] || qualityColors.STANDARD : qualityColors.STANDARD;
+  const itemName = item?.name;
+  const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
 
   const craftingCost = useMemo(() => {
     const recipe = item?.recipe;
@@ -274,6 +277,36 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><Info size={14} /> Item Description</div>
                   <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     &quot;{item.description}&quot;
+                  </div>
+                </div>
+              )}
+
+              {loreLinks.length > 0 && (
+                <div className="bento-card lore-thread-card full-width">
+                  <div className="card-label"><BookOpen size={14} /> Lore Thread</div>
+                  <div className="lore-thread-list">
+                    {loreLinks.map((link) => {
+                      const primary = getLoreEntry(link.entryIds[0]);
+                      const linkedEntries = link.entryIds.map((entryId) => getLoreEntry(entryId)).filter(Boolean);
+                      if (!primary) return null;
+
+                      return (
+                        <button
+                          key={`${link.itemName}-${primary.id}`}
+                          type="button"
+                          className="lore-thread-row"
+                          onClick={() => {
+                            onClose();
+                            router.push(`/lore?thread=${primary.id}`);
+                          }}
+                        >
+                          <span className={`lore-confidence ${link.confidence}`}>{link.confidence}</span>
+                          <strong>{primary.title}</strong>
+                          <small>{link.reason}</small>
+                          <em>{linkedEntries.map((entry) => entry.title).join(' / ')}</em>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -663,6 +696,69 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .full-width-pill { grid-column: span 1; }
 
         .description-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-style: italic; }
+
+        .lore-thread-card {
+          background:
+            linear-gradient(135deg, rgba(245,176,65,0.11), transparent),
+            rgba(255,255,255,0.03);
+          border-color: rgba(245,176,65,0.2);
+        }
+
+        .lore-thread-list {
+          display: grid;
+          gap: 0.75rem;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .lore-thread-row {
+          background: rgba(0,0,0,0.18);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 14px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          gap: 0.25rem;
+          min-width: 0;
+          padding: 0.85rem;
+          text-align: left;
+          transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+        }
+
+        .lore-thread-row:hover {
+          background: rgba(245,176,65,0.08);
+          border-color: rgba(245,176,65,0.34);
+          transform: translateY(-1px);
+        }
+
+        .lore-thread-row strong,
+        .lore-thread-row small,
+        .lore-thread-row em {
+          display: block;
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+
+        .lore-thread-row small,
+        .lore-thread-row em {
+          color: rgba(255,255,255,0.52);
+          font-style: normal;
+          line-height: 1.45;
+        }
+
+        .lore-confidence {
+          border-radius: 999px;
+          display: inline-flex;
+          font-size: 0.62rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          padding: 0.18rem 0.52rem;
+          text-transform: uppercase;
+          width: max-content;
+        }
+
+        .lore-confidence.canon { background: rgba(74,222,128,0.12); color: #86efac; }
+        .lore-confidence.inferred { background: rgba(245,176,65,0.13); color: #facc15; }
+        .lore-confidence.theory { background: rgba(248,113,113,0.13); color: #fca5a5; }
         
         .vendor-info-card { background: linear-gradient(135deg, rgba(251,191,36,0.1), transparent); border-color: rgba(251,191,36,0.2); }
         .vendor-message { font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,0.9); }
