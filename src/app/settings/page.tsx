@@ -24,7 +24,13 @@ export default function SettingsPage() {
   const { allItemsDb, marketData } = useData();
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
+  const [itemSearchOpen, setItemSearchOpen] = useState(false);
   const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
+  const itemSuggestions = useMemo(() => {
+    const query = customItemName.trim().toLowerCase();
+    if (!query) return itemNames.slice(0, 8);
+    return itemNames.filter(name => name.toLowerCase().includes(query)).slice(0, 8);
+  }, [customItemName, itemNames]);
   const customPriceRows = useMemo(
     () => Object.entries(preferences.customPrices || {}).sort(([a], [b]) => a.localeCompare(b)),
     [preferences.customPrices],
@@ -47,6 +53,7 @@ export default function SettingsPage() {
     setPreferences({ customPrices: { ...preferences.customPrices, [name]: Math.round(price * 100) / 100 } });
     setCustomItemName("");
     setCustomItemPrice("");
+    setItemSearchOpen(false);
   };
 
   const removeCustomPrice = (name: string) => {
@@ -185,13 +192,40 @@ export default function SettingsPage() {
           <div className="custom-price-builder">
             <label>
               <span>Item</span>
-              <input
-                className="control-input"
-                list="custom-price-items"
-                placeholder="Search item name"
-                value={customItemName}
-                onChange={e => setCustomItemName(e.target.value)}
-              />
+              <div className="custom-price-combobox">
+                <input
+                  className="control-input"
+                  placeholder="Search item name"
+                  value={customItemName}
+                  onBlur={() => window.setTimeout(() => setItemSearchOpen(false), 120)}
+                  onChange={e => {
+                    setCustomItemName(e.target.value);
+                    setItemSearchOpen(true);
+                  }}
+                  onFocus={() => setItemSearchOpen(true)}
+                />
+                {itemSearchOpen && itemSuggestions.length > 0 && (
+                  <div className="custom-price-suggestions">
+                    {itemSuggestions.map(name => {
+                      const item = allItemsDb?.[name];
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onMouseDown={event => event.preventDefault()}
+                          onClick={() => {
+                            setCustomItemName(name);
+                            setItemSearchOpen(false);
+                          }}
+                        >
+                          <span>{name}</span>
+                          <small>{item?.type ? String(item.type).replace(/_/g, " ") : "Item"}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </label>
             <label>
               <span>Custom value</span>
@@ -207,9 +241,6 @@ export default function SettingsPage() {
             <button className="control-input custom-price-add" type="button" onClick={saveCustomPrice}>
               <Plus size={14} /> Add
             </button>
-            <datalist id="custom-price-items">
-              {itemNames.slice(0, 1353).map(name => <option key={name} value={name} />)}
-            </datalist>
           </div>
 
           {customPriceRows.length === 0 ? (
