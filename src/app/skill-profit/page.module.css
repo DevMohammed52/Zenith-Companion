@@ -188,7 +188,7 @@
 
 .searchBox {
   align-items: center;
-  background: var(--bg-base);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-muted);
@@ -200,10 +200,20 @@
 }
 
 .searchBox input {
+  background: transparent;
   border: 0;
+  color: var(--text-main);
   flex: 1;
+  font: inherit;
+  height: auto;
+  min-width: 0;
+  outline: none;
   padding: 0 0 0 0.5rem;
   width: 100%;
+}
+
+.searchBox input::placeholder {
+  color: var(--text-muted);
 }
 
 .numberField {
