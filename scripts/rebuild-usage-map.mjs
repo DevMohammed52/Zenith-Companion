@@ -70,16 +70,23 @@ async function rebuild() {
       if (item.recipe && (item.recipe.ingredients || item.recipe.materials)) {
         const productEntry = getEntry(resultName);
         const mats = item.recipe.ingredients || item.recipe.materials || [];
-        
-        productEntry.produced_from = {
-          skill: item.recipe.skill || 'CRAFTING',
-          level: item.recipe.level_required || item.recipe.level || 1,
-          recipe_name: item.name, // Link back to THIS specific blueprint
-          mats: mats.map(m => ({
-            name: m.item_name || m.name,
-            amount: m.quantity || m.amount || 1
-          }))
-        };
+        const existingRecipe = productEntry.produced_from?.recipe_name
+          ? allItemsDb[productEntry.produced_from.recipe_name]
+          : null;
+        const existingIsUntradable = existingRecipe?.is_tradeable === false || productEntry.produced_from?.recipe_name?.includes('(Untradable)');
+        const incomingIsUntradable = item.is_tradeable === false || item.name?.includes('(Untradable)');
+
+        if (!productEntry.produced_from || (existingIsUntradable && !incomingIsUntradable)) {
+          productEntry.produced_from = {
+            skill: item.recipe.skill || 'CRAFTING',
+            level: item.recipe.level_required || item.recipe.level || 1,
+            recipe_name: item.name, // Link back to the preferred blueprint
+            mats: mats.map(m => ({
+              name: m.item_name || m.name,
+              amount: m.quantity || m.amount || 1
+            }))
+          };
+        }
 
         // Map ingredients (Where-used)
         mats.forEach(mat => {

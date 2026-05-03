@@ -9,6 +9,7 @@ import { useItemModal } from '@/context/ItemModalContext';
 import { useRouter } from 'next/navigation';
 import { useCrafting } from '@/context/CraftingContext';
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
+import { isCraftingQueueRecipe } from '@/lib/crafting-queue';
 
 import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
@@ -38,11 +39,35 @@ const getSourceRoute = (source: AcquisitionSource) => {
   return `/${target}?search=${encodeURIComponent(source.name || '')}`;
 };
 
+const getRecipeOutputName = (recipeItem: any) => (
+  recipeItem?.recipe_yield?.item_name ||
+  recipeItem?.recipe?.result?.item_name ||
+  recipeItem?.recipe?.result?.name ||
+  ''
+);
+
+const getPreferredRecipeNameForOutput = (outputName: string, fallbackName: string | undefined, allItemsDb: any) => {
+  const candidates = Object.values(allItemsDb || {}).filter((candidate: any) => (
+    candidate?.type === 'RECIPE' && getRecipeOutputName(candidate).toLowerCase() === outputName.toLowerCase()
+  )) as any[];
+
+  if (candidates.length === 0) return fallbackName || '';
+
+  candidates.sort((a, b) => {
+    const aUntradable = a.is_tradeable === false || a.name?.includes('(Untradable)');
+    const bUntradable = b.is_tradeable === false || b.name?.includes('(Untradable)');
+    if (aUntradable !== bUntradable) return aUntradable ? 1 : -1;
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+
+  return candidates[0]?.name || fallbackName || '';
+};
+
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
   const { preferences } = usePreferences();
-  const { openItemByName, getCachedItem, setCachedItem } = useItemModal();
-  const { addToQueue } = useCrafting();
+  const { openItemByName, prefetchItem, getCachedItem, setCachedItem } = useItemModal();
+  const { queue, addToQueue } = useCrafting();
   const { marketData, allItemsDb } = useData();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -126,6 +151,18 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const recipeMats = useMemo(() => recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [], [recipeData]);
   const recipeSkill = recipeData?.skill || 'CRAFTING';
   const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
+  const recipeOutputName = item?.type === 'RECIPE' ? getRecipeOutputName(item) : item?.name || '';
+  const recipeOutputItem = recipeOutputName ? (allItemsDb?.[recipeOutputName] || marketData?.[recipeOutputName]) : null;
+  const craftedByRecipeName = useMemo(
+    () => item && item.type !== 'RECIPE'
+      ? getPreferredRecipeNameForOutput(item.name, item.produced_from?.recipe_name, allItemsDb)
+      : '',
+    [allItemsDb, item],
+  );
+  const craftedByRecipeItem = craftedByRecipeName ? allItemsDb?.[craftedByRecipeName] : null;
+  const queueRecipeName = recipeSkill?.toUpperCase() === 'ALCHEMY' ? recipeOutputName : '';
+  const canQueueRecipe = recipeSkill?.toUpperCase() === 'ALCHEMY' && isCraftingQueueRecipe(queueRecipeName);
+  const queuedRecipeCount = queueRecipeName ? queue[queueRecipeName] || 0 : 0;
   const vendorInfo = item ? VENDOR_ITEMS[item.name] : null;
 
   const renderValue = (val: any) => {
@@ -513,11 +550,18 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               )}
 
               {showYield && (
-                <div className="bento-card yield-card" onClick={() => openItemByName?.(item.recipe_yield.item_name)}>
-                  <div className="card-label"><Zap size={14} color="var(--text-accent)" /> RECIPE YIELD</div>
+                <button
+                  type="button"
+                  className="bento-card yield-card item-link-card"
+                  onClick={() => openItemByName?.(item.recipe_yield.item_name)}
+                  onMouseEnter={() => prefetchItem?.(item.recipe_yield.item_name)}
+                >
+                  <div className="card-label"><Zap size={14} color="var(--text-accent)" /> CRAFTS</div>
                   <div className="yield-content">
                     <div className="yield-item-name">{item.recipe_yield.item_name}</div>
-                    <div className="yield-details">Resulting artifact from this blueprint</div>
+                    <div className="yield-details">
+                      {recipeOutputItem?.type || 'ITEM'}{recipeOutputItem?.quality ? ` - ${recipeOutputItem.quality}` : ''}
+                    </div>
                     <div className="yield-stats">
                         <div className="y-stat">
                             <span>Yield Type</span>
@@ -527,9 +571,19 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             <span>Max Production</span>
                             <strong>{item.recipe_yield.uses} units</strong>
                         </div>
+                        {(item.recipe_yield.market_price || recipeOutputItem?.avg_3) && (
+                          <div className="y-stat">
+                              <span>Market</span>
+                              <strong>{Math.round(item.recipe_yield.market_price || recipeOutputItem?.avg_3).toLocaleString()}g</strong>
+                          </div>
+                        )}
+                    </div>
+                    <div className="yield-action">
+                      <span>Open crafted item</span>
+                      <ExternalLink size={13} />
                     </div>
                   </div>
-                </div>
+                </button>
               )}
 
               {showLootTable && (
@@ -646,20 +700,34 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               {isProfitable ? 'PROFITABLE' : 'LOSS'}
                             </div>
                           )}
-                          {recipeSkill?.toUpperCase() === 'ALCHEMY' && (
+                          {canQueueRecipe && (
                             <button 
-                              onClick={() => {
-                                const targetName = item.type === 'RECIPE' ? (item.recipe_yield?.item_name || item.name) : item.name;
-                                addToQueue(targetName);
-                              }}
+                              onClick={() => addToQueue(queueRecipeName)}
                               className="add-queue-btn"
+                              aria-label={`Add ${queueRecipeName} to crafting queue`}
                               style={{ whiteSpace: 'nowrap' }}
                             >
-                              <Plus size={12} /> QUEUE
+                              <Plus size={12} /> {queuedRecipeCount > 0 ? `QUEUE (${queuedRecipeCount})` : 'QUEUE'}
                             </button>
                           )}
                         </div>
                       </div>
+
+                      {craftedByRecipeName && (
+                        <button
+                          type="button"
+                          className="recipe-link-button"
+                          onClick={() => openItemByName?.(craftedByRecipeName)}
+                          onMouseEnter={() => prefetchItem?.(craftedByRecipeName)}
+                        >
+                          <span>
+                            <span className="recipe-link-kicker">Recipe item</span>
+                            <strong>{craftedByRecipeName}</strong>
+                            {craftedByRecipeItem?.quality && <em>{craftedByRecipeItem.quality}</em>}
+                          </span>
+                          <ExternalLink size={14} />
+                        </button>
+                      )}
                       
                       <div className="list-container scroll-y" style={{ maxHeight: '180px' }}>
                         {recipeMats.map((ing: any, idx: number) => (
@@ -749,6 +817,16 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .modal-body { flex: 1; overflow-y: auto; padding: 3rem; position: relative; }
         .bento-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
         .bento-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 1.5rem; display: flex; flex-direction: column; flex: 1 1 350px; min-width: 300px; min-height: 180px; }
+        button.bento-card { color: inherit; font: inherit; text-align: left; width: auto; }
+        .item-link-card { transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease; }
+        .item-link-card:hover { transform: translateY(-2px); }
+        .item-link-card:focus-visible,
+        .recipe-link-button:focus-visible,
+        .add-queue-btn:focus-visible {
+          outline: none;
+          border-color: var(--text-accent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 82%);
+        }
         .full-width { flex: 1 1 100% !important; }
         .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.25); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
 
@@ -922,12 +1000,14 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .rest-badge.hunger { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
         .yield-card { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), transparent); border-color: rgba(168, 85, 247, 0.2); cursor: pointer; }
+        .yield-card:hover { border-color: rgba(168, 85, 247, 0.45); background: linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.02)); }
         .yield-item-name { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
         .yield-details { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
-        .yield-stats { display: flex; gap: 1.5rem; }
+        .yield-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
         .y-stat { display: flex; flex-direction: column; gap: 2px; }
         .y-stat span { font-size: 0.65rem; color: rgba(168, 85, 247, 0.6); font-weight: 800; text-transform: uppercase; }
         .y-stat strong { font-size: 0.9rem; color: #fff; }
+        .yield-action { align-items: center; color: var(--text-accent); display: flex; font-size: 0.75rem; font-weight: 900; gap: 0.4rem; letter-spacing: 0.06em; margin-top: 1.2rem; text-transform: uppercase; }
 
         .loot-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; cursor: pointer; transition: 0.2s; }
         .loot-row:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
@@ -960,6 +1040,56 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .recipe-box { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
         .recipe-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
         .recipe-req { font-size: 0.75rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        .recipe-link-button {
+          align-items: center;
+          background: rgba(251,191,36,0.05);
+          border: 1px solid rgba(251,191,36,0.16);
+          border-radius: 14px;
+          color: inherit;
+          cursor: pointer;
+          display: flex;
+          font: inherit;
+          gap: 0.85rem;
+          justify-content: space-between;
+          min-width: 0;
+          padding: 0.85rem 1rem;
+          text-align: left;
+          transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+          width: 100%;
+        }
+        .recipe-link-button:hover {
+          background: rgba(251,191,36,0.1);
+          border-color: rgba(251,191,36,0.32);
+          transform: translateY(-1px);
+        }
+        .recipe-link-button > span {
+          display: flex;
+          flex-direction: column;
+          gap: 0.18rem;
+          min-width: 0;
+        }
+        .recipe-link-button strong {
+          color: #fff;
+          font-size: 0.95rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .recipe-link-button em {
+          color: rgba(255,255,255,0.42);
+          font-size: 0.68rem;
+          font-style: normal;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .recipe-link-kicker {
+          color: #fbbf24;
+          font-size: 0.62rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
         
         .roi-badge { font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
         .roi-badge.pos { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }

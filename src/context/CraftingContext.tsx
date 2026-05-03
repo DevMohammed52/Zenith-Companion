@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  CRAFTING_QUEUE_STORAGE_KEY,
+  isCraftingQueueRecipe,
+  sanitizeCraftingQueue,
+  sanitizeQueueQty,
+} from '@/lib/crafting-queue';
 
 interface CraftingContextType {
   queue: Record<string, number>;
@@ -18,56 +24,82 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
 
   // Initial load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('zenith_craft_queue');
-    if (saved) {
-      try {
-        setQueue(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse craft queue:', e);
-      }
-    }
+    setQueue(readStoredQueue());
     setIsLoaded(true);
+
+    const handleStorageUpdate = (event: StorageEvent) => {
+      if (event.key === CRAFTING_QUEUE_STORAGE_KEY) setQueue(readStoredQueue());
+    };
+
+    window.addEventListener("storage", handleStorageUpdate);
+    return () => window.removeEventListener("storage", handleStorageUpdate);
   }, []);
 
   // Save to localStorage on change
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem('zenith_craft_queue', JSON.stringify(queue));
+      localStorage.setItem(CRAFTING_QUEUE_STORAGE_KEY, JSON.stringify(sanitizeCraftingQueue(queue)));
     }
   }, [queue, isLoaded]);
 
-  const addToQueue = (name: string, qty: number = 1) => {
+  const addToQueue = useCallback((name: string, qty: number = 1) => {
+    if (!isCraftingQueueRecipe(name)) return;
+    const safeQty = sanitizeQueueQty(qty);
+    if (safeQty <= 0) return;
     setQueue(prev => ({
       ...prev,
-      [name]: (prev[name] || 0) + qty
+      [name]: sanitizeQueueQty((prev[name] || 0) + safeQty)
     }));
-  };
+  }, []);
 
-  const removeFromQueue = (name: string) => {
+  const removeFromQueue = useCallback((name: string) => {
     setQueue(prev => {
       const next = { ...prev };
       delete next[name];
       return next;
     });
-  };
+  }, []);
 
-  const setQueueQty = (name: string, qty: number) => {
-    if (qty <= 0) {
+  const setQueueQty = useCallback((name: string, qty: number) => {
+    if (!isCraftingQueueRecipe(name)) {
+      removeFromQueue(name);
+      return;
+    }
+    const safeQty = sanitizeQueueQty(qty);
+    if (safeQty <= 0) {
       removeFromQueue(name);
     } else {
-      setQueue(prev => ({ ...prev, [name]: qty }));
+      setQueue(prev => ({ ...prev, [name]: safeQty }));
     }
-  };
+  }, [removeFromQueue]);
 
-  const clearQueue = () => {
+  const clearQueue = useCallback(() => {
     setQueue({});
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    queue,
+    addToQueue,
+    removeFromQueue,
+    setQueueQty,
+    clearQueue,
+  }), [addToQueue, clearQueue, queue, removeFromQueue, setQueueQty]);
 
   return (
-    <CraftingContext.Provider value={{ queue, addToQueue, removeFromQueue, setQueueQty, clearQueue }}>
+    <CraftingContext.Provider value={value}>
       {children}
     </CraftingContext.Provider>
   );
+}
+
+function readStoredQueue() {
+  try {
+    const saved = localStorage.getItem(CRAFTING_QUEUE_STORAGE_KEY);
+    return saved ? sanitizeCraftingQueue(JSON.parse(saved)) : {};
+  } catch (e) {
+    console.error('Failed to parse craft queue:', e);
+    return {};
+  }
 }
 
 export function useCrafting() {

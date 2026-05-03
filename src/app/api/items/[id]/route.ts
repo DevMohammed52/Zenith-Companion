@@ -52,11 +52,20 @@ export async function GET(
         item.dropped_by = relations.dropped_by || [];
         item.required_for = relations.required_for || [];
         item.produced_from = relations.produced_from || null;
+        item.recipe_yield = relations.recipe_yield || item.recipe_yield || null;
       } else {
         item.dropped_by = [];
         item.required_for = [];
         item.produced_from = null;
+        item.recipe_yield = item.recipe_yield || null;
       }
+    }
+
+    if (!item.recipe_yield && item.recipe?.result?.item_name) {
+      item.recipe_yield = {
+        item_name: item.recipe.result.item_name,
+        uses: Number(item.recipe.max_uses || 0) > 0 ? Number(item.recipe.max_uses) : 'Infinite'
+      };
     }
 
     // 5. Attach live market data & Inject Ingredient Pricing
@@ -112,7 +121,12 @@ export async function GET(
       // Inject Result Price for Recipes
       if (item.recipe_yield) {
         const yieldMarket = marketData[item.recipe_yield.item_name] || {};
-        item.recipe_yield.market_price = yieldMarket.avg_3 || 0;
+        const yieldItem = allItems?.[item.recipe_yield.item_name] || itemsMap?.[item.recipe_yield.item_name] || {};
+        item.recipe_yield.market_price = yieldMarket.avg_3 || yieldMarket.price || 0;
+        item.recipe_yield.vendor_price = Number(yieldItem.vendor_price || yieldMarket.vendor_price || 0);
+        item.recipe_yield.type = yieldItem.type || yieldMarket.type;
+        item.recipe_yield.quality = yieldItem.quality || yieldMarket.quality;
+        item.recipe_yield.is_tradeable = yieldItem.is_tradeable ?? yieldMarket.is_tradeable;
       }
     }
 

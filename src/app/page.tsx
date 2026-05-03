@@ -19,6 +19,7 @@ import {
   DEFAULT_TOOL_SELECTIONS,
   type SkillProfitSettings,
 } from "@/lib/skill-profit";
+import { calculateCraftingQueuePlan } from "@/lib/crafting-queue";
 import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "@/data/lore";
 
 export default function DashboardPage() {
@@ -78,27 +79,11 @@ export default function DashboardPage() {
       .slice(0, 6);
   }, [marketData, allItemsDb, preferences.barteringBoost, preferences.membership]);
 
-  const queueEntries = useMemo(() => Object.entries(queue), [queue]);
-
-  const queueStats = useMemo(() => {
-    if (!queueEntries.length || !marketData) return { count: 0, potentialProfit: 0 };
-    let totalProfit = 0;
-    
-    queueEntries.forEach(([name, quantity]) => {
-      const recipe = ALCHEMY_ITEMS[name];
-      if (!recipe) return;
-      
-      const sellPrice = marketData[name]?.avg_3 || 0;
-      let cost = VIAL_COSTS[recipe.vial] || 0;
-      Object.entries(recipe.materials).forEach(([m, q]) => {
-        cost += (marketData[m]?.avg_3 || VIAL_COSTS[m] || 0) * q;
-      });
-      
-      totalProfit += (sellPrice * getMarketTaxMultiplier(preferences.membership) - cost) * quantity;
-    });
-
-    return { count: queueEntries.length, potentialProfit: totalProfit };
-  }, [queueEntries, marketData, preferences.membership]);
+  const queuePlan = useMemo(
+    () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, preferences),
+    [allItemsDb, marketData, preferences, queue],
+  );
+  const queueEntries = queuePlan.entries;
 
   const skillProfitSettings = useMemo<SkillProfitSettings>(() => ({
     membership: preferences.membership,
@@ -183,8 +168,8 @@ export default function DashboardPage() {
           <div className="metric-tile clickable" onClick={() => router.push('/crafting')}>
             <div className="tile-icon"><Hammer size={20} /></div>
             <div className="tile-info">
-              <span className="tile-label">Queue Items</span>
-              <span className="tile-value">{queueEntries.length}</span>
+              <span className="tile-label">Queue Crafts</span>
+              <span className="tile-value">{queuePlan.totalCrafts}</span>
             </div>
           </div>
           <div className="metric-tile clickable" onClick={() => router.push('/alchemy/mythic')}>
@@ -282,20 +267,22 @@ export default function DashboardPage() {
                 <div className="queue-inner-flex">
                   <div className="queue-stats-main">
                     <div className="q-stat">
-                      <span className="q-label">Items Remaining</span>
-                      <span className="q-val">{queueEntries.length} items</span>
+                      <span className="q-label">Crafts Remaining</span>
+                      <span className="q-val">{queuePlan.totalCrafts.toLocaleString()} crafts</span>
                     </div>
                     <div className="q-stat">
                       <span className="q-label">Potential Profit</span>
-                      <span className="q-val profit-positive">+{formatGold(queueStats.potentialProfit)}g</span>
+                      <span className={`q-val ${queuePlan.totalProfit >= 0 ? 'profit-positive' : 'profit-negative'}`}>
+                        {queuePlan.totalProfit >= 0 ? '+' : ''}{formatGold(queuePlan.totalProfit)}g
+                      </span>
                     </div>
                   </div>
                   <div className="queue-preview-list">
-                    {queueEntries.slice(0, 5).map(([name, quantity], i) => (
-                      <div key={i} className="preview-item-row" onClick={() => openItemByName(name)}>
+                    {queueEntries.slice(0, 5).map((entry) => (
+                      <div key={entry.name} className="preview-item-row" onClick={() => openItemByName(entry.name)}>
                         <div className="preview-dot"></div>
-                        <span className="preview-name">{name}</span>
-                        <span className="preview-qty">x{quantity}</span>
+                        <span className="preview-name">{entry.name}</span>
+                        <span className="preview-qty">x{entry.quantity}</span>
                       </div>
                     ))}
                     {queueEntries.length > 5 && <div className="preview-more-link">+{queueEntries.length - 5} more items in queue...</div>}
