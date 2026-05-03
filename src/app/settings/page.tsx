@@ -190,7 +190,7 @@ export default function SettingsPage() {
         <div className="settings-panel settings-panel-wide">
           <h2><Coins size={17} /> Custom Item Prices</h2>
           <div className="custom-price-builder">
-            <label>
+            <label className="custom-price-item-field">
               <span>Item</span>
               <div className="custom-price-combobox">
                 <input
@@ -227,7 +227,7 @@ export default function SettingsPage() {
                 )}
               </div>
             </label>
-            <label>
+            <label className="custom-price-value-field">
               <span>Custom value</span>
               <input
                 className="control-input"
