@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { ALCHEMY_ITEMS } from "@/constants";
 import { useItemModal } from "@/context/ItemModalContext";
-import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from "@/lib/preferences";
+import { LORE_ENTRIES, LORE_THEORIES } from "@/data/lore";
 
 type SearchResult = {
   label: string;
@@ -23,6 +23,7 @@ const navShortcuts: Record<string, string> = {
   "6": "/bosses",
   "7": "/bis",
   "8": "/crafting",
+  "9": "/lore",
   s: "/settings",
 };
 
@@ -40,7 +41,7 @@ export default function GlobalSearch() {
   useEffect(() => {
     const stored = localStorage.getItem('zenith-recent-items');
     if (stored) {
-      try { setRecent(JSON.parse(stored)); } catch (e) {}
+      try { setRecent(JSON.parse(stored)); } catch {}
     }
   }, []);
 
@@ -83,8 +84,27 @@ export default function GlobalSearch() {
       { label: "Dungeons", type: "Page", href: "/dungeons", detail: "Loot tables and efficiency" },
       { label: "World Bosses", type: "Page", href: "/bosses", detail: "Rare drops and locations" },
       { label: "BiS Recommender", type: "Page", href: "/bis", detail: "Best-in-slot gear logic" },
+      { label: "Lore Wiki", type: "Page", href: "/lore", detail: "Chronicles of Valaron" },
       { label: "Settings", type: "Page", href: "/settings", detail: "Preferences and theme" },
     ];
+
+    LORE_ENTRIES.forEach(entry => {
+      next.push({
+        label: entry.title,
+        type: "Lore",
+        href: `/lore?thread=${encodeURIComponent(entry.id)}`,
+        detail: `${entry.category} · ${entry.tags.slice(0, 2).join(", ") || "Valaron archive"}`,
+      });
+    });
+
+    LORE_THEORIES.forEach(theory => {
+      next.push({
+        label: theory.title,
+        type: "Theory",
+        href: `/lore?view=theories&q=${encodeURIComponent(theory.title)}`,
+        detail: `${theory.speculationLevel} speculation`,
+      });
+    });
 
     Object.keys(ALCHEMY_ITEMS).forEach(name => {
       next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
@@ -167,7 +187,8 @@ export default function GlobalSearch() {
 
   const highlightText = (text: string, q: string) => {
     if (!q) return text;
-    const parts = text.split(new RegExp(`(${q})`, 'gi'));
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
     return (
       <span>
         {parts.map((part, i) => 
@@ -196,7 +217,7 @@ export default function GlobalSearch() {
                 autoFocus
                 value={query}
                 onChange={event => setQuery(event.target.value)}
-                placeholder="Search tools, items, recipes, enemies..."
+                placeholder="Search tools, items, recipes, enemies, lore..."
               />
               <button type="button" onClick={() => setOpen(false)} aria-label="Close search">
                 <X size={16} />

@@ -2,15 +2,18 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Skull, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Clock, ExternalLink } from "lucide-react";
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES } from "../../constants/events";
 
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
+import LoreThreadPanel from "@/components/LoreThreadPanel";
+import { getLoreHintsForNames } from "@/lib/lore-links";
 
 function BossesContent() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const { marketData, staticData, allItemsDb } = useData();
     const { openItemByName } = useItemModal();
@@ -140,6 +143,20 @@ function BossesContent() {
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
         else { setSortCol(col); setSortDesc(true); }
+    };
+
+    const selectedBossLore = useMemo(() => {
+        if (!selectedBoss) return [];
+        return getLoreHintsForNames([
+            { name: selectedBoss.name, source: "entity" },
+            { name: selectedBoss.location?.name, source: "location" },
+            ...(selectedBoss.lootDetails || []).map((drop: any) => ({ name: drop.name, source: "drop" as const })),
+        ], 5);
+    }, [selectedBoss]);
+
+    const openLoreThread = (entryId: string) => {
+        setSelectedBoss(null);
+        router.push(`/lore?thread=${entryId}`);
     };
 
     const renderSortIcon = (col: string) => {
@@ -304,6 +321,8 @@ function BossesContent() {
                                     <div className="stat-value">Every {selectedBoss.scheduleInfo?.respawnHours || "?"}h</div>
                                 </div>
                             </div>
+
+                            <LoreThreadPanel hints={selectedBossLore} title="Boss Lore Thread" onOpenThread={openLoreThread} />
 
                             <div className="upcoming-spawns-section">
                                 <div className="section-title">

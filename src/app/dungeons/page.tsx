@@ -2,14 +2,17 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Castle, X, ChevronDown, ChevronUp, Search, ExternalLink, MapPin, Zap } from "lucide-react";
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useItemModal } from "@/context/ItemModalContext";
 
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
+import LoreThreadPanel from "@/components/LoreThreadPanel";
+import { getLoreHintsForNames } from "@/lib/lore-links";
 
 function DungeonsContent() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const { marketData, staticData, allItemsDb } = useData();
     const { openItemByName } = useItemModal();
@@ -117,6 +120,20 @@ function DungeonsContent() {
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
         else { setSortCol(col); setSortDesc(true); }
+    };
+
+    const selectedDungeonLore = useMemo(() => {
+        if (!selectedDungeon) return [];
+        return getLoreHintsForNames([
+            { name: selectedDungeon.name, source: "entity" },
+            { name: selectedDungeon.location?.name, source: "location" },
+            ...(selectedDungeon.lootDetails || []).map((drop: any) => ({ name: drop.name, source: "drop" as const })),
+        ], 5);
+    }, [selectedDungeon]);
+
+    const openLoreThread = (entryId: string) => {
+        setSelectedDungeon(null);
+        router.push(`/lore?thread=${entryId}`);
     };
 
     const renderSortIcon = (col: string) => {
@@ -277,6 +294,8 @@ function DungeonsContent() {
                                     </div>
                                 </div>
                             </div>
+
+                            <LoreThreadPanel hints={selectedDungeonLore} title="Dungeon Lore Thread" onOpenThread={openLoreThread} />
                             
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table (Weighted EV)</h3>
                             

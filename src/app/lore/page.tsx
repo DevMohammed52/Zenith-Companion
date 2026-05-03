@@ -40,6 +40,14 @@ type LoreView = "atlas" | "timeline" | "characters" | "artifacts" | "board" | "t
 type LoreFilter = "all" | LoreEntry["category"];
 type RelationFilter = "all" | LoreRelation["confidence"];
 
+const isLoreView = (value: string | null): value is LoreView =>
+  value === "atlas" ||
+  value === "timeline" ||
+  value === "characters" ||
+  value === "artifacts" ||
+  value === "board" ||
+  value === "theories";
+
 const VIEW_OPTIONS: Array<{ id: LoreView; label: string; icon: ReactNode }> = [
   { id: "atlas", label: "Atlas", icon: <Map size={16} /> },
   { id: "timeline", label: "Timeline", icon: <Clock size={16} /> },
@@ -75,27 +83,60 @@ const FEATURED_ATLAS_IDS = [
   "concepts-gods-and-deities",
 ];
 
+const NPC_NETWORK_HUB_IDS = [
+  "civilizations-arvendor",
+  "civilizations-ombric",
+  "world-the-citadel",
+  "world-solaris-isle",
+  "civilizations-eldorian",
+  "civilizations-oakenra",
+  "civilizations-mokthar",
+  "concepts-gods-and-deities",
+  "concepts-cults",
+  "world-valaron",
+];
+
 const entries = LORE_ENTRIES as readonly LoreEntry[];
+
+const normalizeLoreText = (value: string) => value
+  .toLowerCase()
+  .replace(/&/g, " and ")
+  .replace(/[^a-z0-9]+/g, " ")
+  .trim();
 
 function LoreContent() {
   const searchParams = useSearchParams();
-  const [activeView, setActiveView] = useState<LoreView>("atlas");
+  const searchParamKey = searchParams.toString();
+  const initialViewParam = searchParams.get("view");
+  const initialThreadParam = searchParams.get("thread");
+  const initialView = initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam]
+    ? "board"
+    : isLoreView(initialViewParam)
+      ? initialViewParam
+      : "atlas";
+  const [activeView, setActiveView] = useState<LoreView>(initialView);
   const [activeCategory, setActiveCategory] = useState<LoreFilter>("all");
   const [search, setSearch] = useState("");
-  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(null);
-  const [boardEntryId, setBoardEntryId] = useState("artifacts-the-runemark-of-eternity");
+  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(
+    initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam] ? LORE_ENTRY_BY_ID[initialThreadParam] : null,
+  );
+  const [boardEntryId, setBoardEntryId] = useState(
+    initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam] ? initialThreadParam : "artifacts-the-runemark-of-eternity",
+  );
   const [relationFilter, setRelationFilter] = useState<RelationFilter>("all");
 
   useEffect(() => {
     const thread = searchParams.get("thread");
     const query = searchParams.get("q");
+    const view = searchParams.get("view");
     if (query) setSearch(query);
+    if (isLoreView(view)) setActiveView(view);
     if (thread && LORE_ENTRY_BY_ID[thread]) {
       setBoardEntryId(thread);
       setActiveView("board");
       setSelectedEntry(LORE_ENTRY_BY_ID[thread]);
     }
-  }, [searchParams]);
+  }, [searchParamKey, searchParams]);
 
   const categoryCounts = useMemo(() => {
     return entries.reduce<Record<string, number>>((acc, entry) => {
@@ -132,6 +173,47 @@ function LoreContent() {
     [filteredEntries],
   );
 
+  const npcNetworkGroups = useMemo(() => {
+    const hubs = NPC_NETWORK_HUB_IDS
+      .map((id) => LORE_ENTRY_BY_ID[id])
+      .filter((entry): entry is LoreEntry => Boolean(entry));
+
+    const assigned = new Set<string>();
+    const groups = hubs.map((hub) => {
+      const hubTitle = normalizeLoreText(hub.title);
+      const characters = characterEntries.filter((entry) => {
+        if (assigned.has(entry.id)) return false;
+        if (entry.relatedIds.includes(hub.id)) return true;
+        return entry.tags.some((tag) => normalizeLoreText(tag) === hubTitle);
+      });
+      characters.forEach((entry) => assigned.add(entry.id));
+
+      return {
+        id: hub.id,
+        title: hub.title,
+        category: CATEGORY_META[hub.category].label,
+        tone: CATEGORY_META[hub.category].tone,
+        detail: hub.summary,
+        characters,
+      };
+    }).filter((group) => group.characters.length > 0);
+
+    const unplaced = characterEntries.filter((entry) => !assigned.has(entry.id));
+
+    if (unplaced.length > 0) {
+      groups.push({
+        id: "unplaced",
+        title: "Unplaced Threads",
+        category: "Archive",
+        tone: "#f5b041",
+        detail: "Characters without a strong place or faction link in the current official relationship data.",
+        characters: unplaced,
+      });
+    }
+
+    return groups;
+  }, [characterEntries]);
+
   const artifactsAndBeasts = useMemo(
     () => filteredEntries.filter((entry) => entry.category === "Artifact" || entry.category === "Bestiary" || entry.category === "Concept"),
     [filteredEntries],
@@ -139,12 +221,24 @@ function LoreContent() {
 
   const boardEntry = LORE_ENTRY_BY_ID[boardEntryId] || LORE_ENTRY_BY_ID["artifacts-the-runemark-of-eternity"] || entries[0];
   const boardRelations = useMemo(() => {
-    return LORE_RELATIONS.filter((relation) => {
+    return (LORE_RELATIONS as readonly LoreRelation[]).filter((relation) => {
       const touchesBoard = relation.source === boardEntry.id || relation.target === boardEntry.id;
       const passesFilter = relationFilter === "all" || relation.confidence === relationFilter;
       return touchesBoard && passesFilter;
     }).slice(0, 18);
   }, [boardEntry.id, relationFilter]);
+
+  const boardStats = useMemo(() => {
+    const related = (LORE_RELATIONS as readonly LoreRelation[]).filter((relation) => relation.source === boardEntry.id || relation.target === boardEntry.id);
+    return {
+      total: related.length,
+      canon: related.filter((relation) => relation.confidence === "canon").length,
+      inferred: related.filter((relation) => relation.confidence === "inferred").length,
+      theory: related.filter((relation) => relation.confidence === "theory").length,
+    };
+  }, [boardEntry.id]);
+
+  const boardGraphRelations = boardRelations.slice(0, 8);
 
   const openEntry = (entry: LoreEntry) => {
     setSelectedEntry(entry);
@@ -253,6 +347,31 @@ function LoreContent() {
       {activeView === "characters" && (
         <section className="lore-section">
           <SectionHeading label="Character Index" detail="Witnesses, rulers, exiles, spirits, and names Edric thought worth preserving." />
+          <div className="npc-network-panel">
+            <div className="npc-network-header">
+              <span><GitBranch size={15} /> NPC Relationship Map</span>
+              <p>Characters grouped by their strongest official place, faction, or concept thread. Click any name to open the dossier.</p>
+            </div>
+            <div className="npc-network-grid">
+              {npcNetworkGroups.map((group) => (
+                <article key={group.id} className="npc-region-card" style={{ "--tone": group.tone } as CSSProperties}>
+                  <div className="npc-region-head">
+                    <span>{group.category}</span>
+                    <h3>{group.title}</h3>
+                    <small>{group.characters.length} linked {group.characters.length === 1 ? "character" : "characters"}</small>
+                  </div>
+                  <div className="npc-chip-grid">
+                    {group.characters.map((entry) => (
+                      <button key={`${group.id}-${entry.id}`} type="button" onClick={() => openEntry(entry)}>
+                        <strong>{entry.title}</strong>
+                        <em>{entry.relatedIds.length} threads</em>
+                      </button>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
           <div className="compact-grid">
             {characterEntries.map((entry) => <LoreCompactCard key={entry.id} entry={entry} onOpen={openEntry} />)}
           </div>
@@ -290,8 +409,36 @@ function LoreContent() {
               <span>{CATEGORY_META[boardEntry.category].icon} {CATEGORY_META[boardEntry.category].label}</span>
               <h3>{boardEntry.title}</h3>
               <p>{boardEntry.summary}</p>
+              <div className="board-stat-row">
+                <span><strong>{boardStats.total}</strong> total</span>
+                <span><strong>{boardStats.canon}</strong> canon</span>
+                <span><strong>{boardStats.inferred}</strong> inferred</span>
+                <span><strong>{boardStats.theory}</strong> theory</span>
+              </div>
               <button type="button" onClick={() => openEntry(boardEntry)}>Open dossier</button>
             </article>
+            <div className="board-map" aria-label={`Connection map for ${boardEntry.title}`}>
+              <div className="board-map-core">
+                <span>{CATEGORY_META[boardEntry.category].label}</span>
+                <strong>{boardEntry.title}</strong>
+              </div>
+              {boardGraphRelations.map((relation, index) => {
+                const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
+                const other = LORE_ENTRY_BY_ID[otherId];
+                if (!other) return null;
+                return (
+                  <button
+                    key={`node-${relation.source}-${relation.target}`}
+                    type="button"
+                    className={`board-node node-${index % 8} ${relation.confidence}`}
+                    onClick={() => setBoardEntryId(other.id)}
+                  >
+                    <span>{relation.confidence}</span>
+                    <strong>{other.title}</strong>
+                  </button>
+                );
+              })}
+            </div>
             <div className="thread-list">
               {boardRelations.length > 0 ? boardRelations.map((relation) => {
                 const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
@@ -718,6 +865,125 @@ function LoreContent() {
           margin-bottom: 0.6rem;
         }
 
+        .npc-network-panel {
+          background:
+            radial-gradient(circle at 0% 0%, rgba(245,176,65,0.12), transparent 34%),
+            rgba(255,255,255,0.018);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          overflow: hidden;
+          padding: 1rem;
+        }
+
+        .npc-network-header {
+          align-items: flex-start;
+          border-bottom: 1px solid var(--line);
+          display: flex;
+          gap: 1rem;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+          padding-bottom: 1rem;
+        }
+
+        .npc-network-header span {
+          align-items: center;
+          color: #fff;
+          display: inline-flex;
+          flex: 0 0 auto;
+          font-weight: 900;
+          gap: 0.45rem;
+        }
+
+        .npc-network-header p {
+          color: rgba(255,255,255,0.58);
+          line-height: 1.45;
+          margin: 0;
+          max-width: 640px;
+          text-align: right;
+        }
+
+        .npc-network-grid {
+          display: grid;
+          gap: 0.85rem;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .npc-region-card {
+          background: rgba(0,0,0,0.2);
+          border: 1px solid color-mix(in srgb, var(--tone), transparent 74%);
+          border-radius: 8px;
+          display: grid;
+          gap: 0.85rem;
+          min-width: 0;
+          padding: 0.9rem;
+        }
+
+        .npc-region-head {
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          padding-bottom: 0.7rem;
+        }
+
+        .npc-region-head span,
+        .npc-region-head small {
+          color: color-mix(in srgb, var(--tone), white 12%);
+          font-size: 0.68rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .npc-region-head h3 {
+          color: #fff;
+          font-size: 1rem;
+          line-height: 1.2;
+          margin: 0.25rem 0;
+          overflow-wrap: anywhere;
+        }
+
+        .npc-chip-grid {
+          display: grid;
+          gap: 0.45rem;
+          grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+        }
+
+        .npc-chip-grid button {
+          appearance: none;
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 7px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          font: inherit;
+          gap: 0.1rem;
+          min-width: 0;
+          padding: 0.55rem 0.65rem;
+          text-align: left;
+          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .npc-chip-grid button:hover {
+          background: rgba(255,255,255,0.06);
+          border-color: color-mix(in srgb, var(--tone), transparent 52%);
+          transform: translateY(-2px);
+        }
+
+        .npc-chip-grid strong {
+          font-size: 0.82rem;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .npc-chip-grid em {
+          color: rgba(255,255,255,0.46);
+          font-size: 0.66rem;
+          font-style: normal;
+          font-weight: 800;
+        }
+
         .timeline-list {
           display: grid;
           gap: 1rem;
@@ -762,9 +1028,10 @@ function LoreContent() {
         }
 
         .mystery-board {
+          align-items: start;
           display: grid;
           gap: 1rem;
-          grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.35fr);
+          grid-template-columns: minmax(250px, 0.75fr) minmax(270px, 0.9fr) minmax(0, 1.2fr);
         }
 
         .board-center {
@@ -786,6 +1053,133 @@ function LoreContent() {
         .board-center button {
           margin-top: 1rem;
         }
+
+        .board-stat-row {
+          display: grid;
+          gap: 0.5rem;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          margin-top: 1rem;
+        }
+
+        .board-stat-row span {
+          background: rgba(0,0,0,0.22);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 7px;
+          color: rgba(255,255,255,0.6);
+          font-size: 0.68rem;
+          padding: 0.55rem;
+          text-transform: uppercase;
+        }
+
+        .board-stat-row strong {
+          color: #fff;
+          display: block;
+          font-size: 1rem;
+          margin-bottom: 0.08rem;
+        }
+
+        .board-map {
+          align-self: start;
+          background:
+            radial-gradient(circle at 50% 50%, rgba(245,176,65,0.14), transparent 34%),
+            repeating-linear-gradient(35deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 20px),
+            rgba(255,255,255,0.018);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          display: grid;
+          gap: 0.75rem;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          min-height: 0;
+          overflow: hidden;
+          padding: 1rem;
+          position: relative;
+        }
+
+        .board-map::before,
+        .board-map::after {
+          border: 1px dashed rgba(245,176,65,0.22);
+          border-radius: 999px;
+          content: "";
+          inset: 22%;
+          pointer-events: none;
+          position: absolute;
+        }
+
+        .board-map::after {
+          inset: 8%;
+          opacity: 0.45;
+        }
+
+        .board-map-core {
+          align-items: center;
+          background: rgba(5,5,6,0.84);
+          border: 1px solid rgba(245,176,65,0.36);
+          border-radius: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          grid-column: 1 / -1;
+          justify-self: center;
+          max-width: min(100%, 280px);
+          min-height: 0;
+          padding: 1rem;
+          position: relative;
+          text-align: center;
+          width: 100%;
+          z-index: 2;
+        }
+
+        .board-map-core span,
+        .board-node span {
+          color: #f8d38d;
+          font-size: 0.58rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .board-map-core strong {
+          color: #fff;
+          font-size: 0.92rem;
+          line-height: 1.2;
+          overflow-wrap: anywhere;
+        }
+
+        .board-node {
+          appearance: none;
+          background: rgba(5,5,6,0.82);
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 8px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          font: inherit;
+          gap: 0.2rem;
+          max-width: none;
+          min-width: 0;
+          padding: 0.55rem 0.65rem;
+          position: relative;
+          text-align: left;
+          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+          width: 100%;
+          z-index: 3;
+        }
+
+        .board-node:hover {
+          background: rgba(255,255,255,0.055);
+          border-color: rgba(245,176,65,0.45);
+          transform: translateY(-2px);
+        }
+
+        .board-node strong {
+          font-size: 0.72rem;
+          line-height: 1.18;
+          overflow-wrap: anywhere;
+        }
+
+        .board-node.canon span { color: #86efac; }
+        .board-node.inferred span { color: #7dd3fc; }
+        .board-node.theory span { color: #f8d38d; }
 
         .thread-list {
           display: grid;
@@ -919,6 +1313,14 @@ function LoreContent() {
           .section-heading p {
             text-align: left;
           }
+
+          .npc-network-header {
+            flex-direction: column;
+          }
+
+          .npc-network-header p {
+            text-align: left;
+          }
         }
 
         @media (max-width: 560px) {
@@ -955,6 +1357,10 @@ function LoreContent() {
           .category-rail button {
             justify-content: center;
             width: 100%;
+          }
+
+          .board-map {
+            grid-template-columns: 1fr;
           }
 
           .category-rail {

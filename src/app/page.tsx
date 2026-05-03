@@ -2,24 +2,29 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { 
-  Activity, ArrowRight, Castle, FlaskConical, Package, 
-  Skull, Star, Swords, TrendingUp, Hammer, Sparkles, 
-  Clock, CheckCircle2, AlertCircle, ShoppingCart, Target
+import {
+  Activity, ArrowRight, BarChart3, BookOpen, Castle, Package,
+  Skull, Star, Swords, TrendingUp, Hammer, Sparkles,
+  AlertCircle, ShoppingCart, Target
 } from "lucide-react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../constants";
 import { formatGold } from "@/lib/format";
-import { getMarketTaxMultiplier, useWatchlist, usePreferences } from "@/lib/preferences";
+import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useCrafting } from "@/context/CraftingContext";
 import { useRouter } from "next/navigation";
+import {
+  calculateSkillProfitRows,
+  DEFAULT_TOOL_SELECTIONS,
+  type SkillProfitSettings,
+} from "@/lib/skill-profit";
+import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "@/data/lore";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { marketData, allItemsDb, staticData } = useData();
-  const { openItemByName, prefetchItem } = useItemModal();
-  const { watchlist } = useWatchlist();
+  const { marketData, allItemsDb } = useData();
+  const { openItemByName } = useItemModal();
   const { preferences } = usePreferences();
   const { queue } = useCrafting();
 
@@ -28,7 +33,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const saved = localStorage.getItem("zenith_mythic_active_recipes");
     if (saved) {
-      try { setActiveMythicNames(JSON.parse(saved)); } catch (e) {}
+      try { setActiveMythicNames(JSON.parse(saved)); } catch {}
     }
   }, []);
 
@@ -95,8 +100,41 @@ export default function DashboardPage() {
     return { count: queueEntries.length, potentialProfit: totalProfit };
   }, [queueEntries, marketData, preferences.membership]);
 
+  const skillProfitSettings = useMemo<SkillProfitSettings>(() => ({
+    membership: preferences.membership,
+    classBonus: preferences.skillClassBonus,
+    energizingPoolExp: 0,
+    assaultRank: preferences.assaultRank,
+    ascensionBuffIds: [],
+    tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
+    customPrices: preferences.customPrices,
+    barteringBoost: preferences.barteringBoost,
+  }), [
+    preferences.assaultRank,
+    preferences.barteringBoost,
+    preferences.customPrices,
+    preferences.membership,
+    preferences.skillClassBonus,
+    preferences.skillTools,
+  ]);
+
+  const topSkillProfitRows = useMemo(() => {
+    if (!marketData) return [];
+    return calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, [], 100)
+      .filter((row) => !row.excludedFromTop && row.profitPerHour > 0)
+      .sort((a, b) => b.profitPerHour - a.profitPerHour)
+      .slice(0, 5);
+  }, [allItemsDb, marketData, skillProfitSettings]);
+
+  const loreSpotlight = useMemo(() => {
+    const entry = LORE_ENTRIES.find((candidate) => candidate.id === "artifacts-the-runemark-of-eternity") || LORE_ENTRIES[0];
+    const visibleLinks = entry ? (LORE_RELATIONS as readonly LoreRelation[]).filter((relation) => relation.source === entry.id || relation.target === entry.id).length : 0;
+    return { entry, visibleLinks, theoryCount: LORE_THEORIES.length };
+  }, []);
+
   const lastUpdated = marketData?._meta?.last_updated;
   const timeSince = lastUpdated ? Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000) : null;
+  const spotlightLoreEntry = loreSpotlight.entry;
 
   return (
     <main className="container dashboard">
@@ -133,6 +171,13 @@ export default function DashboardPage() {
             <div className="tile-info">
               <span className="tile-label">Profitable Recipes</span>
               <span className="tile-value">{profitableAlchemy.length}</span>
+            </div>
+          </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/skill-profit')}>
+            <div className="tile-icon"><BarChart3 size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Skill Routes</span>
+              <span className="tile-value">{topSkillProfitRows.length}</span>
             </div>
           </div>
           <div className="metric-tile clickable" onClick={() => router.push('/crafting')}>
@@ -174,6 +219,51 @@ export default function DashboardPage() {
                 </div>
               )) : (
                 <div className="empty-state">No profitable opportunities found in current cache.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Skill Profit Radar */}
+          <div className="bento-card-dashboard skill-profit-insight">
+            <div className="card-header-dashboard">
+              <div className="card-title-wrap">
+                <BarChart3 size={16} />
+                <h3>Skill Profit Radar</h3>
+              </div>
+              <Link href="/skill-profit" className="view-more">Open Finder <ArrowRight size={14} /></Link>
+            </div>
+            <div className="skill-profit-dashboard">
+              {topSkillProfitRows.length > 0 ? (
+                <>
+                  <button className="skill-profit-hero" type="button" onClick={() => router.push('/skill-profit')}>
+                    <span>Top route now</span>
+                    <strong>{topSkillProfitRows[0].name}</strong>
+                    <em>{topSkillProfitRows[0].skill} · {topSkillProfitRows[0].bestSaleSource.toUpperCase()} · {topSkillProfitRows[0].volume3d.toLocaleString()} vol</em>
+                    <b>+{formatGold(topSkillProfitRows[0].profitPerHour)}g/hr</b>
+                  </button>
+                  <div className="insight-list">
+                    {topSkillProfitRows.slice(1).map(row => (
+                      <div key={`${row.skill}-${row.name}`} className="insight-row group" onClick={() => router.push('/skill-profit')}>
+                        <div className="insight-name">
+                          <span className="name-text">{row.name}</span>
+                          <span className="roi-badge">{row.skill} · {Math.round(row.roi)}% ROI</span>
+                        </div>
+                        <div className="insight-profit">+{formatGold(row.profitPerHour)}g/hr</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state centered">
+                  <div className="empty-state-icon-wrap">
+                    <BarChart3 size={32} />
+                  </div>
+                  <p className="empty-text">No liquid skill routes found in the current cache.</p>
+                  <Link href="/skill-profit" className="empty-action">
+                    <Sparkles size={14} />
+                    Tune Skill Settings
+                  </Link>
+                </div>
               )}
             </div>
           </div>
@@ -224,6 +314,31 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Lore Archive Fragment */}
+          <div className="bento-card-dashboard lore-insight">
+            <div className="card-header-dashboard">
+              <div className="card-title-wrap">
+                <BookOpen size={16} />
+                <h3>Lore Archive Fragment</h3>
+              </div>
+              <Link href="/lore" className="view-more">Read Atlas <ArrowRight size={14} /></Link>
+            </div>
+            {spotlightLoreEntry ? (
+              <button className="lore-dashboard-thread" type="button" onClick={() => router.push(`/lore?thread=${spotlightLoreEntry.id}`)}>
+                <span>{spotlightLoreEntry.category}</span>
+                <strong>{spotlightLoreEntry.title}</strong>
+                <p>{spotlightLoreEntry.summary}</p>
+                <div className="lore-dashboard-stats">
+                  <em>{LORE_ENTRIES.length} records</em>
+                  <em>{loreSpotlight.visibleLinks} linked threads</em>
+                  <em>{loreSpotlight.theoryCount} theories</em>
+                </div>
+              </button>
+            ) : (
+              <div className="empty-state">Lore archive is still indexing.</div>
+            )}
           </div>
 
           {/* Mythic Lab Insight */}
@@ -283,6 +398,10 @@ export default function DashboardPage() {
                <Link href="/bis" className="s-card">
                   <Star size={20} />
                   <span>BiS Gear</span>
+               </Link>
+               <Link href="/lore" className="s-card">
+                  <BookOpen size={20} />
+                  <span>Lore Wiki</span>
                </Link>
             </div>
           </div>

@@ -2,13 +2,16 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, BarChart3, Trophy } from "lucide-react";
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
+import LoreThreadPanel from "@/components/LoreThreadPanel";
+import { getLoreHintsForNames } from "@/lib/lore-links";
 
 function CombatContent() {
+    const router = useRouter();
     const { openItemByName, prefetchItem } = useItemModal();
     const searchParams = useSearchParams();
     const { staticData, marketData } = useData();
@@ -164,6 +167,20 @@ function CombatContent() {
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
         else { setSortCol(col); setSortDesc(true); }
+    };
+
+    const selectedEnemyLore = useMemo(() => {
+        if (!selectedEnemy) return [];
+        return getLoreHintsForNames([
+            { name: selectedEnemy.name, source: "entity" },
+            { name: selectedEnemy.location?.name, source: "location" },
+            ...(selectedEnemy.lootDetails || []).map((drop: any) => ({ name: drop.name, source: "drop" as const })),
+        ], 5);
+    }, [selectedEnemy]);
+
+    const openLoreThread = (entryId: string) => {
+        setSelectedEnemy(null);
+        router.push(`/lore?thread=${entryId}`);
     };
 
     const renderSortIcon = (col: string) => {
@@ -414,6 +431,8 @@ function CombatContent() {
                                     <div className="stat-value profit-positive">~{selectedEnemy.ev.toLocaleString(undefined, {maximumFractionDigits:1})}/kill</div>
                                 </div>
                             </div>
+
+                            <LoreThreadPanel hints={selectedEnemyLore} title="Combat Lore Thread" onOpenThread={openLoreThread} />
                             
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>Loot Table</h3>
                             

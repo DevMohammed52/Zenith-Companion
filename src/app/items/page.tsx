@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   ArrowDownUp,
+  BookOpen,
   Boxes,
   ChevronRight,
   Database,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
+import { getLoreForItem } from '@/data/lore';
 
 interface SearchIndexItem {
   id: string;
@@ -26,7 +28,7 @@ interface SearchIndexItem {
 }
 
 type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage';
-type SignalFilter = 'ALL' | 'MARKET' | 'VENDOR' | 'CRAFTABLE' | 'USED' | 'DROPPED' | 'EQUIPMENT' | 'EFFECTS';
+type SignalFilter = 'ALL' | 'MARKET' | 'VENDOR' | 'CRAFTABLE' | 'USED' | 'DROPPED' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
 type ViewMode = 'table' | 'cards';
 
 type UsageEntry = {
@@ -46,6 +48,8 @@ type EnrichedItem = SearchIndexItem & {
   hasRecipe: boolean;
   hasStats: boolean;
   hasEffects: boolean;
+  hasLore: boolean;
+  loreCount: number;
   droppedByCount: number;
   usedInCount: number;
   usageScore: number;
@@ -90,6 +94,7 @@ const SIGNAL_OPTIONS: { value: SignalFilter; label: string }[] = [
   { value: 'DROPPED', label: 'Dropped by enemies' },
   { value: 'EQUIPMENT', label: 'Equipment' },
   { value: 'EFFECTS', label: 'Has effects' },
+  { value: 'LORE', label: 'Has lore' },
 ];
 
 const EQUIPMENT_TYPES = new Set([
@@ -195,6 +200,7 @@ function ItemsArchiveContent() {
       const usedInCount = Array.isArray(usage.required_for) ? usage.required_for.length : 0;
       const vendorPrice = Number(market.vendor_price || full.vendor_price || 0);
       const marketPrice = Number(market.avg_3 || market.price || 0);
+      const loreCount = getLoreForItem(item.name).length;
 
       return {
         ...item,
@@ -207,6 +213,8 @@ function ItemsArchiveContent() {
         hasRecipe: Boolean(full.recipe || usage.produced_from),
         hasStats: Boolean(full.stats && Object.keys(full.stats).length > 0),
         hasEffects: Boolean(full.effects && (Array.isArray(full.effects) ? full.effects.length > 0 : Object.keys(full.effects).length > 0)),
+        hasLore: loreCount > 0,
+        loreCount,
         droppedByCount,
         usedInCount,
         usageScore: droppedByCount + usedInCount + (usage.produced_from ? 1 : 0),
@@ -239,6 +247,7 @@ function ItemsArchiveContent() {
         item.vendorPrice > 0 ? 'vendor value' : '',
         item.hasStats ? 'stats equipment gear' : '',
         item.hasEffects ? 'effects buff potion essence' : '',
+        item.hasLore ? 'lore thread valaron archive' : '',
       ].join(' ').toLowerCase();
 
       const matchSearch = tokens.length === 0 || tokens.every(token => haystack.includes(token));
@@ -252,7 +261,8 @@ function ItemsArchiveContent() {
         (selectedSignal === 'USED' && item.usedInCount > 0) ||
         (selectedSignal === 'DROPPED' && item.droppedByCount > 0) ||
         (selectedSignal === 'EQUIPMENT' && (EQUIPMENT_TYPES.has(item.type) || item.hasStats)) ||
-        (selectedSignal === 'EFFECTS' && item.hasEffects);
+        (selectedSignal === 'EFFECTS' && item.hasEffects) ||
+        (selectedSignal === 'LORE' && item.hasLore);
 
       return matchSearch && matchType && matchQuality && matchSignal;
     });
@@ -297,7 +307,8 @@ function ItemsArchiveContent() {
     const marketListed = enrichedItems.filter(i => i.hasMarket).length;
     const craftable = enrichedItems.filter(i => i.hasRecipe).length;
     const used = enrichedItems.filter(i => i.usedInCount > 0).length;
-    return { marketListed, craftable, used };
+    const loreLinked = enrichedItems.filter(i => i.hasLore).length;
+    return { marketListed, craftable, used, loreLinked };
   }, [enrichedItems]);
 
   const handleSort = (key: SortKey) => {
@@ -318,6 +329,7 @@ function ItemsArchiveContent() {
       {item.hasRecipe && <span className="badge craft"><Hammer size={12} aria-hidden="true" /> <span>Craft</span></span>}
       {(EQUIPMENT_TYPES.has(item.type) || item.hasStats) && <span className="badge gear"><Shield size={12} aria-hidden="true" /> <span>Gear</span></span>}
       {item.hasEffects && <span className="badge effect"><Boxes size={12} aria-hidden="true" /> <span>Effect</span></span>}
+      {item.hasLore && <span className="badge lore"><BookOpen size={12} aria-hidden="true" /> <span>Lore</span></span>}
     </div>
   );
 
@@ -345,6 +357,10 @@ function ItemsArchiveContent() {
         <div>
           <span className="summary-label">Used by recipes</span>
           <strong>{stats.used.toLocaleString()}</strong>
+        </div>
+        <div>
+          <span className="summary-label">Lore linked</span>
+          <strong>{stats.loreLinked.toLocaleString()}</strong>
         </div>
         <div>
           <span className="summary-label">Visible results</span>
@@ -744,6 +760,7 @@ function ItemsArchiveContent() {
         :global(.items-db-page .badge.craft) { color: #60a5fa; background: rgba(96,165,250,0.08); }
         :global(.items-db-page .badge.gear) { color: #a78bfa; background: rgba(167,139,250,0.08); }
         :global(.items-db-page .badge.effect) { color: #f472b6; background: rgba(244,114,182,0.08); }
+        :global(.items-db-page .badge.lore) { color: #f5b041; background: rgba(245,176,65,0.1); }
         .item-grid {
           display: none;
           gap: 0.85rem;

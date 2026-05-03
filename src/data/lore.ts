@@ -4994,63 +4994,157 @@ export const LORE_THEORIES = [
 export const LORE_TIMELINE = [
   {
     "id": "age-ancients",
-    "era": "10,000,000 BR",
-    "title": "The Ancients Enter The Record",
+    "era": "10,000,000+ BR",
+    "title": "The Age Of The Ancients",
     "entryIds": [
       "civilizations-the-ancients",
-      "civilizations-the-first-people"
+      "world-history"
     ],
-    "summary": "The deepest records point to peoples and powers far older than the modern kingdoms."
+    "summary": "The oldest official marker belongs to the Ancients, long before recorded kingdoms, wars, or modern calendars."
+  },
+  {
+    "id": "age-splendor",
+    "era": "500,000 BR",
+    "title": "The Age Of Splendor",
+    "entryIds": [
+      "civilizations-the-first-people",
+      "concepts-gods-and-deities",
+      "world-history"
+    ],
+    "summary": "The First People live during an age of old gods, scattered temples, simple prosperity, and worship carried across the earth."
+  },
+  {
+    "id": "great-fragmentation",
+    "era": "200,000 BR",
+    "title": "The Great Fragmentation",
+    "entryIds": [
+      "world-history",
+      "world-valaron",
+      "concepts-colossal-serpent"
+    ],
+    "summary": "Valaron fractures into drifting landmasses. Scholars call it natural evolution, while darker theories whisper about the Serpent blinking."
   },
   {
     "id": "oakenra-roots",
     "era": "25,000 BR",
-    "title": "The Oakenra Become Living Memory",
+    "title": "The Oakenra Civilization Emerges",
     "entryIds": [
       "civilizations-oakenra",
+      "world-history",
       "npcs-oakrum"
     ],
-    "summary": "The tree-like elders anchor the world through memory, age, and patient endurance."
+    "summary": "The Oakenra appear as one of Valaron's oldest named civilizations, carrying memory through wisdom, age, and living roots."
   },
   {
     "id": "arvendor-foundation",
     "era": "200 BR",
-    "title": "Arvendor Rises Around The Citadel",
+    "title": "The Rise Of Arvendor",
     "entryIds": [
       "civilizations-arvendor",
-      "world-the-citadel"
+      "world-history",
+      "world-valaron"
     ],
-    "summary": "Arvendorian identity gathers around divinity, history, and the impossible floating fortress."
+    "summary": "Arvendor rises before recorded history begins, later shaping the official account of divinity, war, and civilization."
+  },
+  {
+    "id": "recorded-history",
+    "era": "0 AR",
+    "title": "Recorded History Begins",
+    "entryIds": [
+      "world-history",
+      "overview",
+      "npcs-edric"
+    ],
+    "summary": "The calendar turns from Before Record to After Record, giving later historians a formal starting point for the official chronicle."
+  },
+  {
+    "id": "citadel-discovery",
+    "era": "37 AR",
+    "title": "The Citadel Is Discovered",
+    "entryIds": [
+      "world-the-citadel",
+      "civilizations-arvendor",
+      "artifacts-the-runemark-of-eternity"
+    ],
+    "summary": "Arvendor discovers the Citadel, setting up the fortress, the crypts, and the Runemark thread that later bends history around itself."
   },
   {
     "id": "ombric-break",
-    "era": "3200 AR",
-    "title": "The Ombric Wound Opens",
+    "era": "3,200 AR",
+    "title": "The Ombric Civilization Forms",
     "entryIds": [
       "civilizations-ombric",
+      "civilizations-arvendor",
       "npcs-astaroth",
       "npcs-ravenna"
     ],
-    "summary": "The underworld thread begins where exile, forbidden power, and Arvendorian fear converge."
+    "summary": "The Ombric enter the official timeline, carrying the underworld thread of exile, transformation, resentment, and buried Arvendorian guilt."
+  },
+  {
+    "id": "eldoria-founding",
+    "era": "4,500 AR",
+    "title": "Eldoria Is Founded",
+    "entryIds": [
+      "civilizations-eldorian",
+      "world-solaris-isle",
+      "world-history"
+    ],
+    "summary": "Eldoria begins its imperial record, eventually becoming a keeper of knowledge whose archives challenge Arvendor's clean version of history."
   },
   {
     "id": "mokthar-marker",
-    "era": "5001 AR",
-    "title": "Mokthar Strength Enters The Wider Chronicle",
+    "era": "5,001 AR",
+    "title": "The Mokthar Enter Historical Records",
     "entryIds": [
-      "civilizations-mokthar"
+      "civilizations-mokthar",
+      "world-history"
     ],
     "summary": "The warrior civilization is marked in the archive as a force tied to Ardenfell and the wider world."
   },
   {
-    "id": "present-archive",
-    "era": "Current Records",
-    "title": "Edric Preserves Dangerous Truths",
+    "id": "great-war-arvendor-ombric",
+    "era": "8,700 AR",
+    "title": "The Great War Between Arvendor And Ombric",
     "entryIds": [
+      "world-history",
+      "civilizations-arvendor",
+      "civilizations-ombric",
+      "world-the-citadel",
+      "artifacts-the-runemark-of-eternity"
+    ],
+    "summary": "The war burns through bloodlines and reaches the crypts under the Citadel, where mass death is used to empower the Runemark of Eternity."
+  },
+  {
+    "id": "dark-chapter-eldoria",
+    "era": "9,407 AR",
+    "title": "The Dark Chapter Of Eldoria",
+    "entryIds": [
+      "world-history",
+      "civilizations-eldorian"
+    ],
+    "summary": "Eldoria's shameful chapter begins with an emperor's attempted genocide, a wound the empire would later prefer to forget."
+  },
+  {
+    "id": "great-fire-eldoria",
+    "era": "9,480 AR",
+    "title": "The Great Fire Of Eldoria",
+    "entryIds": [
+      "world-history",
+      "civilizations-eldorian",
+      "civilizations-arvendor"
+    ],
+    "summary": "A massive fire destroys priceless Eldorian archives. The official page leaves room for the suspicion that the loss was deliberate."
+  },
+  {
+    "id": "present-archive",
+    "era": "13,903 AR",
+    "title": "Current Day",
+    "entryIds": [
+      "world-history",
       "overview",
       "npcs-edric"
     ],
-    "summary": "The chronicle itself becomes part of the mystery, written by a historian who knows knowledge has a cost."
+    "summary": "The present day sits on top of buried wars, missing records, Ombric unrest, and Edric's dangerous effort to preserve what can still be known."
   }
 ] as const satisfies readonly LoreTimelineEvent[];
 
