@@ -8,7 +8,7 @@ import {
 import { useItemModal } from '@/context/ItemModalContext';
 import { useRouter } from 'next/navigation';
 import { useCrafting } from '@/context/CraftingContext';
-import { usePreferences } from '@/lib/preferences';
+import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
 
 import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
@@ -508,7 +508,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 const investment = totalMatCost + recipeCostPerCraft;
                 
                 // Compare Market vs Vendor
-                const marketRevenue = resultPrice * 0.88;
+                const marketTaxRate = getMarketTaxRate(preferences.membership);
+                const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+                const marketRevenue = resultPrice * marketTaxMultiplier;
                 const vendorBase = item.type === 'RECIPE' ? (item.recipe_yield?.vendor_price || 0) : (item.vendor_price || 0);
                 const vendorRevenue = vendorBase * (1 + ((Number(preferences.barteringBoost) || 0) / 100));
                 
@@ -575,7 +577,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             </div>
                           )}
                           <div className="analysis-row" style={{ color: bestPath === 'MARKET' ? 'var(--text-accent)' : 'rgba(255,255,255,0.4)' }}>
-                            <span>Market Net <small>(After 12% Tax)</small></span>
+                            <span>Market Net <small>(After {Math.round(marketTaxRate * 100)}% Tax)</small></span>
                             <strong>{marketRevenue.toLocaleString()}g</strong>
                           </div>
                           {vendorBase > 0 && (

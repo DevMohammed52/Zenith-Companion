@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../../constants";
 import { ChevronUp, ChevronDown, Minus, Info, X, Activity, Target, Search, Sparkles, TrendingUp, Hammer, DollarSign, Plus, Trash2, Edit3, Save, Clock } from "lucide-react";
-import { usePreferences } from "@/lib/preferences";
+import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 
@@ -169,6 +169,7 @@ export default function MythicAlchemyPage() {
         if (!data) return [];
         const calculated: RowData[] = [];
         const parsedBartering = Number(preferences.barteringBoost) || 0;
+        const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
         for (const name of activeRecipeNames) {
             const recipe = ALCHEMY_ITEMS[name];
@@ -211,7 +212,7 @@ export default function MythicAlchemyPage() {
 
             const customSellPrice = customSellPrices[name] ?? null;
             const activeSellPrice = customSellPrice !== null ? customSellPrice : mktPrice;
-            const revMarket = activeSellPrice * 0.88;
+            const revMarket = activeSellPrice * marketTaxMultiplier;
             
             // Fallback to allItemsDb if vendor price is missing in market data
             let baseVendor = pData?.vendor_price || 0;
@@ -242,7 +243,7 @@ export default function MythicAlchemyPage() {
             });
         }
         return calculated;
-    }, [data, allItemsDb, activeRecipeNames, customPrices, usesLeft, customMatPrices, customSellPrices, preferences.barteringBoost]);
+    }, [data, allItemsDb, activeRecipeNames, customPrices, usesLeft, customMatPrices, customSellPrices, preferences.barteringBoost, preferences.membership]);
 
     const labSummary = useMemo(() => {
         return activeRows.reduce((acc, curr) => ({

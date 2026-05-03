@@ -72,6 +72,8 @@ export default function RootLayout({
           .content-wrapper {
             padding: 0;
             width: 100%;
+            min-width: 0;
+            overflow-x: clip;
           }
           .top-navigation {
             display: none;
@@ -96,6 +98,7 @@ export default function RootLayout({
               z-index: 1000;
               height: 64px;
               backdrop-filter: blur(12px);
+              overflow: hidden;
             }
             .top-navigation .global-search-trigger {
               flex: 1 1 auto;

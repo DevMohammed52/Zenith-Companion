@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import { ChevronUp, ChevronDown, Minus, Info, X, Activity, Target, Search } from "lucide-react";
 import Link from "next/link";
-import { usePreferences } from "@/lib/preferences";
+import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -65,6 +65,7 @@ function AlchemyContent() {
     const calculated: (RowData & { level: number })[] = [];
     const parsedBartering = Number(preferences.barteringBoost) || 0;
     const parsedActiveHours = Number(preferences.activeHours) || 0;
+    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     for (const [name, recipe] of Object.entries(ALCHEMY_ITEMS)) {
       // Basic Search & Level Filters
@@ -120,7 +121,7 @@ function AlchemyContent() {
 
         if (finalPrice <= 0) { matsValid = false; break; }
         matCost += finalPrice * qty;
-        matsSellVal += (finalPrice * 0.88) * qty;
+        matsSellVal += (finalPrice * marketTaxMultiplier) * qty;
       }
 
       // Add recipe cost for Mythics (amortized over 30 uses)
@@ -137,7 +138,7 @@ function AlchemyContent() {
         continue;
       }
 
-      const rev = price * 0.88;
+      const rev = price * marketTaxMultiplier;
       const baseVendor = pData.vendor_price || 0;
       const vendorRev = baseVendor * (1 + (parsedBartering / 100));
       const bestRev = Math.max(rev, vendorRev, matsSellVal);
@@ -183,7 +184,7 @@ function AlchemyContent() {
     });
 
     return filtered;
-  }, [data, preferences.barteringBoost, preferences.activeHours, sortCol, sortDesc, minRoi, minVolume, searchTerm, minLevel, maxLevel]);
+  }, [data, preferences.barteringBoost, preferences.activeHours, preferences.membership, sortCol, sortDesc, minRoi, minVolume, searchTerm, minLevel, maxLevel]);
 
   const autoOpenedRef = useRef<string | null>(null);
   const searchParams = useSearchParams();
@@ -216,6 +217,8 @@ function AlchemyContent() {
     if (sortCol === col) setSortDesc(!sortDesc);
     else { setSortCol(col); setSortDesc(true); }
   };
+  const marketTaxRate = getMarketTaxRate(preferences.membership);
+  const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
 
   const renderSortIcon = (col: AlchemySortKey) => {
@@ -482,7 +485,7 @@ function AlchemyContent() {
                                 <span className="mono" style={{ fontWeight: 700 }}>{(selectedRow.cost - selectedRow.vialCost).toLocaleString()}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>MARKET NET (AFTER 12% TAX)</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>MARKET NET (AFTER {Math.round(marketTaxRate * 100)}% TAX)</span>
                                 <span className="mono" style={{ fontWeight: 700 }}>{selectedRow.rev.toLocaleString()}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -494,7 +497,7 @@ function AlchemyContent() {
                             
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TARGET LIST PRICE</span>
-                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-accent)' }}>{(selectedRow.rev / 0.88).toLocaleString(undefined, {maximumFractionDigits:0})}</span>
+                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-accent)' }}>{(selectedRow.rev / marketTaxMultiplier).toLocaleString(undefined, {maximumFractionDigits:0})}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>PROJECTED NET PROFIT</span>

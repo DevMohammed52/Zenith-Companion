@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../constants";
 import { formatGold } from "@/lib/format";
-import { useWatchlist, usePreferences } from "@/lib/preferences";
+import { getMarketTaxMultiplier, useWatchlist, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useCrafting } from "@/context/CraftingContext";
@@ -36,6 +36,7 @@ export default function DashboardPage() {
     if (!marketData) return [];
 
     const barter = (Number(preferences.barteringBoost) || 0) / 100;
+    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     return Object.entries(ALCHEMY_ITEMS)
       .map(([name, recipe]) => {
@@ -59,7 +60,7 @@ export default function DashboardPage() {
 
         if (!hasAllPrices) return null;
 
-        const marketNet = sellPrice * 0.88;
+        const marketNet = sellPrice * marketTaxMultiplier;
         const vendorNet = (itemInfo.vendor_price || 0) * (1 + barter);
         const bestRevenue = Math.max(marketNet, vendorNet);
         const profit = bestRevenue - matCost;
@@ -70,7 +71,7 @@ export default function DashboardPage() {
       .filter((item): item is NonNullable<typeof item> => item !== null && item.profit > 0)
       .sort((a, b) => b.profit - a.profit)
       .slice(0, 6);
-  }, [marketData, allItemsDb, preferences.barteringBoost]);
+  }, [marketData, allItemsDb, preferences.barteringBoost, preferences.membership]);
 
   const queueEntries = useMemo(() => Object.entries(queue), [queue]);
 
@@ -88,11 +89,11 @@ export default function DashboardPage() {
         cost += (marketData[m]?.avg_3 || VIAL_COSTS[m] || 0) * q;
       });
       
-      totalProfit += (sellPrice * 0.88 - cost) * quantity;
+      totalProfit += (sellPrice * getMarketTaxMultiplier(preferences.membership) - cost) * quantity;
     });
 
     return { count: queueEntries.length, potentialProfit: totalProfit };
-  }, [queueEntries, marketData]);
+  }, [queueEntries, marketData, preferences.membership]);
 
   const lastUpdated = marketData?._meta?.last_updated;
   const timeSince = lastUpdated ? Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000) : null;

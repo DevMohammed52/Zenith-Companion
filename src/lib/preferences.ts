@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AssaultRank, DEFAULT_TOOL_SELECTIONS, ToolSelections } from "@/lib/skill-profit";
 
 export type ThemeName = "ember" | "forest" | "arcane" | "frost";
 
 export type Preferences = {
+  membership: boolean;
+  skillClassBonus: boolean;
+  assaultRank: AssaultRank;
+  skillTools: ToolSelections;
   barteringBoost: number | "";
   activeHours: number | "";
   killsPerHour: number | "";
@@ -17,6 +22,10 @@ export type Preferences = {
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
+  membership: false,
+  skillClassBonus: false,
+  assaultRank: "none",
+  skillTools: DEFAULT_TOOL_SELECTIONS,
   barteringBoost: 0,
   activeHours: 18,
   killsPerHour: 360,
@@ -36,9 +45,13 @@ const readPreferences = (): Preferences => {
   try {
     const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
     if (stored) Object.assign(next, JSON.parse(stored));
+    next.skillTools = { ...DEFAULT_TOOL_SELECTIONS, ...next.skillTools };
   } catch (e) {}
   return next;
 };
+
+export const getMarketTaxRate = (membership: boolean) => membership ? 0.12 : 0.15;
+export const getMarketTaxMultiplier = (membership: boolean) => 1 - getMarketTaxRate(membership);
 
 export const applyTheme = (theme: ThemeName) => {
   if (typeof document !== 'undefined') {

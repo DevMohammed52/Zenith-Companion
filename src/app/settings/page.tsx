@@ -1,7 +1,8 @@
 "use client";
 
-import { Keyboard, Palette, Settings, Swords, FlaskConical, Target, Shield, Zap } from "lucide-react";
+import { BarChart3, Check, Keyboard, Palette, Settings, Swords, FlaskConical, Target, Shield, Zap } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
+import { ASSAULT_OPTIONS, SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
@@ -83,6 +84,27 @@ export default function SettingsPage() {
           <h2><FlaskConical size={17} /> Skill Analytics</h2>
           <div className="settings-fields">
             <label className="settings-field">
+              <span><strong>Membership</strong><small>Uses 12% market tax and member skill bonuses.</small></span>
+              <button type="button" className="control-input" onClick={() => setPreferences({ membership: !preferences.membership })} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
+              </button>
+            </label>
+
+            <label className="settings-field">
+              <span><strong>Class Skill Buff</strong><small>Applies the generic +10% skill class buff where supported.</small></span>
+              <button type="button" className="control-input" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+                {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class buff active" : "No class buff"}
+              </button>
+            </label>
+
+            <label className="settings-field">
+              <span><strong>Conquest Buff</strong><small>Default conquest rank for skill profit.</small></span>
+              <select className="control-input" value={preferences.assaultRank} onChange={e => setPreferences({ assaultRank: e.target.value as typeof preferences.assaultRank })}>
+                {ASSAULT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+
+            <label className="settings-field">
               <span><strong>Bartering Boost %</strong><small>Vendor bonus.</small></span>
               <input type="number" className="control-input" min="0" max="20" value={preferences.barteringBoost} onChange={e => handleNumChange('barteringBoost', e.target.value)} onBlur={() => clamp('barteringBoost', 0, 20)} />
             </label>
@@ -110,6 +132,26 @@ export default function SettingsPage() {
                     ))}
                 </div>
             </div>
+          </div>
+        </div>
+
+        <div className="settings-panel settings-panel-wide">
+          <h2><BarChart3 size={17} /> Skill Tools</h2>
+          <div className="settings-fields">
+            {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map(skill => (
+              <label className="settings-field" key={skill}>
+                <span><strong>{skill} Tool</strong><small>Efficiency tool used by Skill Profit Finder.</small></span>
+                <select
+                  className="control-input"
+                  value={preferences.skillTools[skill]}
+                  onChange={e => setPreferences({ skillTools: { ...preferences.skillTools, [skill]: e.target.value } })}
+                >
+                  {SKILL_TOOLS[skill].map(tool => (
+                    <option key={tool.name} value={tool.name}>{tool.name} (+{tool.efficiency}% eff)</option>
+                  ))}
+                </select>
+              </label>
+            ))}
           </div>
         </div>
 

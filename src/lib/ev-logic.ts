@@ -56,12 +56,12 @@ export function getItemTrueValue(
         }
 
         const uses = yieldData.uses === 'Infinite' ? 1 : Number(yieldData.uses);
-        const craftingROI = (resultVal * 0.88 - matCosts) * (uses || 1);
+        const craftingROI = (resultVal * 0.85 - matCosts) * (uses || 1);
 
         // For recipes, we take max of selling recipe or crafting
         // If untradable, we only have crafting ROI
         if (dbItem.is_tradeable) {
-            return Math.max(marketPrice * 0.88, craftingROI);
+            return Math.max(marketPrice * 0.85, craftingROI);
         }
         return Math.max(0, craftingROI);
     }

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useCrafting } from "@/context/CraftingContext";
+import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 
 export default function CraftingPage() {
     const { openItemByName, prefetchItem } = useItemModal();
     const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
+    const { preferences } = usePreferences();
     const [marketData, setMarketData] = useState<any>(null);
     const [adding, setAdding] = useState("");
 
@@ -43,6 +45,7 @@ export default function CraftingPage() {
         const recipes: Record<string, number> = {};
         let cost = 0;
         let revenue = 0;
+        const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
         for (const [recipeName, qty] of Object.entries(queue)) {
             const recipe = ALCHEMY_ITEMS[recipeName];
@@ -59,7 +62,7 @@ export default function CraftingPage() {
             }
             // Revenue
             const sellPrice = marketData?.[recipeName]?.avg_3 || 0;
-            revenue += sellPrice * 0.88 * qty;
+            revenue += sellPrice * marketTaxMultiplier * qty;
         }
 
         // Material costs
@@ -82,7 +85,7 @@ export default function CraftingPage() {
             totalRevenue: revenue,
             totalProfit: revenue - cost,
         };
-    }, [queue, marketData]);
+    }, [queue, marketData, preferences.membership]);
 
     const queueEntries = Object.entries(queue);
 
@@ -161,7 +164,7 @@ export default function CraftingPage() {
                                     for (const [mat, q] of Object.entries(recipe?.materials || {})) {
                                         matCost += (marketData?.[mat]?.avg_3 || 0) * q;
                                     }
-                                    const profit = (sellPrice * 0.88 - matCost) * qty;
+                                    const profit = (sellPrice * getMarketTaxMultiplier(preferences.membership) - matCost) * qty;
                                     return (
                                         <div key={name} style={{
                                             display: 'flex', alignItems: 'center', gap: '0.75rem',
