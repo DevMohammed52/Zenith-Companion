@@ -71,7 +71,7 @@ function DungeonsContent() {
             });
         }
 
-        let filtered = searchTerm 
+        const filtered = searchTerm 
             ? calculated.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || (e.location?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
             : calculated;
 

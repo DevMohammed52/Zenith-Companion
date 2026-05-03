@@ -115,27 +115,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     return total > 0 ? total : null;
   }, [item, marketData]);
 
-  if (error) {
-    return (
-      <div className="modal-container">
-        <div className="modal-backdrop" onClick={onClose} />
-        <div className="error-card">
-          <div className="error-label">Registry Error</div>
-          <div className="error-msg">{error}</div>
-          <button onClick={onClose} className="error-btn">Dismiss</button>
-        </div>
-        <style jsx>{`
-          .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-          .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
-          .error-card { position: relative; padding: 3rem; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); border-radius: 32px; text-align: center; max-width: 400px; }
-          .error-label { color: #f87171; margin-bottom: 0.5rem; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; }
-          .error-msg { color: #fff; font-size: 1.25rem; font-weight: 300; margin-bottom: 2rem; }
-          .error-btn { padding: 0.75rem 2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; }
-        `}</style>
-      </div>
-    );
-  }
-
   const renderValue = (val: any) => {
     if (val === null || val === undefined) return '';
     if (typeof val === 'string' || typeof val === 'number') return val;
@@ -197,6 +176,27 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const hasEffects = item && item.effects && (Array.isArray(item.effects) ? item.effects.length > 0 : Object.keys(item.effects).length > 0);
   const hasRestoration = item && (item.health_restore > 0 || item.hunger_restore > 0);
   const hasRequirements = item && item.requirements && Object.keys(item.requirements).length > 0;
+
+  if (error) {
+    return (
+      <div className="modal-container">
+        <div className="modal-backdrop" onClick={onClose} />
+        <div className="error-card">
+          <div className="error-label">Registry Error</div>
+          <div className="error-msg">{error}</div>
+          <button onClick={onClose} className="error-btn">Dismiss</button>
+        </div>
+        <style jsx>{`
+          .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+          .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+          .error-card { position: relative; padding: 3rem; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); border-radius: 32px; text-align: center; max-width: 400px; }
+          .error-label { color: #f87171; margin-bottom: 0.5rem; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; }
+          .error-msg { color: #fff; font-size: 1.25rem; font-weight: 300; margin-bottom: 2rem; }
+          .error-btn { padding: 0.75rem 2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; }
+        `}</style>
+      </div>
+    );
+  }
 
   // Recipe display data (Unified)
   const recipeData = item?.recipe || item?.produced_from;
@@ -273,7 +273,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <div className="bento-card description-card full-width" style={{ background: 'rgba(255,255,255,0.01)', borderStyle: 'dashed' }}>
                   <div className="card-label"><Info size={14} /> Item Description</div>
                   <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    "{item.description}"
+                    &quot;{item.description}&quot;
                   </div>
                 </div>
               )}

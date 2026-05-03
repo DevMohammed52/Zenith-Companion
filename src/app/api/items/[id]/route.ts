@@ -4,7 +4,7 @@ import path from 'path';
 import { VIAL_COSTS, VENDOR_ITEMS } from '@/constants';
 
 // Singleton caches with timestamps
-let caches: Record<string, { data: any, mtime: number }> = {
+const caches: Record<string, { data: any, mtime: number }> = {
   itemsMap: { data: null, mtime: 0 },
   allItems: { data: null, mtime: 0 },
   market: { data: null, mtime: 0 },

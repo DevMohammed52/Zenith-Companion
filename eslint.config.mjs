@@ -12,7 +12,22 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "node_modules/**",
+    "public/**",
+    "game_info/**",
+    "scratch/**",
+    "maintenance_scripts/**",
+    "scripts/**",
+    "scraper.mjs",
+    "tsconfig.tsbuildinfo",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

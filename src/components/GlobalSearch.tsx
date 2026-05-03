@@ -218,7 +218,7 @@ export default function GlobalSearch() {
                   <em>{result.type}</em>
                 </button>
               ))}
-              {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for "{query}"</div>}
+              {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
             </div>
           </div>
         </div>

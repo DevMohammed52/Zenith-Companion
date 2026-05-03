@@ -7,7 +7,7 @@
     "dev:full": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
     "build": "node scripts/rebuild-usage-map.mjs && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "rebuild": "node scripts/rebuild-usage-map.mjs",
     "scrape": "SCRAPE_ONCE=true node scraper.mjs",
     "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority"

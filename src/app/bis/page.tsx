@@ -4,6 +4,7 @@ import { Shield, Sword, Target, Zap, HardHat, Layers, MoveDown, ArrowDown, Hand,
 import Link from "next/link";
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
+import { useData } from "@/context/DataContext";
 
 const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: React.ReactNode }> = {
     SWORD:      { label: "Sword",      defaultStat: "attack_power", icon: <Sword size={15} /> },
@@ -71,7 +72,7 @@ function getRankValue(item: GearItem, sortKey: string, defaultStat: string, mark
 export default function BISPage() {
     const { openItemByName, prefetchItem } = useItemModal();
     const [gearData, setGearData]     = useState<Record<string, GearItem> | null>(null);
-    const [marketData, setMarketData] = useState<any>(null);
+    const { marketData } = useData();
     const { preferences, setPreferences } = usePreferences();
     
     const [sortBy, setSortBy]         = useState("auto");
@@ -79,15 +80,6 @@ export default function BISPage() {
 
     useEffect(() => {
         fetch("/gear-data.json?t=" + Date.now()).then(r => r.json()).then(setGearData).catch(() => {});
-        const fetchMarket = async () => {
-            try {
-                const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) setMarketData(await res.json());
-            } catch {}
-        };
-        fetchMarket();
-        const iv = setInterval(fetchMarket, 5000);
-        return () => clearInterval(iv);
     }, []);
 
     const toggleSlot = (type: string) => {

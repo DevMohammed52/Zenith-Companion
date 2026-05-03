@@ -1,36 +1,19 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { FlaskConical, ShoppingCart, Trash2, Plus, Minus, ChevronDown, Package } from "lucide-react";
 import Link from "next/link";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useCrafting } from "@/context/CraftingContext";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
+import { useData } from "@/context/DataContext";
 
 export default function CraftingPage() {
     const { openItemByName, prefetchItem } = useItemModal();
     const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
     const { preferences } = usePreferences();
-    const [marketData, setMarketData] = useState<any>(null);
+    const { marketData } = useData();
     const [adding, setAdding] = useState("");
-
-    useEffect(() => {
-        const fetch_ = async () => {
-            try {
-                const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) {
-                    const data = await res.json();
-                    setMarketData((prev: any) => {
-                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
-                        return data;
-                    });
-                }
-            } catch {}
-        };
-        fetch_();
-        const iv = setInterval(fetch_, 5000);
-        return () => clearInterval(iv);
-    }, []);
 
     const addRecipe = (name: string) => {
         if (!name || !ALCHEMY_ITEMS[name]) return;

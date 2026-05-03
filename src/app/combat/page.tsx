@@ -5,13 +5,13 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
+import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 
 function CombatContent() {
     const { openItemByName, prefetchItem } = useItemModal();
     const searchParams = useSearchParams();
-    const [staticData, setStaticData] = useState<any>(null);
-    const [marketData, setMarketData] = useState<any>(null);
+    const { staticData, marketData } = useData();
     const { preferences, setPreferences } = usePreferences();
     const [selectedEnemy, setSelectedEnemy] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("ev");
@@ -22,26 +22,6 @@ function CombatContent() {
         const search = searchParams.get("search");
         if (search) setSearchTerm(search);
     }, [searchParams]);
-
-    useEffect(() => {
-        fetch('/static-data.json').then(r => r.json()).then(setStaticData);
-        
-        const fetchMarket = async () => {
-            try {
-                const res = await fetch("/market-data.json?t=" + Date.now());
-                if (res.ok) {
-                    const data = await res.json();
-                    setMarketData((prev: any) => {
-                        if (prev?._meta?.last_updated === data?._meta?.last_updated) return prev;
-                        return data;
-                    });
-                }
-            } catch (e) {}
-        };
-        fetchMarket();
-        const interval = setInterval(fetchMarket, 30000);
-        return () => clearInterval(interval);
-    }, []);
 
     // Keyboard support for Esc
     useEffect(() => {
@@ -87,7 +67,7 @@ function CombatContent() {
                 lootDetails: enemy.loot?.map((drop: any) => {
                     const price = marketData[drop.name]?.avg_3 || 0;
                     const dropChance = (drop.chance || 0) / 100;
-                    const expectedVal = dropChance * (drop.quantity || 1) * price;
+                    const expectedVal = dropChance * (drop.quantity || 1) * price * chanceOfLoot;
                     return { ...drop, price, expectedVal };
                 }) || []
             });
@@ -133,7 +113,7 @@ function CombatContent() {
     const rows = useMemo(() => {
         // Search Filter
         const q = debouncedSearch.toLowerCase();
-        let filtered = q
+        const filtered = q
             ? combatRows.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
             : [...combatRows];
 

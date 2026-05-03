@@ -131,7 +131,7 @@ export default function WeatherPage() {
                   <Map size={16} />
                   <div>
                     <h4>Regional Geography</h4>
-                    <p>Weather isn't global. It changes depending on where you are, based on the area’s geography and the current season.</p>
+                    <p>Weather isn&apos;t global. It changes depending on where you are, based on the area&apos;s geography and the current season.</p>
                   </div>
                 </div>
                 <div className="mech-item">
