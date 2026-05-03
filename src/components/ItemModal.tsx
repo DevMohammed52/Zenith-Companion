@@ -13,7 +13,7 @@ import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/
 import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
-import { VENDOR_ITEMS } from '@/constants';
+import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
 import { getLoreEntry, getLoreForItem } from '@/data/lore';
 
 interface ItemModalProps {
@@ -599,7 +599,14 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
               {/* Recipe Card (Unified) */}
               {showRecipe && (() => {
-                const totalMatCost = recipeMats.reduce((acc: number, m: any) => acc + ((m.price || 0) * (m.amount || m.quantity || 1)), 0);
+                const getRecipeMatUnitPrice = (m: any) => {
+                  const merchantBuyPrice = getMerchantBuyPrice(m.name || m.item_name);
+                  if (merchantBuyPrice > 0) return merchantBuyPrice;
+                  const injectedPrice = Number(m.price || 0);
+                  if (injectedPrice > 0) return injectedPrice;
+                  return 0;
+                };
+                const totalMatCost = recipeMats.reduce((acc: number, m: any) => acc + (getRecipeMatUnitPrice(m) * (m.amount || m.quantity || 1)), 0);
                 
                 // Uses logic from shared core
                 const rawUses = getRecipeUses(item);
@@ -659,7 +666,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           <div key={idx} className="ing-row" onClick={() => openItemByName?.(ing.name || ing.item_name)}>
                             <div className="ing-name-link">
                               {ing?.name || ing?.item_name}
-                              <span className="ing-price-sub">@{ (ing.price || 0).toLocaleString() }g</span>
+                              <span className="ing-price-sub">@{getRecipeMatUnitPrice(ing).toLocaleString()}g</span>
                             </div>
                             <span className="ing-qty">x{ing?.amount || ing?.quantity}</span>
                           </div>

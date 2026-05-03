@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { VIAL_COSTS, VENDOR_ITEMS } from '@/constants';
+import { getMerchantBuyPrice } from '@/constants';
 
 // Singleton caches with timestamps
 const caches: Record<string, { data: any, mtime: number }> = {
@@ -73,18 +73,14 @@ export async function GET(
           item.recipe.ingredients = item.recipe.ingredients.map((ing: any) => {
             const name = ing.name || ing.item_name;
             const ingMarket = marketData[name] || {};
-            const vialCost = VIAL_COSTS[name] || 0;
-            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
-            return { ...ing, price: ingMarket.avg_3 || vialCost || vendorCost || 0 };
+            return { ...ing, price: getMerchantBuyPrice(name) || ingMarket.avg_3 || 0 };
           });
         }
         if (item.recipe.materials) {
           item.recipe.materials = item.recipe.materials.map((mat: any) => {
             const name = mat.item_name || mat.name;
             const matMarket = marketData[name] || {};
-            const vialCost = VIAL_COSTS[name] || 0;
-            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
-            return { ...mat, price: matMarket.avg_3 || vialCost || vendorCost || 0 };
+            return { ...mat, price: getMerchantBuyPrice(name) || matMarket.avg_3 || 0 };
           });
         }
       }
@@ -95,9 +91,7 @@ export async function GET(
           item.produced_from.mats = item.produced_from.mats.map((mat: any) => {
             const name = mat.name;
             const matMarket = marketData[name] || {};
-            const vialCost = VIAL_COSTS[name] || 0;
-            const vendorCost = parseInt(VENDOR_ITEMS[name]?.price?.replace(/,/g, '') || "0");
-            return { ...mat, price: matMarket.avg_3 || vialCost || vendorCost || 0 };
+            return { ...mat, price: getMerchantBuyPrice(name) || matMarket.avg_3 || 0 };
           });
         }
         

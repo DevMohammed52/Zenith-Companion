@@ -5,6 +5,8 @@
  * chests, recipes, and market prices.
  */
 
+import { getMerchantBuyPrice } from "@/constants";
+
 export function getItemTrueValue(
     itemName: string, 
     marketData: any, 
@@ -51,7 +53,8 @@ export function getItemTrueValue(
         let matCosts = 0;
         const mats = dbItem.recipe?.ingredients || dbItem.recipe?.materials || [];
         for (const mat of mats) {
-            const matPrice = marketData[mat.name]?.avg_3 || 0;
+            const matName = mat.name || mat.item_name;
+            const matPrice = marketData[matName]?.avg_3 || getMerchantBuyPrice(matName) || 0;
             matCosts += matPrice * (mat.amount || mat.quantity || 1);
         }
 

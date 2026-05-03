@@ -76,6 +76,7 @@ type AlchemyRow = {
   liquidationNet: number;
   bestRevenue: number;
   profit: number;
+  profitPerHour: number;
   opportunityProfit: number;
   roi: number;
   dailyProfit: number;
@@ -90,6 +91,7 @@ type AlchemySortKey =
   | "level"
   | "action"
   | "profit"
+  | "profitPerHour"
   | "roi"
   | "dailyProfit"
   | "vol_3"
@@ -234,7 +236,8 @@ function AlchemyContent() {
     if (saved.minVolume !== undefined) setMinVolume(saved.minVolume);
     if (typeof saved.onlyProfitable === "boolean") setOnlyProfitable(saved.onlyProfitable);
     if (typeof saved.hideMissing === "boolean") setHideMissing(saved.hideMissing);
-    if (saved.sortCol) setSortCol(saved.sortCol);
+    if (saved.sortCol === "craftsPerHour") setSortCol("profitPerHour");
+    else if (saved.sortCol) setSortCol(saved.sortCol);
     if (typeof saved.sortDesc === "boolean") setSortDesc(saved.sortDesc);
     setOwnedMaterials(readOwnedMaterials());
     const savedOwnedMode = typeof saved.ownedCostMode === "boolean"
@@ -350,8 +353,9 @@ function AlchemyContent() {
       const opportunityProfit = missing ? 0 : bestRevenue - opportunityCost;
       const roi = !missing && cost > 0 ? (profit / cost) * 100 : 0;
       const craftsPerHour = recipe.time > 0 ? 3600 / recipe.time : 0;
+      const profitPerHour = profit * craftsPerHour;
       const craftsPerDay = craftsPerHour * parsedActiveHours;
-      const dailyProfit = profit * craftsPerDay;
+      const dailyProfit = profitPerHour * parsedActiveHours;
 
       let action: ActionPath = "LIQUIDATE";
       if (bestRevenue === vendorNet && vendorNet > liquidationNet) action = "VENDOR";
@@ -400,6 +404,7 @@ function AlchemyContent() {
         liquidationNet,
         bestRevenue,
         profit,
+        profitPerHour,
         opportunityProfit,
         roi,
         dailyProfit,
@@ -610,7 +615,7 @@ function AlchemyContent() {
                   <th className="sortable" onClick={() => handleSort("roi")}>ROI {renderSortIcon("roi")}</th>
                   <th className="sortable" onClick={() => handleSort("vol_3")}>3D Vol {renderSortIcon("vol_3")}</th>
                   <th className="sortable" onClick={() => handleSort("time")}>Time {renderSortIcon("time")}</th>
-                  <th className="sortable" onClick={() => handleSort("craftsPerHour")}>Profit/Hr {renderSortIcon("craftsPerHour")}</th>
+                  <th className="sortable" onClick={() => handleSort("profitPerHour")}>Profit/Hr {renderSortIcon("profitPerHour")}</th>
                   <th>Signals</th>
                 </tr>
               </thead>
@@ -637,7 +642,7 @@ function AlchemyContent() {
                     <td className={`mono ${row.roi >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : `${row.roi >= 0 ? "+" : ""}${row.roi.toFixed(1)}%`}</td>
                     <td className={`mono ${row.vol_3 > 0 ? "text-main" : "text-muted"}`}>{formatGold(row.vol_3)}</td>
                     <td className="mono text-muted">{formatDuration(row.time)}</td>
-                    <td className={`mono ${row.dailyProfit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit * row.craftsPerHour)}</td>
+                    <td className={`mono ${row.profitPerHour >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profitPerHour)}</td>
                     <td>
                       <div className="alchemy-signal-stack">
                         <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
@@ -660,6 +665,7 @@ function AlchemyContent() {
             onToggleDirection={() => setSortDesc((prev) => !prev)}
             options={[
               { value: "profit", label: "Net/Craft" },
+              { value: "profitPerHour", label: "Profit/Hr" },
               { value: "roi", label: "ROI" },
               { value: "dailyProfit", label: "Daily Profit" },
               { value: "vol_3", label: "Volume" },
@@ -684,7 +690,7 @@ function AlchemyContent() {
                     <div className="m-card-body">
                       <div className="m-stat"><span className="m-label">PATH</span><PathBadge action={row.action} /></div>
                       <div className="m-stat"><span className="m-label">NET/CRAFT</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
-                      <div className="m-stat"><span className="m-label">PROFIT/HR</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit * row.craftsPerHour)}</span></div>
+                      <div className="m-stat"><span className="m-label">PROFIT/HR</span><span className={`m-val ${row.profitPerHour > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profitPerHour)}</span></div>
                       <div className="m-stat"><span className="m-label">VOLUME</span><span className="m-val">{formatGold(row.vol_3)}</span></div>
                     </div>
                     <div className="m-card-footer">

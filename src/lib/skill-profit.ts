@@ -1,4 +1,4 @@
-import { ALCHEMY_ITEMS, VENDOR_ITEMS, VIAL_COSTS } from "@/constants";
+import { ALCHEMY_ITEMS, VENDOR_ITEMS, getMerchantBuyPrice, parseVendorGoldPrice } from "@/constants";
 
 export type SkillName =
   | "Woodcutting"
@@ -597,14 +597,8 @@ function getPrice(
   const marketPrice = marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0;
   if (marketPrice > 0) return { value: marketPrice, source: "market" };
 
-  const vendorItem = VENDOR_ITEMS[name];
-  if (vendorItem?.currency === "Gold") {
-    const parsed = Number(vendorItem.price.replace(/,/g, ""));
-    if (parsed > 0) return { value: parsed, source: "vendor" };
-  }
-
-  const vialPrice = VIAL_COSTS[name] || 0;
-  if (vialPrice > 0) return { value: vialPrice, source: "vendor" };
+  const merchantBuyPrice = getMerchantBuyPrice(name);
+  if (merchantBuyPrice > 0) return { value: merchantBuyPrice, source: "vendor" };
 
   const vendorPrice = items?.[name]?.vendor_price || marketData?.[name]?.vendor_price || 0;
   if (vendorPrice > 0) return { value: vendorPrice, source: "vendor" };
@@ -621,7 +615,7 @@ function getVendorPrice(
   if (directVendor > 0) return directVendor;
   const vendorItem = VENDOR_ITEMS[name];
   if (vendorItem?.currency === "Gold") {
-    return Number(vendorItem.price.replace(/,/g, "")) || 0;
+    return parseVendorGoldPrice(name);
   }
   return 0;
 }

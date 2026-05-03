@@ -40,6 +40,16 @@ export const VENDOR_ITEMS: Record<string, { price: string; currency: string }> =
     "Blank Scroll": { price: "60,000", currency: "Gold" }
 };
 
+export function parseVendorGoldPrice(name: string): number {
+    const vendorItem = VENDOR_ITEMS[name];
+    if (vendorItem?.currency !== "Gold") return 0;
+    return Number(vendorItem.price.replace(/,/g, "")) || 0;
+}
+
+export function getMerchantBuyPrice(name: string): number {
+    return VIAL_COSTS[name] || parseVendorGoldPrice(name);
+}
+
 export interface Recipe {
     level: number;
     time: number;
