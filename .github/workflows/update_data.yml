@@ -27,7 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run Market & Boss Scraper
         env:
@@ -41,6 +41,10 @@ jobs:
           git config --local user.name "GitHub Action"
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore: auto-update market data and boss schedules [skip ci]"
+          git stash push -m "generated market data" -- public/*.json
           git pull --rebase origin "${GITHUB_REF_NAME}"
+          git stash pop
+          git add public/*.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: auto-update market data and boss schedules [skip ci]"
           git push origin "HEAD:${GITHUB_REF_NAME}"
