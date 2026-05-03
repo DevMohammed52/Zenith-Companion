@@ -249,9 +249,12 @@ async function fetchLiveWorldBosses() {
         if (data && data.world_bosses) {
             const currentStatic = loadJson(STATIC_DATA_FILE);
             if (currentStatic) {
+                const liveBossKeys = new Set(data.world_bosses.map(boss => boss.id || boss.name).filter(Boolean));
                 // Update specific fields from API while preserving our augmented data
                 const seenBossKeys = new Set();
-                const updatedBosses = currentStatic.world_bosses.map(boss => {
+                const updatedBosses = currentStatic.world_bosses
+                    .filter(boss => boss._source !== "live_world_boss_api" || liveBossKeys.has(boss.id || boss.name))
+                    .map(boss => {
                     const live = data.world_bosses.find(lb => lb.id === boss.id || lb.name === boss.name);
                     if (live) {
                         seenBossKeys.add(live.id || live.name);
@@ -286,6 +289,73 @@ async function fetchLiveWorldBosses() {
     } catch (e) {
         console.error("Error updating world bosses:", e.message);
     }
+}
+
+async function fetchLiveEnemies() {
+    try {
+        console.log("Fetching live enemy data...");
+        const res = await apiFetch(`${BASE_URL}/combat/enemies/list`, { headers });
+        if (!res.ok) {
+            console.error(`Failed to fetch enemies: ${res.status}`);
+            return;
+        }
+
+        const data = await res.json();
+        if (data && data.enemies) {
+            const currentStatic = loadJson(STATIC_DATA_FILE);
+            if (!currentStatic) return;
+
+            const liveEnemyKeys = new Set(data.enemies.map(enemy => enemy.id || enemy.name).filter(Boolean));
+            const seenEnemyKeys = new Set();
+            const updatedEnemies = currentStatic.enemies
+                .filter(enemy => enemy._source !== "live_enemies_api" || liveEnemyKeys.has(enemy.id || enemy.name))
+                .map(enemy => {
+                    const live = data.enemies.find(le => le.id === enemy.id || le.name === enemy.name);
+                    if (!live) return enemy;
+
+                    seenEnemyKeys.add(live.id || live.name);
+                    return {
+                        ...enemy,
+                        ...live,
+                        loot: live.loot || enemy.loot || [],
+                    };
+                });
+
+            for (const live of data.enemies) {
+                const key = live.id || live.name;
+                if (!key || seenEnemyKeys.has(key)) continue;
+                updatedEnemies.push({
+                    ...live,
+                    loot: live.loot || [],
+                    _source: "live_enemies_api"
+                });
+            }
+
+            currentStatic.enemies = updatedEnemies;
+            await safeWriteJson(STATIC_DATA_FILE, currentStatic);
+            console.log("Enemy data updated from API.");
+        }
+    } catch (e) {
+        console.error("Error updating enemies:", e.message);
+    }
+}
+
+function collectLootItemNames(staticDataSnapshot) {
+    const names = new Set();
+    const addLootItems = (entityList) => {
+        if (!entityList) return;
+        for (const entity of entityList) {
+            if (!Array.isArray(entity.loot)) continue;
+            for (const drop of entity.loot) {
+                if (drop?.name) names.add(drop.name);
+            }
+        }
+    };
+
+    addLootItems(staticDataSnapshot?.enemies);
+    addLootItems(staticDataSnapshot?.dungeons);
+    addLootItems(staticDataSnapshot?.world_bosses);
+    return names;
 }
 
 async function fetchItem(itemName) {
@@ -369,18 +439,25 @@ async function start() {
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
     while (true) {
-        // Fetch live boss data at the start of each cycle
+        // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
         await fetchLiveWorldBosses();
+        await fetchLiveEnemies();
 
-        for (let i = 0; i < itemsArray.length; i++) {
-            const item = itemsArray[i];
+        const latestStaticData = loadJson(STATIC_DATA_FILE);
+        const cycleItemsArray = Array.from(new Set([
+            ...itemsArray,
+            ...collectLootItemNames(latestStaticData)
+        ]));
+
+        for (let i = 0; i < cycleItemsArray.length; i++) {
+            const item = cycleItemsArray[i];
             
             // Write status
             try {
                 fs.writeFileSync(STATUS_FILE, JSON.stringify({
                     currentItem: item,
                     currentIndex: i + 1,
-                    totalItems: itemsArray.length,
+                    totalItems: cycleItemsArray.length,
                     timestamp: new Date().toISOString()
                 }));
             } catch(e) {}
@@ -391,7 +468,7 @@ async function start() {
                 marketData["_meta"] = { currently_fetching: item, last_updated: new Date().toISOString() };
                 
                 // Batch save every 10 items or at the end
-                if (i % 10 === 0 || i === itemsArray.length - 1) {
+                if (i % 10 === 0 || i === cycleItemsArray.length - 1) {
                     await safeWriteJson(DATA_FILE, marketData);
                 }
             }
