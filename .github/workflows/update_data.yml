@@ -3,8 +3,11 @@ name: Update Market & Boss Data
 on:
   schedule:
     - cron: '0 0,12 * * *' # Full update twice a day
-    - cron: '0 6,18 * * *' # Priority update twice a day (Materials/Consumables)
   workflow_dispatch: # Allow manual trigger
+
+concurrency:
+  group: market-data-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   update-data:
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,19 +33,14 @@ jobs:
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
           SCRAPE_ONCE: "true"
-        run: |
-          if [[ "${{ github.event.schedule }}" == "0 6,18 * * *" ]]; then
-            echo "Running PRIORITY update..."
-            node scraper.mjs --priority
-          else
-            echo "Running FULL update..."
-            node scraper.mjs
-          fi
+        run: node scraper.mjs
 
       - name: Commit and Push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add public/*.json
-          git commit -m "chore: auto-update market data and boss schedules [skip ci]" || echo "No changes to commit"
-          git push
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: auto-update market data and boss schedules [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -8,6 +8,7 @@ import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import MobileSortControls from "@/components/MobileSortControls";
 
 type SearchIndexItem = {
   id: string;
@@ -42,6 +43,8 @@ type RowData = {
   vialCost: number;
 };
 
+type AlchemySortKey = keyof (RowData & { level: number });
+
 import { useData } from "@/context/DataContext";
 
 function AlchemyContent() {
@@ -53,7 +56,7 @@ function AlchemyContent() {
   const [maxLevel, setMaxLevel] = useState<number | "">(100);
   const [minRoi, setMinRoi] = useState<number | "">(-999);
   const [minVolume, setMinVolume] = useState<number | "">(0);
-  const [sortCol, setSortCol] = useState<keyof (RowData & { level: number }) | "">("");
+  const [sortCol, setSortCol] = useState<AlchemySortKey | "">("profit");
   const [sortDesc, setSortDesc] = useState<boolean>(true);
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
 
@@ -209,13 +212,13 @@ function AlchemyContent() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
-  const handleSort = (col: keyof RowData) => {
+  const handleSort = (col: AlchemySortKey) => {
     if (sortCol === col) setSortDesc(!sortDesc);
-    else { setSortCol(col as any); setSortDesc(true); }
+    else { setSortCol(col); setSortDesc(true); }
   };
 
 
-  const renderSortIcon = (col: keyof RowData) => {
+  const renderSortIcon = (col: AlchemySortKey) => {
     if (sortCol !== col) return null;
     return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
   };
@@ -345,38 +348,21 @@ function AlchemyContent() {
 
         {/* Mobile View */}
         <div className="mobile-only">
-          <div className="mobile-sort-controls" style={{ 
-            marginBottom: '1rem', 
-            padding: '0.75rem', 
-            background: 'rgba(255,255,255,0.02)', 
-            border: '1px solid var(--border-subtle)', 
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sort Strategy</span>
-            <select 
-              value={sortCol} 
-              onChange={(e) => handleSort(e.target.value as any)}
-              style={{ 
-                background: 'var(--bg-card)', 
-                border: '1px solid var(--border-focus)', 
-                color: '#fff', 
-                padding: '0.4rem 0.75rem', 
-                borderRadius: '6px',
-                fontSize: '0.8rem',
-                outline: 'none'
-              }}
-            >
-              <option value="profit">Net Profit</option>
-              <option value="roi">ROI %</option>
-              <option value="level">Level</option>
-              <option value="vol_3">3D Volume</option>
-              <option value="name">Name</option>
-              <option value="dailyProfit">Daily Profit</option>
-            </select>
-          </div>
+          <MobileSortControls
+            label="Sort Strategy"
+            value={sortCol || "profit"}
+            descending={sortDesc}
+            onSort={(value) => handleSort(value as AlchemySortKey)}
+            onToggleDirection={() => setSortDesc((prev) => !prev)}
+            options={[
+              { value: "profit", label: "Net Profit" },
+              { value: "roi", label: "ROI %" },
+              { value: "level", label: "Level" },
+              { value: "vol_3", label: "3D Volume" },
+              { value: "dailyProfit", label: "Daily Profit" },
+              { value: "name", label: "Name" },
+            ]}
+          />
           <div className="mobile-card-grid">
             {rows.map((row, i) => (
               <div key={i} className="mobile-alchemy-card" onClick={() => !row.loading && setSelectedRow(row)}>

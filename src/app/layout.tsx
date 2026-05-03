@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: "Zenith Companion",
@@ -22,6 +11,8 @@ export const metadata: Metadata = {
 import { ItemModalProvider } from "@/context/ItemModalContext";
 import { DataProvider } from "@/context/DataContext";
 import { CraftingProvider } from "@/context/CraftingContext";
+import { SidebarProvider } from "@/context/SidebarContext";
+import MobileMenuBtn from "@/components/MobileMenuBtn";
 
 export default function RootLayout({
   children,
@@ -33,19 +24,27 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${inter.variable} ${jetbrains.variable}`}>
+      <body>
         <DataProvider>
           <CraftingProvider>
             <ItemModalProvider>
-              <div className="layout-root">
-                <header className="top-navigation">
+              <SidebarProvider>
+                <div className="layout-root">
                   <Sidebar />
-                  <GlobalSearch />
-                </header>
-                <div className="main-content">
-                  {children}
+                  <div className="main-content">
+                    <header className="top-navigation">
+                      <MobileMenuBtn />
+                      <GlobalSearch />
+                    </header>
+                    <div className="content-wrapper">
+                      <div className="shell-desktop-search">
+                        <GlobalSearch />
+                      </div>
+                      {children}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </SidebarProvider>
             </ItemModalProvider>
           </CraftingProvider>
         </DataProvider>
@@ -54,18 +53,34 @@ export default function RootLayout({
             display: flex;
             min-height: 100vh;
           }
+          .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            width: calc(100% - var(--sidebar-width));
+          }
+
+          @media (max-width: 1180px) {
+            .main-content {
+              margin-left: 0 !important;
+              width: 100% !important;
+            }
+          }
+          .content-wrapper {
+            padding: 0;
+            width: 100%;
+          }
           .top-navigation {
             display: none;
           }
-          .main-content {
-            margin-left: var(--sidebar-width);
-            width: 100%;
-            transition: margin-left 0.3s ease;
-            padding-top: 0;
-          }
-          @media (max-width: 768px) {
-            .layout-root {
-              flex-direction: column;
+          @media (max-width: 1180px) {
+            .main-content {
+              margin-left: 0 !important;
+              padding-top: 64px;
+              width: 100% !important;
             }
             .top-navigation {
               display: flex;
@@ -82,9 +97,12 @@ export default function RootLayout({
               height: 64px;
               backdrop-filter: blur(12px);
             }
-            .main-content {
-              margin-left: 0;
-              padding-top: 64px;
+            .top-navigation .global-search-trigger {
+              flex: 1 1 auto;
+              margin: 0;
+              max-width: none;
+              min-width: 0;
+              width: auto;
             }
           }
         `}</style>

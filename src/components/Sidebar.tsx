@@ -52,10 +52,12 @@ const NAV_GROUPS: NavGroup[] = [
 
 import { useData } from '@/context/DataContext';
 
+import { useSidebar } from '@/context/SidebarContext';
+
 export default function Sidebar() {
     const pathname = usePathname();
     const { scraperStatus } = useData();
-    const [mobileOpen, setMobileOpen] = useState(false);
+    const { mobileOpen, setMobileOpen } = useSidebar();
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         'General': true,
         'Skills': true,
@@ -84,17 +86,41 @@ export default function Sidebar() {
 
     return (
         <>
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="mobile-menu-btn" aria-label="Toggle menu">
-                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
             {mobileOpen && <div onClick={() => setMobileOpen(false)} className="mobile-backdrop" />}
 
             <div className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
-                <div style={{ marginBottom: '1.5rem', padding: '0 0.5rem' }}>
-                    <h2 style={{ fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
-                        <Activity size={18} color="var(--text-accent)" /> ZENITH
-                    </h2>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem', letterSpacing: '0.1em' }}>COMPANION SUITE</p>
+                <div style={{ marginBottom: '1.5rem', padding: '0 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h2 style={{ fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
+                            <Activity size={18} color="var(--text-accent)" /> ZENITH
+                        </h2>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem', letterSpacing: '0.1em' }}>COMPANION SUITE</p>
+                    </div>
+                    <button 
+                        onClick={() => setMobileOpen(false)} 
+                        className="mobile-sidebar-close"
+                        style={{ 
+                            background: 'rgba(255,255,255,0.05)', 
+                            border: '1px solid var(--border-subtle)', 
+                            borderRadius: '6px', 
+                            padding: '4px',
+                            color: 'var(--text-muted)'
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
+                    <style>{`
+                        @media (min-width: 769px) {
+                            .mobile-sidebar-close {
+                                display: none !important;
+                            }
+                        }
+                        @media (max-width: 768px) {
+                            .mobile-sidebar-close {
+                                display: flex !important;
+                            }
+                        }
+                    `}</style>
                 </div>
 
                 <nav style={{ 

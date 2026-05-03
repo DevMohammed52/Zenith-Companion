@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = 3100;
+const API_DELAY_MS = 3100; // IdleMMO limit is 20 requests/min; 3.1s keeps us just under it.
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 
@@ -105,6 +105,7 @@ const IS_PRIORITY_ONLY = process.argv.includes('--priority');
 const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 
 const itemsToFetch = new Set();
+const itemLookupByName = new Map();
 
 // 1. Always add Alchemy-related items (Highest priority)
 for (const [potion, data] of Object.entries(ALCHEMY_ITEMS)) {
@@ -173,26 +174,16 @@ if (staticData) {
     addLootItems(staticData.dungeons);
     addLootItems(staticData.world_bosses);
 
-    // 4. In FULL mode, we could add even more items if needed, but for now 
-    // we stick to items linked to core gameplay (combat/alchemy).
-
     if (IS_PRIORITY_ONLY) {
         console.log(`Running in PRIORITY mode. Targeting ${itemsToFetch.size} velocity items.`);
     } else {
-        console.log(`Running in FULL mode. Targeting ${itemsToFetch.size} gameplay items.`);
+        console.log(`Running in FULL mode. Starting with ${itemsToFetch.size} gameplay-linked items.`);
     }
-    console.log(`Added combat items to scrape list. Total items: ${itemsToFetch.size}`);
+    console.log(`Added combat items to scrape list. Current total: ${itemsToFetch.size}`);
 }
 
 // 4. Load ALL items from global database to ensure 100% coverage
 const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
-const VENDOR_ONLY_EXCLUSIONS = new Set([
-    'Bait', 'Empty Essence Crystal', 'Empty Essence Vial', 'Blank Scroll', 
-    'Small Bait', 'Medium Bait', 'Large Bait', 'Master Bait', 'Legendary Bait',
-    'Empty Crystal', 'Blank Scroll',
-    'Cheap Vial', 'Tarnished Vial', 'Gleaming Vial', 'Elemental Vial', 'Eldritch Vial', 'Arcane Vial',
-    'Cheap Crystal', 'Tarnished Crystal', 'Gleaming Crystal', 'Elemental Crystal', 'Eldritch Crystal', 'Arcane Crystal'
-]);
 
 if (fs.existsSync(ALL_ITEMS_DB_FILE)) {
     try {
@@ -201,13 +192,7 @@ if (fs.existsSync(ALL_ITEMS_DB_FILE)) {
         for (const item of Object.values(allItems)) {
             const name = item.name;
             if (!name) continue;
-            
-            // Skip untradable items
-            if (item.is_tradeable === false) continue;
-            
-            // Skip known vendor-only items that can't be listed unless specifically requested
-            if (VENDOR_ONLY_EXCLUSIONS.has(name)) continue;
-            if (name.includes('Crystal') && item.vendor_price < 100 && !itemsToFetch.has(name)) continue;
+            itemLookupByName.set(name.toLowerCase(), item);
 
             if (!IS_PRIORITY_ONLY || priorityData?.high_priority_items?.includes(name)) {
                 if (!itemsToFetch.has(name)) {
@@ -216,7 +201,7 @@ if (fs.existsSync(ALL_ITEMS_DB_FILE)) {
                 }
             }
         }
-        console.log(`Added ${addedCount} tradeable items from global DB. Total items: ${itemsToFetch.size}`);
+        console.log(`Added ${addedCount} items from global DB. Total items: ${itemsToFetch.size}`);
     } catch (e) {
         console.error("Error reading global items DB:", e.message);
     }
@@ -241,11 +226,21 @@ if (fs.existsSync(DATA_FILE)) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+let lastApiRequestAt = 0;
+
+async function apiFetch(url, options = {}) {
+    const elapsed = Date.now() - lastApiRequestAt;
+    if (elapsed < API_DELAY_MS) {
+        await sleep(API_DELAY_MS - elapsed);
+    }
+    lastApiRequestAt = Date.now();
+    return fetch(url, options);
+}
 
 async function fetchLiveWorldBosses() {
     try {
         console.log("Fetching live world boss data...");
-        const res = await fetch(`${BASE_URL}/combat/world_bosses/list`, { headers });
+        const res = await apiFetch(`${BASE_URL}/combat/world_bosses/list`, { headers });
         if (!res.ok) {
             console.error(`Failed to fetch world bosses: ${res.status}`);
             return;
@@ -283,18 +278,20 @@ async function fetchLiveWorldBosses() {
 
 async function fetchItem(itemName) {
     try {
-        const searchRes = await fetch(`${BASE_URL}/item/search?query=${encodeURIComponent(itemName)}`, { headers });
-        if (!searchRes.ok) return null;
-        const searchData = await searchRes.json();
-        if (!searchData.items || searchData.items.length === 0) return null;
-        
-        let tradable = searchData.items.find(i => (i.vendor_price > 0 || i.vendor_price === null) && i.name.toLowerCase() === itemName.toLowerCase());
-        if (!tradable) tradable = searchData.items.find(i => i.vendor_price > 0 || i.vendor_price === null);
-        if (!tradable) return null;
+        let itemRecord = itemLookupByName.get(itemName.toLowerCase());
 
-        await sleep(API_DELAY_MS);
+        if (!itemRecord?.hashed_id) {
+            const searchRes = await apiFetch(`${BASE_URL}/item/search?query=${encodeURIComponent(itemName)}`, { headers });
+            if (!searchRes.ok) return null;
+            const searchData = await searchRes.json();
+            if (!searchData.items || searchData.items.length === 0) return null;
 
-        const histRes = await fetch(`${BASE_URL}/item/${tradable.hashed_id}/market-history?tier=0&type=listings`, { headers });
+            itemRecord = searchData.items.find(i => i.name.toLowerCase() === itemName.toLowerCase())
+                || searchData.items.find(i => i.vendor_price > 0 || i.vendor_price === null);
+            if (!itemRecord?.hashed_id) return null;
+        }
+
+        const histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
         if (!histRes.ok) return null;
         
         const histData = await histRes.json();
@@ -330,15 +327,15 @@ async function fetchItem(itemName) {
         let a3 = avg_3 !== null ? avg_3 : a7;
 
         return {
-            hashed_id: tradable.hashed_id,
-            image_url: tradable.image_url,
+            hashed_id: itemRecord.hashed_id,
+            image_url: itemRecord.image_url,
             price: a3,
             avg_3: a3,
             avg_7: a7,
             avg_14: a14,
             avg_30: a30,
             vol_3: vol_3,
-            vendor_price: tradable.vendor_price || 0,
+            vendor_price: itemRecord.vendor_price || 0,
             last_updated: new Date().toISOString()
         };
     } catch (e) {
@@ -362,7 +359,6 @@ async function start() {
     while (true) {
         // Fetch live boss data at the start of each cycle
         await fetchLiveWorldBosses();
-        await sleep(API_DELAY_MS);
 
         for (let i = 0; i < itemsArray.length; i++) {
             const item = itemsArray[i];
@@ -387,7 +383,6 @@ async function start() {
                     await safeWriteJson(DATA_FILE, marketData);
                 }
             }
-            await sleep(API_DELAY_MS);
         }
 
         // --- RELATIONAL LINKER TRIGGER ---

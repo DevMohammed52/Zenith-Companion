@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
+import MobileSortControls from "@/components/MobileSortControls";
 
 function CombatContent() {
     const { openItemByName, prefetchItem } = useItemModal();
@@ -13,7 +14,7 @@ function CombatContent() {
     const [marketData, setMarketData] = useState<any>(null);
     const { preferences, setPreferences } = usePreferences();
     const [selectedEnemy, setSelectedEnemy] = useState<any>(null);
-    const [sortCol, setSortCol] = useState<string>("");
+    const [sortCol, setSortCol] = useState<string>("ev");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -249,38 +250,21 @@ function CombatContent() {
 
                 {/* Mobile View */}
                 <div className="mobile-only">
-                    <div className="mobile-sort-controls" style={{ 
-                        marginBottom: '1rem', 
-                        padding: '0.75rem', 
-                        background: 'rgba(255,255,255,0.02)', 
-                        border: '1px solid var(--border-subtle)', 
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                    }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sort Enemies</span>
-                        <select 
-                            value={sortCol} 
-                            onChange={(e) => handleSort(e.target.value)}
-                            style={{ 
-                                background: 'var(--bg-card)', 
-                                border: '1px solid var(--border-focus)', 
-                                color: '#fff', 
-                                padding: '0.4rem 0.75rem', 
-                                borderRadius: '6px',
-                                fontSize: '0.8rem',
-                                outline: 'none'
-                            }}
-                        >
-                            <option value="profitPerHour">Gold / Hour</option>
-                            <option value="ev">EV / Kill</option>
-                            <option value="level">Level</option>
-                            <option value="dropsCount">Drops</option>
-                            <option value="name">Name</option>
-                            <option value="location">Location</option>
-                        </select>
-                    </div>
+                    <MobileSortControls
+                        label="Sort Enemies"
+                        value={sortCol || "ev"}
+                        descending={sortDesc}
+                        onSort={handleSort}
+                        onToggleDirection={() => setSortDesc((prev) => !prev)}
+                        options={[
+                            { value: "profitPerHour", label: "Gold / Hour" },
+                            { value: "ev", label: "EV / Kill" },
+                            { value: "level", label: "Level" },
+                            { value: "dropsCount", label: "Drops" },
+                            { value: "name", label: "Name" },
+                            { value: "location", label: "Location" },
+                        ]}
+                    />
                     <div className="mobile-card-grid">
                         {rows.map((row, i) => (
                             <div key={i} className="mobile-alchemy-card" onClick={() => setSelectedEnemy(row)}>
