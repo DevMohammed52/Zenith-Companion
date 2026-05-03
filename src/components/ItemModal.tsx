@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  X, ExternalLink, Shield, Sword, Zap, Package, BookOpen,
+  X, ExternalLink, Shield, Zap, Package, BookOpen,
   MapPin, Hammer, TrendingUp, Info, Target, Lock, Plus
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
@@ -20,6 +20,23 @@ interface ItemModalProps {
   id: string;
   onClose: () => void;
 }
+
+type AcquisitionSource = {
+  type?: string;
+  name?: string;
+  chance?: number | string;
+  location?: string;
+};
+
+const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
+
+const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase().replace(/\s+/g, '_');
+
+const getSourceRoute = (source: AcquisitionSource) => {
+  const type = normalizeSourceType(source.type);
+  const target = type.includes('BOSS') ? 'bosses' : type === 'DUNGEON' ? 'dungeons' : 'combat';
+  return `/${target}?search=${encodeURIComponent(source.name || '')}`;
+};
 
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
@@ -105,18 +122,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const qColor = item ? qualityColors[item.quality] || qualityColors.STANDARD : qualityColors.STANDARD;
   const itemName = item?.name;
   const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
-
-  const craftingCost = useMemo(() => {
-    const recipe = item?.recipe;
-    if (!recipe) return null;
-    let total = 0;
-    const items = recipe.ingredients || recipe.materials || [];
-    for (const ing of items) {
-      const price = marketData?.[ing.name || ing.item_name]?.avg_3 || 0;
-      total += price * (ing.amount || ing.quantity || 1);
-    }
-    return total > 0 ? total : null;
-  }, [item, marketData]);
+  const recipeData = useMemo(() => item?.recipe || item?.produced_from, [item]);
+  const recipeMats = useMemo(() => recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [], [recipeData]);
+  const recipeSkill = recipeData?.skill || 'CRAFTING';
+  const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
+  const vendorInfo = item ? VENDOR_ITEMS[item.name] : null;
 
   const renderValue = (val: any) => {
     if (val === null || val === undefined) return '';
@@ -136,15 +146,33 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     return `+${valStr}${targetStr} ${attrStr}${duration}`;
   };
 
-  const showMarket = item && item.is_tradeable;
-  const showAcquisition = item && item.dropped_by && item.dropped_by.length > 0;
+  const relationEntry = useMemo(() => {
+    if (!usageMap || !item?.name) return null;
+    const entry = usageMap[item.name];
+    return entry && typeof entry === 'object' ? entry : null;
+  }, [item, usageMap]);
+
+  const acquisitionSources = useMemo(() => {
+    const rawSources = [
+      ...(Array.isArray(item?.dropped_by) ? item.dropped_by : []),
+      ...(Array.isArray(relationEntry?.dropped_by) ? relationEntry.dropped_by : []),
+    ];
+    const seen = new Set<string>();
+
+    return rawSources.filter((source: AcquisitionSource) => {
+      const key = `${normalizeSourceType(source.type)}:${source.name || ''}:${source.location || ''}`;
+      if (!source?.name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a: AcquisitionSource, b: AcquisitionSource) => Number(b.chance || 0) - Number(a.chance || 0));
+  }, [item, relationEntry]);
+
   const groupedUtility = useMemo(() => {
     const direct = Array.isArray(item?.required_for) ? item.required_for : [];
-    const mapEntry = (usageMap && item?.name) ? usageMap[item.name] : null;
-    
+
     // Safety check: usageMap[name] should be an object with a required_for array
-    const fromMap = (mapEntry && typeof mapEntry === 'object' && Array.isArray(mapEntry.required_for)) 
-      ? mapEntry.required_for 
+    const fromMap = (relationEntry && typeof relationEntry === 'object' && Array.isArray(relationEntry.required_for))
+      ? relationEntry.required_for
       : [];
     
     // Combine and normalize
@@ -168,12 +196,38 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       acc[type].push(curr);
       return acc;
     }, {});
-  }, [item, usageMap]);
+  }, [item, relationEntry]);
+
+  const saleInsight = useMemo(() => {
+    if (!item) return null;
+    const marketGross = Number(item.avg_3 || item.price || marketData?.[item.name]?.avg_3 || 0);
+    const vendorBase = Number(item.vendor_price || 0);
+    if (!marketGross && !vendorBase) return null;
+
+    const taxRate = getMarketTaxRate(preferences.membership);
+    const marketNet = item.is_tradeable ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
+    const vendorNet = vendorBase * (1 + ((Number(preferences.barteringBoost) || 0) / 100));
+    const bestPath = marketNet >= vendorNet ? 'Market' : 'Vendor';
+    const bestRevenue = Math.max(marketNet, vendorNet);
+
+    return {
+      bestPath,
+      bestRevenue,
+      marketGross,
+      marketNet,
+      vendorNet,
+      taxRate,
+      volume: Number(item.vol_3 || marketData?.[item.name]?.vol_3 || 0),
+    };
+  }, [item, marketData, preferences.barteringBoost, preferences.membership]);
 
   const showUtility = Object.keys(groupedUtility).length > 0;
+  const showMarket = item && item.is_tradeable;
+  const showAcquisition = acquisitionSources.length > 0;
   const showRecipe = item && (item.recipe || item.produced_from);
   const showYield = item && item.recipe_yield;
   const showLootTable = (item && item.loot_table && item.loot_table.length > 0) || (item && item.chest_drops && item.chest_drops.length > 0);
+  const showSellAdvisor = item && saleInsight;
   
   const hasStats = item && item.stats && Object.keys(item.stats).length > 0;
   const hasEffects = item && item.effects && (Array.isArray(item.effects) ? item.effects.length > 0 : Object.keys(item.effects).length > 0);
@@ -200,13 +254,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       </div>
     );
   }
-
-  // Recipe display data (Unified)
-  const recipeData = item?.recipe || item?.produced_from;
-  const recipeMats = recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [];
-  const recipeSkill = recipeData?.skill || 'CRAFTING';
-  const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
-  const vendorInfo = item ? VENDOR_ITEMS[item.name] : null;
 
   return (
     <div className="modal-container">
@@ -277,6 +324,33 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><Info size={14} /> Item Description</div>
                   <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     &quot;{item.description}&quot;
+                  </div>
+                </div>
+              )}
+
+              {showSellAdvisor && saleInsight && (
+                <div className="bento-card sell-advisor-card full-width">
+                  <div className="card-label"><Target size={14} /> Sell Advisor</div>
+                  <div className="sell-advisor-grid">
+                    <div className="sell-advisor-main">
+                      <span>Best sell path</span>
+                      <strong>{saleInsight.bestPath}</strong>
+                      <em>{formatGold(saleInsight.bestRevenue)} net revenue</em>
+                    </div>
+                    <div className="sell-advisor-metrics">
+                      <div>
+                        <span>Market net {saleInsight.marketGross ? `(${Math.round(saleInsight.taxRate * 100)}% tax)` : ''}</span>
+                        <strong>{saleInsight.marketGross ? formatGold(saleInsight.marketNet) : 'No market'}</strong>
+                      </div>
+                      <div>
+                        <span>Vendor net</span>
+                        <strong>{saleInsight.vendorNet ? formatGold(saleInsight.vendorNet) : 'No vendor'}</strong>
+                      </div>
+                      <div>
+                        <span>3-day volume</span>
+                        <strong>{saleInsight.volume.toLocaleString()}</strong>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -479,15 +553,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <div className="bento-card acquisition-card">
                   <div className="card-label"><MapPin size={14} /> Acquisition</div>
                   <div className="list-container scroll-y">
-                    {item.dropped_by.map((src: any, i: number) => (
+                    {acquisitionSources.map((src: any, i: number) => (
                       <div 
                         key={i} 
                         className="source-pill group-source" 
                         onClick={() => {
                           onClose();
-                          const sType = (src.type || '').trim().toUpperCase();
-                          const target = sType === 'BOSS' ? 'bosses' : (sType === 'DUNGEON' ? 'dungeons' : 'combat');
-                          router.push(`/${target}?search=${encodeURIComponent(src.name)}`);
+                          router.push(getSourceRoute(src));
                         }}
                         style={{ cursor: 'pointer' }}
                       >
@@ -696,6 +768,78 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .full-width-pill { grid-column: span 1; }
 
         .description-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-style: italic; }
+
+        .sell-advisor-card {
+          background:
+            radial-gradient(circle at top left, rgba(56,189,248,0.13), transparent 34%),
+            linear-gradient(135deg, rgba(74,222,128,0.06), transparent),
+            rgba(255,255,255,0.03);
+          border-color: rgba(56,189,248,0.22);
+        }
+
+        .sell-advisor-grid {
+          align-items: stretch;
+          display: grid;
+          gap: 0.85rem;
+          grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.35fr);
+          width: 100%;
+        }
+
+        .sell-advisor-main,
+        .sell-advisor-metrics > div {
+          background: rgba(0,0,0,0.2);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 14px;
+          min-width: 0;
+          padding: 1rem;
+        }
+
+        .sell-advisor-main {
+          border-color: rgba(56,189,248,0.22);
+          display: grid;
+          gap: 0.5rem;
+        }
+
+        .sell-advisor-main span,
+        .sell-advisor-metrics span {
+          color: rgba(255,255,255,0.45);
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .sell-advisor-main strong {
+          color: #fff;
+          font-size: clamp(1.5rem, 4vw, 2.15rem);
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .sell-advisor-main em {
+          color: rgba(255,255,255,0.45);
+          font-style: normal;
+          overflow-wrap: anywhere;
+        }
+
+        .sell-advisor-metrics {
+          display: grid;
+          gap: 0.75rem;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          min-width: 0;
+        }
+
+        .sell-advisor-metrics > div {
+          display: grid;
+          gap: 0.28rem;
+        }
+
+        .sell-advisor-metrics strong {
+          color: #fff;
+          font-size: 1rem;
+          font-weight: 900;
+          overflow-wrap: anywhere;
+        }
 
         .lore-thread-card {
           background:
@@ -913,6 +1057,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           .stats-mini-grid,
           .utility-group-items {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .sell-advisor-grid,
+          .sell-advisor-metrics {
+            grid-template-columns: 1fr;
           }
           .description-text { font-size: 0.95rem; }
           .source-pill,

@@ -124,6 +124,9 @@ function LoreContent() {
     initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam] ? initialThreadParam : "artifacts-the-runemark-of-eternity",
   );
   const [relationFilter, setRelationFilter] = useState<RelationFilter>("all");
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false);
+  const [boardPickerSearch, setBoardPickerSearch] = useState("");
+  const boardPickerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const thread = searchParams.get("thread");
@@ -137,6 +140,25 @@ function LoreContent() {
       setSelectedEntry(LORE_ENTRY_BY_ID[thread]);
     }
   }, [searchParamKey, searchParams]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!boardPickerRef.current?.contains(event.target as Node)) {
+        setBoardPickerOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setBoardPickerOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const categoryCounts = useMemo(() => {
     return entries.reduce<Record<string, number>>((acc, entry) => {
@@ -164,7 +186,7 @@ function LoreContent() {
 
   const featuredAtlas = useMemo(() => {
     const featured = FEATURED_ATLAS_IDS.map((id) => LORE_ENTRY_BY_ID[id]).filter(Boolean);
-    if (search.trim() || activeCategory !== "all") return filteredEntries.filter((entry) => entry.category !== "NPC");
+    if (search.trim() || activeCategory !== "all") return filteredEntries;
     return featured;
   }, [activeCategory, filteredEntries, search]);
 
@@ -239,10 +261,32 @@ function LoreContent() {
   }, [boardEntry.id]);
 
   const boardGraphRelations = boardRelations.slice(0, 8);
+  const boardOptions = useMemo(() => entries.filter((entry) => entry.category !== "Index"), []);
+  const filteredBoardOptions = useMemo(() => {
+    const q = boardPickerSearch.trim().toLowerCase();
+    if (!q) return boardOptions;
+
+    return boardOptions.filter((entry) => {
+      const haystack = [
+        entry.title,
+        entry.category,
+        CATEGORY_META[entry.category].label,
+        entry.summary,
+        ...entry.tags,
+      ].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [boardOptions, boardPickerSearch]);
 
   const openEntry = (entry: LoreEntry) => {
     setSelectedEntry(entry);
     setBoardEntryId(entry.id);
+  };
+
+  const selectBoardEntry = (entryId: string) => {
+    setBoardEntryId(entryId);
+    setBoardPickerOpen(false);
+    setBoardPickerSearch("");
   };
 
   return (
@@ -311,9 +355,17 @@ function LoreContent() {
       {activeView === "atlas" && (
         <section className="lore-section">
           <SectionHeading label="World Atlas" detail="Civilizations, realms, artifacts, and mythic pressure points." />
-          <div className="atlas-grid">
-            {featuredAtlas.map((entry) => <LoreCard key={entry.id} entry={entry} onOpen={openEntry} />)}
-          </div>
+          {featuredAtlas.length > 0 ? (
+            <div className={`atlas-grid ${activeCategory === "NPC" ? "npc-atlas" : ""}`}>
+              {featuredAtlas.map((entry) => (
+                activeCategory === "NPC"
+                  ? <LoreCompactCard key={entry.id} entry={entry} onOpen={openEntry} />
+                  : <LoreCard key={entry.id} entry={entry} onOpen={openEntry} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-thread atlas-empty">No Atlas records match this filter.</div>
+          )}
         </section>
       )}
 
@@ -391,11 +443,57 @@ function LoreContent() {
         <section className="lore-section">
           <SectionHeading label="Mystery Board" detail="Official links first. The red-string energy is optional, but encouraged." />
           <div className="board-controls">
-            <select value={boardEntry.id} onChange={(event) => setBoardEntryId(event.target.value)}>
-              {entries.filter((entry) => entry.category !== "Index").map((entry) => (
-                <option key={entry.id} value={entry.id}>{entry.title}</option>
-              ))}
-            </select>
+            <div className="board-picker" ref={boardPickerRef}>
+              <button
+                type="button"
+                className="board-picker-trigger"
+                onClick={() => setBoardPickerOpen((open) => !open)}
+                aria-expanded={boardPickerOpen}
+              >
+                <span className="board-picker-mark" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
+                  {CATEGORY_META[boardEntry.category].icon}
+                </span>
+                <span className="board-picker-copy">
+                  <small>{CATEGORY_META[boardEntry.category].label} thread</small>
+                  <strong>{boardEntry.title}</strong>
+                </span>
+                <ChevronRight className={boardPickerOpen ? "open" : ""} size={17} />
+              </button>
+
+              {boardPickerOpen && (
+                <div className="board-picker-popover">
+                  <label className="board-picker-search">
+                    <Search size={15} />
+                    <input
+                      value={boardPickerSearch}
+                      onChange={(event) => setBoardPickerSearch(event.target.value)}
+                      placeholder="Search threads..."
+                      autoFocus
+                    />
+                  </label>
+                  <div className="board-option-list custom-scrollbar">
+                    {filteredBoardOptions.length > 0 ? filteredBoardOptions.map((entry) => {
+                      const meta = CATEGORY_META[entry.category];
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className={entry.id === boardEntry.id ? "active" : ""}
+                          onClick={() => selectBoardEntry(entry.id)}
+                          style={{ "--tone": meta.tone } as CSSProperties}
+                        >
+                          <span>{meta.icon}</span>
+                          <strong>{entry.title}</strong>
+                          <small>{meta.label}</small>
+                        </button>
+                      );
+                    }) : (
+                      <div className="board-picker-empty">No matching lore thread.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="confidence-tabs">
               {(["all", "canon", "inferred", "theory"] as RelationFilter[]).map((filter) => (
                 <button key={filter} className={relationFilter === filter ? "active" : ""} onClick={() => setRelationFilter(filter)} type="button">
@@ -748,6 +846,10 @@ function LoreContent() {
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
 
+        .atlas-grid.npc-atlas {
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+
         .lore-card,
         .compact-card,
         .theory-card,
@@ -1016,15 +1118,177 @@ function LoreContent() {
           margin-bottom: 1rem;
         }
 
-        .board-controls select {
-          background: rgba(0,0,0,0.45);
-          border: 1px solid var(--line);
-          border-radius: 7px;
+        .board-picker {
+          max-width: min(100%, 520px);
+          min-width: min(100%, 360px);
+          position: relative;
+          width: 100%;
+          z-index: 20;
+        }
+
+        .board-picker-trigger {
+          align-items: center;
+          appearance: none;
+          background:
+            linear-gradient(135deg, rgba(245,176,65,0.11), transparent),
+            rgba(0,0,0,0.48);
+          border: 1px solid rgba(245,176,65,0.22);
+          border-radius: 8px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          font: inherit;
+          gap: 0.75rem;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          min-height: 58px;
+          padding: 0.7rem 0.85rem;
+          text-align: left;
+          transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+          width: 100%;
+        }
+
+        .board-picker-trigger:hover {
+          background:
+            linear-gradient(135deg, rgba(245,176,65,0.16), transparent),
+            rgba(0,0,0,0.52);
+          border-color: rgba(245,176,65,0.45);
+          transform: translateY(-1px);
+        }
+
+        .board-picker-trigger svg.open {
+          transform: rotate(90deg);
+        }
+
+        .board-picker-mark {
+          align-items: center;
+          background: color-mix(in srgb, var(--tone), transparent 84%);
+          border: 1px solid color-mix(in srgb, var(--tone), transparent 58%);
+          border-radius: 8px;
+          color: color-mix(in srgb, var(--tone), white 20%);
+          display: inline-flex;
+          height: 38px;
+          justify-content: center;
+          width: 38px;
+        }
+
+        .board-picker-copy {
+          display: grid;
+          gap: 0.12rem;
+          min-width: 0;
+        }
+
+        .board-picker-copy small {
+          color: rgba(255,255,255,0.42);
+          font-size: 0.62rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .board-picker-copy strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .board-picker-popover {
+          animation: boardMenuIn 0.16s ease-out;
+          background: rgba(9,9,11,0.98);
+          border: 1px solid rgba(245,176,65,0.26);
+          border-radius: 10px;
+          box-shadow: 0 22px 70px rgba(0,0,0,0.45);
+          display: grid;
+          gap: 0.65rem;
+          left: 0;
+          margin-top: 0.5rem;
+          overflow: hidden;
+          padding: 0.65rem;
+          position: absolute;
+          right: 0;
+          top: 100%;
+        }
+
+        .board-picker-search {
+          align-items: center;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px;
+          color: rgba(255,255,255,0.48);
+          display: flex;
+          gap: 0.5rem;
+          padding: 0.6rem 0.75rem;
+        }
+
+        .board-picker-search input {
+          background: transparent;
+          border: 0;
           color: #fff;
           font: inherit;
-          min-height: 42px;
-          min-width: min(360px, 100%);
-          padding: 0 0.85rem;
+          min-width: 0;
+          outline: 0;
+          width: 100%;
+        }
+
+        .board-option-list {
+          display: grid;
+          gap: 0.35rem;
+          max-height: 310px;
+          overflow-y: auto;
+          padding-right: 0.25rem;
+        }
+
+        .board-option-list button {
+          align-items: center;
+          appearance: none;
+          background: rgba(255,255,255,0.025);
+          border: 1px solid rgba(255,255,255,0.055);
+          border-radius: 8px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          font: inherit;
+          gap: 0.2rem 0.55rem;
+          grid-template-columns: auto minmax(0, 1fr);
+          padding: 0.62rem 0.7rem;
+          text-align: left;
+          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+        }
+
+        .board-option-list button:hover,
+        .board-option-list button.active {
+          background: color-mix(in srgb, var(--tone), transparent 92%);
+          border-color: color-mix(in srgb, var(--tone), transparent 55%);
+          transform: translateX(2px);
+        }
+
+        .board-option-list button > span {
+          color: color-mix(in srgb, var(--tone), white 18%);
+          grid-row: span 2;
+        }
+
+        .board-option-list strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .board-option-list small {
+          color: rgba(255,255,255,0.42);
+          font-size: 0.66rem;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+
+        .board-picker-empty {
+          color: rgba(255,255,255,0.5);
+          font-size: 0.82rem;
+          padding: 1rem;
+          text-align: center;
+        }
+
+        @keyframes boardMenuIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .mystery-board {
@@ -1321,6 +1585,16 @@ function LoreContent() {
           .npc-network-header p {
             text-align: left;
           }
+
+          .board-controls {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .board-picker {
+            max-width: 100%;
+            min-width: 0;
+          }
         }
 
         @media (max-width: 560px) {
@@ -1357,6 +1631,25 @@ function LoreContent() {
           .category-rail button {
             justify-content: center;
             width: 100%;
+          }
+
+          .board-picker-trigger {
+            min-height: 54px;
+          }
+
+          .board-picker-copy strong,
+          .board-option-list strong {
+            white-space: normal;
+          }
+
+          .board-picker-popover {
+            position: fixed;
+            inset: auto 1rem 1rem 1rem;
+            max-height: min(72dvh, 560px);
+          }
+
+          .board-option-list {
+            max-height: calc(min(72dvh, 560px) - 82px);
           }
 
           .board-map {

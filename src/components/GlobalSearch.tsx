@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { ALCHEMY_ITEMS } from "@/constants";
@@ -29,13 +30,19 @@ const navShortcuts: Record<string, string> = {
 
 import { useData } from "@/context/DataContext";
 
-export default function GlobalSearch() {
+type GlobalSearchProps = {
+  hotkeyEnabled?: boolean;
+};
+
+export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps) {
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
   const { marketData, staticData, allItemsDb } = useData();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   // Load recent from storage
   useEffect(() => {
@@ -46,6 +53,29 @@ export default function GlobalSearch() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.classList.add("command-open");
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.body.classList.remove("command-open");
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!hotkeyEnabled) return;
+
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
@@ -72,7 +102,7 @@ export default function GlobalSearch() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [router]);
+  }, [hotkeyEnabled, router]);
 
   const results = useMemo<SearchResult[]>(() => {
     const next: SearchResult[] = [
@@ -200,50 +230,55 @@ export default function GlobalSearch() {
     );
   };
 
+  const palette = open ? (
+    <div className="command-overlay" onClick={() => setOpen(false)}>
+      <div className="command-palette" onClick={event => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Global search">
+        <div className="command-input-wrap">
+          <Search size={16} />
+          <input
+            ref={inputRef}
+            autoFocus
+            type="search"
+            spellCheck={false}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Search tools, items, recipes, enemies, lore..."
+          />
+          <button type="button" onClick={() => setOpen(false)} aria-label="Close search">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="command-results">
+          {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
+          {filteredResults.map(result => (
+            <button
+              key={`${result.type}-${result.label}`}
+              type="button"
+              onClick={() => openResult(result)}
+              onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
+            >
+              <span>
+                <strong>{highlightText(result.label, query)}</strong>
+                <small>{result.detail || result.href}</small>
+              </span>
+              <em>{result.type}</em>
+            </button>
+          ))}
+          {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
-      <button className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }}>
+      <button className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }} aria-haspopup="dialog" aria-expanded={open}>
         <Search size={14} />
         <span>Search</span>
         <kbd>Ctrl K</kbd>
       </button>
 
-      {open && (
-        <div className="command-overlay" onClick={() => setOpen(false)}>
-          <div className="command-palette" onClick={event => event.stopPropagation()}>
-            <div className="command-input-wrap">
-              <Search size={16} />
-              <input
-                autoFocus
-                value={query}
-                onChange={event => setQuery(event.target.value)}
-                placeholder="Search tools, items, recipes, enemies, lore..."
-              />
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close search">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="command-results">
-              {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
-              {filteredResults.map(result => (
-                <button 
-                  key={`${result.type}-${result.label}`} 
-                  type="button" 
-                  onClick={() => openResult(result)}
-                  onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
-                >
-                  <span>
-                    <strong>{highlightText(result.label, query)}</strong>
-                    <small>{result.detail || result.href}</small>
-                  </span>
-                  <em>{result.type}</em>
-                </button>
-              ))}
-              {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
-            </div>
-          </div>
-        </div>
-      )}
+      {mounted && palette ? createPortal(palette, document.body) : null}
     </>
   );
 }

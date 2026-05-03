@@ -34,7 +34,7 @@ export default function RootLayout({
                   <div className="main-content">
                     <header className="top-navigation">
                       <MobileMenuBtn />
-                      <GlobalSearch />
+                      <GlobalSearch hotkeyEnabled={false} />
                     </header>
                     <div className="content-wrapper">
                       <div className="shell-desktop-search">

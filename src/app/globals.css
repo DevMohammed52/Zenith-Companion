@@ -59,7 +59,8 @@ body {
   max-width: 100%;
 }
 
-body:has(.command-overlay) {
+body:has(.command-overlay),
+body.command-open {
   overflow: hidden;
 }
 
@@ -1681,11 +1682,14 @@ kbd {
   background: rgba(0, 0, 0, 0.68);
   backdrop-filter: blur(8px);
   display: flex;
+  height: 100dvh;
   inset: 0;
   justify-content: center;
+  overflow: hidden;
+  overscroll-behavior: contain;
   padding: 10vh 1rem 1rem;
   position: fixed;
-  z-index: 300;
+  z-index: 10000;
 }
 
 .command-palette {
@@ -1693,6 +1697,9 @@ kbd {
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: min(78dvh, 640px);
   max-width: 680px;
   overflow: hidden;
   width: 100%;
@@ -1712,20 +1719,30 @@ kbd {
   border: none;
   color: #fff;
   font: inherit;
+  min-width: 0;
   outline: none;
+  width: 100%;
 }
 
 .command-input-wrap button {
+  align-items: center;
   background: transparent;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 36px;
 }
 
 .command-results {
-  max-height: min(60vh, 520px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.45rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .command-results button {
@@ -1750,6 +1767,10 @@ kbd {
 .command-results strong,
 .command-results small {
   display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .command-results small {
@@ -1762,6 +1783,53 @@ kbd {
   font-size: 0.72rem;
   font-style: normal;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .command-overlay {
+    align-items: stretch;
+    padding:
+      max(0.75rem, env(safe-area-inset-top))
+      0.75rem
+      max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .command-palette {
+    border-radius: 14px;
+    height: 100%;
+    max-height: none;
+    max-width: none;
+  }
+
+  .command-input-wrap {
+    gap: 0.75rem;
+    min-height: 64px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .command-input-wrap input {
+    font-size: 16px;
+  }
+
+  .command-results {
+    padding: 0.55rem;
+  }
+
+  .command-results button {
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.8rem 0.75rem;
+  }
+
+  .command-results button > span {
+    min-width: 0;
+  }
+
+  .command-results strong,
+  .command-results small {
+    white-space: normal;
+  }
 }
 
 /* ---- Settings ---- */
