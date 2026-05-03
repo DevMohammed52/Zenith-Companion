@@ -445,18 +445,18 @@ function AlchemyContent() {
                                 const total = unitPrice * q;
                                 return (
                                     <div key={m} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.75rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.85rem' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '0.75rem', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.85rem', minWidth: 0, lineHeight: 1.35 }}>
                                                 <span style={{ color: 'var(--text-muted)' }}>{q}x</span>{" "}
                                                 <button 
                                                     onClick={() => openItemByName(m)}
-                                                    style={{ fontWeight: 600, color: '#fff', background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none' }}
+                                                    style={{ fontWeight: 600, color: '#fff', background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none', textAlign: 'left', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35 }}
                                                     className="hover-underline"
                                                 >
                                                     {m}
                                                 </button>
                                             </span>
-                                            <span className="mono" style={{ fontSize: '0.8rem' }}>
+                                            <span className="mono" style={{ fontSize: '0.8rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                                 <span style={{ color: 'var(--text-muted)' }}>{unitPrice.toLocaleString()} ea</span>
                                                 <span style={{ margin: '0 0.5rem', color: 'var(--text-accent)' }}>→</span>
                                                 <span style={{ color: 'var(--text-success)', fontWeight: 600 }}>{total.toLocaleString()}g</span>

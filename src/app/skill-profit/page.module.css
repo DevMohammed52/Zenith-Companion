@@ -816,7 +816,7 @@ th.left-align .sortButton {
   overflow-wrap: anywhere;
 }
 
-.materialLine strong,
+.materialLine > strong,
 .calcRow strong,
 .modalTotal strong {
   font-family: var(--font-mono);
