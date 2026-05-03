@@ -1,347 +1,649 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, Suspense } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
-import { ChevronUp, ChevronDown, Minus, Info, X, Activity, Target, Search } from "lucide-react";
-import Link from "next/link";
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Coins,
+  Eye,
+  Filter,
+  Info,
+  PackageCheck,
+  Search,
+  Target,
+  X,
+} from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
+import { useData } from "@/context/DataContext";
 
-type SearchIndexItem = {
-  id: string;
-  name: string;
-};
+type Trend = "up" | "down" | "flat";
+type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
+type RowStatus = "ok" | "missing";
+type LiquiditySignal = "LIQUID" | "STEADY" | "THIN" | "NO SALES" | "VENDOR SAFE" | "MISSING";
 
 type MarketData = {
-  price: number;
-  avg_3: number;
-  avg_7: number;
-  avg_14: number;
-  avg_30: number;
+  avg_3?: number;
+  avg_7?: number;
+  avg_14?: number;
+  avg_30?: number;
   vol_3?: number;
   vendor_price?: number;
+  quality?: string;
 };
 
-type AllData = Record<string, MarketData> & { _meta?: { last_updated: string } };
-
-type RowData = {
+type IngredientCost = {
   name: string;
-  trend: "up" | "down" | "flat";
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  source: "custom" | "market" | "vendor" | "missing";
+  owned: boolean;
+};
+
+type AlchemyRow = {
+  status: RowStatus;
+  name: string;
+  level: number;
+  time: number;
+  craftsPerHour: number;
+  craftsPerDay: number;
+  trend: Trend;
+  action: ActionPath;
+  signal: LiquiditySignal;
+  warnings: string[];
+  reason: string;
+  formula: string;
   cost: number;
-  rev: number;
-  vendorRev: number;
+  cashCost: number;
+  opportunityCost: number;
+  materialCost: number;
+  cashMaterialCost: number;
+  vialCost: number;
+  recipeCostShare: number;
+  marketGross: number;
+  marketTax: number;
+  marketNet: number;
+  vendorNet: number;
+  liquidationNet: number;
+  bestRevenue: number;
   profit: number;
+  opportunityProfit: number;
   roi: number;
   dailyProfit: number;
   vol_3: number;
-  action: "CRAFT" | "LIQUIDATE" | "VENDOR";
-  loading: boolean;
-  matsSellVal: number;
-  vialCost: number;
+  outputSource: "custom" | "market" | "missing";
+  inputMissing: string[];
+  ingredientCosts: IngredientCost[];
 };
 
-type AlchemySortKey = keyof (RowData & { level: number });
+type AlchemySortKey =
+  | "name"
+  | "level"
+  | "action"
+  | "profit"
+  | "roi"
+  | "dailyProfit"
+  | "vol_3"
+  | "craftsPerHour"
+  | "time"
+  | "signal";
 
-import { useData } from "@/context/DataContext";
+const OWNED_STORAGE_KEY = "zenith_alchemy_owned_materials";
+const OWNED_MODE_STORAGE_KEY = "zenith_alchemy_owned_cost_mode";
+const ALCHEMY_SETTINGS_STORAGE_KEY = "zenith_alchemy_settings";
+
+type PersistedAlchemySettings = {
+  minLevel: number | "";
+  maxLevel: number | "";
+  minRoi: number | "";
+  minVolume: number | "";
+  onlyProfitable: boolean;
+  hideMissing: boolean;
+  ownedCostMode: boolean;
+  sortCol: AlchemySortKey;
+  sortDesc: boolean;
+};
+
+const formatGold = (value: number, digits = 0) =>
+  value.toLocaleString(undefined, { maximumFractionDigits: digits });
+
+const formatSignedGold = (value: number, digits = 0) =>
+  `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
+
+const formatDuration = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0s";
+  if (seconds < 60) return `${seconds.toFixed(0)}s`;
+  const minutes = seconds / 60;
+  return `${minutes.toFixed(minutes >= 10 ? 0 : 1)}m`;
+};
+
+const getCustomPrice = (customPrices: Record<string, number>, name: string) => {
+  const price = customPrices?.[name];
+  return typeof price === "number" && price > 0 ? price : 0;
+};
+
+const getItemPrice = (
+  name: string,
+  marketData: Record<string, MarketData>,
+  customPrices: Record<string, number>,
+): { price: number; source: IngredientCost["source"] | "custom" | "market" } => {
+  const custom = getCustomPrice(customPrices, name);
+  if (custom > 0) return { price: custom, source: "custom" };
+
+  const market = marketData?.[name]?.avg_3 || 0;
+  if (market > 0) return { price: market, source: "market" };
+
+  const vendor = VIAL_COSTS[name] || 0;
+  if (vendor > 0) return { price: vendor, source: "vendor" };
+
+  return { price: 0, source: "missing" };
+};
+
+const getTrend = (item?: MarketData): Trend => {
+  const avg3 = item?.avg_3 || 0;
+  const avg14 = item?.avg_14 || 0;
+  if (avg3 > 0 && avg14 > 0 && avg3 > avg14 * 1.05) return "up";
+  if (avg3 > 0 && avg14 > 0 && avg3 < avg14 * 0.95) return "down";
+  return "flat";
+};
+
+const getSignal = (action: ActionPath, volume: number, missing: boolean): LiquiditySignal => {
+  if (missing) return "MISSING";
+  if (action === "VENDOR") return "VENDOR SAFE";
+  if (volume >= 150) return "LIQUID";
+  if (volume >= 40) return "STEADY";
+  if (volume > 0) return "THIN";
+  return "NO SALES";
+};
+
+const getSignalClass = (signal: LiquiditySignal) => {
+  if (signal === "LIQUID" || signal === "VENDOR SAFE") return "action-craft";
+  if (signal === "STEADY") return "action-vendor";
+  return "action-liquidate";
+};
+
+const highlightMatch = (text: string, query: string) => {
+  if (!query.trim()) return text;
+  const index = text.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) return text;
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="search-mark">{text.slice(index, index + query.length)}</mark>
+      {text.slice(index + query.length)}
+    </>
+  );
+};
+
+function readOwnedMaterials(): Record<string, string[]> {
+  try {
+    const stored = localStorage.getItem(OWNED_STORAGE_KEY);
+    if (!stored) return {};
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readAlchemySettings(): Partial<PersistedAlchemySettings> {
+  try {
+    const stored = localStorage.getItem(ALCHEMY_SETTINGS_STORAGE_KEY);
+    if (!stored) return {};
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 
 function AlchemyContent() {
-  const { marketData: data } = useData();
+  const { marketData: data, scraperStatus } = useData();
   const { preferences, setPreferences } = usePreferences();
   const { openItemByName, prefetchItem } = useItemModal();
+  const searchParams = useSearchParams();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [minLevel, setMinLevel] = useState<number | "">(0);
-  const [maxLevel, setMaxLevel] = useState<number | "">(100);
-  const [minRoi, setMinRoi] = useState<number | "">(-999);
-  const [minVolume, setMinVolume] = useState<number | "">(0);
-  const [sortCol, setSortCol] = useState<AlchemySortKey | "">("profit");
-  const [sortDesc, setSortDesc] = useState<boolean>(true);
-  const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
+  const [maxLevel, setMaxLevel] = useState<number | "">(89);
+  const [minRoi, setMinRoi] = useState<number | "">("");
+  const [minVolume, setMinVolume] = useState<number | "">("");
+  const [onlyProfitable, setOnlyProfitable] = useState(false);
+  const [hideMissing, setHideMissing] = useState(true);
+  const [ownedCostMode, setOwnedCostMode] = useState(false);
+  const [ownedMaterials, setOwnedMaterials] = useState<Record<string, string[]>>({});
+  const [sortCol, setSortCol] = useState<AlchemySortKey>("profit");
+  const [sortDesc, setSortDesc] = useState(true);
+  const [selectedRow, setSelectedRow] = useState<AlchemyRow | null>(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  const rows = useMemo(() => {
-    if (!data) return [];
-    const calculated: (RowData & { level: number })[] = [];
-    const parsedBartering = Number(preferences.barteringBoost) || 0;
-    const parsedActiveHours = Number(preferences.activeHours) || 0;
-    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+  useEffect(() => {
+    const saved = readAlchemySettings();
+    if (saved.minLevel !== undefined) setMinLevel(saved.minLevel);
+    if (saved.maxLevel !== undefined) setMaxLevel(saved.maxLevel);
+    if (saved.minRoi !== undefined) setMinRoi(saved.minRoi);
+    if (saved.minVolume !== undefined) setMinVolume(saved.minVolume);
+    if (typeof saved.onlyProfitable === "boolean") setOnlyProfitable(saved.onlyProfitable);
+    if (typeof saved.hideMissing === "boolean") setHideMissing(saved.hideMissing);
+    if (saved.sortCol) setSortCol(saved.sortCol);
+    if (typeof saved.sortDesc === "boolean") setSortDesc(saved.sortDesc);
+    setOwnedMaterials(readOwnedMaterials());
+    const savedOwnedMode = typeof saved.ownedCostMode === "boolean"
+      ? saved.ownedCostMode
+      : localStorage.getItem(OWNED_MODE_STORAGE_KEY) === "true";
+    setOwnedCostMode(savedOwnedMode);
+    setSettingsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    const next: PersistedAlchemySettings = {
+      minLevel,
+      maxLevel,
+      minRoi,
+      minVolume,
+      onlyProfitable,
+      hideMissing,
+      ownedCostMode,
+      sortCol,
+      sortDesc,
+    };
+    localStorage.setItem(ALCHEMY_SETTINGS_STORAGE_KEY, JSON.stringify(next));
+  }, [hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, ownedCostMode, settingsLoaded, sortCol, sortDesc]);
+
+  const persistOwnedMaterials = (next: Record<string, string[]>) => {
+    setOwnedMaterials(next);
+    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify(next));
+  };
+
+  const toggleOwnedMaterial = (recipeName: string, materialName: string) => {
+    const current = new Set(ownedMaterials[recipeName] || []);
+    if (current.has(materialName)) current.delete(materialName);
+    else current.add(materialName);
+    const next = { ...ownedMaterials, [recipeName]: Array.from(current) };
+    persistOwnedMaterials(next);
+    setSelectedRow((currentRow) => {
+      if (!currentRow || currentRow.name !== recipeName) return currentRow;
+      return {
+        ...currentRow,
+        ingredientCosts: currentRow.ingredientCosts.map((ingredient) =>
+          ingredient.name === materialName ? { ...ingredient, owned: !ingredient.owned } : ingredient,
+        ),
+      };
+    });
+  };
+
+  const setOwnedMode = (next: boolean) => {
+    setOwnedCostMode(next);
+    localStorage.setItem(OWNED_MODE_STORAGE_KEY, String(next));
+  };
+
+  const marketData = useMemo(() => (data || {}) as Record<string, MarketData>, [data]);
+  const parsedActiveHours = Number(preferences.activeHours) || 0;
+  const parsedBartering = Number(preferences.barteringBoost) || 0;
+  const marketTaxRate = getMarketTaxRate(preferences.membership);
+  const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+
+  const allRows = useMemo(() => {
+    const rows: AlchemyRow[] = [];
+    if (!data) return rows;
 
     for (const [name, recipe] of Object.entries(ALCHEMY_ITEMS)) {
-      // Basic Search & Level Filters
-      if (searchTerm && !name.toLowerCase().includes(searchTerm.toLowerCase())) continue;
-      if (recipe.level >= 90) continue; // Mythics are now in the Lab
-      if (minLevel !== "" && recipe.level < minLevel) continue;
-      if (maxLevel !== "" && recipe.level > maxLevel) continue;
+      if (recipe.level >= 90) continue;
 
-      const pData = data?.[name];
-      const price = pData?.avg_3 || 0;
+      const item = marketData[name];
+      const outputPrice = getItemPrice(name, marketData, preferences.customPrices || {});
+      const outputMissing = outputPrice.price <= 0;
+      const recipeOwnedSet = new Set(ownedMaterials[name] || []);
 
-      if (!pData || price <= 0) {
-        // Handle items with no market data
-        let matCost = VIAL_COSTS[recipe.vial] || 0;
-        let matsValid = true;
-        for (const [mName, qty] of Object.entries(recipe.materials)) {
-            const mPrice = data?.[mName]?.avg_3 || 0;
-            if (mPrice <= 0) { matsValid = false; break; }
-            matCost += mPrice * qty;
-        }
+      const ingredientCosts = Object.entries(recipe.materials).map(([materialName, quantity]) => {
+        const priceInfo = getItemPrice(materialName, marketData, preferences.customPrices || {});
+        const owned = recipeOwnedSet.has(materialName);
+        return {
+          name: materialName,
+          quantity,
+          unitPrice: priceInfo.price,
+          totalPrice: priceInfo.price * quantity,
+          source: priceInfo.source,
+          owned,
+        };
+      });
 
-        calculated.push({ 
-            name, 
-            loading: !matsValid, 
-            level: recipe.level,
-            cost: matCost,
-            rev: 0,
-            profit: 0,
-            roi: 0,
-            dailyProfit: 0,
-            vol_3: 0,
-            trend: 'flat',
-            action: 'LIQUIDATE',
-            noMarketData: true
-        } as any);
-        continue;
-      }
+      const inputMissing = ingredientCosts
+        .filter((ingredient) => ingredient.unitPrice <= 0)
+        .map((ingredient) => ingredient.name);
+      const missing = outputMissing || inputMissing.length > 0;
 
-      const avg3 = pData.avg_3 || 0;
-      const avg14 = pData.avg_14 || 0;
-      let trend: "up" | "down" | "flat" = "flat";
-      if (avg3 > avg14 * 1.05) trend = "up";
-      else if (avg3 < avg14 * 0.95) trend = "down";
-
-      let matCost = VIAL_COSTS[recipe.vial] || 0;
-      let matsSellVal = 0;
-      let matsValid = true;
-
-      for (const [mName, qty] of Object.entries(recipe.materials)) {
-        const mPrice = data?.[mName]?.avg_3 || 0;
-        const vPrice = VIAL_COSTS[mName] || 0;
-        const finalPrice = mPrice || vPrice;
-
-        if (finalPrice <= 0) { matsValid = false; break; }
-        matCost += finalPrice * qty;
-        matsSellVal += (finalPrice * marketTaxMultiplier) * qty;
-      }
-
-      // Add recipe cost for Mythics (amortized over 30 uses)
+      const materialCost = ingredientCosts.reduce((sum, ingredient) => sum + ingredient.totalPrice, 0);
+      const cashMaterialCost = ingredientCosts.reduce(
+        (sum, ingredient) => sum + (ownedCostMode && ingredient.owned ? 0 : ingredient.totalPrice),
+        0,
+      );
+      const vialCost = VIAL_COSTS[recipe.vial] || 0;
       const recipeName = `Recipe: ${name}`;
-      const recipePrice = data?.[recipeName]?.avg_3 || 0;
-      const isMythic = pData.quality === 'MYTHIC';
-      
-      if (isMythic && recipePrice > 0) {
-        matCost += (recipePrice / 30);
-      }
+      const recipePrice = getItemPrice(recipeName, marketData, preferences.customPrices || {}).price;
+      const recipeCostShare = item?.quality === "MYTHIC" && recipePrice > 0 ? recipePrice / 30 : 0;
 
-      if (!matsValid) {
-        calculated.push({ name, loading: true, level: recipe.level } as RowData & { level: number });
-        continue;
-      }
+      const opportunityCost = materialCost + vialCost + recipeCostShare;
+      const cashCost = cashMaterialCost + vialCost + recipeCostShare;
+      const cost = ownedCostMode ? cashCost : opportunityCost;
+      const marketGross = outputPrice.source === "missing" ? 0 : outputPrice.price;
+      const marketTax = marketGross * marketTaxRate;
+      const marketNet = marketGross * marketTaxMultiplier;
+      const vendorNet = (item?.vendor_price || 0) * (1 + parsedBartering / 100);
+      const liquidationNet = ingredientCosts.reduce((sum, ingredient) => {
+        if (ingredient.unitPrice <= 0) return sum;
+        return sum + ingredient.unitPrice * marketTaxMultiplier * ingredient.quantity;
+      }, 0);
 
-      const rev = price * marketTaxMultiplier;
-      const baseVendor = pData.vendor_price || 0;
-      const vendorRev = baseVendor * (1 + (parsedBartering / 100));
-      const bestRev = Math.max(rev, vendorRev, matsSellVal);
-      const profit = bestRev - matCost;
-      const roi = matCost > 0 ? (profit / matCost) * 100 : 0; 
-      const craftsPerDay = (parsedActiveHours * 3600) / (recipe.time || 1090.9);
+      const bestRevenue = Math.max(marketNet, vendorNet, liquidationNet);
+      const profit = missing ? 0 : bestRevenue - cost;
+      const opportunityProfit = missing ? 0 : bestRevenue - opportunityCost;
+      const roi = !missing && cost > 0 ? (profit / cost) * 100 : 0;
+      const craftsPerHour = recipe.time > 0 ? 3600 / recipe.time : 0;
+      const craftsPerDay = craftsPerHour * parsedActiveHours;
       const dailyProfit = profit * craftsPerDay;
 
-      let action: "CRAFT" | "LIQUIDATE" | "VENDOR" = "LIQUIDATE";
-      if (bestRev === vendorRev && vendorRev > matsSellVal) action = "VENDOR";
-      else if (bestRev === rev && rev > matsSellVal) action = "CRAFT";
+      let action: ActionPath = "LIQUIDATE";
+      if (bestRevenue === vendorNet && vendorNet > liquidationNet) action = "VENDOR";
+      else if (bestRevenue === marketNet && marketNet > liquidationNet) action = "MARKET";
 
-      calculated.push({
-        name, trend, cost: matCost, rev: bestRev, vendorRev, profit, roi, dailyProfit, vol_3: pData.vol_3 || 0, action, loading: false, matsSellVal, vialCost: VIAL_COSTS[recipe.vial] || 0, level: recipe.level
+      const signal = getSignal(action, item?.vol_3 || 0, missing);
+      const warnings: string[] = [];
+      if (missing) warnings.push(outputMissing ? "Missing result price" : `Missing inputs: ${inputMissing.join(", ")}`);
+      if (!missing && action === "MARKET" && (item?.vol_3 || 0) < 40) warnings.push("Thin market");
+      if (!missing && profit > 0 && opportunityProfit < 0 && ownedCostMode) warnings.push("Only profitable with owned inputs");
+      if (!missing && preferences.customPrices?.[name]) warnings.push("Custom sell price");
+      if (!missing && ingredientCosts.some((ingredient) => ingredient.source === "custom")) warnings.push("Custom input price");
+
+      const reason = missing
+        ? warnings[0] || "Missing market data"
+        : action === "MARKET"
+          ? `Market net beats vendor by ${formatGold(marketNet - vendorNet)}g and liquidation by ${formatGold(marketNet - liquidationNet)}g.`
+          : action === "VENDOR"
+            ? `Vendor wins by ${formatGold(vendorNet - Math.max(marketNet, liquidationNet))}g over the next best path.`
+            : `Selling the ingredients beats crafting by ${formatGold(liquidationNet - Math.max(marketNet, vendorNet))}g.`;
+
+      rows.push({
+        status: missing ? "missing" : "ok",
+        name,
+        level: recipe.level,
+        time: recipe.time,
+        craftsPerHour,
+        craftsPerDay,
+        trend: getTrend(item),
+        action,
+        signal,
+        warnings,
+        reason,
+        formula: `${formatGold(bestRevenue, 2)}g best revenue - ${formatGold(cost, 2)}g cost = ${formatSignedGold(profit, 2)}`,
+        cost,
+        cashCost,
+        opportunityCost,
+        materialCost,
+        cashMaterialCost,
+        vialCost,
+        recipeCostShare,
+        marketGross,
+        marketTax,
+        marketNet,
+        vendorNet,
+        liquidationNet,
+        bestRevenue,
+        profit,
+        opportunityProfit,
+        roi,
+        dailyProfit,
+        vol_3: item?.vol_3 || 0,
+        outputSource: outputPrice.source === "custom" ? "custom" : outputPrice.source === "market" ? "market" : "missing",
+        inputMissing,
+        ingredientCosts,
       });
     }
 
-    const roiLimit = minRoi === "" ? -Infinity : minRoi;
-    const volLimit = minVolume === "" ? 0 : minVolume;
+    return rows;
+  }, [
+    data,
+    marketData,
+    ownedCostMode,
+    ownedMaterials,
+    parsedActiveHours,
+    parsedBartering,
+    preferences.customPrices,
+    marketTaxMultiplier,
+    marketTaxRate,
+  ]);
 
-    const filtered = calculated.filter(row => {
-      if (row.loading) return true;
-      if (row.roi < roiLimit) return false;
-      if (row.vol_3 < volLimit) return false;
+  const rows = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    const roiLimit = minRoi === "" ? -Infinity : Number(minRoi);
+    const volumeLimit = minVolume === "" ? 0 : Number(minVolume);
+
+    const filtered = allRows.filter((row) => {
+      if (query && !row.name.toLowerCase().includes(query)) return false;
+      if (minLevel !== "" && row.level < Number(minLevel)) return false;
+      if (maxLevel !== "" && row.level > Number(maxLevel)) return false;
+      if (hideMissing && row.status === "missing") return false;
+      if (onlyProfitable && row.profit <= 0) return false;
+      if (row.status === "ok" && row.roi < roiLimit) return false;
+      if (row.status === "ok" && row.vol_3 < volumeLimit) return false;
       return true;
     });
 
     filtered.sort((a, b) => {
-      if (a.loading && !b.loading) return 1;
-      if (!a.loading && b.loading) return -1;
-      
-      const aNoData = (a as any).noMarketData;
-      const bNoData = (b as any).noMarketData;
-      if (aNoData && !bNoData) return 1;
-      if (!aNoData && bNoData) return -1;
-
-      if (!sortCol) return b.profit - a.profit;
-      const valA = (a as any)[sortCol];
-      const valB = (b as any)[sortCol];
-      if (valA < valB) return sortDesc ? 1 : -1;
-      if (valA > valB) return sortDesc ? -1 : 1;
-      return 0;
+      if (a.status === "missing" && b.status !== "missing") return 1;
+      if (a.status !== "missing" && b.status === "missing") return -1;
+      const valA = a[sortCol];
+      const valB = b[sortCol];
+      if (typeof valA === "number" && typeof valB === "number") return sortDesc ? valB - valA : valA - valB;
+      return sortDesc
+        ? String(valB).localeCompare(String(valA))
+        : String(valA).localeCompare(String(valB));
     });
 
     return filtered;
-  }, [data, preferences.barteringBoost, preferences.activeHours, preferences.membership, sortCol, sortDesc, minRoi, minVolume, searchTerm, minLevel, maxLevel]);
+  }, [allRows, hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
+
+  const summary = useMemo(() => {
+    const valid = allRows.filter((row) => row.status === "ok");
+    const byProfit = [...valid].sort((a, b) => b.profit - a.profit);
+    const market = valid.filter((row) => row.action === "MARKET").sort((a, b) => b.profit - a.profit)[0];
+    const vendor = valid.filter((row) => row.action === "VENDOR").sort((a, b) => b.profit - a.profit)[0];
+    const roi = [...valid].sort((a, b) => b.roi - a.roi)[0];
+    const volume = [...valid].sort((a, b) => b.vol_3 - a.vol_3)[0];
+    const risky = byProfit.find((row) => row.profit > 0 && row.vol_3 > 0 && row.vol_3 < 40);
+    return { market, vendor, roi, volume, risky, best: byProfit[0] };
+  }, [allRows]);
+
+  useEffect(() => {
+    setSelectedRow((currentRow) => {
+      if (!currentRow) return null;
+      return allRows.find((row) => row.name === currentRow.name && row.status === "ok") || currentRow;
+    });
+  }, [allRows]);
 
   const autoOpenedRef = useRef<string | null>(null);
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const recipeParam = searchParams.get("recipe");
-    if (recipeParam && rows.length > 0) {
-        if (recipeParam === autoOpenedRef.current) return;
-
-        const found = rows.find(r => r.name.toLowerCase() === recipeParam.toLowerCase());
-        if (found && !found.loading) {
-            setSelectedRow(found as RowData);
-            autoOpenedRef.current = recipeParam;
-        }
+    if (recipeParam && allRows.length > 0) {
+      if (recipeParam === autoOpenedRef.current) return;
+      const found = allRows.find((row) => row.name.toLowerCase() === recipeParam.toLowerCase());
+      if (found && found.status === "ok") {
+        setSelectedRow(found);
+        autoOpenedRef.current = recipeParam;
+      }
     } else {
-        autoOpenedRef.current = null;
+      autoOpenedRef.current = null;
     }
-  }, [rows, searchParams]);
+  }, [allRows, searchParams]);
 
-  // Keyboard support for Esc
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedRow(null);
+      if (e.key === "Escape") setSelectedRow(null);
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   const handleSort = (col: AlchemySortKey) => {
-    if (sortCol === col) setSortDesc(!sortDesc);
-    else { setSortCol(col); setSortDesc(true); }
+    if (sortCol === col) setSortDesc((prev) => !prev);
+    else {
+      setSortCol(col);
+      setSortDesc(true);
+    }
   };
-  const marketTaxRate = getMarketTaxRate(preferences.membership);
-  const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
-
 
   const renderSortIcon = (col: AlchemySortKey) => {
     if (sortCol !== col) return null;
     return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
   };
 
+  const updatedAt = scraperStatus?.last_updated || data?._meta?.last_updated;
+  const dataAgeMinutes = updatedAt ? Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000) : null;
+  const staleMarket = dataAgeMinutes !== null && dataAgeMinutes > 90;
+
   return (
     <>
-      <div className="header">
+      <div className="header alchemy-header">
         <h1 className="header-title">
           <Activity size={24} color="var(--text-accent)" /> ALCHEMY PROFIT FINDER
         </h1>
         <div className="header-status">
-            <div className="status-dot"></div>
-            <span className="mono">{rows.length} STRATEGIES</span>
+          <div className="status-dot"></div>
+          <span className="mono">{rows.length} STRATEGIES</span>
         </div>
       </div>
 
-      <div className="controls" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      {staleMarket && (
+        <div className="alchemy-alert">
+          <AlertTriangle size={16} />
+          Market data looks stale: last sync was about {dataAgeMinutes} minutes ago.
+        </div>
+      )}
+
+      <div className="alchemy-summary-grid">
+        <SummaryCard icon={<Coins size={16} />} label="Best Market Craft" row={summary.market} value={summary.market ? formatSignedGold(summary.market.profit) : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<PackageCheck size={16} />} label="Best Vendor Play" row={summary.vendor} value={summary.vendor ? formatSignedGold(summary.vendor.profit) : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<BarChart3 size={16} />} label="Best ROI" row={summary.roi} value={summary.roi ? `+${summary.roi.roi.toFixed(1)}%` : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<Activity size={16} />} label="Highest Volume" row={summary.volume} value={summary.volume ? `${formatGold(summary.volume.vol_3)} vol` : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<AlertTriangle size={16} />} label="Risky High Profit" row={summary.risky} value={summary.risky ? formatSignedGold(summary.risky.profit) : "None"} onSelect={setSelectedRow} />
+      </div>
+
+      <div className="alchemy-controls-panel">
         <div className="control-group">
-            <label className="control-label">Search Recipe</label>
-            <div style={{ position: 'relative' }}>
-                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input type="text" className="control-input" style={{ paddingLeft: '2.5rem', width: '100%' }} placeholder="Filter by name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
+          <label className="control-label">Search Recipe</label>
+          <div className="alchemy-search-field">
+            <Search size={14} />
+            <input
+              type="text"
+              className="control-input"
+              placeholder="Filter by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         <div className="control-group">
-            <label className="control-label">Level Range</label>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <input type="number" className="control-input" style={{ width: '50%' }} placeholder="Min" value={minLevel} onChange={(e) => setMinLevel(e.target.value === "" ? "" : Number(e.target.value))} />
-                <input type="number" className="control-input" style={{ width: '50%' }} placeholder="Max" value={maxLevel} onChange={(e) => setMaxLevel(e.target.value === "" ? "" : Number(e.target.value))} />
-            </div>
+          <label className="control-label">Level Range</label>
+          <div className="alchemy-inline-fields">
+            <input type="number" className="control-input" placeholder="Min" value={minLevel} onChange={(e) => setMinLevel(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input type="number" className="control-input" placeholder="Max" value={maxLevel} onChange={(e) => setMaxLevel(e.target.value === "" ? "" : Number(e.target.value))} />
+          </div>
         </div>
 
         <div className="control-group">
-            <label className="control-label">Bartering Boost (%)</label>
-            <input type="number" className="control-input" style={{ width: '100%' }} value={preferences.barteringBoost} onChange={(e) => setPreferences({ barteringBoost: e.target.value === "" ? "" : Math.min(20, Math.max(0, Number(e.target.value) || 0)) })} />
+          <label className="control-label">Min ROI / Volume</label>
+          <div className="alchemy-inline-fields">
+            <input type="number" className="control-input" placeholder="ROI %" value={minRoi} onChange={(e) => setMinRoi(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input type="number" className="control-input" placeholder="3D Vol" value={minVolume} onChange={(e) => setMinVolume(e.target.value === "" ? "" : Number(e.target.value))} />
+          </div>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Bartering Boost (%)</label>
+          <input
+            type="number"
+            className="control-input"
+            min="0"
+            max="20"
+            value={preferences.barteringBoost}
+            onChange={(e) => setPreferences({ barteringBoost: e.target.value === "" ? "" : Math.min(20, Math.max(0, Number(e.target.value) || 0)) })}
+          />
+        </div>
+
+        <div className="alchemy-toggle-row">
+          <button type="button" className={`alchemy-toggle ${onlyProfitable ? "active" : ""}`} onClick={() => setOnlyProfitable((prev) => !prev)}>
+            <CheckCircle2 size={15} /> Profitable only
+          </button>
+          <button type="button" className={`alchemy-toggle ${hideMissing ? "active" : ""}`} onClick={() => setHideMissing((prev) => !prev)}>
+            <Filter size={15} /> Hide missing
+          </button>
+          <button type="button" className={`alchemy-toggle ${ownedCostMode ? "active" : ""}`} onClick={() => setOwnedMode(!ownedCostMode)}>
+            <PackageCheck size={15} /> Owned mode
+          </button>
+          <span className="alchemy-settings-pill">
+            <Clock size={14} /> {parsedActiveHours}h/day from Settings
+          </span>
         </div>
       </div>
+
       <section className="table-wrapper">
-        {/* Desktop View */}
         <div className="desktop-only">
           <div className="table-container">
-            <table>
+            <table className="alchemy-table">
               <thead>
                 <tr>
-                  <th className="sortable left-align" onClick={() => handleSort("name")}>Asset {renderSortIcon("name")}</th>
-                  <th className="sortable" onClick={() => handleSort("level" as any)}>Level {renderSortIcon("level" as any)}</th>
-                  <th className="sortable" onClick={() => handleSort("trend")}>Trend {renderSortIcon("trend")}</th>
-                  <th className="sortable" onClick={() => handleSort("cost")}>Est. Cost {renderSortIcon("cost")}</th>
-                  <th className="sortable" onClick={() => handleSort("rev")}>Best Revenue {renderSortIcon("rev")}</th>
-                  <th className="sortable" onClick={() => handleSort("profit")}>Net Profit {renderSortIcon("profit")}</th>
-                  <th className="sortable" onClick={() => handleSort("dailyProfit")}>Daily Profit {renderSortIcon("dailyProfit")}</th>
-                  <th className="sortable" onClick={() => handleSort("roi")}>ROI % {renderSortIcon("roi")}</th>
+                  <th className="sortable left-align" onClick={() => handleSort("name")}>Recipe {renderSortIcon("name")}</th>
+                  <th className="sortable" onClick={() => handleSort("level")}>Lvl {renderSortIcon("level")}</th>
+                  <th className="sortable" onClick={() => handleSort("action")}>Best Path {renderSortIcon("action")}</th>
+                  <th className="sortable" onClick={() => handleSort("profit")}>Net/Craft {renderSortIcon("profit")}</th>
+                  <th className="sortable" onClick={() => handleSort("roi")}>ROI {renderSortIcon("roi")}</th>
                   <th className="sortable" onClick={() => handleSort("vol_3")}>3D Vol {renderSortIcon("vol_3")}</th>
-                  <th>Action</th>
+                  <th className="sortable" onClick={() => handleSort("time")}>Time {renderSortIcon("time")}</th>
+                  <th className="sortable" onClick={() => handleSort("craftsPerHour")}>Profit/Hr {renderSortIcon("craftsPerHour")}</th>
+                  <th>Signals</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i} onClick={() => !row.loading && setSelectedRow(row)} className="clickable-row group">
+                {rows.map((row) => (
+                  <tr key={row.name} onClick={() => row.status === "ok" && setSelectedRow(row)} className={`clickable-row ${row.status === "missing" ? "row-muted" : ""}`}>
                     <td className="item-name left-align">
-                      <span 
-                        onClick={(e) => { 
-                          if (!row.loading) {
-                            e.stopPropagation(); 
-                            openItemByName(row.name); 
-                          }
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openItemByName(row.name);
                         }}
-                        onMouseEnter={() => !row.loading && prefetchItem(row.name)}
-                        className="hover:text-accent hover:underline cursor-pointer transition-colors"
+                        onMouseEnter={() => prefetchItem(row.name)}
+                        className="alchemy-recipe-link"
                       >
-                        {row.name}
-                      </span>
+                        {highlightMatch(row.name, searchTerm)}
+                      </button>
+                      <small>{row.status === "missing" ? row.warnings[0] : row.reason}</small>
                     </td>
                     <td className="mono text-muted">{row.level}</td>
-                    {row.loading ? (
-                      <>
-                        <td><div className="skeleton-bar" style={{ width: '40px' }}></div></td>
-                        <td><div className="skeleton-bar"></div></td>
-                        <td><div className="skeleton-bar"></div></td>
-                        <td><div className="skeleton-bar"></div></td>
-                        <td><div className="skeleton-bar"></div></td>
-                        <td><div className="skeleton-bar"></div></td>
-                        <td><div className="skeleton-bar" style={{ width: '30px' }}></div></td>
-                        <td><div className="skeleton-bar" style={{ width: '60px' }}></div></td>
-                      </>
-                    ) : (
-                      <>
-                        <td>
-                          {(row as any).noMarketData ? <span className="text-muted/30">—</span> : (
-                            <>
-                              {row.trend === "up" && <span className="trend-up"><ChevronUp size={14} /> RISING</span>}
-                              {row.trend === "down" && <span className="trend-down"><ChevronDown size={14} /> FALLING</span>}
-                              {row.trend === "flat" && <span className="trend-flat"><Minus size={14} /> STABLE</span>}
-                            </>
-                          )}
-                        </td>
-                        <td className="mono text-muted">{row.cost.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
-                        <td className="mono text-muted">{(row as any).noMarketData ? 'N/A' : row.rev.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
-                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.profit > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                            {(row as any).noMarketData ? 'N/A' : (row.profit > 0 ? '+' : '') + row.profit.toLocaleString(undefined, {maximumFractionDigits:0})}
-                        </td>
-                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.dailyProfit > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                            {(row as any).noMarketData ? 'N/A' : (row.dailyProfit > 0 ? '+' : '') + row.dailyProfit.toLocaleString(undefined, {maximumFractionDigits:0})}
-                        </td>
-                        <td className={`mono ${(row as any).noMarketData ? 'text-muted/30' : (row.roi > 0 ? 'profit-positive' : 'profit-negative')}`}>
-                            {(row as any).noMarketData ? 'N/A' : (row.roi > 0 ? '+' : '') + row.roi.toFixed(1) + '%'}
-                        </td>
-                        <td className={`mono ${row.vol_3 > 0 ? 'text-main' : 'text-muted/30'}`}>{(row as any).noMarketData ? '0' : row.vol_3.toLocaleString()}</td>
-                        <td>
-                          {(row as any).noMarketData ? <span className="action-badge action-liquidate">NO DATA</span> : (
-                            <>
-                              {row.action === "CRAFT" && <span className="action-badge action-craft">MARKET</span>}
-                              {row.action === "VENDOR" && <span className="action-badge action-vendor">VENDOR</span>}
-                              {row.action === "LIQUIDATE" && <span className="action-badge action-liquidate">LIQUIDATE</span>}
-                            </>
-                          )}
-                        </td>
-                      </>
-                    )}
+                    <td>{row.status === "missing" ? <Badge label="NO DATA" tone="bad" /> : <PathBadge action={row.action} />}</td>
+                    <td className={`mono ${row.profit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit)}</td>
+                    <td className={`mono ${row.roi >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : `${row.roi >= 0 ? "+" : ""}${row.roi.toFixed(1)}%`}</td>
+                    <td className={`mono ${row.vol_3 > 0 ? "text-main" : "text-muted"}`}>{formatGold(row.vol_3)}</td>
+                    <td className="mono text-muted">{formatDuration(row.time)}</td>
+                    <td className={`mono ${row.dailyProfit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit * row.craftsPerHour)}</td>
+                    <td>
+                      <div className="alchemy-signal-stack">
+                        <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
+                        {row.warnings.slice(0, 2).map((warning) => <span key={warning} className="alchemy-warning-chip">{warning}</span>)}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -349,190 +651,204 @@ function AlchemyContent() {
           </div>
         </div>
 
-        {/* Mobile View */}
         <div className="mobile-only">
           <MobileSortControls
             label="Sort Strategy"
-            value={sortCol || "profit"}
+            value={sortCol}
             descending={sortDesc}
             onSort={(value) => handleSort(value as AlchemySortKey)}
             onToggleDirection={() => setSortDesc((prev) => !prev)}
             options={[
-              { value: "profit", label: "Net Profit" },
-              { value: "roi", label: "ROI %" },
-              { value: "level", label: "Level" },
-              { value: "vol_3", label: "3D Volume" },
+              { value: "profit", label: "Net/Craft" },
+              { value: "roi", label: "ROI" },
               { value: "dailyProfit", label: "Daily Profit" },
+              { value: "vol_3", label: "Volume" },
+              { value: "level", label: "Level" },
               { value: "name", label: "Name" },
             ]}
           />
           <div className="mobile-card-grid">
-            {rows.map((row, i) => (
-              <div key={i} className="mobile-alchemy-card" onClick={() => !row.loading && setSelectedRow(row)}>
+            {rows.map((row) => (
+              <div key={row.name} className="mobile-alchemy-card rich" onClick={() => row.status === "ok" && setSelectedRow(row)}>
                 <div className="m-card-header">
                   <div className="m-card-title">
-                    <span className="m-name">{row.name}</span>
+                    <span className="m-name">{highlightMatch(row.name, searchTerm)}</span>
                     <span className="m-lvl">LVL {row.level}</span>
                   </div>
-                  {!row.loading && (
-                    <div className={`m-roi ${row.roi > 0 ? 'pos' : 'neg'}`}>
-                      {row.roi.toFixed(1)}% ROI
+                  {row.status === "ok" && <div className={`m-roi ${row.roi > 0 ? "pos" : "neg"}`}>{row.roi.toFixed(1)}% ROI</div>}
+                </div>
+                {row.status === "missing" ? (
+                  <p className="alchemy-card-note">{row.warnings[0] || "Missing market data"}</p>
+                ) : (
+                  <>
+                    <div className="m-card-body">
+                      <div className="m-stat"><span className="m-label">PATH</span><PathBadge action={row.action} /></div>
+                      <div className="m-stat"><span className="m-label">NET/CRAFT</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
+                      <div className="m-stat"><span className="m-label">PROFIT/HR</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit * row.craftsPerHour)}</span></div>
+                      <div className="m-stat"><span className="m-label">VOLUME</span><span className="m-val">{formatGold(row.vol_3)}</span></div>
                     </div>
-                  )}
-                </div>
-                
-                <div className="m-card-body">
-                  {row.loading ? (
-                    <div className="skeleton-bar" style={{ width: '100%', height: '40px' }}></div>
-                  ) : (
-                    <>
-                      <div className="m-stat">
-                        <span className="m-label">EST. COST</span>
-                        <span className="m-val">{row.cost.toLocaleString()}g</span>
-                      </div>
-                      <div className="m-stat">
-                        <span className="m-label">NET PROFIT</span>
-                        <span className={`m-val ${row.profit > 0 ? 'pos' : 'neg'}`}>
-                          {row.profit > 0 ? '+' : ''}{row.profit.toLocaleString()}g
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="m-card-footer">
-                  {!row.loading && (
-                    <>
-                      <div className="m-badges">
-                        {row.action === "CRAFT" && <span className="action-badge action-craft">MARKET</span>}
-                        {row.action === "VENDOR" && <span className="action-badge action-vendor">VENDOR</span>}
-                        {row.action === "LIQUIDATE" && <span className="action-badge action-liquidate">LIQUIDATE</span>}
-                      </div>
-                      <div className="m-vol">{row.vol_3.toLocaleString()} VOL</div>
-                    </>
-                  )}
-                </div>
+                    <div className="m-card-footer">
+                      <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
+                      <div className="m-vol">{formatDuration(row.time)} each</div>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
         </div>
+
+        {rows.length === 0 && (
+          <div className="alchemy-empty-state">
+            <Search size={28} />
+            <h3>No alchemy strategies match those filters</h3>
+            <p>Relax the ROI, volume, level, or search filters to bring recipes back.</p>
+          </div>
+        )}
       </section>
 
       {selectedRow && (
-        <div className="modal-overlay" onClick={() => setSelectedRow(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-                <h2 
-                    onClick={() => openItemByName(selectedRow.name)}
-                    style={{ cursor: 'pointer' }}
-                    className="hover:text-accent transition-colors"
-                >
-                    {selectedRow.name} Strategy
-                </h2>
-                <button className="close-btn" onClick={() => setSelectedRow(null)}><X size={20} /></button>
-            </div>
-            <div className="modal-body">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                    {/* Left Column: Acquisition */}
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em' }}>
-                            <Target size={16} /> ACQUISITION STRATEGY
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {Object.entries(ALCHEMY_ITEMS[selectedRow.name]?.materials || {}).map(([m, q]) => {
-                                const unitPrice = data?.[m]?.avg_3 || 0;
-                                const total = unitPrice * q;
-                                return (
-                                    <div key={m} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.75rem' }}>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '0.75rem', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.85rem', minWidth: 0, lineHeight: 1.35 }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>{q}x</span>{" "}
-                                                <button 
-                                                    onClick={() => openItemByName(m)}
-                                                    style={{ fontWeight: 600, color: '#fff', background: 'none', border: 'none', padding: 0, cursor: 'pointer', outline: 'none', textAlign: 'left', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35 }}
-                                                    className="hover-underline"
-                                                >
-                                                    {m}
-                                                </button>
-                                            </span>
-                                            <span className="mono" style={{ fontSize: '0.8rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>{unitPrice.toLocaleString()} ea</span>
-                                                <span style={{ margin: '0 0.5rem', color: 'var(--text-accent)' }}>→</span>
-                                                <span style={{ color: 'var(--text-success)', fontWeight: 600 }}>{total.toLocaleString()}g</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            
-                            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Vial Cost (Fixed)</span>
-                                <span className="mono" style={{ fontWeight: 700 }}>{selectedRow.vialCost.toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Execution */}
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '8px', padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em' }}>
-                            <Info size={16} /> EXECUTION & MATH
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>RAW MATERIAL VALUE</span>
-                                <span className="mono" style={{ fontWeight: 700 }}>{(selectedRow.cost - selectedRow.vialCost).toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>MARKET NET (AFTER {Math.round(marketTaxRate * 100)}% TAX)</span>
-                                <span className="mono" style={{ fontWeight: 700 }}>{selectedRow.rev.toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>VENDOR NET (W/ BARTERING)</span>
-                                <span className="mono" style={{ fontWeight: 700 }}>{selectedRow.vendorRev.toLocaleString()}</span>
-                            </div>
-                            
-                            <div style={{ margin: '0.5rem 0', borderBottom: '1px solid var(--border-subtle)' }}></div>
-                            
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TARGET LIST PRICE</span>
-                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-accent)' }}>{(selectedRow.rev / marketTaxMultiplier).toLocaleString(undefined, {maximumFractionDigits:0})}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>PROJECTED NET PROFIT</span>
-                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-success)' }}>+{selectedRow.profit.toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>EST. DAILY PROFIT ({preferences.activeHours}H)</span>
-                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-success)' }}>+{selectedRow.dailyProfit.toLocaleString()}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>RETURN ON INVESTMENT (ROI)</span>
-                                <span className="mono" style={{ fontWeight: 700, color: 'var(--text-success)' }}>+{selectedRow.roi.toFixed(1)}%</span>
-                            </div>
-                            
-                            <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>3-Day Liquidity (Volume)</span>
-                                <span style={{ fontWeight: 600 }}><span style={{ color: '#fff' }}>{selectedRow.vol_3}</span> <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sold</span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
+        <AlchemyStrategyModal
+          row={selectedRow}
+          marketTaxRate={marketTaxRate}
+          activeHours={parsedActiveHours}
+          ownedCostMode={ownedCostMode}
+          onClose={() => setSelectedRow(null)}
+          onOpenItem={openItemByName}
+          onToggleOwned={(materialName) => toggleOwnedMaterial(selectedRow.name, materialName)}
+        />
       )}
     </>
   );
 }
 
+function SummaryCard({
+  icon,
+  label,
+  row,
+  value,
+  onSelect,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  row?: AlchemyRow;
+  value: string;
+  onSelect: (row: AlchemyRow) => void;
+}) {
+  return (
+    <button type="button" className="alchemy-summary-card" disabled={!row} onClick={() => row && onSelect(row)}>
+      <span>{icon}</span>
+      <small>{label}</small>
+      <strong>{value}</strong>
+      <em>{row?.name || "No match"}</em>
+    </button>
+  );
+}
+
+function Badge({ label, tone }: { label: string; tone: "good" | "warn" | "bad" }) {
+  return <span className={`action-badge ${tone === "good" ? "action-craft" : tone === "warn" ? "action-vendor" : "action-liquidate"}`}>{label}</span>;
+}
+
+function PathBadge({ action }: { action: ActionPath }) {
+  if (action === "MARKET") return <Badge label="MARKET" tone="good" />;
+  if (action === "VENDOR") return <Badge label="VENDOR" tone="warn" />;
+  return <Badge label="LIQUIDATE" tone="bad" />;
+}
+
+function AlchemyStrategyModal({
+  row,
+  marketTaxRate,
+  activeHours,
+  ownedCostMode,
+  onClose,
+  onOpenItem,
+  onToggleOwned,
+}: {
+  row: AlchemyRow;
+  marketTaxRate: number;
+  activeHours: number;
+  ownedCostMode: boolean;
+  onClose: () => void;
+  onOpenItem: (name: string) => void;
+  onToggleOwned: (materialName: string) => void;
+}) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content alchemy-strategy-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header">
+          <h2 onClick={() => onOpenItem(row.name)} style={{ cursor: "pointer" }}>{row.name} Strategy</h2>
+          <button className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
+        </div>
+        <div className="modal-body">
+          <div className="alchemy-modal-grid">
+            <section className="alchemy-modal-panel">
+              <div className="alchemy-modal-panel-title"><Target size={16} /> Inputs</div>
+              <div className="alchemy-material-list">
+                {row.ingredientCosts.map((ingredient) => (
+                  <div key={ingredient.name} className="alchemy-material-card">
+                    <div className="alchemy-material-row">
+                      <span className="alchemy-material-name">
+                        <label className="alchemy-owned-check">
+                          <input type="checkbox" checked={ingredient.owned} onChange={() => onToggleOwned(ingredient.name)} />
+                          <span>{ingredient.quantity}x</span>
+                        </label>{" "}
+                        <button type="button" className="alchemy-material-button hover-underline" onClick={() => onOpenItem(ingredient.name)}>
+                          {ingredient.name}
+                        </button>
+                      </span>
+                      <span className="alchemy-material-price mono">
+                        <span>{formatGold(ingredient.unitPrice, 3)} ea</span>
+                        <span>{"->"}</span>
+                        <strong>{ownedCostMode && ingredient.owned ? "Owned" : `${formatGold(ingredient.totalPrice, 3)}g`}</strong>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div className="alchemy-modal-total"><span>Material cost</span><strong className="mono">{formatGold(row.materialCost, 3)}g</strong></div>
+                <div className="alchemy-modal-total"><span>Cash material cost</span><strong className="mono">{formatGold(row.cashMaterialCost, 3)}g</strong></div>
+                <div className="alchemy-modal-total"><span>Vial cost</span><strong className="mono">{formatGold(row.vialCost)}g</strong></div>
+                {row.recipeCostShare > 0 && <div className="alchemy-modal-total"><span>Recipe amortization</span><strong className="mono">{formatGold(row.recipeCostShare, 3)}g</strong></div>}
+              </div>
+            </section>
+
+            <section className="alchemy-modal-panel">
+              <div className="alchemy-modal-panel-title"><Info size={16} /> Revenue Paths</div>
+              <div className="alchemy-math-list">
+                <div className="alchemy-math-row"><span>Market gross</span><strong className="mono">{formatGold(row.marketGross, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Market tax ({Math.round(marketTaxRate * 100)}%)</span><strong className="mono">-{formatGold(row.marketTax, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Market net</span><strong className="mono">{formatGold(row.marketNet, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Vendor net</span><strong className="mono">{formatGold(row.vendorNet, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Material liquidation net</span><strong className="mono">{formatGold(row.liquidationNet, 3)}g</strong></div>
+                <div className="alchemy-math-divider"></div>
+                <div className="alchemy-math-row"><span>Best path</span><PathBadge action={row.action} /></div>
+                <div className="alchemy-math-row"><span>Best revenue</span><strong className="mono accent-value">{formatGold(row.bestRevenue, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Cost used</span><strong className="mono">{formatGold(row.cost, 3)}g</strong></div>
+                <div className="alchemy-math-row"><span>Profit per craft</span><strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit, 3)}</strong></div>
+                <div className="alchemy-math-row"><span>Opportunity profit</span><strong className={`mono ${row.opportunityProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.opportunityProfit, 3)}</strong></div>
+                <div className="alchemy-math-row"><span>Craft time</span><strong className="mono">{formatDuration(row.time)}</strong></div>
+                <div className="alchemy-math-row"><span>Crafts/hr</span><strong className="mono">{row.craftsPerHour.toFixed(2)}</strong></div>
+                <div className="alchemy-math-row"><span>Daily profit ({activeHours}h)</span><strong className={`mono ${row.dailyProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.dailyProfit, 2)}</strong></div>
+                <div className="alchemy-formula-line">{row.formula}</div>
+                <div className="alchemy-liquidity-row">
+                  <span>3-day liquidity</span>
+                  <strong>{formatGold(row.vol_3)} <small>sold</small></strong>
+                </div>
+                <p className="alchemy-reason"><Eye size={14} /> {row.reason}</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AlchemyPage() {
-    return (
-        <main className="container">
-            <Suspense fallback={<div className="loading-state">Loading Alchemy Data...</div>}>
-                <AlchemyContent />
-            </Suspense>
-        </main>
-    );
+  return (
+    <main className="container">
+      <Suspense fallback={<div className="loading-state">Loading Alchemy Data...</div>}>
+        <AlchemyContent />
+      </Suspense>
+    </main>
+  );
 }
