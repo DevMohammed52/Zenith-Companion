@@ -3,9 +3,8 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { Skull, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Clock, ExternalLink } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
-import { BOSS_SCHEDULES, EVENT_BOSSES } from "../../constants/events";
+import { BOSS_SCHEDULES } from "../../constants/events";
 
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { useData } from "@/context/DataContext";
@@ -14,7 +13,6 @@ import MobileSortControls from "@/components/MobileSortControls";
 function BossesContent() {
     const searchParams = useSearchParams();
     const { marketData, staticData, allItemsDb } = useData();
-    const { preferences } = usePreferences();
     const { openItemByName } = useItemModal();
     const [selectedBoss, setSelectedBoss] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("ev");
@@ -39,9 +37,7 @@ function BossesContent() {
         if (!staticData || !marketData || !allItemsDb) return [];
         const calculated = [];
 
-        const allBosses = preferences.showEventBosses ? [...staticData.world_bosses, ...EVENT_BOSSES] : staticData.world_bosses;
-
-        for (const boss of allBosses) {
+        for (const boss of staticData.world_bosses) {
             let evPerRun = 0;
             if (boss.loot) {
                 for (const drop of boss.loot) {
@@ -51,7 +47,7 @@ function BossesContent() {
                 }
             }
 
-            const scheduleInfo = boss.isEvent ? { respawnHours: boss.respawnHours, lengthSeconds: boss.lengthSeconds } : BOSS_SCHEDULES[boss.name];
+            const scheduleInfo = BOSS_SCHEDULES[boss.name] || (boss.respawnHours ? { respawnHours: boss.respawnHours, lengthSeconds: boss.lengthSeconds || 3600 } : null);
             
             let nextSpawnTime = null;
             let deathTime = null;
@@ -109,7 +105,7 @@ function BossesContent() {
             return sortDesc ? valB - valA : valA - valB;
         });
         return filtered;
-    }, [staticData, marketData, allItemsDb, searchTerm, sortCol, sortDesc, preferences.showEventBosses]);
+    }, [staticData, marketData, allItemsDb, searchTerm, sortCol, sortDesc]);
 
     const autoOpenedRef = useRef<string | null>(null);
 
@@ -201,7 +197,6 @@ function BossesContent() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
                                                 <span>{row.name}</span>
-                                                {row.isEvent && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
                                             </div>
                                         </td>
                                         <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
@@ -247,7 +242,6 @@ function BossesContent() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
                                             <span className="m-name">{row.name}</span>
-                                            {row.isEvent && <span style={{fontSize:'0.5rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 3px', borderRadius:'3px'}}>EVENT</span>}
                                         </div>
                                         <span className="m-lvl">{row.location?.name || "Unknown"} • LVL {row.level}</span>
                                     </div>

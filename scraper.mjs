@@ -250,9 +250,11 @@ async function fetchLiveWorldBosses() {
             const currentStatic = loadJson(STATIC_DATA_FILE);
             if (currentStatic) {
                 // Update specific fields from API while preserving our augmented data
+                const seenBossKeys = new Set();
                 const updatedBosses = currentStatic.world_bosses.map(boss => {
                     const live = data.world_bosses.find(lb => lb.id === boss.id || lb.name === boss.name);
                     if (live) {
+                        seenBossKeys.add(live.id || live.name);
                         return {
                             ...boss,
                             status: live.status,
@@ -265,6 +267,16 @@ async function fetchLiveWorldBosses() {
                     }
                     return boss;
                 });
+
+                for (const live of data.world_bosses) {
+                    const key = live.id || live.name;
+                    if (!key || seenBossKeys.has(key)) continue;
+                    updatedBosses.push({
+                        ...live,
+                        loot: live.loot || [],
+                        _source: "live_world_boss_api"
+                    });
+                }
                 
                 currentStatic.world_bosses = updatedBosses;
                 await safeWriteJson(STATIC_DATA_FILE, currentStatic);

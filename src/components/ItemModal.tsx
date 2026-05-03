@@ -776,8 +776,100 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .market-link:hover { text-decoration: underline; }
 
         @media (max-width: 900px) {
-          .modal-card { max-width: 100vw; max-height: 100vh; border-radius: 0; }
-          .bento-card { flex: 1 1 100%; }
+          .modal-container { align-items: stretch; padding: 0; }
+          .modal-card { max-width: 100vw; max-height: 100dvh; border-radius: 0; }
+          .modal-header-section { padding: 1rem; }
+          .header-flex { align-items: flex-start; gap: 1rem; }
+          .header-left { align-items: flex-start; gap: 0.85rem; min-width: 0; }
+          .item-icon-large { border-radius: 10px; height: 46px; width: 46px; }
+          .item-title {
+            font-size: clamp(1.2rem, 7vw, 1.75rem);
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+          }
+          .badge-row { flex-wrap: wrap; gap: 0.45rem; }
+          .modal-close-btn { flex-shrink: 0; padding: 0.55rem; }
+
+          .modal-body { padding: 1rem; }
+          .bento-grid { gap: 0.85rem; }
+          .bento-card {
+            border-radius: 12px;
+            flex: 1 1 100%;
+            min-height: 0;
+            min-width: 0;
+            padding: 1rem;
+          }
+          .card-label { margin-bottom: 0.85rem; }
+          .market-card { flex-basis: 100%; }
+          .price-main {
+            font-size: clamp(1.8rem, 11vw, 2.35rem);
+            overflow-wrap: anywhere;
+          }
+          .market-stats,
+          .yield-stats,
+          .restoration-row {
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .stats-mini-grid,
+          .utility-group-items {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .description-text { font-size: 0.95rem; }
+          .source-pill,
+          .loot-row,
+          .ing-row {
+            border-radius: 10px;
+            gap: 0.75rem;
+            padding: 0.75rem;
+          }
+          .source-meta,
+          .loot-row,
+          .ing-row,
+          .analysis-row,
+          .profit-footer {
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+          }
+          .loot-name,
+          .source-name,
+          .ing-name-link,
+          .up-name {
+            overflow-wrap: anywhere;
+            white-space: normal;
+          }
+          .ing-price-sub { margin-left: 0; }
+          .modal-footer {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1rem;
+          }
+          .item-id {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .market-link { font-size: 0.8rem; }
+        }
+
+        @media (max-width: 480px) {
+          .market-stats,
+          .yield-stats,
+          .restoration-row,
+          .stats-mini-grid,
+          .utility-group-items {
+            grid-template-columns: 1fr;
+          }
+          .type-badge,
+          .quality-text,
+          .uses-badge,
+          .vendor-badge {
+            font-size: 9px;
+          }
+          .profit-footer strong { font-size: 1.15rem; }
         }
       `}</style>
     </div>

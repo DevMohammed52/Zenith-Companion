@@ -1,6 +1,6 @@
 "use client";
 
-import { Keyboard, Palette, Settings, SlidersHorizontal, ToggleLeft, Swords, FlaskConical, Target, Shield, Zap } from "lucide-react";
+import { Keyboard, Palette, Settings, Swords, FlaskConical, Target, Shield, Zap } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
@@ -110,20 +110,6 @@ export default function SettingsPage() {
                     ))}
                 </div>
             </div>
-          </div>
-        </div>
-
-        <div className="settings-panel">
-          <h2><ToggleLeft size={17} /> Content Filters</h2>
-          <div className="settings-fields">
-            <label className="toggle-row">
-              <span><strong>Event Bosses</strong><small>Include seasonal bosses.</small></span>
-              <input type="checkbox" checked={preferences.showEventBosses} onChange={e => setPreferences({ showEventBosses: e.target.checked })} />
-            </label>
-            <label className="toggle-row">
-              <span><strong>Event Dungeons</strong><small>Include seasonal dungeons.</small></span>
-              <input type="checkbox" checked={preferences.showEventDungeons} onChange={e => setPreferences({ showEventDungeons: e.target.checked })} />
-            </label>
           </div>
         </div>
 

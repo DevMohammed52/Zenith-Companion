@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { Castle, X, ChevronDown, ChevronUp, Search, ExternalLink, MapPin, Zap } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 
 import { getItemTrueValue } from "@/lib/ev-logic";
@@ -13,7 +12,6 @@ import MobileSortControls from "@/components/MobileSortControls";
 function DungeonsContent() {
     const searchParams = useSearchParams();
     const { marketData, staticData, allItemsDb } = useData();
-    const { preferences } = usePreferences();
     const { openItemByName } = useItemModal();
     const [selectedDungeon, setSelectedDungeon] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("netProfitPerRun");
@@ -39,8 +37,6 @@ function DungeonsContent() {
         const calculated = [];
 
         for (const dungeon of staticData.dungeons) {
-            if (dungeon.is_event && !preferences.showEventDungeons) continue;
-
             let totalEv = 0;
             let combinedDropChance = 0;
             if (dungeon.loot) {
@@ -98,7 +94,7 @@ function DungeonsContent() {
         });
 
         return filtered;
-    }, [staticData, marketData, allItemsDb, preferences.showEventDungeons, sortCol, sortDesc, searchTerm]);
+    }, [staticData, marketData, allItemsDb, sortCol, sortDesc, searchTerm]);
 
     const autoOpenedRef = useRef<string | null>(null);
 
@@ -178,7 +174,6 @@ function DungeonsContent() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
                                                 <span>{row.name}</span>
-                                                {row.is_event && <span style={{fontSize:'0.6rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 4px', borderRadius:'3px', marginLeft:'5px'}}>EVENT</span>}
                                             </div>
                                         </td>
                                         <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
@@ -220,7 +215,6 @@ function DungeonsContent() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
                                             <span className="m-name">{row.name}</span>
-                                            {row.is_event && <span style={{fontSize:'0.5rem', color:'var(--text-accent)', border:'1px solid var(--text-accent)', padding:'1px 3px', borderRadius:'3px'}}>EVENT</span>}
                                         </div>
                                         <span className="m-lvl">{row.location?.name || "Unknown"} • {row.durationMins}m</span>
                                     </div>

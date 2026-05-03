@@ -8,8 +8,6 @@ export type Preferences = {
   barteringBoost: number | "";
   activeHours: number | "";
   killsPerHour: number | "";
-  showEventBosses: boolean;
-  showEventDungeons: boolean;
   theme: ThemeName;
   combatLevel: number | "";
   strStat: number | "";
@@ -22,8 +20,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   barteringBoost: 0,
   activeHours: 18,
   killsPerHour: 360,
-  showEventBosses: true,
-  showEventDungeons: true,
   theme: "ember",
   combatLevel: 96,
   strStat: 80,
