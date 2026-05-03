@@ -733,7 +733,7 @@ th.left-align .sortButton {
 }
 
 .strategyModalContent {
-  max-width: 860px;
+  max-width: 980px;
 }
 
 .modalPanel {
@@ -741,6 +741,140 @@ th.left-align .sortButton {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 1rem;
+}
+
+.itemDetailsPanel {
+  grid-column: 1 / -1;
+}
+
+.itemDetailHeader {
+  align-items: center;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-bottom: 0.85rem;
+  padding: 0.75rem;
+}
+
+.itemDetailHeader img {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  height: 44px;
+  object-fit: cover;
+  width: 44px;
+}
+
+.itemDetailHeader strong,
+.itemDetailHeader span {
+  display: block;
+  min-width: 0;
+}
+
+.itemDetailHeader strong {
+  color: var(--text-main);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.itemDetailHeader span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.detailGrid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+}
+
+.detailPill {
+  background: rgba(0,0,0,0.18);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+}
+
+.detailPill span,
+.detailPill strong {
+  display: block;
+  min-width: 0;
+}
+
+.detailPill span {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.detailPill strong {
+  color: var(--text-main);
+  font-size: 0.84rem;
+  line-height: 1.3;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.extraDetailGrid {
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+}
+
+.detailList {
+  background: rgba(0,0,0,0.16);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.detailList > strong {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.detailList div {
+  align-items: baseline;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(82px, 0.55fr) minmax(0, 1fr);
+  min-width: 0;
+}
+
+.detailList span,
+.detailList em {
+  min-width: 0;
+}
+
+.detailList span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.detailList em {
+  color: var(--text-main);
+  font-size: 0.76rem;
+  font-style: normal;
+  overflow-wrap: anywhere;
 }
 
 .modalPanelTitle {

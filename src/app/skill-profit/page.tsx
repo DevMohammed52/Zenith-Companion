@@ -596,9 +596,24 @@ function SkillStrategyModal({
   onClose: () => void;
   onOpenItem: (name: string) => void;
 }) {
+  const { marketData, allItemsDb } = useData();
   const taxRate = membership ? 12 : 15;
   const grossRevenue = row.saleSource === "market" ? row.salePrice : 0;
   const taxPaid = row.saleSource === "market" ? grossRevenue - row.marketRevenue : 0;
+  const item = allItemsDb?.[row.name];
+  const market = marketData?.[row.name] || {};
+  const itemStats = item?.stats && typeof item.stats === "object" ? Object.entries(item.stats).filter(([, value]) => value !== null && value !== 0 && value !== "") : [];
+  const itemRequirements = item?.requirements && typeof item.requirements === "object" ? Object.entries(item.requirements).filter(([, value]) => value !== null && value !== "") : [];
+  const itemEffects = item?.effects
+    ? Array.isArray(item.effects)
+      ? item.effects.map((effect: any, index: number) => [`Effect ${index + 1}`, effect?.name || effect?.type || stringifyDetail(effect)] as [string, string])
+      : Object.entries(item.effects).filter(([, value]) => value !== null && value !== "")
+    : [];
+  const restorationEntries = [
+    ["Health", item?.health_restore ? `+${item.health_restore}` : "0"],
+    ["Hunger", item?.hunger_restore ? `+${item.hunger_restore}` : "0"],
+  ].filter(([, value]) => value !== "0") as Array<[string, string]>;
+  const findSources = Array.isArray(item?.where_to_find) ? item.where_to_find.filter(Boolean).slice(0, 4) : [];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -665,11 +680,113 @@ function SkillStrategyModal({
                 Open item database details
               </button>
             </section>
+
+            <section className={`${styles.modalPanel} ${styles.itemDetailsPanel}`}>
+              <div className={styles.modalPanelTitle}><Eye size={16} /> Result Item Details</div>
+              <div className={styles.itemDetailHeader}>
+                {item?.image_url && <img src={item.image_url} alt="" />}
+                <div>
+                  <strong>{row.name}</strong>
+                  <span>{item?.description || row.note || "No item description available in the local database."}</span>
+                </div>
+              </div>
+              <div className={styles.detailGrid}>
+                <DetailPill label="Skill" value={row.skill} />
+                <DetailPill label="Level" value={row.level.toLocaleString()} />
+                <DetailPill label="Base Time" value={`${formatNumber(row.baseDuration)}s`} />
+                <DetailPill label="Final Time" value={`${formatNumber(row.finalDuration)}s`} />
+                <DetailPill label="Base EXP" value={formatNumber(row.experience)} />
+                <DetailPill label="EXP/hr" value={formatNumber(row.expPerHour)} />
+                <DetailPill label="Type" value={formatType(item?.type)} muted={!item?.type} />
+                <DetailPill label="Quality" value={formatType(item?.quality)} muted={!item?.quality} />
+                <DetailPill label="Tradeable" value={item ? (item.is_tradeable ? "Yes" : "No") : "Unknown"} muted={!item} />
+                <DetailPill label="Vendor Base" value={item?.vendor_price ? `${formatGold(item.vendor_price)}g` : "None"} muted={!item?.vendor_price} />
+                <DetailPill label="3d Avg" value={market?.avg_3 ? `${formatGold(market.avg_3)}g` : "No data"} muted={!market?.avg_3} />
+                <DetailPill label="7d Avg" value={market?.avg_7 ? `${formatGold(market.avg_7)}g` : "No data"} muted={!market?.avg_7} />
+                <DetailPill label="30d Avg" value={market?.avg_30 ? `${formatGold(market.avg_30)}g` : "No data"} muted={!market?.avg_30} />
+                <DetailPill label="3d Volume" value={row.volume3d.toLocaleString()} muted={row.volume3d <= 0} />
+              </div>
+
+              {(itemRequirements.length > 0 || itemStats.length > 0 || itemEffects.length > 0 || findSources.length > 0 || item?.health_restore || item?.hunger_restore) && (
+                <div className={styles.extraDetailGrid}>
+                  {itemRequirements.length > 0 && <DetailList title="Requirements" entries={itemRequirements} />}
+                  {itemStats.length > 0 && <DetailList title="Stats" entries={itemStats} />}
+                  {itemEffects.length > 0 && <DetailList title="Effects" entries={itemEffects} />}
+                  {(item?.health_restore || item?.hunger_restore) && (
+                    <DetailList
+                      title="Restoration"
+                      entries={restorationEntries}
+                    />
+                  )}
+                  {findSources.length > 0 && (
+                    <DetailList
+                      title="Where To Find"
+                      entries={findSources.map((source: any, index: number) => [
+                        source?.type || source?.name || `Source ${index + 1}`,
+                        source?.name || source?.location || stringifyDetail(source),
+                      ])}
+                    />
+                  )}
+                </div>
+              )}
+            </section>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function DetailPill({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className={styles.detailPill}>
+      <span>{label}</span>
+      <strong className={muted ? styles.mutedValue : ""}>{value}</strong>
+    </div>
+  );
+}
+
+function DetailList({ title, entries }: { title: string; entries: Array<[string, any]> }) {
+  return (
+    <div className={styles.detailList}>
+      <strong>{title}</strong>
+      {entries.map(([label, value]) => (
+        <div key={`${title}-${label}`}>
+          <span>{formatType(label)}</span>
+          <em>{stringifyDetail(value)}</em>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function stringifyDetail(value: any): string {
+  if (value === null || value === undefined || value === "") return "None";
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(stringifyDetail).join(", ");
+  if (typeof value === "object") {
+    const name = value.name || value.item_name || value.type || value.location || value.value;
+    if (name) return String(name);
+    return Object.entries(value)
+      .filter(([, entryValue]) => entryValue !== null && entryValue !== undefined && entryValue !== "")
+      .slice(0, 3)
+      .map(([entryKey, entryValue]) => `${formatType(entryKey)}: ${stringifyDetail(entryValue)}`)
+      .join(", ");
+  }
+  return String(value);
+}
+
+function formatType(value: any): string {
+  if (!value) return "Unknown";
+  return String(value)
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function CalcRow({ label, value, tone, muted }: { label: string; value: string; tone?: "good" | "bad"; muted?: boolean }) {
