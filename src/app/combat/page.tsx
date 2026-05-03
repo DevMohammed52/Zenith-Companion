@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { Swords, Activity, X, Info, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink } from "lucide-react";
+import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, BarChart3, Trophy } from "lucide-react";
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
@@ -59,7 +59,7 @@ function CombatContent() {
     }, [searchTerm]);
 
 
-    const rows = useMemo(() => {
+    const combatRows = useMemo(() => {
         if (!staticData || !marketData) return [];
         const calculated = [];
         const parsedKph = Number(preferences.killsPerHour) || 0;
@@ -93,11 +93,49 @@ function CombatContent() {
             });
         }
 
+        return calculated;
+    }, [staticData, marketData, preferences.killsPerHour]);
+
+    const areaSummaries = useMemo(() => {
+        const grouped = new Map<string, any[]>();
+
+        for (const row of combatRows) {
+            const area = row.location?.name || "Unknown";
+            const existing = grouped.get(area) || [];
+            existing.push(row);
+            grouped.set(area, existing);
+        }
+
+        return Array.from(grouped.entries())
+            .map(([area, enemies]) => {
+                const totalGoldPerHour = enemies.reduce((sum, enemy) => sum + enemy.profitPerHour, 0);
+                const totalEv = enemies.reduce((sum, enemy) => sum + enemy.ev, 0);
+                const avgGoldPerHour = totalGoldPerHour / enemies.length;
+                const avgEv = totalEv / enemies.length;
+                const levels = enemies.map(enemy => Number(enemy.level) || 0).filter(Boolean);
+                const bestEnemy = [...enemies].sort((a, b) => b.profitPerHour - a.profitPerHour)[0];
+
+                return {
+                    area,
+                    enemies,
+                    enemyCount: enemies.length,
+                    totalGoldPerHour,
+                    avgGoldPerHour,
+                    avgEv,
+                    minLevel: levels.length ? Math.min(...levels) : 0,
+                    maxLevel: levels.length ? Math.max(...levels) : 0,
+                    bestEnemy,
+                };
+            })
+            .sort((a, b) => b.avgGoldPerHour - a.avgGoldPerHour);
+    }, [combatRows]);
+
+    const rows = useMemo(() => {
         // Search Filter
         const q = debouncedSearch.toLowerCase();
-        let filtered = q 
-            ? calculated.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
-            : calculated;
+        let filtered = q
+            ? combatRows.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
+            : [...combatRows];
 
         // Sort
         filtered.sort((a, b) => {
@@ -123,7 +161,7 @@ function CombatContent() {
         });
 
         return filtered;
-    }, [staticData, marketData, preferences.killsPerHour, sortCol, sortDesc, debouncedSearch]);
+    }, [combatRows, sortCol, sortDesc, debouncedSearch]);
 
     const autoOpenedRef = useRef<string | null>(null);
 
@@ -195,6 +233,60 @@ function CombatContent() {
                     </div>
                 </div>
             </div>
+
+            <section className="area-overview" aria-label="Area combat summary">
+                <div className="area-overview-header">
+                    <div>
+                        <h2>
+                            <BarChart3 size={18} color="var(--text-accent)" /> Area Profit Overview
+                        </h2>
+                        <p>Average value across every enemy in each location, using your kills/hour setting.</p>
+                    </div>
+                    <div className="area-overview-meta mono">
+                        {areaSummaries.length} AREAS
+                    </div>
+                </div>
+
+                <div className="area-summary-grid">
+                    {areaSummaries.map((summary, index) => (
+                        <button
+                            key={summary.area}
+                            type="button"
+                            className="area-summary-card"
+                            onClick={() => setSearchTerm(summary.area)}
+                            aria-label={`Filter enemies to ${summary.area}`}
+                        >
+                            <div className="area-card-top">
+                                <span className="area-rank">#{index + 1}</span>
+                                <span className="area-name">{summary.area}</span>
+                                {index === 0 && <Trophy size={16} color="var(--text-accent)" />}
+                            </div>
+                            <div className="area-main-stat">
+                                <span className="mono">{summary.avgGoldPerHour.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                <small>avg gold / hour</small>
+                            </div>
+                            <div className="area-mini-stats">
+                                <span>
+                                    <strong>{summary.enemyCount}</strong>
+                                    <small>enemies</small>
+                                </span>
+                                <span>
+                                    <strong>{summary.avgEv.toLocaleString(undefined, { maximumFractionDigits: 1 })}</strong>
+                                    <small>avg EV</small>
+                                </span>
+                                <span>
+                                    <strong>{summary.minLevel}-{summary.maxLevel}</strong>
+                                    <small>level</small>
+                                </span>
+                            </div>
+                            <div className="area-best">
+                                Best: <strong>{summary.bestEnemy?.name || "Unknown"}</strong>
+                                <span className="mono">{(summary.bestEnemy?.profitPerHour || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}/h</span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </section>
 
             <section className="table-wrapper">
                 {/* Desktop View */}
@@ -381,6 +473,155 @@ function CombatContent() {
             )}
             <style jsx>{`
                 .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
+                .area-overview {
+                    background: rgba(255,255,255,0.015);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    margin-bottom: 1.5rem;
+                    padding: 1rem;
+                }
+                .area-overview-header {
+                    align-items: center;
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: space-between;
+                    margin-bottom: 1rem;
+                }
+                .area-overview-header h2 {
+                    align-items: center;
+                    display: flex;
+                    font-size: 0.95rem;
+                    gap: 0.5rem;
+                    margin: 0;
+                }
+                .area-overview-header p {
+                    color: var(--text-muted);
+                    font-size: 0.78rem;
+                    margin-top: 0.2rem;
+                }
+                .area-overview-meta {
+                    background: color-mix(in srgb, var(--text-accent), transparent 92%);
+                    border: 1px solid var(--border-focus);
+                    border-radius: 999px;
+                    color: var(--text-accent);
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    padding: 0.3rem 0.7rem;
+                    white-space: nowrap;
+                }
+                .area-summary-grid {
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                }
+                .area-summary-card {
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    color: inherit;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.85rem;
+                    min-width: 0;
+                    padding: 1rem;
+                    text-align: left;
+                    transition: all 0.15s ease;
+                }
+                .area-summary-card:hover {
+                    background: color-mix(in srgb, var(--text-accent), transparent 96%);
+                    border-color: var(--border-focus);
+                    transform: translateY(-1px);
+                }
+                .area-card-top {
+                    align-items: center;
+                    display: flex;
+                    gap: 0.5rem;
+                    min-width: 0;
+                }
+                .area-rank {
+                    color: var(--text-accent);
+                    font-family: var(--font-mono);
+                    font-size: 0.74rem;
+                    font-weight: 800;
+                }
+                .area-name {
+                    color: #fff;
+                    flex: 1;
+                    font-weight: 800;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .area-main-stat span {
+                    color: var(--text-success);
+                    display: block;
+                    font-size: 1.35rem;
+                    font-weight: 800;
+                    line-height: 1;
+                }
+                .area-main-stat small,
+                .area-mini-stats small {
+                    color: var(--text-muted);
+                    display: block;
+                    font-size: 0.68rem;
+                    font-weight: 700;
+                    letter-spacing: 0.04em;
+                    margin-top: 0.25rem;
+                    text-transform: uppercase;
+                }
+                .area-mini-stats {
+                    display: grid;
+                    gap: 0.5rem;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+                .area-mini-stats span {
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 6px;
+                    padding: 0.55rem;
+                }
+                .area-mini-stats strong {
+                    color: #fff;
+                    display: block;
+                    font-family: var(--font-mono);
+                    font-size: 0.86rem;
+                }
+                .area-best {
+                    align-items: center;
+                    border-top: 1px solid var(--border-subtle);
+                    color: var(--text-muted);
+                    display: flex;
+                    gap: 0.35rem;
+                    justify-content: space-between;
+                    min-width: 0;
+                    padding-top: 0.75rem;
+                    font-size: 0.78rem;
+                }
+                .area-best strong {
+                    color: #fff;
+                    flex: 1;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .area-best span {
+                    color: var(--text-success);
+                    font-weight: 800;
+                    white-space: nowrap;
+                }
+                @media (max-width: 768px) {
+                    .area-overview {
+                        padding: 0.85rem;
+                    }
+                    .area-overview-header {
+                        align-items: flex-start;
+                        flex-direction: column;
+                    }
+                    .area-summary-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
             `}</style>
         </main>
     );
