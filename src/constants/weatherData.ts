@@ -89,7 +89,7 @@ export const WEATHER_DATA: WeatherData[] = [
   {
     id: "rain",
     name: "Rain",
-    description: "Improves fishing efficiency, but reduces woodcutting and mining efficiency. Woodcutting and mining receive increased experience.",
+    description: "Reduces efficiency across standard activities, but grants increased experience for each affected skill.",
     impacts: [
       { skill: "Hunting", efficiency: -5, experience: 10 },
       { skill: "Fishing", efficiency: -5, experience: 10 },
