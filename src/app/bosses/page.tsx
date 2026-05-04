@@ -217,7 +217,7 @@ function getValueBreakdown(
 ) {
     const marketItem = marketData?.[itemName];
     const dbItem = allItemsDb?.[itemName];
-    const trueValue = getItemTrueValue(itemName, marketData, allItemsDb, 0, options);
+    const trueValue = getItemTrueValue(itemName, marketData, allItemsDb, 0);
     const customGross = Number(options.customPrices?.[itemName] || 0);
     const marketGross = customGross || Number(marketItem?.avg_3 || marketItem?.price || 0);
     const marketNet = (customGross > 0 || dbItem?.is_tradeable !== false)

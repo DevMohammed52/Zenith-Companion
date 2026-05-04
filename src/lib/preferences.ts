@@ -20,6 +20,7 @@ export type Preferences = {
   dexStat: number | "";
   defStat: number | "";
   combatStyle: string;
+  worldBossMagicFind: number | "";
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -37,6 +38,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   dexStat: 80,
   defStat: 80,
   combatStyle: "sword_shield",
+  worldBossMagicFind: 0,
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";
