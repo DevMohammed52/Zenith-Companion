@@ -3781,6 +3781,24 @@ body.pet-modal-open {
   opacity: 0.82;
 }
 
+.pet-table-stack {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.pet-table-stack strong {
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.pet-table-stack span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
 .pets-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border-subtle);
@@ -4043,9 +4061,18 @@ body.pet-modal-open {
   text-align: left;
 }
 
-.pet-zone-button:hover {
+.pet-zone-button:hover,
+.pet-zone-button.selected {
   border-color: var(--border-focus);
   background: color-mix(in srgb, var(--text-accent), transparent 91%);
+}
+
+.pet-zone-button em {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .pet-source-override {
@@ -4211,6 +4238,10 @@ body.pet-modal-open {
   .pet-zone-button {
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .pet-zone-button em {
+    text-align: left;
   }
 
   .pet-modal-backdrop {

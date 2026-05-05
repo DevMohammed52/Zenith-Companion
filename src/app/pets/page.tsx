@@ -195,7 +195,17 @@ type SourceFilter = "ALL" | "EGG" | "BOSS" | "EXCHANGE" | "MERCHANT" | "EVENT" |
 type ViewMode = "cards" | "table";
 type BattleProfitMode = "noSleep" | "withSleep" | "healingWithSleep";
 type FoodPolicy = "standard" | "none";
+type BattleMapFilter = string;
 type BattleDrop = NonNullable<BattleZone["drops"]>[number];
+
+type BattleProfitResult = {
+  value: number;
+  zone: string | null;
+  mode: BattleProfitMode | null;
+  selectedMap: BattleMapFilter;
+  isBestMap: boolean;
+  missingSelectedMap: boolean;
+};
 
 type BattleSelection = {
   pet: PetRecord;
@@ -216,10 +226,12 @@ type StoredPetState = {
   patBonus?: boolean;
   battleProfitMode?: BattleProfitMode;
   foodPolicy?: FoodPolicy | "workbook";
+  battleMapFilter?: BattleMapFilter;
   beastmaster?: boolean;
 };
 
 const PET_DATABASE_STORAGE_KEY = "zenith_pet_database_state_v1";
+const BEST_BATTLE_MAP = "BEST_MAP";
 
 const QUALITY_ORDER: Record<Quality, number> = {
   UNKNOWN: 0,
@@ -308,8 +320,8 @@ const BATTLE_PROFIT_OPTIONS: Array<{ value: BattleProfitMode; label: string }> =
 ];
 
 const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
-  { value: "standard", label: "Food cost" },
-  { value: "none", label: "No food" },
+  { value: "standard", label: "Subtract food cost" },
+  { value: "none", label: "Ignore food cost" },
 ];
 
 const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
@@ -326,6 +338,11 @@ const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
 function formatGold(value?: number | null) {
   if (!value || value <= 0) return "-";
   return `${Math.round(value).toLocaleString()}g`;
+}
+
+function formatGoldPerHour(value?: number | null) {
+  const gold = formatGold(value);
+  return gold === "-" ? "-" : `${gold}/hr`;
 }
 
 function formatNumber(value?: number | null, digits = 0) {
@@ -428,9 +445,47 @@ function getZoneProfitValue(zone: BattleZone, mode: BattleProfitMode, foodPolicy
   return value;
 }
 
-function getBestBattleProfit(pet: PetRecord, mode: BattleProfitMode, foodPolicy: FoodPolicy) {
+function shortBattleZoneLabel(zone?: string | null) {
+  if (!zone) return "-";
+  return zone.replace(/^Level\s*(\d+)\s*-\s*/i, "Lv. $1 - ").replace(/^Lv\.\s*(\d+)\s*-\s*/, "Lv. $1 - ");
+}
+
+function battleZoneSortValue(zone: string) {
+  const level = zone.match(/Level\s*(\d+)/i)?.[1];
+  return level ? Number(level) : 0;
+}
+
+function getBattleMapOptions(database: PetDatabase | null): Array<{ value: BattleMapFilter; label: string }> {
+  const zones = new Set<string>();
+  for (const pet of database?.pets || []) {
+    for (const zone of pet.battle?.zones || []) {
+      if (zone.zone) zones.add(zone.zone);
+    }
+  }
+
+  return [
+    { value: BEST_BATTLE_MAP, label: "Best map" },
+    ...[...zones]
+      .sort((a, b) => battleZoneSortValue(b) - battleZoneSortValue(a) || a.localeCompare(b))
+      .map((zone) => ({ value: zone, label: shortBattleZoneLabel(zone) })),
+  ];
+}
+
+function getBattleProfit(pet: PetRecord, mode: BattleProfitMode, foodPolicy: FoodPolicy, battleMapFilter: BattleMapFilter): BattleProfitResult {
   const zones = pet.battle?.zones || [];
-  return zones.reduce(
+  if (battleMapFilter !== BEST_BATTLE_MAP) {
+    const selectedZone = zones.find((zone) => zone.zone === battleMapFilter);
+    return {
+      value: selectedZone ? getZoneProfitValue(selectedZone, mode, foodPolicy) : 0,
+      zone: selectedZone?.zone || battleMapFilter,
+      mode,
+      selectedMap: battleMapFilter,
+      isBestMap: false,
+      missingSelectedMap: !selectedZone,
+    };
+  }
+
+  return zones.reduce<BattleProfitResult>(
     (best, zone) => {
       const value = getZoneProfitValue(zone, mode, foodPolicy);
       if (value <= best.value) return best;
@@ -438,10 +493,23 @@ function getBestBattleProfit(pet: PetRecord, mode: BattleProfitMode, foodPolicy:
         value,
         zone: zone.zone,
         mode,
+        selectedMap: BEST_BATTLE_MAP,
+        isBestMap: true,
+        missingSelectedMap: false,
       };
     },
-    { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null },
+    { value: 0, zone: null, mode: null, selectedMap: BEST_BATTLE_MAP, isBestMap: true, missingSelectedMap: false },
   );
+}
+
+function getProfitMetricLabel(foodPolicy: FoodPolicy) {
+  return foodPolicy === "none" ? "Gross battle value/hr" : "Net battle profit/hr";
+}
+
+function getBattleCardContext(battleProfit: BattleProfitResult) {
+  if (battleProfit.missingSelectedMap) return `${shortBattleZoneLabel(battleProfit.selectedMap)} unavailable`;
+  if (!battleProfit.zone) return "No battle data";
+  return `${battleProfit.isBestMap ? "Best" : "Map"}: ${shortBattleZoneLabel(battleProfit.zone)}`;
 }
 
 function petSearchText(pet: PetRecord) {
@@ -455,6 +523,7 @@ function petSearchText(pet: PetRecord) {
     pet.sourceOverride?.availability,
     ...(pet.sourceOverride?.notes || []),
     ...(pet.acquisition || []).flatMap((entry) => [entry.boss, entry.location, entry.egg]),
+    ...(pet.battle?.zones || []).map((zone) => zone.zone),
   ]
     .filter(Boolean)
     .join(" ")
@@ -571,10 +640,12 @@ function PetCard({
   stats: Partial<Record<StatKey, number>>;
   totalPower: number;
   huntingTime: number;
-  battleProfit: ReturnType<typeof getBestBattleProfit>;
+  battleProfit: BattleProfitResult;
   onInspect: () => void;
 }) {
   const accent = QUALITY_COLORS[pet.quality] || QUALITY_COLORS.UNKNOWN;
+  const battleContext = getBattleCardContext(battleProfit);
+  const battleValue = battleProfit.missingSelectedMap ? "No data" : battleProfit.value ? formatGoldPerHour(battleProfit.value) : formatGold(pet.exchange?.minPrice);
   return (
     <button className="pet-card" onClick={onInspect} style={{ "--quality-accent": accent } as React.CSSProperties}>
       <div className="pet-card-top">
@@ -597,8 +668,8 @@ function PetCard({
         </span>
       </div>
       <div className="pet-card-market">
-        <span>{battleProfit.zone ? `Battle: ${battleProfit.zone}` : pet.exchange?.listingCount ? `${pet.exchange.listingCount} listed` : "No listings"}</span>
-        <strong>{battleProfit.value ? `${formatGold(battleProfit.value)}/hr` : formatGold(pet.exchange?.minPrice)}</strong>
+        <span>{battleProfit.zone ? battleContext : pet.exchange?.listingCount ? `${pet.exchange.listingCount} listed` : "No listings"}</span>
+        <strong>{battleValue}</strong>
       </div>
       <div className="pet-card-market pet-card-market-secondary">
         <span>{pet.exchange?.listingCount ? `${pet.exchange.listingCount} exchange listings` : "No exchange listings"}</span>
@@ -624,6 +695,7 @@ export default function PetsPage() {
   const [patBonus, setPatBonus] = useState(false);
   const [battleProfitMode, setBattleProfitMode] = useState<BattleProfitMode>("withSleep");
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
+  const [battleMapFilter, setBattleMapFilter] = useState<BattleMapFilter>(BEST_BATTLE_MAP);
   const [beastmaster, setBeastmaster] = useState(false);
   const [openPetSelect, setOpenPetSelect] = useState<string | null>(null);
   const [selectedPetName, setSelectedPetName] = useState<string | null>(null);
@@ -657,6 +729,7 @@ export default function PetsPage() {
       if (typeof stored.patBonus === "boolean") setPatBonus(stored.patBonus);
       if (stored.battleProfitMode) setBattleProfitMode(stored.battleProfitMode);
       if (stored.foodPolicy) setFoodPolicy(stored.foodPolicy === "workbook" ? "standard" : stored.foodPolicy);
+      if (stored.battleMapFilter) setBattleMapFilter(stored.battleMapFilter);
       if (typeof stored.beastmaster === "boolean") setBeastmaster(stored.beastmaster);
     } catch {
       window.localStorage.removeItem(PET_DATABASE_STORAGE_KEY);
@@ -681,6 +754,7 @@ export default function PetsPage() {
       patBonus,
       battleProfitMode,
       foodPolicy,
+      battleMapFilter,
       beastmaster,
     };
     window.localStorage.setItem(PET_DATABASE_STORAGE_KEY, JSON.stringify(stored));
@@ -699,6 +773,7 @@ export default function PetsPage() {
     patBonus,
     battleProfitMode,
     foodPolicy,
+    battleMapFilter,
     beastmaster,
   ]);
 
@@ -755,6 +830,14 @@ export default function PetsPage() {
   }, [openPetSelect]);
 
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
+  const battleMapOptions = useMemo(() => getBattleMapOptions(database), [database]);
+
+  useEffect(() => {
+    if (!database) return;
+    if (battleMapFilter === BEST_BATTLE_MAP) return;
+    if (battleMapOptions.some((option) => option.value === battleMapFilter)) return;
+    setBattleMapFilter(BEST_BATTLE_MAP);
+  }, [battleMapFilter, battleMapOptions, database]);
 
   const petRows = useMemo(() => {
     const pets = database?.pets || [];
@@ -764,7 +847,7 @@ export default function PetsPage() {
         const stats = calculateStats(pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
         const totalPower = getTotalPower(stats);
         const huntingTime = getHuntingTimeSeconds(stats);
-        const battleProfit = getBestBattleProfit(pet, battleProfitMode, foodPolicy);
+        const battleProfit = getBattleProfit(pet, battleProfitMode, foodPolicy, battleMapFilter);
         return { pet, stats, totalPower, huntingTime, battleProfit };
       })
       .filter(({ pet }) => {
@@ -821,6 +904,7 @@ export default function PetsPage() {
     patBonus,
     battleProfitMode,
     foodPolicy,
+    battleMapFilter,
   ]);
 
   const selectedRow = useMemo(
@@ -909,7 +993,7 @@ export default function PetsPage() {
           <ChevronsUp size={18} />
           <div>
             <strong>Scenario Preview</strong>
-            <span>Adjust level, mastery, evolution, sleep, food, and pet effects to preview each pet under your setup.</span>
+            <span>Adjust level, mastery, evolution, battle map, sleep cycle, food cost, and pet effects.</span>
           </div>
         </div>
         <div className="calculator-fields">
@@ -917,8 +1001,9 @@ export default function PetsPage() {
           <PetNumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
           <PetNumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
           <PetSelect label="Evolution stat" value={evolutionStat} options={EVOLUTION_STAT_OPTIONS} onChange={setEvolutionStat} open={openPetSelect === "evolution"} onOpenChange={(open) => setOpenPetSelect(open ? "evolution" : null)} />
-          <PetSelect label="Profit mode" value={battleProfitMode} options={BATTLE_PROFIT_OPTIONS} onChange={setBattleProfitMode} open={openPetSelect === "profit"} onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)} />
-          <PetSelect label="Food" value={foodPolicy} options={FOOD_OPTIONS} onChange={setFoodPolicy} open={openPetSelect === "food"} onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)} />
+          <PetSelect label="Battle map" value={battleMapFilter} options={battleMapOptions} onChange={setBattleMapFilter} open={openPetSelect === "battle-map"} onOpenChange={(open) => setOpenPetSelect(open ? "battle-map" : null)} />
+          <PetSelect label="Cycle mode" value={battleProfitMode} options={BATTLE_PROFIT_OPTIONS} onChange={setBattleProfitMode} open={openPetSelect === "profit"} onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)} />
+          <PetSelect label="Food cost" value={foodPolicy} options={FOOD_OPTIONS} onChange={setFoodPolicy} open={openPetSelect === "food"} onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)} />
           <button className={`pet-toggle ${patBonus ? "active" : ""}`} onClick={() => setPatBonus((value) => !value)}>
             <HeartPulse size={16} />
             Pat +5%
@@ -929,7 +1014,7 @@ export default function PetsPage() {
           </button>
         </div>
         <div className="pet-effect-note">
-          Battle profit uses the selected sleep and food settings. Beastmaster is tracked for pet EXP context.
+          Battle ranking uses the selected map and cycle. Subtract food cost shows net profit; ignore food cost shows gross battle value.
         </div>
       </section>
 
@@ -951,10 +1036,10 @@ export default function PetsPage() {
             </div>
             <div>
               <BarChart3 size={18} />
-              <span>Best Battle Profit</span>
+              <span>{foodPolicy === "none" ? "Best Gross Battle" : "Best Net Battle"}</span>
               <strong>
                 {bestBattleProfit?.battleProfit.value
-                  ? `${bestBattleProfit.pet.name} - ${formatGold(bestBattleProfit.battleProfit.value)}/hr`
+                  ? `${bestBattleProfit.pet.name} - ${formatGoldPerHour(bestBattleProfit.battleProfit.value)} (${shortBattleZoneLabel(bestBattleProfit.battleProfit.zone)})`
                   : "-"}
               </strong>
             </div>
@@ -1009,7 +1094,12 @@ export default function PetsPage() {
                           <td>{formatNumber(row.totalPower)}</td>
                           <td>{formatNumber(row.stats.movement_speed, 2)}m/s</td>
                           <td>{secondsToDuration(row.huntingTime)}</td>
-                          <td>{row.battleProfit.value ? formatGold(row.battleProfit.value) : "-"}</td>
+                          <td>
+                            <span className="pet-table-stack">
+                              <strong>{row.battleProfit.missingSelectedMap ? "No data" : row.battleProfit.value ? formatGoldPerHour(row.battleProfit.value) : "-"}</strong>
+                              <span>{getBattleCardContext(row.battleProfit)}</span>
+                            </span>
+                          </td>
                           <td>{getPetSourceLabel(row.pet)}</td>
                           <td>{formatGold(row.pet.exchange?.minPrice)}</td>
                         </tr>
@@ -1169,20 +1259,21 @@ export default function PetsPage() {
                   </h3>
                   {selectedRow.pet.battle?.zones?.length ? (
                     <div className="pet-zone-list">
-                      {selectedRow.pet.battle.zones.slice(0, 4).map((zone) => (
+                      {selectedRow.pet.battle.zones.map((zone) => (
                         <button
                           type="button"
-                          className="pet-zone-button"
+                          className={`pet-zone-button ${battleMapFilter === zone.zone ? "selected" : ""}`}
                           key={zone.zone}
                           onClick={() => {
                             setSelectedPetName(null);
                             setSelectedBattle({ pet: selectedRow.pet, zone });
                           }}
                         >
-                          <span>{zone.zone}</span>
+                          <span>{shortBattleZoneLabel(zone.zone)}</span>
                           <strong>
-                            {secondsToDuration(zone.battleTimeSeconds)} - {zone.enemiesBattled || "-"} enemies
+                            {formatGoldPerHour(getZoneProfitValue(zone, battleProfitMode, foodPolicy))}
                           </strong>
+                          <em>{secondsToDuration(zone.battleTimeSeconds)} - {zone.enemiesBattled || "-"} enemies</em>
                         </button>
                       ))}
                     </div>
@@ -1238,32 +1329,32 @@ export default function PetsPage() {
                 </div>
                 <div className="pet-source-list">
                   <div>
-                    <span>Selected profit/hr</span>
-                    <strong>{formatGold(getZoneProfitValue(selectedBattle.zone, battleProfitMode, foodPolicy))}</strong>
+                    <span>{getProfitMetricLabel(foodPolicy)}</span>
+                    <strong>{formatGoldPerHour(getZoneProfitValue(selectedBattle.zone, battleProfitMode, foodPolicy))}</strong>
                   </div>
                   <div>
-                    <span>Profit/hr no sleep</span>
-                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourNoSleep)}</strong>
+                    <span>Net/hr no sleep</span>
+                    <strong>{formatGoldPerHour(selectedBattle.zone.expectedProfitPerHourNoSleep)}</strong>
                   </div>
                   <div>
-                    <span>Profit/hr with sleep</span>
-                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourWithSleep)}</strong>
+                    <span>Net/hr with sleep</span>
+                    <strong>{formatGoldPerHour(selectedBattle.zone.expectedProfitPerHourWithSleep)}</strong>
                   </div>
                   <div>
                     <span>Healing + sleep</span>
-                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourHealingWithSleep)}</strong>
+                    <strong>{formatGoldPerHour(selectedBattle.zone.expectedProfitPerHourHealingWithSleep)}</strong>
                   </div>
                   <div>
-                    <span>Revenue/battle</span>
+                    <span>Gross/battle</span>
                     <strong>{formatGold(selectedBattle.zone.expectedRevenuePerBattle)}</strong>
                   </div>
                   <div>
-                    <span>Profit/battle</span>
+                    <span>Net/battle</span>
                     <strong>{formatGold(selectedBattle.zone.expectedProfitPerBattle)}</strong>
                   </div>
                   <div>
                     <span>Food cost/hr</span>
-                    <strong>{formatGold(selectedBattle.zone.foodCostPerHourCheapest)}</strong>
+                    <strong>{formatGoldPerHour(selectedBattle.zone.foodCostPerHourCheapest)}</strong>
                   </div>
                   <div>
                     <span>Profit margin</span>
@@ -1352,11 +1443,19 @@ export default function PetsPage() {
                   </h3>
                   <div className="pet-source-list">
                     <div>
-                      <span>Mode</span>
+                      <span>Battle map</span>
+                      <strong>{battleMapFilter === BEST_BATTLE_MAP ? "Best map" : shortBattleZoneLabel(battleMapFilter)}</strong>
+                    </div>
+                    <div>
+                      <span>Metric</span>
+                      <strong>{getProfitMetricLabel(foodPolicy)}</strong>
+                    </div>
+                    <div>
+                      <span>Cycle mode</span>
                       <strong>{BATTLE_PROFIT_OPTIONS.find((option) => option.value === battleProfitMode)?.label}</strong>
                     </div>
                     <div>
-                      <span>Food</span>
+                      <span>Food cost</span>
                       <strong>{FOOD_OPTIONS.find((option) => option.value === foodPolicy)?.label}</strong>
                     </div>
                     <div>
@@ -1367,7 +1466,7 @@ export default function PetsPage() {
                 </div>
                 <div className="pet-research-note">
                   <BadgeInfo size={15} />
-                  <span>Profit shown here reflects the selected sleep and food settings. Beastmaster is shown as pet EXP context.</span>
+                  <span>Profit shown here follows the selected battle map, cycle mode, and food cost setting. Beastmaster is shown as pet EXP context.</span>
                 </div>
               </article>
             </div>
