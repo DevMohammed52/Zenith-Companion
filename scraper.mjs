@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
 const API_DELAY_MS = 3100; // IdleMMO limit is 20 requests/min; 3.1s keeps us just under it.
+const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 
@@ -358,7 +359,74 @@ function collectLootItemNames(staticDataSnapshot) {
     return names;
 }
 
-async function fetchItem(itemName) {
+function mergeLiveCollection(currentItems = [], liveItems = [], sourceLabel) {
+    const liveKeys = new Set(liveItems.map(item => item.id || item.name).filter(Boolean));
+    const seenKeys = new Set();
+    const updatedItems = currentItems
+        .filter(item => item._source !== sourceLabel || liveKeys.has(item.id || item.name))
+        .map(item => {
+            const live = liveItems.find(liveItem => liveItem.id === item.id || liveItem.name === item.name);
+            if (!live) return item;
+
+            seenKeys.add(live.id || live.name);
+            return {
+                ...item,
+                ...live,
+                loot: live.loot || item.loot || [],
+            };
+        });
+
+    for (const live of liveItems) {
+        const key = live.id || live.name;
+        if (!key || seenKeys.has(key)) continue;
+        updatedItems.push({
+            ...live,
+            loot: live.loot || [],
+            _source: sourceLabel,
+        });
+    }
+
+    return updatedItems;
+}
+
+async function fetchLiveDungeons() {
+    try {
+        console.log("Fetching live dungeon data...");
+        const res = await apiFetch(`${BASE_URL}/combat/dungeons/list`, { headers });
+        if (!res.ok) {
+            console.error(`Failed to fetch dungeons: ${res.status}`);
+            return;
+        }
+
+        const data = await res.json();
+        if (data && data.dungeons) {
+            const currentStatic = loadJson(STATIC_DATA_FILE);
+            if (!currentStatic) return;
+
+            currentStatic.dungeons = mergeLiveCollection(
+                currentStatic.dungeons || [],
+                data.dungeons,
+                "live_dungeons_api",
+            );
+            await safeWriteJson(STATIC_DATA_FILE, currentStatic);
+            console.log("Dungeon data updated from API.");
+        }
+    } catch (e) {
+        console.error("Error updating dungeons:", e.message);
+    }
+}
+
+function formatDuration(ms) {
+    const totalSeconds = Math.max(0, Math.round(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+}
+
+async function fetchItem(itemName, cycleHistoryCache) {
     try {
         let itemRecord = itemLookupByName.get(itemName.toLowerCase());
 
@@ -371,6 +439,10 @@ async function fetchItem(itemName) {
             itemRecord = searchData.items.find(i => i.name.toLowerCase() === itemName.toLowerCase())
                 || searchData.items.find(i => i.vendor_price > 0 || i.vendor_price === null);
             if (!itemRecord?.hashed_id) return null;
+        }
+
+        if (cycleHistoryCache.has(itemRecord.hashed_id)) {
+            return cycleHistoryCache.get(itemRecord.hashed_id);
         }
 
         const histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
@@ -408,7 +480,7 @@ async function fetchItem(itemName) {
         let a7 = avg_7 !== null ? avg_7 : a14;
         let a3 = avg_3 !== null ? avg_3 : a7;
 
-        return {
+        const result = {
             hashed_id: itemRecord.hashed_id,
             image_url: itemRecord.image_url,
             price: a3,
@@ -420,6 +492,8 @@ async function fetchItem(itemName) {
             vendor_price: itemRecord.vendor_price || 0,
             last_updated: new Date().toISOString()
         };
+        cycleHistoryCache.set(itemRecord.hashed_id, result);
+        return result;
     } catch (e) {
         console.error(`Error fetching ${itemName}:`, e.message);
         return null;
@@ -442,12 +516,14 @@ async function start() {
         // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
         await fetchLiveWorldBosses();
         await fetchLiveEnemies();
+        await fetchLiveDungeons();
 
         const latestStaticData = loadJson(STATIC_DATA_FILE);
         const cycleItemsArray = Array.from(new Set([
             ...itemsArray,
             ...collectLootItemNames(latestStaticData)
         ]));
+        const cycleHistoryCache = new Map();
 
         for (let i = 0; i < cycleItemsArray.length; i++) {
             const item = cycleItemsArray[i];
@@ -462,7 +538,7 @@ async function start() {
                 }));
             } catch(e) {}
 
-            const data = await fetchItem(item);
+            const data = await fetchItem(item, cycleHistoryCache);
             if (data) {
                 marketData[item] = data;
                 marketData["_meta"] = { currently_fetching: item, last_updated: new Date().toISOString() };
@@ -488,8 +564,8 @@ async function start() {
             process.exit(0);
         }
 
-        console.log("Cycle finished. Restarting in 60s...");
-        await sleep(60000);
+        console.log(`Cycle finished. Restarting in ${formatDuration(SCRAPE_INTERVAL_MS)}...`);
+        await sleep(SCRAPE_INTERVAL_MS);
     }
 }
 

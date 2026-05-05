@@ -2,15 +2,16 @@ name: Update Market & Boss Data
 
 on:
   schedule:
-    - cron: '0 0,12 * * *' # Full update twice a day
+    - cron: '0 */6 * * *' # Full update every 6 hours
   workflow_dispatch: # Allow manual trigger
 
 concurrency:
-  group: market-data-${{ github.ref }}
+  group: market-data-main
   cancel-in-progress: false
 
 jobs:
   update-data:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -42,9 +43,9 @@ jobs:
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git stash push -m "generated market data" -- public/*.json
-          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git pull --rebase origin main
           git stash pop
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: auto-update market data and boss schedules [skip ci]"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:main"

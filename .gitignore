@@ -29,6 +29,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -47,6 +48,21 @@ texts/
 zenith-debug.log
 game_info/
 
+# local research/cache data
+local_data/
+*.json.tmp
+public/*.json.tmp
+local_data/**/*.tmp
+__pycache__/
+*.py[cod]
+game_info/dropCalc/node_modules/
+game_info/dropCalc/cache.json
+game_info/dropCalc/.env*
+game_info/06_references/dropCalc/node_modules/
+game_info/06_references/dropCalc/cache.json
+game_info/06_references/dropCalc/.env*
+
 # local-only maintenance/debug scripts
 maintenance_scripts/
 scratch/
+qa-artifacts/
