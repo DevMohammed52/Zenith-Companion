@@ -798,7 +798,10 @@ function BossesContent() {
                                     <div className="routine-leg-main">
                                         <div className="routine-leg-title">
                                             <strong>{leg.boss.name}</strong>
-                                            <span>{formatTime(leg.boss.nextSpawnTime)} at {leg.destination}</span>
+                                            <span>
+                                                {formatTime(leg.boss.nextSpawnTime)} at {leg.destination}
+                                                {isFiniteDate(leg.boss.countdownTarget) ? ` - ${leg.boss.countdownLabel || "Starts in"} ${formatCountdown(leg.boss.countdownTarget, now)}` : ""}
+                                            </span>
                                         </div>
                                         <div className="routine-leg-route">
                                             <span>{leg.origin}</span>
@@ -839,7 +842,7 @@ function BossesContent() {
                 {routinePlan.conflictLegs > 0 && (
                     <div className="boss-warning-box routine-warning">
                         <AlertTriangle size={16} />
-                        <p>{routinePlan.conflictLegs} selected boss window{routinePlan.conflictLegs === 1 ? "" : "s"} overlap or start too close to the previous stop. Check the timing badges in the route.</p>
+                        <p>{routinePlan.conflictLegs} selected boss window{routinePlan.conflictLegs === 1 ? "" : "s"} need timing review. Some can still be reachable after spawn; check the route timing badges.</p>
                     </div>
                 )}
             </section>
@@ -918,7 +921,11 @@ function BossesContent() {
                                             <div className="boss-status-cell">
                                                 <span className={`boss-phase ${getPhaseClass(row.phase)}`}>{row.statusLabel}</span>
                                                 <strong>{row.countdownLabel} {formatCountdown(row.countdownTarget, now)}</strong>
-                                                <small>{row.phase === "active" ? `Ends ${formatTime(row.battleEndTime)}` : `Starts ${formatDateTime(row.nextSpawnTime)}`}</small>
+                                                <small>
+                                                    {row.phase === "active"
+                                                        ? `Ends ${formatTime(row.battleEndTime)} - ${formatCountdown(row.battleEndTime, now)}`
+                                                        : `Starts ${formatDateTime(row.nextSpawnTime)} - in ${formatCountdown(row.nextSpawnTime, now)}`}
+                                                </small>
                                             </div>
                                         </td>
                                         <td className="mono profit-positive font-bold">

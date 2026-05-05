@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, ChevronRight, Sparkles, BarChart3, BookOpen } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface NavItem {
     href: string;
@@ -60,6 +60,7 @@ export default function Sidebar() {
     const pathname = usePathname();
     const { scraperStatus } = useData();
     const { mobileOpen, setMobileOpen } = useSidebar();
+    const previousPathname = useRef(pathname);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         'General': true,
         'Skills': true,
@@ -69,6 +70,16 @@ export default function Sidebar() {
     const toggleGroup = (label: string) => {
         setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
     };
+
+    const closeMobileMenu = () => {
+        setMobileOpen(false);
+    };
+
+    useEffect(() => {
+        if (previousPathname.current === pathname) return;
+        previousPathname.current = pathname;
+        setMobileOpen(false);
+    }, [pathname, setMobileOpen]);
 
     const isActive = (item: NavItem) => {
         if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + '/');
@@ -112,12 +123,12 @@ export default function Sidebar() {
                         <X size={18} />
                     </button>
                     <style>{`
-                        @media (min-width: 769px) {
+                        @media (min-width: 1181px) {
                             .mobile-sidebar-close {
                                 display: none !important;
                             }
                         }
-                        @media (max-width: 768px) {
+                        @media (max-width: 1180px) {
                             .mobile-sidebar-close {
                                 display: flex !important;
                             }
@@ -174,6 +185,7 @@ export default function Sidebar() {
                                                     key={item.href} 
                                                     href={item.href} 
                                                     className={`nav-link ${active ? 'nav-link-active' : ''}`}
+                                                    onClick={closeMobileMenu}
                                                     style={{ 
                                                         paddingLeft: '1.25rem', 
                                                         fontSize: '0.82rem',

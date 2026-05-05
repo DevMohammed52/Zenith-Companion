@@ -13,7 +13,7 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    const toggleMobile = () => setMobileOpen(!mobileOpen);
+    const toggleMobile = () => setMobileOpen((open) => !open);
 
     return (
         <SidebarContext.Provider value={{ mobileOpen, setMobileOpen, toggleMobile }}>

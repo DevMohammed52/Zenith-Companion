@@ -12,6 +12,8 @@ export type RoutineBoss = {
     location?: { name?: string | null } | null;
     nextSpawnTime?: Date | null;
     battleEndTime?: Date | null;
+    countdownLabel?: string;
+    countdownTarget?: Date | null;
     ev?: number;
 };
 
@@ -150,7 +152,6 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
 
     let currentLocation = settings.startLocation;
     let availableAt = currentTime;
-    let previousBossEnd: number | null = null;
     const legs: RoutineLeg[] = [];
 
     for (const boss of orderedBosses) {
@@ -164,7 +165,8 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
         const ev = Number(boss.ev) || 0;
         const startTime = boss.nextSpawnTime?.getTime?.() ?? null;
         const endTime = boss.battleEndTime?.getTime?.() ?? null;
-        const arrivalBase = Math.max(currentTime, availableAt);
+        const previousAvailableAt = Math.max(currentTime, availableAt);
+        const arrivalBase = previousAvailableAt;
         const arriveAtMs = routeSeconds === null ? null : arrivalBase + routeSeconds * 1000;
         const waitSeconds = arriveAtMs === null || startTime === null ? null : Math.max(0, Math.round((startTime - arriveAtMs) / 1000));
         let timingStatus: RoutineTimingStatus = routeSeconds === null ? "unknown" : "ok";
@@ -175,15 +177,14 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
         } else if (arriveAtMs !== null && endTime !== null && arriveAtMs > endTime) {
             timingStatus = "missed";
             timingNote = "Arrives after boss window";
-        } else if (previousBossEnd !== null && startTime !== null && startTime < previousBossEnd) {
+        } else if (startTime !== null && startTime < previousAvailableAt) {
             timingStatus = "overlap";
-            timingNote = "Overlaps previous boss";
+            timingNote = arriveAtMs !== null && arriveAtMs > startTime
+                ? "Arrives during active window"
+                : "Starts before previous stop clears";
         } else if (arriveAtMs !== null && startTime !== null && arriveAtMs > startTime) {
             timingStatus = "tight";
             timingNote = "Arrives after spawn";
-        } else if (waitSeconds !== null && waitSeconds <= 300) {
-            timingStatus = "tight";
-            timingNote = waitSeconds <= 0 ? "Back-to-back window" : "Starts within 5m of arrival";
         }
 
         legs.push({
@@ -204,10 +205,9 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
         });
 
         currentLocation = destination;
-        if (endTime !== null) availableAt = Math.max(arriveAtMs ?? availableAt, endTime);
-        else if (startTime !== null) availableAt = Math.max(arriveAtMs ?? availableAt, startTime);
-        else if (arriveAtMs !== null) availableAt = arriveAtMs;
-        previousBossEnd = endTime;
+        if (endTime !== null) availableAt = Math.max(availableAt, arriveAtMs ?? availableAt, endTime);
+        else if (startTime !== null) availableAt = Math.max(availableAt, arriveAtMs ?? availableAt, startTime);
+        else if (arriveAtMs !== null) availableAt = Math.max(availableAt, arriveAtMs);
     }
 
     const grossEv = legs.reduce((sum, leg) => sum + leg.ev, 0);
