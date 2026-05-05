@@ -1,4 +1,4 @@
-name: Update Market & Boss Data
+name: Update Market, Boss & Pet Data
 
 on:
   schedule:
@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Market & Boss Scraper
+      - name: Run Market, Boss & Pet Scraper
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
           SCRAPE_ONCE: "true"
@@ -47,5 +47,5 @@ jobs:
           git stash pop
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore: auto-update market data and boss schedules [skip ci]"
+          git commit -m "chore: auto-update market, boss, and pet data [skip ci]"
           git push origin "HEAD:main"

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "rebuild": "node scripts/rebuild-usage-map.mjs",
     "scrape": "SCRAPE_ONCE=true node scraper.mjs",
-    "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority"
+    "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority",
+    "scrape:pets": "SCRAPE_ONCE=true node scraper.mjs --pets-only"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

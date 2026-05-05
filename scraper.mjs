@@ -13,6 +13,7 @@ const API_DELAY_MS = 3100; // IdleMMO limit is 20 requests/min; 3.1s keeps us ju
 const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
+const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
 
 const ALCHEMY_ITEMS = {
     // Level 1-10
@@ -103,6 +104,7 @@ const ALCHEMY_ITEMS = {
 };
 
 const IS_PRIORITY_ONLY = process.argv.includes('--priority');
+const IS_PETS_ONLY = process.argv.includes('--pets-only');
 const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 
 const itemsToFetch = new Set();
@@ -157,7 +159,7 @@ async function safeWriteJson(filePath, data) {
 }
 
 // 3. Add drops from enemies/dungeons/bosses
-if (staticData) {
+if (!IS_PETS_ONLY && staticData) {
     const addLootItems = (entityList) => {
         if (!entityList) return;
         for (const entity of entityList) {
@@ -186,7 +188,7 @@ if (staticData) {
 // 4. Load ALL items from global database to ensure 100% coverage
 const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
 
-if (fs.existsSync(ALL_ITEMS_DB_FILE)) {
+if (!IS_PETS_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
     try {
         const allItems = JSON.parse(fs.readFileSync(ALL_ITEMS_DB_FILE, 'utf8'));
         let addedCount = 0;
@@ -229,13 +231,35 @@ if (fs.existsSync(DATA_FILE)) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let lastApiRequestAt = 0;
 
-async function apiFetch(url, options = {}) {
+function getRetryDelayMs(response) {
+    const retryAfter = response.headers.get("retry-after");
+    if (!retryAfter) return API_DELAY_MS * 2;
+
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds)) return Math.max(seconds * 1000, API_DELAY_MS);
+
+    const retryDate = new Date(retryAfter).getTime();
+    if (Number.isFinite(retryDate)) return Math.max(retryDate - Date.now(), API_DELAY_MS);
+
+    return API_DELAY_MS * 2;
+}
+
+async function apiFetch(url, options = {}, attempt = 0) {
     const elapsed = Date.now() - lastApiRequestAt;
     if (elapsed < API_DELAY_MS) {
         await sleep(API_DELAY_MS - elapsed);
     }
     lastApiRequestAt = Date.now();
-    return fetch(url, options);
+
+    const response = await fetch(url, options);
+    if (response.status === 429 && attempt < 4) {
+        const delayMs = getRetryDelayMs(response);
+        console.warn(`Rate limited by API. Retrying in ${formatDuration(delayMs)}...`);
+        await sleep(delayMs);
+        return apiFetch(url, options, attempt + 1);
+    }
+
+    return response;
 }
 
 async function fetchLiveWorldBosses() {
@@ -389,6 +413,174 @@ function mergeLiveCollection(currentItems = [], liveItems = [], sourceLabel) {
     return updatedItems;
 }
 
+function normalizeQuality(value) {
+    if (!value) return "UNKNOWN";
+    return String(value).trim().toUpperCase();
+}
+
+function median(values) {
+    const sorted = values.filter(value => Number.isFinite(value)).sort((a, b) => a - b);
+    if (sorted.length === 0) return null;
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
+}
+
+function compactCompanionListing(listing) {
+    return {
+        level: listing.pet?.level ?? null,
+        quality: normalizeQuality(listing.pet?.quality),
+        price: Number(listing.cost?.amount || 0),
+    };
+}
+
+function summarizeCompanionExchange(listings) {
+    const summaryByPet = new Map();
+    const listingsByPet = new Map();
+
+    for (const listing of listings) {
+        const petName = listing.pet?.name;
+        const price = Number(listing.cost?.amount || 0);
+        if (!petName || !Number.isFinite(price) || price <= 0) continue;
+
+        const quality = normalizeQuality(listing.pet?.quality);
+        const summary = summaryByPet.get(petName) || {
+            petId: listing.pet?.pet_id ?? null,
+            listingCount: 0,
+            minPrice: price,
+            maxPrice: price,
+            totalPrice: 0,
+            byQuality: {},
+        };
+
+        summary.petId = summary.petId ?? listing.pet?.pet_id ?? null;
+        summary.listingCount += 1;
+        summary.minPrice = Math.min(summary.minPrice, price);
+        summary.maxPrice = Math.max(summary.maxPrice, price);
+        summary.totalPrice += price;
+
+        const qualitySummary = summary.byQuality[quality] || {
+            count: 0,
+            min_price: price,
+            max_price: price,
+            total_price: 0,
+            average_price: 0,
+        };
+        qualitySummary.count += 1;
+        qualitySummary.min_price = Math.min(qualitySummary.min_price, price);
+        qualitySummary.max_price = Math.max(qualitySummary.max_price, price);
+        qualitySummary.total_price += price;
+        qualitySummary.average_price = Math.round(qualitySummary.total_price / qualitySummary.count);
+        summary.byQuality[quality] = qualitySummary;
+
+        const compactListings = listingsByPet.get(petName) || [];
+        compactListings.push(compactCompanionListing(listing));
+        listingsByPet.set(petName, compactListings);
+        summaryByPet.set(petName, summary);
+    }
+
+    for (const summary of summaryByPet.values()) {
+        summary.averagePrice = Math.round(summary.totalPrice / summary.listingCount);
+        delete summary.totalPrice;
+    }
+
+    for (const petListings of listingsByPet.values()) {
+        petListings.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+    }
+
+    return { summaryByPet, listingsByPet };
+}
+
+function buildPetExchangeBlock(petName, summaryByPet, listingsByPet) {
+    const summary = summaryByPet.get(petName);
+    if (!summary) return null;
+
+    const petListings = listingsByPet.get(petName) || [];
+    const prices = petListings.map(listing => listing.price);
+    return {
+        ...summary,
+        medianPrice: median(prices),
+        sampleListings: petListings.slice(0, 12),
+    };
+}
+
+async function fetchCompanionExchangeListings() {
+    const listings = [];
+    let page = 1;
+    let hasMore = true;
+
+    console.log("Fetching companion exchange listings...");
+
+    while (hasMore) {
+        const res = await apiFetch(`${BASE_URL}/pets/companion-exchange/listings?page=${page}`, { headers });
+        if (!res.ok) {
+            console.error(`Failed to fetch companion exchange page ${page}: ${res.status}`);
+            return null;
+        }
+
+        const data = await res.json();
+        const pageListings = Array.isArray(data.listings) ? data.listings : [];
+        listings.push(...pageListings.map(listing => ({ ...listing, source_page: page })));
+
+        const pagination = data.pagination || {};
+        hasMore = Boolean(pagination.has_more);
+        page = Number(pagination.next_page || page + 1);
+
+        console.log(`Companion exchange: fetched ${listings.length} listings so far.`);
+    }
+
+    return {
+        fetchedAt: new Date().toISOString(),
+        listings,
+        pageCount: Math.max(0, page - 1),
+    };
+}
+
+async function updatePetDatabaseExchange() {
+    try {
+        if (!fs.existsSync(PET_DATABASE_FILE)) {
+            console.log("No pet database file found. Skipping companion exchange merge.");
+            return;
+        }
+
+        const exchange = await fetchCompanionExchangeListings();
+        if (!exchange) return;
+
+        const petDatabase = loadJson(PET_DATABASE_FILE);
+        if (!petDatabase || !Array.isArray(petDatabase.pets)) return;
+
+        const { summaryByPet, listingsByPet } = summarizeCompanionExchange(exchange.listings);
+        petDatabase.pets = petDatabase.pets.map(pet => ({
+            ...pet,
+            exchange: buildPetExchangeBlock(pet.name, summaryByPet, listingsByPet),
+        }));
+
+        petDatabase.meta = petDatabase.meta || {};
+        petDatabase.meta.generatedAt = new Date().toISOString();
+        petDatabase.meta.counts = {
+            ...(petDatabase.meta.counts || {}),
+            pets: petDatabase.pets.length,
+            petsWithStats: petDatabase.pets.filter(pet => pet.stats).length,
+            petsWithEggs: petDatabase.pets.filter(pet => pet.egg).length,
+            petsWithExchangeListings: petDatabase.pets.filter(pet => pet.exchange?.listingCount).length,
+            exchangeListings: exchange.listings.length,
+            exchangeSpecies: summaryByPet.size,
+        };
+
+        petDatabase.exchange = {
+            ...(petDatabase.exchange || {}),
+            fetchedAt: exchange.fetchedAt,
+            listingCount: exchange.listings.length,
+            speciesCount: summaryByPet.size,
+            pageCount: exchange.pageCount,
+        };
+
+        await safeWriteJson(PET_DATABASE_FILE, petDatabase);
+        console.log(`Pet database exchange data updated: ${exchange.listings.length} listings across ${summaryByPet.size} pets.`);
+    } catch (e) {
+        console.error("Error updating pet database exchange data:", e.message);
+    }
+}
+
 async function fetchLiveDungeons() {
     try {
         console.log("Fetching live dungeon data...");
@@ -512,11 +704,18 @@ async function start() {
     const publicDir = path.dirname(DATA_FILE);
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
+    if (IS_PETS_ONLY) {
+        await updatePetDatabaseExchange();
+        console.log("Pet data scrape completed. Exiting.");
+        process.exit(0);
+    }
+
     while (true) {
         // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
         await fetchLiveWorldBosses();
         await fetchLiveEnemies();
         await fetchLiveDungeons();
+        await updatePetDatabaseExchange();
 
         const latestStaticData = loadJson(STATIC_DATA_FILE);
         const cycleItemsArray = Array.from(new Set([
