@@ -509,7 +509,7 @@ function normalizeQuality(value) {
     return String(value).trim().toUpperCase();
 }
 
-function median(values) {
+function medianNumber(values) {
     const sorted = values.filter(value => Number.isFinite(value)).sort((a, b) => a - b);
     if (sorted.length === 0) return null;
     const mid = Math.floor(sorted.length / 2);
@@ -589,7 +589,7 @@ function buildPetExchangeBlock(petName, summaryByPet, listingsByPet) {
     const prices = petListings.map(listing => listing.price);
     return {
         ...summary,
-        medianPrice: median(prices),
+        medianPrice: medianNumber(prices),
         sampleListings: petListings.slice(0, 12),
     };
 }
