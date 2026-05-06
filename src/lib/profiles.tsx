@@ -67,6 +67,7 @@ export type CharacterProfile = {
     quality: string;
     level: number | "";
     evolution: number | "";
+    stats: Record<string, number | "">;
     notes: string;
   };
   gear: Record<string, string>;
@@ -128,6 +129,18 @@ const DEFAULT_TOOLS = {
   fishing: "",
 };
 
+const DEFAULT_PET_STATS: Record<string, number | ""> = {
+  agility: "",
+  accuracy: "",
+  protection: "",
+  attack_power: "",
+  movement_speed: "",
+  max_health: "",
+  max_stamina: "",
+  critical_damage: "",
+  critical_chance: "",
+};
+
 const ProfilesContext = createContext<ProfilesContextValue | null>(null);
 
 const makeId = () => (
@@ -149,41 +162,41 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
     id: makeId(),
     name,
     kind: "main",
-    className: "Standard",
+    className: "Warrior",
     notes: "",
     levels: {
-      totalLevel: "",
-      combat: "",
-      strength: "",
-      defence: "",
-      speed: "",
-      dexterity: "",
-      huntingMastery: "",
-      dungeoneering: "",
-      petMastery: "",
+      totalLevel: 20,
+      combat: 1,
+      strength: 1,
+      defence: 1,
+      speed: 1,
+      dexterity: 1,
+      huntingMastery: 1,
+      dungeoneering: 1,
+      petMastery: 1,
     },
     secondaryStats: {
-      attackPower: "",
-      protection: "",
-      agility: "",
-      accuracy: "",
-      criticalChance: "",
-      criticalDamage: "",
-      movementSpeed: "",
-      damage: "",
+      attackPower: 2,
+      protection: 2,
+      agility: 2,
+      accuracy: 2,
+      criticalChance: 0,
+      criticalDamage: 0,
+      movementSpeed: 3,
+      damage: 0,
     },
     magicFind: {
-      combat: "",
-      dungeon: "",
-      worldBoss: "",
-      dailyStreak: "",
+      combat: 0,
+      dungeon: 0,
+      worldBoss: 0,
+      dailyStreak: 0,
     },
     efficiency: {
-      hunting: "",
-      dungeon: "",
+      hunting: 0,
+      dungeon: 0,
     },
     timers: {
-      activeHours: "",
+      activeHours: 0,
       idleTimerHours: "",
     },
     pet: {
@@ -191,6 +204,7 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
       quality: "",
       level: "",
       evolution: "",
+      stats: { ...DEFAULT_PET_STATS },
       notes: "",
     },
     gear: { ...DEFAULT_GEAR },
@@ -206,22 +220,24 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
 }
 
 export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefined): CharacterProfile {
-  const base = createDefaultProfile(typeof input?.name === "string" && input.name.trim() ? input.name.trim() : "New Character");
+  const base = createDefaultProfile(typeof input?.name === "string" ? input.name.slice(0, 40) : "New Character");
   const next: CharacterProfile = {
     ...base,
     ...input,
     schemaVersion: 1,
     id: typeof input?.id === "string" && input.id ? input.id : base.id,
-    name: typeof input?.name === "string" && input.name.trim() ? input.name.trim().slice(0, 40) : base.name,
+    name: typeof input?.name === "string" ? input.name.slice(0, 40) : base.name,
     kind: input?.kind === "alt" ? "alt" : "main",
-    className: typeof input?.className === "string" && input.className.trim() ? input.className.trim().slice(0, 40) : base.className,
+    className: typeof input?.className === "string" && input.className.trim() && input.className !== "Standard"
+      ? input.className.slice(0, 40)
+      : base.className,
     notes: typeof input?.notes === "string" ? input.notes.slice(0, 500) : "",
     levels: { ...base.levels, ...(input?.levels || {}) },
     secondaryStats: { ...base.secondaryStats, ...(input?.secondaryStats || {}) },
     magicFind: { ...base.magicFind, ...(input?.magicFind || {}) },
     efficiency: { ...base.efficiency, ...(input?.efficiency || {}) },
     timers: { ...base.timers, ...(input?.timers || {}) },
-    pet: { ...base.pet, ...(input?.pet || {}) },
+    pet: { ...base.pet, ...(input?.pet || {}), stats: { ...DEFAULT_PET_STATS, ...(input?.pet?.stats || {}) } },
     gear: { ...DEFAULT_GEAR, ...(input?.gear || {}) },
     gearTiers: { ...DEFAULT_GEAR_TIERS, ...(input?.gearTiers || {}) },
     tools: { ...DEFAULT_TOOLS, ...(input?.tools || {}) },
@@ -251,6 +267,9 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   }
   next.pet.level = cleanNumber(next.pet.level);
   next.pet.evolution = cleanNumber(next.pet.evolution);
+  for (const key of Object.keys(next.pet.stats)) {
+    next.pet.stats[key] = cleanNumber(next.pet.stats[key]);
+  }
   for (const key of Object.keys(next.gearTiers)) {
     next.gearTiers[key] = cleanNumber(next.gearTiers[key]);
   }

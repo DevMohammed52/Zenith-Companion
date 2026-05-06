@@ -7209,7 +7209,14 @@ kbd {
 /* Profiles */
 .profiles-page {
   max-width: 1460px;
+  box-sizing: border-box;
+  overflow-x: clip;
   scroll-behavior: smooth;
+}
+
+.profiles-page,
+.profiles-page * {
+  box-sizing: border-box;
 }
 
 .profile-header {
@@ -7222,6 +7229,7 @@ kbd {
   margin-top: 0.45rem;
   max-width: 720px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .profile-header-actions,
@@ -7284,6 +7292,7 @@ kbd {
 
 .profile-action {
   padding: 0 0.85rem;
+  min-width: 0;
 }
 
 .profile-inline-actions button {
@@ -7417,6 +7426,7 @@ kbd {
   color: var(--text-muted);
   font-size: 0.8rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .profile-grid,
@@ -7426,11 +7436,11 @@ kbd {
 }
 
 .profile-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .profile-grid.compact {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .profile-grid.single {
@@ -7472,6 +7482,27 @@ kbd {
 .profiles-page .control-input {
   width: 100%;
   min-width: 0;
+}
+
+.profile-number-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-number-wrap input {
+  padding-right: 3.75rem;
+}
+
+.profile-number-wrap em {
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+  pointer-events: none;
 }
 
 .profile-select {
@@ -7558,6 +7589,201 @@ kbd {
   font-weight: 800;
 }
 
+.profile-transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.profile-class-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 68%);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--text-accent), transparent 87%), transparent 38%),
+    rgba(255,255,255,0.025);
+}
+
+.profile-class-card strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.profile-class-card p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.profile-class-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.profile-class-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.45rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-accent);
+  background: rgba(0,0,0,0.22);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-picker-trigger {
+  width: 100%;
+  min-height: 3.55rem;
+  display: grid;
+  grid-template-columns: 2.45rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)),
+    rgba(0,0,0,0.24);
+  color: #fff;
+  cursor: pointer;
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.profile-picker-trigger:hover,
+.profile-picker.open .profile-picker-trigger {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 52%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 92%);
+}
+
+.profile-picker-trigger img,
+.profile-picker-option img,
+.profile-picker-icon {
+  width: 2.45rem;
+  height: 2.45rem;
+  object-fit: contain;
+  border-radius: 7px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border-subtle);
+}
+
+.profile-picker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: 900;
+}
+
+.profile-picker-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+}
+
+.profile-picker-copy strong,
+.profile-picker-option strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-weight: 900;
+}
+
+.profile-picker-copy small,
+.profile-picker-option small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.profile-picker-menu {
+  position: absolute;
+  z-index: 55;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  min-width: min(34rem, calc(100vw - 2rem));
+  padding: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 62%);
+  border-radius: 10px;
+  background: rgba(12, 15, 18, 0.98);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+}
+
+.profile-picker-search {
+  height: 2.65rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.28);
+  color: var(--text-muted);
+}
+
+.profile-picker-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+}
+
+.profile-picker-options {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  padding: 0.55rem 0.15rem 0 0;
+}
+
+.profile-picker-option {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2.45rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.45rem;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.profile-picker-option:hover,
+.profile-picker-option.selected {
+  background: color-mix(in srgb, var(--text-accent), transparent 91%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+}
+
 @media (max-width: 980px) {
   .profile-layout {
     grid-template-columns: 1fr;
@@ -7570,6 +7796,9 @@ kbd {
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   }
   .profile-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .profile-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -7592,20 +7821,52 @@ kbd {
 }
 
 @media (max-width: 620px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  .profiles-page {
+    width: auto;
+    max-width: 100%;
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+  .content-wrapper:has(.profiles-page) {
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  .profiles-page,
+  .profile-header,
+  .profile-layout,
+  .profile-editor,
+  .profile-list-panel,
+  .profile-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
   .profile-header {
     flex-direction: column;
   }
   .profile-header-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 0.5rem;
-    margin: 0 -0.5rem;
+    margin: 0;
     border: 1px solid var(--border-subtle);
     border-radius: 8px;
     background: color-mix(in srgb, var(--bg-panel), transparent 8%);
     backdrop-filter: blur(12px);
   }
   .profile-action {
-    flex: 1;
+    width: 100%;
+  }
+  .profile-section-nav {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
   .profile-panel {
     padding: 0.85rem;
@@ -7622,6 +7883,17 @@ kbd {
   .profile-dual-grid {
     grid-template-columns: 1fr;
   }
+  .profile-picker-menu {
+    position: fixed;
+    top: 5rem;
+    left: 1rem;
+    right: 1rem;
+    min-width: 0;
+    max-height: calc(100vh - 6rem);
+  }
+  .profile-picker-options {
+    max-height: calc(100vh - 12rem);
+  }
   .profile-item-slot {
     grid-template-columns: 1fr;
   }
@@ -7631,6 +7903,20 @@ kbd {
   .profile-list-item {
     grid-template-columns: 2rem minmax(0, 1fr) 1rem;
     padding: 0.6rem;
+  }
+  .profile-picker-trigger,
+  .profile-pet-trigger {
+    grid-template-columns: 2.35rem minmax(0, 1fr) 1rem;
+    padding: 0.5rem;
+  }
+  .profile-picker-copy small,
+  .profile-pet-trigger-copy small,
+  .profile-picker-option small,
+  .profile-pet-option small {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
   .profile-avatar {
     width: 2rem;
