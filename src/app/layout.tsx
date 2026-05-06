@@ -12,6 +12,7 @@ import { ItemModalProvider } from "@/context/ItemModalContext";
 import { DataProvider } from "@/context/DataContext";
 import { CraftingProvider } from "@/context/CraftingContext";
 import { SidebarProvider } from "@/context/SidebarContext";
+import { ProfileProvider } from "@/lib/profiles";
 import MobileMenuBtn from "@/components/MobileMenuBtn";
 
 export default function RootLayout({
@@ -27,25 +28,27 @@ export default function RootLayout({
       <body>
         <DataProvider>
           <CraftingProvider>
-            <ItemModalProvider>
-              <SidebarProvider>
-                <div className="layout-root">
-                  <Sidebar />
-                  <div className="main-content">
-                    <header className="top-navigation">
-                      <MobileMenuBtn />
-                      <GlobalSearch hotkeyEnabled={false} />
-                    </header>
-                    <div className="content-wrapper">
-                      <div className="shell-desktop-search">
-                        <GlobalSearch />
+            <ProfileProvider>
+              <ItemModalProvider>
+                <SidebarProvider>
+                  <div className="layout-root">
+                    <Sidebar />
+                    <div className="main-content">
+                      <header className="top-navigation">
+                        <MobileMenuBtn />
+                        <GlobalSearch hotkeyEnabled={false} />
+                      </header>
+                      <div className="content-wrapper">
+                        <div className="shell-desktop-search">
+                          <GlobalSearch />
+                        </div>
+                        {children}
                       </div>
-                      {children}
                     </div>
                   </div>
-                </div>
-              </SidebarProvider>
-            </ItemModalProvider>
+                </SidebarProvider>
+              </ItemModalProvider>
+            </ProfileProvider>
           </CraftingProvider>
         </DataProvider>
         <style>{`
