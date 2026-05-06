@@ -7,6 +7,7 @@ import {
   Check,
   Coins,
   Database,
+  ExternalLink,
   Keyboard,
   Palette,
   Plus,
@@ -20,6 +21,7 @@ import { useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
 import { getSafeMarketPrice, getSafeMarketValue } from "@/lib/market-pricing";
+import { barteringBuffPercent, dailyStreakMagicFind, getProfileConquestRank } from "@/lib/profile-calculations";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
@@ -62,6 +64,9 @@ export default function SettingsPage() {
     const safe = getSafeMarketPrice(marketData?.[name]);
     return safe.value > 0 && Number(price) > safe.value * 5;
   });
+  const profileBarteringPercent = barteringBuffPercent(activeProfile?.boosts.barteringLevel ?? 0);
+  const profileDailyBonus = dailyStreakMagicFind(activeProfile?.magicFind.dailyStreak ?? 0);
+  const profileConquest = getProfileConquestRank(activeProfile);
 
   const saveCustomPrice = () => {
     const name = customItemName.trim();
@@ -90,16 +95,17 @@ export default function SettingsPage() {
       <section className="settings-grid">
         <div className="settings-panel settings-panel-wide">
           <h2><UserRound size={17} /> Profile Link</h2>
+          <p className="settings-panel-note">Profiles own character-specific values. Settings only owns app-wide defaults and price overrides.</p>
           <div className="settings-summary-grid">
             <div className="settings-summary-card">
               <span>Active Profile</span>
               <strong>{activeProfile?.name?.trim() || "Unnamed Character"}</strong>
-              <small>{activeProfile ? `${activeProfile.className || "Other"} · ${activeProfile.kind === "main" ? "Main" : "Alt"}` : "Create a profile to power page defaults."}</small>
+              <small>{activeProfile ? `${activeProfile.className || "Other"} - ${activeProfile.kind === "main" ? "Main" : "Alt"}` : "Create a profile to power page defaults."}</small>
             </div>
             <div className="settings-summary-card">
               <span>Playtime</span>
               <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
-              <small>Used by daily profit views where a profile is active.</small>
+              <small>Used by daily profit and idle-window views.</small>
             </div>
             <div className="settings-summary-card">
               <span>Profiles</span>
@@ -107,24 +113,38 @@ export default function SettingsPage() {
               <small>Combat stats, magic find, pets, gear, tools, and timers live there.</small>
             </div>
           </div>
+          <div className="settings-scope-grid">
+            <div>
+              <strong>Global here</strong>
+              <span>Membership, theme, custom prices, scraper cache, keyboard shortcuts.</span>
+            </div>
+            <div>
+              <strong>Profile-owned</strong>
+              <span>Class, bartering level, conquest, playtime, magic find, pets, gear, tools.</span>
+            </div>
+            <div>
+              <strong>Page-specific</strong>
+              <span>Potions, shrine, essence, dungeon filters, boss route choices, search filters.</span>
+            </div>
+          </div>
           <div className="settings-actions-row">
-            <Link className="settings-link-button" href="/profiles">Manage Profiles</Link>
-            <span>Membership, custom prices, scraper data, and theme remain global.</span>
+            <Link className="settings-link-button" href="/profiles">Manage Profiles <ExternalLink size={14} /></Link>
+            <span>Profile values are shown here for clarity, but edited from the Profiles page.</span>
           </div>
         </div>
 
         <div className="settings-panel">
-          <h2><Sparkles size={17} /> Global Boosts</h2>
+          <h2><Sparkles size={17} /> Account</h2>
           <div className="settings-fields">
             <label className="settings-field">
-              <span><strong>Membership</strong><small>Uses 12% market tax and member skill bonuses.</small></span>
+              <span><strong>Membership</strong><small>Global account setting. Uses 12% market tax where market sales are calculated.</small></span>
               <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ membership: !preferences.membership })}>
                 {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
               </button>
             </label>
 
             <label className="settings-field">
-              <span><strong>Class Skill Buff</strong><small>Global helper for supported skill-profit calculations.</small></span>
+              <span><strong>Skill Class Helper</strong><small>Fallback for older skill-profit calculations until every skill reads profile class data.</small></span>
               <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
                 {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class buff active" : "No class buff"}
               </button>
@@ -152,8 +172,19 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div className="settings-panel">
+          <h2><UserRound size={17} /> Active Profile Values</h2>
+          <div className="profile-settings-readout">
+            <div><span>Bartering Level</span><strong>{Number(activeProfile?.boosts.barteringLevel || 0).toLocaleString()}</strong><small>+{profileBarteringPercent}% vendor value</small></div>
+            <div><span>Conquest</span><strong>{profileConquest === "none" ? "None" : profileConquest}</strong><small>Used by supported profit views</small></div>
+            <div><span>Daily Streak</span><strong>{Number(activeProfile?.magicFind.dailyStreak || 0).toLocaleString()}</strong><small>+{profileDailyBonus}% magic find cap</small></div>
+          </div>
+          <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-magic">Edit Profile Values <ExternalLink size={14} /></Link>
+        </div>
+
         <div className="settings-panel settings-panel-wide">
-          <h2><BarChart3 size={17} /> Default Skill Tools</h2>
+          <h2><BarChart3 size={17} /> Fallback Skill Tools</h2>
+          <p className="settings-panel-note">These only apply when a page cannot read a tool from the active profile yet. Profile tools remain the preferred source.</p>
           <div className="settings-fields">
             {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
               <label className="settings-field" key={skill}>

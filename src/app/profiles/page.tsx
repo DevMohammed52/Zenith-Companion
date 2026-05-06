@@ -37,8 +37,10 @@ import {
   formatStatName,
   getClassInfo,
   getItemRequirementLevel,
+  getPetMasteryStatBonus,
   getToolEfficiency,
   sortProfileItems,
+  type PetMasteryLevelRecord,
   type PetDatabaseRecord,
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
@@ -55,6 +57,12 @@ const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: numb
   ["dungeoneering", "Dungeoneering", { min: 1, max: 600 }],
   ["petMastery", "Pet Mastery", { min: 1, max: 100 }],
 ];
+
+const ASCENSION_LEVEL_FIELDS = new Set<keyof CharacterProfile["levels"]>([
+  "combat",
+  "huntingMastery",
+  "dungeoneering",
+]);
 
 const SECONDARY_FIELDS: Array<[keyof CharacterProfile["secondaryStats"], string]> = [
   ["attackPower", "Attack Power"],
@@ -112,6 +120,39 @@ const PROFILE_SECTIONS = [
 
 function numberFromInput(value: string) {
   return value === "" ? "" : Number(value);
+}
+
+function currentUtcResetDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daysBetweenUtcDates(fromDate: string, toDate: string) {
+  const from = Date.parse(`${fromDate}T00:00:00.000Z`);
+  const to = Date.parse(`${toDate}T00:00:00.000Z`);
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return 0;
+  return Math.floor((to - from) / 86_400_000);
+}
+
+function updateMagicFindFromStreak(
+  magicFind: CharacterProfile["magicFind"],
+  nextDailyStreak: number | "",
+) {
+  const previousBonus = dailyStreakMagicFind(magicFind.dailyStreak);
+  const nextBonus = dailyStreakMagicFind(nextDailyStreak);
+  const syncValue = (current: number | "") => {
+    const numeric = Number(current || 0);
+    if (numeric === previousBonus || numeric < nextBonus) return nextBonus;
+    return current;
+  };
+
+  return {
+    ...magicFind,
+    dailyStreak: nextDailyStreak,
+    dailyStreakLastAutoDate: currentUtcResetDate(),
+    combat: syncValue(magicFind.combat),
+    dungeon: syncValue(magicFind.dungeon),
+    worldBoss: syncValue(magicFind.worldBoss),
+  };
 }
 
 function formatShortStats(stats?: Record<string, number> | null, limit = 3) {
@@ -304,8 +345,9 @@ export default function ProfilesPage() {
   const [transferText, setTransferText] = useState("");
   const [toast, setToast] = useState("");
   const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[] } | null>(null);
+  const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[]; mastery?: { levels?: PetMasteryLevelRecord[] } } | null>(null);
   const lastAutoStatKey = useRef("");
+  const lastPetStatKey = useRef("");
 
   const profile = activeProfile;
 
@@ -353,6 +395,7 @@ export default function ProfilesPage() {
   const classInfo = getClassInfo(profile?.className || "Other");
   const dailyBonus = dailyStreakMagicFind(profile?.magicFind.dailyStreak ?? 0);
   const barteringPercent = barteringBuffPercent(profile?.boosts.barteringLevel ?? 0);
+  const petMasteryBonus = getPetMasteryStatBonus(petDb?.mastery?.levels, profile?.levels.petMastery ?? 1);
   const calculatedSecondary = useMemo(() => (
     profile ? calculateProfileSecondaryStats(profile, itemByName) : null
   ), [itemByName, profile]);
@@ -400,18 +443,39 @@ export default function ProfilesPage() {
     if (changed) patchActive({ secondaryStats: calculatedSecondary });
   }, [autoStatKey, calculatedSecondary, itemByName, patchActive, profile]);
 
+  useEffect(() => {
+    if (!profile || !selectedPet) return;
+    const petStatKey = JSON.stringify({
+      species: selectedPet.name,
+      level: profile.pet.level || 1,
+      evolution: profile.pet.evolution || 0,
+      petMasteryBonus,
+    });
+    if (lastPetStatKey.current === petStatKey) return;
+    lastPetStatKey.current = petStatKey;
+    const nextStats = calculatePetStats(selectedPet, profile.pet.level || 1, profile.pet.evolution || 0, petMasteryBonus);
+    const changed = PET_STAT_FIELDS.some(([key]) => Number(profile.pet.stats[key] || 0) !== Number(nextStats[key] || 0));
+    if (!changed) return;
+    patchActive({ pet: { ...profile.pet, stats: nextStats } });
+  }, [patchActive, petMasteryBonus, profile, selectedPet]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const today = currentUtcResetDate();
+    const lastAutoDate = profile.magicFind.dailyStreakLastAutoDate;
+    if (!lastAutoDate) {
+      patchActive({ magicFind: { ...profile.magicFind, dailyStreakLastAutoDate: today } });
+      return;
+    }
+    const elapsedDays = daysBetweenUtcDates(lastAutoDate, today);
+    if (elapsedDays <= 0 || profile.magicFind.dailyStreak === "") return;
+    const nextDailyStreak = Math.max(0, Number(profile.magicFind.dailyStreak || 0) + elapsedDays);
+    patchActive({ magicFind: updateMagicFindFromStreak(profile.magicFind, nextDailyStreak) });
+  }, [patchActive, profile]);
+
   const updateDailyStreak = (value: number | "") => {
     if (!profile) return;
-    const bonus = dailyStreakMagicFind(value);
-    patchActive({
-      magicFind: {
-        ...profile.magicFind,
-        dailyStreak: value,
-        combat: Math.max(Number(profile.magicFind.combat || 0), bonus),
-        dungeon: Math.max(Number(profile.magicFind.dungeon || 0), bonus),
-        worldBoss: Math.max(Number(profile.magicFind.worldBoss || 0), bonus),
-      },
-    });
+    patchActive({ magicFind: updateMagicFindFromStreak(profile.magicFind, value) });
   };
 
   const selectPet = (pet: PetDatabaseRecord | null) => {
@@ -440,7 +504,7 @@ export default function ProfilesPage() {
       });
       return;
     }
-    const stats = calculatePetStats(pet, profile.pet.level || 1, profile.pet.evolution || 0);
+    const stats = calculatePetStats(pet, profile.pet.level || 1, profile.pet.evolution || 0, petMasteryBonus);
     patchActive({
       pet: {
         ...profile.pet,
@@ -455,14 +519,8 @@ export default function ProfilesPage() {
   const updatePetFormula = (patch: Partial<CharacterProfile["pet"]>) => {
     if (!profile) return;
     const nextPet = { ...profile.pet, ...patch };
-    const stats = selectedPet ? calculatePetStats(selectedPet, nextPet.level, nextPet.evolution) : nextPet.stats;
+    const stats = selectedPet ? calculatePetStats(selectedPet, nextPet.level, nextPet.evolution, petMasteryBonus) : nextPet.stats;
     patchActive({ pet: { ...nextPet, stats } });
-  };
-
-  const applyAutoStats = () => {
-    if (!profile || !calculatedSecondary) return;
-    patchActive({ secondaryStats: calculatedSecondary });
-    setToast("Combat stats updated from levels, gear, pet, and class talents.");
   };
 
   const handleExport = async () => {
@@ -759,7 +817,7 @@ export default function ProfilesPage() {
             </div>
             <div className="profile-grid compact">
               {LEVEL_FIELDS.map(([key, label, limits]) => {
-                const asc = ascensionLevel(profile.levels[key]);
+                const asc = ASCENSION_LEVEL_FIELDS.has(key) ? ascensionLevel(profile.levels[key]) : 0;
                 return (
                   <ProfileNumberField
                     key={key}
@@ -790,7 +848,6 @@ export default function ProfilesPage() {
                   <strong>{calculatedSecondary?.[key]?.toLocaleString() || 0}</strong>
                 </div>
               ))}
-              <button type="button" onClick={applyAutoStats}>Apply Calculated Stats</button>
             </div>
             <div className="profile-grid compact">
               {SECONDARY_FIELDS.map(([key, label]) => (
@@ -818,7 +875,13 @@ export default function ProfilesPage() {
               <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} onChange={(value) => updateNested("magicFind", "combat", value)} />
               <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} onChange={(value) => updateNested("magicFind", "dungeon", value)} />
               <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} onChange={(value) => updateNested("magicFind", "worldBoss", value)} />
-              <ProfileNumberField label="Daily Streak" value={profile.magicFind.dailyStreak} min={0} onChange={updateDailyStreak} hint="1% every 10 days, capped at 10%." />
+              <ProfileNumberField
+                label="Daily Streak"
+                value={profile.magicFind.dailyStreak}
+                min={0}
+                onChange={updateDailyStreak}
+                hint="1% magic find every 10 days, capped at 10%. Tracked once per UTC reset day after you enter it."
+              />
               <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} onChange={(value) => updateNested("efficiency", "hunting", value)} />
               <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} onChange={(value) => updateNested("efficiency", "dungeon", value)} />
               <ProfileNumberField label="Playtime (hours/day)" value={profile.timers.activeHours} min={0} max={24} onChange={(value) => updateNested("timers", "activeHours", value)} />
@@ -847,8 +910,9 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Pet</h2>
-                <p>Select from the Pet Database, then adjust level, evolution, or final visible pet stats.</p>
+                <p>Select from the Pet Database, then adjust level, evolution, Pet Mastery, or final visible pet stats.</p>
               </div>
+              <div className="profile-stat-pill">+{petMasteryBonus}% Pet Mastery stats</div>
             </div>
             <div className="profile-grid">
               <ProfilePicker

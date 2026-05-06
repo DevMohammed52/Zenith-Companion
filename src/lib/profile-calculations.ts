@@ -21,6 +21,12 @@ export type PetDatabaseRecord = {
 };
 
 export const RARITY_ORDER = ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"];
+const PET_BOOSTED_STATS = new Set(["agility", "accuracy", "protection", "attack_power", "movement_speed"]);
+
+export type PetMasteryLevelRecord = {
+  level?: number;
+  stat_bonus_percent?: number;
+};
 
 export const STAT_LABELS: Record<string, string> = {
   attack_power: "Attack Power",
@@ -217,7 +223,19 @@ function addStat(target: Record<string, number>, key: string, value: number | un
   target[key] = roundStat((target[key] || 0) + Number(value));
 }
 
-export function calculatePetStats(pet: PetDatabaseRecord | undefined, level: number | "", evolution: number | "") {
+export function getPetMasteryStatBonus(levels: PetMasteryLevelRecord[] | undefined, level: number | "") {
+  const masteryLevel = Math.min(100, Math.max(1, Number(level || 1)));
+  const found = levels?.find((entry) => Number(entry.level) === masteryLevel);
+  const rawBonus = Number(found?.stat_bonus_percent || 0);
+  return rawBonus <= 1 ? rawBonus * 100 : rawBonus;
+}
+
+export function calculatePetStats(
+  pet: PetDatabaseRecord | undefined,
+  level: number | "",
+  evolution: number | "",
+  masteryBonusPercent = 0,
+) {
   const stats = {
     agility: "" as number | "",
     accuracy: "" as number | "",
@@ -232,7 +250,8 @@ export function calculatePetStats(pet: PetDatabaseRecord | undefined, level: num
   if (!pet?.stats) return stats;
   const petLevel = Math.max(1, Number(level || 1));
   const evo = Math.max(0, Number(evolution || 0));
-  const multiplier = 1 + Math.min(5, evo) * 0.05;
+  const boostPercent = Number(masteryBonusPercent || 0) + Math.min(5, evo) * 5;
+  const multiplier = 1 + boostPercent / 100;
   const mapping: Record<string, keyof typeof stats> = {
     agility: "agility",
     accuracy: "accuracy",
@@ -248,7 +267,10 @@ export function calculatePetStats(pet: PetDatabaseRecord | undefined, level: num
     const key = mapping[rawKey];
     if (!key) continue;
     const value = Number(formula.base || 0) + (petLevel - 1) * Number(formula.per_level || 0);
-    stats[key] = roundStat(value * multiplier);
+    const boosted = PET_BOOSTED_STATS.has(rawKey) ? value * multiplier : value;
+    stats[key] = key === "movementSpeed" || key === "criticalDamage" || key === "criticalChance"
+      ? roundStat(boosted)
+      : Math.floor(boosted);
   }
   return stats;
 }

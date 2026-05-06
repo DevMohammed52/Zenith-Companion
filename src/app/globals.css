@@ -5683,6 +5683,68 @@ kbd {
 }
 }
 
+.settings-scope-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.9rem;
+}
+
+.settings-scope-grid div,
+.profile-settings-readout div {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.settings-scope-grid strong,
+.settings-scope-grid span,
+.profile-settings-readout span,
+.profile-settings-readout strong,
+.profile-settings-readout small {
+  display: block;
+  min-width: 0;
+}
+
+.settings-scope-grid strong,
+.profile-settings-readout span {
+  color: var(--text-main);
+  font-size: 0.76rem;
+  font-weight: 900;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+
+.settings-scope-grid span,
+.profile-settings-readout small {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.profile-settings-readout {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.profile-settings-readout strong {
+  color: var(--text-main);
+  font-size: 1.12rem;
+  margin-bottom: 0.2rem;
+}
+
+.settings-profile-edit-link {
+  margin-top: 0.85rem;
+  width: 100%;
+}
+
+@media (max-width: 820px) {
+  .settings-scope-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .profile-pet-card {
   display: grid;
   grid-template-columns: 4.25rem minmax(0, 1fr);

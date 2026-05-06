@@ -296,9 +296,9 @@ function AlchemyContent() {
   };
 
   const marketData = useMemo(() => (data || {}) as Record<string, MarketData>, [data]);
-  const parsedActiveHours = Number(activeProfile?.timers.activeHours || preferences.activeHours) || 0;
-  const activeHoursSource = activeProfile ? "Profile" : "Settings";
-  const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0;
+  const parsedActiveHours = Number(activeProfile?.timers.activeHours || 0) || 0;
+  const activeHoursSource = activeProfile ? "profile" : "no profile";
+  const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
   const marketTaxRate = getMarketTaxRate(preferences.membership);
   const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
@@ -583,7 +583,7 @@ function AlchemyContent() {
         <div className="control-group">
           <label className="control-label">Bartering Bonus</label>
           <div className="control-input" aria-label="Active profile bartering bonus">
-            +{parsedBartering}% {activeProfile ? "from profile" : "legacy setting"}
+            +{parsedBartering}% {activeProfile ? "from profile" : "without profile"}
           </div>
         </div>
 

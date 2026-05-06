@@ -52,6 +52,7 @@ export type CharacterProfile = {
     dungeon: number | "";
     worldBoss: number | "";
     dailyStreak: number | "";
+    dailyStreakLastAutoDate?: string;
   };
   efficiency: {
     hunting: number | "";
@@ -194,6 +195,7 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
       dungeon: 0,
       worldBoss: 0,
       dailyStreak: 0,
+      dailyStreakLastAutoDate: "",
     },
     efficiency: {
       hunting: 0,
@@ -270,9 +272,13 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   for (const key of Object.keys(next.secondaryStats) as Array<keyof CharacterProfile["secondaryStats"]>) {
     next.secondaryStats[key] = cleanNumber(next.secondaryStats[key]);
   }
-  for (const key of Object.keys(next.magicFind) as Array<keyof CharacterProfile["magicFind"]>) {
+  const numericMagicFindKeys = ["combat", "dungeon", "worldBoss", "dailyStreak"] as const;
+  for (const key of numericMagicFindKeys) {
     next.magicFind[key] = cleanNumber(next.magicFind[key]);
   }
+  next.magicFind.dailyStreakLastAutoDate = typeof next.magicFind.dailyStreakLastAutoDate === "string"
+    ? next.magicFind.dailyStreakLastAutoDate
+    : "";
   for (const key of Object.keys(next.efficiency) as Array<keyof CharacterProfile["efficiency"]>) {
     next.efficiency[key] = cleanNumber(next.efficiency[key]);
   }
@@ -304,12 +310,18 @@ export function sanitizeProfilesState(input: Partial<ProfilesState> | null | und
   const profiles = Array.isArray(input?.profiles)
     ? input.profiles.slice(0, MAX_PROFILES).map((profile) => sanitizeProfile(profile))
     : [];
+  const explicitMainIndex = profiles.findIndex((profile) => profile.kind === "main");
+  const mainIndex = explicitMainIndex >= 0 ? explicitMainIndex : 0;
+  const normalizedProfiles = profiles.map((profile, index) => ({
+    ...profile,
+    kind: index === mainIndex ? "main" as const : "alt" as const,
+  }));
   return {
     schemaVersion: 1,
-    activeProfileId: profiles.some((profile) => profile.id === input?.activeProfileId)
+    activeProfileId: normalizedProfiles.some((profile) => profile.id === input?.activeProfileId)
       ? String(input?.activeProfileId)
-      : profiles[0]?.id || null,
-    profiles,
+      : normalizedProfiles[0]?.id || null,
+    profiles: normalizedProfiles,
   };
 }
 
@@ -386,7 +398,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const addProfile = useCallback((name?: string) => {
     if (state.profiles.length >= MAX_PROFILES) return null;
-    const profile = createDefaultProfile(name || `Character ${state.profiles.length + 1}`);
+    const profile = { ...createDefaultProfile(name || `Character ${state.profiles.length + 1}`), kind: "alt" as const };
     replaceState({
       ...state,
       activeProfileId: profile.id,
@@ -404,6 +416,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       ...source,
       id: makeId(),
       name: `${source.name} Copy`.slice(0, 40),
+      kind: "alt",
       createdAt: now,
       updatedAt: now,
     });
@@ -433,6 +446,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       profiles: state.profiles.map((profile) => (
         profile.id === profileId
           ? sanitizeProfile({ ...profile, ...patch, updatedAt: now })
+          : patch.kind === "main"
+            ? sanitizeProfile({ ...profile, kind: "alt", updatedAt: now })
           : profile
       )),
     });
