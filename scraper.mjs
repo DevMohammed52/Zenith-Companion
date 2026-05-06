@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = 3100; // IdleMMO limit is 20 requests/min; 3.1s keeps us just under it.
+const API_DELAY_MS = Number(process.env.IDLEMMO_API_DELAY_MS || 1100); // IdleMMO limit is 60 requests/min for this key; 1.1s keeps us just under it.
 const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');

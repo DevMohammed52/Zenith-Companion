@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BadgeCheck,
   ChevronDown,
@@ -22,57 +22,24 @@ import {
   useProfiles,
 } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
-
-const CLASS_OPTIONS = [
-  {
-    value: "Warrior",
-    label: "Warrior",
-    detail: "Melee combat class. Use this when your character is built around weapon damage and frontline stats.",
-    tags: ["Combat", "Melee"],
-  },
-  {
-    value: "Shadowblade",
-    label: "Shadowblade",
-    detail: "Dexterity-style combat class. Useful for profile planning where accuracy, agility, and speed matter.",
-    tags: ["Combat", "Dexterity"],
-  },
-  {
-    value: "Ranger",
-    label: "Ranger",
-    detail: "Ranged combat class. Keep bow and hunting-related setup linked here for future calculators.",
-    tags: ["Combat", "Ranged"],
-  },
-  {
-    value: "Cursed",
-    label: "Cursed",
-    detail: "Restricted class. Market/trade profit views should avoid assuming normal selling access.",
-    tags: ["Restricted", "No market"],
-  },
-  {
-    value: "Banished",
-    label: "Banished",
-    detail: "Restricted class. Useful for route, combat, and dungeon planning, but market profit needs special handling.",
-    tags: ["Restricted", "No market"],
-  },
-  {
-    value: "Forsaken",
-    label: "Forsaken",
-    detail: "Special class profile slot for future class-specific modifiers and restrictions.",
-    tags: ["Special"],
-  },
-];
-
-const CLASS_OPTION_VALUES = new Set(CLASS_OPTIONS.map((option) => option.value));
-
-const QUALITY_ORDER: Record<string, number> = {
-  STANDARD: 1,
-  REFINED: 2,
-  PREMIUM: 3,
-  EPIC: 4,
-  LEGENDARY: 5,
-  MYTHIC: 6,
-  UNIQUE: 7,
-};
+import {
+  CLASS_OPTION_VALUES,
+  CLASS_RULES,
+  cleanQuality,
+  formatRequirements,
+  formatStatSummary,
+  getClassEfficiencyBonus,
+  getGearStatTotals,
+  getItemEffectSummary,
+  getItemStatTotals,
+  getNextClassTalent,
+  getRequirementLevel,
+  getToolEfficiency,
+  getUnlockedClassTalents,
+  qualityRank,
+  statLabel,
+  type RawItemLike,
+} from "@/lib/profile-rules";
 
 const PET_STAT_KEYS = [
   "agility",
@@ -178,6 +145,10 @@ function ProfileNumberField({
   max?: number;
   suffix?: string;
 }) {
+  const numericValue = typeof value === "number" ? value : Number(value || 0);
+  const isAscensionField = label === "Combat" || label === "Hunting Mastery" || label === "Dungeoneering";
+  const showAscension = isAscensionField && numericValue > 100;
+
   return (
     <label className="profile-field">
       <span>{label}</span>
@@ -193,6 +164,7 @@ function ProfileNumberField({
         />
         {suffix && <em>{suffix}</em>}
       </div>
+      {showAscension && <small className="profile-field-hint">Ascension Lv. {Math.min(500, numericValue - 100)}</small>}
     </label>
   );
 }
@@ -228,7 +200,11 @@ type ItemOption = {
   quality?: string;
   max_tier?: number;
   image_url?: string | null;
+  requirements?: Record<string, number | string | null> | null;
   stats?: Record<string, number | string | null> | null;
+  effects?: Array<{ value?: number | string; target?: string; attribute?: string; value_type?: string }> | null;
+  tier_modifiers?: Record<string, number | string | null> | null;
+  upgrade_requirements?: Array<{ item_name?: string; quantity?: number | string }> | null;
 };
 
 type ItemDatabase = Record<string, ItemOption>;
@@ -256,25 +232,9 @@ type PickerOption = {
   tags?: string[];
 };
 
-function qualityRank(quality?: string | null) {
-  return QUALITY_ORDER[String(quality || "").toUpperCase()] || 99;
-}
-
-function cleanQuality(quality?: string | null) {
-  const raw = String(quality || "").trim();
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : "";
-}
-
 function getPetSourceLabel(pet: PetRecord | null | undefined) {
   if (!pet) return "";
   return pet.sourceOverride?.label || pet.rarity?.worldBoss || pet.acquisition?.[0]?.location || "Source pending";
-}
-
-function statLabel(key: string) {
-  return key
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function getPetStatEntries(pet: PetRecord | null | undefined) {
@@ -361,7 +321,7 @@ function CustomPicker({
         {selected?.imageUrl ? <img src={selected.imageUrl} alt="" /> : <span className="profile-picker-icon">{selected?.label?.charAt(0) || "-"}</span>}
         <span className="profile-picker-copy">
           <strong>{selected?.label || placeholder}</strong>
-          <small>{selected?.badge || selected?.detail || label}</small>
+          <small>{selected ? [selected.badge, selected.detail].filter(Boolean).join(" - ") : label}</small>
         </span>
         <ChevronDown size={18} />
       </button>
@@ -524,18 +484,23 @@ export default function ProfilesPage() {
   const { allItemsDb } = useData();
   const [transferText, setTransferText] = useState("");
   const [transferMessage, setTransferMessage] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const [petDatabase, setPetDatabase] = useState<PetDatabase | null>(null);
+  const lastAppliedCombatSignature = useRef("");
 
   const profile = activeProfile;
-  const combatStatTotal = useMemo(() => {
-    if (!profile) return 0;
-    return (
-      Number(profile.secondaryStats.attackPower || 0) +
-      Number(profile.secondaryStats.protection || 0) +
-      Number(profile.secondaryStats.agility || 0) +
-      Number(profile.secondaryStats.accuracy || 0)
-    );
-  }, [profile]);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage((current) => (current === message ? "" : current)), 3600);
+  };
+
+  const itemByName = useMemo(() => {
+    const map = new Map<string, ItemOption>();
+    Object.values((allItemsDb || {}) as ItemDatabase).forEach((item) => {
+      if (item?.name) map.set(item.name, item);
+    });
+    return map;
+  }, [allItemsDb]);
 
   const itemOptionsByType = useMemo(() => {
     const grouped: Record<string, ItemOption[]> = {};
@@ -545,7 +510,11 @@ export default function ProfilesPage() {
       grouped[item.type].push(item);
     });
     Object.values(grouped).forEach((items) => {
-      items.sort((a, b) => qualityRank(a.quality) - qualityRank(b.quality) || a.name.localeCompare(b.name));
+      items.sort((a, b) => (
+        qualityRank(a.quality) - qualityRank(b.quality)
+        || getRequirementLevel(a) - getRequirementLevel(b)
+        || a.name.localeCompare(b.name)
+      ));
     });
     return grouped;
   }, [allItemsDb]);
@@ -583,15 +552,79 @@ export default function ProfilesPage() {
       value: item.name,
       label: item.name,
       badge: cleanQuality(item.quality) || item.type || "",
-      detail: item.type ? item.type.replaceAll("_", " ").toLowerCase() : "",
+      detail: [
+        item.type ? statLabel(item.type).toLowerCase() : "",
+        getRequirementLevel(item) ? `Lv. ${getRequirementLevel(item)}` : "",
+      ].filter(Boolean).join(" - "),
       imageUrl: item.image_url,
-      tags: [item.quality || "", item.type || ""],
+      tags: [item.quality || "", item.type || "", formatRequirements(item), formatStatSummary(getItemStatTotals(item, 0)), getItemEffectSummary(item)],
     }))
   );
 
-  const getSelectedItem = (name: string) => (
-    name ? (allItemsDb as ItemDatabase | undefined)?.[name] : undefined
-  );
+  const getSelectedItem = (name: string) => (name ? itemByName.get(name) : undefined);
+
+  const selectedGearItems = useMemo(() => {
+    if (!profile) return [];
+    return GEAR_FIELDS.map(([key]) => ({
+      key,
+      item: getSelectedItem(profile.gear[key] || ""),
+      tier: profile.gearTiers?.[key] || 0,
+    }));
+  }, [itemByName, profile?.gear, profile?.gearTiers]);
+
+  const calculatedCombatStats = useMemo(() => {
+    if (!profile) return null;
+    return getGearStatTotals(
+      selectedGearItems.map((entry) => ({ item: entry.item as RawItemLike | undefined, tier: entry.tier })),
+      profile.className,
+      Number(profile.levels.combat || 0),
+    );
+  }, [profile, selectedGearItems]);
+
+  const combatSetupSignature = useMemo(() => {
+    if (!profile) return "";
+    return JSON.stringify({
+      className: profile.className,
+      combat: profile.levels.combat,
+      gear: profile.gear,
+      tiers: profile.gearTiers,
+    });
+  }, [profile?.className, profile?.levels.combat, profile?.gear, profile?.gearTiers]);
+
+  const combatStatTotal = useMemo(() => {
+    if (!calculatedCombatStats) return 0;
+    return (
+      Number(calculatedCombatStats.attackPower || 0) +
+      Number(calculatedCombatStats.protection || 0) +
+      Number(calculatedCombatStats.agility || 0) +
+      Number(calculatedCombatStats.accuracy || 0)
+    );
+  }, [calculatedCombatStats]);
+
+  const toolEfficiencies = useMemo(() => {
+    if (!profile) return { woodcutting: 0, mining: 0, fishing: 0 };
+    const classBonuses = getClassEfficiencyBonus(profile.className);
+    return {
+      woodcutting: getToolEfficiency(getSelectedItem(profile.tools.woodcutting || "")) + Number(classBonuses.woodcutting || 0),
+      mining: getToolEfficiency(getSelectedItem(profile.tools.mining || "")) + Number(classBonuses.mining || 0),
+      fishing: getToolEfficiency(getSelectedItem(profile.tools.fishing || "")) + Number(classBonuses.fishing || 0),
+    };
+  }, [itemByName, profile]);
+
+  useEffect(() => {
+    if (!profile || !calculatedCombatStats) return;
+    if (lastAppliedCombatSignature.current === combatSetupSignature) return;
+    const current = profile.secondaryStats;
+    const changed = Object.entries(calculatedCombatStats).some(([key, value]) => current[key as keyof CharacterProfile["secondaryStats"]] !== value);
+    lastAppliedCombatSignature.current = combatSetupSignature;
+    if (!changed) return;
+    updateProfile(profile.id, {
+      secondaryStats: {
+        ...current,
+        ...calculatedCombatStats,
+      },
+    });
+  }, [calculatedCombatStats, combatSetupSignature, profile?.id, profile?.secondaryStats, updateProfile]);
 
   const patchActive = (patch: Partial<CharacterProfile>) => {
     if (!profile) return;
@@ -621,20 +654,24 @@ export default function ProfilesPage() {
     try {
       await navigator.clipboard?.writeText(payload);
       setTransferMessage("Export generated below and copied to clipboard.");
+      showToast("Profile export copied to clipboard.");
     } catch {
       setTransferMessage("Export generated below. Copy it from the text box.");
+      showToast("Profile export generated below.");
     }
   };
 
   const handleImport = () => {
     if (!transferText.trim()) {
       setTransferMessage("Paste a profile export before importing.");
+      showToast("Paste an export before importing.");
       return;
     }
     const confirmed = window.confirm("Importing profiles will replace the current local profile list in this browser. Continue?");
     if (!confirmed) return;
     const result = importProfiles(transferText);
     setTransferMessage(result.ok ? "Profiles imported." : result.error || "Import failed.");
+    showToast(result.ok ? "Profiles imported." : result.error || "Import failed.");
   };
 
   const handleDeleteProfile = () => {
@@ -654,10 +691,13 @@ export default function ProfilesPage() {
     );
   }
 
-  const classOption = CLASS_OPTIONS.find((option) => option.value === profile.className);
+  const classOption = CLASS_RULES.find((option) => option.value === profile.className);
+  const unlockedTalents = getUnlockedClassTalents(profile.className, Number(profile.levels.combat || 0));
+  const nextTalent = getNextClassTalent(profile.className, Number(profile.levels.combat || 0));
 
   return (
     <main className="container profiles-page">
+      {toastMessage && <div className="profile-toast" role="status">{toastMessage}</div>}
       <div className="header profile-header">
         <div>
           <h1 className="header-title"><Users size={24} color="var(--text-accent)" /> PROFILES</h1>
@@ -730,12 +770,13 @@ export default function ProfilesPage() {
                 <CustomPicker
                   label="Class"
                   value={CLASS_OPTION_VALUES.has(profile.className) ? profile.className : ""}
-                  options={CLASS_OPTIONS.map((option) => ({
+                  options={CLASS_RULES.map((option) => ({
                     value: option.value,
                     label: option.label,
-                    detail: option.detail,
-                    badge: option.tags[0],
-                    tags: option.tags,
+                    detail: option.dropdownDetail,
+                    badge: option.category,
+                    imageUrl: option.iconUrl,
+                    tags: [option.category, option.dropdownDetail, ...option.permanentEffects],
                   }))}
                   placeholder="Select class"
                   searchPlaceholder="Search class..."
@@ -752,10 +793,46 @@ export default function ProfilesPage() {
               </label>
               {classOption && (
                 <div className="profile-class-card profile-field-wide">
-                  <strong>{classOption.label}</strong>
-                  <p>{classOption.detail}</p>
-                  <div>
-                    {classOption.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                  <div className="profile-class-main">
+                    {classOption.iconUrl ? <img src={classOption.iconUrl} alt="" /> : <span className="profile-picker-icon">{classOption.label.charAt(0)}</span>}
+                    <div>
+                      <strong>{classOption.label}</strong>
+                      <p>{classOption.description}</p>
+                    </div>
+                  </div>
+                  <div className="profile-info-list">
+                    <section>
+                      <h4>Effects</h4>
+                      <ul>
+                        {classOption.permanentEffects.map((effect) => <li key={effect}>{effect}</li>)}
+                      </ul>
+                    </section>
+                    <section>
+                      <h4>Battle Talents</h4>
+                      {classOption.battleTalents.length ? (
+                        <ul>
+                          {classOption.battleTalents.map((talent) => (
+                            <li key={talent.name} className={Number(profile.levels.combat || 0) >= talent.level ? "active" : ""}>
+                              Lv. {talent.level}: {talent.name} ({talent.effect})
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p>No combat talents for this class.</p>}
+                    </section>
+                    {classOption.notes?.length ? (
+                      <section>
+                        <h4>Notes</h4>
+                        <ul>
+                          {classOption.notes.map((note) => <li key={note}>{note}</li>)}
+                        </ul>
+                      </section>
+                    ) : null}
+                  </div>
+                  <div className="profile-class-tags">
+                    <span>{classOption.category}</span>
+                    <span>{classOption.dropdownDetail}</span>
+                    {unlockedTalents.length ? <span>{unlockedTalents.length} active talent{unlockedTalents.length === 1 ? "" : "s"}</span> : null}
+                    {nextTalent ? <span>Next: {nextTalent.name} at Lv. {nextTalent.level}</span> : null}
                   </div>
                 </div>
               )}
@@ -801,7 +878,7 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Combat Snapshot</h2>
-                <p>Use the visible final values from the game. Auto-calculation comes after gear and pet formulas are verified.</p>
+                <p>Auto-updated from selected class talents and gear. You can still edit values manually if your character screen differs.</p>
               </div>
               <div className="profile-stat-pill"><Shield size={14} /> {combatStatTotal.toLocaleString()} dungeon stats</div>
             </div>
@@ -844,6 +921,12 @@ export default function ProfilesPage() {
                 onChange={(value) => patchActive({ timers: { activeHours: value, idleTimerHours: "" } })}
               />
             </div>
+            <div className="profile-derived-strip">
+              <span>Tool Efficiency</span>
+              <strong>Woodcutting {toolEfficiencies.woodcutting}%</strong>
+              <strong>Mining {toolEfficiencies.mining}%</strong>
+              <strong>Fishing {toolEfficiencies.fishing}%</strong>
+            </div>
           </section>
 
           <section id="profile-pet" className="profile-panel">
@@ -866,7 +949,9 @@ export default function ProfilesPage() {
                         ...profile.pet,
                         species: pet?.name || "",
                         quality: pet?.quality || "",
-                        stats: { ...profile.pet.stats, ...nextStats },
+                        level: pet ? profile.pet.level : "",
+                        evolution: pet ? profile.pet.evolution : "",
+                        stats: pet ? { ...profile.pet.stats, ...nextStats } : Object.fromEntries(PET_STAT_KEYS.map((key) => [key, ""])),
                         notes: pet?.name === profile.pet.species ? profile.pet.notes : "",
                       },
                     });
@@ -977,6 +1062,16 @@ export default function ProfilesPage() {
                           max={maxTier || undefined}
                           onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: maxTier ? Math.min(Number(value) || 0, maxTier) : value } })}
                         />
+                        {selected && (
+                          <div className="profile-item-summary">
+                            {selected.image_url ? <img src={selected.image_url} alt="" /> : null}
+                            <div>
+                              <strong>{selected.name}</strong>
+                              <small>{cleanQuality(selected.quality)} - {formatRequirements(selected)}</small>
+                              <p>{formatStatSummary(getItemStatTotals(selected, profile.gearTiers?.[key] || 0)) || "No combat stats"}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -996,6 +1091,15 @@ export default function ProfilesPage() {
                         searchPlaceholder={`Search ${label.toLowerCase()}...`}
                         onChange={(value) => patchActive({ tools: { ...profile.tools, [key]: value } })}
                       />
+                      {profile.tools[key] && (
+                        <div className="profile-item-summary compact">
+                          {getSelectedItem(profile.tools[key] || "")?.image_url ? <img src={getSelectedItem(profile.tools[key] || "")?.image_url || ""} alt="" /> : null}
+                          <div>
+                            <strong>{profile.tools[key]}</strong>
+                            <small>{getItemEffectSummary(getSelectedItem(profile.tools[key] || "")) || "No efficiency effect"}</small>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
