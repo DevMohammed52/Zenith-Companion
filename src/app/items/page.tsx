@@ -18,6 +18,7 @@ import {
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
 import { getLoreForItem } from '@/data/lore';
+import { getSafeMarketValue } from '@/lib/market-pricing';
 
 interface SearchIndexItem {
   id: string;
@@ -199,7 +200,7 @@ function ItemsArchiveContent() {
       const droppedByCount = Array.isArray(usage.dropped_by) ? usage.dropped_by.length : 0;
       const usedInCount = Array.isArray(usage.required_for) ? usage.required_for.length : 0;
       const vendorPrice = Number(market.vendor_price || full.vendor_price || 0);
-      const marketPrice = Number(market.avg_3 || market.price || 0);
+      const marketPrice = getSafeMarketValue(market);
       const loreCount = getLoreForItem(item.name).length;
 
       return {

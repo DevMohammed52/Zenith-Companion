@@ -21,6 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
+import { useProfiles } from "@/lib/profiles";
 
 type Quality =
   | "STANDARD"
@@ -163,8 +164,6 @@ type PetRecord = {
 type MasteryLevel = {
   level: number;
   stat_bonus_percent?: number | null;
-  loot_chance?: number | null;
-  concurrent_battles?: number | null;
 };
 
 type PetDatabase = {
@@ -197,45 +196,7 @@ type SourceFilter = "ALL" | "EGG" | "BOSS" | "EXCHANGE" | "MERCHANT" | "EVENT" |
 type ViewMode = "cards" | "table";
 type BattleProfitMode = "noSleep" | "withSleep" | "healingWithSleep";
 type FoodPolicy = "standard" | "none";
-type BattleMapFilter = string;
 type BattleDrop = NonNullable<BattleZone["drops"]>[number];
-
-type BattleEstimate = {
-  value: number;
-  battleTimeSeconds: number;
-  enemiesBattled: number;
-  lootPieces: number;
-  lootChance: number;
-  expectedRevenuePerBattle: number;
-  expectedRevenuePerHour: number;
-  expectedProfitPerBattle: number;
-  expectedProfitPerHourNoSleep: number;
-  expectedProfitPerHourWithSleep: number;
-  expectedProfitPerHourHealingWithSleep: number;
-  foodCostPerHourCheapest: number;
-  profitMargin: number | null;
-  staminaLimited: boolean;
-  secondsPerEnemy: number;
-  averageEnemyLevel: number | null;
-  maxStamina: number;
-  staminaDrainPerSecond: number;
-  staminaDrainPerHour: number;
-  staminaDrainPerBattle: number;
-  staminaDurationSeconds: number | null;
-  battlesBeforeSleep: number | null;
-  sleepMultiplier: number;
-  healingMultiplier: number;
-};
-
-type BattleProfitResult = {
-  value: number;
-  zone: string | null;
-  mode: BattleProfitMode | null;
-  selectedMap: BattleMapFilter;
-  isBestMap: boolean;
-  missingSelectedMap: boolean;
-  estimate?: BattleEstimate | null;
-};
 
 type BattleSelection = {
   pet: PetRecord;
@@ -252,15 +213,14 @@ type StoredPetState = {
   petLevel?: number;
   masteryLevel?: number;
   evolutionStage?: number;
+  evolutionStat?: StatKey | "all";
   patBonus?: boolean;
   battleProfitMode?: BattleProfitMode;
   foodPolicy?: FoodPolicy | "workbook";
-  battleMapFilter?: BattleMapFilter;
   beastmaster?: boolean;
 };
 
 const PET_DATABASE_STORAGE_KEY = "zenith_pet_database_state_v1";
-const BEST_BATTLE_MAP = "BEST_MAP";
 
 const QUALITY_ORDER: Record<Quality, number> = {
   UNKNOWN: 0,
@@ -333,6 +293,15 @@ const SOURCE_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
   { value: "MISSING_EGG", label: "Missing egg data" },
 ];
 
+const EVOLUTION_STAT_OPTIONS: Array<{ value: StatKey | "all"; label: string }> = [
+  { value: "all", label: "All stats" },
+  { value: "agility", label: "Agility" },
+  { value: "accuracy", label: "Accuracy" },
+  { value: "protection", label: "Protection" },
+  { value: "attack_power", label: "Attack Power" },
+  { value: "movement_speed", label: "Move Speed" },
+];
+
 const BATTLE_PROFIT_OPTIONS: Array<{ value: BattleProfitMode; label: string }> = [
   { value: "withSleep", label: "With sleep" },
   { value: "noSleep", label: "No sleep" },
@@ -340,8 +309,8 @@ const BATTLE_PROFIT_OPTIONS: Array<{ value: BattleProfitMode; label: string }> =
 ];
 
 const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
-  { value: "standard", label: "Subtract food cost" },
-  { value: "none", label: "Ignore food cost" },
+  { value: "standard", label: "Food cost" },
+  { value: "none", label: "No food" },
 ];
 
 const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
@@ -358,11 +327,6 @@ const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
 function formatGold(value?: number | null) {
   if (!value || value <= 0) return "-";
   return `${Math.round(value).toLocaleString()}g`;
-}
-
-function formatGoldPerHour(value?: number | null) {
-  const gold = formatGold(value);
-  return gold === "-" ? "-" : `${gold}/hr`;
 }
 
 function formatNumber(value?: number | null, digits = 0) {
@@ -400,24 +364,10 @@ function secondsToDuration(seconds?: number | null) {
 }
 
 function getMasteryBonus(database: PetDatabase | null, level: number) {
-  const found = getMasteryLevel(database, level);
+  const levels = database?.mastery?.levels || [];
+  const found = levels.find((entry) => Number(entry.level) === level);
   const rawBonus = Number(found?.stat_bonus_percent || 0);
   return rawBonus <= 1 ? rawBonus * 100 : rawBonus;
-}
-
-function getMasteryLevel(database: PetDatabase | null, level: number) {
-  const levels = database?.mastery?.levels || [];
-  const target = clampNumber(level, 1, 100);
-  return levels.find((entry) => Number(entry.level) === target) || levels.reduce<MasteryLevel | null>((closest, entry) => {
-    if (Number(entry.level) > target) return closest;
-    if (!closest || Number(entry.level) > Number(closest.level)) return entry;
-    return closest;
-  }, null);
-}
-
-function getMasteryLootChance(database: PetDatabase | null, level: number) {
-  const rawChance = Number(getMasteryLevel(database, level)?.loot_chance ?? 0.1);
-  return rawChance > 1 ? rawChance / 100 : rawChance;
 }
 
 function calculateStats(
@@ -425,10 +375,11 @@ function calculateStats(
   level: number,
   masteryBonusPercent: number,
   evolutionStage: number,
+  evolutionStat: StatKey | "all",
   patBonus: boolean,
 ) {
   const stats = pet.stats || {};
-  const globalBoostPercent = masteryBonusPercent + (patBonus ? 5 : 0);
+  const globalBoostPercent = masteryBonusPercent;
   const evolutionBoostPercent = evolutionStage * 5;
   const values: Partial<Record<StatKey, number>> = {};
 
@@ -436,7 +387,9 @@ function calculateStats(
     const stat = stats[key];
     if (!stat) return;
     const raw = Number(stat.base || 0) + (level - 1) * Number(stat.per_level || 0);
-    const boostPercent = globalBoostPercent + evolutionBoostPercent;
+    const patBoostPercent = patBonus && key !== "movement_speed" ? 5 : 0;
+    const boostPercent =
+      globalBoostPercent + patBoostPercent + (evolutionStat === "all" || evolutionStat === key ? evolutionBoostPercent : 0);
     const boostMultiplier = 1 + boostPercent / 100;
     const boosted = BOOSTED_STATS.has(key) ? raw * boostMultiplier : raw;
     if (key === "movement_speed" || key === "critical_damage" || key === "critical_chance") {
@@ -464,229 +417,33 @@ function getHuntingTimeSeconds(stats: Partial<Record<StatKey, number>>) {
   return 200 - 125 * (0.7 * Math.min(agility / 120, 1) + 0.3 * Math.min(movementSpeed / 100, 1));
 }
 
-function shortBattleZoneLabel(zone?: string | null) {
-  if (!zone) return "-";
-  return zone.replace(/^Level\s*(\d+)\s*-\s*/i, "Lv. $1 - ").replace(/^Lv\.\s*(\d+)\s*-\s*/, "Lv. $1 - ");
-}
-
-function getBattleZoneLevel(zone?: string | null) {
-  const level = zone?.match(/Level\s*(\d+)/i)?.[1];
-  return level ? Number(level) : null;
-}
-
-function battleZoneSortValue(zone: string) {
-  return getBattleZoneLevel(zone) || 0;
-}
-
-function getBattleMapOptions(database: PetDatabase | null): Array<{ value: BattleMapFilter; label: string }> {
-  const zones = new Set<string>();
-  for (const pet of database?.pets || []) {
-    for (const zone of pet.battle?.zones || []) {
-      if (zone.zone) zones.add(zone.zone);
-    }
+function getZoneProfitValue(zone: BattleZone, mode: BattleProfitMode, foodPolicy: FoodPolicy) {
+  let value =
+    mode === "noSleep"
+      ? Number(zone.expectedProfitPerHourNoSleep || 0)
+      : mode === "healingWithSleep"
+        ? Number(zone.expectedProfitPerHourHealingWithSleep || 0)
+        : Number(zone.expectedProfitPerHourWithSleep || 0);
+  if (foodPolicy === "none") {
+    value += Number(zone.foodCostPerHourCheapest || 0);
   }
-
-  return [
-    { value: BEST_BATTLE_MAP, label: "Best map" },
-    ...[...zones]
-      .sort((a, b) => battleZoneSortValue(b) - battleZoneSortValue(a) || a.localeCompare(b))
-      .map((zone) => ({ value: zone, label: shortBattleZoneLabel(zone) })),
-  ];
+  return value;
 }
 
-function getQualityBattleStaminaDrain(database: PetDatabase | null, quality: Quality) {
-  const defaults: Partial<Record<Quality, number>> = {
-    STANDARD: 0.0065,
-    REFINED: 0.00475,
-    PREMIUM: 0.004,
-    EPIC: 0.00375,
-    LEGENDARY: 0.003375,
-    MYTHIC: 0.0025,
-  };
-  const found = database?.qualityStamina?.battle?.find((entry) => String(entry.quality || "").toUpperCase() === quality);
-  return Number(found?.battle_stamina_per_second || defaults[quality] || 0.004);
-}
-
-function getBattleFormulaSeconds(stats: Partial<Record<StatKey, number>>, enemyLevel: number | null) {
-  const health = Number(stats.max_health || 0);
-  if (!health) return null;
-  const effectiveEnemyLevel = enemyLevel || 1;
-  const duration = 8 + health * 5.65 + 15 * (getTotalPower(stats) - effectiveEnemyLevel * 3.9);
-  return Math.max(8, duration);
-}
-
-function getSecondsPerEnemy(level: number) {
-  const clamped = clampNumber(level, 1, 100);
-  const points = [
-    { level: 1, seconds: 75 },
-    { level: 25, seconds: 72 },
-    { level: 50, seconds: 69 },
-    { level: 75, seconds: 67 },
-    { level: 100, seconds: 65 },
-  ];
-  for (let index = 1; index < points.length; index += 1) {
-    const prev = points[index - 1];
-    const next = points[index];
-    if (clamped <= next.level) {
-      const progress = (clamped - prev.level) / (next.level - prev.level);
-      return prev.seconds + (next.seconds - prev.seconds) * progress;
-    }
-  }
-  return 65;
-}
-
-function getBattleDifficultyMultiplier(enemyLevel: number | null, petLevel: number) {
-  const ratio = (enemyLevel || 1) / Math.max(1, petLevel);
-  const clampedRatio = clampNumber(ratio, 0.75, 3.3);
-  if (clampedRatio <= 1) {
-    return 0.75 + ((1 - 0.75) * (clampedRatio - 0.75)) / (1 - 0.75);
-  }
-  return 1 + ((2.5 - 1) * (clampedRatio - 1)) / (3.3 - 1);
-}
-
-function getModeValue(estimate: BattleEstimate, mode: BattleProfitMode) {
-  if (mode === "noSleep") return estimate.expectedProfitPerHourNoSleep;
-  if (mode === "healingWithSleep") return estimate.expectedProfitPerHourHealingWithSleep;
-  return estimate.expectedProfitPerHourWithSleep;
-}
-
-function estimateBattleZone(
-  database: PetDatabase | null,
-  pet: PetRecord,
-  zone: BattleZone,
-  stats: Partial<Record<StatKey, number>>,
-  petLevel: number,
-  masteryLootChance: number,
-  mode: BattleProfitMode,
-  foodPolicy: FoodPolicy,
-): BattleEstimate {
-  const enemyLevel = getBattleZoneLevel(zone.zone);
-  const baselineStats = calculateStats(pet, 100, getMasteryBonus(database, 100), 0, false);
-  const baselineFormula = getBattleFormulaSeconds(baselineStats, enemyLevel);
-  const currentFormula = getBattleFormulaSeconds(stats, enemyLevel);
-  const originalBattleTime = Number(zone.battleTimeSeconds || 0);
-  let battleTimeSeconds =
-    originalBattleTime && baselineFormula && currentFormula
-      ? originalBattleTime * (currentFormula / baselineFormula)
-      : currentFormula || originalBattleTime || 0;
-
-  const stamina = Number(stats.max_stamina || 0);
-  const staminaDrainPerSecond = getQualityBattleStaminaDrain(database, pet.quality) * getBattleDifficultyMultiplier(enemyLevel, petLevel);
-  const staminaDurationSeconds = stamina && staminaDrainPerSecond ? stamina / staminaDrainPerSecond : null;
-  const staminaLimited = Boolean(staminaDurationSeconds && battleTimeSeconds > staminaDurationSeconds);
-  if (staminaLimited && staminaDurationSeconds) battleTimeSeconds = staminaDurationSeconds;
-
-  const secondsPerEnemy = getSecondsPerEnemy(petLevel);
-  battleTimeSeconds = Math.max(secondsPerEnemy, battleTimeSeconds);
-  const enemiesBattled = Math.max(0, Math.floor(battleTimeSeconds / secondsPerEnemy));
-  const lootChance = Math.max(0, masteryLootChance);
-  const lootPieces = Math.max(0, Math.floor(enemiesBattled * lootChance));
-  const baselineLootPieces = Math.max(1, Number(zone.lootPieces || 0) || Math.floor(Number(zone.enemiesBattled || 0) * 0.1) || 1);
-  const baselineRevenuePerBattle =
-    Number(zone.expectedRevenuePerBattle || 0) ||
-    (Number(zone.expectedRevenuePerHour || 0) * Number(zone.battleTimeSeconds || 0)) / 3600;
-  const revenuePerLootPiece = baselineRevenuePerBattle / baselineLootPieces;
-  const expectedRevenuePerBattle = revenuePerLootPiece * lootPieces;
-  const expectedRevenuePerHour = battleTimeSeconds > 0 ? (expectedRevenuePerBattle / battleTimeSeconds) * 3600 : 0;
-  const foodCostPerHourCheapest = Number(zone.foodCostPerHourCheapest || 0);
-  const appliedFoodCostPerHour = foodPolicy === "standard" ? foodCostPerHourCheapest : 0;
-  const expectedProfitPerBattle = expectedRevenuePerBattle - (appliedFoodCostPerHour * battleTimeSeconds) / 3600;
-  const expectedProfitPerHourNoSleep = expectedRevenuePerHour - appliedFoodCostPerHour;
-  const sleepMultiplier = 1 / (1 + Math.max(0, Number(zone.cycle?.sleepToBattleForStamina || 0)));
-  const healingMultiplier = Math.max(0, Number(zone.cycle?.battleToSleepForHp || sleepMultiplier));
-  const expectedProfitPerHourWithSleep = expectedProfitPerHourNoSleep * sleepMultiplier;
-  const expectedProfitPerHourHealingWithSleep = expectedProfitPerHourNoSleep * healingMultiplier;
-  const profitMargin = expectedRevenuePerBattle > 0 ? expectedProfitPerBattle / expectedRevenuePerBattle : null;
-  const staminaDrainPerBattle = Math.ceil(battleTimeSeconds * staminaDrainPerSecond);
-  const battlesBeforeSleep = staminaDrainPerBattle > 0 && stamina ? stamina / staminaDrainPerBattle : null;
-  const estimate: BattleEstimate = {
-    value: 0,
-    battleTimeSeconds,
-    enemiesBattled,
-    lootPieces,
-    lootChance,
-    expectedRevenuePerBattle,
-    expectedRevenuePerHour,
-    expectedProfitPerBattle,
-    expectedProfitPerHourNoSleep,
-    expectedProfitPerHourWithSleep,
-    expectedProfitPerHourHealingWithSleep,
-    foodCostPerHourCheapest,
-    profitMargin,
-    staminaLimited,
-    secondsPerEnemy,
-    averageEnemyLevel: enemyLevel,
-    maxStamina: stamina,
-    staminaDrainPerSecond,
-    staminaDrainPerHour: staminaDrainPerSecond * 3600,
-    staminaDrainPerBattle,
-    staminaDurationSeconds,
-    battlesBeforeSleep,
-    sleepMultiplier,
-    healingMultiplier,
-  };
-  estimate.value = getModeValue(estimate, mode);
-  return estimate;
-}
-
-function getBattleProfit(
-  database: PetDatabase | null,
-  pet: PetRecord,
-  stats: Partial<Record<StatKey, number>>,
-  petLevel: number,
-  masteryLootChance: number,
-  mode: BattleProfitMode,
-  foodPolicy: FoodPolicy,
-  battleMapFilter: BattleMapFilter,
-): BattleProfitResult {
+function getBestBattleProfit(pet: PetRecord, mode: BattleProfitMode, foodPolicy: FoodPolicy) {
   const zones = pet.battle?.zones || [];
-  if (battleMapFilter !== BEST_BATTLE_MAP) {
-    const selectedZone = zones.find((zone) => zone.zone === battleMapFilter);
-    const estimate = selectedZone
-      ? estimateBattleZone(database, pet, selectedZone, stats, petLevel, masteryLootChance, mode, foodPolicy)
-      : null;
-    return {
-      value: estimate?.value || 0,
-      zone: selectedZone?.zone || battleMapFilter,
-      mode,
-      selectedMap: battleMapFilter,
-      isBestMap: false,
-      missingSelectedMap: !selectedZone,
-      estimate,
-    };
-  }
-
-  if (!zones.length) {
-    return { value: 0, zone: null, mode: null, selectedMap: BEST_BATTLE_MAP, isBestMap: true, missingSelectedMap: false, estimate: null };
-  }
-
-  return zones.reduce<BattleProfitResult>(
+  return zones.reduce(
     (best, zone) => {
-      const estimate = estimateBattleZone(database, pet, zone, stats, petLevel, masteryLootChance, mode, foodPolicy);
-      const value = estimate.value;
-      if (best.zone && value <= best.value) return best;
+      const value = getZoneProfitValue(zone, mode, foodPolicy);
+      if (value <= best.value) return best;
       return {
         value,
         zone: zone.zone,
         mode,
-        selectedMap: BEST_BATTLE_MAP,
-        isBestMap: true,
-        missingSelectedMap: false,
-        estimate,
       };
     },
-    { value: Number.NEGATIVE_INFINITY, zone: null, mode: null, selectedMap: BEST_BATTLE_MAP, isBestMap: true, missingSelectedMap: false, estimate: null },
+    { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null },
   );
-}
-
-function getProfitMetricLabel(foodPolicy: FoodPolicy) {
-  return foodPolicy === "none" ? "Gross battle value/hr" : "Net battle profit/hr";
-}
-
-function getBattleCardContext(battleProfit: BattleProfitResult) {
-  if (battleProfit.missingSelectedMap) return `${shortBattleZoneLabel(battleProfit.selectedMap)} unavailable`;
-  if (!battleProfit.zone) return "No battle data";
-  return `${battleProfit.isBestMap ? "Best" : "Map"}: ${shortBattleZoneLabel(battleProfit.zone)}`;
 }
 
 function petSearchText(pet: PetRecord) {
@@ -700,7 +457,6 @@ function petSearchText(pet: PetRecord) {
     pet.sourceOverride?.availability,
     ...(pet.sourceOverride?.notes || []),
     ...(pet.acquisition || []).flatMap((entry) => [entry.boss, entry.location, entry.egg]),
-    ...(pet.battle?.zones || []).map((zone) => zone.zone),
   ]
     .filter(Boolean)
     .join(" ")
@@ -817,12 +573,10 @@ function PetCard({
   stats: Partial<Record<StatKey, number>>;
   totalPower: number;
   huntingTime: number;
-  battleProfit: BattleProfitResult;
+  battleProfit: ReturnType<typeof getBestBattleProfit>;
   onInspect: () => void;
 }) {
   const accent = QUALITY_COLORS[pet.quality] || QUALITY_COLORS.UNKNOWN;
-  const battleContext = getBattleCardContext(battleProfit);
-  const battleValue = battleProfit.missingSelectedMap ? "No data" : battleProfit.value ? formatGoldPerHour(battleProfit.value) : formatGold(pet.exchange?.minPrice);
   return (
     <button className="pet-card" onClick={onInspect} style={{ "--quality-accent": accent } as React.CSSProperties}>
       <div className="pet-card-top">
@@ -845,8 +599,8 @@ function PetCard({
         </span>
       </div>
       <div className="pet-card-market">
-        <span>{battleProfit.zone ? battleContext : pet.exchange?.listingCount ? `${pet.exchange.listingCount} listed` : "No listings"}</span>
-        <strong>{battleValue}</strong>
+        <span>{battleProfit.zone ? `Battle: ${battleProfit.zone}` : pet.exchange?.listingCount ? `${pet.exchange.listingCount} listed` : "No listings"}</span>
+        <strong>{battleProfit.value ? `${formatGold(battleProfit.value)}/hr` : formatGold(pet.exchange?.minPrice)}</strong>
       </div>
       <div className="pet-card-market pet-card-market-secondary">
         <span>{pet.exchange?.listingCount ? `${pet.exchange.listingCount} exchange listings` : "No exchange listings"}</span>
@@ -868,10 +622,10 @@ export default function PetsPage() {
   const [petLevel, setPetLevel] = useState(100);
   const [masteryLevel, setMasteryLevel] = useState(100);
   const [evolutionStage, setEvolutionStage] = useState(0);
+  const [evolutionStat, setEvolutionStat] = useState<StatKey | "all">("all");
   const [patBonus, setPatBonus] = useState(false);
   const [battleProfitMode, setBattleProfitMode] = useState<BattleProfitMode>("withSleep");
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
-  const [battleMapFilter, setBattleMapFilter] = useState<BattleMapFilter>(BEST_BATTLE_MAP);
   const [beastmaster, setBeastmaster] = useState(false);
   const [openPetSelect, setOpenPetSelect] = useState<string | null>(null);
   const [selectedPetName, setSelectedPetName] = useState<string | null>(null);
@@ -879,6 +633,7 @@ export default function PetsPage() {
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const [modalRootReady, setModalRootReady] = useState(false);
   const { openItem, openItemByName } = useItemModal();
+  const { activeProfile } = useProfiles();
 
   useEffect(() => {
     setModalRootReady(true);
@@ -901,10 +656,10 @@ export default function PetsPage() {
       if (typeof stored.petLevel === "number") setPetLevel(clampNumber(stored.petLevel, 1, 100));
       if (typeof stored.masteryLevel === "number") setMasteryLevel(clampNumber(stored.masteryLevel, 1, 100));
       if (typeof stored.evolutionStage === "number") setEvolutionStage(clampNumber(stored.evolutionStage, 0, 5));
+      if (stored.evolutionStat) setEvolutionStat(stored.evolutionStat);
       if (typeof stored.patBonus === "boolean") setPatBonus(stored.patBonus);
       if (stored.battleProfitMode) setBattleProfitMode(stored.battleProfitMode);
       if (stored.foodPolicy) setFoodPolicy(stored.foodPolicy === "workbook" ? "standard" : stored.foodPolicy);
-      if (stored.battleMapFilter) setBattleMapFilter(stored.battleMapFilter);
       if (typeof stored.beastmaster === "boolean") setBeastmaster(stored.beastmaster);
     } catch {
       window.localStorage.removeItem(PET_DATABASE_STORAGE_KEY);
@@ -925,10 +680,10 @@ export default function PetsPage() {
       petLevel,
       masteryLevel,
       evolutionStage,
+      evolutionStat,
       patBonus,
       battleProfitMode,
       foodPolicy,
-      battleMapFilter,
       beastmaster,
     };
     window.localStorage.setItem(PET_DATABASE_STORAGE_KEY, JSON.stringify(stored));
@@ -943,10 +698,10 @@ export default function PetsPage() {
     petLevel,
     masteryLevel,
     evolutionStage,
+    evolutionStat,
     patBonus,
     battleProfitMode,
     foodPolicy,
-    battleMapFilter,
     beastmaster,
   ]);
 
@@ -1003,25 +758,16 @@ export default function PetsPage() {
   }, [openPetSelect]);
 
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
-  const masteryLootChance = useMemo(() => getMasteryLootChance(database, masteryLevel), [database, masteryLevel]);
-  const battleMapOptions = useMemo(() => getBattleMapOptions(database), [database]);
-
-  useEffect(() => {
-    if (!database) return;
-    if (battleMapFilter === BEST_BATTLE_MAP) return;
-    if (battleMapOptions.some((option) => option.value === battleMapFilter)) return;
-    setBattleMapFilter(BEST_BATTLE_MAP);
-  }, [battleMapFilter, battleMapOptions, database]);
 
   const petRows = useMemo(() => {
     const pets = database?.pets || [];
     const query = searchTerm.trim().toLowerCase();
     return pets
       .map((pet) => {
-        const stats = calculateStats(pet, petLevel, masteryBonus, evolutionStage, patBonus);
+        const stats = calculateStats(pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
         const totalPower = getTotalPower(stats);
         const huntingTime = getHuntingTimeSeconds(stats);
-        const battleProfit = getBattleProfit(database, pet, stats, petLevel, masteryLootChance, battleProfitMode, foodPolicy, battleMapFilter);
+        const battleProfit = getBestBattleProfit(pet, battleProfitMode, foodPolicy);
         return { pet, stats, totalPower, huntingTime, battleProfit };
       })
       .filter(({ pet }) => {
@@ -1073,12 +819,11 @@ export default function PetsPage() {
     sortDesc,
     petLevel,
     masteryBonus,
-    masteryLootChance,
     evolutionStage,
+    evolutionStat,
     patBonus,
     battleProfitMode,
     foodPolicy,
-    battleMapFilter,
   ]);
 
   const selectedRow = useMemo(
@@ -1089,20 +834,6 @@ export default function PetsPage() {
     () => selectedBattle?.zone.drops?.filter(isDisplayableBattleDrop) || [],
     [selectedBattle],
   );
-  const selectedBattleEstimate = useMemo(() => {
-    if (!selectedBattle) return null;
-    const stats = calculateStats(selectedBattle.pet, petLevel, masteryBonus, evolutionStage, patBonus);
-    return estimateBattleZone(
-      database,
-      selectedBattle.pet,
-      selectedBattle.zone,
-      stats,
-      petLevel,
-      masteryLootChance,
-      battleProfitMode,
-      foodPolicy,
-    );
-  }, [battleProfitMode, database, evolutionStage, foodPolicy, masteryBonus, masteryLootChance, patBonus, petLevel, selectedBattle]);
 
   const counts = database?.meta.counts;
   const bestHunter = petRows.reduce<(typeof petRows)[number] | null>(
@@ -1181,16 +912,16 @@ export default function PetsPage() {
           <ChevronsUp size={18} />
           <div>
             <strong>Scenario Preview</strong>
-            <span>Adjust level, mastery, evolution, battle map, sleep cycle, food cost, and pet effects.</span>
+            <span>Adjust level, mastery, evolution, sleep, food, and pet effects to preview each pet under your setup.</span>
           </div>
         </div>
         <div className="calculator-fields">
           <PetNumberField label="Pet Level" value={petLevel} min={1} max={100} onChange={setPetLevel} />
           <PetNumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
           <PetNumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
-          <PetSelect label="Battle map" value={battleMapFilter} options={battleMapOptions} onChange={setBattleMapFilter} open={openPetSelect === "battle-map"} onOpenChange={(open) => setOpenPetSelect(open ? "battle-map" : null)} />
-          <PetSelect label="Cycle mode" value={battleProfitMode} options={BATTLE_PROFIT_OPTIONS} onChange={setBattleProfitMode} open={openPetSelect === "profit"} onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)} />
-          <PetSelect label="Food cost" value={foodPolicy} options={FOOD_OPTIONS} onChange={setFoodPolicy} open={openPetSelect === "food"} onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)} />
+          <PetSelect label="Evolution stat" value={evolutionStat} options={EVOLUTION_STAT_OPTIONS} onChange={setEvolutionStat} open={openPetSelect === "evolution"} onOpenChange={(open) => setOpenPetSelect(open ? "evolution" : null)} />
+          <PetSelect label="Profit mode" value={battleProfitMode} options={BATTLE_PROFIT_OPTIONS} onChange={setBattleProfitMode} open={openPetSelect === "profit"} onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)} />
+          <PetSelect label="Food" value={foodPolicy} options={FOOD_OPTIONS} onChange={setFoodPolicy} open={openPetSelect === "food"} onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)} />
           <button className={`pet-toggle ${patBonus ? "active" : ""}`} onClick={() => setPatBonus((value) => !value)}>
             <HeartPulse size={16} />
             Pat +5%
@@ -1199,9 +930,23 @@ export default function PetsPage() {
             <PawPrint size={16} />
             Beastmaster
           </button>
+          {activeProfile?.pet?.species ? (
+            <button
+              className="pet-toggle"
+              onClick={() => {
+                setSearchTerm(activeProfile.pet.species);
+                if (typeof activeProfile.pet.level === "number") setPetLevel(clampNumber(activeProfile.pet.level, 1, 100));
+                if (typeof activeProfile.pet.evolution === "number") setEvolutionStage(clampNumber(activeProfile.pet.evolution, 0, 5));
+                if (typeof activeProfile.levels.petMastery === "number") setMasteryLevel(clampNumber(activeProfile.levels.petMastery, 1, 100));
+              }}
+            >
+              <Database size={16} />
+              Use profile pet
+            </button>
+          ) : null}
         </div>
         <div className="pet-effect-note">
-          Battle ranking uses the selected map and cycle. Subtract food cost shows net profit; ignore food cost shows gross battle value.
+          Battle profit uses the selected sleep and food settings. Beastmaster is tracked for pet EXP context.
         </div>
       </section>
 
@@ -1223,10 +968,10 @@ export default function PetsPage() {
             </div>
             <div>
               <BarChart3 size={18} />
-              <span>{foodPolicy === "none" ? "Best Gross Battle" : "Best Net Battle"}</span>
+              <span>Best Battle Profit</span>
               <strong>
                 {bestBattleProfit?.battleProfit.value
-                  ? `${bestBattleProfit.pet.name} - ${formatGoldPerHour(bestBattleProfit.battleProfit.value)} (${shortBattleZoneLabel(bestBattleProfit.battleProfit.zone)})`
+                  ? `${bestBattleProfit.pet.name} - ${formatGold(bestBattleProfit.battleProfit.value)}/hr`
                   : "-"}
               </strong>
             </div>
@@ -1281,12 +1026,7 @@ export default function PetsPage() {
                           <td>{formatNumber(row.totalPower)}</td>
                           <td>{formatNumber(row.stats.movement_speed, 2)}m/s</td>
                           <td>{secondsToDuration(row.huntingTime)}</td>
-                          <td>
-                            <span className="pet-table-stack">
-                              <strong>{row.battleProfit.missingSelectedMap ? "No data" : row.battleProfit.value ? formatGoldPerHour(row.battleProfit.value) : "-"}</strong>
-                              <span>{getBattleCardContext(row.battleProfit)}</span>
-                            </span>
-                          </td>
+                          <td>{row.battleProfit.value ? formatGold(row.battleProfit.value) : "-"}</td>
                           <td>{getPetSourceLabel(row.pet)}</td>
                           <td>{formatGold(row.pet.exchange?.minPrice)}</td>
                         </tr>
@@ -1446,38 +1186,22 @@ export default function PetsPage() {
                   </h3>
                   {selectedRow.pet.battle?.zones?.length ? (
                     <div className="pet-zone-list">
-                      {selectedRow.pet.battle.zones.map((zone) => {
-                        const zoneEstimate = estimateBattleZone(
-                          database,
-                          selectedRow.pet,
-                          zone,
-                          selectedRow.stats,
-                          petLevel,
-                          masteryLootChance,
-                          battleProfitMode,
-                          foodPolicy,
-                        );
-                        return (
-                          <button
-                            type="button"
-                            className={`pet-zone-button ${battleMapFilter === zone.zone ? "selected" : ""}`}
-                            key={zone.zone}
-                            onClick={() => {
-                              setSelectedPetName(null);
-                              setSelectedBattle({ pet: selectedRow.pet, zone });
-                            }}
-                          >
-                            <span className="pet-zone-main">
-                              <span className="pet-zone-name">{shortBattleZoneLabel(zone.zone)}</span>
-                              <span className="pet-zone-meta">
-                                {formatNumber(zoneEstimate.enemiesBattled)} enemies - {formatNumber(zoneEstimate.lootPieces)} loot at {formatPercent(zoneEstimate.lootChance)}
-                              </span>
-                            </span>
-                            <strong className="pet-zone-profit">{formatGoldPerHour(zoneEstimate.value)}</strong>
-                            <span className="pet-zone-time">{secondsToDuration(zoneEstimate.battleTimeSeconds)}</span>
-                          </button>
-                        );
-                      })}
+                      {selectedRow.pet.battle.zones.slice(0, 4).map((zone) => (
+                        <button
+                          type="button"
+                          className="pet-zone-button"
+                          key={zone.zone}
+                          onClick={() => {
+                            setSelectedPetName(null);
+                            setSelectedBattle({ pet: selectedRow.pet, zone });
+                          }}
+                        >
+                          <span>{zone.zone}</span>
+                          <strong>
+                            {secondsToDuration(zone.battleTimeSeconds)} - {zone.enemiesBattled || "-"} enemies
+                          </strong>
+                        </button>
+                      ))}
                     </div>
                   ) : (
                     <p className="pet-muted">No battle data is available for this pet yet.</p>
@@ -1486,7 +1210,7 @@ export default function PetsPage() {
 
                 <div className="pet-research-note">
                   <BadgeInfo size={15} />
-                  <span>Pet stats and battle estimates update from the scenario controls above, including Pet Mastery loot chance and evolution.</span>
+                  <span>Pet stats update from the scenario controls above. Use the evolution stat selector to match how your pet is built.</span>
                 </div>
               </article>
               </div>
@@ -1516,59 +1240,51 @@ export default function PetsPage() {
                   <div>
                     <Zap size={15} />
                     <span>Battle Time</span>
-                    <strong>{secondsToDuration(selectedBattleEstimate?.battleTimeSeconds)}</strong>
+                    <strong>{secondsToDuration(selectedBattle.zone.battleTimeSeconds)}</strong>
                   </div>
                   <div>
                     <Swords size={15} />
                     <span>Enemies</span>
-                    <strong>{formatNumber(selectedBattleEstimate?.enemiesBattled)}</strong>
+                    <strong>{formatNumber(selectedBattle.zone.enemiesBattled)}</strong>
                   </div>
                   <div>
                     <Database size={15} />
                     <span>Loot Pieces</span>
-                    <strong>{formatNumber(selectedBattleEstimate?.lootPieces)}</strong>
+                    <strong>{formatNumber(selectedBattle.zone.lootPieces)}</strong>
                   </div>
                 </div>
                 <div className="pet-source-list">
                   <div>
-                    <span>{getProfitMetricLabel(foodPolicy)}</span>
-                    <strong>{formatGoldPerHour(selectedBattleEstimate?.value)}</strong>
+                    <span>Selected profit/hr</span>
+                    <strong>{formatGold(getZoneProfitValue(selectedBattle.zone, battleProfitMode, foodPolicy))}</strong>
                   </div>
                   <div>
-                    <span>No sleep</span>
-                    <strong>{formatGoldPerHour(selectedBattleEstimate?.expectedProfitPerHourNoSleep)}</strong>
+                    <span>Profit/hr no sleep</span>
+                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourNoSleep)}</strong>
                   </div>
                   <div>
-                    <span>With sleep</span>
-                    <strong>{formatGoldPerHour(selectedBattleEstimate?.expectedProfitPerHourWithSleep)}</strong>
+                    <span>Profit/hr with sleep</span>
+                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourWithSleep)}</strong>
                   </div>
                   <div>
                     <span>Healing + sleep</span>
-                    <strong>{formatGoldPerHour(selectedBattleEstimate?.expectedProfitPerHourHealingWithSleep)}</strong>
+                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerHourHealingWithSleep)}</strong>
                   </div>
                   <div>
-                    <span>Gross/battle</span>
-                    <strong>{formatGold(selectedBattleEstimate?.expectedRevenuePerBattle)}</strong>
+                    <span>Revenue/battle</span>
+                    <strong>{formatGold(selectedBattle.zone.expectedRevenuePerBattle)}</strong>
                   </div>
                   <div>
-                    <span>{foodPolicy === "none" ? "Value/battle" : "Net/battle"}</span>
-                    <strong>{formatGold(selectedBattleEstimate?.expectedProfitPerBattle)}</strong>
+                    <span>Profit/battle</span>
+                    <strong>{formatGold(selectedBattle.zone.expectedProfitPerBattle)}</strong>
                   </div>
                   <div>
                     <span>Food cost/hr</span>
-                    <strong>{formatGoldPerHour(selectedBattleEstimate?.foodCostPerHourCheapest)}</strong>
+                    <strong>{formatGold(selectedBattle.zone.foodCostPerHourCheapest)}</strong>
                   </div>
                   <div>
                     <span>Profit margin</span>
-                    <strong>{formatPercent(selectedBattleEstimate?.profitMargin)}</strong>
-                  </div>
-                  <div>
-                    <span>Loot chance</span>
-                    <strong>{formatPercent(selectedBattleEstimate?.lootChance)}</strong>
-                  </div>
-                  <div>
-                    <span>Seconds / enemy</span>
-                    <strong>{formatNumber(selectedBattleEstimate?.secondsPerEnemy, 1)}s</strong>
+                    <strong>{formatPercent(selectedBattle.zone.profitMargin)}</strong>
                   </div>
                 </div>
                 <div className="pet-detail-section">
@@ -1578,23 +1294,23 @@ export default function PetsPage() {
                   <div className="pet-source-list">
                     <div>
                       <span>Max stamina</span>
-                      <strong>{formatNumber(selectedBattleEstimate?.maxStamina)}</strong>
+                      <strong>{formatNumber(selectedBattle.zone.cycle?.maxStamina)}</strong>
                     </div>
                     <div>
                       <span>Stamina / battle</span>
-                      <strong>{formatNumber(selectedBattleEstimate?.staminaDrainPerBattle)}</strong>
+                      <strong>{formatNumber(selectedBattle.zone.cycle?.staminaDrainPerBattle, 2)}</strong>
                     </div>
                     <div>
                       <span>Stamina / hour</span>
-                      <strong>{formatNumber(selectedBattleEstimate?.staminaDrainPerHour, 2)}</strong>
+                      <strong>{formatNumber(selectedBattle.zone.cycle?.staminaDrainPerHour, 2)}</strong>
                     </div>
                     <div>
                       <span>Battles before sleep</span>
-                      <strong>{formatNumber(selectedBattleEstimate?.battlesBeforeSleep, 1)}</strong>
+                      <strong>{formatNumber(selectedBattle.zone.cycle?.battlesBeforeSleep, 1)}</strong>
                     </div>
                     <div>
                       <span>Zero stamina battle time</span>
-                      <strong>{secondsToDuration(selectedBattleEstimate?.staminaDurationSeconds)}</strong>
+                      <strong>{secondsToDuration(selectedBattle.zone.cycle?.timeBattledForZeroStaminaSeconds)}</strong>
                     </div>
                     <div>
                       <span>Stamina recovery</span>
@@ -1606,11 +1322,7 @@ export default function PetsPage() {
                     </div>
                     <div>
                       <span>Sleep/battle stamina</span>
-                      <strong>{formatNumber(selectedBattleEstimate?.sleepMultiplier ? (1 / selectedBattleEstimate.sleepMultiplier) - 1 : null, 2)}</strong>
-                    </div>
-                    <div>
-                      <span>Estimate cap</span>
-                      <strong>{selectedBattleEstimate?.staminaLimited ? "Stamina limited" : "Battle formula"}</strong>
+                      <strong>{formatNumber(selectedBattle.zone.cycle?.sleepToBattleForStamina, 2)}</strong>
                     </div>
                   </div>
                 </div>
@@ -1657,31 +1369,11 @@ export default function PetsPage() {
                   </h3>
                   <div className="pet-source-list">
                     <div>
-                      <span>Pet level</span>
-                      <strong>{petLevel}</strong>
-                    </div>
-                    <div>
-                      <span>Pet Mastery</span>
-                      <strong>{masteryLevel} - {formatPercent(masteryLootChance)}</strong>
-                    </div>
-                    <div>
-                      <span>Evolution</span>
-                      <strong>{evolutionStage}</strong>
-                    </div>
-                    <div>
-                      <span>Battle map</span>
-                      <strong>{battleMapFilter === BEST_BATTLE_MAP ? "Best map" : shortBattleZoneLabel(battleMapFilter)}</strong>
-                    </div>
-                    <div>
-                      <span>Metric</span>
-                      <strong>{getProfitMetricLabel(foodPolicy)}</strong>
-                    </div>
-                    <div>
-                      <span>Cycle mode</span>
+                      <span>Mode</span>
                       <strong>{BATTLE_PROFIT_OPTIONS.find((option) => option.value === battleProfitMode)?.label}</strong>
                     </div>
                     <div>
-                      <span>Food cost</span>
+                      <span>Food</span>
                       <strong>{FOOD_OPTIONS.find((option) => option.value === foodPolicy)?.label}</strong>
                     </div>
                     <div>
@@ -1692,7 +1384,7 @@ export default function PetsPage() {
                 </div>
                 <div className="pet-research-note">
                   <BadgeInfo size={15} />
-                  <span>Profit shown here follows the selected battle map, cycle mode, food cost setting, Pet Mastery loot chance, and current pet stats. Beastmaster is shown as pet EXP context.</span>
+                  <span>Profit shown here reflects the selected sleep and food settings. Beastmaster is shown as pet EXP context.</span>
                 </div>
               </article>
             </div>

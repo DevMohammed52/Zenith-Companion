@@ -11,7 +11,13 @@
     "rebuild": "node scripts/rebuild-usage-map.mjs",
     "scrape": "SCRAPE_ONCE=true node scraper.mjs",
     "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority",
-    "scrape:pets": "SCRAPE_ONCE=true node scraper.mjs --pets-only"
+    "scrape:pets": "SCRAPE_ONCE=true node scraper.mjs --pets-only",
+    "idlemmo:cache": "node --env-file=.env scripts/fetch-idlemmo-cache.mjs",
+    "idlemmo:guild": "node --env-file=.env scripts/fetch-idlemmo-guild.mjs",
+    "idlemmo:persona": "node --env-file=.env scripts/fetch-idlemmo-persona.mjs",
+    "idlemmo:persona-summary": "node scripts/build-idlemmo-persona-summary.mjs",
+    "idlemmo:derive": "node scripts/build-idlemmo-derived-cache.mjs",
+    "idlemmo:pets": "node scripts/build-pet-database.mjs"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -20,6 +26,9 @@
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
+  "overrides": {
+    "postcss": "8.5.13"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
@@ -27,7 +36,8 @@
     "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
-    "postcss": "^8.5.13",
+    "playwright": "^1.59.1",
+    "postcss": "8.5.13",
     "typescript": "^5"
   }
 }

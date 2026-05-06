@@ -9,11 +9,13 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = Number(process.env.IDLEMMO_API_DELAY_MS || 1100); // IdleMMO limit is 60 requests/min for this key; 1.1s keeps us just under it.
+const API_DELAY_MS = Number(process.env.IDLEMMO_API_DELAY_MS || 1050); // IdleMMO limit is 60 requests/min for this key; 1.05s keeps us just under it.
 const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
+const MARKET_SPIKE_MULTIPLIER = 5;
+const MARKET_SPIKE_MIN_DELTA = 100;
 
 const ALCHEMY_ITEMS = {
     // Level 1-10
@@ -242,6 +244,95 @@ function getRetryDelayMs(response) {
     if (Number.isFinite(retryDate)) return Math.max(retryDate - Date.now(), API_DELAY_MS);
 
     return API_DELAY_MS * 2;
+}
+
+function asPositiveNumber(value) {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function median(values) {
+    const clean = values.map(asPositiveNumber).filter(value => value > 0).sort((a, b) => a - b);
+    if (clean.length === 0) return 0;
+    const mid = Math.floor(clean.length / 2);
+    return clean.length % 2 === 0 ? (clean[mid - 1] + clean[mid]) / 2 : clean[mid];
+}
+
+function weightedAverage(rows) {
+    let totalValue = 0;
+    let totalSold = 0;
+    for (const row of rows) {
+        const price = asPositiveNumber(row.average_price);
+        const sold = asPositiveNumber(row.total_sold);
+        if (price <= 0) continue;
+        if (sold > 0) {
+            totalValue += price * sold;
+            totalSold += sold;
+        }
+    }
+    if (totalSold > 0) return totalValue / totalSold;
+    return median(rows.map(row => row.average_price));
+}
+
+function recentRows(history, days) {
+    const now = Date.now();
+    const cutoff = now - (days * 24 * 60 * 60 * 1000);
+    return history.filter(h => new Date(h.date).getTime() >= cutoff);
+}
+
+function isMarketSpike(value, anchor) {
+    return value > 0
+        && anchor > 0
+        && value >= anchor * MARKET_SPIKE_MULTIPLIER
+        && value - anchor >= MARKET_SPIKE_MIN_DELTA;
+}
+
+function latestSoldMedian(latestSold) {
+    return median((latestSold || []).slice(0, 10).map(sale => sale.price_per_item));
+}
+
+function buildSafeMarketAverages(history, latestSold) {
+    const recentSaleAnchor = latestSoldMedian(latestSold);
+    const allDailyMedian = median(history.map(row => row.average_price));
+
+    const averageForDays = (days) => {
+        const rows = recentRows(history, days);
+        if (rows.length === 0) return { raw: null, safe: null, removed: 0 };
+
+        const raw = weightedAverage(rows);
+        const windowMedian = median(rows.map(row => row.average_price));
+        const anchor = median([recentSaleAnchor, windowMedian, allDailyMedian].filter(value => value > 0));
+        const safeRows = anchor > 0
+            ? rows.filter(row => !isMarketSpike(asPositiveNumber(row.average_price), anchor))
+            : rows;
+        const safe = safeRows.length > 0 ? weightedAverage(safeRows) : anchor || raw;
+
+        return {
+            raw,
+            safe,
+            removed: rows.length - safeRows.length,
+        };
+    };
+
+    const avg3 = averageForDays(3);
+    const avg7 = averageForDays(7);
+    const avg14 = averageForDays(14);
+    const avg30 = averageForDays(30);
+    const rawPrice = avg3.raw ?? avg7.raw ?? avg14.raw ?? avg30.raw ?? 0;
+    const safePrice = avg3.safe ?? avg7.safe ?? avg14.safe ?? avg30.safe ?? rawPrice;
+    const adjusted = rawPrice > 0 && safePrice > 0 && Math.abs(rawPrice - safePrice) > 1;
+
+    return {
+        safePrice,
+        rawPrice,
+        avg3,
+        avg7,
+        avg14,
+        avg30,
+        adjusted,
+        removedRows: avg3.removed + avg7.removed + avg14.removed + avg30.removed,
+        latestSaleMedian: recentSaleAnchor || null,
+    };
 }
 
 async function apiFetch(url, options = {}, attempt = 0) {
@@ -644,22 +735,10 @@ async function fetchItem(itemName, cycleHistoryCache) {
         const history = histData.history_data || [];
         if (history.length === 0) return null;
 
-        const now = Date.now();
-        const getAvg = (days) => {
-            const cutoff = now - (days * 24 * 60 * 60 * 1000);
-            const sales = history.filter(h => new Date(h.date).getTime() >= cutoff);
-            if (sales.length === 0) return null;
-            return sales.reduce((sum, h) => sum + h.average_price, 0) / sales.length;
-        };
-
-        const avg_3 = getAvg(3);
-        const avg_7 = getAvg(7);
-        const avg_14 = getAvg(14);
-        const avg_30 = getAvg(30);
+        const safeMarket = buildSafeMarketAverages(history, histData.latest_sold || []);
 
         const getVol = (days) => {
-            const cutoff = now - (days * 24 * 60 * 60 * 1000);
-            const sales = history.filter(h => new Date(h.date).getTime() >= cutoff);
+            const sales = recentRows(history, days);
             return sales.reduce((sum, h) => sum + (h.total_sold || 0), 0);
         };
         const vol_3 = getVol(3);
@@ -667,19 +746,29 @@ async function fetchItem(itemName, cycleHistoryCache) {
         let latest = history.reduce((latest, current) => new Date(current.date) > new Date(latest.date) ? current : latest, history[0]);
         let latest_price = latest.average_price;
 
-        let a30 = avg_30 !== null ? avg_30 : latest_price;
-        let a14 = avg_14 !== null ? avg_14 : a30;
-        let a7 = avg_7 !== null ? avg_7 : a14;
-        let a3 = avg_3 !== null ? avg_3 : a7;
+        let a30 = safeMarket.avg30.safe !== null ? safeMarket.avg30.safe : latest_price;
+        let a14 = safeMarket.avg14.safe !== null ? safeMarket.avg14.safe : a30;
+        let a7 = safeMarket.avg7.safe !== null ? safeMarket.avg7.safe : a14;
+        let a3 = safeMarket.avg3.safe !== null ? safeMarket.avg3.safe : a7;
 
         const result = {
             hashed_id: itemRecord.hashed_id,
             image_url: itemRecord.image_url,
             price: a3,
+            safe_price: a3,
             avg_3: a3,
             avg_7: a7,
             avg_14: a14,
             avg_30: a30,
+            raw_price: safeMarket.rawPrice,
+            raw_avg_3: safeMarket.avg3.raw,
+            raw_avg_7: safeMarket.avg7.raw,
+            raw_avg_14: safeMarket.avg14.raw,
+            raw_avg_30: safeMarket.avg30.raw,
+            price_adjusted: safeMarket.adjusted,
+            price_warning: safeMarket.adjusted ? "Recent market spike filtered" : undefined,
+            price_outlier_rows: safeMarket.removedRows,
+            latest_sale_median: safeMarket.latestSaleMedian,
             vol_3: vol_3,
             vendor_price: itemRecord.vendor_price || 0,
             last_updated: new Date().toISOString()

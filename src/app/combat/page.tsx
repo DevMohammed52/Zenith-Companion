@@ -9,14 +9,18 @@ import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getItemTrueValue } from "@/lib/ev-logic";
+import { getSafeMarketValue } from "@/lib/market-pricing";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 
 function CombatContent() {
     const router = useRouter();
     const { openItemByName, prefetchItem } = useItemModal();
     const searchParams = useSearchParams();
-    const { staticData, marketData } = useData();
+    const { staticData, marketData, allItemsDb } = useData();
     const { preferences, setPreferences } = usePreferences();
+    const { activeProfile } = useProfiles();
     const [selectedEnemy, setSelectedEnemy] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("ev");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
@@ -44,9 +48,14 @@ function CombatContent() {
 
 
     const combatRows = useMemo(() => {
-        if (!staticData || !marketData) return [];
+        if (!staticData || !marketData || !allItemsDb) return [];
         const calculated = [];
         const parsedKph = Number(preferences.killsPerHour) || 0;
+        const evOptions = {
+            customPrices: preferences.customPrices,
+            marketTaxMultiplier: preferences.membership ? 0.88 : 0.85,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+        };
 
         for (const enemy of staticData.enemies) {
             const chanceOfLoot = (enemy.chance_of_loot || 0) / 100;
@@ -54,9 +63,9 @@ function CombatContent() {
 
             if (enemy.loot) {
                 for (const drop of enemy.loot) {
-                    const price = getSafeMarketPrice(marketData[drop.name]);
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb, 0, evOptions);
                     const dropChance = (drop.chance || 0) / 100;
-                    evPerKill += dropChance * (drop.quantity || 1) * price;
+                    evPerKill += dropChance * (drop.quantity || 1) * trueValue;
                 }
             }
             
@@ -68,16 +77,26 @@ function CombatContent() {
                 profitPerHour: finalEv * parsedKph,
                 dropsCount: enemy.loot?.length || 0,
                 lootDetails: enemy.loot?.map((drop: any) => {
-                    const price = getSafeMarketPrice(marketData[drop.name]);
+                    const price = getSafeMarketValue(marketData[drop.name]);
+                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb, 0, evOptions);
                     const dropChance = (drop.chance || 0) / 100;
-                    const expectedVal = dropChance * (drop.quantity || 1) * price * chanceOfLoot;
-                    return { ...drop, price, expectedVal };
+                    const expectedVal = dropChance * (drop.quantity || 1) * trueValue * chanceOfLoot;
+                    return { ...drop, price, trueValue, expectedVal };
                 }) || []
             });
         }
 
         return calculated;
-    }, [staticData, marketData, preferences.killsPerHour]);
+    }, [
+        staticData,
+        marketData,
+        allItemsDb,
+        activeProfile,
+        preferences.barteringBoost,
+        preferences.customPrices,
+        preferences.killsPerHour,
+        preferences.membership,
+    ]);
 
     const areaSummaries = useMemo(() => {
         const grouped = new Map<string, any[]>();
@@ -460,7 +479,7 @@ function CombatContent() {
                                                  ~{drop.expectedVal.toLocaleString(undefined, {maximumFractionDigits:2})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/kill</span>
                                              </div>
                                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                                 Inspect Item ({drop.price.toLocaleString()}g avg) <ExternalLink size={10} />
+                                                 Inspect Item ({(drop.trueValue || drop.price).toLocaleString(undefined, { maximumFractionDigits: 0 })}g value) <ExternalLink size={10} />
                                              </div>
                                          </div>
                                      </div>

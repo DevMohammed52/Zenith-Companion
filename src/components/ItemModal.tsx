@@ -16,7 +16,9 @@ import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
 import { getLoreEntry, getLoreForItem } from '@/data/lore';
-import { getSafeMarketPrice } from '@/lib/market-pricing';
+import { getSafeMarketValue } from '@/lib/market-pricing';
+import { useProfiles } from '@/lib/profiles';
+import { getProfileBarteringBoost } from '@/lib/profile-calculations';
 
 interface ItemModalProps {
   id: string;
@@ -67,6 +69,7 @@ const getPreferredRecipeNameForOutput = (outputName: string, fallbackName: strin
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
   const { preferences } = usePreferences();
+  const { activeProfile } = useProfiles();
   const { openItemByName, prefetchItem, getCachedItem, setCachedItem } = useItemModal();
   const { queue, addToQueue } = useCrafting();
   const { marketData, allItemsDb } = useData();
@@ -119,10 +122,23 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     fetchItem();
   }, [id, getCachedItem, setCachedItem]);
 
+  const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost;
+
   const intrinsicValue = useMemo(() => {
     if (!item || !marketData || !allItemsDb) return 0;
-    return getItemTrueValue(item.name, marketData, allItemsDb);
-  }, [item, marketData, allItemsDb]);
+    return getItemTrueValue(item.name, marketData, allItemsDb, 0, {
+      customPrices: preferences.customPrices,
+      marketTaxMultiplier: getMarketTaxMultiplier(preferences.membership),
+      barteringBoost: profileBarteringBoost,
+    });
+  }, [
+    item,
+    marketData,
+    allItemsDb,
+    profileBarteringBoost,
+    preferences.customPrices,
+    preferences.membership,
+  ]);
 
   const formatStatName = (name: string) => {
     return name
@@ -176,12 +192,12 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   // Human-readable effect parser
   const parseEffect = (eff: any) => {
     if (!eff || typeof eff !== 'object') return renderValue(eff);
-    const valStr = eff.value_type === 'percentage' ? `${eff.value}%` : 
-                   eff.value_type === 'efficiency' ? `${eff.value}%` : eff.value;
-    const targetStr = eff.target ? ` ${formatStatName(eff.target)}` : '';
-    const attrStr = formatStatName(eff.attribute);
+    const valStr = eff.value_type === 'percentage' ? `${eff.value}%` :
+                   eff.value_type === 'efficiency' ? `${eff.value} efficiency` : renderValue(eff.value);
+    const targetStr = eff.target ? `${formatStatName(eff.target)} ` : '';
+    const attrStr = eff.attribute ? formatStatName(eff.attribute) : formatStatName(eff.type || eff.name || 'Effect');
     const duration = eff.length ? ` (${Math.floor(eff.length / 60000)}m)` : '';
-    return `+${valStr}${targetStr} ${attrStr}${duration}`;
+    return `${targetStr}${attrStr}: +${valStr}${duration}`;
   };
 
   const relationEntry = useMemo(() => {
@@ -238,13 +254,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const saleInsight = useMemo(() => {
     if (!item) return null;
-    const marketGross = getSafeMarketPrice(item) || getSafeMarketPrice(marketData?.[item.name]);
+    const marketGross = getSafeMarketValue(item) || getSafeMarketValue(marketData?.[item.name]);
     const vendorBase = Number(item.vendor_price || 0);
     if (!marketGross && !vendorBase) return null;
 
     const taxRate = getMarketTaxRate(preferences.membership);
-    const marketNet = item.is_tradeable ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
-    const vendorNet = vendorBase * (1 + ((Number(preferences.barteringBoost) || 0) / 100));
+    const marketNet = item.is_tradeable !== false ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
+    const vendorNet = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
     const bestPath = marketNet >= vendorNet ? 'Market' : 'Vendor';
     const bestRevenue = Math.max(marketNet, vendorNet);
 
@@ -257,7 +273,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       taxRate,
       volume: Number(item.vol_3 || marketData?.[item.name]?.vol_3 || 0),
     };
-  }, [item, marketData, preferences.barteringBoost, preferences.membership]);
+  }, [item, marketData, preferences.membership, profileBarteringBoost]);
 
   const showUtility = Object.keys(groupedUtility).length > 0;
   const showMarket = item && item.is_tradeable;
@@ -426,22 +442,22 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               {showMarket && (
                 <div className="bento-card market-card">
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
-                  {saleInsight?.marketGross ? (
+                  {getSafeMarketValue(item) ? (
                     <>
                       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                         <div className="price-row">
                           <div className="price-main">
-                            {Math.round(saleInsight.marketGross).toLocaleString()}g
+                            {Math.round(getSafeMarketValue(item)).toLocaleString()}g
                           </div>
-                          <div className="price-sub">Safe Market Price</div>
+                          <div className="price-sub">Current Market Price</div>
                         </div>
 
-                        {intrinsicValue > 0 && Math.abs(intrinsicValue - saleInsight.marketGross) > 1 && (
+                        {intrinsicValue > 0 && Math.abs(intrinsicValue - getSafeMarketValue(item)) > 1 && (
                           <div className="price-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2rem' }}>
                             <div className="price-main" style={{ color: 'var(--text-accent)' }}>
                               {Math.floor(intrinsicValue).toLocaleString()}g
                             </div>
-                            <div className="price-sub" style={{ color: 'var(--text-accent)' }}>Intrinsic Valuation</div>
+                            <div className="price-sub" style={{ color: 'var(--text-accent)' }}>Best Value Estimate</div>
                           </div>
                         )}
                       </div>
@@ -449,7 +465,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <div className="market-stats">
                         <div className="m-stat">
                           <span>3D Average</span>
-                          <strong>{item.avg_3 ? `${(item.avg_3 || 0).toLocaleString()}g` : '—'}</strong>
+                          <strong>{getSafeMarketValue(item) ? `${Math.round(getSafeMarketValue(item)).toLocaleString()}g` : '—'}</strong>
                         </div>
                         <div className="m-stat">
                           <span>3D Volume</span>
@@ -572,10 +588,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             <span>Max Production</span>
                             <strong>{item.recipe_yield.uses} units</strong>
                         </div>
-                        {(item.recipe_yield.market_price || recipeOutputItem?.avg_3) && (
+                        {(item.recipe_yield.market_price || getSafeMarketValue(recipeOutputItem)) && (
                           <div className="y-stat">
                               <span>Market</span>
-                              <strong>{Math.round(item.recipe_yield.market_price || recipeOutputItem?.avg_3).toLocaleString()}g</strong>
+                              <strong>{Math.round(item.recipe_yield.market_price || getSafeMarketValue(recipeOutputItem)).toLocaleString()}g</strong>
                           </div>
                         )}
                     </div>
@@ -667,8 +683,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 const rawUses = getRecipeUses(item);
                 const uses = rawUses === 'Infinite' ? Infinity : Number(rawUses);
 
-                const recipePrice = item.type === 'RECIPE' ? (item.avg_3 || item.price || 0) : (item.produced_from?.recipe_price || 0);
-                const resultPrice = item.type === 'RECIPE' ? (item.recipe_yield?.market_price || 0) : (item.avg_3 || item.price || 0);
+                const recipePrice = item.type === 'RECIPE' ? getSafeMarketValue(item) : (item.produced_from?.recipe_price || 0);
+                const resultPrice = item.type === 'RECIPE' ? (item.recipe_yield?.market_price || 0) : getSafeMarketValue(item);
 
                 // Math
                 const recipeCostPerCraft = (uses === Infinity) ? 0 : (recipePrice / uses);
@@ -679,7 +695,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
                 const marketRevenue = resultPrice * marketTaxMultiplier;
                 const vendorBase = item.type === 'RECIPE' ? (item.recipe_yield?.vendor_price || 0) : (item.vendor_price || 0);
-                const vendorRevenue = vendorBase * (1 + ((Number(preferences.barteringBoost) || 0) / 100));
+                const vendorRevenue = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
                 
                 const bestRevenue = Math.max(marketRevenue, vendorRevenue);
                 const profit = bestRevenue - investment;
@@ -763,7 +779,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           </div>
                           {vendorBase > 0 && (
                             <div className="analysis-row" style={{ color: bestPath === 'VENDOR' ? 'var(--text-accent)' : 'rgba(255,255,255,0.4)' }}>
-                                <span>Vendor Net <small>(w/ {preferences.barteringBoost}% Barter)</small></span>
+                                <span>Vendor Net <small>(w/ {profileBarteringBoost}% Barter)</small></span>
                                 <strong>{vendorRevenue.toLocaleString()}g</strong>
                             </div>
                           )}

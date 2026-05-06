@@ -14,13 +14,13 @@ export type Preferences = {
   barteringBoost: number | "";
   activeHours: number | "";
   killsPerHour: number | "";
+  worldBossMagicFind: number | "";
   theme: ThemeName;
   combatLevel: number | "";
   strStat: number | "";
   dexStat: number | "";
   defStat: number | "";
   combatStyle: string;
-  worldBossMagicFind: number | "";
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -30,15 +30,15 @@ export const DEFAULT_PREFERENCES: Preferences = {
   skillTools: DEFAULT_TOOL_SELECTIONS,
   customPrices: {},
   barteringBoost: 0,
-  activeHours: 18,
+  activeHours: 0,
   killsPerHour: 360,
+  worldBossMagicFind: 0,
   theme: "ember",
   combatLevel: 96,
   strStat: 80,
   dexStat: 80,
   defStat: 80,
   combatStyle: "sword_shield",
-  worldBossMagicFind: 0,
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";
@@ -51,7 +51,7 @@ const readPreferences = (): Preferences => {
     if (stored) Object.assign(next, JSON.parse(stored));
     next.skillTools = { ...DEFAULT_TOOL_SELECTIONS, ...next.skillTools };
     next.customPrices = { ...next.customPrices };
-  } catch (e) {}
+  } catch {}
   return next;
 };
 
@@ -114,7 +114,7 @@ export function useWatchlist() {
         try {
             const stored = localStorage.getItem(WATCHLIST_STORAGE_KEY);
             if (stored) setWatchlistState(JSON.parse(stored));
-        } catch (e) {}
+        } catch {}
     };
     handleUpdate();
     window.addEventListener("zenith-watchlist-updated", handleUpdate);

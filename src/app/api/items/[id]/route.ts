@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getMerchantBuyPrice } from '@/constants';
-import { getSafeMarketPrice } from '@/lib/market-pricing';
+import { getSafeMarketValue } from '@/lib/market-pricing';
 
 // Singleton caches with timestamps
 const caches: Record<string, { data: any, mtime: number }> = {
@@ -83,14 +83,14 @@ export async function GET(
           item.recipe.ingredients = item.recipe.ingredients.map((ing: any) => {
             const name = ing.name || ing.item_name;
             const ingMarket = marketData[name] || {};
-            return { ...ing, price: getMerchantBuyPrice(name) || getSafeMarketPrice(ingMarket) || 0 };
+            return { ...ing, price: getMerchantBuyPrice(name) || getSafeMarketValue(ingMarket) || 0 };
           });
         }
         if (item.recipe.materials) {
           item.recipe.materials = item.recipe.materials.map((mat: any) => {
             const name = mat.item_name || mat.name;
             const matMarket = marketData[name] || {};
-            return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketPrice(matMarket) || 0 };
+            return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketValue(matMarket) || 0 };
           });
         }
       }
@@ -101,14 +101,14 @@ export async function GET(
           item.produced_from.mats = item.produced_from.mats.map((mat: any) => {
             const name = mat.name;
             const matMarket = marketData[name] || {};
-            return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketPrice(matMarket) || 0 };
+            return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketValue(matMarket) || 0 };
           });
         }
         
         const rName = item.produced_from.recipe_name;
         if (rName) {
           const recipeMarket = marketData[rName] || {};
-          item.produced_from.recipe_price = getSafeMarketPrice(recipeMarket) || 0;
+          item.produced_from.recipe_price = getSafeMarketValue(recipeMarket) || 0;
           
           // To find the recipe's quality, we search by NAME since rName is a string
           const recipeObj = Object.values(allItems || {}).find((it: any) => it.name === rName) || 
@@ -123,7 +123,7 @@ export async function GET(
       if (item.recipe_yield) {
         const yieldMarket = marketData[item.recipe_yield.item_name] || {};
         const yieldItem = allItems?.[item.recipe_yield.item_name] || itemsMap?.[item.recipe_yield.item_name] || {};
-        item.recipe_yield.market_price = getSafeMarketPrice(yieldMarket) || 0;
+        item.recipe_yield.market_price = getSafeMarketValue(yieldMarket) || 0;
         item.recipe_yield.vendor_price = Number(yieldItem.vendor_price || yieldMarket.vendor_price || 0);
         item.recipe_yield.type = yieldItem.type || yieldMarket.type;
         item.recipe_yield.quality = yieldItem.quality || yieldMarket.quality;

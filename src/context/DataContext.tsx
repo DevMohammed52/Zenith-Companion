@@ -3,11 +3,28 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from '@/lib/preferences';
 
+type MarketData = Record<string, any>;
+type StaticData = Record<string, any>;
+type ItemRecord = {
+  name?: string;
+  vendor_price?: number;
+  quality?: string;
+  type?: string;
+} & Record<string, any>;
+type ItemLookup = Record<string, ItemRecord>;
+type ScraperStatus = {
+  timestamp?: string | number;
+  last_updated?: string | number;
+  currentItem?: string;
+  currentIndex?: string | number;
+  totalItems?: string | number;
+} & Record<string, unknown>;
+
 type DataContextType = {
-  marketData: any | null;
-  staticData: any | null;
-  allItemsDb: any | null;
-  scraperStatus: any | null;
+  marketData: MarketData | null;
+  staticData: StaticData | null;
+  allItemsDb: ItemLookup | null;
+  scraperStatus: ScraperStatus | null;
   loading: boolean;
   refresh: () => Promise<void>;
 };
@@ -15,10 +32,10 @@ type DataContextType = {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [marketData, setMarketData] = useState<any>(null);
-  const [staticData, setStaticData] = useState<any>(null);
-  const [allItemsDb, setAllItemsDb] = useState<any>(null);
-  const [scraperStatus, setScraperStatus] = useState<any>(null);
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+  const [staticData, setStaticData] = useState<StaticData | null>(null);
+  const [allItemsDb, setAllItemsDb] = useState<ItemLookup | null>(null);
+  const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Initialize and Sync Theme
@@ -32,7 +49,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         } else {
           applyTheme(DEFAULT_PREFERENCES.theme);
         }
-      } catch (e) {
+      } catch {
         applyTheme(DEFAULT_PREFERENCES.theme);
       }
     };
@@ -61,9 +78,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (statusRes.ok) setScraperStatus(await statusRes.json());
       
       if (itemsRes.ok) {
-        const data = await itemsRes.json();
-        const byName: any = {};
-        Object.values(data).forEach((item: any) => {
+        const data = await itemsRes.json() as ItemLookup;
+        const byName: ItemLookup = {};
+        Object.values(data).forEach((item) => {
             if (item.name) byName[item.name] = item;
         });
         setAllItemsDb(byName);

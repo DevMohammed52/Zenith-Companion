@@ -20,11 +20,13 @@ import {
   X,
 } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
 import { useData } from "@/context/DataContext";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getSafeMarketValue } from "@/lib/market-pricing";
 
 type Trend = "up" | "down" | "flat";
 type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
@@ -36,6 +38,7 @@ type MarketData = {
   avg_7?: number;
   avg_14?: number;
   avg_30?: number;
+  price?: number;
   vol_3?: number;
   vendor_price?: number;
   quality?: string;
@@ -116,8 +119,8 @@ type PersistedAlchemySettings = {
   sortDesc: boolean;
 };
 
-const formatGold = (value: number, digits = 0) =>
-  value.toLocaleString(undefined, { maximumFractionDigits: digits });
+const formatGold = (value: number, _digits = 0) =>
+  Math.round(value).toLocaleString();
 
 const formatSignedGold = (value: number, digits = 0) =>
   `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
@@ -142,7 +145,7 @@ const getItemPrice = (
   const custom = getCustomPrice(customPrices, name);
   if (custom > 0) return { price: custom, source: "custom" };
 
-  const market = getSafeMarketPrice(marketData?.[name]);
+  const market = getSafeMarketValue(marketData?.[name]);
   if (market > 0) return { price: market, source: "market" };
 
   const vendor = VIAL_COSTS[name] || 0;
@@ -211,7 +214,8 @@ function readAlchemySettings(): Partial<PersistedAlchemySettings> {
 
 function AlchemyContent() {
   const { marketData: data, scraperStatus } = useData();
-  const { preferences, setPreferences } = usePreferences();
+  const { preferences } = usePreferences();
+  const { activeProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
   const searchParams = useSearchParams();
 
@@ -292,8 +296,9 @@ function AlchemyContent() {
   };
 
   const marketData = useMemo(() => (data || {}) as Record<string, MarketData>, [data]);
-  const parsedActiveHours = Number(preferences.activeHours) || 0;
-  const parsedBartering = Number(preferences.barteringBoost) || 0;
+  const parsedActiveHours = Number(activeProfile?.timers.activeHours || preferences.activeHours) || 0;
+  const activeHoursSource = activeProfile ? "Profile" : "Settings";
+  const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0;
   const marketTaxRate = getMarketTaxRate(preferences.membership);
   const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
@@ -576,15 +581,10 @@ function AlchemyContent() {
         </div>
 
         <div className="control-group">
-          <label className="control-label">Bartering Boost (%)</label>
-          <input
-            type="number"
-            className="control-input"
-            min="0"
-            max="20"
-            value={preferences.barteringBoost}
-            onChange={(e) => setPreferences({ barteringBoost: e.target.value === "" ? "" : Math.min(20, Math.max(0, Number(e.target.value) || 0)) })}
-          />
+          <label className="control-label">Bartering Bonus</label>
+          <div className="control-input" aria-label="Active profile bartering bonus">
+            +{parsedBartering}% {activeProfile ? "from profile" : "legacy setting"}
+          </div>
         </div>
 
         <div className="alchemy-toggle-row">
@@ -598,7 +598,7 @@ function AlchemyContent() {
             <PackageCheck size={15} /> Owned mode
           </button>
           <span className="alchemy-settings-pill">
-            <Clock size={14} /> {parsedActiveHours}h/day from Settings
+            <Clock size={14} /> {parsedActiveHours}h/day from {activeHoursSource}
           </span>
         </div>
       </div>

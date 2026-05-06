@@ -8,21 +8,54 @@ interface SearchIndexItem {
   name: string;
 }
 
+type CachedItem = Record<string, unknown>;
+
 interface ItemModalContextType {
   openItem: (id: string) => void;
   openItemByName: (name: string) => void;
   prefetchItem: (idOrName: string) => void;
   closeItem: () => void;
-  getCachedItem: (id: string) => any;
-  setCachedItem: (id: string, data: any) => void;
+  getCachedItem: (id: string) => CachedItem | undefined;
+  setCachedItem: (id: string, data: CachedItem) => void;
 }
 
 const ItemModalContext = createContext<ItemModalContextType | undefined>(undefined);
 
+function findSearchIndexItem(searchIndex: SearchIndexItem[], name: string) {
+  let found = searchIndex.find(i => i.name.toLowerCase() === name.toLowerCase());
+
+  if (!found) {
+    const variants = [];
+    if (name.startsWith('Recipe: ')) {
+      const base = name.replace('Recipe: ', '');
+      variants.push(base + ' Recipe');
+      variants.push(base + ' Recipe (Untradable)');
+      variants.push(base + ' (Untradable)');
+
+      if (!base.toLowerCase().includes('crystal')) {
+        variants.push(base + ' Crystal (Untradable)');
+        variants.push(base + ' Crystal Recipe');
+      }
+    } else if (name.endsWith(' Recipe')) {
+      const base = name.replace(' Recipe', '');
+      variants.push('Recipe: ' + base);
+      variants.push(base + ' (Untradable)');
+    }
+
+    for (const variant of variants) {
+      found = searchIndex.find(i => i.name.toLowerCase() === variant.toLowerCase());
+      if (found) break;
+    }
+  }
+
+  return found;
+}
+
 export function ItemModalProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [searchIndex, setSearchIndex] = useState<SearchIndexItem[]>([]);
-  const [itemCache] = useState<Map<string, any>>(new Map());
+  const [pendingItemName, setPendingItemName] = useState<string | null>(null);
+  const [itemCache] = useState<Map<string, CachedItem>>(new Map());
 
   useEffect(() => {
     fetch('/search-index.json')
@@ -31,20 +64,29 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!pendingItemName || searchIndex.length === 0) return;
+    const found = findSearchIndexItem(searchIndex, pendingItemName);
+    if (found) {
+      setActiveId(found.id);
+      setPendingItemName(null);
+    }
+  }, [pendingItemName, searchIndex]);
+
   const getCachedItem = React.useCallback((id: string) => itemCache.get(id), [itemCache]);
-  const setCachedItem = React.useCallback((id: string, data: any) => itemCache.set(id, data), [itemCache]);
+  const setCachedItem = React.useCallback((id: string, data: CachedItem) => itemCache.set(id, data), [itemCache]);
 
   const prefetchItem = React.useCallback(async (idOrName: string) => {
     let id = idOrName;
     if (!idOrName.includes('-') && idOrName.length < 50) {
-        const found = searchIndex.find(i => i.name.toLowerCase() === idOrName.toLowerCase());
+        const found = findSearchIndexItem(searchIndex, idOrName);
         if (found) id = found.id;
     }
 
     if (itemCache.has(id)) return;
     
     try {
-        const res = await fetch(`/api/items/${id}`);
+        const res = await fetch(`/api/items/${encodeURIComponent(id)}`);
         if (res.ok) {
             const data = await res.json();
             itemCache.set(id, data);
@@ -57,35 +99,12 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const openItemByName = React.useCallback((name: string) => {
-    let found = searchIndex.find(i => i.name.toLowerCase() === name.toLowerCase());
-    
-    // Fuzzy fallback for recipes if exact name match fails
-    if (!found) {
-      const variants = [];
-      if (name.startsWith('Recipe: ')) {
-        const base = name.replace('Recipe: ', '');
-        variants.push(base + ' Recipe');
-        variants.push(base + ' Recipe (Untradable)');
-        variants.push(base + ' (Untradable)');
-        
-        if (!base.toLowerCase().includes('crystal')) {
-          variants.push(base + ' Crystal (Untradable)');
-          variants.push(base + ' Crystal Recipe');
-        }
-      } else if (name.endsWith(' Recipe')) {
-        const base = name.replace(' Recipe', '');
-        variants.push('Recipe: ' + base);
-        variants.push(base + ' (Untradable)');
-      }
-      
-      for (const variant of variants) {
-        found = searchIndex.find(i => i.name.toLowerCase() === variant.toLowerCase());
-        if (found) break;
-      }
-    }
-
+    const found = findSearchIndexItem(searchIndex, name);
     if (found) {
       setActiveId(found.id);
+      setPendingItemName(null);
+    } else if (searchIndex.length === 0) {
+      setPendingItemName(name);
     }
   }, [searchIndex]);
 

@@ -61,7 +61,7 @@ export default function CraftingPage() {
         const matches = q
             ? recipeOptions.filter((option) => option.searchText.includes(q))
             : recipeOptions;
-        return matches.slice(0, 48);
+        return matches;
     }, [recipeOptions, recipeSearch]);
 
     const selectedRecipe = useMemo(

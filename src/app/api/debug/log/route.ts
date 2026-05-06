@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     
     fs.appendFileSync(logPath, logEntry);
     return NextResponse.json({ success: true });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }

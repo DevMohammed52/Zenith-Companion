@@ -1,232 +1,272 @@
-/**
- * Shared Expected Value (EV) logic for Zenith Companion.
- * Values drops by their best practical path: market sale, vendor sale,
- * chest contents, or recipe-to-crafted-output profit.
- */
 
 import { getMerchantBuyPrice } from "@/constants";
-import { getSafeMarketPriceInfo } from "@/lib/market-pricing";
+import { getSafeMarketValue } from "@/lib/market-pricing";
 
-const MARKET_TAX_MULTIPLIER = 0.85;
-
-export type ValuePath = "market" | "vendor" | "chest" | "craft" | "missing";
-
-export type ItemValueBreakdown = {
-  name: string;
-  value: number;
-  path: ValuePath;
-  marketValue: number;
-  vendorValue: number;
-  chestValue?: number;
-  chestDropDetails?: Array<{
-    name: string;
-    chance: number;
-    quantity: number;
-    itemValue: number;
-    expectedValue: number;
-    path: ValuePath;
-    marketValue: number;
-    vendorValue: number;
-    craftedItemName?: string;
-    craftedValue?: number;
-    materialCost?: number;
-    craftValue?: number;
-    warnings?: string[];
-  }>;
-  craftValue?: number;
-  craftedItemName?: string;
-  craftedValue?: number;
-  materialCost?: number;
-  recipeUses?: number;
-  craftMaterialDetails?: Array<{
-    name: string;
-    quantity: number;
-    unitCost: number;
-    totalCost: number;
-  }>;
-  marketVolume?: number;
-  warnings: string[];
+export type TrueValueMarketItem = {
+    avg_3?: number;
+    avg_7?: number;
+    avg_14?: number;
+    avg_30?: number;
+    price?: number;
+    vendor_price?: number;
+    is_tradeable?: boolean;
+    vol_3?: number;
 };
 
-type ChestDropValueDetail = NonNullable<ItemValueBreakdown["chestDropDetails"]>[number];
-type CraftMaterialValueDetail = NonNullable<ItemValueBreakdown["craftMaterialDetails"]>[number];
+export type TrueValueDbItem = {
+    name?: string;
+    type?: string;
+    is_tradeable?: boolean;
+    vendor_price?: number;
+    loot_table?: TrueValueDrop[];
+    chest_drops?: TrueValueDrop[];
+    recipe_yield?: {
+        item_name?: string;
+        uses?: number | string;
+    } | null;
+    recipe?: {
+        max_uses?: number | string;
+        result?: {
+            item_name?: string;
+            name?: string;
+        } | null;
+        ingredients?: TrueValueIngredient[];
+        materials?: TrueValueIngredient[];
+    } | null;
+};
 
-type ItemLookup = Record<string, any> | null | undefined;
-type MarketLookup = Record<string, any> | null | undefined;
+export type TrueValueDrop = {
+    name?: string;
+    item_name?: string;
+    chance?: number;
+    quantity?: number;
+};
 
-function normalizeName(name: string) {
-  return name.trim().toLowerCase();
-}
+export type TrueValueIngredient = {
+    name?: string;
+    item_name?: string;
+    amount?: number;
+    quantity?: number;
+};
 
-function getItemByName(itemName: string, allItemsDb: ItemLookup) {
-  if (!allItemsDb || !itemName) return null;
-  const direct = allItemsDb[itemName];
-  if (direct) return direct;
-  const wanted = normalizeName(itemName);
-  return Object.values(allItemsDb).find((item: any) => normalizeName(String(item?.name || "")) === wanted) || null;
-}
+export type TrueValueOptions = {
+    customPrices?: Record<string, number>;
+    marketTaxMultiplier?: number;
+    barteringBoost?: number | "";
+};
 
-function getMarketEntry(itemName: string, marketData: MarketLookup) {
-  if (!marketData || !itemName) return null;
-  const direct = marketData[itemName];
-  if (direct) return direct;
-  const wanted = normalizeName(itemName);
-  return Object.entries(marketData).find(([name]) => normalizeName(name) === wanted)?.[1] || null;
-}
+export type TrueValueMarketData = Record<string, TrueValueMarketItem>;
+export type TrueValueItemDb = Record<string, TrueValueDbItem>;
 
-function getSafeMarketGross(itemName: string, marketData: MarketLookup) {
-  const entry = getMarketEntry(itemName, marketData);
-  if (!entry) return { value: 0, volume: 0, warning: null as string | null };
+export type TrueValuePath = "market" | "vendor" | "chest_ev" | "recipe_craft" | "missing";
 
-  const safe = getSafeMarketPriceInfo(entry);
-  return { value: safe.value, volume: safe.volume3d, warning: safe.reason };
-}
-
-function getVendorValue(itemName: string, item: any, marketData: MarketLookup) {
-  const marketEntry = getMarketEntry(itemName, marketData);
-  return Number(item?.vendor_price || marketEntry?.vendor_price || 0);
-}
-
-function getMarketSellNet(itemName: string, item: any, marketData: MarketLookup) {
-  if (item?.is_tradeable === false) return { value: 0, volume: 0, warning: null as string | null };
-  const market = getSafeMarketGross(itemName, marketData);
-  return {
-    value: market.value * MARKET_TAX_MULTIPLIER,
-    volume: market.volume,
-    warning: market.warning,
-  };
-}
-
-function getMaterialCost(itemName: string, marketData: MarketLookup, allItemsDb: ItemLookup) {
-  const item = getItemByName(itemName, allItemsDb);
-  const market = getSafeMarketGross(itemName, marketData);
-  if (market.value > 0) return market.value;
-  const merchant = getMerchantBuyPrice(itemName);
-  if (merchant) return merchant;
-  return getVendorValue(itemName, item, marketData);
-}
-
-function pickBestBaseValue(itemName: string, item: any, marketData: MarketLookup) {
-  const market = getMarketSellNet(itemName, item, marketData);
-  const vendorValue = getVendorValue(itemName, item, marketData);
-  const warnings = market.warning ? [market.warning] : [];
-  if (market.value <= 0 && vendorValue <= 0) {
-    return { value: 0, path: "missing" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
-  }
-  if (vendorValue > market.value) {
-    return { value: vendorValue, path: "vendor" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
-  }
-  return { value: market.value, path: "market" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
-}
-
-export function getItemValueBreakdown(
-  itemName: string,
-  marketData: MarketLookup,
-  allItemsDb: ItemLookup,
-  depth = 0,
-): ItemValueBreakdown {
-  if (depth > 4) {
-    return {
-      name: itemName,
-      value: 0,
-      path: "missing",
-      marketValue: 0,
-      vendorValue: 0,
-      warnings: ["Value recursion limit"],
+export type TrueValueBreakdown = {
+    itemName: string;
+    value: number;
+    directValue: number;
+    marketNet: number;
+    vendorNet: number;
+    chosenPath: TrueValuePath;
+    recipe?: {
+        resultName: string;
+        resultValue: number;
+        materialCost: number;
+        uses: number;
+        craftValue: number;
+        materials: Array<{
+            name: string;
+            quantity: number;
+            unitCost: number;
+            totalCost: number;
+        }>;
     };
-  }
-
-  const item = getItemByName(itemName, allItemsDb);
-  const base = pickBestBaseValue(itemName, item, marketData);
-  const result: ItemValueBreakdown = {
-    name: itemName,
-    value: base.value,
-    path: base.path,
-    marketValue: base.marketValue,
-    vendorValue: base.vendorValue,
-    marketVolume: base.marketVolume,
-    warnings: [...base.warnings],
-  };
-
-  if (!item) return result;
-
-  const loot = item.loot_table || item.chest_drops;
-  if (Array.isArray(loot) && loot.length > 0) {
-    const chestDropDetails: ChestDropValueDetail[] = loot.map((drop: any) => {
-      const dropName = drop.item_name || drop.name;
-      const chance = Number(drop.chance || 0) / 100;
-      const quantity = Number(drop.quantity || drop.amount || 1);
-      const breakdown = getItemValueBreakdown(dropName, marketData, allItemsDb, depth + 1);
-      return {
-        name: dropName,
-        chance,
-        quantity,
-        itemValue: breakdown.value,
-        expectedValue: chance * quantity * breakdown.value,
-        path: breakdown.path,
-        marketValue: breakdown.marketValue,
-        vendorValue: breakdown.vendorValue,
-        craftedItemName: breakdown.craftedItemName,
-        craftedValue: breakdown.craftedValue,
-        materialCost: breakdown.materialCost,
-        craftValue: breakdown.craftValue,
-        warnings: breakdown.warnings,
-      };
-    });
-    const chestValue = chestDropDetails.reduce((total: number, drop: ChestDropValueDetail) => total + drop.expectedValue, 0);
-    result.chestValue = chestValue;
-    result.chestDropDetails = chestDropDetails;
-    if (chestValue > result.value) {
-      result.value = chestValue;
-      result.path = "chest";
-    }
-  }
-
-  const recipe = item.recipe;
-  const craftedItemName = recipe?.result?.item_name || item.recipe_yield?.item_name;
-  if ((item.type === "RECIPE" || craftedItemName) && craftedItemName) {
-    const crafted = getItemValueBreakdown(craftedItemName, marketData, allItemsDb, depth + 1);
-    const uses = Number(recipe?.max_uses || item.recipe_yield?.uses || 1);
-    const safeUses = Number.isFinite(uses) && uses > 0 ? uses : 1;
-    const materials = Array.isArray(recipe?.materials)
-      ? recipe.materials
-      : Array.isArray(recipe?.ingredients)
-        ? recipe.ingredients
-        : [];
-    const craftMaterialDetails: CraftMaterialValueDetail[] = materials.map((material: any) => {
-      const materialName = material.item_name || material.name;
-      const quantity = Number(material.quantity || material.amount || 1);
-      const unitCost = getMaterialCost(materialName, marketData, allItemsDb);
-      return {
-        name: materialName,
-        quantity,
-        unitCost,
-        totalCost: quantity * unitCost,
-      };
-    });
-    const materialCost = craftMaterialDetails.reduce((total: number, material: CraftMaterialValueDetail) => total + material.totalCost, 0);
-    const craftValue = Math.max(0, (crafted.value - materialCost) * safeUses);
-    result.craftedItemName = craftedItemName;
-    result.craftedValue = crafted.value;
-    result.materialCost = materialCost * safeUses;
-    result.recipeUses = safeUses;
-    result.craftMaterialDetails = craftMaterialDetails;
-    result.craftValue = craftValue;
-    result.warnings.push(...crafted.warnings.map((warning) => `${craftedItemName}: ${warning}`));
-    if (craftValue > result.value) {
-      result.value = craftValue;
-      result.path = "craft";
-    }
-  }
-
-  return result;
-}
+    chest?: {
+        expectedValue: number;
+        drops: Array<{
+            name: string;
+            chance: number;
+            quantity: number;
+            value: number;
+            expectedValue: number;
+            path: TrueValuePath;
+        }>;
+    };
+};
 
 export function getItemTrueValue(
-  itemName: string,
-  marketData: MarketLookup,
-  allItemsDb: ItemLookup,
-  depth = 0,
+    itemName: string,
+    marketData: TrueValueMarketData | null | undefined,
+    allItemsDb: TrueValueItemDb | null | undefined,
+    depth = 0,
+    options: TrueValueOptions = {},
 ): number {
-  return getItemValueBreakdown(itemName, marketData, allItemsDb, depth).value;
+    return getItemTrueValueBreakdown(itemName, marketData, allItemsDb, depth, options).value;
+}
+
+export function getItemTrueValueBreakdown(
+    itemName: string,
+    marketData: TrueValueMarketData | null | undefined,
+    allItemsDb: TrueValueItemDb | null | undefined,
+    depth = 0,
+    options: TrueValueOptions = {},
+): TrueValueBreakdown {
+    const empty = {
+        itemName,
+        value: 0,
+        directValue: 0,
+        marketNet: 0,
+        vendorNet: 0,
+        chosenPath: "missing" as const,
+    };
+    if (depth > 3) return empty; // Prevent infinite recursion
+    if (!itemName) return empty;
+
+    const mData = marketData?.[itemName];
+    const dbItem = allItemsDb?.[itemName];
+    const direct = getDirectSellBreakdown(itemName, mData, dbItem, options);
+    const directValue = direct.value;
+    let best: TrueValueBreakdown = {
+        itemName,
+        value: directValue,
+        directValue,
+        marketNet: direct.marketNet,
+        vendorNet: direct.vendorNet,
+        chosenPath: direct.chosenPath,
+    };
+
+    if (!dbItem) return best;
+
+    // Chests can be worth their contents even when the listed market is thin.
+    const loot = dbItem.loot_table || dbItem.chest_drops;
+    if (loot && loot.length > 0) {
+        let chestEV = 0;
+        const chestDrops = [];
+        for (const drop of loot) {
+            const dropName = drop.item_name || drop.name;
+            const dropChance = (drop.chance || 0) / 100;
+            const dropQty = drop.quantity || 1;
+            const dropBreakdown = getItemTrueValueBreakdown(dropName || "", marketData, allItemsDb, depth + 1, options);
+            const dropVal = dropBreakdown.value;
+            const expectedValue = dropChance * dropQty * dropVal;
+            chestEV += expectedValue;
+            chestDrops.push({
+                name: dropName || "Unknown item",
+                chance: drop.chance || 0,
+                quantity: dropQty,
+                value: dropVal,
+                expectedValue,
+                path: dropBreakdown.chosenPath,
+            });
+        }
+        const chest = { expectedValue: chestEV, drops: chestDrops };
+        if (chestEV > best.value || dbItem.is_tradeable === false) {
+            best = {
+                ...best,
+                value: Math.max(chestEV, best.vendorNet),
+                chosenPath: chestEV >= best.vendorNet ? "chest_ev" : "vendor",
+                chest,
+            };
+        } else {
+            best.chest = chest;
+        }
+        return best;
+    }
+
+    // Recipes are valued by either selling the recipe or using its remaining crafts.
+    if (dbItem.type === "RECIPE" || dbItem.recipe_yield) {
+        const yieldData = dbItem.recipe_yield;
+        const resultName = yieldData?.item_name || dbItem.recipe?.result?.item_name || dbItem.recipe?.result?.name;
+        if (!resultName) return best;
+
+        const resultVal = getItemTrueValue(resultName, marketData, allItemsDb, depth + 1, options);
+        let matCosts = 0;
+        const materialBreakdown = [];
+        const mats = dbItem.recipe?.ingredients || dbItem.recipe?.materials || [];
+        for (const mat of mats) {
+            const matName = mat.name || mat.item_name || "";
+            const quantity = mat.amount || mat.quantity || 1;
+            const matPrice = getAcquisitionCost(matName, marketData, options.customPrices);
+            const totalCost = matPrice * quantity;
+            matCosts += totalCost;
+            materialBreakdown.push({ name: matName, quantity, unitCost: matPrice, totalCost });
+        }
+
+        const rawUses = yieldData?.uses || dbItem.recipe?.max_uses;
+        const uses = rawUses === "Infinite" ? 1 : Number(rawUses);
+        const craftingROI = (resultVal - matCosts) * (Number.isFinite(uses) && uses > 0 ? uses : 1);
+        const craftUses = Number.isFinite(uses) && uses > 0 ? uses : 1;
+
+        if (craftingROI > best.value || dbItem.is_tradeable === false) {
+            best = {
+                ...best,
+                value: dbItem.is_tradeable === false ? Math.max(0, best.vendorNet, craftingROI) : Math.max(directValue, craftingROI),
+                chosenPath: craftingROI >= Math.max(directValue, best.vendorNet) ? "recipe_craft" : best.chosenPath,
+                recipe: {
+                    resultName,
+                    resultValue: resultVal,
+                    materialCost: matCosts,
+                    uses: craftUses,
+                    craftValue: craftingROI,
+                    materials: materialBreakdown,
+                },
+            };
+        } else {
+            best.recipe = {
+                resultName,
+                resultValue: resultVal,
+                materialCost: matCosts,
+                uses: craftUses,
+                craftValue: craftingROI,
+                materials: materialBreakdown,
+            };
+        }
+
+        return best;
+    }
+
+    return best;
+}
+
+function getDirectSellBreakdown(
+    itemName: string,
+    marketItem: TrueValueMarketItem | undefined,
+    dbItem: TrueValueDbItem | undefined,
+    options: TrueValueOptions,
+) {
+    const customPrice = getCustomPrice(options.customPrices, itemName);
+    const marketGross = customPrice || getSafeMarketValue(marketItem);
+    const canMarketSell = customPrice > 0 || dbItem?.is_tradeable !== false;
+    const marketNet = canMarketSell ? marketGross * (options.marketTaxMultiplier ?? 0.85) : 0;
+    const vendorNet = getVendorNet(marketItem, dbItem, options);
+    return {
+        value: Math.max(marketNet, vendorNet),
+        marketNet,
+        vendorNet,
+        chosenPath: marketNet >= vendorNet ? "market" as const : "vendor" as const,
+    };
+}
+
+function getVendorNet(
+    marketItem: TrueValueMarketItem | undefined,
+    dbItem: TrueValueDbItem | undefined,
+    options: TrueValueOptions,
+) {
+    const base = Number(dbItem?.vendor_price || marketItem?.vendor_price || 0);
+    const boost = (Number(options.barteringBoost) || 0) / 100;
+    return base * (1 + boost);
+}
+
+function getAcquisitionCost(
+    itemName: string,
+    marketData: TrueValueMarketData | null | undefined,
+    customPrices?: Record<string, number>,
+) {
+    const customPrice = getCustomPrice(customPrices, itemName);
+    if (customPrice > 0) return customPrice;
+    return getMerchantBuyPrice(itemName) || getSafeMarketValue(marketData?.[itemName]);
+}
+
+function getCustomPrice(customPrices: Record<string, number> | undefined, itemName: string) {
+    const custom = Number(customPrices?.[itemName] || 0);
+    return Number.isFinite(custom) && custom > 0 ? custom : 0;
 }

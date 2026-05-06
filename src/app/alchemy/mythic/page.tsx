@@ -5,10 +5,12 @@ import { DollarSign, Hammer, Plus, Search, Sparkles, TrendingUp, X } from "lucid
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { getMerchantBuyPrice } from "@/constants";
-import { getSafeMarketPriceInfo } from "@/lib/market-pricing";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
-type PriceSource = "custom" | "settings" | "3d" | "7d" | "14d" | "30d" | "merchant" | "vendor" | "none";
+type PriceSource = "custom" | "settings" | "guarded" | "3d" | "7d" | "14d" | "30d" | "merchant" | "vendor" | "none";
 type RecipeCostMode = "full" | "remaining" | "owned";
 type BestPath = "MARKET" | "VENDOR" | "CUSTOM";
 
@@ -17,6 +19,14 @@ type MarketItem = {
   avg_7?: number;
   avg_14?: number;
   avg_30?: number;
+  price?: number;
+  safe_price?: number;
+  raw_price?: number;
+  raw_avg_3?: number;
+  raw_avg_7?: number;
+  raw_avg_14?: number;
+  raw_avg_30?: number;
+  price_adjusted?: boolean;
   vol_3?: number;
   vendor_price?: number;
 };
@@ -79,8 +89,8 @@ const isFinitePositive = (value: unknown): value is number =>
 const isNonNegativeNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= 0;
 
-const formatGold = (value: number, digits = 0) =>
-  value.toLocaleString(undefined, { maximumFractionDigits: digits });
+const formatGold = (value: number, _digits = 0) =>
+  Math.round(value).toLocaleString();
 
 const formatSignedGold = (value: number, digits = 0) =>
   `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
@@ -90,6 +100,7 @@ const formatSource = (source: PriceSource) => {
   if (source === "settings") return "Settings custom";
   if (source === "merchant") return "Merchant buy cost";
   if (source === "vendor") return "Vendor sell fallback";
+  if (source === "guarded") return "Guarded market value";
   if (source === "none") return "No price data";
   return `${source.toUpperCase()} market avg`;
 };
@@ -139,6 +150,7 @@ const clampUses = (value: string | number, maxUses: number) => {
 export default function MythicAlchemyPage() {
   const { marketData: data, allItemsDb } = useData();
   const { preferences } = usePreferences();
+  const { activeProfile } = useProfiles();
   const { openItemByName } = useItemModal();
   const [activeRecipeNames, setActiveRecipeNames] = useState<string[]>([]);
   const [customRecipePrices, setCustomRecipePrices] = useState<Record<string, number>>({});
@@ -246,8 +258,10 @@ export default function MythicAlchemyPage() {
   const getMarketAverage = useCallback((itemName: string): { price: number; source: PriceSource } => {
     const item = marketData[itemName];
     if (!item) return { price: 0, source: "none" };
-    const safe = getSafeMarketPriceInfo(item);
-    if (safe.value > 0) return { price: safe.value, source: safe.adjusted ? "14d" : "3d" };
+    const guarded = getSafeMarketPrice(item);
+    if (guarded.value > 0 && guarded.adjusted) return { price: guarded.value, source: "guarded" };
+    if (guarded.value > 0 && isFinitePositive(item.price)) return { price: guarded.value, source: "3d" };
+    if (isFinitePositive(item.avg_3)) return { price: item.avg_3, source: "3d" };
     if (isFinitePositive(item.avg_7)) return { price: item.avg_7, source: "7d" };
     if (isFinitePositive(item.avg_14)) return { price: item.avg_14, source: "14d" };
     if (isFinitePositive(item.avg_30)) return { price: item.avg_30, source: "30d" };
@@ -306,7 +320,7 @@ export default function MythicAlchemyPage() {
   }, [activeRecipeNames, mythicRecipes, searchTerm]);
 
   const activeRows = useMemo(() => {
-    const parsedBartering = Number(preferences.barteringBoost) || 0;
+    const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0;
     const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     return activeRecipeNames
@@ -383,6 +397,7 @@ export default function MythicAlchemyPage() {
     getPricedItem,
     getVendorPrice,
     marketData,
+    activeProfile,
     preferences.barteringBoost,
     preferences.membership,
     recipeByResult,
@@ -673,7 +688,7 @@ export default function MythicAlchemyPage() {
 
                       <div className={`vendor-revenue-box ${row.bestPath === "VENDOR" ? "highlight" : ""}`}>
                         <div>
-                          <div className="vendor-label">Vendor path (+{preferences.barteringBoost || 0}%)</div>
+                          <div className="vendor-label">Vendor path (+{activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost || 0}%)</div>
                           <div className="vendor-note">Market tax is {Math.round(taxRate * 100)}%</div>
                         </div>
                         <div className="vendor-val">{formatGold(row.vendorRevenue)}g</div>

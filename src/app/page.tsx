@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowRight, BarChart3, BookOpen, Castle, Package,
   Skull, Star, Swords, TrendingUp, Hammer, Sparkles,
-  AlertCircle, ShoppingCart, Target, PawPrint, Users
+  AlertCircle, ShoppingCart, Target, PawPrint, UserRound
 } from "lucide-react";
-import { ALCHEMY_ITEMS, VIAL_COSTS } from "../constants";
+import { ALCHEMY_ITEMS, getMerchantBuyPrice } from "../constants";
 import { formatGold } from "@/lib/format";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
@@ -20,20 +20,31 @@ import {
   type SkillProfitSettings,
 } from "@/lib/skill-profit";
 import { calculateCraftingQueuePlan } from "@/lib/crafting-queue";
+import { getSafeMarketValue } from "@/lib/market-pricing";
 import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "@/data/lore";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
 import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
+
+function getDashboardInputPrice(
+  name: string,
+  marketData: Record<string, { avg_3?: number; avg_7?: number; avg_14?: number; avg_30?: number; price?: number }> | null,
+  customPrices?: Record<string, number>,
+) {
+  const custom = Number(customPrices?.[name] || 0);
+  if (custom > 0) return custom;
+  return getMerchantBuyPrice(name) || getSafeMarketValue(marketData?.[name]);
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const { marketData, allItemsDb } = useData();
   const { openItemByName } = useItemModal();
   const { preferences } = usePreferences();
+  const { activeProfile, state: profileState } = useProfiles();
   const { queue } = useCrafting();
-  const { state: profilesState } = useProfiles();
 
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
-  const [petCount, setPetCount] = useState(0);
+  const [petDatabaseCount, setPetDatabaseCount] = useState(0);
   
   useEffect(() => {
     const saved = localStorage.getItem("zenith_mythic_active_recipes");
@@ -43,16 +54,26 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/pet-database.json?t=" + Date.now())
+    let cancelled = false;
+    fetch("/pet-database.json")
       .then((response) => response.ok ? response.json() : null)
-      .then((data) => setPetCount(Array.isArray(data?.pets) ? data.pets.length : 0))
-      .catch(() => setPetCount(0));
+      .then((payload) => {
+        if (cancelled) return;
+        const pets = Array.isArray(payload?.pets) ? payload.pets : [];
+        setPetDatabaseCount(pets.length);
+      })
+      .catch(() => {
+        if (!cancelled) setPetDatabaseCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const profitableAlchemy = useMemo(() => {
     if (!marketData) return [];
 
-    const barter = (Number(preferences.barteringBoost) || 0) / 100;
+    const barter = (Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0) / 100;
     const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     return Object.entries(ALCHEMY_ITEMS)
@@ -61,13 +82,14 @@ export default function DashboardPage() {
         const isMythic = itemInfo.quality === 'MYTHIC';
         if (isMythic) return null; // Filter out mythics for the basic list
 
-        const sellPrice = getSafeMarketPrice(marketData[name]);
-        let matCost = VIAL_COSTS[recipe.vial] || 0;
+        const customSellPrice = Number(preferences.customPrices?.[name] || 0);
+        const sellPrice = customSellPrice || getSafeMarketValue(marketData[name]);
+        let matCost = getDashboardInputPrice(recipe.vial, marketData, preferences.customPrices);
         let hasAllPrices = sellPrice > 0 || (itemInfo.vendor_price > 0);
 
         // Add material costs
         for (const [material, qty] of Object.entries(recipe.materials)) {
-          const materialPrice = getSafeMarketPrice(marketData[material]) || VIAL_COSTS[material] || 0;
+          const materialPrice = getDashboardInputPrice(material, marketData, preferences.customPrices);
           if (materialPrice <= 0) {
             hasAllPrices = false;
             break;
@@ -88,11 +110,14 @@ export default function DashboardPage() {
       .filter((item): item is NonNullable<typeof item> => item !== null && item.profit > 0)
       .sort((a, b) => b.profit - a.profit)
       .slice(0, 6);
-  }, [marketData, allItemsDb, preferences.barteringBoost, preferences.membership]);
+  }, [activeProfile, marketData, allItemsDb, preferences.barteringBoost, preferences.customPrices, preferences.membership]);
 
   const queuePlan = useMemo(
-    () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, preferences),
-    [allItemsDb, marketData, preferences, queue],
+    () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
+      ...preferences,
+      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+    }),
+    [activeProfile, allItemsDb, marketData, preferences, queue],
   );
   const queueEntries = queuePlan.entries;
 
@@ -100,12 +125,13 @@ export default function DashboardPage() {
     membership: preferences.membership,
     classBonus: preferences.skillClassBonus,
     energizingPoolExp: 0,
-    assaultRank: preferences.assaultRank,
+    assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
     ascensionBuffIds: [],
     tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
     customPrices: preferences.customPrices,
-    barteringBoost: preferences.barteringBoost,
+    barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
   }), [
+    activeProfile,
     preferences.assaultRank,
     preferences.barteringBoost,
     preferences.customPrices,
@@ -176,6 +202,20 @@ export default function DashboardPage() {
               <span className="tile-value">{topSkillProfitRows.length}</span>
             </div>
           </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/profiles')}>
+            <div className="tile-icon"><UserRound size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Active Profile</span>
+              <span className="tile-value">{activeProfile?.name?.trim() || `${profileState.profiles.length}/5`}</span>
+            </div>
+          </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/pets')}>
+            <div className="tile-icon"><PawPrint size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Pet Database</span>
+              <span className="tile-value">{petDatabaseCount || "Open"}</span>
+            </div>
+          </div>
           <div className="metric-tile clickable" onClick={() => router.push('/crafting')}>
             <div className="tile-icon"><Hammer size={20} /></div>
             <div className="tile-info">
@@ -188,20 +228,6 @@ export default function DashboardPage() {
             <div className="tile-info">
               <span className="tile-label">Active Lab Projects</span>
               <span className="tile-value">{activeMythicNames.length}</span>
-            </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/profiles')}>
-            <div className="tile-icon"><Users size={20} /></div>
-            <div className="tile-info">
-              <span className="tile-label">Profiles</span>
-              <span className="tile-value">{profilesState.profiles.length}</span>
-            </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/pets')}>
-            <div className="tile-icon"><PawPrint size={20} /></div>
-            <div className="tile-info">
-              <span className="tile-label">Pet Database</span>
-              <span className="tile-value">{petCount}</span>
             </div>
           </div>
         </div>
@@ -395,13 +421,21 @@ export default function DashboardPage() {
                 </div>
             </div>
             <div className="shortcuts-grid">
-               <Link href="/combat" className="s-card">
-                  <Swords size={20} />
-                  <span>Combat & Drops</span>
-               </Link>
-               <Link href="/dungeons" className="s-card">
-                  <Castle size={20} />
-                  <span>Dungeon Loot</span>
+                 <Link href="/combat" className="s-card">
+                    <Swords size={20} />
+                    <span>Combat & Drops</span>
+                 </Link>
+                 <Link href="/profiles" className="s-card">
+                    <UserRound size={20} />
+                    <span>Profiles</span>
+                 </Link>
+                 <Link href="/pets" className="s-card">
+                    <PawPrint size={20} />
+                    <span>Pet Database</span>
+                 </Link>
+                 <Link href="/dungeons" className="s-card">
+                    <Castle size={20} />
+                    <span>Dungeon Loot</span>
                </Link>
                <Link href="/bosses" className="s-card">
                   <Skull size={20} />

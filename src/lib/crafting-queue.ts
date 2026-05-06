@@ -39,6 +39,7 @@ export type QueueItemLookup = Record<string, QueueDbItem>;
 export type QueuePrice = {
   value: number;
   source: QueuePriceSource;
+  adjusted?: boolean;
 };
 
 export type QueueNeedRow = {
@@ -207,6 +208,7 @@ export function calculateCraftingQueuePlan(
       warnings.push("Thin market");
     }
     if (sale.source === "custom") warnings.push("Custom sell price");
+    if (sale.adjusted) warnings.push("3d average ignored as a market spike");
     if (materialRows.some((row) => row.source === "custom")) warnings.push("Custom input price");
 
     entries.push({
@@ -259,7 +261,7 @@ function getAcquisitionPrice(
   if (merchantBuyPrice > 0) return { value: merchantBuyPrice, source: "vendor" };
 
   const marketPrice = getSafeMarketPrice(marketData?.[name]);
-  if (marketPrice > 0) return { value: marketPrice, source: "market" };
+  if (marketPrice.value > 0) return { value: marketPrice.value, source: "market", adjusted: marketPrice.adjusted };
 
   const vendorFallback = Number(items?.[name]?.vendor_price || marketData?.[name]?.vendor_price || 0);
   if (vendorFallback > 0) return { value: vendorFallback, source: "vendor" };
@@ -276,7 +278,7 @@ function getSalePrice(
   if (customPrice > 0) return { value: customPrice, source: "custom" };
 
   const marketPrice = getSafeMarketPrice(marketData?.[name]);
-  if (marketPrice > 0) return { value: marketPrice, source: "market" };
+  if (marketPrice.value > 0) return { value: marketPrice.value, source: "market", adjusted: marketPrice.adjusted };
 
   return { value: 0, source: "missing" };
 }

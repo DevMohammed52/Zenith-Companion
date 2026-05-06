@@ -27,8 +27,8 @@ export default function RootLayout({
       </head>
       <body>
         <DataProvider>
-          <CraftingProvider>
-            <ProfileProvider>
+          <ProfileProvider>
+            <CraftingProvider>
               <ItemModalProvider>
                 <SidebarProvider>
                   <div className="layout-root">
@@ -48,8 +48,8 @@ export default function RootLayout({
                   </div>
                 </SidebarProvider>
               </ItemModalProvider>
-            </ProfileProvider>
-          </CraftingProvider>
+            </CraftingProvider>
+          </ProfileProvider>
         </DataProvider>
         <style>{`
           .layout-root {

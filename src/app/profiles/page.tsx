@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   BadgeCheck,
   ChevronDown,
@@ -8,85 +8,52 @@ import {
   Download,
   FileUp,
   Home,
+  Package,
   Plus,
   Search,
   Shield,
+  Sparkles,
+  Swords,
   Trash2,
   Upload,
   UserRound,
   Users,
+  X,
 } from "lucide-react";
 import {
   MAX_PROFILES,
   type CharacterProfile,
+  type CombatStyle,
   useProfiles,
 } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import {
-  CLASS_OPTION_VALUES,
-  CLASS_RULES,
-  cleanQuality,
-  formatRequirements,
-  formatStatSummary,
-  getClassEfficiencyBonus,
-  getGearStatTotals,
-  getItemEffectSummary,
-  getItemStatTotals,
-  getNextClassTalent,
-  getRequirementLevel,
+  CLASS_DATA,
+  ascensionLevel,
+  calculatePetStats,
+  calculateProfileSecondaryStats,
+  barteringBuffPercent,
+  dailyStreakMagicFind,
+  formatStatName,
+  getClassInfo,
+  getItemRequirementLevel,
   getToolEfficiency,
-  getUnlockedClassTalents,
-  qualityRank,
-  statLabel,
-  type RawItemLike,
-} from "@/lib/profile-rules";
+  sortProfileItems,
+  type PetDatabaseRecord,
+  type ProfileItemRecord,
+} from "@/lib/profile-calculations";
+import { ASSAULT_OPTIONS, type AssaultRank } from "@/lib/skill-profit";
 
-const PET_STAT_KEYS = [
-  "agility",
-  "accuracy",
-  "protection",
-  "attack_power",
-  "movement_speed",
-  "max_health",
-  "max_stamina",
-  "critical_damage",
-  "critical_chance",
-] as const;
-
-const PET_STAT_LABELS: Record<(typeof PET_STAT_KEYS)[number], string> = {
-  agility: "Agility",
-  accuracy: "Accuracy",
-  protection: "Protection",
-  attack_power: "Attack Power",
-  movement_speed: "Movement Speed",
-  max_health: "Max Health",
-  max_stamina: "Max Stamina",
-  critical_damage: "Critical Damage",
-  critical_chance: "Critical Chance",
-};
-
-const BOOSTED_PET_STATS = new Set<string>([
-  "agility",
-  "accuracy",
-  "protection",
-  "attack_power",
-  "movement_speed",
-]);
-
-function getDailyStreakMagicFindBonus(streak: number | "") {
-  return Math.min(10, Math.floor(Math.max(0, Number(streak || 0)) / 10));
-}
-
-const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string]> = [
-  ["totalLevel", "Total Level / TL"],
-  ["combat", "Combat"],
-  ["strength", "Strength"],
-  ["defence", "Defence"],
-  ["speed", "Speed"],
-  ["dexterity", "Dexterity"],
-  ["huntingMastery", "Hunting Mastery"],
-  ["dungeoneering", "Dungeoneering"],
-  ["petMastery", "Pet Mastery"],
+const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
+  ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
+  ["combat", "Combat", { min: 1, max: 600 }],
+  ["strength", "Strength", { min: 1, max: 100 }],
+  ["defence", "Defence", { min: 1, max: 100 }],
+  ["speed", "Speed", { min: 1, max: 100 }],
+  ["dexterity", "Dexterity", { min: 1, max: 100 }],
+  ["huntingMastery", "Hunting Mastery", { min: 1, max: 600 }],
+  ["dungeoneering", "Dungeoneering", { min: 1, max: 600 }],
+  ["petMastery", "Pet Mastery", { min: 1, max: 100 }],
 ];
 
 const SECONDARY_FIELDS: Array<[keyof CharacterProfile["secondaryStats"], string]> = [
@@ -100,15 +67,30 @@ const SECONDARY_FIELDS: Array<[keyof CharacterProfile["secondaryStats"], string]
   ["damage", "Damage"],
 ];
 
-const GEAR_FIELDS: Array<[string, string, string[]]> = [
+const PET_STAT_FIELDS: Array<[keyof CharacterProfile["pet"]["stats"], string]> = [
+  ["agility", "Agility"],
+  ["accuracy", "Accuracy"],
+  ["protection", "Protection"],
+  ["attackPower", "Attack Power"],
+  ["movementSpeed", "Movement Speed"],
+  ["maxHealth", "Max Health"],
+  ["maxStamina", "Max Stamina"],
+  ["criticalDamage", "Crit Damage"],
+  ["criticalChance", "Crit Chance"],
+];
+
+const ARMOR_GEAR_FIELDS: Array<[string, string, string[]]> = [
   ["helmet", "Helmet", ["HELMET"]],
   ["chestplate", "Chestplate", ["CHESTPLATE"]],
   ["greaves", "Greaves", ["GREAVES"]],
   ["boots", "Boots", ["BOOTS"]],
   ["gauntlets", "Gauntlets", ["GAUNTLETS"]],
-  ["weapon", "Weapon", ["SWORD", "DAGGER"]],
-  ["shield", "Shield", ["SHIELD"]],
-  ["bow", "Bow", ["BOW"]],
+];
+
+const COMBAT_STYLE_OPTIONS: Array<{ value: CombatStyle; label: string; hint: string }> = [
+  { value: "swordShield", label: "Sword + Shield", hint: "One sword, optional shield" },
+  { value: "dualDaggers", label: "Dual Daggers", hint: "Two dagger slots" },
+  { value: "bow", label: "Bow", hint: "Bow only, no shield" },
 ];
 
 const TOOL_FIELDS: Array<[string, string, string[]]> = [
@@ -132,6 +114,22 @@ function numberFromInput(value: string) {
   return value === "" ? "" : Number(value);
 }
 
+function formatShortStats(stats?: Record<string, number> | null, limit = 3) {
+  const entries = Object.entries(stats || {}).filter(([, value]) => Number(value) !== 0).slice(0, limit);
+  if (!entries.length) return "";
+  return entries.map(([key, value]) => `${formatStatName(key)} ${value}`).join(" / ");
+}
+
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  if (!message) return null;
+  return (
+    <div className="profile-toast" role="status">
+      <span>{message}</span>
+      <button type="button" onClick={onClose} aria-label="Dismiss notification"><X size={14} /></button>
+    </div>
+  );
+}
+
 function ProfileNumberField({
   label,
   value,
@@ -139,7 +137,7 @@ function ProfileNumberField({
   step = "1",
   min,
   max,
-  suffix,
+  hint,
 }: {
   label: string;
   value: number | "";
@@ -147,28 +145,21 @@ function ProfileNumberField({
   step?: string;
   min?: number;
   max?: number;
-  suffix?: string;
+  hint?: ReactNode;
 }) {
-  const numericValue = typeof value === "number" ? value : Number(value || 0);
-  const isAscensionField = label === "Combat" || label === "Hunting Mastery" || label === "Dungeoneering";
-  const showAscension = isAscensionField && numericValue > 100;
-
   return (
     <label className="profile-field">
       <span>{label}</span>
-      <div className="profile-number-wrap">
-        <input
-          className="control-input"
-          type="number"
-          step={step}
-          min={min}
-          max={max}
-          value={value}
-          onChange={(event) => onChange(numberFromInput(event.target.value))}
-        />
-        {suffix && <em>{suffix}</em>}
-      </div>
-      {showAscension && <small className="profile-field-hint">Ascension Lv. {Math.min(500, numericValue - 100)}</small>}
+      <input
+        className="control-input"
+        type="number"
+        step={step}
+        min={min}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(numberFromInput(event.target.value))}
+      />
+      {hint && <small>{hint}</small>}
     </label>
   );
 }
@@ -198,274 +189,98 @@ function ProfileTextField({
   );
 }
 
-type ItemOption = {
-  name: string;
-  type?: string;
-  quality?: string;
-  max_tier?: number;
-  image_url?: string | null;
-  requirements?: Record<string, number | string | null> | null;
-  stats?: Record<string, number | string | null> | null;
-  effects?: Array<{ value?: number | string; target?: string; attribute?: string; value_type?: string }> | null;
-  tier_modifiers?: Record<string, number | string | null> | null;
-  upgrade_requirements?: Array<{ item_name?: string; quantity?: number | string }> | null;
-};
-
-type ItemDatabase = Record<string, ItemOption>;
-
-type PetRecord = {
-  name: string;
-  quality?: string;
-  imageUrl?: string;
-  sourceOverride?: { label?: string | null } | null;
-  rarity?: { worldBoss?: string | null } | null;
-  acquisition?: Array<{ location?: string | null; boss?: string | null }>;
-  stats?: Record<string, { max?: number | null; base?: number | null; per_level?: number | null }>;
-};
-
-type PetDatabase = {
-  pets?: PetRecord[];
-};
-
-type PickerOption = {
-  value: string;
-  label: string;
-  detail?: string;
-  imageUrl?: string | null;
+type PickerOption<T> = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  image?: string;
   badge?: string;
-  tags?: string[];
+  searchText: string;
+  value: T | null;
+  muted?: boolean;
 };
 
-function getPetSourceLabel(pet: PetRecord | null | undefined) {
-  if (!pet) return "";
-  return pet.sourceOverride?.label || pet.rarity?.worldBoss || pet.acquisition?.[0]?.location || "Source pending";
-}
-
-function getPetStatEntries(pet: PetRecord | null | undefined) {
-  if (!pet?.stats) return [];
-  return Object.entries(pet.stats)
-    .map(([key, value]) => ({
-      label: statLabel(key),
-      value: Number(value?.max ?? value?.base ?? 0),
-    }))
-    .filter((entry) => entry.value > 0)
-    .slice(0, 6)
-    .map((entry) => ({ ...entry, valueLabel: entry.value.toLocaleString() }));
-}
-
-function getPetMasteryBonus(petDatabase: PetDatabase | null, level: number | "") {
-  const levels = (petDatabase as unknown as { mastery?: { levels?: Array<{ level?: number; stat_bonus_percent?: number }> } })?.mastery?.levels || [];
-  const target = Math.min(100, Math.max(1, Number(level || 1)));
-  const found = levels.find((entry) => Number(entry.level) === target) || levels.reduce<{ level?: number; stat_bonus_percent?: number } | null>((closest, entry) => {
-    if (Number(entry.level) > target) return closest;
-    if (!closest || Number(entry.level) > Number(closest.level)) return entry;
-    return closest;
-  }, null);
-  const raw = Number(found?.stat_bonus_percent || 0);
-  return raw <= 1 ? raw * 100 : raw;
-}
-
-function calculatePetStats(pet: PetRecord | null, petLevel: number | "", masteryLevel: number | "", evolution: number | "", petDatabase: PetDatabase | null) {
-  const values: Record<string, number | ""> = {};
-  if (!pet?.stats) return values;
-  const level = Math.min(100, Math.max(1, Number(petLevel || 1)));
-  const masteryBonus = getPetMasteryBonus(petDatabase, masteryLevel);
-  const evolutionBonus = Math.max(0, Number(evolution || 0)) * 5;
-  for (const key of PET_STAT_KEYS) {
-    const stat = pet.stats[key];
-    if (!stat) {
-      values[key] = "";
-      continue;
-    }
-    const raw = Number(stat.base || 0) + (level - 1) * Number((stat as { per_level?: number }).per_level || 0);
-    const boosted = BOOSTED_PET_STATS.has(key) ? raw * (1 + (masteryBonus + evolutionBonus) / 100) : raw;
-    values[key] = key === "movement_speed" || key === "critical_damage" || key === "critical_chance"
-      ? Number(boosted.toFixed(2))
-      : Math.floor(boosted);
-  }
-  return values;
-}
-
-function CustomPicker({
+function ProfilePicker<T>({
   label,
-  value,
+  placeholder,
+  selected,
   options,
-  placeholder = "Select",
-  searchPlaceholder = "Search...",
-  onChange,
-  allowClear = true,
+  openId,
+  id,
+  setOpenId,
+  onSelect,
+  disabled,
 }: {
   label: string;
-  value: string;
-  options: PickerOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  onChange: (value: string) => void;
-  allowClear?: boolean;
+  placeholder: string;
+  selected?: PickerOption<T> | null;
+  options: Array<PickerOption<T>>;
+  openId: string | null;
+  id: string;
+  setOpenId: (value: string | null) => void;
+  onSelect: (value: T | null) => void;
+  disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const selected = options.find((option) => option.value === value) || null;
-  const filtered = useMemo(() => {
+  const open = openId === id;
+  const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const source = needle
-      ? options.filter((option) => [
-          option.label,
-          option.detail,
-          option.badge,
-          ...(option.tags || []),
-        ].filter(Boolean).join(" ").toLowerCase().includes(needle))
-      : options;
-    return source.slice(0, 90);
+    if (!needle) return options.slice(0, 90);
+    return options.filter((option) => option.searchText.toLowerCase().includes(needle)).slice(0, 90);
   }, [options, query]);
 
   return (
     <div className={`profile-picker ${open ? "open" : ""}`}>
-      <button className="profile-picker-trigger" type="button" onClick={() => setOpen((state) => !state)} aria-expanded={open}>
-        {selected?.imageUrl ? <img src={selected.imageUrl} alt="" /> : <span className="profile-picker-icon">{selected?.label?.charAt(0) || "-"}</span>}
-        <span className="profile-picker-copy">
-          <strong>{selected?.label || placeholder}</strong>
-          <small>{selected ? [selected.badge, selected.detail].filter(Boolean).join(" - ") : label}</small>
+      <span className="profile-picker-label">{label}</span>
+      <button
+        type="button"
+        className="profile-picker-button"
+        onClick={() => {
+          if (disabled) return;
+          setQuery("");
+          setOpenId(open ? null : id);
+        }}
+        disabled={disabled}
+      >
+        <span className="profile-picker-image">
+          {selected?.image ? <img src={selected.image} alt="" /> : <Package size={16} />}
         </span>
-        <ChevronDown size={18} />
+        <span className="profile-picker-text">
+          <strong>{selected?.title || placeholder}</strong>
+          <small>{selected?.subtitle || "Select from database"}</small>
+        </span>
+        {selected?.badge && <em>{selected.badge}</em>}
+        <ChevronDown size={16} />
       </button>
       {open && (
         <div className="profile-picker-menu">
           <label className="profile-picker-search">
             <Search size={16} />
-            <input
-              autoFocus
-              value={query}
-              placeholder={searchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
-            />
+            <input value={query} placeholder={`Search ${label.toLowerCase()}...`} onChange={(event) => setQuery(event.target.value)} autoFocus />
           </label>
           <div className="profile-picker-options custom-scrollbar">
-            {allowClear && (
+            {visible.map((option) => (
               <button
-                className="profile-picker-option"
+                key={option.id}
                 type="button"
+                className={`profile-picker-option ${option.muted ? "muted" : ""}`}
                 onClick={() => {
-                  onChange("");
+                  onSelect(option.value);
+                  setOpenId(null);
                   setQuery("");
-                  setOpen(false);
                 }}
               >
-                <span className="profile-picker-icon">-</span>
-                <span>
-                  <strong>None</strong>
-                  <small>Clear this selection</small>
+                <span className="profile-picker-image">
+                  {option.image ? <img src={option.image} alt="" /> : <Package size={16} />}
                 </span>
-              </button>
-            )}
-            {filtered.map((option) => (
-              <button
-                key={option.value}
-                className={`profile-picker-option ${option.value === value ? "selected" : ""}`}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setQuery("");
-                  setOpen(false);
-                }}
-              >
-                {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="profile-picker-icon">{option.label.charAt(0)}</span>}
                 <span>
-                  <strong>{option.label}</strong>
-                  <small>{[option.badge, option.detail].filter(Boolean).join(" - ")}</small>
+                  <strong>{option.title}</strong>
+                  {option.subtitle && <small>{option.subtitle}</small>}
                 </span>
+                {option.badge && <em>{option.badge}</em>}
               </button>
             ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function petSearchText(pet: PetRecord) {
-  return [
-    pet.name,
-    pet.quality,
-    getPetSourceLabel(pet),
-    ...getPetStatEntries(pet).map((entry) => `${entry.label} ${entry.valueLabel}`),
-  ].filter(Boolean).join(" ").toLowerCase();
-}
-
-function ProfilePetPicker({
-  value,
-  options,
-  onSelect,
-}: {
-  value: string;
-  options: PetRecord[];
-  onSelect: (pet: PetRecord | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const selected = value ? options.find((pet) => pet.name.toLowerCase() === value.toLowerCase()) || null : null;
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return options.slice(0, 80);
-    return options.filter((pet) => petSearchText(pet).includes(needle)).slice(0, 80);
-  }, [options, query]);
-
-  return (
-    <div className={`profile-pet-picker ${open ? "open" : ""}`}>
-      <button className="profile-pet-trigger" type="button" onClick={() => setOpen((state) => !state)}>
-        {selected?.imageUrl ? <img src={selected.imageUrl} alt="" /> : <span className="profile-pet-empty-icon">?</span>}
-        <span className="profile-pet-trigger-copy">
-          <strong>{selected?.name || "Select pet"}</strong>
-          <small>{selected ? `${cleanQuality(selected.quality) || "Unknown quality"} - ${getPetSourceLabel(selected)}` : "Search the Pet Database"}</small>
-        </span>
-        <ChevronDown size={18} />
-      </button>
-
-      {open && (
-        <div className="profile-pet-menu">
-          <label className="profile-pet-search">
-            <Search size={16} />
-            <input
-              autoFocus
-              value={query}
-              placeholder="Search pet, quality, source, or stat..."
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <div className="profile-pet-options custom-scrollbar">
-            <button
-              className="profile-pet-option"
-              type="button"
-              onClick={() => {
-                onSelect(null);
-                setQuery("");
-                setOpen(false);
-              }}
-            >
-              <span className="profile-pet-empty-icon">-</span>
-              <span>
-                <strong>No pet selected</strong>
-                <small>Clear pet data for this profile</small>
-              </span>
-            </button>
-            {filtered.map((pet) => (
-              <button
-                key={pet.name}
-                className={`profile-pet-option ${pet.name === selected?.name ? "selected" : ""}`}
-                type="button"
-                onClick={() => {
-                  onSelect(pet);
-                  setQuery("");
-                  setOpen(false);
-                }}
-              >
-                {pet.imageUrl ? <img src={pet.imageUrl} alt="" /> : <span className="profile-pet-empty-icon">?</span>}
-                <span>
-                  <strong>{pet.name}</strong>
-                  <small>{cleanQuality(pet.quality) || "Unknown quality"} - {getPetSourceLabel(pet)}</small>
-                </span>
-              </button>
-            ))}
+            {!visible.length && <div className="profile-picker-empty">No matches</div>}
           </div>
         </div>
       )}
@@ -487,158 +302,78 @@ export default function ProfilesPage() {
   } = useProfiles();
   const { allItemsDb } = useData();
   const [transferText, setTransferText] = useState("");
-  const [transferMessage, setTransferMessage] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
-  const [petDatabase, setPetDatabase] = useState<PetDatabase | null>(null);
-  const lastAppliedCombatSignature = useRef("");
+  const [toast, setToast] = useState("");
+  const [openPicker, setOpenPicker] = useState<string | null>(null);
+  const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[] } | null>(null);
+  const lastAutoStatKey = useRef("");
 
   const profile = activeProfile;
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    window.setTimeout(() => setToastMessage((current) => (current === message ? "" : current)), 3600);
-  };
-
-  const itemByName = useMemo(() => {
-    const map = new Map<string, ItemOption>();
-    Object.values((allItemsDb || {}) as ItemDatabase).forEach((item) => {
-      if (item?.name) map.set(item.name, item);
-    });
-    return map;
-  }, [allItemsDb]);
-
-  const itemOptionsByType = useMemo(() => {
-    const grouped: Record<string, ItemOption[]> = {};
-    Object.values((allItemsDb || {}) as ItemDatabase).forEach((item) => {
-      if (!item?.name || !item?.type) return;
-      if (!grouped[item.type]) grouped[item.type] = [];
-      grouped[item.type].push(item);
-    });
-    Object.values(grouped).forEach((items) => {
-      items.sort((a, b) => (
-        qualityRank(a.quality) - qualityRank(b.quality)
-        || getRequirementLevel(a) - getRequirementLevel(b)
-        || a.name.localeCompare(b.name)
-      ));
-    });
-    return grouped;
-  }, [allItemsDb]);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/pet-database.json")
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Pet database unavailable"))))
-      .then((data: PetDatabase) => {
-        if (!cancelled) setPetDatabase(data);
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!cancelled) setPetDb(data);
       })
-      .catch(() => {
-        if (!cancelled) setPetDatabase({ pets: [] });
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const petOptions = useMemo(() => {
-    return [...(petDatabase?.pets || [])].sort((a, b) => qualityRank(a.quality) - qualityRank(b.quality) || a.name.localeCompare(b.name));
-  }, [petDatabase]);
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = window.setTimeout(() => setToast(""), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [toast]);
 
-  const selectedPet = useMemo(() => {
-    if (!profile?.pet.species) return null;
-    return petOptions.find((pet) => pet.name.toLowerCase() === profile.pet.species.toLowerCase()) || null;
-  }, [petOptions, profile]);
+  const itemOptionsByType = useMemo(() => {
+    const grouped: Record<string, ProfileItemRecord[]> = {};
+    Object.values((allItemsDb || {}) as Record<string, ProfileItemRecord>).forEach((item) => {
+      if (!item?.name || !item?.type) return;
+      if (!grouped[item.type]) grouped[item.type] = [];
+      grouped[item.type].push(item);
+    });
+    Object.keys(grouped).forEach((type) => {
+      grouped[type] = sortProfileItems(grouped[type]);
+    });
+    return grouped;
+  }, [allItemsDb]);
 
-  const getSlotOptions = (types: string[]) => (
-    types.flatMap((type) => itemOptionsByType[type] || [])
-  );
+  const itemByName = useMemo(() => (allItemsDb || {}) as Record<string, ProfileItemRecord>, [allItemsDb]);
+  const pets = useMemo(() => [...(petDb?.pets || [])].sort((a, b) => {
+    const qualityDelta = ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"].indexOf(String(a.quality || "")) -
+      ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"].indexOf(String(b.quality || ""));
+    if (qualityDelta !== 0) return qualityDelta;
+    return a.name.localeCompare(b.name);
+  }), [petDb]);
 
-  const getSlotPickerOptions = (types: string[]) => (
-    getSlotOptions(types).map((item) => ({
-      value: item.name,
-      label: item.name,
-      badge: cleanQuality(item.quality) || item.type || "",
-      detail: [
-        item.type ? statLabel(item.type).toLowerCase() : "",
-        getRequirementLevel(item) ? `Lv. ${getRequirementLevel(item)}` : "",
-      ].filter(Boolean).join(" - "),
-      imageUrl: item.image_url,
-      tags: [item.quality || "", item.type || "", formatRequirements(item), formatStatSummary(getItemStatTotals(item, 1)), getItemEffectSummary(item)],
-    }))
-  );
-
-  const getSelectedItem = (name: string) => (name ? itemByName.get(name) : undefined);
-
-  const selectedGearItems = useMemo(() => {
-    if (!profile) return [];
-    return GEAR_FIELDS.map(([key]) => ({
-      key,
-      item: getSelectedItem(profile.gear[key] || ""),
-      tier: profile.gearTiers?.[key] || 1,
-    }));
-  }, [itemByName, profile?.gear, profile?.gearTiers]);
-
-  const calculatedCombatStats = useMemo(() => {
-    if (!profile) return null;
-    return getGearStatTotals(
-      selectedGearItems.map((entry) => ({ item: entry.item as RawItemLike | undefined, tier: entry.tier })),
-      profile.className,
-      Number(profile.levels.combat || 0),
-      profile.levels,
-    );
-  }, [profile, selectedGearItems]);
-
-  const combatSetupSignature = useMemo(() => {
+  const selectedPet = useMemo(() => pets.find((pet) => pet.name === profile?.pet.species), [pets, profile?.pet.species]);
+  const classInfo = getClassInfo(profile?.className || "Other");
+  const dailyBonus = dailyStreakMagicFind(profile?.magicFind.dailyStreak ?? 0);
+  const barteringPercent = barteringBuffPercent(profile?.boosts.barteringLevel ?? 0);
+  const calculatedSecondary = useMemo(() => (
+    profile ? calculateProfileSecondaryStats(profile, itemByName) : null
+  ), [itemByName, profile]);
+  const autoStatKey = useMemo(() => {
     if (!profile) return "";
     return JSON.stringify({
       className: profile.className,
-      combat: profile.levels.combat,
-      strength: profile.levels.strength,
-      defence: profile.levels.defence,
-      speed: profile.levels.speed,
-      dexterity: profile.levels.dexterity,
+      levels: profile.levels,
       gear: profile.gear,
-      tiers: profile.gearTiers,
+      gearTiers: profile.gearTiers,
+      petStats: profile.pet.stats,
     });
-  }, [profile?.className, profile?.levels.combat, profile?.levels.strength, profile?.levels.defence, profile?.levels.speed, profile?.levels.dexterity, profile?.gear, profile?.gearTiers]);
+  }, [profile]);
+  const combatStatTotal = calculatedSecondary
+    ? calculatedSecondary.attackPower + calculatedSecondary.protection + calculatedSecondary.agility + calculatedSecondary.accuracy
+    : 0;
 
-  const combatStatTotal = useMemo(() => {
-    if (!calculatedCombatStats) return 0;
-    return (
-      Number(calculatedCombatStats.attackPower || 0) +
-      Number(calculatedCombatStats.protection || 0) +
-      Number(calculatedCombatStats.agility || 0) +
-      Number(calculatedCombatStats.accuracy || 0)
-    );
-  }, [calculatedCombatStats]);
-
-  const toolEfficiencies = useMemo(() => {
-    if (!profile) return { woodcutting: 0, mining: 0, fishing: 0 };
-    const classBonuses = getClassEfficiencyBonus(profile.className);
-    return {
-      woodcutting: getToolEfficiency(getSelectedItem(profile.tools.woodcutting || "")) + Number(classBonuses.woodcutting || 0),
-      mining: getToolEfficiency(getSelectedItem(profile.tools.mining || "")) + Number(classBonuses.mining || 0),
-      fishing: getToolEfficiency(getSelectedItem(profile.tools.fishing || "")) + Number(classBonuses.fishing || 0),
-    };
-  }, [itemByName, profile]);
-
-  useEffect(() => {
-    if (!profile || !calculatedCombatStats) return;
-    if (lastAppliedCombatSignature.current === combatSetupSignature) return;
-    const current = profile.secondaryStats;
-    const changed = Object.entries(calculatedCombatStats).some(([key, value]) => current[key as keyof CharacterProfile["secondaryStats"]] !== value);
-    lastAppliedCombatSignature.current = combatSetupSignature;
-    if (!changed) return;
-    updateProfile(profile.id, {
-      secondaryStats: {
-        ...current,
-        ...calculatedCombatStats,
-      },
-    });
-  }, [calculatedCombatStats, combatSetupSignature, profile?.id, profile?.secondaryStats, updateProfile]);
-
-  const patchActive = (patch: Partial<CharacterProfile>) => {
+  const patchActive = useCallback((patch: Partial<CharacterProfile>) => {
     if (!profile) return;
     updateProfile(profile.id, patch);
-  };
+  }, [profile, updateProfile]);
 
   const updateNested = <Section extends keyof CharacterProfile, Key extends keyof CharacterProfile[Section]>(
     section: Section,
@@ -656,38 +391,194 @@ export default function ProfilesPage() {
     } as Partial<CharacterProfile>);
   };
 
+  useEffect(() => {
+    if (!profile || !calculatedSecondary || !autoStatKey || !Object.keys(itemByName).length) return;
+    if (lastAutoStatKey.current === autoStatKey) return;
+    lastAutoStatKey.current = autoStatKey;
+    const current = profile.secondaryStats;
+    const changed = SECONDARY_FIELDS.some(([key]) => Number(current[key] || 0) !== Number(calculatedSecondary[key] || 0));
+    if (changed) patchActive({ secondaryStats: calculatedSecondary });
+  }, [autoStatKey, calculatedSecondary, itemByName, patchActive, profile]);
+
+  const updateDailyStreak = (value: number | "") => {
+    if (!profile) return;
+    const bonus = dailyStreakMagicFind(value);
+    patchActive({
+      magicFind: {
+        ...profile.magicFind,
+        dailyStreak: value,
+        combat: Math.max(Number(profile.magicFind.combat || 0), bonus),
+        dungeon: Math.max(Number(profile.magicFind.dungeon || 0), bonus),
+        worldBoss: Math.max(Number(profile.magicFind.worldBoss || 0), bonus),
+      },
+    });
+  };
+
+  const selectPet = (pet: PetDatabaseRecord | null) => {
+    if (!profile) return;
+    if (!pet) {
+      patchActive({
+        pet: {
+          ...profile.pet,
+          species: "",
+          quality: "",
+          level: 1,
+          evolution: 0,
+          notes: "",
+          stats: {
+            agility: "",
+            accuracy: "",
+            protection: "",
+            attackPower: "",
+            movementSpeed: "",
+            maxHealth: "",
+            maxStamina: "",
+            criticalDamage: "",
+            criticalChance: "",
+          },
+        },
+      });
+      return;
+    }
+    const stats = calculatePetStats(pet, profile.pet.level || 1, profile.pet.evolution || 0);
+    patchActive({
+      pet: {
+        ...profile.pet,
+        species: pet.name,
+        quality: pet.quality || "",
+        stats,
+        notes: `${pet.name}${pet.acquisition?.[0]?.boss ? ` from ${pet.acquisition[0].boss}` : ""}`,
+      },
+    });
+  };
+
+  const updatePetFormula = (patch: Partial<CharacterProfile["pet"]>) => {
+    if (!profile) return;
+    const nextPet = { ...profile.pet, ...patch };
+    const stats = selectedPet ? calculatePetStats(selectedPet, nextPet.level, nextPet.evolution) : nextPet.stats;
+    patchActive({ pet: { ...nextPet, stats } });
+  };
+
+  const applyAutoStats = () => {
+    if (!profile || !calculatedSecondary) return;
+    patchActive({ secondaryStats: calculatedSecondary });
+    setToast("Combat stats updated from levels, gear, pet, and class talents.");
+  };
+
   const handleExport = async () => {
     const payload = exportProfiles();
     setTransferText(payload);
-    setTransferMessage("Export generated below.");
     try {
       await navigator.clipboard?.writeText(payload);
-      setTransferMessage("Export generated below and copied to clipboard.");
-      showToast("Profile export copied to clipboard.");
+      setToast("Profile export copied to clipboard.");
     } catch {
-      setTransferMessage("Export generated below. Copy it from the text box.");
-      showToast("Profile export generated below.");
+      setToast("Profile export generated below.");
     }
   };
 
   const handleImport = () => {
     if (!transferText.trim()) {
-      setTransferMessage("Paste a profile export before importing.");
-      showToast("Paste an export before importing.");
+      setToast("Paste a profile export before importing.");
       return;
     }
     const confirmed = window.confirm("Importing profiles will replace the current local profile list in this browser. Continue?");
     if (!confirmed) return;
     const result = importProfiles(transferText);
-    setTransferMessage(result.ok ? "Profiles imported." : result.error || "Import failed.");
-    showToast(result.ok ? "Profiles imported." : result.error || "Import failed.");
+    setToast(result.ok ? "Profiles imported into this browser." : result.error || "Import failed.");
   };
 
   const handleDeleteProfile = () => {
     if (!profile) return;
-    const confirmed = window.confirm(`Delete the local profile "${profile.name}" from this browser?`);
+    const confirmed = window.confirm(`Delete the local profile "${profile.name || "Unnamed"}" from this browser?`);
     if (!confirmed) return;
     deleteProfile(profile.id);
+    setToast("Profile deleted.");
+  };
+
+  const getSlotOptions = (types: string[]) => types.flatMap((type) => itemOptionsByType[type] || []);
+  const itemPickerOption = (item: ProfileItemRecord): PickerOption<ProfileItemRecord> => ({
+    id: item.name || "",
+    title: item.name || "Unknown item",
+    subtitle: `${item.quality || "UNKNOWN"} - ${String(item.type || "").replace(/_/g, " ")}${getItemRequirementLevel(item) ? ` - Lv. ${getItemRequirementLevel(item)}` : ""}`,
+    image: item.image_url,
+    badge: item.max_tier ? `T${item.max_tier}` : undefined,
+    searchText: `${item.name} ${item.quality} ${item.type} ${formatShortStats(item.stats, 6)}`,
+    value: item,
+  });
+  const updateCombatStyle = (combatStyle: CombatStyle) => {
+    if (!profile) return;
+    const nextGear = { ...profile.gear };
+    if (combatStyle === "swordShield") {
+      nextGear.offhandWeapon = "";
+      nextGear.bow = "";
+    } else if (combatStyle === "dualDaggers") {
+      nextGear.shield = "";
+      nextGear.bow = "";
+    } else {
+      nextGear.weapon = "";
+      nextGear.offhandWeapon = "";
+      nextGear.shield = "";
+    }
+    patchActive({ combatStyle, gear: nextGear });
+  };
+  const renderGearSlot = (key: string, label: string, types: string[], disabled = false) => {
+    if (!profile) return null;
+    const options = getSlotOptions(types);
+    const selected = itemByName[profile.gear[key] || ""];
+    const selectedOption = selected ? itemPickerOption(selected) : {
+      id: "none",
+      title: `Select ${label}`,
+      subtitle: label,
+      searchText: "none",
+      value: null,
+    };
+    const maxTier = Number(selected?.max_tier || 1);
+    const previewProfile = {
+      ...profile,
+      gear: { ...Object.fromEntries(Object.keys(profile.gear).map((slot) => [slot, ""])), [key]: profile.gear[key] },
+      gearTiers: { ...profile.gearTiers, [key]: profile.gearTiers[key] || 1 },
+      combatStyle: key === "bow" ? "bow" : key === "offhandWeapon" ? "dualDaggers" : profile.combatStyle,
+    } as CharacterProfile;
+    const stats = calculateProfileSecondaryStats(previewProfile, itemByName);
+    return (
+      <div key={key} className={`profile-item-slot rich ${disabled ? "disabled" : ""}`}>
+        <ProfilePicker
+          id={`gear-${key}`}
+          label={label}
+          placeholder={`Select ${label}`}
+          selected={selectedOption}
+          options={[
+            { id: "none", title: "None", subtitle: "Clear this slot", searchText: "none clear", value: null, muted: true },
+            ...options.map(itemPickerOption),
+          ]}
+          openId={openPicker}
+          setOpenId={setOpenPicker}
+          disabled={disabled}
+          onSelect={(item) => {
+            const next = item as ProfileItemRecord | null;
+            patchActive({
+              gear: { ...profile.gear, [key]: next?.name || "" },
+              gearTiers: { ...profile.gearTiers, [key]: 1 },
+            });
+          }}
+        />
+        <ProfileNumberField
+          label={`Tier / ${maxTier}`}
+          value={profile.gearTiers?.[key] || 1}
+          min={1}
+          max={maxTier}
+          onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: Math.min(Math.max(Number(value) || 1, 1), maxTier) } })}
+        />
+        {selected && (
+          <div className="profile-slot-stats">
+            <span>{formatShortStats(selected.stats, 5) || "No base stats"}</span>
+            {selected.tier_modifiers && <small>Tier gain: {formatShortStats(selected.tier_modifiers, 5)}</small>}
+            <small>Slot preview: AP {stats.attackPower}, Prot {stats.protection}, Agi {stats.agility}, Acc {stats.accuracy}</small>
+          </div>
+        )}
+        {disabled && <div className="profile-slot-stats"><span>Disabled by current weapon setup.</span></div>}
+      </div>
+    );
   };
 
   if (!profile) {
@@ -700,21 +591,53 @@ export default function ProfilesPage() {
     );
   }
 
-  const classOption = CLASS_RULES.find((option) => option.value === profile.className);
-  const unlockedTalents = getUnlockedClassTalents(profile.className, Number(profile.levels.combat || 0));
-  const nextTalent = getNextClassTalent(profile.className, Number(profile.levels.combat || 0));
-  const dailyStreakBonus = getDailyStreakMagicFindBonus(profile.magicFind.dailyStreak);
+  const selectedClassOption: PickerOption<string> = {
+    id: classInfo.id,
+    title: classInfo.id,
+    subtitle: classInfo.category,
+    image: classInfo.icon,
+    badge: classInfo.category,
+    searchText: `${classInfo.id} ${classInfo.category}`,
+    value: classInfo.id,
+  };
+  const petOptions: Array<PickerOption<PetDatabaseRecord>> = [
+    {
+      id: "none",
+      title: "No Pet Selected",
+      subtitle: "Clear pet data",
+      searchText: "none clear no pet",
+      value: null,
+      muted: true,
+    },
+    ...pets.map((pet) => ({
+      id: pet.name,
+      title: pet.name,
+      subtitle: `${pet.quality || "UNKNOWN"}${pet.acquisition?.[0]?.boss ? ` - ${pet.acquisition[0].boss}` : ""}`,
+      image: pet.imageUrl,
+      badge: pet.quality,
+      searchText: `${pet.name} ${pet.quality} ${pet.acquisition?.map((entry) => `${entry.boss} ${entry.location}`).join(" ")}`,
+      value: pet,
+    })),
+  ];
+  const selectedPetOption = selectedPet
+    ? petOptions.find((option) => option.id === selectedPet.name)
+    : petOptions[0];
 
   return (
-    <main className="container profiles-page">
-      {toastMessage && <div className="profile-toast" role="status">{toastMessage}</div>}
+    <main className="container profiles-page" onClick={(event) => {
+      if (!(event.target as HTMLElement).closest(".profile-picker")) setOpenPicker(null);
+    }}>
+      <Toast message={toast} onClose={() => setToast("")} />
       <div className="header profile-header">
         <div>
           <h1 className="header-title"><Users size={24} color="var(--text-accent)" /> PROFILES</h1>
-          <p className="profile-subtitle">Local character setups for calculators. Global prices, membership, and theme stay in Settings.</p>
+          <p className="profile-subtitle">Local character setups for calculators. Global prices, membership, custom prices, and theme stay in Settings.</p>
         </div>
         <div className="profile-header-actions">
-          <button className="profile-action" type="button" onClick={() => addProfile()} disabled={state.profiles.length >= MAX_PROFILES}>
+          <button className="profile-action" type="button" onClick={() => {
+            const created = addProfile();
+            if (created) setToast("Profile added.");
+          }} disabled={state.profiles.length >= MAX_PROFILES}>
             <Plus size={15} /> Add
           </button>
           <button className="profile-action" type="button" onClick={handleExport}>
@@ -747,8 +670,8 @@ export default function ProfilesPage() {
                 >
                   <span className="profile-avatar"><UserRound size={18} /></span>
                   <span>
-                    <strong>{item.name}</strong>
-                    <small>{item.kind === "main" ? "Main" : "Alt"} - {item.className || "Class not set"}</small>
+                    <strong>{item.name || "Unnamed Character"}</strong>
+                    <small>{item.kind === "main" ? "Main" : "Alt"} - {item.className}</small>
                   </span>
                   {active && <BadgeCheck size={16} />}
                 </button>
@@ -765,7 +688,10 @@ export default function ProfilesPage() {
                 <p>Stable profile data used by calculators.</p>
               </div>
               <div className="profile-inline-actions">
-                <button type="button" onClick={() => duplicateProfile(profile.id)} disabled={state.profiles.length >= MAX_PROFILES} title="Duplicate profile">
+                <button type="button" onClick={() => {
+                  const created = duplicateProfile(profile.id);
+                  if (created) setToast("Profile duplicated.");
+                }} disabled={state.profiles.length >= MAX_PROFILES} title="Duplicate profile">
                   <Copy size={15} />
                 </button>
                 <button type="button" onClick={handleDeleteProfile} title="Delete profile">
@@ -773,27 +699,26 @@ export default function ProfilesPage() {
                 </button>
               </div>
             </div>
-            <div className="profile-grid">
-              <ProfileTextField label="Character Name" value={profile.name} onChange={(name) => patchActive({ name })} />
-              <div className="profile-field">
-                <span>Class</span>
-                <CustomPicker
-                  label="Class"
-                  value={CLASS_OPTION_VALUES.has(profile.className) ? profile.className : ""}
-                  options={CLASS_RULES.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                    detail: option.dropdownDetail,
-                    badge: option.category,
-                    imageUrl: option.iconUrl,
-                    tags: [option.category, option.dropdownDetail, ...option.permanentEffects],
-                  }))}
-                  placeholder="Select class"
-                  searchPlaceholder="Search class..."
-                  onChange={(className) => patchActive({ className })}
-                  allowClear={false}
-                />
-              </div>
+            <div className="profile-grid identity-grid">
+              <ProfileTextField label="Character Name" value={profile.name} onChange={(name) => patchActive({ name })} placeholder="Character name" />
+              <ProfilePicker
+                id="class"
+                label="Class"
+                placeholder="Select Class"
+                selected={selectedClassOption}
+                options={CLASS_DATA.map((entry) => ({
+                  id: entry.id,
+                  title: entry.id,
+                  subtitle: entry.category,
+                  image: entry.icon,
+                  badge: entry.category,
+                  searchText: `${entry.id} ${entry.category}`,
+                  value: entry.id,
+                }))}
+                openId={openPicker}
+                setOpenId={setOpenPicker}
+                onSelect={(value) => patchActive({ className: String(value || "Other") })}
+              />
               <label className="profile-field">
                 <span>Character Type</span>
                 <div className="profile-segmented">
@@ -801,86 +726,52 @@ export default function ProfilesPage() {
                   <button type="button" className={profile.kind === "alt" ? "active" : ""} onClick={() => patchActive({ kind: "alt" })}>Alt</button>
                 </div>
               </label>
-              {classOption && (
-                <div className="profile-class-card profile-field-wide">
-                  <div className="profile-class-main">
-                    {classOption.iconUrl ? <img src={classOption.iconUrl} alt="" /> : <span className="profile-picker-icon">{classOption.label.charAt(0)}</span>}
-                    <div>
-                      <strong>{classOption.label}</strong>
-                      <p>{classOption.description}</p>
-                    </div>
-                  </div>
-                  <div className="profile-info-list">
-                    <section>
-                      <h4>Effects</h4>
-                      <ul>
-                        {classOption.permanentEffects.map((effect) => <li key={effect}>{effect}</li>)}
-                      </ul>
-                    </section>
-                    <section>
-                      <h4>Battle Talents</h4>
-                      {classOption.battleTalents.length ? (
-                        <ul>
-                          {classOption.battleTalents.map((talent) => (
-                            <li key={talent.name} className={Number(profile.levels.combat || 0) >= talent.level ? "active" : ""}>
-                              Lv. {talent.level}: {talent.name} ({talent.effect})
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p>No combat talents for this class.</p>}
-                    </section>
-                    {classOption.notes?.length ? (
-                      <section>
-                        <h4>Notes</h4>
-                        <ul>
-                          {classOption.notes.map((note) => <li key={note}>{note}</li>)}
-                        </ul>
-                      </section>
-                    ) : null}
-                  </div>
-                  <div className="profile-class-tags">
-                    <span>{classOption.category}</span>
-                    <span>{classOption.dropdownDetail}</span>
-                    {unlockedTalents.length ? <span>{unlockedTalents.length} active talent{unlockedTalents.length === 1 ? "" : "s"}</span> : null}
-                    {nextTalent ? <span>Next: {nextTalent.name} at Lv. {nextTalent.level}</span> : null}
-                  </div>
-                </div>
-              )}
-              <label className="profile-field profile-field-wide">
-                <span>Notes</span>
-                <textarea className="control-input" value={profile.notes} onChange={(event) => patchActive({ notes: event.target.value })} />
-              </label>
             </div>
+            <div className="profile-class-card">
+              <span className="profile-class-icon">{classInfo.icon ? <img src={classInfo.icon} alt="" /> : <Sparkles size={22} />}</span>
+              <div>
+                <h3>{classInfo.id}</h3>
+                <p>{classInfo.summary}</p>
+                <div className="profile-chip-row">
+                  {classInfo.effects.map((effect) => <span key={effect}>{effect}</span>)}
+                </div>
+                <div className="profile-talent-list">
+                  {classInfo.talents.length ? classInfo.talents.map((talent) => {
+                    const active = Number(profile.levels.combat || 0) >= talent.level;
+                    return <em key={talent.name} className={active ? "active" : ""}>{talent.name} Lv.{talent.level}: {talent.description}</em>;
+                  }) : <em>No battle talents.</em>}
+                </div>
+                {classInfo.notes.map((note) => <small key={note}>{note}</small>)}
+              </div>
+            </div>
+            <label className="profile-field profile-field-wide">
+              <span>Notes</span>
+              <textarea className="control-input" value={profile.notes} onChange={(event) => patchActive({ notes: event.target.value })} />
+            </label>
           </section>
 
           <section id="profile-levels" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
                 <h2>Levels</h2>
-                <p>Levels above 100 are stored as entered for future ascension-aware logic.</p>
+                <p>Combat, Hunting Mastery, and Dungeoneering can store ascension levels above 100.</p>
               </div>
             </div>
             <div className="profile-grid compact">
-              {LEVEL_FIELDS.map(([key, label]) => (
-                <ProfileNumberField
-                  key={key}
-                  label={label}
-                  value={profile.levels[key]}
-                  min={key === "totalLevel" ? 20 : 1}
-                  max={key === "totalLevel" ? 2300 : key === "strength" || key === "defence" || key === "speed" || key === "dexterity" || key === "petMastery" ? 100 : 600}
-                  onChange={(value) => {
-                    if (key === "petMastery") {
-                      const nextStats = calculatePetStats(selectedPet, profile.pet.level, value, profile.pet.evolution, petDatabase);
-                      patchActive({
-                        levels: { ...profile.levels, [key]: value },
-                        pet: { ...profile.pet, stats: { ...profile.pet.stats, ...nextStats } },
-                      });
-                      return;
-                    }
-                    updateNested("levels", key, value);
-                  }}
-                />
-              ))}
+              {LEVEL_FIELDS.map(([key, label, limits]) => {
+                const asc = ascensionLevel(profile.levels[key]);
+                return (
+                  <ProfileNumberField
+                    key={key}
+                    label={label}
+                    value={profile.levels[key]}
+                    min={limits.min}
+                    max={limits.max}
+                    onChange={(value) => updateNested("levels", key, value)}
+                    hint={asc ? `Ascension ${asc}` : undefined}
+                  />
+                );
+              })}
             </div>
           </section>
 
@@ -888,9 +779,18 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Combat Snapshot</h2>
-                <p>Auto-updated from selected class talents and gear. You can still edit values manually if your character screen differs.</p>
+                <p>Calculated from core levels, selected gear tiers, pet stats, and active class talents. You can still edit any final value manually.</p>
               </div>
-              <div className="profile-stat-pill"><Shield size={14} /> {combatStatTotal.toLocaleString()} dungeon stats</div>
+              <div className="profile-stat-pill"><Shield size={14} /> {combatStatTotal.toLocaleString()} calculated dungeon stats</div>
+            </div>
+            <div className="profile-auto-card">
+              {SECONDARY_FIELDS.map(([key, label]) => (
+                <div key={key}>
+                  <span>{label}</span>
+                  <strong>{calculatedSecondary?.[key]?.toLocaleString() || 0}</strong>
+                </div>
+              ))}
+              <button type="button" onClick={applyAutoStats}>Apply Calculated Stats</button>
             </div>
             <div className="profile-grid compact">
               {SECONDARY_FIELDS.map(([key, label]) => (
@@ -899,8 +799,7 @@ export default function ProfilesPage() {
                   label={label}
                   value={profile.secondaryStats[key]}
                   step={key === "movementSpeed" ? "0.01" : "1"}
-                  min={key === "criticalChance" || key === "criticalDamage" || key === "damage" ? 0 : key === "movementSpeed" ? 3 : 2}
-                  suffix={key === "movementSpeed" ? "m/s" : undefined}
+                  min={key === "movementSpeed" ? 3 : key === "criticalChance" || key === "criticalDamage" || key === "damage" ? 0 : 2}
                   onChange={(value) => updateNested("secondaryStats", key, value)}
                 />
               ))}
@@ -911,54 +810,36 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Magic, Efficiency, Timers</h2>
-                <p>Final visible values first. Page-specific potions, essence, shrine, and weather stay on the relevant page.</p>
+                <p>Daily streak, conquest, bartering level, efficiencies, and playtime belong to this character. Page-specific potions, shrine, essence, and weather stay on the relevant page.</p>
               </div>
+              <div className="profile-stat-pill"><Sparkles size={14} /> +{dailyBonus}% streak MF</div>
             </div>
             <div className="profile-grid compact">
-              <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "combat", value)} />
-              <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "dungeon", value)} />
-              <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "worldBoss", value)} />
+              <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} onChange={(value) => updateNested("magicFind", "combat", value)} />
+              <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} onChange={(value) => updateNested("magicFind", "dungeon", value)} />
+              <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} onChange={(value) => updateNested("magicFind", "worldBoss", value)} />
+              <ProfileNumberField label="Daily Streak" value={profile.magicFind.dailyStreak} min={0} onChange={updateDailyStreak} hint="1% every 10 days, capped at 10%." />
+              <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} onChange={(value) => updateNested("efficiency", "hunting", value)} />
+              <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} onChange={(value) => updateNested("efficiency", "dungeon", value)} />
+              <ProfileNumberField label="Playtime (hours/day)" value={profile.timers.activeHours} min={0} max={24} onChange={(value) => updateNested("timers", "activeHours", value)} />
+              <label className="profile-field">
+                <span>Conquest Buff</span>
+                <select
+                  className="control-input"
+                  value={profile.boosts.conquestRank}
+                  onChange={(event) => updateNested("boosts", "conquestRank", event.target.value as AssaultRank)}
+                >
+                  {ASSAULT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
               <ProfileNumberField
-                label="Daily Streak"
-                value={profile.magicFind.dailyStreak}
+                label="Bartering Level"
+                value={profile.boosts.barteringLevel}
                 min={0}
-                onChange={(value) => {
-                  const previousBonus = getDailyStreakMagicFindBonus(profile.magicFind.dailyStreak);
-                  const nextBonus = getDailyStreakMagicFindBonus(value);
-                  const adjust = (current: number | "") => Math.max(0, Number(current || 0) - previousBonus + nextBonus);
-                  patchActive({
-                    magicFind: {
-                      ...profile.magicFind,
-                      dailyStreak: value,
-                      combat: adjust(profile.magicFind.combat),
-                      dungeon: adjust(profile.magicFind.dungeon),
-                      worldBoss: adjust(profile.magicFind.worldBoss),
-                    },
-                  });
-                }}
+                max={100}
+                onChange={(value) => updateNested("boosts", "barteringLevel", value === "" ? "" : Math.min(100, Math.max(0, Number(value))))}
+                hint={`Vendor bonus: +${barteringPercent}%`}
               />
-              <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} suffix="%" onChange={(value) => updateNested("efficiency", "hunting", value)} />
-              <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} suffix="%" onChange={(value) => updateNested("efficiency", "dungeon", value)} />
-              <ProfileNumberField
-                label="Playtime (hours/day)"
-                value={profile.timers.activeHours || profile.timers.idleTimerHours}
-                step="0.25"
-                min={0}
-                max={24}
-                suffix="hours"
-                onChange={(value) => patchActive({ timers: { activeHours: value, idleTimerHours: "" } })}
-              />
-            </div>
-            <div className="profile-derived-strip">
-              <span>Daily Streak MF</span>
-              <strong>+{dailyStreakBonus}% to Combat, Dungeon, World Boss</strong>
-              <strong>Caps at 100 days</strong>
-            </div>
-            <div className="profile-derived-strip">
-              <span>Tool Efficiency</span>
-              <strong>Woodcutting {toolEfficiencies.woodcutting}%</strong>
-              <strong>Mining {toolEfficiencies.mining}%</strong>
-              <strong>Fishing {toolEfficiencies.fishing}%</strong>
             </div>
           </section>
 
@@ -966,178 +847,138 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Pet</h2>
-                <p>Select a pet from the Pet Database, then store level and evolution for calculators.</p>
+                <p>Select from the Pet Database, then adjust level, evolution, or final visible pet stats.</p>
               </div>
             </div>
             <div className="profile-grid">
-              <div className="profile-field">
-                <span>Pet</span>
-                <ProfilePetPicker
-                  value={profile.pet.species}
-                  options={petOptions}
-                  onSelect={(pet) => {
-                    const nextStats = calculatePetStats(pet, profile.pet.level, profile.levels.petMastery, profile.pet.evolution, petDatabase);
-                    patchActive({
-                      pet: {
-                        ...profile.pet,
-                        species: pet?.name || "",
-                        quality: pet?.quality || "",
-                        level: pet ? profile.pet.level || 1 : 1,
-                        evolution: pet ? profile.pet.evolution || 0 : 0,
-                        stats: pet ? { ...profile.pet.stats, ...nextStats } : Object.fromEntries(PET_STAT_KEYS.map((key) => [key, ""])),
-                        notes: pet?.name === profile.pet.species ? profile.pet.notes : "",
-                      },
-                    });
-                  }}
-                />
-              </div>
-              <label className="profile-field">
-                <span>Quality</span>
-                <input className="control-input" type="text" value={profile.pet.quality} readOnly placeholder="Select a pet" />
-              </label>
-              <ProfileNumberField
-                label="Pet Level"
-                value={profile.pet.level}
-                min={1}
-                max={100}
-                onChange={(value) => {
-                  const nextStats = calculatePetStats(selectedPet, value, profile.levels.petMastery, profile.pet.evolution, petDatabase);
-                  patchActive({ pet: { ...profile.pet, level: value, stats: { ...profile.pet.stats, ...nextStats } } });
-                }}
+              <ProfilePicker
+                id="pet"
+                label="Pet"
+                placeholder="Select Pet"
+                selected={selectedPetOption}
+                options={petOptions}
+                openId={openPicker}
+                setOpenId={setOpenPicker}
+                onSelect={selectPet}
               />
-              <ProfileNumberField
-                label="Evolution Level"
-                value={profile.pet.evolution}
-                min={0}
-                max={5}
-                onChange={(value) => {
-                  const nextStats = calculatePetStats(selectedPet, profile.pet.level, profile.levels.petMastery, value, petDatabase);
-                  patchActive({ pet: { ...profile.pet, evolution: value, stats: { ...profile.pet.stats, ...nextStats } } });
-                }}
-              />
-              {selectedPet && (
-                <div className="profile-pet-card profile-field-wide">
-                  {selectedPet.imageUrl ? <img src={selectedPet.imageUrl} alt="" /> : null}
-                  <div>
-                    <strong>{selectedPet.name}</strong>
-                    <span>{getPetSourceLabel(selectedPet)}</span>
-                    <div className="profile-pet-stat-grid">
-                      {getPetStatEntries(selectedPet).length ? getPetStatEntries(selectedPet).map((entry) => (
-                        <small key={entry.label}><b>{entry.label}</b> {entry.valueLabel}</small>
-                      )) : <small>Stats pending in local database</small>}
-                    </div>
+              <ProfileTextField label="Quality" value={profile.pet.quality} onChange={(value) => updateNested("pet", "quality", value)} placeholder="Select a pet" />
+              <ProfileNumberField label="Pet Level" value={profile.pet.level} min={1} max={100} onChange={(value) => updatePetFormula({ level: value })} />
+              <ProfileNumberField label="Evolution Level" value={profile.pet.evolution} min={0} max={5} onChange={(value) => updatePetFormula({ evolution: value })} />
+            </div>
+            {selectedPet && (
+              <div className="profile-selected-card">
+                <img src={selectedPet.imageUrl} alt="" />
+                <div>
+                  <h3>{selectedPet.name}</h3>
+                  <p>{selectedPet.quality} - {selectedPet.acquisition?.[0]?.boss || "Pet Database"}</p>
+                  <div className="profile-chip-row">
+                    {PET_STAT_FIELDS.slice(0, 6).map(([key, label]) => <span key={key}>{label}: {profile.pet.stats[key] || 0}</span>)}
                   </div>
                 </div>
-              )}
-              <div className="profile-field profile-field-wide">
-                <span>Pet Stats</span>
-                <div className="profile-grid compact profile-pet-stat-editor">
-                  {PET_STAT_KEYS.map((key) => (
-                    <ProfileNumberField
-                      key={key}
-                      label={PET_STAT_LABELS[key]}
-                      value={profile.pet.stats?.[key] ?? ""}
-                      step={key === "movement_speed" || key === "critical_damage" || key === "critical_chance" ? "0.01" : "1"}
-                      suffix={key === "movement_speed" ? "m/s" : undefined}
-                      onChange={(value) => patchActive({ pet: { ...profile.pet, stats: { ...profile.pet.stats, [key]: value } } })}
-                    />
-                  ))}
-                </div>
               </div>
-              <label className="profile-field profile-field-wide">
-                <span>Pet Notes</span>
-                <textarea
-                  className="control-input"
-                  value={profile.pet.notes}
-                  placeholder="Optional notes from your character screen..."
-                  onChange={(event) => updateNested("pet", "notes", event.target.value)}
+            )}
+            <div className="profile-grid compact">
+              {PET_STAT_FIELDS.map(([key, label]) => (
+                <ProfileNumberField
+                  key={key}
+                  label={label}
+                  value={profile.pet.stats[key]}
+                  step={key === "movementSpeed" || key === "criticalDamage" || key === "criticalChance" ? "0.01" : "1"}
+                  onChange={(value) => patchActive({ pet: { ...profile.pet, stats: { ...profile.pet.stats, [key]: value } } })}
                 />
-              </label>
+              ))}
             </div>
+            <label className="profile-field profile-field-wide">
+              <span>Pet Notes</span>
+              <textarea className="control-input" value={profile.pet.notes} placeholder="Optional notes from screenshots or manual checks..." onChange={(event) => updateNested("pet", "notes", event.target.value)} />
+            </label>
           </section>
 
           <section id="profile-gear" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
                 <h2>Gear And Tools</h2>
-                <p>Gear and tools come from the item database. Tier modifiers are stored per profile for future stat calculation.</p>
+                <p>Gear and tools come from the item database. Tier 1 is the base item; higher tiers apply stored tier modifiers.</p>
               </div>
             </div>
             <div className="profile-dual-grid">
               <div>
                 <h3><Shield size={14} /> Gear</h3>
+                <div className="profile-loadout-card">
+                  <span><Swords size={14} /> Weapon Setup</span>
+                  <div className="profile-loadout-options">
+                    {COMBAT_STYLE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={profile.combatStyle === option.value ? "active" : ""}
+                        onClick={() => updateCombatStyle(option.value)}
+                      >
+                        <strong>{option.label}</strong>
+                        <small>{option.hint}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="profile-grid single">
-                  {GEAR_FIELDS.map(([key, label, types]) => {
-                    const selected = getSelectedItem(profile.gear[key] || "");
-                    const maxTier = Number(selected?.max_tier || 0);
-                    return (
-                      <div key={key} className="profile-item-slot">
-                        <div className="profile-field">
-                          <span>{label}</span>
-                          <CustomPicker
-                            label={label}
-                            value={profile.gear[key] || ""}
-                            options={getSlotPickerOptions(types)}
-                            placeholder={`Select ${label.toLowerCase()}`}
-                            searchPlaceholder={`Search ${label.toLowerCase()}...`}
-                            onChange={(value) => {
-                              patchActive({
-                                gear: { ...profile.gear, [key]: value },
-                                gearTiers: { ...profile.gearTiers, [key]: 1 },
-                              });
-                            }}
-                          />
-                        </div>
-                        <ProfileNumberField
-                          label={`Tier${maxTier ? ` / ${maxTier}` : ""}`}
-                          value={profile.gearTiers?.[key] || 1}
-                          min={1}
-                          max={maxTier || undefined}
-                          onChange={(value) => {
-                            const nextTier = Math.max(1, Number(value) || 1);
-                            patchActive({ gearTiers: { ...profile.gearTiers, [key]: maxTier ? Math.min(nextTier, maxTier) : nextTier } });
-                          }}
-                        />
-                        {selected && (
-                          <div className="profile-item-summary">
-                            {selected.image_url ? <img src={selected.image_url} alt="" /> : null}
-                            <div>
-                              <strong>{selected.name}</strong>
-                              <small>{cleanQuality(selected.quality)} - {formatRequirements(selected)}</small>
-                              <p>{formatStatSummary(getItemStatTotals(selected, profile.gearTiers?.[key] || 1)) || "No combat stats"}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {ARMOR_GEAR_FIELDS.map(([key, label, types]) => renderGearSlot(key, label, types))}
+                  {profile.combatStyle === "swordShield" && (
+                    <>
+                      {renderGearSlot("weapon", "Sword", ["SWORD"])}
+                      {renderGearSlot("shield", "Shield", ["SHIELD"])}
+                    </>
+                  )}
+                  {profile.combatStyle === "dualDaggers" && (
+                    <>
+                      {renderGearSlot("weapon", "Main Dagger", ["DAGGER"])}
+                      {renderGearSlot("offhandWeapon", "Offhand Dagger", ["DAGGER"])}
+                      {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
+                    </>
+                  )}
+                  {profile.combatStyle === "bow" && (
+                    <>
+                      {renderGearSlot("bow", "Bow", ["BOW"])}
+                      {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
+                    </>
+                  )}
                 </div>
               </div>
               <div>
                 <h3><FileUp size={14} /> Tools</h3>
                 <div className="profile-grid single">
-                  {TOOL_FIELDS.map(([key, label, types]) => (
-                    <div key={key} className="profile-field">
-                      <span>{label}</span>
-                      <CustomPicker
-                        label={label}
-                        value={profile.tools[key] || ""}
-                        options={getSlotPickerOptions(types)}
-                        placeholder={`Select ${label.toLowerCase()}`}
-                        searchPlaceholder={`Search ${label.toLowerCase()}...`}
-                        onChange={(value) => patchActive({ tools: { ...profile.tools, [key]: value } })}
-                      />
-                      {profile.tools[key] && (
-                        <div className="profile-item-summary compact">
-                          {getSelectedItem(profile.tools[key] || "")?.image_url ? <img src={getSelectedItem(profile.tools[key] || "")?.image_url || ""} alt="" /> : null}
-                          <div>
-                            <strong>{profile.tools[key]}</strong>
-                            <small>{getItemEffectSummary(getSelectedItem(profile.tools[key] || "")) || "No efficiency effect"}</small>
-                          </div>
+                  {TOOL_FIELDS.map(([key, label, types]) => {
+                    const selected = itemByName[profile.tools[key] || ""];
+                    return (
+                      <div key={key} className="profile-item-slot tool-slot">
+                        <ProfilePicker
+                          id={`tool-${key}`}
+                          label={label}
+                          placeholder={`Select ${label}`}
+                          selected={selected ? itemPickerOption(selected) : {
+                            id: "none",
+                            title: `Select ${label}`,
+                            subtitle: "Tool",
+                            searchText: "none",
+                            value: null,
+                          }}
+                          options={[
+                            { id: "none", title: "None", subtitle: "Clear this tool", searchText: "none clear", value: null, muted: true },
+                            ...getSlotOptions(types).map(itemPickerOption),
+                          ]}
+                          openId={openPicker}
+                          setOpenId={setOpenPicker}
+                          onSelect={(item) => {
+                            const next = item as ProfileItemRecord | null;
+                            patchActive({ tools: { ...profile.tools, [key]: next?.name || "" } });
+                          }}
+                        />
+                        <div className="profile-slot-stats">
+                          <span>{selected ? `Efficiency: +${getToolEfficiency(selected)}%` : "No tool selected"}</span>
+                          {selected?.requirements && <small>Requires Lv. {getItemRequirementLevel(selected)}</small>}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1152,22 +993,14 @@ export default function ProfilesPage() {
               <Home size={18} color="var(--text-accent)" />
             </div>
             <div className="profile-grid">
-              <div className="profile-field">
+              <label className="profile-field">
                 <span>Mode</span>
-                <CustomPicker
-                  label="Housing mode"
-                  value={profile.housing.mode}
-                  options={[
-                    { value: "none", label: "Not Set", detail: "No housing data stored yet" },
-                    { value: "owner", label: "Own House", detail: "Track this profile as the house owner" },
-                    { value: "guest", label: "Guest Buffs", detail: "Store buffs received from another house" },
-                  ]}
-                  placeholder="Select housing mode"
-                  searchPlaceholder="Search housing mode..."
-                  onChange={(value) => updateNested("housing", "mode", (value || "none") as CharacterProfile["housing"]["mode"])}
-                  allowClear={false}
-                />
-              </div>
+                <select className="control-input" value={profile.housing.mode} onChange={(event) => updateNested("housing", "mode", event.target.value as CharacterProfile["housing"]["mode"])}>
+                  <option value="none">Not Set</option>
+                  <option value="owner">Own House</option>
+                  <option value="guest">Guest Buffs</option>
+                </select>
+              </label>
               <label className="profile-field profile-field-wide">
                 <span>Housing Notes</span>
                 <textarea className="control-input" value={profile.housing.notes} onChange={(event) => updateNested("housing", "notes", event.target.value)} />
@@ -1192,11 +1025,6 @@ export default function ProfilesPage() {
               placeholder="Exported profile JSON or paste an import payload here..."
               onChange={(event) => setTransferText(event.target.value)}
             />
-            <div className="profile-transfer-actions">
-              <button className="profile-action" type="button" onClick={handleExport}><Download size={15} /> Generate export</button>
-              <button className="profile-action" type="button" onClick={handleImport}><Upload size={15} /> Import pasted profiles</button>
-            </div>
-            {transferMessage && <p className="profile-transfer-message">{transferMessage}</p>}
           </section>
         </div>
       </section>

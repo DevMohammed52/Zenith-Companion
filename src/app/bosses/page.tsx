@@ -23,13 +23,14 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES } from "../../constants/events";
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { formatGold } from "@/lib/format";
+import { getSafeMarketValue } from "@/lib/market-pricing";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
-import { useProfiles } from "@/lib/profiles";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
@@ -219,9 +220,9 @@ function getValueBreakdown(
 ) {
     const marketItem = marketData?.[itemName];
     const dbItem = allItemsDb?.[itemName];
-    const trueValue = getItemTrueValue(itemName, marketData, allItemsDb, 0);
+    const trueValue = getItemTrueValue(itemName, marketData, allItemsDb, 0, options);
     const customGross = Number(options.customPrices?.[itemName] || 0);
-    const marketGross = customGross || getSafeMarketPrice(marketItem);
+    const marketGross = customGross || getSafeMarketValue(marketItem);
     const marketNet = (customGross > 0 || dbItem?.is_tradeable !== false)
         ? marketGross * options.marketTaxMultiplier
         : 0;
@@ -311,7 +312,7 @@ function BossesContent() {
     const [routineTravelMode, setRoutineTravelMode] = useState<TravelMode>("teleport");
     const [routineLocationOpen, setRoutineLocationOpen] = useState(false);
     const routineLocationRef = useRef<HTMLDivElement | null>(null);
-    const profileRoutineAppliedRef = useRef<string | null>(null);
+    const profileDefaultsAppliedRef = useRef<string | null>(null);
 
     useEffect(() => {
         const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -371,27 +372,6 @@ function BossesContent() {
     ]);
 
     useEffect(() => {
-        if (!routineSettingsLoaded || !activeProfile) return;
-        if (profileRoutineAppliedRef.current === activeProfile.id) return;
-        profileRoutineAppliedRef.current = activeProfile.id;
-
-        const totalLevel = Number(activeProfile.levels.totalLevel);
-        if (Number.isFinite(totalLevel) && totalLevel > 0) {
-            setRoutineTeleportLevel(clampNumber(totalLevel, 0, MAX_EFFECTIVE_TELEPORT_LEVEL));
-        }
-
-        const movementSpeed = Number(activeProfile.secondaryStats.movementSpeed);
-        if (Number.isFinite(movementSpeed) && movementSpeed > 0) {
-            setRoutineMovementSpeed(clampNumber(movementSpeed, 0.1, 500));
-        }
-
-        setRoutineClassDiscount(["cursed", "banished"].includes(activeProfile.className.toLowerCase()));
-    }, [
-        activeProfile,
-        routineSettingsLoaded,
-    ]);
-
-    useEffect(() => {
         const searchParam = searchParams.get("search");
         if (searchParam) setSearchTerm(searchParam);
     }, [searchParams]);
@@ -417,8 +397,24 @@ function BossesContent() {
         return () => window.removeEventListener("pointerdown", handlePointerDown);
     }, []);
 
-    const worldBossMagicFindValue = activeProfile ? activeProfile.magicFind.worldBoss : preferences.worldBossMagicFind;
-    const magicFind = clampNumber(Number(worldBossMagicFindValue) || 0, 0, 500);
+    useEffect(() => {
+        if (!routineSettingsLoaded || !activeProfile || profileDefaultsAppliedRef.current === activeProfile.id) return;
+        if (activeProfile.levels.totalLevel !== "" && Number(routineTeleportLevel) === DEFAULT_EFFECTIVE_TELEPORT_LEVEL) {
+            setRoutineTeleportLevel(clampNumber(Number(activeProfile.levels.totalLevel), 0, MAX_EFFECTIVE_TELEPORT_LEVEL));
+        }
+        if (activeProfile.secondaryStats.movementSpeed !== "" && Number(routineMovementSpeed) === DEFAULT_MOVEMENT_SPEED) {
+            setRoutineMovementSpeed(clampNumber(Number(activeProfile.secondaryStats.movementSpeed), 0.1, 500));
+        }
+        profileDefaultsAppliedRef.current = activeProfile.id;
+    }, [
+        activeProfile,
+        routineMovementSpeed,
+        routineSettingsLoaded,
+        routineTeleportLevel,
+    ]);
+
+    const profileWorldBossMagicFind = activeProfile && activeProfile.magicFind.worldBoss !== "" ? activeProfile.magicFind.worldBoss : preferences.worldBossMagicFind;
+    const magicFind = clampNumber(Number(profileWorldBossMagicFind) || 0, 0, 500);
 
     const calculatedRows = useMemo(() => {
         if (!staticData?.world_bosses || !marketData || !allItemsDb) return [];
@@ -426,7 +422,7 @@ function BossesContent() {
         const evOptions = {
             customPrices: preferences.customPrices,
             marketTaxMultiplier: getMarketTaxMultiplier(preferences.membership),
-            barteringBoost: preferences.barteringBoost,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
         };
 
         for (const boss of staticData.world_bosses) {
@@ -477,6 +473,7 @@ function BossesContent() {
         magicFind,
         marketData,
         now,
+        activeProfile,
         preferences.barteringBoost,
         preferences.customPrices,
         preferences.membership,
@@ -670,7 +667,7 @@ function BossesContent() {
                 <div className="header-status" aria-live="polite">
                     <div className="status-dot"></div>
                     <span className="mono">
-                        {activeCount > 0 ? `${activeCount} ACTIVE / READY` : nextBoss ? `NEXT ${formatCountdown(nextBoss.nextSpawnTime, now)}` : `${rows.length} BOSSES LOADED`}
+                        {activeProfile ? `${activeProfile.name} · ` : ""}{activeCount > 0 ? `${activeCount} ACTIVE / READY` : nextBoss ? `NEXT ${formatCountdown(nextBoss.nextSpawnTime, now)}` : `${rows.length} BOSSES LOADED`}
                     </span>
                 </div>
             </div>
@@ -714,12 +711,6 @@ function BossesContent() {
                 </div>
 
                 <div className="boss-routine-controls">
-                    {activeProfile ? (
-                        <div className="boss-warning-box routine-warning" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                            <Sparkles size={16} />
-                            <p>Using active profile: {activeProfile.name}. Total level, movement speed, class, and world boss magic find are linked to this profile.</p>
-                        </div>
-                    ) : null}
                     <div className="control-group routine-location-field" ref={routineLocationRef}>
                         <span className="control-label">Start Location</span>
                         <button
@@ -904,27 +895,17 @@ function BossesContent() {
                             max="500"
                             className="control-input"
                             style={{ width: "100%", paddingLeft: "2rem" }}
-                            value={worldBossMagicFindValue}
+                            value={profileWorldBossMagicFind}
                             onChange={(event) => {
                                 const next = event.target.value === "" ? "" : clampNumber(Number(event.target.value) || 0, 0, 500);
                                 if (activeProfile) {
-                                    updateProfile(activeProfile.id, {
-                                        magicFind: {
-                                            ...activeProfile.magicFind,
-                                            worldBoss: next,
-                                        },
-                                    });
+                                    updateProfile(activeProfile.id, { magicFind: { ...activeProfile.magicFind, worldBoss: next } });
                                 } else {
                                     setPreferences({ worldBossMagicFind: next });
                                 }
                             }}
                         />
                     </div>
-                    {activeProfile ? (
-                        <small style={{ display: "block", marginTop: "0.35rem", color: "var(--text-muted)" }}>
-                            Linked to {activeProfile.name}. Edit this value here or on the Profiles page.
-                        </small>
-                    ) : null}
                 </div>
             </div>
 

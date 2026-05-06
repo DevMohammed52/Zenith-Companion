@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { formatGold } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import {
@@ -91,6 +93,7 @@ export default function SkillProfitPage() {
   const { marketData, allItemsDb } = useData();
   const { openItemByName, prefetchItem } = useItemModal();
   const { preferences, setPreferences, loaded: preferencesLoaded } = usePreferences();
+  const { activeProfile, updateProfile } = useProfiles();
   const [settings, setSettings] = useState<SkillProfitSettings>(DEFAULT_STATE.settings);
   const [activeSkill, setActiveSkill] = useState<SkillName | "All">(DEFAULT_STATE.activeSkill);
   const [sortKey, setSortKey] = useState<SkillProfitSortKey>(DEFAULT_STATE.sortKey);
@@ -108,16 +111,26 @@ export default function SkillProfitPage() {
 
   useEffect(() => {
     if (!preferencesLoaded) return;
+    const profileTools = activeProfile?.tools || {};
+    const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : Number(preferences.barteringBoost) || 0;
     setSettings((current) => ({
       ...current,
       membership: preferences.membership,
       classBonus: preferences.skillClassBonus,
-      assaultRank: preferences.assaultRank,
-      tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
+      assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
+      tools: {
+        ...DEFAULT_TOOL_SELECTIONS,
+        ...preferences.skillTools,
+        ...(profileTools.woodcutting ? { Woodcutting: profileTools.woodcutting } : {}),
+        ...(profileTools.mining ? { Mining: profileTools.mining } : {}),
+        ...(profileTools.fishing ? { Fishing: profileTools.fishing } : {}),
+      },
       customPrices: preferences.customPrices,
-      barteringBoost: preferences.barteringBoost,
+      barteringBoost: profileBarteringBoost,
     }));
   }, [
+    activeProfile,
+    activeProfile?.tools,
     preferences.assaultRank,
     preferences.barteringBoost,
     preferences.customPrices,
@@ -136,7 +149,7 @@ export default function SkillProfitPage() {
         ...DEFAULT_SETTINGS,
         ...parsed.settings,
         tools: { ...DEFAULT_TOOL_SELECTIONS, ...parsed.settings?.tools },
-        customPrices: preferences.customPrices,
+        customPrices: DEFAULT_SETTINGS.customPrices,
       });
       if (parsed.activeSkill) setActiveSkill(parsed.activeSkill);
       if (parsed.sortKey) setSortKey(parsed.sortKey);
@@ -260,14 +273,21 @@ export default function SkillProfitPage() {
 
   const patchSettings = (patch: Partial<SkillProfitSettings>) => {
     setSettings((current) => ({ ...current, ...patch, tools: { ...current.tools, ...patch.tools } }));
-    if ("membership" in patch || "classBonus" in patch || "assaultRank" in patch || "tools" in patch || "barteringBoost" in patch || "customPrices" in patch) {
+    if (activeProfile && (patch.assaultRank || patch.barteringBoost !== undefined)) {
+      updateProfile(activeProfile.id, {
+        boosts: {
+          ...activeProfile.boosts,
+          ...(patch.assaultRank ? { conquestRank: patch.assaultRank } : {}),
+          ...(patch.barteringBoost !== undefined ? { barteringLevel: Math.min(100, Math.max(0, Math.round((Number(patch.barteringBoost) || 0) / 0.2))) } : {}),
+        },
+      });
+    }
+    if ("membership" in patch || "classBonus" in patch || "tools" in patch || "customPrices" in patch) {
       setPreferences({
         ...(typeof patch.membership === "boolean" ? { membership: patch.membership } : {}),
         ...(typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
-        ...(patch.assaultRank ? { assaultRank: patch.assaultRank } : {}),
         ...(patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
         ...(patch.customPrices ? { customPrices: patch.customPrices } : {}),
-        ...(patch.barteringBoost !== undefined ? { barteringBoost: patch.barteringBoost } : {}),
       });
     }
   };
@@ -359,6 +379,24 @@ export default function SkillProfitPage() {
             max={15}
             value={settings.energizingPoolExp}
             onChange={(event) => patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(event.target.value) || 0)) })}
+          />
+        </label>
+        <label className={styles.numberField}>
+          <span>Bartering Lvl</span>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={activeProfile?.boosts.barteringLevel ?? ""}
+            placeholder="0"
+            onChange={(event) => {
+                const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
+              if (activeProfile) {
+                updateProfile(activeProfile.id, { boosts: { ...activeProfile.boosts, barteringLevel: level } });
+              } else {
+                patchSettings({ barteringBoost: level === "" ? "" : Math.round(Number(level) * 0.2) });
+              }
+            }}
           />
         </label>
         <label className={styles.numberField}>
@@ -611,8 +649,10 @@ function SkillStrategyModal({
   const itemRequirements = item?.requirements && typeof item.requirements === "object" ? Object.entries(item.requirements).filter(([, value]) => value !== null && value !== "") : [];
   const itemEffects = item?.effects
     ? Array.isArray(item.effects)
-      ? item.effects.map((effect: any, index: number) => [`Effect ${index + 1}`, effect?.name || effect?.type || stringifyDetail(effect)] as [string, string])
-      : Object.entries(item.effects).filter(([, value]) => value !== null && value !== "")
+      ? item.effects.map((effect: any, index: number) => formatEffectEntry(effect, index))
+      : Object.entries(item.effects)
+        .filter(([, value]) => value !== null && value !== "")
+        .map(([key, value]) => [formatType(key), stringifyDetail(value)] as [string, string])
     : [];
   const restorationEntries = [
     ["Health", item?.health_restore ? `+${item.health_restore}` : "0"],
@@ -780,6 +820,22 @@ function stringifyDetail(value: any): string {
       .join(", ");
   }
   return String(value);
+}
+
+function formatEffectEntry(effect: any, index: number): [string, string] {
+  if (!effect || typeof effect !== "object") return [`Effect ${index + 1}`, stringifyDetail(effect)];
+  const target = effect.target ? formatType(effect.target) : "";
+  const attribute = effect.attribute ? formatType(effect.attribute) : effect.name || effect.type || `Effect ${index + 1}`;
+  const label = [target, attribute].filter(Boolean).join(" ");
+  const rawValue = Number(effect.value);
+  const prefix = Number.isFinite(rawValue) && rawValue > 0 ? "+" : "";
+  const suffix = effect.value_type === "percentage"
+    ? "%"
+    : effect.value_type
+      ? ` ${formatType(effect.value_type).toLowerCase()}`
+      : "";
+  const value = Number.isFinite(rawValue) ? `${prefix}${rawValue.toLocaleString()}${suffix}` : stringifyDetail(effect);
+  return [label || `Effect ${index + 1}`, value];
 }
 
 function formatType(value: any): string {

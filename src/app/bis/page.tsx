@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Shield, Sword, Target, Zap, HardHat, Layers, MoveDown, ArrowDown, Hand, ExternalLink, ShoppingCart, Info, ChevronDown, ChevronUp, Swords, Crosshair } from "lucide-react";
-import Link from "next/link";
+import { Shield, Sword, Target, Zap, HardHat, Layers, MoveDown, ArrowDown, Hand, ExternalLink, ShoppingCart } from "lucide-react";
 import { usePreferences } from "@/lib/preferences";
+import { useProfiles } from "@/lib/profiles";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
-import { useProfiles } from "@/lib/profiles";
+import { getSafeMarketValue } from "@/lib/market-pricing";
 
 const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: React.ReactNode }> = {
     SWORD:      { label: "Sword",      defaultStat: "attack_power", icon: <Sword size={15} /> },
@@ -18,16 +17,6 @@ const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: Re
     GREAVES:    { label: "Greaves",    defaultStat: "protection",   icon: <MoveDown size={15} /> },
     BOOTS:      { label: "Boots",      defaultStat: "protection",   icon: <ArrowDown size={15} /> },
     GAUNTLETS:  { label: "Gauntlets",  defaultStat: "protection",   icon: <Hand size={15} /> },
-};
-
-const STAT_LABELS: Record<string, string> = {
-    attack_power:    "ATK",
-    protection:      "DEF",
-    agility:         "AGI",
-    accuracy:        "ACC",
-    critical_damage: "CRIT",
-    movement_speed:  "SPD",
-    critical_chance: "CRIT CHANCE",
 };
 
 const QUALITY_COLOR: Record<string, string> = {
@@ -55,14 +44,14 @@ interface GearItem {
     combat_req: number | null;
     requirements: Record<string, number> | null;
     stats: Record<string, number> | null;
-    effects: any[] | null;
+    effects: Array<Record<string, unknown>> | null;
     max_tier: number | null;
     recipe_hashed_id: string;
 }
 
-function getRankValue(item: GearItem, sortKey: string, defaultStat: string, marketData: any): number {
+function getRankValue(item: GearItem, sortKey: string, defaultStat: string, marketData: Record<string, { avg_3?: number; price?: number; safe_price?: number; price_adjusted?: boolean }> | null): number {
     if (sortKey === "price") {
-        const p = getSafeMarketPrice(marketData?.[item.name]);
+        const p = getSafeMarketValue(marketData?.[item.name]);
         return p ? -p : -999999999;
     }
     if (!item.stats) return 0;
@@ -77,13 +66,13 @@ export default function BISPage() {
     const { marketData } = useData();
     const { preferences, setPreferences } = usePreferences();
     const { activeProfile, updateProfile } = useProfiles();
-    
-    const [sortBy, setSortBy]         = useState("auto");
+
+    const [sortBy]         = useState("auto");
     const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
-    const combatLevelValue = activeProfile ? activeProfile.levels.combat : preferences.combatLevel;
-    const strengthValue = activeProfile ? activeProfile.levels.strength : preferences.strStat;
-    const dexterityValue = activeProfile ? activeProfile.levels.dexterity : preferences.dexStat;
-    const defenceValue = activeProfile ? activeProfile.levels.defence : preferences.defStat;
+    const profileCombatLevel = activeProfile && activeProfile.levels.combat !== "" ? activeProfile.levels.combat : preferences.combatLevel;
+    const profileStrength = activeProfile && activeProfile.levels.strength !== "" ? activeProfile.levels.strength : preferences.strStat;
+    const profileDexterity = activeProfile && activeProfile.levels.dexterity !== "" ? activeProfile.levels.dexterity : preferences.dexStat;
+    const profileDefence = activeProfile && activeProfile.levels.defence !== "" ? activeProfile.levels.defence : preferences.defStat;
 
     useEffect(() => {
         fetch("/gear-data.json?t=" + Date.now()).then(r => r.json()).then(setGearData).catch(() => {});
@@ -99,10 +88,10 @@ export default function BISPage() {
 
     const bisSet = useMemo(() => {
         if (!gearData) return {};
-        const level = Number(combatLevelValue) || 0;
-        const str = Number(strengthValue) || 0;
-        const dex = Number(dexterityValue) || 0;
-        const def = Number(defenceValue) || 0;
+        const level = Number(profileCombatLevel) || 0;
+        const str = Number(profileStrength) || 0;
+        const dex = Number(profileDexterity) || 0;
+        const def = Number(profileDefence) || 0;
 
         const groups: Record<string, GearItem[]> = {};
         for (const item of Object.values(gearData)) {
@@ -114,7 +103,7 @@ export default function BISPage() {
         const result: Record<string, { best: GearItem; alts: GearItem[]; nextUp: GearItem | null }> = {};
         for (const [type, items] of Object.entries(groups)) {
             const defaultStat = SLOT_CONFIG[type].defaultStat;
-            const sorter = (a: GearItem, b: GearItem) => 
+            const sorter = (a: GearItem, b: GearItem) =>
                 getRankValue(b, sortBy, defaultStat, marketData) - getRankValue(a, sortBy, defaultStat, marketData);
 
             const eligible = items.filter(i => {
@@ -134,7 +123,7 @@ export default function BISPage() {
             result[type] = { best: eligible[0], alts: eligible.slice(1, 5), nextUp: locked[0] || null };
         }
         return result;
-    }, [gearData, combatLevelValue, strengthValue, dexterityValue, defenceValue, sortBy, marketData]);
+    }, [gearData, profileCombatLevel, profileStrength, profileDexterity, profileDefence, sortBy, marketData]);
 
     const activeSlots = useMemo(() => {
         const slots = ["HELMET", "CHESTPLATE", "GREAVES", "BOOTS", "GAUNTLETS"];
@@ -150,7 +139,7 @@ export default function BISPage() {
 
     const getPrice = (item: GearItem | undefined): number | null => {
         if (!item || !item.name) return null;
-        return getSafeMarketPrice(marketData?.[item.name]) || null;
+        return getSafeMarketValue(marketData?.[item.name]) || null;
     };
 
     const totalPower = useMemo(() => {
@@ -169,34 +158,26 @@ export default function BISPage() {
         return <main className="container"><div className="header"><h1 className="header-title">LOADING...</h1></div></main>;
     }
 
-    const handleNumChange = (key: string, val: string) => {
+    const handleNumChange = (key: "combatLevel" | "strStat" | "dexStat" | "defStat", val: string) => {
         const next = val === "" ? "" : Number(val);
         if (activeProfile) {
-            const profileKeyMap: Record<string, keyof typeof activeProfile.levels> = {
-                combatLevel: "combat",
-                strStat: "strength",
-                dexStat: "dexterity",
-                defStat: "defence",
-            };
-            const profileKey = profileKeyMap[key];
-            if (profileKey) {
-                updateProfile(activeProfile.id, {
-                    levels: {
-                        ...activeProfile.levels,
-                        [profileKey]: next,
-                    },
-                });
-                return;
-            }
+            const profileKey = key === "combatLevel"
+                ? "combat"
+                : key === "strStat"
+                    ? "strength"
+                    : key === "dexStat"
+                        ? "dexterity"
+                        : "defence";
+            updateProfile(activeProfile.id, { levels: { ...activeProfile.levels, [profileKey]: next } });
+        } else {
+            setPreferences({ [key]: next });
         }
-        setPreferences({ [key]: next });
     };
 
-    const clamp = (key: string, min: number, max: number) => {
-        const current = key === "combatLevel" ? combatLevelValue : key === "strStat" ? strengthValue : key === "dexStat" ? dexterityValue : key === "defStat" ? defenceValue : preferences[key as keyof typeof preferences];
-        if (current !== "") {
-            handleNumChange(key, String(Math.max(min, Math.min(max, Number(current)))));
-        }
+    const clamp = (key: "combatLevel" | "strStat" | "dexStat" | "defStat", min: number, max: number) => {
+        const current = key === "combatLevel" ? profileCombatLevel : key === "strStat" ? profileStrength : key === "dexStat" ? profileDexterity : profileDefence;
+        if (current === "") return;
+        handleNumChange(key, String(Math.max(min, Math.min(max, Number(current)))));
     };
 
     return (
@@ -205,35 +186,29 @@ export default function BISPage() {
                 <h1 className="header-title"><Shield size={24} color="var(--text-accent)" /> BEST-IN-SLOT</h1>
                 <div className="header-status">
                     <div className="status-dot"></div>
-                    <span className="mono">SET POWER: {totalPower.toLocaleString()}</span>
+                    <span className="mono">{activeProfile ? `${activeProfile.name} · ` : ""}SET POWER: {totalPower.toLocaleString()}</span>
                 </div>
             </div>
 
             <div className="controls bento-controls-stack">
-                {activeProfile ? (
-                    <div className="boss-warning-box routine-warning" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                        <Info size={16} />
-                        <p>Using active profile: {activeProfile.name}. Combat, Strength, Dexterity, and Defence edits update the profile.</p>
-                    </div>
-                ) : null}
                 <div className="control-group">
-                    <label className="control-label">Combat Level</label>
-                    <input type="number" className="control-input" value={combatLevelValue} 
+                    <label className="control-label">Level (60-96)</label>
+                    <input type="number" className="control-input" value={profileCombatLevel}
                         onChange={e => handleNumChange('combatLevel', e.target.value)}
-                        onBlur={() => clamp('combatLevel', 1, 600)}
+                        onBlur={() => clamp('combatLevel', 60, 96)}
                     />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">Strength (1-100)</label>
-                    <input type="number" className="control-input" value={strengthValue} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
+                    <label className="control-label">STR Stat (0-100)</label>
+                    <input type="number" className="control-input" value={profileStrength} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 0, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">Dexterity (1-100)</label>
-                    <input type="number" className="control-input" value={dexterityValue} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
+                    <label className="control-label">DEX Stat (0-100)</label>
+                    <input type="number" className="control-input" value={profileDexterity} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 0, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">Defence (1-100)</label>
-                    <input type="number" className="control-input" value={defenceValue} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
+                    <label className="control-label">DEF Stat (0-100)</label>
+                    <input type="number" className="control-input" value={profileDefence} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 0, 100)} />
                 </div>
                 <div className="control-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="control-label">Combat Style</label>
@@ -277,8 +252,8 @@ export default function BISPage() {
                             </div>
                             {!entry ? <div className="text-muted" style={{ textAlign: 'center', padding: '1rem' }}>No items meet your requirements</div> : (
                                 <>
-                                    <GearCard item={entry.best} price={getPrice(entry.best)} sortBy={sortBy} cfg={cfg} isBest openItem={openItemByName} prefetch={prefetchItem} />
-                                    {isExpanded && entry.alts.map(alt => <GearCard key={alt.hashed_id} item={alt} price={getPrice(alt)} sortBy={sortBy} cfg={cfg} isBest={false} openItem={openItemByName} prefetch={prefetchItem} />)}
+                                    <GearCard item={entry.best} isBest openItem={openItemByName} prefetch={prefetchItem} />
+                                    {isExpanded && entry.alts.map(alt => <GearCard key={alt.hashed_id} item={alt} isBest={false} openItem={openItemByName} prefetch={prefetchItem} />)}
                                 </>
                             )}
                         </div>
@@ -302,8 +277,8 @@ export default function BISPage() {
                         const totalStats = Object.values(item.stats || {}).reduce((s, v) => s + v, 0);
 
                         return (
-                            <div 
-                                key={type} 
+                            <div
+                                key={type}
                                 onClick={() => openItemByName(item.name)}
                                 onMouseEnter={() => prefetchItem(item.name)}
                                 className="clickable-row group"
@@ -328,7 +303,7 @@ export default function BISPage() {
                             </div>
                         );
                     })}
-                    
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderTop: '1px solid var(--border-subtle)', marginTop: '0.25rem' }}>
                         <span style={{ fontWeight: 600, color: '#fff' }}>Estimated Total Cost</span>
                         <div style={{ textAlign: 'right' }}>
@@ -350,12 +325,22 @@ export default function BISPage() {
     );
 }
 
-function GearCard({ item, price, sortBy, cfg, isBest, openItem, prefetch }: { item: GearItem; price: number | null; sortBy: string; cfg: any; isBest: boolean; openItem: any; prefetch: any }) {
+function GearCard({
+    item,
+    isBest,
+    openItem,
+    prefetch,
+}: {
+    item: GearItem;
+    isBest: boolean;
+    openItem: (name: string) => void;
+    prefetch: (name: string) => void;
+}) {
     const qualityColor = QUALITY_COLOR[item.quality] || '#a1a1aa';
     const totalStats = Object.values(item.stats || {}).reduce((s, v) => s + v, 0);
 
     return (
-        <div 
+        <div
             onClick={() => openItem(item.name)}
             onMouseEnter={() => prefetch(item.name)}
             className="gear-card group"

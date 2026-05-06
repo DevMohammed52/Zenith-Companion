@@ -1,12 +1,25 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BarChart3, Check, Coins, Keyboard, Palette, Plus, Settings, Swords, FlaskConical, Target, Shield, Trash2, Zap, UserRound } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  Coins,
+  Database,
+  Keyboard,
+  Palette,
+  Plus,
+  Settings,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
-import { useData } from "@/context/DataContext";
-import { ASSAULT_OPTIONS, SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
 import { useProfiles } from "@/lib/profiles";
+import { useData } from "@/context/DataContext";
+import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
+import { getSafeMarketPrice, getSafeMarketValue } from "@/lib/market-pricing";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
@@ -15,45 +28,46 @@ const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "frost", label: "Frost", colors: ["#38bdf8", "#a7f3d0", "#f472b6"] },
 ];
 
-const COMBAT_STYLES = [
-    { id: "sword_shield", label: "Sword + Shield", icon: <Shield size={14} /> },
-    { id: "dual_daggers", label: "Dual Daggers",   icon: <Zap size={14} /> },
-    { id: "bow",          label: "Single Bow",     icon: <Target size={14} /> },
-];
+function formatAge(value?: string) {
+  if (!value) return "Waiting for cache";
+  const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
+  if (!Number.isFinite(minutes) || minutes < 0) return "Unknown age";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 export default function SettingsPage() {
   const { preferences, setPreferences } = usePreferences();
-  const { activeProfile } = useProfiles();
-  const { allItemsDb, marketData } = useData();
+  const { activeProfile, state } = useProfiles();
+  const { allItemsDb, marketData, staticData } = useData();
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
   const [itemSearchOpen, setItemSearchOpen] = useState(false);
+
   const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
   const itemSuggestions = useMemo(() => {
     const query = customItemName.trim().toLowerCase();
     if (!query) return itemNames.slice(0, 8);
-    return itemNames.filter(name => name.toLowerCase().includes(query)).slice(0, 8);
+    return itemNames.filter((name) => name.toLowerCase().includes(query)).slice(0, 8);
   }, [customItemName, itemNames]);
   const customPriceRows = useMemo(
     () => Object.entries(preferences.customPrices || {}).sort(([a], [b]) => a.localeCompare(b)),
     [preferences.customPrices],
   );
 
-  const handleNumChange = (key: string, val: string) => {
-    setPreferences({ [key]: val === "" ? "" : Number(val) });
-  };
-
-  const clamp = (key: string, min: number, max: number) => {
-    if (preferences[key as keyof typeof preferences] !== "") {
-        setPreferences({ [key]: Math.max(min, Math.min(max, Number(preferences[key as keyof typeof preferences]))) });
-    }
-  };
+  const marketMeta = marketData?._meta;
+  const suspiciousCustomRows = customPriceRows.filter(([name, price]) => {
+    const safe = getSafeMarketPrice(marketData?.[name]);
+    return safe.value > 0 && Number(price) > safe.value * 5;
+  });
 
   const saveCustomPrice = () => {
     const name = customItemName.trim();
     const price = Number(customItemPrice);
     if (!name || !Number.isFinite(price) || price <= 0) return;
-    setPreferences({ customPrices: { ...preferences.customPrices, [name]: Math.round(price * 100) / 100 } });
+    setPreferences({ customPrices: { ...preferences.customPrices, [name]: Math.round(price) } });
     setCustomItemName("");
     setCustomItemPrice("");
     setItemSearchOpen(false);
@@ -76,133 +90,80 @@ export default function SettingsPage() {
       <section className="settings-grid">
         <div className="settings-panel settings-panel-wide">
           <h2><UserRound size={17} /> Profile Link</h2>
-          {activeProfile ? (
-            <div className="settings-fields">
-              <div className="settings-field">
-                <span>
-                  <strong>{activeProfile.name}</strong>
-                  <small>Active profile values are used by supported pages such as World Bosses and BiS.</small>
-                </span>
-                <em className="mono" style={{ color: "var(--text-accent)", fontStyle: "normal", fontWeight: 800 }}>{activeProfile.className}</em>
-              </div>
-              <div className="settings-field">
-                <span><strong>Profile-owned values</strong><small>Levels, combat stats, magic find, pet, gear, tools, and playtime live on the Profiles page.</small></span>
-              </div>
+          <div className="settings-summary-grid">
+            <div className="settings-summary-card">
+              <span>Active Profile</span>
+              <strong>{activeProfile?.name?.trim() || "Unnamed Character"}</strong>
+              <small>{activeProfile ? `${activeProfile.className || "Other"} · ${activeProfile.kind === "main" ? "Main" : "Alt"}` : "Create a profile to power page defaults."}</small>
             </div>
-          ) : (
-            <p className="settings-empty-note">No active profile loaded. Legacy fallback values below are used until a profile is created.</p>
-          )}
-        </div>
-
-        {/* Character & Combat Stats */}
-        <div className="settings-panel">
-          <h2><Swords size={17} /> Legacy Fallback Stats</h2>
-          <p className="settings-empty-note" style={{ marginTop: "-0.35rem" }}>Used only by older calculators when no active profile value is available.</p>
-          <div className="settings-fields">
-            <label className="settings-field">
-              <span>
-                <strong>Combat Level</strong>
-                <small>Fallback combat level.</small>
-              </span>
-              <input
-                type="number"
-                className="control-input"
-                value={preferences.combatLevel}
-                onChange={e => handleNumChange('combatLevel', e.target.value)}
-                onBlur={() => clamp('combatLevel', 1, 600)}
-              />
-            </label>
-
-            <label className="settings-field">
-              <span><strong>Strength</strong><small>Fallback primary stat.</small></span>
-              <input type="number" className="control-input" value={preferences.strStat} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
-            </label>
-
-            <label className="settings-field">
-              <span><strong>Dexterity</strong><small>Fallback primary stat.</small></span>
-              <input type="number" className="number control-input" value={preferences.dexStat} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
-            </label>
-
-            <label className="settings-field">
-              <span><strong>Defence</strong><small>Fallback primary stat.</small></span>
-              <input type="number" className="control-input" value={preferences.defStat} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
-            </label>
-
-            <label className="settings-field">
-              <span><strong>Kills Per Hour</strong><small>Used for combat profit.</small></span>
-              <input type="number" className="control-input" value={preferences.killsPerHour} onChange={e => handleNumChange('killsPerHour', e.target.value)} />
-            </label>
+            <div className="settings-summary-card">
+              <span>Playtime</span>
+              <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
+              <small>Used by daily profit views where a profile is active.</small>
+            </div>
+            <div className="settings-summary-card">
+              <span>Profiles</span>
+              <strong>{state.profiles.length}/5</strong>
+              <small>Combat stats, magic find, pets, gear, tools, and timers live there.</small>
+            </div>
+          </div>
+          <div className="settings-actions-row">
+            <Link className="settings-link-button" href="/profiles">Manage Profiles</Link>
+            <span>Membership, custom prices, scraper data, and theme remain global.</span>
           </div>
         </div>
 
-        {/* Skill Boosts */}
         <div className="settings-panel">
-          <h2><FlaskConical size={17} /> Skill Analytics</h2>
+          <h2><Sparkles size={17} /> Global Boosts</h2>
           <div className="settings-fields">
             <label className="settings-field">
               <span><strong>Membership</strong><small>Uses 12% market tax and member skill bonuses.</small></span>
-              <button type="button" className="control-input" onClick={() => setPreferences({ membership: !preferences.membership })} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ membership: !preferences.membership })}>
                 {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
               </button>
             </label>
 
             <label className="settings-field">
-              <span><strong>Class Skill Buff</strong><small>Applies the generic +10% skill class buff where supported.</small></span>
-              <button type="button" className="control-input" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+              <span><strong>Class Skill Buff</strong><small>Global helper for supported skill-profit calculations.</small></span>
+              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
                 {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class buff active" : "No class buff"}
               </button>
             </label>
 
-            <label className="settings-field">
-              <span><strong>Conquest Buff</strong><small>Default conquest rank for skill profit.</small></span>
-              <select className="control-input" value={preferences.assaultRank} onChange={e => setPreferences({ assaultRank: e.target.value as typeof preferences.assaultRank })}>
-                {ASSAULT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
+          </div>
+        </div>
 
-            <label className="settings-field">
-              <span><strong>Bartering Boost %</strong><small>Vendor bonus.</small></span>
-              <input type="number" className="control-input" min="0" max="20" value={preferences.barteringBoost} onChange={e => handleNumChange('barteringBoost', e.target.value)} onBlur={() => clamp('barteringBoost', 0, 20)} />
-            </label>
-
-            <label className="settings-field">
-              <span><strong>Playtime</strong><small>Daily playtime in hours.</small></span>
-              <input type="number" className="control-input" min="0" max="24" step="0.5" value={preferences.activeHours} onChange={e => handleNumChange('activeHours', e.target.value)} onBlur={() => clamp('activeHours', 0, 24)} />
-            </label>
-
-            <div className="settings-field" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ marginBottom: '0.75rem' }}>
-                    <strong>Default Combat Style</strong>
-                    <small>Active weapon configuration.</small>
-                </span>
-                <div style={{ display: 'flex', gap: '0.25rem', width: '100%' }}>
-                    {COMBAT_STYLES.map(s => (
-                        <button key={s.id} onClick={() => setPreferences({ combatStyle: s.id })} style={{
-                            flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-subtle)',
-                            background: preferences.combatStyle === s.id ? 'var(--text-accent)' : 'var(--bg-card)',
-                            color: preferences.combatStyle === s.id ? '#000' : 'var(--text-muted)',
-                            cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem'
-                        }}>
-                            {s.icon} {s.label.split(' ')[0]}
-                        </button>
-                    ))}
+        <div className="settings-panel">
+          <h2><Palette size={17} /> Appearance</h2>
+          <div className="theme-grid">
+            {themes.map((theme) => (
+              <button
+                type="button"
+                key={theme.value}
+                className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
+                onClick={() => setPreferences({ theme: theme.value })}
+              >
+                <span>{theme.label}</span>
+                <div className="theme-swatch-row">
+                  {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
                 </div>
-            </div>
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="settings-panel settings-panel-wide">
-          <h2><BarChart3 size={17} /> Skill Tools</h2>
+          <h2><BarChart3 size={17} /> Default Skill Tools</h2>
           <div className="settings-fields">
-            {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map(skill => (
+            {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
               <label className="settings-field" key={skill}>
-                <span><strong>{skill} Tool</strong><small>Efficiency tool used by Skill Profit Finder.</small></span>
+                <span><strong>{skill} Tool</strong><small>Fallback tool for Skill Profit Finder when no profile tool is selected.</small></span>
                 <select
                   className="control-input"
                   value={preferences.skillTools[skill]}
-                  onChange={e => setPreferences({ skillTools: { ...preferences.skillTools, [skill]: e.target.value } })}
+                  onChange={(e) => setPreferences({ skillTools: { ...preferences.skillTools, [skill]: e.target.value } })}
                 >
-                  {SKILL_TOOLS[skill].map(tool => (
+                  {SKILL_TOOLS[skill].map((tool) => (
                     <option key={tool.name} value={tool.name}>{tool.name} (+{tool.efficiency}% eff)</option>
                   ))}
                 </select>
@@ -213,6 +174,7 @@ export default function SettingsPage() {
 
         <div className="settings-panel settings-panel-wide">
           <h2><Coins size={17} /> Custom Item Prices</h2>
+          <p className="settings-panel-note">Custom prices override market cache values everywhere. Use whole gold values; suspicious market outliers are filtered before comparison.</p>
           <div className="custom-price-builder">
             <label className="custom-price-item-field">
               <span>Item</span>
@@ -222,7 +184,7 @@ export default function SettingsPage() {
                   placeholder="Search item name"
                   value={customItemName}
                   onBlur={() => window.setTimeout(() => setItemSearchOpen(false), 120)}
-                  onChange={e => {
+                  onChange={(e) => {
                     setCustomItemName(e.target.value);
                     setItemSearchOpen(true);
                   }}
@@ -230,13 +192,13 @@ export default function SettingsPage() {
                 />
                 {itemSearchOpen && itemSuggestions.length > 0 && (
                   <div className="custom-price-suggestions">
-                    {itemSuggestions.map(name => {
+                    {itemSuggestions.map((name) => {
                       const item = allItemsDb?.[name];
                       return (
                         <button
                           key={name}
                           type="button"
-                          onMouseDown={event => event.preventDefault()}
+                          onMouseDown={(event) => event.preventDefault()}
                           onClick={() => {
                             setCustomItemName(name);
                             setItemSearchOpen(false);
@@ -258,7 +220,7 @@ export default function SettingsPage() {
                 min="0"
                 type="number"
                 value={customItemPrice}
-                onChange={e => setCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => setCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))}
                 placeholder="Gold each"
               />
             </label>
@@ -268,16 +230,16 @@ export default function SettingsPage() {
           </div>
 
           {customPriceRows.length === 0 ? (
-            <p className="settings-empty-note">No custom prices yet. Skill Profit will use market/vendor values until you add one.</p>
+            <p className="settings-empty-note">No custom prices yet. Calculators will use safe market, recipe, or vendor values.</p>
           ) : (
             <div className="custom-price-list">
               {customPriceRows.map(([name, price]) => {
-                const market = getSafeMarketPrice(marketData?.[name]);
+                const market = getSafeMarketValue(marketData?.[name]);
                 return (
                   <div className="custom-price-row" key={name}>
                     <span>
                       <strong>{name}</strong>
-                      <small>{market > 0 ? `Market ${market.toLocaleString()}g` : "No live market price"}</small>
+                      <small>{market > 0 ? `Safe market ${market.toLocaleString()}g` : "No safe market price"}</small>
                     </span>
                     <em>{Number(price).toLocaleString()}g</em>
                     <button type="button" onClick={() => removeCustomPrice(name)} aria-label={`Remove ${name}`}>
@@ -288,24 +250,29 @@ export default function SettingsPage() {
               })}
             </div>
           )}
+          {suspiciousCustomRows.length > 0 && (
+            <p className="settings-warning-note">{suspiciousCustomRows.length} custom price override is far above safe market. That may be intentional, but it will override every calculator.</p>
+          )}
         </div>
 
-        <div className="settings-panel">
-          <h2><Palette size={17} /> Appearance</h2>
-          <div className="theme-grid">
-            {themes.map(theme => (
-              <button
-                type="button"
-                key={theme.value}
-                className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
-                onClick={() => setPreferences({ theme: theme.value })}
-              >
-                <span>{theme.label}</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {theme.colors.map(color => <i key={color} style={{ display: 'block', width: '10px', height: '10px', borderRadius: '2px', background: color }} />)}
-                </div>
-              </button>
-            ))}
+        <div className="settings-panel settings-panel-wide">
+          <h2><Database size={17} /> Data Cache</h2>
+          <div className="settings-summary-grid">
+            <div className="settings-summary-card">
+              <span>Market Cache</span>
+              <strong>{Object.keys(marketData || {}).filter((key) => key !== "_meta").length.toLocaleString()}</strong>
+              <small>{formatAge(marketMeta?.last_updated)}</small>
+            </div>
+            <div className="settings-summary-card">
+              <span>Item Database</span>
+              <strong>{Object.keys(allItemsDb || {}).length.toLocaleString()}</strong>
+              <small>Loaded from local app data.</small>
+            </div>
+            <div className="settings-summary-card">
+              <span>Game Entities</span>
+              <strong>{((staticData?.enemies?.length || 0) + (staticData?.dungeons?.length || 0) + (staticData?.worldBosses?.length || 0)).toLocaleString()}</strong>
+              <small>Enemies, dungeons, and world bosses.</small>
+            </div>
           </div>
         </div>
 

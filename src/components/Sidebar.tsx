@@ -1,20 +1,21 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, Menu, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, ChevronRight, Sparkles, BarChart3, BookOpen, PawPrint, Users } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface NavItem {
     href: string;
     label: string;
-    icon: any;
+    icon: LucideIcon;
     matchPrefix?: boolean;
     badge?: string;
 }
 
 interface NavGroup {
     label: string;
-    icon: any;
+    icon: LucideIcon;
     items: NavItem[];
 }
 

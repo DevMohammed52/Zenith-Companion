@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "node_modules/**",
     "public/**",
     "game_info/**",
+    "local_data/**",
     "scratch/**",
     "maintenance_scripts/**",
     "scripts/**",

@@ -9,12 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { AssaultRank } from "@/lib/skill-profit";
 
 export const PROFILE_STORAGE_KEY = "zenith_character_profiles_v1";
 export const PROFILE_UPDATED_EVENT = "zenith-profiles-updated";
 export const MAX_PROFILES = 5;
 
 export type ProfileKind = "main" | "alt";
+export type CombatStyle = "swordShield" | "dualDaggers" | "bow";
 
 export type CharacterProfile = {
   schemaVersion: 1;
@@ -22,6 +24,7 @@ export type CharacterProfile = {
   name: string;
   kind: ProfileKind;
   className: string;
+  combatStyle: CombatStyle;
   notes: string;
   levels: {
     totalLevel: number | "";
@@ -54,11 +57,11 @@ export type CharacterProfile = {
     hunting: number | "";
     dungeon: number | "";
   };
+  boosts: {
+    conquestRank: AssaultRank;
+    barteringLevel: number | "";
+  };
   timers: {
-    /**
-     * Stored as Playtime in the UI. The old idleTimerHours key is retained
-     * only so older local exports keep importing cleanly.
-     */
     activeHours: number | "";
     idleTimerHours: number | "";
   };
@@ -67,7 +70,17 @@ export type CharacterProfile = {
     quality: string;
     level: number | "";
     evolution: number | "";
-    stats: Record<string, number | "">;
+    stats: {
+      agility: number | "";
+      accuracy: number | "";
+      protection: number | "";
+      attackPower: number | "";
+      movementSpeed: number | "";
+      maxHealth: number | "";
+      maxStamina: number | "";
+      criticalDamage: number | "";
+      criticalChance: number | "";
+    };
     notes: string;
   };
   gear: Record<string, string>;
@@ -108,6 +121,7 @@ const DEFAULT_GEAR = {
   boots: "",
   gauntlets: "",
   weapon: "",
+  offhandWeapon: "",
   shield: "",
   bow: "",
 };
@@ -119,6 +133,7 @@ const DEFAULT_GEAR_TIERS: Record<string, number | ""> = {
   boots: 1,
   gauntlets: 1,
   weapon: 1,
+  offhandWeapon: 1,
   shield: 1,
   bow: 1,
 };
@@ -127,18 +142,6 @@ const DEFAULT_TOOLS = {
   woodcutting: "",
   mining: "",
   fishing: "",
-};
-
-const DEFAULT_PET_STATS: Record<string, number | ""> = {
-  agility: "",
-  accuracy: "",
-  protection: "",
-  attack_power: "",
-  movement_speed: "",
-  max_health: "",
-  max_stamina: "",
-  critical_damage: "",
-  critical_chance: "",
 };
 
 const ProfilesContext = createContext<ProfilesContextValue | null>(null);
@@ -163,6 +166,7 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
     name,
     kind: "main",
     className: "Warrior",
+    combatStyle: "swordShield",
     notes: "",
     levels: {
       totalLevel: 20,
@@ -195,16 +199,30 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
       hunting: 0,
       dungeon: 0,
     },
+    boosts: {
+      conquestRank: "none",
+      barteringLevel: 0,
+    },
     timers: {
       activeHours: 0,
-      idleTimerHours: "",
+      idleTimerHours: 0,
     },
     pet: {
       species: "",
       quality: "",
       level: 1,
       evolution: 0,
-      stats: { ...DEFAULT_PET_STATS },
+      stats: {
+        agility: "",
+        accuracy: "",
+        protection: "",
+        attackPower: "",
+        movementSpeed: "",
+        maxHealth: "",
+        maxStamina: "",
+        criticalDamage: "",
+        criticalChance: "",
+      },
       notes: "",
     },
     gear: { ...DEFAULT_GEAR },
@@ -220,7 +238,7 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
 }
 
 export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefined): CharacterProfile {
-  const base = createDefaultProfile(typeof input?.name === "string" ? input.name.slice(0, 40) : "New Character");
+  const base = createDefaultProfile(typeof input?.name === "string" && input.name.trim() ? input.name.trim() : "New Character");
   const next: CharacterProfile = {
     ...base,
     ...input,
@@ -228,16 +246,16 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
     id: typeof input?.id === "string" && input.id ? input.id : base.id,
     name: typeof input?.name === "string" ? input.name.slice(0, 40) : base.name,
     kind: input?.kind === "alt" ? "alt" : "main",
-    className: typeof input?.className === "string" && input.className.trim() && input.className !== "Standard"
-      ? input.className.slice(0, 40)
-      : base.className,
+    className: typeof input?.className === "string" && input.className.trim() ? input.className.trim().slice(0, 40) : base.className,
+    combatStyle: input?.combatStyle === "dualDaggers" || input?.combatStyle === "bow" ? input.combatStyle : "swordShield",
     notes: typeof input?.notes === "string" ? input.notes.slice(0, 500) : "",
     levels: { ...base.levels, ...(input?.levels || {}) },
     secondaryStats: { ...base.secondaryStats, ...(input?.secondaryStats || {}) },
     magicFind: { ...base.magicFind, ...(input?.magicFind || {}) },
     efficiency: { ...base.efficiency, ...(input?.efficiency || {}) },
+    boosts: { ...base.boosts, ...((input as Partial<CharacterProfile> | undefined)?.boosts || {}) },
     timers: { ...base.timers, ...(input?.timers || {}) },
-    pet: { ...base.pet, ...(input?.pet || {}), stats: { ...DEFAULT_PET_STATS, ...(input?.pet?.stats || {}) } },
+    pet: { ...base.pet, ...(input?.pet || {}), stats: { ...base.pet.stats, ...((input?.pet as CharacterProfile["pet"] | undefined)?.stats || {}) } },
     gear: { ...DEFAULT_GEAR, ...(input?.gear || {}) },
     gearTiers: { ...DEFAULT_GEAR_TIERS, ...(input?.gearTiers || {}) },
     tools: { ...DEFAULT_TOOLS, ...(input?.tools || {}) },
@@ -258,25 +276,24 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   for (const key of Object.keys(next.efficiency) as Array<keyof CharacterProfile["efficiency"]>) {
     next.efficiency[key] = cleanNumber(next.efficiency[key]);
   }
+  next.boosts.barteringLevel = cleanNumber(next.boosts.barteringLevel);
+  if (next.boosts.barteringLevel !== "") {
+    next.boosts.barteringLevel = Math.min(100, Math.max(0, Number(next.boosts.barteringLevel)));
+  }
+  if (!["none", "first", "second", "third", "fourthSeventh", "eighthTenth"].includes(next.boosts.conquestRank)) {
+    next.boosts.conquestRank = "none";
+  }
   for (const key of Object.keys(next.timers) as Array<keyof CharacterProfile["timers"]>) {
     next.timers[key] = cleanNumber(next.timers[key]);
   }
-  if (next.timers.activeHours === "" && next.timers.idleTimerHours !== "") {
-    next.timers.activeHours = next.timers.idleTimerHours;
-    next.timers.idleTimerHours = "";
-  }
   next.pet.level = cleanNumber(next.pet.level);
   next.pet.evolution = cleanNumber(next.pet.evolution);
-  if (next.pet.level === "" || Number(next.pet.level) < 1) next.pet.level = 1;
-  if (next.pet.evolution === "" || Number(next.pet.evolution) < 0) next.pet.evolution = 0;
-  for (const key of Object.keys(next.pet.stats)) {
+  for (const key of Object.keys(next.pet.stats) as Array<keyof CharacterProfile["pet"]["stats"]>) {
     next.pet.stats[key] = cleanNumber(next.pet.stats[key]);
   }
   for (const key of Object.keys(next.gearTiers)) {
     next.gearTiers[key] = cleanNumber(next.gearTiers[key]);
-    if (next.gearTiers[key] === "" || Number(next.gearTiers[key]) < 1) {
-      next.gearTiers[key] = 1;
-    }
+    if (next.gearTiers[key] !== "") next.gearTiers[key] = Math.max(1, Number(next.gearTiers[key]));
   }
   next.housing.mode = next.housing.mode === "owner" || next.housing.mode === "guest" ? next.housing.mode : "none";
 

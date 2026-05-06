@@ -1,2 +1,2 @@
-export const formatGold = (value: number, maximumFractionDigits = 0) =>
-  value.toLocaleString(undefined, { maximumFractionDigits });
+export const formatGold = (value: number, _maximumFractionDigits = 0) =>
+  Math.round(value).toLocaleString();

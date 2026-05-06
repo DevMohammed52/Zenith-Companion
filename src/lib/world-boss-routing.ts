@@ -179,7 +179,7 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
             timingNote = "Arrives after boss window";
         } else if (startTime !== null && startTime < previousAvailableAt) {
             timingStatus = "overlap";
-            timingNote = arriveAtMs !== null && arriveAtMs > startTime
+            timingNote = arriveAtMs !== null && startTime !== null && arriveAtMs > startTime
                 ? "Arrives during active window"
                 : "Starts before previous stop clears";
         } else if (arriveAtMs !== null && startTime !== null && arriveAtMs > startTime) {
