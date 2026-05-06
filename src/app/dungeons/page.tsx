@@ -70,6 +70,11 @@ function getReadinessText(row: any, hasProfile: boolean) {
   return `Dungeoneering +${row.dungeoneeringGap}`;
 }
 
+function getProfileIdleActionHours(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
+  if (!profile) return 0;
+  return profile.kind === "main" ? 8 : 4;
+}
+
 function DungeonsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -125,7 +130,8 @@ function DungeonsContent() {
     };
     const profileDungeonStats = getProfileDungeonStatTotal(activeProfile);
     const profileDungeoneering = Number(activeProfile?.levels.dungeoneering || 0);
-    const idleWindowHours = Math.max(0, Number(activeProfile?.timers.activeHours || 0));
+    const playtimeHours = Math.max(0, Number(activeProfile?.timers.activeHours || 0));
+    const idleActionLimitHours = getProfileIdleActionHours(activeProfile);
     const efficiency = Math.max(0, Number(dungeonEfficiency) || Number(activeProfile?.efficiency.dungeon) || 0);
     const completedDungeonBonus = (staticData.dungeons || []).filter((dungeon: any) => {
       const requirement = Number(dungeon.completion_requirement || 0);
@@ -167,12 +173,18 @@ function DungeonsContent() {
       const requiredDungeonStats = Math.ceil(Number(dungeon.difficulty || 0) * 0.7);
       const statGap = Math.max(0, requiredDungeonStats - profileDungeonStats);
       const dungeoneeringGap = Math.max(0, Number(dungeon.level_required || 0) - profileDungeoneering);
-      const runsInIdleAction = idleWindowHours > 0 && effectiveDurationHours > 0 ? Math.floor(idleWindowHours / effectiveDurationHours) : 0;
+      const runsInIdleAction = idleActionLimitHours > 0 && effectiveDurationHours > 0 ? Math.floor(idleActionLimitHours / effectiveDurationHours) : 0;
+      const dailyRunsByPlaytime = runsInIdleAction > 0 && playtimeHours > 0 && effectiveDurationHours > 0
+        ? Math.floor(playtimeHours / effectiveDurationHours)
+        : 0;
+      const actionsNeededForDailyRuns = runsInIdleAction > 0 && dailyRunsByPlaytime > 0
+        ? Math.ceil(dailyRunsByPlaytime / runsInIdleAction)
+        : 0;
       const idleActionBaseHours = durationHours * runsInIdleAction;
       const idleActionEffectiveHours = effectiveDurationHours * runsInIdleAction;
       const idleActionCost = entryCost * runsInIdleAction;
       const idleActionNetProfit = netProfitPerRun * runsInIdleAction;
-      const idleActionGapHours = Math.max(0, idleWindowHours - idleActionEffectiveHours);
+      const idleActionGapHours = Math.max(0, idleActionLimitHours - idleActionEffectiveHours);
       const completionRequirement = Number(dungeon.completion_requirement || 0);
       const completedRuns = Number(completedRunsByDungeon[getDungeonKey(dungeon)] || 0);
       const completionMagicFindActive = completionRequirement > 0 && completedRuns >= completionRequirement;
@@ -196,8 +208,11 @@ function DungeonsContent() {
         dungeoneeringGap,
         dropsCount: lootDetails.length,
         lootDetails,
-        idleWindowHours,
+        playtimeHours,
+        idleActionLimitHours,
         runsInIdleAction,
+        dailyRunsByPlaytime,
+        actionsNeededForDailyRuns,
         idleActionBaseHours,
         idleActionEffectiveHours,
         idleActionCost,
@@ -359,29 +374,34 @@ function DungeonsContent() {
             />
           </div>
         </div>
-        <div className="dungeon-planner-field dungeon-readonly-field">
-          <span className="control-label">Idle Action Window</span>
-          <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h</strong>
-          <small>Uses active profile playtime.</small>
+        <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
+          <span className="control-label">Idle Action Limit</span>
+          <strong>{getProfileIdleActionHours(activeProfile).toLocaleString()}h</strong>
+          <small>{activeProfile?.kind === "main" ? "Main profile queue cap." : activeProfile ? "Alt profile queue cap." : "Select a profile."}</small>
         </div>
-        <label className="dungeon-planner-field">
+        <div className="dungeon-planner-field dungeon-readonly-field dungeon-playtime-field">
+          <span className="control-label">Playtime</span>
+          <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
+          <small>Used for daily repeat capacity, not one queued action.</small>
+        </div>
+        <label className="dungeon-planner-field dungeon-profit-field">
           <span className="control-label">Min Profit / Run</span>
           <input className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number(event.target.value))} />
         </label>
-        <label className="dungeon-planner-field">
+        <label className="dungeon-planner-field dungeon-efficiency-field">
           <span className="control-label">Dungeon Efficiency</span>
           <input className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
         </label>
-        <label className="dungeon-planner-field">
+        <label className="dungeon-planner-field dungeon-mf-field">
           <span className="control-label">Dungeon MF</span>
           <input className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
         </label>
-        <div className="dungeon-planner-field dungeon-readonly-field">
+        <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
           <span className="control-label">Completion MF</span>
           <strong>+{rows[0]?.completedDungeonBonus || 0}%</strong>
           <small>One point per completed dungeon requirement met.</small>
         </div>
-        <div className="dungeon-planner-field">
+        <div className="dungeon-planner-field dungeon-filter-field">
           <span className="control-label">Profile Filter</span>
           <div className="dungeon-segmented">
             {(["all", "ready", "blocked"] as ReadinessFilter[]).map((mode) => (
@@ -393,7 +413,7 @@ function DungeonsContent() {
         </div>
         <button
           type="button"
-          className={`dungeon-check-toggle ${includeMagicFindEv ? "active" : ""}`}
+          className={`dungeon-check-toggle dungeon-mf-toggle ${includeMagicFindEv ? "active" : ""}`}
           aria-pressed={includeMagicFindEv}
           onClick={() => setIncludeMagicFindEv((value) => !value)}
         >
@@ -420,9 +440,9 @@ function DungeonsContent() {
         </button>
         <div className="dungeon-insight passive">
           <Timer size={16} />
-          <span>Idle Window</span>
-          <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h profile window</strong>
-          <small>Runs fit in one idle action after dungeon efficiency.</small>
+          <span>Action Limit</span>
+          <strong>{getProfileIdleActionHours(activeProfile).toLocaleString()}h {activeProfile?.kind || "profile"} action</strong>
+          <small>Runs fit in one queued action after dungeon efficiency.</small>
         </div>
       </section>
 
@@ -437,7 +457,7 @@ function DungeonsContent() {
                   <th className="sortable" onClick={() => handleSort("readiness")}>Profile {renderSortIcon("readiness")}</th>
                   <th className="sortable" onClick={() => handleSort("netProfitPerRun")}>EV / Run {renderSortIcon("netProfitPerRun")}</th>
                   <th className="sortable" onClick={() => handleSort("netProfitPerHour")}>EV / Hr {renderSortIcon("netProfitPerHour")}</th>
-                  <th className="sortable" onClick={() => handleSort("runsInIdleAction")}>Runs / Idle {renderSortIcon("runsInIdleAction")}</th>
+                  <th className="sortable" onClick={() => handleSort("runsInIdleAction")}>Runs / Action {renderSortIcon("runsInIdleAction")}</th>
                   <th>Done</th>
                   <th className="sortable" onClick={() => handleSort("runsToDrop")}>Runs / Drop {renderSortIcon("runsToDrop")}</th>
                 </tr>
@@ -514,7 +534,7 @@ function DungeonsContent() {
             options={[
               { value: "netProfitPerHour", label: "EV / Hr" },
               { value: "netProfitPerRun", label: "EV / Run" },
-              { value: "runsInIdleAction", label: "Runs / Idle" },
+              { value: "runsInIdleAction", label: "Runs / Action" },
               { value: "readiness", label: "Profile Gap" },
               { value: "durationMins", label: "Duration" },
               { value: "name", label: "Name" },
@@ -556,7 +576,8 @@ function DungeonsContent() {
                 <div className="dungeon-card-stats">
                   <span><small>EV/run</small><strong className={row.netProfitPerRun >= 0 ? "profit-positive" : "profit-negative"}>{formatGold(row.netProfitPerRun)}</strong></span>
                   <span><small>EV/hr</small><strong className={row.netProfitPerHour >= 0 ? "profit-positive" : "profit-negative"}>{formatGold(row.netProfitPerHour)}</strong></span>
-                  <span><small>Runs / Idle</small><strong>{row.runsInIdleAction}</strong></span>
+                  <span><small>Runs / Action</small><strong>{row.runsInIdleAction}</strong></span>
+                  <span><small>Daily Runs</small><strong>{row.dailyRunsByPlaytime}</strong></span>
                   <span><small>Cost</small><strong>{formatPlainGold(row.entryCost)}</strong></span>
                 </div>
                 <label className="dungeon-mobile-completed" onClick={(event) => event.stopPropagation()}>
@@ -611,7 +632,7 @@ function DungeonsContent() {
                   <div className="stat-value" style={{ color: selectedDungeon.netProfitPerHour >= 0 ? "var(--text-success)" : "#f87171" }}>{formatGold(selectedDungeon.netProfitPerHour)}</div>
                 </div>
                 <div className="stat-card highlight">
-                  <div className="stat-label">Idle Net</div>
+                  <div className="stat-label">Action Net</div>
                   <div className="stat-value" style={{ color: selectedDungeon.idleActionNetProfit >= 0 ? "var(--text-success)" : "#f87171" }}>{formatGold(selectedDungeon.idleActionNetProfit)}</div>
                 </div>
               </div>
@@ -626,11 +647,13 @@ function DungeonsContent() {
                 </section>
                 <section className="dungeon-modal-panel">
                   <h3><Target size={15} /> Idle Action Plan</h3>
-                  <div className="dungeon-detail-row"><span>Profile window</span><strong>{selectedDungeon.idleWindowHours.toFixed(1)}h</strong></div>
+                  <div className="dungeon-detail-row"><span>Action limit</span><strong>{selectedDungeon.idleActionLimitHours.toFixed(1)}h</strong></div>
+                  <div className="dungeon-detail-row"><span>Playtime</span><strong>{selectedDungeon.playtimeHours.toFixed(1)}h/day</strong></div>
                   <div className="dungeon-detail-row"><span>Runs fit</span><strong>{selectedDungeon.runsInIdleAction}</strong></div>
+                  <div className="dungeon-detail-row"><span>Daily repeat capacity</span><strong>{selectedDungeon.dailyRunsByPlaytime} runs in {selectedDungeon.actionsNeededForDailyRuns} actions</strong></div>
                   <div className="dungeon-detail-row"><span>Base time used</span><strong>{selectedDungeon.idleActionBaseHours.toFixed(1)}h</strong></div>
                   <div className="dungeon-detail-row"><span>Effective time used</span><strong>{selectedDungeon.idleActionEffectiveHours.toFixed(1)}h</strong></div>
-                  <div className="dungeon-detail-row"><span>Idle gap</span><strong>{selectedDungeon.idleActionGapHours.toFixed(1)}h</strong></div>
+                  <div className="dungeon-detail-row"><span>Action gap</span><strong>{selectedDungeon.idleActionGapHours.toFixed(1)}h</strong></div>
                 </section>
                 <section className="dungeon-modal-panel">
                   <h3><Sparkles size={15} /> Rewards</h3>
@@ -642,7 +665,7 @@ function DungeonsContent() {
                 </section>
                 <section className="dungeon-modal-panel">
                   <h3><Coins size={15} /> Cost Model</h3>
-                  <div className="dungeon-detail-row"><span>Idle action entry cost</span><strong>{formatPlainGold(selectedDungeon.idleActionCost)}</strong></div>
+                  <div className="dungeon-detail-row"><span>Queued action entry cost</span><strong>{formatPlainGold(selectedDungeon.idleActionCost)}</strong></div>
                   <div className="dungeon-detail-row"><span>Gross EV / run</span><strong>{formatPlainGold(selectedDungeon.ev)}</strong></div>
                   <div className="dungeon-detail-row"><span>Dungeon MF in EV</span><strong>{selectedDungeon.includeMagicFindEv ? `${selectedDungeon.dungeonMagicFind}%` : "Off"}</strong></div>
                   <div className="dungeon-detail-row"><span>Runs / any drop</span><strong>{selectedDungeon.runsToDrop === Infinity ? "-" : selectedDungeon.runsToDrop.toFixed(1)}</strong></div>
@@ -797,26 +820,41 @@ function DungeonsContent() {
         }
         .dungeon-planner {
           display: grid;
-          grid-template-columns: minmax(16rem, 1.4fr) repeat(4, minmax(9rem, 1fr));
+          grid-template-columns: minmax(17rem, 1.35fr) repeat(4, minmax(10rem, 1fr));
+          grid-template-areas:
+            "search action playtime profit efficiency"
+            "mf completion filter toggle toggle";
           gap: 0.75rem;
           padding: 1rem;
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: var(--bg-panel);
+          align-items: stretch;
         }
+        .dungeon-search-field { grid-area: search; }
+        .dungeon-action-limit-field { grid-area: action; }
+        .dungeon-playtime-field { grid-area: playtime; }
+        .dungeon-profit-field { grid-area: profit; }
+        .dungeon-efficiency-field { grid-area: efficiency; }
+        .dungeon-mf-field { grid-area: mf; }
+        .dungeon-completion-field { grid-area: completion; }
+        .dungeon-filter-field { grid-area: filter; }
+        .dungeon-mf-toggle { grid-area: toggle; }
         .dungeon-planner-field {
           display: flex;
           flex-direction: column;
           gap: 0.45rem;
           min-width: 0;
+          justify-content: flex-end;
         }
         .dungeon-planner-field .control-input {
           width: 100%;
           min-width: 0;
+          min-height: 42px;
         }
         .dungeon-readonly-field {
           justify-content: center;
-          min-height: 3.8rem;
+          min-height: 4.4rem;
           padding: 0.55rem 0.7rem;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
@@ -837,7 +875,7 @@ function DungeonsContent() {
           grid-template-columns: 1.8rem minmax(0, 1fr);
           align-items: center;
           gap: 0.65rem;
-          min-height: 3.8rem;
+          min-height: 4.4rem;
           padding: 0.65rem 0.75rem;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
@@ -886,10 +924,21 @@ function DungeonsContent() {
           position: relative;
           width: 100%;
           min-width: 0;
+          display: flex;
+          align-items: center;
+          min-height: 42px;
+          border: 1px solid var(--border-subtle);
+          border-radius: 6px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .dungeon-input-icon:focus-within {
+          border-color: var(--text-accent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
         }
         .dungeon-input-icon svg {
           position: absolute;
-          left: 0.75rem;
+          left: 0.85rem;
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-muted);
@@ -898,7 +947,15 @@ function DungeonsContent() {
         }
         .dungeon-input-icon .control-input {
           display: block;
-          padding-left: 2.2rem;
+          height: 40px;
+          min-height: 40px;
+          padding-left: 2.45rem;
+          border: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+        .dungeon-input-icon .control-input:focus {
+          box-shadow: none;
         }
         .dungeon-segmented {
           display: grid;
@@ -1329,9 +1386,30 @@ function DungeonsContent() {
           .dungeon-planner {
             grid-template-columns: 1fr;
           }
+          .dungeon-planner {
+            grid-template-areas:
+              "search"
+              "action"
+              "playtime"
+              "profit"
+              "efficiency"
+              "mf"
+              "completion"
+              "filter"
+              "toggle";
+          }
           .dungeon-command-stats,
           .dungeon-insights {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        @media (min-width: 1101px) and (max-width: 1380px) {
+          .dungeon-planner {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-areas:
+              "search action playtime"
+              "mf completion filter"
+              "profit efficiency toggle";
           }
         }
         @media (max-width: 720px) {

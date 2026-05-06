@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
+import ProfileSwitcher from "@/components/ProfileSwitcher";
 
 export const metadata: Metadata = {
   title: "Zenith Companion",
@@ -37,10 +38,12 @@ export default function RootLayout({
                       <header className="top-navigation">
                         <MobileMenuBtn />
                         <GlobalSearch hotkeyEnabled={false} />
+                        <ProfileSwitcher compact />
                       </header>
                       <div className="content-wrapper">
-                        <div className="shell-desktop-search">
+                        <div className="shell-quickbar">
                           <GlobalSearch />
+                          <ProfileSwitcher />
                         </div>
                         {children}
                       </div>
@@ -101,7 +104,7 @@ export default function RootLayout({
               z-index: 1000;
               height: 64px;
               backdrop-filter: blur(12px);
-              overflow: hidden;
+              overflow: visible;
             }
             .top-navigation .global-search-trigger {
               flex: 1 1 auto;
@@ -109,6 +112,9 @@ export default function RootLayout({
               max-width: none;
               min-width: 0;
               width: auto;
+            }
+            .top-navigation .profile-switcher {
+              flex: 0 0 auto;
             }
           }
         `}</style>
