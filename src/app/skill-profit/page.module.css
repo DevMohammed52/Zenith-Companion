@@ -264,6 +264,12 @@
   transform: translateY(-1px);
 }
 
+.toggle:disabled {
+  cursor: default;
+  opacity: 0.9;
+  transform: none;
+}
+
 .toggleActive {
   background: color-mix(in srgb, var(--text-accent), transparent 90%);
   border-color: var(--border-focus);

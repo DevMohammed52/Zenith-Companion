@@ -110,13 +110,14 @@ export default function SkillProfitPage() {
   const deferredSettings = useDeferredValue(settings);
 
   useEffect(() => {
-    if (!preferencesLoaded) return;
+    if (!preferencesLoaded || !loadedStoredState) return;
     const profileTools = activeProfile?.tools || {};
     const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : Number(preferences.barteringBoost) || 0;
     setSettings((current) => ({
       ...current,
       membership: preferences.membership,
-      classBonus: preferences.skillClassBonus,
+      classBonus: activeProfile ? false : preferences.skillClassBonus,
+      profileClassName: activeProfile?.className || undefined,
       assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
       tools: {
         ...DEFAULT_TOOL_SELECTIONS,
@@ -131,6 +132,7 @@ export default function SkillProfitPage() {
   }, [
     activeProfile,
     activeProfile?.tools,
+    loadedStoredState,
     preferences.assaultRank,
     preferences.barteringBoost,
     preferences.customPrices,
@@ -285,7 +287,7 @@ export default function SkillProfitPage() {
     if ("membership" in patch || "classBonus" in patch || "tools" in patch || "customPrices" in patch) {
       setPreferences({
         ...(typeof patch.membership === "boolean" ? { membership: patch.membership } : {}),
-        ...(typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
+        ...(!activeProfile && typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
         ...(patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
         ...(patch.customPrices ? { customPrices: patch.customPrices } : {}),
       });
@@ -416,11 +418,15 @@ export default function SkillProfitPage() {
           {settings.membership && <Check size={14} />} Member
         </button>
         <button
-          className={`${styles.toggle} ${settings.classBonus ? styles.toggleActive : ""}`}
-          onClick={() => patchSettings({ classBonus: !settings.classBonus })}
+          className={`${styles.toggle} ${(activeProfile ? settings.profileClassName : settings.classBonus) ? styles.toggleActive : ""}`}
+          onClick={() => {
+            if (!activeProfile) patchSettings({ classBonus: !settings.classBonus });
+          }}
+          disabled={Boolean(activeProfile)}
+          title={activeProfile ? `Using ${activeProfile.className} from active profile` : "Fallback class helper when no profile is active"}
           type="button"
         >
-          {settings.classBonus && <Check size={14} />} Class
+          {(activeProfile ? settings.profileClassName : settings.classBonus) && <Check size={14} />} {activeProfile ? activeProfile.className : "Class"}
         </button>
         <div className={`${styles.taxPill} ${settings.membership ? styles.taxMember : ""}`}>
           {settings.membership ? "12% tax" : "15% tax"}

@@ -123,11 +123,18 @@ export default function DashboardPage() {
 
   const skillProfitSettings = useMemo<SkillProfitSettings>(() => ({
     membership: preferences.membership,
-    classBonus: preferences.skillClassBonus,
+    classBonus: activeProfile ? false : preferences.skillClassBonus,
+    profileClassName: activeProfile?.className || undefined,
     energizingPoolExp: 0,
     assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
     ascensionBuffIds: [],
-    tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
+    tools: {
+      ...DEFAULT_TOOL_SELECTIONS,
+      ...preferences.skillTools,
+      ...(activeProfile?.tools.woodcutting ? { Woodcutting: activeProfile.tools.woodcutting } : {}),
+      ...(activeProfile?.tools.mining ? { Mining: activeProfile.tools.mining } : {}),
+      ...(activeProfile?.tools.fishing ? { Fishing: activeProfile.tools.fishing } : {}),
+    },
     customPrices: preferences.customPrices,
     barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
   }), [

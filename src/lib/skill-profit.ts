@@ -69,6 +69,7 @@ export type ItemRegistry = Record<string, {
 export type SkillProfitSettings = {
   membership: boolean;
   classBonus: boolean;
+  profileClassName?: string;
   energizingPoolExp: number;
   assaultRank: AssaultRank;
   ascensionBuffIds: string[];
@@ -269,6 +270,27 @@ const ASSAULT_BUFFS: Record<AssaultRank, { exp: number; efficiency: number; labe
   fourthSeventh: { exp: 6, efficiency: 2, label: "4th-7th (+6% EXP, +2% Eff)" },
   eighthTenth: { exp: 2, efficiency: 1, label: "8th-10th (+2% EXP, +1% Eff)" },
 };
+
+const SKILL_CLASS_EFFECTS: Record<string, { skill: SkillName; exp: number; efficiency: number }> = {
+  Miner: { skill: "Mining", exp: 10, efficiency: 10 },
+  Angler: { skill: "Fishing", exp: 10, efficiency: 10 },
+  Chef: { skill: "Cooking", exp: 10, efficiency: 10 },
+  Lumberjack: { skill: "Woodcutting", exp: 10, efficiency: 10 },
+  Smelter: { skill: "Smelting", exp: 10, efficiency: 10 },
+};
+
+const SKILL_EXP_PENALTY_CLASSES = new Set(["Cursed", "Forsaken"]);
+
+function getClassSkillEffect(settings: SkillProfitSettings, skill?: SkillName | "All") {
+  const className = settings.profileClassName || "";
+  if (!skill || skill === "All") return { exp: 0, efficiency: 0 };
+  if (SKILL_EXP_PENALTY_CLASSES.has(className) && skill !== "Forge") {
+    return { exp: -50, efficiency: 0 };
+  }
+  const effect = SKILL_CLASS_EFFECTS[className];
+  if (effect?.skill === skill) return { exp: effect.exp, efficiency: effect.efficiency };
+  return { exp: 0, efficiency: 0 };
+}
 
 export const ASSAULT_OPTIONS = Object.entries(ASSAULT_BUFFS).map(([value, config]) => ({
   value: value as AssaultRank,
@@ -490,17 +512,18 @@ export function getBuffTotals(settings: SkillProfitSettings, includeAscension = 
     .filter((buff) => buff.type === "Exp")
     .reduce((sum, buff) => sum + buff.value, 0) : 0;
   const assault = ASSAULT_BUFFS[settings.assaultRank];
+  const classEffect = getClassSkillEffect(settings, skill);
   const supportsClass = !skill || skill === "All" || (skill !== "Alchemy" && skill !== "Forge" && skill !== "Construction");
 
   return {
     efficiency:
       (settings.membership ? 10 : 0) +
-      (settings.classBonus && supportsClass ? 10 : 0) +
+      (settings.profileClassName ? classEffect.efficiency : settings.classBonus && supportsClass ? 10 : 0) +
       assault.efficiency +
       ascensionEfficiency,
     experience:
       (settings.membership ? 15 : 0) +
-      (settings.classBonus && supportsClass ? 10 : 0) +
+      (settings.profileClassName ? classEffect.exp : settings.classBonus && supportsClass ? 10 : 0) +
       settings.energizingPoolExp +
       assault.exp +
       ascensionExp,
