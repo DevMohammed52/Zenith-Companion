@@ -285,13 +285,14 @@ export function getClassEfficiencyBonus(className: string) {
 }
 
 export function getItemStatTotals(item: RawItemLike | null | undefined, tierValue: number | "" = "") {
-  const tier = Math.max(0, Number(tierValue || 0));
+  const tier = Math.max(1, Number(tierValue || 1));
+  const upgradeSteps = Math.max(0, tier - 1);
   const totals: Partial<Record<ProfileStatKey, number>> = {};
   const sources = [item?.stats || {}, item?.tier_modifiers || {}];
   for (const [rawKey, mappedKey] of Object.entries(STAT_KEY_MAP)) {
     const base = Number((sources[0] as Record<string, unknown>)[rawKey] || 0);
     const modifier = Number((sources[1] as Record<string, unknown>)[rawKey] || 0);
-    const total = base + modifier * tier;
+    const total = base + modifier * upgradeSteps;
     if (total) totals[mappedKey] = Number(total.toFixed(2));
   }
   return totals;

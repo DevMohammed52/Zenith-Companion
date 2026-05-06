@@ -113,14 +113,14 @@ const DEFAULT_GEAR = {
 };
 
 const DEFAULT_GEAR_TIERS: Record<string, number | ""> = {
-  helmet: "",
-  chestplate: "",
-  greaves: "",
-  boots: "",
-  gauntlets: "",
-  weapon: "",
-  shield: "",
-  bow: "",
+  helmet: 1,
+  chestplate: 1,
+  greaves: 1,
+  boots: 1,
+  gauntlets: 1,
+  weapon: 1,
+  shield: 1,
+  bow: 1,
 };
 
 const DEFAULT_TOOLS = {
@@ -272,6 +272,9 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   }
   for (const key of Object.keys(next.gearTiers)) {
     next.gearTiers[key] = cleanNumber(next.gearTiers[key]);
+    if (next.gearTiers[key] === "" || Number(next.gearTiers[key]) < 1) {
+      next.gearTiers[key] = 1;
+    }
   }
   next.housing.mode = next.housing.mode === "owner" || next.housing.mode === "guest" ? next.housing.mode : "none";
 

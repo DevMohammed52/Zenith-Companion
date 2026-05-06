@@ -557,7 +557,7 @@ export default function ProfilesPage() {
         getRequirementLevel(item) ? `Lv. ${getRequirementLevel(item)}` : "",
       ].filter(Boolean).join(" - "),
       imageUrl: item.image_url,
-      tags: [item.quality || "", item.type || "", formatRequirements(item), formatStatSummary(getItemStatTotals(item, 0)), getItemEffectSummary(item)],
+      tags: [item.quality || "", item.type || "", formatRequirements(item), formatStatSummary(getItemStatTotals(item, 1)), getItemEffectSummary(item)],
     }))
   );
 
@@ -568,7 +568,7 @@ export default function ProfilesPage() {
     return GEAR_FIELDS.map(([key]) => ({
       key,
       item: getSelectedItem(profile.gear[key] || ""),
-      tier: profile.gearTiers?.[key] || 0,
+      tier: profile.gearTiers?.[key] || 1,
     }));
   }, [itemByName, profile?.gear, profile?.gearTiers]);
 
@@ -1050,17 +1050,20 @@ export default function ProfilesPage() {
                             onChange={(value) => {
                               patchActive({
                                 gear: { ...profile.gear, [key]: value },
-                                gearTiers: { ...profile.gearTiers, [key]: "" },
+                                gearTiers: { ...profile.gearTiers, [key]: 1 },
                               });
                             }}
                           />
                         </div>
                         <ProfileNumberField
                           label={`Tier${maxTier ? ` / ${maxTier}` : ""}`}
-                          value={profile.gearTiers?.[key] || ""}
-                          min={0}
+                          value={profile.gearTiers?.[key] || 1}
+                          min={1}
                           max={maxTier || undefined}
-                          onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: maxTier ? Math.min(Number(value) || 0, maxTier) : value } })}
+                          onChange={(value) => {
+                            const nextTier = Math.max(1, Number(value) || 1);
+                            patchActive({ gearTiers: { ...profile.gearTiers, [key]: maxTier ? Math.min(nextTier, maxTier) : nextTier } });
+                          }}
                         />
                         {selected && (
                           <div className="profile-item-summary">
@@ -1068,7 +1071,7 @@ export default function ProfilesPage() {
                             <div>
                               <strong>{selected.name}</strong>
                               <small>{cleanQuality(selected.quality)} - {formatRequirements(selected)}</small>
-                              <p>{formatStatSummary(getItemStatTotals(selected, profile.gearTiers?.[key] || 0)) || "No combat stats"}</p>
+                              <p>{formatStatSummary(getItemStatTotals(selected, profile.gearTiers?.[key] || 1)) || "No combat stats"}</p>
                             </div>
                           </div>
                         )}
