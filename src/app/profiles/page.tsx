@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
+  ChevronDown,
   Copy,
   Download,
   FileUp,
   Home,
   Plus,
+  Search,
   Shield,
   Trash2,
   Upload,
@@ -166,13 +168,113 @@ function getPetSourceLabel(pet: PetRecord | null | undefined) {
   return pet.sourceOverride?.label || pet.rarity?.worldBoss || pet.acquisition?.[0]?.location || "Source pending";
 }
 
-function getPetStatSummary(pet: PetRecord | null | undefined) {
-  if (!pet?.stats) return "";
+function statLabel(key: string) {
+  return key
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getPetStatEntries(pet: PetRecord | null | undefined) {
+  if (!pet?.stats) return [];
   return Object.entries(pet.stats)
-    .map(([key, value]) => `${key}: ${Number(value?.max ?? value?.base ?? 0).toLocaleString()}`)
-    .filter((line) => !line.endsWith(": 0"))
+    .map(([key, value]) => ({
+      label: statLabel(key),
+      value: Number(value?.max ?? value?.base ?? 0),
+    }))
+    .filter((entry) => entry.value > 0)
     .slice(0, 6)
-    .join(" | ");
+    .map((entry) => ({ ...entry, valueLabel: entry.value.toLocaleString() }));
+}
+
+function petSearchText(pet: PetRecord) {
+  return [
+    pet.name,
+    pet.quality,
+    getPetSourceLabel(pet),
+    ...getPetStatEntries(pet).map((entry) => `${entry.label} ${entry.valueLabel}`),
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function ProfilePetPicker({
+  value,
+  options,
+  onSelect,
+}: {
+  value: string;
+  options: PetRecord[];
+  onSelect: (pet: PetRecord | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selected = value ? options.find((pet) => pet.name.toLowerCase() === value.toLowerCase()) || null : null;
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return options.slice(0, 80);
+    return options.filter((pet) => petSearchText(pet).includes(needle)).slice(0, 80);
+  }, [options, query]);
+
+  return (
+    <div className={`profile-pet-picker ${open ? "open" : ""}`}>
+      <button className="profile-pet-trigger" type="button" onClick={() => setOpen((state) => !state)}>
+        {selected?.imageUrl ? <img src={selected.imageUrl} alt="" /> : <span className="profile-pet-empty-icon">?</span>}
+        <span className="profile-pet-trigger-copy">
+          <strong>{selected?.name || "Select pet"}</strong>
+          <small>{selected ? `${selected.quality || "Unknown quality"} - ${getPetSourceLabel(selected)}` : "Search the Pet Database"}</small>
+        </span>
+        <ChevronDown size={18} />
+      </button>
+
+      {open && (
+        <div className="profile-pet-menu">
+          <label className="profile-pet-search">
+            <Search size={16} />
+            <input
+              autoFocus
+              value={query}
+              placeholder="Search pet, quality, source, or stat..."
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <div className="profile-pet-options custom-scrollbar">
+            <button
+              className="profile-pet-option"
+              type="button"
+              onClick={() => {
+                onSelect(null);
+                setQuery("");
+                setOpen(false);
+              }}
+            >
+              <span className="profile-pet-empty-icon">-</span>
+              <span>
+                <strong>No pet selected</strong>
+                <small>Clear this profile slot</small>
+              </span>
+            </button>
+            {filtered.map((pet) => (
+              <button
+                key={pet.name}
+                className={`profile-pet-option ${pet.name === selected?.name ? "selected" : ""}`}
+                type="button"
+                onClick={() => {
+                  onSelect(pet);
+                  setQuery("");
+                  setOpen(false);
+                }}
+              >
+                {pet.imageUrl ? <img src={pet.imageUrl} alt="" /> : <span className="profile-pet-empty-icon">?</span>}
+                <span>
+                  <strong>{pet.name}</strong>
+                  <small>{pet.quality || "Unknown quality"} - {getPetSourceLabel(pet)}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ProfilesPage() {
@@ -467,29 +569,23 @@ export default function ProfilesPage() {
               </div>
             </div>
             <div className="profile-grid">
-              <label className="profile-field">
+              <div className="profile-field">
                 <span>Pet</span>
-                <select
-                  className="control-input profile-select"
+                <ProfilePetPicker
                   value={profile.pet.species}
-                  onChange={(event) => {
-                    const pet = petOptions.find((item) => item.name === event.target.value);
+                  options={petOptions}
+                  onSelect={(pet) => {
                     patchActive({
                       pet: {
                         ...profile.pet,
-                        species: event.target.value,
+                        species: pet?.name || "",
                         quality: pet?.quality || "",
-                        notes: pet ? [getPetSourceLabel(pet), getPetStatSummary(pet)].filter(Boolean).join("\n") : profile.pet.notes,
+                        notes: pet?.name === profile.pet.species ? profile.pet.notes : "",
                       },
                     });
                   }}
-                >
-                  <option value="">No pet selected</option>
-                  {petOptions.map((pet) => (
-                    <option key={pet.name} value={pet.name}>{pet.name}{pet.quality ? ` - ${pet.quality}` : ""}</option>
-                  ))}
-                </select>
-              </label>
+                />
+              </div>
               <label className="profile-field">
                 <span>Quality</span>
                 <input className="control-input" type="text" value={profile.pet.quality} readOnly placeholder="Select a pet" />
@@ -502,13 +598,22 @@ export default function ProfilesPage() {
                   <div>
                     <strong>{selectedPet.name}</strong>
                     <span>{getPetSourceLabel(selectedPet)}</span>
-                    <small>{getPetStatSummary(selectedPet) || "Stats pending in local database"}</small>
+                    <div className="profile-pet-stat-grid">
+                      {getPetStatEntries(selectedPet).length ? getPetStatEntries(selectedPet).map((entry) => (
+                        <small key={entry.label}><b>{entry.label}</b> {entry.valueLabel}</small>
+                      )) : <small>Stats pending in local database</small>}
+                    </div>
                   </div>
                 </div>
               )}
               <label className="profile-field profile-field-wide">
-                <span>Pet Notes / Manual Overrides</span>
-                <textarea className="control-input" value={profile.pet.notes} onChange={(event) => updateNested("pet", "notes", event.target.value)} />
+                <span>Pet Notes</span>
+                <textarea
+                  className="control-input"
+                  value={profile.pet.notes}
+                  placeholder="Optional notes, manual corrections, or visible pet stats from your character screen..."
+                  onChange={(event) => updateNested("pet", "notes", event.target.value)}
+                />
               </label>
             </div>
           </section>

@@ -3314,6 +3314,172 @@ kbd {
   overflow-wrap: anywhere;
 }
 
+.profile-pet-stat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.profile-pet-stat-grid small {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  margin: 0;
+  padding: 0.32rem 0.48rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: rgba(0,0,0,0.18);
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.profile-pet-stat-grid b {
+  color: #fff;
+  font-weight: 800;
+}
+
+.profile-pet-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.profile-pet-trigger {
+  width: 100%;
+  min-height: 3.75rem;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)),
+    rgba(0,0,0,0.24);
+  color: #fff;
+  cursor: pointer;
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.profile-pet-trigger:hover,
+.profile-pet-picker.open .profile-pet-trigger {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 52%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 92%);
+}
+
+.profile-pet-trigger img,
+.profile-pet-option img,
+.profile-pet-empty-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border-subtle);
+}
+
+.profile-pet-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: 900;
+}
+
+.profile-pet-trigger-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-pet-trigger-copy strong,
+.profile-pet-option strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+  font-weight: 900;
+}
+
+.profile-pet-trigger-copy small,
+.profile-pet-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.profile-pet-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  min-width: min(34rem, calc(100vw - 2rem));
+  padding: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 62%);
+  border-radius: 10px;
+  background: rgba(12, 15, 18, 0.98);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+}
+
+.profile-pet-search {
+  height: 2.65rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.28);
+  color: var(--text-muted);
+}
+
+.profile-pet-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+}
+
+.profile-pet-options {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  padding: 0.55rem 0.15rem 0 0;
+}
+
+.profile-pet-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.45rem;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.profile-pet-option:hover,
+.profile-pet-option.selected {
+  background: color-mix(in srgb, var(--text-accent), transparent 91%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+}
+
 @media (max-width: 520px) {
   .profile-pet-card {
     grid-template-columns: 3.25rem minmax(0, 1fr);
@@ -3322,6 +3488,19 @@ kbd {
   .profile-pet-card img {
     width: 3.25rem;
     height: 3.25rem;
+  }
+
+  .profile-pet-menu {
+    position: fixed;
+    top: 5rem;
+    left: 1rem;
+    right: 1rem;
+    min-width: 0;
+    max-height: calc(100vh - 6rem);
+  }
+
+  .profile-pet-options {
+    max-height: calc(100vh - 12rem);
   }
 }
 
