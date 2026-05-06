@@ -2,7 +2,7 @@ name: Update Market, Boss & Pet Data
 
 on:
   schedule:
-    - cron: '0 */2 * * *' # Full update every 2 hours
+    - cron: '0 * * * *' # Full update every hour
   workflow_dispatch: # Allow manual trigger
 
 concurrency:
