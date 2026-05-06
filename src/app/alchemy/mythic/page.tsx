@@ -6,6 +6,7 @@ import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import { getMerchantBuyPrice } from "@/constants";
+import { getSafeMarketPriceInfo } from "@/lib/market-pricing";
 
 type PriceSource = "custom" | "settings" | "3d" | "7d" | "14d" | "30d" | "merchant" | "vendor" | "none";
 type RecipeCostMode = "full" | "remaining" | "owned";
@@ -245,7 +246,8 @@ export default function MythicAlchemyPage() {
   const getMarketAverage = useCallback((itemName: string): { price: number; source: PriceSource } => {
     const item = marketData[itemName];
     if (!item) return { price: 0, source: "none" };
-    if (isFinitePositive(item.avg_3)) return { price: item.avg_3, source: "3d" };
+    const safe = getSafeMarketPriceInfo(item);
+    if (safe.value > 0) return { price: safe.value, source: safe.adjusted ? "14d" : "3d" };
     if (isFinitePositive(item.avg_7)) return { price: item.avg_7, source: "7d" };
     if (isFinitePositive(item.avg_14)) return { price: item.avg_14, source: "14d" };
     if (isFinitePositive(item.avg_30)) return { price: item.avg_30, source: "30d" };

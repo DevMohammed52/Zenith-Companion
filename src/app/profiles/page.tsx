@@ -73,6 +73,10 @@ const BOOSTED_PET_STATS = new Set<string>([
   "movement_speed",
 ]);
 
+function getDailyStreakMagicFindBonus(streak: number | "") {
+  return Math.min(10, Math.floor(Math.max(0, Number(streak || 0)) / 10));
+}
+
 const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string]> = [
   ["totalLevel", "Total Level / TL"],
   ["combat", "Combat"],
@@ -578,6 +582,7 @@ export default function ProfilesPage() {
       selectedGearItems.map((entry) => ({ item: entry.item as RawItemLike | undefined, tier: entry.tier })),
       profile.className,
       Number(profile.levels.combat || 0),
+      profile.levels,
     );
   }, [profile, selectedGearItems]);
 
@@ -586,10 +591,14 @@ export default function ProfilesPage() {
     return JSON.stringify({
       className: profile.className,
       combat: profile.levels.combat,
+      strength: profile.levels.strength,
+      defence: profile.levels.defence,
+      speed: profile.levels.speed,
+      dexterity: profile.levels.dexterity,
       gear: profile.gear,
       tiers: profile.gearTiers,
     });
-  }, [profile?.className, profile?.levels.combat, profile?.gear, profile?.gearTiers]);
+  }, [profile?.className, profile?.levels.combat, profile?.levels.strength, profile?.levels.defence, profile?.levels.speed, profile?.levels.dexterity, profile?.gear, profile?.gearTiers]);
 
   const combatStatTotal = useMemo(() => {
     if (!calculatedCombatStats) return 0;
@@ -694,6 +703,7 @@ export default function ProfilesPage() {
   const classOption = CLASS_RULES.find((option) => option.value === profile.className);
   const unlockedTalents = getUnlockedClassTalents(profile.className, Number(profile.levels.combat || 0));
   const nextTalent = getNextClassTalent(profile.className, Number(profile.levels.combat || 0));
+  const dailyStreakBonus = getDailyStreakMagicFindBonus(profile.magicFind.dailyStreak);
 
   return (
     <main className="container profiles-page">
@@ -908,7 +918,25 @@ export default function ProfilesPage() {
               <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "combat", value)} />
               <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "dungeon", value)} />
               <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} suffix="%" onChange={(value) => updateNested("magicFind", "worldBoss", value)} />
-              <ProfileNumberField label="Daily Streak" value={profile.magicFind.dailyStreak} min={0} onChange={(value) => updateNested("magicFind", "dailyStreak", value)} />
+              <ProfileNumberField
+                label="Daily Streak"
+                value={profile.magicFind.dailyStreak}
+                min={0}
+                onChange={(value) => {
+                  const previousBonus = getDailyStreakMagicFindBonus(profile.magicFind.dailyStreak);
+                  const nextBonus = getDailyStreakMagicFindBonus(value);
+                  const adjust = (current: number | "") => Math.max(0, Number(current || 0) - previousBonus + nextBonus);
+                  patchActive({
+                    magicFind: {
+                      ...profile.magicFind,
+                      dailyStreak: value,
+                      combat: adjust(profile.magicFind.combat),
+                      dungeon: adjust(profile.magicFind.dungeon),
+                      worldBoss: adjust(profile.magicFind.worldBoss),
+                    },
+                  });
+                }}
+              />
               <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} suffix="%" onChange={(value) => updateNested("efficiency", "hunting", value)} />
               <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} suffix="%" onChange={(value) => updateNested("efficiency", "dungeon", value)} />
               <ProfileNumberField
@@ -920,6 +948,11 @@ export default function ProfilesPage() {
                 suffix="hours"
                 onChange={(value) => patchActive({ timers: { activeHours: value, idleTimerHours: "" } })}
               />
+            </div>
+            <div className="profile-derived-strip">
+              <span>Daily Streak MF</span>
+              <strong>+{dailyStreakBonus}% to Combat, Dungeon, World Boss</strong>
+              <strong>Caps at 100 days</strong>
             </div>
             <div className="profile-derived-strip">
               <span>Tool Efficiency</span>
@@ -949,8 +982,8 @@ export default function ProfilesPage() {
                         ...profile.pet,
                         species: pet?.name || "",
                         quality: pet?.quality || "",
-                        level: pet ? profile.pet.level : "",
-                        evolution: pet ? profile.pet.evolution : "",
+                        level: pet ? profile.pet.level || 1 : 1,
+                        evolution: pet ? profile.pet.evolution || 0 : 0,
                         stats: pet ? { ...profile.pet.stats, ...nextStats } : Object.fromEntries(PET_STAT_KEYS.map((key) => [key, ""])),
                         notes: pet?.name === profile.pet.species ? profile.pet.notes : "",
                       },

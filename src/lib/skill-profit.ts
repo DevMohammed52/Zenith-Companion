@@ -1,4 +1,5 @@
 import { ALCHEMY_ITEMS, VENDOR_ITEMS, getMerchantBuyPrice, parseVendorGoldPrice } from "@/constants";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
 export type SkillName =
   | "Woodcutting"
@@ -594,7 +595,7 @@ function getPrice(
   const customPrice = customPrices?.[name];
   if (Number(customPrice) > 0) return { value: Number(customPrice), source: "custom" };
 
-  const marketPrice = marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0;
+  const marketPrice = getSafeMarketPrice(marketData?.[name]);
   if (marketPrice > 0) return { value: marketPrice, source: "market" };
 
   const merchantBuyPrice = getMerchantBuyPrice(name);

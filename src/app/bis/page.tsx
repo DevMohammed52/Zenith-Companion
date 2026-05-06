@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
 const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: React.ReactNode }> = {
     SWORD:      { label: "Sword",      defaultStat: "attack_power", icon: <Sword size={15} /> },
@@ -60,7 +61,7 @@ interface GearItem {
 
 function getRankValue(item: GearItem, sortKey: string, defaultStat: string, marketData: any): number {
     if (sortKey === "price") {
-        const p = marketData?.[item.name]?.avg_3;
+        const p = getSafeMarketPrice(marketData?.[item.name]);
         return p ? -p : -999999999;
     }
     if (!item.stats) return 0;
@@ -143,7 +144,7 @@ export default function BISPage() {
 
     const getPrice = (item: GearItem | undefined): number | null => {
         if (!item || !item.name) return null;
-        return marketData?.[item.name]?.avg_3 || null;
+        return getSafeMarketPrice(marketData?.[item.name]) || null;
     };
 
     const totalPower = useMemo(() => {

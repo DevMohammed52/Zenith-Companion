@@ -202,8 +202,8 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
     pet: {
       species: "",
       quality: "",
-      level: "",
-      evolution: "",
+      level: 1,
+      evolution: 0,
       stats: { ...DEFAULT_PET_STATS },
       notes: "",
     },
@@ -267,6 +267,8 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   }
   next.pet.level = cleanNumber(next.pet.level);
   next.pet.evolution = cleanNumber(next.pet.evolution);
+  if (next.pet.level === "" || Number(next.pet.level) < 1) next.pet.level = 1;
+  if (next.pet.evolution === "" || Number(next.pet.evolution) < 0) next.pet.evolution = 0;
   for (const key of Object.keys(next.pet.stats)) {
     next.pet.stats[key] = cleanNumber(next.pet.stats[key]);
   }

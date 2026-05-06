@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowRight, BarChart3, BookOpen, Castle, Package,
   Skull, Star, Swords, TrendingUp, Hammer, Sparkles,
-  AlertCircle, ShoppingCart, Target
+  AlertCircle, ShoppingCart, Target, PawPrint, Users
 } from "lucide-react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../constants";
 import { formatGold } from "@/lib/format";
@@ -21,6 +21,8 @@ import {
 } from "@/lib/skill-profit";
 import { calculateCraftingQueuePlan } from "@/lib/crafting-queue";
 import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "@/data/lore";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { useProfiles } from "@/lib/profiles";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,14 +30,23 @@ export default function DashboardPage() {
   const { openItemByName } = useItemModal();
   const { preferences } = usePreferences();
   const { queue } = useCrafting();
+  const { state: profilesState } = useProfiles();
 
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
+  const [petCount, setPetCount] = useState(0);
   
   useEffect(() => {
     const saved = localStorage.getItem("zenith_mythic_active_recipes");
     if (saved) {
       try { setActiveMythicNames(JSON.parse(saved)); } catch {}
     }
+  }, []);
+
+  useEffect(() => {
+    fetch("/pet-database.json?t=" + Date.now())
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setPetCount(Array.isArray(data?.pets) ? data.pets.length : 0))
+      .catch(() => setPetCount(0));
   }, []);
 
   const profitableAlchemy = useMemo(() => {
@@ -50,13 +61,13 @@ export default function DashboardPage() {
         const isMythic = itemInfo.quality === 'MYTHIC';
         if (isMythic) return null; // Filter out mythics for the basic list
 
-        const sellPrice = marketData[name]?.avg_3 || 0;
+        const sellPrice = getSafeMarketPrice(marketData[name]);
         let matCost = VIAL_COSTS[recipe.vial] || 0;
         let hasAllPrices = sellPrice > 0 || (itemInfo.vendor_price > 0);
 
         // Add material costs
         for (const [material, qty] of Object.entries(recipe.materials)) {
-          const materialPrice = marketData[material]?.avg_3 || VIAL_COSTS[material] || 0;
+          const materialPrice = getSafeMarketPrice(marketData[material]) || VIAL_COSTS[material] || 0;
           if (materialPrice <= 0) {
             hasAllPrices = false;
             break;
@@ -177,6 +188,20 @@ export default function DashboardPage() {
             <div className="tile-info">
               <span className="tile-label">Active Lab Projects</span>
               <span className="tile-value">{activeMythicNames.length}</span>
+            </div>
+          </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/profiles')}>
+            <div className="tile-icon"><Users size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Profiles</span>
+              <span className="tile-value">{profilesState.profiles.length}</span>
+            </div>
+          </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/pets')}>
+            <div className="tile-icon"><PawPrint size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Pet Database</span>
+              <span className="tile-value">{petCount}</span>
             </div>
           </div>
         </div>

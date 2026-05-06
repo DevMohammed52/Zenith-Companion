@@ -9,6 +9,7 @@ import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
 function CombatContent() {
     const router = useRouter();
@@ -53,8 +54,7 @@ function CombatContent() {
 
             if (enemy.loot) {
                 for (const drop of enemy.loot) {
-                    const mData = marketData[drop.name];
-                    const price = mData ? mData.avg_3 : 0;
+                    const price = getSafeMarketPrice(marketData[drop.name]);
                     const dropChance = (drop.chance || 0) / 100;
                     evPerKill += dropChance * (drop.quantity || 1) * price;
                 }
@@ -68,7 +68,7 @@ function CombatContent() {
                 profitPerHour: finalEv * parsedKph,
                 dropsCount: enemy.loot?.length || 0,
                 lootDetails: enemy.loot?.map((drop: any) => {
-                    const price = marketData[drop.name]?.avg_3 || 0;
+                    const price = getSafeMarketPrice(marketData[drop.name]);
                     const dropChance = (drop.chance || 0) / 100;
                     const expectedVal = dropChance * (drop.quantity || 1) * price * chanceOfLoot;
                     return { ...drop, price, expectedVal };

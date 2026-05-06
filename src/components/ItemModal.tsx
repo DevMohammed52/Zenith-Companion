@@ -16,6 +16,7 @@ import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
 import { getLoreEntry, getLoreForItem } from '@/data/lore';
+import { getSafeMarketPrice } from '@/lib/market-pricing';
 
 interface ItemModalProps {
   id: string;
@@ -237,7 +238,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const saleInsight = useMemo(() => {
     if (!item) return null;
-    const marketGross = Number(item.avg_3 || item.price || marketData?.[item.name]?.avg_3 || 0);
+    const marketGross = getSafeMarketPrice(item) || getSafeMarketPrice(marketData?.[item.name]);
     const vendorBase = Number(item.vendor_price || 0);
     if (!marketGross && !vendorBase) return null;
 
@@ -425,17 +426,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               {showMarket && (
                 <div className="bento-card market-card">
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
-                  {(item.avg_3 || item.price) ? (
+                  {saleInsight?.marketGross ? (
                     <>
                       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                         <div className="price-row">
                           <div className="price-main">
-                            {(item.avg_3 || item.price || 0).toLocaleString()}g
+                            {Math.round(saleInsight.marketGross).toLocaleString()}g
                           </div>
-                          <div className="price-sub">Current Market Price</div>
+                          <div className="price-sub">Safe Market Price</div>
                         </div>
 
-                        {intrinsicValue > 0 && Math.abs(intrinsicValue - (item.avg_3 || item.price || 0)) > 1 && (
+                        {intrinsicValue > 0 && Math.abs(intrinsicValue - saleInsight.marketGross) > 1 && (
                           <div className="price-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2rem' }}>
                             <div className="price-main" style={{ color: 'var(--text-accent)' }}>
                               {Math.floor(intrinsicValue).toLocaleString()}g

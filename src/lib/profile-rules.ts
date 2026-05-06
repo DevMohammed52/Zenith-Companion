@@ -38,6 +38,13 @@ export type RawItemLike = {
   upgrade_requirements?: Array<{ item_name?: string; quantity?: number | string }> | null;
 };
 
+export type ProfilePrimaryLevels = {
+  strength?: number | "";
+  defence?: number | "";
+  speed?: number | "";
+  dexterity?: number | "";
+};
+
 export const QUALITY_ORDER: Record<string, number> = {
   STANDARD: 1,
   REFINED: 2,
@@ -252,6 +259,12 @@ const DEFAULT_SECONDARY_STATS: Record<ProfileStatKey, number> = {
   damage: 0,
 };
 
+const CORE_STAT_MULTIPLIER = 2.4;
+
+function coreStatValue(level: number | "" | undefined) {
+  return Math.floor(Math.max(1, Number(level || 1)) * CORE_STAT_MULTIPLIER);
+}
+
 export function getUnlockedClassTalents(className: string, combatLevel: number) {
   const rule = CLASS_RULES.find((option) => option.value === className);
   return (rule?.battleTalents || []).filter((talent) => combatLevel >= talent.level);
@@ -270,6 +283,16 @@ export function getClassTalentStats(className: string, combatLevel: number) {
     }
   }
   return totals;
+}
+
+export function getCoreStatTotals(levels?: ProfilePrimaryLevels | null) {
+  return {
+    ...DEFAULT_SECONDARY_STATS,
+    attackPower: coreStatValue(levels?.strength),
+    protection: coreStatValue(levels?.defence),
+    agility: coreStatValue(levels?.speed),
+    accuracy: coreStatValue(levels?.dexterity),
+  };
 }
 
 export function getClassEfficiencyBonus(className: string) {
@@ -305,8 +328,19 @@ export function addStatTotals(target: Record<ProfileStatKey, number>, addition: 
   return target;
 }
 
-export function getGearStatTotals(items: Array<{ item?: RawItemLike | null; tier?: number | "" }>, className: string, combatLevel: number) {
-  const totals = getClassTalentStats(className, combatLevel);
+export function getGearStatTotals(
+  items: Array<{ item?: RawItemLike | null; tier?: number | "" }>,
+  className: string,
+  combatLevel: number,
+  primaryLevels?: ProfilePrimaryLevels | null,
+) {
+  const totals = getCoreStatTotals(primaryLevels);
+  addStatTotals(totals, getClassTalentStats(className, combatLevel));
+  totals.attackPower -= DEFAULT_SECONDARY_STATS.attackPower;
+  totals.protection -= DEFAULT_SECONDARY_STATS.protection;
+  totals.agility -= DEFAULT_SECONDARY_STATS.agility;
+  totals.accuracy -= DEFAULT_SECONDARY_STATS.accuracy;
+  totals.movementSpeed -= DEFAULT_SECONDARY_STATS.movementSpeed;
   for (const entry of items) {
     addStatTotals(totals, getItemStatTotals(entry.item, entry.tier));
   }

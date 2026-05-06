@@ -1,4 +1,5 @@
 import { ALCHEMY_ITEMS, getMerchantBuyPrice, type Recipe } from "@/constants";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 import type { Preferences } from "@/lib/preferences";
 
 export type CraftingQueue = Record<string, number>;
@@ -7,6 +8,9 @@ export type QueueSaleSource = "custom" | "market" | "vendor" | "missing";
 
 export type QueueMarketItem = {
   avg_3?: number;
+  avg_7?: number;
+  avg_14?: number;
+  avg_30?: number;
   price?: number;
   vendor_price?: number;
   vol_3?: number;
@@ -254,7 +258,7 @@ function getAcquisitionPrice(
   const merchantBuyPrice = getMerchantBuyPrice(name);
   if (merchantBuyPrice > 0) return { value: merchantBuyPrice, source: "vendor" };
 
-  const marketPrice = Number(marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0);
+  const marketPrice = getSafeMarketPrice(marketData?.[name]);
   if (marketPrice > 0) return { value: marketPrice, source: "market" };
 
   const vendorFallback = Number(items?.[name]?.vendor_price || marketData?.[name]?.vendor_price || 0);
@@ -271,7 +275,7 @@ function getSalePrice(
   const customPrice = Number(customPrices?.[name] || 0);
   if (customPrice > 0) return { value: customPrice, source: "custom" };
 
-  const marketPrice = Number(marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0);
+  const marketPrice = getSafeMarketPrice(marketData?.[name]);
   if (marketPrice > 0) return { value: marketPrice, source: "market" };
 
   return { value: 0, source: "missing" };

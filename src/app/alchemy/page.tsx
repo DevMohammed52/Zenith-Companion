@@ -24,6 +24,7 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
 import { useData } from "@/context/DataContext";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
 type Trend = "up" | "down" | "flat";
 type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
@@ -141,7 +142,7 @@ const getItemPrice = (
   const custom = getCustomPrice(customPrices, name);
   if (custom > 0) return { price: custom, source: "custom" };
 
-  const market = marketData?.[name]?.avg_3 || 0;
+  const market = getSafeMarketPrice(marketData?.[name]);
   if (market > 0) return { price: market, source: "market" };
 
   const vendor = VIAL_COSTS[name] || 0;

@@ -28,6 +28,7 @@ import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
@@ -219,7 +220,7 @@ function getValueBreakdown(
     const dbItem = allItemsDb?.[itemName];
     const trueValue = getItemTrueValue(itemName, marketData, allItemsDb, 0);
     const customGross = Number(options.customPrices?.[itemName] || 0);
-    const marketGross = customGross || Number(marketItem?.avg_3 || marketItem?.price || 0);
+    const marketGross = customGross || getSafeMarketPrice(marketItem);
     const marketNet = (customGross > 0 || dbItem?.is_tradeable !== false)
         ? marketGross * options.marketTaxMultiplier
         : 0;

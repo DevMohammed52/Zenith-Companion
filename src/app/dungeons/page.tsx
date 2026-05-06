@@ -328,7 +328,12 @@ function DungeonsContent() {
                                                 </div>
                                                 {drop.valueBreakdown?.path === "craft" && drop.valueBreakdown?.craftedItemName ? (
                                                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
-                                                        Craft to {drop.valueBreakdown.craftedItemName}; materials ~{(drop.valueBreakdown.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                                                        Craft to {drop.valueBreakdown.craftedItemName}; output ~{(drop.valueBreakdown.craftedValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g; materials ~{(drop.valueBreakdown.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                                                    </div>
+                                                ) : null}
+                                                {drop.valueBreakdown?.path === "chest" && drop.valueBreakdown?.chestDropDetails?.length ? (
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                                                        Chest EV from {drop.valueBreakdown.chestDropDetails.length} possible drop{drop.valueBreakdown.chestDropDetails.length === 1 ? "" : "s"}
                                                     </div>
                                                 ) : null}
                                                 {drop.valueBreakdown?.warnings?.length ? (
@@ -337,6 +342,35 @@ function DungeonsContent() {
                                                     </div>
                                                 ) : null}
                                             </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <h3 style={{ margin: '1.5rem 0 1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Value Breakdown</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                                {selectedDungeon.lootDetails?.sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).slice(0, 6).map((drop: any, i: number) => (
+                                    <div key={`${drop.name}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.85rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                            <strong style={{ fontSize: '0.86rem' }}>{drop.name}</strong>
+                                            <span className="mono" style={{ color: 'var(--text-success)', fontSize: '0.8rem' }}>{(drop.trueValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                        </div>
+                                        <div style={{ marginTop: '0.55rem', display: 'grid', gap: '0.35rem', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                            <span>Best path: {getValuePathLabel(drop.valueBreakdown?.path)}</span>
+                                            <span>Market after tax: {(drop.valueBreakdown?.marketValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                            <span>Vendor: {(drop.valueBreakdown?.vendorValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                            {drop.valueBreakdown?.path === "craft" ? (
+                                                <>
+                                                    <span>Crafted item: {drop.valueBreakdown.craftedItemName}</span>
+                                                    <span>Crafted output value: {(drop.valueBreakdown.craftedValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                                    <span>Material cost: {(drop.valueBreakdown.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                                </>
+                                            ) : null}
+                                            {drop.valueBreakdown?.path === "chest" && drop.valueBreakdown?.chestDropDetails?.length ? (
+                                                <span>
+                                                    Top chest item: {drop.valueBreakdown.chestDropDetails.slice().sort((a:any, b:any) => b.expectedValue - a.expectedValue)[0]?.name || "Unknown"}
+                                                </span>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

@@ -5,6 +5,7 @@
  */
 
 import { getMerchantBuyPrice } from "@/constants";
+import { getSafeMarketPriceInfo } from "@/lib/market-pricing";
 
 const MARKET_TAX_MULTIPLIER = 0.85;
 
@@ -17,12 +18,31 @@ export type ItemValueBreakdown = {
   marketValue: number;
   vendorValue: number;
   chestValue?: number;
+  chestDropDetails?: Array<{
+    name: string;
+    chance: number;
+    quantity: number;
+    itemValue: number;
+    expectedValue: number;
+    path: ValuePath;
+  }>;
   craftValue?: number;
   craftedItemName?: string;
+  craftedValue?: number;
   materialCost?: number;
+  recipeUses?: number;
+  craftMaterialDetails?: Array<{
+    name: string;
+    quantity: number;
+    unitCost: number;
+    totalCost: number;
+  }>;
   marketVolume?: number;
   warnings: string[];
 };
+
+type ChestDropValueDetail = NonNullable<ItemValueBreakdown["chestDropDetails"]>[number];
+type CraftMaterialValueDetail = NonNullable<ItemValueBreakdown["craftMaterialDetails"]>[number];
 
 type ItemLookup = Record<string, any> | null | undefined;
 type MarketLookup = Record<string, any> | null | undefined;
@@ -51,31 +71,8 @@ function getSafeMarketGross(itemName: string, marketData: MarketLookup) {
   const entry = getMarketEntry(itemName, marketData);
   if (!entry) return { value: 0, volume: 0, warning: null as string | null };
 
-  const price = Number(entry.price || 0);
-  const avg3 = Number(entry.avg_3 || 0);
-  const avg7 = Number(entry.avg_7 || 0);
-  const avg14 = Number(entry.avg_14 || 0);
-  const avg30 = Number(entry.avg_30 || 0);
-  const volume = Number(entry.vol_3 || 0);
-  const candidates = [price, avg3].filter((value) => value > 0);
-  const longerAverages = [avg7, avg14, avg30].filter((value) => value > 0);
-
-  if (!candidates.length && !longerAverages.length) return { value: 0, volume, warning: null as string | null };
-
-  let value = candidates.length ? Math.min(...candidates) : Math.min(...longerAverages);
-  let warning: string | null = null;
-
-  if (volume > 0 && volume < 3 && longerAverages.length) {
-    value = Math.min(value, ...longerAverages);
-    warning = "Low recent volume";
-  }
-
-  if (avg30 > 0 && value > avg30 * 3) {
-    value = avg30;
-    warning = "Outlier-safe price";
-  }
-
-  return { value, volume, warning };
+  const safe = getSafeMarketPriceInfo(entry);
+  return { value: safe.value, volume: safe.volume3d, warning: safe.reason };
 }
 
 function getVendorValue(itemName: string, item: any, marketData: MarketLookup) {
@@ -148,13 +145,23 @@ export function getItemValueBreakdown(
 
   const loot = item.loot_table || item.chest_drops;
   if (Array.isArray(loot) && loot.length > 0) {
-    const chestValue = loot.reduce((total: number, drop: any) => {
+    const chestDropDetails: ChestDropValueDetail[] = loot.map((drop: any) => {
       const dropName = drop.item_name || drop.name;
       const chance = Number(drop.chance || 0) / 100;
       const quantity = Number(drop.quantity || drop.amount || 1);
-      return total + chance * quantity * getItemValueBreakdown(dropName, marketData, allItemsDb, depth + 1).value;
-    }, 0);
+      const breakdown = getItemValueBreakdown(dropName, marketData, allItemsDb, depth + 1);
+      return {
+        name: dropName,
+        chance,
+        quantity,
+        itemValue: breakdown.value,
+        expectedValue: chance * quantity * breakdown.value,
+        path: breakdown.path,
+      };
+    });
+    const chestValue = chestDropDetails.reduce((total: number, drop: ChestDropValueDetail) => total + drop.expectedValue, 0);
     result.chestValue = chestValue;
+    result.chestDropDetails = chestDropDetails;
     if (chestValue > result.value) {
       result.value = chestValue;
       result.path = "chest";
@@ -172,14 +179,24 @@ export function getItemValueBreakdown(
       : Array.isArray(recipe?.ingredients)
         ? recipe.ingredients
         : [];
-    const materialCost = materials.reduce((total: number, material: any) => {
+    const craftMaterialDetails: CraftMaterialValueDetail[] = materials.map((material: any) => {
       const materialName = material.item_name || material.name;
       const quantity = Number(material.quantity || material.amount || 1);
-      return total + quantity * getMaterialCost(materialName, marketData, allItemsDb);
-    }, 0);
+      const unitCost = getMaterialCost(materialName, marketData, allItemsDb);
+      return {
+        name: materialName,
+        quantity,
+        unitCost,
+        totalCost: quantity * unitCost,
+      };
+    });
+    const materialCost = craftMaterialDetails.reduce((total: number, material: CraftMaterialValueDetail) => total + material.totalCost, 0);
     const craftValue = Math.max(0, (crafted.value - materialCost) * safeUses);
     result.craftedItemName = craftedItemName;
+    result.craftedValue = crafted.value;
     result.materialCost = materialCost * safeUses;
+    result.recipeUses = safeUses;
+    result.craftMaterialDetails = craftMaterialDetails;
     result.craftValue = craftValue;
     result.warnings.push(...crafted.warnings.map((warning) => `${craftedItemName}: ${warning}`));
     if (craftValue > result.value) {

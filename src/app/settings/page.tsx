@@ -5,6 +5,7 @@ import { BarChart3, Check, Coins, Keyboard, Palette, Plus, Settings, Swords, Fla
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { ASSAULT_OPTIONS, SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
+import { getSafeMarketPrice } from "@/lib/market-pricing";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
@@ -248,7 +249,7 @@ export default function SettingsPage() {
           ) : (
             <div className="custom-price-list">
               {customPriceRows.map(([name, price]) => {
-                const market = marketData?.[name]?.avg_3 || marketData?.[name]?.price || 0;
+                const market = getSafeMarketPrice(marketData?.[name]);
                 return (
                   <div className="custom-price-row" key={name}>
                     <span>
