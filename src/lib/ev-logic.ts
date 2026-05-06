@@ -1,74 +1,201 @@
-
 /**
  * Shared Expected Value (EV) logic for Zenith Companion.
- * Calculates the "True Value" of an item by recursively looking into 
- * chests, recipes, and market prices.
+ * Values drops by their best practical path: market sale, vendor sale,
+ * chest contents, or recipe-to-crafted-output profit.
  */
 
 import { getMerchantBuyPrice } from "@/constants";
 
+const MARKET_TAX_MULTIPLIER = 0.85;
+
+export type ValuePath = "market" | "vendor" | "chest" | "craft" | "missing";
+
+export type ItemValueBreakdown = {
+  name: string;
+  value: number;
+  path: ValuePath;
+  marketValue: number;
+  vendorValue: number;
+  chestValue?: number;
+  craftValue?: number;
+  craftedItemName?: string;
+  materialCost?: number;
+  marketVolume?: number;
+  warnings: string[];
+};
+
+type ItemLookup = Record<string, any> | null | undefined;
+type MarketLookup = Record<string, any> | null | undefined;
+
+function normalizeName(name: string) {
+  return name.trim().toLowerCase();
+}
+
+function getItemByName(itemName: string, allItemsDb: ItemLookup) {
+  if (!allItemsDb || !itemName) return null;
+  const direct = allItemsDb[itemName];
+  if (direct) return direct;
+  const wanted = normalizeName(itemName);
+  return Object.values(allItemsDb).find((item: any) => normalizeName(String(item?.name || "")) === wanted) || null;
+}
+
+function getMarketEntry(itemName: string, marketData: MarketLookup) {
+  if (!marketData || !itemName) return null;
+  const direct = marketData[itemName];
+  if (direct) return direct;
+  const wanted = normalizeName(itemName);
+  return Object.entries(marketData).find(([name]) => normalizeName(name) === wanted)?.[1] || null;
+}
+
+function getSafeMarketGross(itemName: string, marketData: MarketLookup) {
+  const entry = getMarketEntry(itemName, marketData);
+  if (!entry) return { value: 0, volume: 0, warning: null as string | null };
+
+  const price = Number(entry.price || 0);
+  const avg3 = Number(entry.avg_3 || 0);
+  const avg7 = Number(entry.avg_7 || 0);
+  const avg14 = Number(entry.avg_14 || 0);
+  const avg30 = Number(entry.avg_30 || 0);
+  const volume = Number(entry.vol_3 || 0);
+  const candidates = [price, avg3].filter((value) => value > 0);
+  const longerAverages = [avg7, avg14, avg30].filter((value) => value > 0);
+
+  if (!candidates.length && !longerAverages.length) return { value: 0, volume, warning: null as string | null };
+
+  let value = candidates.length ? Math.min(...candidates) : Math.min(...longerAverages);
+  let warning: string | null = null;
+
+  if (volume > 0 && volume < 3 && longerAverages.length) {
+    value = Math.min(value, ...longerAverages);
+    warning = "Low recent volume";
+  }
+
+  if (avg30 > 0 && value > avg30 * 3) {
+    value = avg30;
+    warning = "Outlier-safe price";
+  }
+
+  return { value, volume, warning };
+}
+
+function getVendorValue(itemName: string, item: any, marketData: MarketLookup) {
+  const marketEntry = getMarketEntry(itemName, marketData);
+  return Number(item?.vendor_price || marketEntry?.vendor_price || 0);
+}
+
+function getMarketSellNet(itemName: string, item: any, marketData: MarketLookup) {
+  if (item?.is_tradeable === false) return { value: 0, volume: 0, warning: null as string | null };
+  const market = getSafeMarketGross(itemName, marketData);
+  return {
+    value: market.value * MARKET_TAX_MULTIPLIER,
+    volume: market.volume,
+    warning: market.warning,
+  };
+}
+
+function getMaterialCost(itemName: string, marketData: MarketLookup, allItemsDb: ItemLookup) {
+  const item = getItemByName(itemName, allItemsDb);
+  const market = getSafeMarketGross(itemName, marketData);
+  if (market.value > 0) return market.value;
+  const merchant = getMerchantBuyPrice(itemName);
+  if (merchant) return merchant;
+  return getVendorValue(itemName, item, marketData);
+}
+
+function pickBestBaseValue(itemName: string, item: any, marketData: MarketLookup) {
+  const market = getMarketSellNet(itemName, item, marketData);
+  const vendorValue = getVendorValue(itemName, item, marketData);
+  const warnings = market.warning ? [market.warning] : [];
+  if (market.value <= 0 && vendorValue <= 0) {
+    return { value: 0, path: "missing" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
+  }
+  if (vendorValue > market.value) {
+    return { value: vendorValue, path: "vendor" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
+  }
+  return { value: market.value, path: "market" as ValuePath, marketValue: market.value, vendorValue, marketVolume: market.volume, warnings };
+}
+
+export function getItemValueBreakdown(
+  itemName: string,
+  marketData: MarketLookup,
+  allItemsDb: ItemLookup,
+  depth = 0,
+): ItemValueBreakdown {
+  if (depth > 4) {
+    return {
+      name: itemName,
+      value: 0,
+      path: "missing",
+      marketValue: 0,
+      vendorValue: 0,
+      warnings: ["Value recursion limit"],
+    };
+  }
+
+  const item = getItemByName(itemName, allItemsDb);
+  const base = pickBestBaseValue(itemName, item, marketData);
+  const result: ItemValueBreakdown = {
+    name: itemName,
+    value: base.value,
+    path: base.path,
+    marketValue: base.marketValue,
+    vendorValue: base.vendorValue,
+    marketVolume: base.marketVolume,
+    warnings: [...base.warnings],
+  };
+
+  if (!item) return result;
+
+  const loot = item.loot_table || item.chest_drops;
+  if (Array.isArray(loot) && loot.length > 0) {
+    const chestValue = loot.reduce((total: number, drop: any) => {
+      const dropName = drop.item_name || drop.name;
+      const chance = Number(drop.chance || 0) / 100;
+      const quantity = Number(drop.quantity || drop.amount || 1);
+      return total + chance * quantity * getItemValueBreakdown(dropName, marketData, allItemsDb, depth + 1).value;
+    }, 0);
+    result.chestValue = chestValue;
+    if (chestValue > result.value) {
+      result.value = chestValue;
+      result.path = "chest";
+    }
+  }
+
+  const recipe = item.recipe;
+  const craftedItemName = recipe?.result?.item_name || item.recipe_yield?.item_name;
+  if ((item.type === "RECIPE" || craftedItemName) && craftedItemName) {
+    const crafted = getItemValueBreakdown(craftedItemName, marketData, allItemsDb, depth + 1);
+    const uses = Number(recipe?.max_uses || item.recipe_yield?.uses || 1);
+    const safeUses = Number.isFinite(uses) && uses > 0 ? uses : 1;
+    const materials = Array.isArray(recipe?.materials)
+      ? recipe.materials
+      : Array.isArray(recipe?.ingredients)
+        ? recipe.ingredients
+        : [];
+    const materialCost = materials.reduce((total: number, material: any) => {
+      const materialName = material.item_name || material.name;
+      const quantity = Number(material.quantity || material.amount || 1);
+      return total + quantity * getMaterialCost(materialName, marketData, allItemsDb);
+    }, 0);
+    const craftValue = Math.max(0, (crafted.value - materialCost) * safeUses);
+    result.craftedItemName = craftedItemName;
+    result.materialCost = materialCost * safeUses;
+    result.craftValue = craftValue;
+    result.warnings.push(...crafted.warnings.map((warning) => `${craftedItemName}: ${warning}`));
+    if (craftValue > result.value) {
+      result.value = craftValue;
+      result.path = "craft";
+    }
+  }
+
+  return result;
+}
+
 export function getItemTrueValue(
-    itemName: string, 
-    marketData: any, 
-    allItemsDb: any, 
-    depth = 0
+  itemName: string,
+  marketData: MarketLookup,
+  allItemsDb: ItemLookup,
+  depth = 0,
 ): number {
-    if (depth > 3) return 0; // Prevent infinite recursion
-
-    const mData = marketData[itemName];
-    const dbItem = allItemsDb[itemName];
-    
-    // Base market price
-    const marketPrice = mData?.avg_3 || 0;
-
-    if (!dbItem) return marketPrice;
-
-    // 1. If it's a Chest, calculate weighted EV of contents
-    const loot = dbItem.loot_table || dbItem.chest_drops;
-    if (loot && loot.length > 0) {
-        let chestEV = 0;
-        for (const drop of loot) {
-            const dropName = drop.item_name || drop.name;
-            const dropChance = (drop.chance || 0) / 100;
-            const dropQty = drop.quantity || 1;
-            const dropVal = getItemTrueValue(dropName, marketData, allItemsDb, depth + 1);
-            chestEV += dropChance * dropQty * dropVal;
-        }
-        // If chest is tradable, return max of market price or content EV
-        if (dbItem.is_tradeable) {
-            return Math.max(marketPrice, chestEV);
-        }
-        return chestEV;
-    }
-
-    // 2. If it's a Recipe/Blueprint, calculate ROI
-    if (dbItem.type === 'RECIPE' || dbItem.recipe_yield) {
-        const yieldData = dbItem.recipe_yield;
-        if (!yieldData) return marketPrice;
-
-        const resultName = yieldData.item_name;
-        const resultVal = getItemTrueValue(resultName, marketData, allItemsDb, depth + 1);
-        
-        // Calculate mat costs
-        let matCosts = 0;
-        const mats = dbItem.recipe?.ingredients || dbItem.recipe?.materials || [];
-        for (const mat of mats) {
-            const matName = mat.name || mat.item_name;
-            const matPrice = marketData[matName]?.avg_3 || getMerchantBuyPrice(matName) || 0;
-            matCosts += matPrice * (mat.amount || mat.quantity || 1);
-        }
-
-        const uses = yieldData.uses === 'Infinite' ? 1 : Number(yieldData.uses);
-        const craftingROI = (resultVal * 0.85 - matCosts) * (uses || 1);
-
-        // For recipes, we take max of selling recipe or crafting
-        // If untradable, we only have crafting ROI
-        if (dbItem.is_tradeable) {
-            return Math.max(marketPrice * 0.85, craftingROI);
-        }
-        return Math.max(0, craftingROI);
-    }
-
-    // 3. Normal Item
-    return marketPrice;
+  return getItemValueBreakdown(itemName, marketData, allItemsDb, depth).value;
 }

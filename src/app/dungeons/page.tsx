@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useItemModal } from "@/context/ItemModalContext";
 
-import { getItemTrueValue } from "@/lib/ev-logic";
+import { getItemTrueValue, getItemValueBreakdown } from "@/lib/ev-logic";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
@@ -65,11 +65,12 @@ function DungeonsContent() {
                 runsToDrop,
                 dropsCount: dungeon.loot?.length || 0,
                 lootDetails: dungeon.loot?.map((drop: any) => {
-                    const trueValue = getItemTrueValue(drop.name, marketData, allItemsDb);
-                    const marketPrice = marketData[drop.name]?.avg_3 || 0;
+                    const valueBreakdown = getItemValueBreakdown(drop.name, marketData, allItemsDb);
+                    const trueValue = valueBreakdown.value;
+                    const marketPrice = valueBreakdown.marketValue || 0;
                     const dropChance = (drop.chance || 0) / 100;
                     const expectedVal = dropChance * (drop.quantity || 1) * trueValue;
-                    return { ...drop, trueValue, marketPrice, expectedVal };
+                    return { ...drop, trueValue, marketPrice, expectedVal, valueBreakdown };
                 }) || []
             });
         }
@@ -323,8 +324,18 @@ function DungeonsContent() {
                                                     ~{(drop.expectedVal || 0).toLocaleString(undefined, {maximumFractionDigits:0})}g <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 400 }}>EV/run</span>
                                                 </div>
                                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                                    {drop.trueValue > drop.marketPrice ? 'Crafting Value' : 'Market Value'} ({(drop.trueValue || 0).toLocaleString()}g) <ExternalLink size={10} />
+                                                    {getValuePathLabel(drop.valueBreakdown?.path)} ({(drop.trueValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g) <ExternalLink size={10} />
                                                 </div>
+                                                {drop.valueBreakdown?.path === "craft" && drop.valueBreakdown?.craftedItemName ? (
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                                                        Craft to {drop.valueBreakdown.craftedItemName}; materials ~{(drop.valueBreakdown.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                                                    </div>
+                                                ) : null}
+                                                {drop.valueBreakdown?.warnings?.length ? (
+                                                    <div style={{ fontSize: '0.68rem', color: '#fbbf24', marginTop: '0.18rem' }}>
+                                                        {drop.valueBreakdown.warnings[0]}
+                                                    </div>
+                                                ) : null}
                                             </div>
                                     </div>
                                 ))}
@@ -335,6 +346,14 @@ function DungeonsContent() {
             )}
         </main>
     );
+}
+
+function getValuePathLabel(path?: string) {
+    if (path === "craft") return "Crafted sell path";
+    if (path === "chest") return "Chest EV";
+    if (path === "vendor") return "Vendor value";
+    if (path === "market") return "Market value";
+    return "Value pending";
 }
 
 export default function DungeonsPage() {
