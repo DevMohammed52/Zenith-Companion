@@ -3872,6 +3872,7 @@ body.pet-modal-open {
   margin: auto;
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
+  background-color: var(--bg-card);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
     var(--bg-card);
@@ -4058,6 +4059,9 @@ body.pet-modal-open {
   width: 100%;
   color: var(--text-main);
   cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
   text-align: left;
 }
 
@@ -4073,6 +4077,54 @@ body.pet-modal-open {
   font-style: normal;
   line-height: 1.25;
   text-align: right;
+}
+
+.pet-zone-button .pet-zone-main {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.pet-zone-button .pet-zone-name {
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.pet-zone-button .pet-zone-meta {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.pet-zone-button .pet-zone-profit {
+  justify-self: end;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.pet-zone-button .pet-zone-time {
+  justify-self: end;
+  min-width: 5.1rem;
+  padding: 0.3rem 0.48rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.035);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: none;
+  white-space: nowrap;
 }
 
 .pet-source-override {
@@ -4238,6 +4290,21 @@ body.pet-modal-open {
   .pet-zone-button {
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .pet-zone-button {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 0.42rem;
+  }
+
+  .pet-zone-button .pet-zone-profit,
+  .pet-zone-button .pet-zone-time {
+    justify-self: start;
+  }
+
+  .pet-zone-button .pet-zone-time {
+    min-width: 0;
   }
 
   .pet-zone-button em {
