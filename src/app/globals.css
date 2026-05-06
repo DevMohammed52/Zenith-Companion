@@ -5957,10 +5957,93 @@ kbd {
   width: 100%;
 }
 
+.settings-compat-fields {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.custom-price-actions {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.settings-danger-link {
+  color: var(--text-danger);
+}
+
+.settings-danger-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.settings-source-table {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.settings-source-head,
+.settings-source-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.8fr) repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.settings-source-head {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.settings-source-row {
+  padding: 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.022);
+}
+
+.settings-source-row strong,
+.settings-source-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-source-row strong {
+  color: #fff;
+}
+
+.settings-source-row span {
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 @media (max-width: 820px) {
   .settings-scope-grid {
     grid-template-columns: 1fr;
   }
+  .settings-source-head {
+    display: none;
+  }
+  .settings-source-row {
+    grid-template-columns: 1fr;
+  }
+  .settings-source-row span::before {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--text-accent);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .settings-source-row span:nth-child(2)::before { content: "Global Settings"; }
+  .settings-source-row span:nth-child(3)::before { content: "Active Profile"; }
+  .settings-source-row span:nth-child(4)::before { content: "Page Controls"; }
 }
 
 .profile-pet-card {

@@ -30,6 +30,15 @@ const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "frost", label: "Frost", colors: ["#38bdf8", "#a7f3d0", "#f472b6"] },
 ];
 
+const connectedPages = [
+  { page: "Dashboard", global: "Membership, custom prices", profile: "Bartering level, conquest", local: "Market cache" },
+  { page: "Alchemy Profit", global: "Membership, custom prices", profile: "Playtime, bartering level", local: "Recipe and filter state" },
+  { page: "Skill Profit Finder", global: "Membership, custom prices", profile: "Class, tools, bartering, conquest", local: "Skill, essence, filters" },
+  { page: "Dungeons", global: "Membership, custom prices", profile: "Dungeoneering, dungeon stats, MF, playtime", local: "Dungeon runs, MF toggle" },
+  { page: "World Bosses", global: "Membership, custom prices", profile: "TL, movement speed, MF, bartering", local: "Route and selected bosses" },
+  { page: "Items/Pets", global: "Membership, custom prices", profile: "Owned pet where supported", local: "Search and comparison settings" },
+];
+
 function formatAge(value?: string) {
   if (!value) return "Waiting for cache";
   const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
@@ -67,6 +76,8 @@ export default function SettingsPage() {
   const profileBarteringPercent = barteringBuffPercent(activeProfile?.boosts.barteringLevel ?? 0);
   const profileDailyBonus = dailyStreakMagicFind(activeProfile?.magicFind.dailyStreak ?? 0);
   const profileConquest = getProfileConquestRank(activeProfile);
+  const worldBossCount = staticData?.world_bosses?.length || staticData?.worldBosses?.length || 0;
+  const entityCount = (staticData?.enemies?.length || 0) + (staticData?.dungeons?.length || 0) + worldBossCount;
 
   const saveCustomPrice = () => {
     const name = customItemName.trim();
@@ -84,6 +95,12 @@ export default function SettingsPage() {
     setPreferences({ customPrices: next });
   };
 
+  const clearCustomPrices = () => {
+    if (customPriceRows.length === 0) return;
+    if (!window.confirm(`Remove all ${customPriceRows.length} custom price overrides?`)) return;
+    setPreferences({ customPrices: {} });
+  };
+
   return (
     <main className="container settings-page">
       <div className="header">
@@ -94,8 +111,8 @@ export default function SettingsPage() {
 
       <section className="settings-grid">
         <div className="settings-panel settings-panel-wide">
-          <h2><UserRound size={17} /> Profile Link</h2>
-          <p className="settings-panel-note">Profiles own character-specific values. Settings only owns app-wide defaults and price overrides.</p>
+          <h2><UserRound size={17} /> Settings Scope</h2>
+          <p className="settings-panel-note">Settings is now for app-wide behavior. Character-specific values are read from the active profile selected in the top bar.</p>
           <div className="settings-summary-grid">
             <div className="settings-summary-card">
               <span>Active Profile</span>
@@ -142,14 +159,6 @@ export default function SettingsPage() {
                 {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
               </button>
             </label>
-
-            <label className="settings-field">
-              <span><strong>Skill Class Helper</strong><small>Fallback for older skill-profit calculations until every skill reads profile class data.</small></span>
-              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
-                {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class buff active" : "No class buff"}
-              </button>
-            </label>
-
           </div>
         </div>
 
@@ -178,13 +187,22 @@ export default function SettingsPage() {
             <div><span>Bartering Level</span><strong>{Number(activeProfile?.boosts.barteringLevel || 0).toLocaleString()}</strong><small>+{profileBarteringPercent}% vendor value</small></div>
             <div><span>Conquest</span><strong>{profileConquest === "none" ? "None" : profileConquest}</strong><small>Used by supported profit views</small></div>
             <div><span>Daily Streak</span><strong>{Number(activeProfile?.magicFind.dailyStreak || 0).toLocaleString()}</strong><small>+{profileDailyBonus}% magic find cap</small></div>
+            <div><span>Magic Find</span><strong>{Number(activeProfile?.magicFind.combat || 0)} / {Number(activeProfile?.magicFind.dungeon || 0)} / {Number(activeProfile?.magicFind.worldBoss || 0)}</strong><small>Combat / dungeon / world boss</small></div>
           </div>
           <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-magic">Edit Profile Values <ExternalLink size={14} /></Link>
         </div>
 
         <div className="settings-panel settings-panel-wide">
-          <h2><BarChart3 size={17} /> Fallback Skill Tools</h2>
-          <p className="settings-panel-note">These only apply when a page cannot read a tool from the active profile yet. Profile tools remain the preferred source.</p>
+          <h2><BarChart3 size={17} /> Compatibility Fallbacks</h2>
+          <p className="settings-panel-note">These are kept for older calculators and no-profile states. Active profile values remain the preferred source wherever supported.</p>
+          <div className="settings-fields settings-compat-fields">
+            <label className="settings-field">
+              <span><strong>Skill Class Helper</strong><small>Temporary fallback for skill calculations that still need full profile-class integration.</small></span>
+              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
+                {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class helper active" : "No helper"}
+              </button>
+            </label>
+          </div>
           <div className="settings-fields">
             {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
               <label className="settings-field" key={skill}>
@@ -205,7 +223,7 @@ export default function SettingsPage() {
 
         <div className="settings-panel settings-panel-wide">
           <h2><Coins size={17} /> Custom Item Prices</h2>
-          <p className="settings-panel-note">Custom prices override market cache values everywhere. Use whole gold values; suspicious market outliers are filtered before comparison.</p>
+          <p className="settings-panel-note">Custom prices override market cache values everywhere. Use whole gold values; safe market pricing still filters suspicious market outliers before comparisons.</p>
           <div className="custom-price-builder">
             <label className="custom-price-item-field">
               <span>Item</span>
@@ -259,6 +277,12 @@ export default function SettingsPage() {
               <Plus size={14} /> Add
             </button>
           </div>
+          <div className="settings-actions-row custom-price-actions">
+            <span>{customPriceRows.length.toLocaleString()} active override{customPriceRows.length === 1 ? "" : "s"}</span>
+            <button type="button" className="settings-link-button settings-danger-link" onClick={clearCustomPrices} disabled={customPriceRows.length === 0}>
+              Clear All Overrides
+            </button>
+          </div>
 
           {customPriceRows.length === 0 ? (
             <p className="settings-empty-note">No custom prices yet. Calculators will use safe market, recipe, or vendor values.</p>
@@ -301,9 +325,30 @@ export default function SettingsPage() {
             </div>
             <div className="settings-summary-card">
               <span>Game Entities</span>
-              <strong>{((staticData?.enemies?.length || 0) + (staticData?.dungeons?.length || 0) + (staticData?.worldBosses?.length || 0)).toLocaleString()}</strong>
+              <strong>{entityCount.toLocaleString()}</strong>
               <small>Enemies, dungeons, and world bosses.</small>
             </div>
+          </div>
+        </div>
+
+        <div className="settings-panel settings-panel-wide">
+          <h2><Database size={17} /> Page Connections</h2>
+          <p className="settings-panel-note">This shows where values come from so users do not have to guess whether a page is using Settings, Profiles, or its own controls.</p>
+          <div className="settings-source-table">
+            <div className="settings-source-head">
+              <span>Page</span>
+              <span>Global Settings</span>
+              <span>Active Profile</span>
+              <span>Page Controls</span>
+            </div>
+            {connectedPages.map((row) => (
+              <div className="settings-source-row" key={row.page}>
+                <strong>{row.page}</strong>
+                <span>{row.global}</span>
+                <span>{row.profile}</span>
+                <span>{row.local}</span>
+              </div>
+            ))}
           </div>
         </div>
 
