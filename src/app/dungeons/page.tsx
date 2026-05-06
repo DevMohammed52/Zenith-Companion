@@ -301,7 +301,7 @@ function DungeonsContent() {
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Loot Table (Weighted EV)</h3>
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {selectedDungeon.lootDetails?.sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).map((drop: any, i: number) => (
+                                {selectedDungeon.lootDetails?.slice().sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).map((drop: any, i: number) => (
                                     <div 
                                         key={i} 
                                         onClick={() => openItemByName(drop.name)}
@@ -333,7 +333,7 @@ function DungeonsContent() {
                                                 ) : null}
                                                 {drop.valueBreakdown?.path === "chest" && drop.valueBreakdown?.chestDropDetails?.length ? (
                                                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
-                                                        Chest EV from {drop.valueBreakdown.chestDropDetails.length} possible drop{drop.valueBreakdown.chestDropDetails.length === 1 ? "" : "s"}
+                                                        Expected value from {drop.valueBreakdown.chestDropDetails.length} possible chest drop{drop.valueBreakdown.chestDropDetails.length === 1 ? "" : "s"}
                                                     </div>
                                                 ) : null}
                                                 {drop.valueBreakdown?.warnings?.length ? (
@@ -346,34 +346,55 @@ function DungeonsContent() {
                                 ))}
                             </div>
 
-                            <h3 style={{ margin: '1.5rem 0 1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Value Breakdown</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
-                                {selectedDungeon.lootDetails?.sort((a:any, b:any) => (b.expectedVal || 0) - (a.expectedVal || 0)).slice(0, 6).map((drop: any, i: number) => (
-                                    <div key={`${drop.name}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.85rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                            <strong style={{ fontSize: '0.86rem' }}>{drop.name}</strong>
-                                            <span className="mono" style={{ color: 'var(--text-success)', fontSize: '0.8rem' }}>{(drop.trueValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
-                                        </div>
-                                        <div style={{ marginTop: '0.55rem', display: 'grid', gap: '0.35rem', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                                            <span>Best path: {getValuePathLabel(drop.valueBreakdown?.path)}</span>
-                                            <span>Market after tax: {(drop.valueBreakdown?.marketValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
-                                            <span>Vendor: {(drop.valueBreakdown?.vendorValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
-                                            {drop.valueBreakdown?.path === "craft" ? (
-                                                <>
-                                                    <span>Crafted item: {drop.valueBreakdown.craftedItemName}</span>
-                                                    <span>Crafted output value: {(drop.valueBreakdown.craftedValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
-                                                    <span>Material cost: {(drop.valueBreakdown.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
-                                                </>
-                                            ) : null}
-                                            {drop.valueBreakdown?.path === "chest" && drop.valueBreakdown?.chestDropDetails?.length ? (
-                                                <span>
-                                                    Top chest item: {drop.valueBreakdown.chestDropDetails.slice().sort((a:any, b:any) => b.expectedValue - a.expectedValue)[0]?.name || "Unknown"}
-                                                </span>
-                                            ) : null}
-                                        </div>
+                            {selectedDungeon.lootDetails?.some((drop: any) => isAlchemyChestDrop(drop)) ? (
+                                <>
+                                    <h3 style={{ margin: '1.5rem 0 1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem', fontSize: '1rem', fontWeight: 600 }}>Alchemy Chest Breakdown</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {selectedDungeon.lootDetails
+                                            ?.filter((drop: any) => isAlchemyChestDrop(drop))
+                                            .map((drop: any, i: number) => (
+                                                <div key={`${drop.name}-${i}`} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.9rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                                        <div>
+                                                            <strong style={{ fontSize: '0.92rem' }}>{drop.name}</strong>
+                                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem' }}>
+                                                                Chest drop rate: {formatPercent((drop.chance || 0) / 100)}. The value below uses the expected value of its possible recipe drops.
+                                                            </div>
+                                                        </div>
+                                                        <span className="mono" style={{ color: 'var(--text-success)', fontSize: '0.86rem', whiteSpace: 'nowrap' }}>
+                                                            {(drop.trueValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                                                        {drop.valueBreakdown?.chestDropDetails?.slice().sort((a:any, b:any) => b.expectedValue - a.expectedValue).map((chestDrop: any) => (
+                                                            <div key={chestDrop.name} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', alignItems: 'center', background: 'rgba(0,0,0,0.18)', border: '1px solid var(--border-subtle)', borderRadius: '6px', padding: '0.7rem' }}>
+                                                                <div>
+                                                                    <strong style={{ fontSize: '0.82rem' }}>{chestDrop.name}</strong>
+                                                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{formatPercent(chestDrop.chance)} chance</div>
+                                                                </div>
+                                                                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>
+                                                                    Value used<br />
+                                                                    <span className="mono" style={{ color: 'var(--text-success)' }}>{(chestDrop.itemValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g</span>
+                                                                </div>
+                                                                <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>
+                                                                    {getChestDropActionText(chestDrop)}
+                                                                    {chestDrop.path === "craft" && chestDrop.craftedItemName ? (
+                                                                        <div style={{ marginTop: '0.2rem' }}>
+                                                                            Output {(chestDrop.craftedValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g, materials {(chestDrop.materialCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                                                                        </div>
+                                                                    ) : null}
+                                                                </div>
+                                                                <div className="mono" style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                                                    {(chestDrop.expectedValue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}g/run
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
                                     </div>
-                                ))}
-                            </div>
+                                </>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -383,11 +404,30 @@ function DungeonsContent() {
 }
 
 function getValuePathLabel(path?: string) {
-    if (path === "craft") return "Crafted sell path";
-    if (path === "chest") return "Chest EV";
-    if (path === "vendor") return "Vendor value";
-    if (path === "market") return "Market value";
-    return "Value pending";
+    if (path === "craft") return "Craft and sell output";
+    if (path === "chest") return "Expected contents value";
+    if (path === "vendor") return "Sell to vendor";
+    if (path === "market") return "Sell on market";
+    return "No reliable value";
+}
+
+function isAlchemyChestDrop(drop: any) {
+    return String(drop?.name || "").toLowerCase().includes("alchemy chest");
+}
+
+function formatPercent(value: number) {
+    const percent = Number(value || 0) * 100;
+    return `${percent.toLocaleString(undefined, { maximumFractionDigits: percent < 1 ? 3 : 2 })}%`;
+}
+
+function getChestDropActionText(chestDrop: any) {
+    if (chestDrop?.path === "craft" && chestDrop?.craftedItemName) {
+        return `Craft ${chestDrop.craftedItemName}, then sell it.`;
+    }
+    if (chestDrop?.path === "market") return "Sell the recipe on the market.";
+    if (chestDrop?.path === "vendor") return "Sell to vendor.";
+    if (chestDrop?.path === "chest") return "Uses expected contents value.";
+    return "No reliable market or craft value yet.";
 }
 
 export default function DungeonsPage() {

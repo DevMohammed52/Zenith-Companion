@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, Check, Coins, Keyboard, Palette, Plus, Settings, Swords, FlaskConical, Target, Shield, Trash2, Zap } from "lucide-react";
+import { BarChart3, Check, Coins, Keyboard, Palette, Plus, Settings, Swords, FlaskConical, Target, Shield, Trash2, Zap, UserRound } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { ASSAULT_OPTIONS, SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { useProfiles } from "@/lib/profiles";
 
 const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
@@ -22,6 +23,7 @@ const COMBAT_STYLES = [
 
 export default function SettingsPage() {
   const { preferences, setPreferences } = usePreferences();
+  const { activeProfile } = useProfiles();
   const { allItemsDb, marketData } = useData();
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
@@ -72,37 +74,58 @@ export default function SettingsPage() {
       </div>
 
       <section className="settings-grid">
+        <div className="settings-panel settings-panel-wide">
+          <h2><UserRound size={17} /> Profile Link</h2>
+          {activeProfile ? (
+            <div className="settings-fields">
+              <div className="settings-field">
+                <span>
+                  <strong>{activeProfile.name}</strong>
+                  <small>Active profile values are used by supported pages such as World Bosses and BiS.</small>
+                </span>
+                <em className="mono" style={{ color: "var(--text-accent)", fontStyle: "normal", fontWeight: 800 }}>{activeProfile.className}</em>
+              </div>
+              <div className="settings-field">
+                <span><strong>Profile-owned values</strong><small>Levels, combat stats, magic find, pet, gear, tools, and playtime live on the Profiles page.</small></span>
+              </div>
+            </div>
+          ) : (
+            <p className="settings-empty-note">No active profile loaded. Legacy fallback values below are used until a profile is created.</p>
+          )}
+        </div>
+
         {/* Character & Combat Stats */}
         <div className="settings-panel">
-          <h2><Swords size={17} /> Character Stats</h2>
+          <h2><Swords size={17} /> Legacy Fallback Stats</h2>
+          <p className="settings-empty-note" style={{ marginTop: "-0.35rem" }}>Used only by older calculators when no active profile value is available.</p>
           <div className="settings-fields">
             <label className="settings-field">
               <span>
                 <strong>Combat Level</strong>
-                <small>Combat tier (60-96).</small>
+                <small>Fallback combat level.</small>
               </span>
               <input
                 type="number"
                 className="control-input"
                 value={preferences.combatLevel}
                 onChange={e => handleNumChange('combatLevel', e.target.value)}
-                onBlur={() => clamp('combatLevel', 60, 96)}
+                onBlur={() => clamp('combatLevel', 1, 600)}
               />
             </label>
 
             <label className="settings-field">
-              <span><strong>Strength (STR)</strong><small>Cap: 100.</small></span>
-              <input type="number" className="control-input" value={preferences.strStat} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 0, 100)} />
+              <span><strong>Strength</strong><small>Fallback primary stat.</small></span>
+              <input type="number" className="control-input" value={preferences.strStat} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
             </label>
 
             <label className="settings-field">
-              <span><strong>Dexterity (DEX)</strong><small>Cap: 100.</small></span>
-              <input type="number" className="number control-input" value={preferences.dexStat} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 0, 100)} />
+              <span><strong>Dexterity</strong><small>Fallback primary stat.</small></span>
+              <input type="number" className="number control-input" value={preferences.dexStat} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
             </label>
 
             <label className="settings-field">
-              <span><strong>Defence (DEF)</strong><small>Cap: 100.</small></span>
-              <input type="number" className="control-input" value={preferences.defStat} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 0, 100)} />
+              <span><strong>Defence</strong><small>Fallback primary stat.</small></span>
+              <input type="number" className="control-input" value={preferences.defStat} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
             </label>
 
             <label className="settings-field">
@@ -143,7 +166,7 @@ export default function SettingsPage() {
             </label>
 
             <label className="settings-field">
-              <span><strong>Active Hours</strong><small>Daily time window.</small></span>
+              <span><strong>Playtime</strong><small>Daily playtime in hours.</small></span>
               <input type="number" className="control-input" min="0" max="24" step="0.5" value={preferences.activeHours} onChange={e => handleNumChange('activeHours', e.target.value)} onBlur={() => clamp('activeHours', 0, 24)} />
             </label>
 

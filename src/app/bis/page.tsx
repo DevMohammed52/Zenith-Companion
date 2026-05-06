@@ -6,6 +6,7 @@ import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { useProfiles } from "@/lib/profiles";
 
 const SLOT_CONFIG: Record<string, { label: string; defaultStat: string; icon: React.ReactNode }> = {
     SWORD:      { label: "Sword",      defaultStat: "attack_power", icon: <Sword size={15} /> },
@@ -75,9 +76,14 @@ export default function BISPage() {
     const [gearData, setGearData]     = useState<Record<string, GearItem> | null>(null);
     const { marketData } = useData();
     const { preferences, setPreferences } = usePreferences();
+    const { activeProfile, updateProfile } = useProfiles();
     
     const [sortBy, setSortBy]         = useState("auto");
     const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
+    const combatLevelValue = activeProfile ? activeProfile.levels.combat : preferences.combatLevel;
+    const strengthValue = activeProfile ? activeProfile.levels.strength : preferences.strStat;
+    const dexterityValue = activeProfile ? activeProfile.levels.dexterity : preferences.dexStat;
+    const defenceValue = activeProfile ? activeProfile.levels.defence : preferences.defStat;
 
     useEffect(() => {
         fetch("/gear-data.json?t=" + Date.now()).then(r => r.json()).then(setGearData).catch(() => {});
@@ -93,10 +99,10 @@ export default function BISPage() {
 
     const bisSet = useMemo(() => {
         if (!gearData) return {};
-        const level = Number(preferences.combatLevel) || 0;
-        const str = Number(preferences.strStat) || 0;
-        const dex = Number(preferences.dexStat) || 0;
-        const def = Number(preferences.defStat) || 0;
+        const level = Number(combatLevelValue) || 0;
+        const str = Number(strengthValue) || 0;
+        const dex = Number(dexterityValue) || 0;
+        const def = Number(defenceValue) || 0;
 
         const groups: Record<string, GearItem[]> = {};
         for (const item of Object.values(gearData)) {
@@ -128,7 +134,7 @@ export default function BISPage() {
             result[type] = { best: eligible[0], alts: eligible.slice(1, 5), nextUp: locked[0] || null };
         }
         return result;
-    }, [gearData, preferences.combatLevel, preferences.strStat, preferences.dexStat, preferences.defStat, sortBy, marketData]);
+    }, [gearData, combatLevelValue, strengthValue, dexterityValue, defenceValue, sortBy, marketData]);
 
     const activeSlots = useMemo(() => {
         const slots = ["HELMET", "CHESTPLATE", "GREAVES", "BOOTS", "GAUNTLETS"];
@@ -164,12 +170,32 @@ export default function BISPage() {
     }
 
     const handleNumChange = (key: string, val: string) => {
-        setPreferences({ [key]: val === "" ? "" : Number(val) });
+        const next = val === "" ? "" : Number(val);
+        if (activeProfile) {
+            const profileKeyMap: Record<string, keyof typeof activeProfile.levels> = {
+                combatLevel: "combat",
+                strStat: "strength",
+                dexStat: "dexterity",
+                defStat: "defence",
+            };
+            const profileKey = profileKeyMap[key];
+            if (profileKey) {
+                updateProfile(activeProfile.id, {
+                    levels: {
+                        ...activeProfile.levels,
+                        [profileKey]: next,
+                    },
+                });
+                return;
+            }
+        }
+        setPreferences({ [key]: next });
     };
 
     const clamp = (key: string, min: number, max: number) => {
-        if (preferences[key as keyof typeof preferences] !== "") {
-            setPreferences({ [key]: Math.max(min, Math.min(max, Number(preferences[key as keyof typeof preferences]))) });
+        const current = key === "combatLevel" ? combatLevelValue : key === "strStat" ? strengthValue : key === "dexStat" ? dexterityValue : key === "defStat" ? defenceValue : preferences[key as keyof typeof preferences];
+        if (current !== "") {
+            handleNumChange(key, String(Math.max(min, Math.min(max, Number(current)))));
         }
     };
 
@@ -184,24 +210,30 @@ export default function BISPage() {
             </div>
 
             <div className="controls bento-controls-stack">
+                {activeProfile ? (
+                    <div className="boss-warning-box routine-warning" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                        <Info size={16} />
+                        <p>Using active profile: {activeProfile.name}. Combat, Strength, Dexterity, and Defence edits update the profile.</p>
+                    </div>
+                ) : null}
                 <div className="control-group">
-                    <label className="control-label">Level (60-96)</label>
-                    <input type="number" className="control-input" value={preferences.combatLevel} 
+                    <label className="control-label">Combat Level</label>
+                    <input type="number" className="control-input" value={combatLevelValue} 
                         onChange={e => handleNumChange('combatLevel', e.target.value)}
-                        onBlur={() => clamp('combatLevel', 60, 96)}
+                        onBlur={() => clamp('combatLevel', 1, 600)}
                     />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">STR Stat (0-100)</label>
-                    <input type="number" className="control-input" value={preferences.strStat} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 0, 100)} />
+                    <label className="control-label">Strength (1-100)</label>
+                    <input type="number" className="control-input" value={strengthValue} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">DEX Stat (0-100)</label>
-                    <input type="number" className="control-input" value={preferences.dexStat} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 0, 100)} />
+                    <label className="control-label">Dexterity (1-100)</label>
+                    <input type="number" className="control-input" value={dexterityValue} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">DEF Stat (0-100)</label>
-                    <input type="number" className="control-input" value={preferences.defStat} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 0, 100)} />
+                    <label className="control-label">Defence (1-100)</label>
+                    <input type="number" className="control-input" value={defenceValue} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
                 </div>
                 <div className="control-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="control-label">Combat Style</label>

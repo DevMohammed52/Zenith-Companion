@@ -1,5 +1,5 @@
 import { ALCHEMY_ITEMS, VENDOR_ITEMS, getMerchantBuyPrice, parseVendorGoldPrice } from "@/constants";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getSafeMarketPriceInfo } from "@/lib/market-pricing";
 
 export type SkillName =
   | "Woodcutting"
@@ -113,6 +113,7 @@ export type SkillProfitRow = SkillRecipe & {
   isLiquid: boolean;
   excludedFromTop: boolean;
   toolBonus: number;
+  priceAdjusted: boolean;
 };
 
 export type AssaultRank = "none" | "first" | "second" | "third" | "fourthSeventh" | "eighthTenth";
@@ -527,6 +528,7 @@ export function calculateSkillProfitRows(
     const inputMissing = ingredientPrices
       .filter(({ price }) => price.source === "missing")
       .map(({ ingredient }) => ingredient.name);
+    const hasAdjustedMarketPrice = sale.adjusted || ingredientPrices.some(({ price }) => price.adjusted);
     const ingredientCosts = ingredientPrices.map(({ ingredient, price }) => ({
       ...ingredient,
       unitPrice: price.value,
@@ -574,8 +576,9 @@ export function calculateSkillProfitRows(
       roi: inputCost > 0 ? (profitEach / inputCost) * 100 : profitEach > 0 ? 100 : 0,
       volume3d,
       isLiquid,
-      excludedFromTop: recipe.skill === "Forge" || !isLiquid,
+      excludedFromTop: recipe.skill === "Forge" || !isLiquid || hasAdjustedMarketPrice,
       toolBonus,
+      priceAdjusted: hasAdjustedMarketPrice,
     };
   });
 }
@@ -591,20 +594,20 @@ function getPrice(
   marketData: MarketData | null,
   items: ItemLookup | null,
   customPrices?: Record<string, number>,
-): { value: number; source: "custom" | "market" | "vendor" | "missing" } {
+): { value: number; source: "custom" | "market" | "vendor" | "missing"; adjusted: boolean } {
   const customPrice = customPrices?.[name];
-  if (Number(customPrice) > 0) return { value: Number(customPrice), source: "custom" };
+  if (Number(customPrice) > 0) return { value: Number(customPrice), source: "custom", adjusted: false };
 
-  const marketPrice = getSafeMarketPrice(marketData?.[name]);
-  if (marketPrice > 0) return { value: marketPrice, source: "market" };
+  const marketPrice = getSafeMarketPriceInfo(marketData?.[name]);
+  if (marketPrice.value > 0) return { value: marketPrice.value, source: "market", adjusted: marketPrice.adjusted };
 
   const merchantBuyPrice = getMerchantBuyPrice(name);
-  if (merchantBuyPrice > 0) return { value: merchantBuyPrice, source: "vendor" };
+  if (merchantBuyPrice > 0) return { value: merchantBuyPrice, source: "vendor", adjusted: false };
 
   const vendorPrice = items?.[name]?.vendor_price || marketData?.[name]?.vendor_price || 0;
-  if (vendorPrice > 0) return { value: vendorPrice, source: "vendor" };
+  if (vendorPrice > 0) return { value: vendorPrice, source: "vendor", adjusted: false };
 
-  return { value: 0, source: "missing" };
+  return { value: 0, source: "missing", adjusted: false };
 }
 
 function getVendorPrice(

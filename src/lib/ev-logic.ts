@@ -25,6 +25,13 @@ export type ItemValueBreakdown = {
     itemValue: number;
     expectedValue: number;
     path: ValuePath;
+    marketValue: number;
+    vendorValue: number;
+    craftedItemName?: string;
+    craftedValue?: number;
+    materialCost?: number;
+    craftValue?: number;
+    warnings?: string[];
   }>;
   craftValue?: number;
   craftedItemName?: string;
@@ -157,6 +164,13 @@ export function getItemValueBreakdown(
         itemValue: breakdown.value,
         expectedValue: chance * quantity * breakdown.value,
         path: breakdown.path,
+        marketValue: breakdown.marketValue,
+        vendorValue: breakdown.vendorValue,
+        craftedItemName: breakdown.craftedItemName,
+        craftedValue: breakdown.craftedValue,
+        materialCost: breakdown.materialCost,
+        craftValue: breakdown.craftValue,
+        warnings: breakdown.warnings,
       };
     });
     const chestValue = chestDropDetails.reduce((total: number, drop: ChestDropValueDetail) => total + drop.expectedValue, 0);

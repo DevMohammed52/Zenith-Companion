@@ -18,6 +18,8 @@ export type SafeMarketPriceInfo = {
 };
 
 const OUTLIER_CAP_MULTIPLIER = 3;
+const LONG_TERM_SPIKE_MULTIPLIER = 3;
+const LONG_TERM_CAP_MULTIPLIER = 2;
 const LOW_VOLUME_THRESHOLD = 3;
 
 function positive(value: unknown) {
@@ -39,7 +41,10 @@ export function getSafeMarketPriceInfo(entry: MarketPriceDatum | null | undefine
 
   const avg3 = positive(entry.avg_3);
   const current = avg3 || positive(entry.price);
-  const longerAverages = [positive(entry.avg_7), positive(entry.avg_14), positive(entry.avg_30)].filter((value) => value > 0);
+  const avg7 = positive(entry.avg_7);
+  const avg14 = positive(entry.avg_14);
+  const avg30 = positive(entry.avg_30);
+  const longerAverages = [avg7, avg14, avg30].filter((value) => value > 0);
   const baseline = median(longerAverages);
   const volume3d = positive(entry.vol_3);
 
@@ -61,6 +66,20 @@ export function getSafeMarketPriceInfo(entry: MarketPriceDatum | null | undefine
       adjusted: true,
       reason: "Recent market average capped because it is far above longer-term prices.",
       baseline,
+      volume3d,
+    };
+  }
+
+  if (avg30 > 0 && current > avg30 * LONG_TERM_SPIKE_MULTIPLIER) {
+    const stableCap = Math.min(
+      ...[baseline, avg14, avg30 * LONG_TERM_CAP_MULTIPLIER].filter((value) => value > 0),
+    );
+    return {
+      value: Math.round(stableCap),
+      rawValue: current,
+      adjusted: true,
+      reason: "Recent market average capped because it is far above the 30-day average.",
+      baseline: avg30,
       volume3d,
     };
   }
