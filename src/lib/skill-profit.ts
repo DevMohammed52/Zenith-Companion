@@ -234,6 +234,8 @@ const ALCHEMY_EXPERIENCE: Record<string, number> = {
   "Dragonblood Tonic": 3450,
   "Gourmet Essence Crystal": 3450,
   "Wraithbane Essence": 3450,
+  "Thunderfury Brew": 3600,
+  "Cosmic Tear": 3600,
   "Titans Essence": 8000,
   "Cosmic Barrier": 8000,
   "Divine Essence Crystal": 8000,

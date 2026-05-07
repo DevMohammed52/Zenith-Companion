@@ -29,6 +29,7 @@ import { usePreferences } from "@/lib/preferences";
 import { getProfileDungeonStatTotal, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { calculateHousingBuffs, formatHours } from "@/lib/housing";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
@@ -71,13 +72,38 @@ function getReadinessText(row: any, hasProfile: boolean) {
   return `Dungeoneering +${row.dungeoneeringGap}`;
 }
 
-function getProfileIdleActionHours(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
+function getBaseProfileIdleActionHours(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
   if (!profile) return 0;
   return profile.kind === "main" ? 8 : 4;
 }
 
 function getOptionalNumber(value: number | "") {
   return value === "" ? null : Number(value);
+}
+
+function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
+  if (!profile) return 0;
+  const summary = calculateHousingBuffs(profile.housing);
+  const hours = summary.idleHours.dungeon;
+  if (hours <= 0) return 0;
+  if (summary.mode === "guest" || summary.availableAnywhere) return hours;
+  const houseLocation = String(summary.location || "").trim().toLowerCase();
+  const dungeonLocation = String(dungeon?.location?.name || dungeon?.location || "").trim().toLowerCase();
+  return houseLocation && dungeonLocation && houseLocation === dungeonLocation ? hours : 0;
+}
+
+function getProfileIdleActionHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
+  return getBaseProfileIdleActionHours(profile) + getHousingDungeonHoursForDungeon(profile, dungeon);
+}
+
+function getHousingDungeonScopeText(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
+  if (!profile) return "Select a profile.";
+  const summary = calculateHousingBuffs(profile.housing);
+  const hours = summary.idleHours.dungeon;
+  if (hours <= 0) return "No dungeon housing bonus.";
+  if (summary.mode === "guest") return `Guest dungeon bonus ${formatHours(hours)}.`;
+  if (summary.availableAnywhere) return `Housing dungeon bonus ${formatHours(hours)} anywhere.`;
+  return `Housing dungeon bonus ${formatHours(hours)} only at ${summary.location || "house location"}.`;
 }
 
 function DungeonsContent() {
@@ -150,7 +176,6 @@ function DungeonsContent() {
     const profileDungeonStats = getProfileDungeonStatTotal(activeProfile);
     const profileDungeoneering = Number(activeProfile?.levels.dungeoneering || 0);
     const playtimeHours = Math.max(0, Number(activeProfile?.timers.activeHours || 0));
-    const idleActionLimitHours = getProfileIdleActionHours(activeProfile);
     const manualEfficiency = getOptionalNumber(dungeonEfficiency);
     const manualMagicFind = getOptionalNumber(dungeonMagicFind);
     const efficiency = Math.max(0, manualEfficiency ?? Number(activeProfile?.efficiency.dungeon || 0));
@@ -182,6 +207,8 @@ function DungeonsContent() {
       const durationHours = durationMins / 60;
       const effectiveDurationMins = durationMins / (1 + efficiency / 100);
       const effectiveDurationHours = effectiveDurationMins / 60;
+      const housingDungeonHours = getHousingDungeonHoursForDungeon(activeProfile, dungeon);
+      const idleActionLimitHours = getProfileIdleActionHoursForDungeon(activeProfile, dungeon);
       const entryCost = Number(dungeon.cost || 0);
       const netProfitPerRun = totalEv - entryCost;
       const netProfitPerHour = effectiveDurationHours > 0 ? netProfitPerRun / effectiveDurationHours : 0;
@@ -226,6 +253,7 @@ function DungeonsContent() {
         lootDetails,
         playtimeHours,
         idleActionLimitHours,
+        housingDungeonHours,
         runsInIdleAction,
         dailyRunsByPlaytime,
         actionsNeededForDailyRuns,
@@ -322,6 +350,16 @@ function DungeonsContent() {
     return { readyRows, bestProfit, bestReady, cheapest };
   }, [rows]);
 
+  const actionLimitSummary = useMemo(() => {
+    const base = getBaseProfileIdleActionHours(activeProfile);
+    const maxHousing = rows.reduce((max, row) => Math.max(max, Number(row.housingDungeonHours || 0)), 0);
+    return {
+      base,
+      maxHousing,
+      maxLimit: base + maxHousing,
+    };
+  }, [activeProfile, rows]);
+
   const selectedDungeonLore = useMemo(() => {
     if (!selectedDungeon) return [];
     return getLoreHintsForNames([
@@ -392,8 +430,14 @@ function DungeonsContent() {
         </div>
         <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
           <span className="control-label">Idle Action Limit</span>
-          <strong>{getProfileIdleActionHours(activeProfile).toLocaleString()}h</strong>
-          <small>{activeProfile?.kind === "main" ? "Main profile queue cap." : activeProfile ? "Alt profile queue cap." : "Select a profile."}</small>
+          <strong>{formatHours(actionLimitSummary.maxLimit)}</strong>
+          <small>
+            {activeProfile
+              ? actionLimitSummary.maxHousing > 0
+                ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)} + housing up to ${formatHours(actionLimitSummary.maxHousing)}. ${getHousingDungeonScopeText(activeProfile)}`
+                : `${activeProfile.kind === "main" ? "Main" : "Alt"} base. ${getHousingDungeonScopeText(activeProfile)}`
+              : "Select a profile."}
+          </small>
         </div>
         <div className="dungeon-planner-field dungeon-readonly-field dungeon-playtime-field">
           <span className="control-label">Playtime</span>
@@ -457,8 +501,12 @@ function DungeonsContent() {
         <div className="dungeon-insight passive">
           <Timer size={16} />
           <span>Action Limit</span>
-          <strong>{getProfileIdleActionHours(activeProfile).toLocaleString()}h {activeProfile?.kind || "profile"} action</strong>
-          <small>Runs fit in one queued action after dungeon efficiency.</small>
+          <strong>{formatHours(actionLimitSummary.maxLimit)} action limit</strong>
+          <small>
+            {actionLimitSummary.maxHousing > 0
+              ? `Base ${formatHours(actionLimitSummary.base)} + dungeon housing where available.`
+              : "No dungeon housing bonus applied."}
+          </small>
         </div>
       </section>
 
@@ -664,6 +712,7 @@ function DungeonsContent() {
                 <section className="dungeon-modal-panel">
                   <h3><Target size={15} /> Idle Action Plan</h3>
                   <div className="dungeon-detail-row"><span>Action limit</span><strong>{selectedDungeon.idleActionLimitHours.toFixed(1)}h</strong></div>
+                  <div className="dungeon-detail-row"><span>Housing bonus</span><strong>{formatHours(selectedDungeon.housingDungeonHours || 0)}</strong></div>
                   <div className="dungeon-detail-row"><span>Playtime</span><strong>{selectedDungeon.playtimeHours.toFixed(1)}h/day</strong></div>
                   <div className="dungeon-detail-row"><span>Runs fit</span><strong>{selectedDungeon.runsInIdleAction}</strong></div>
                   <div className="dungeon-detail-row"><span>Daily repeat capacity</span><strong>{selectedDungeon.dailyRunsByPlaytime} runs in {selectedDungeon.actionsNeededForDailyRuns} actions</strong></div>
@@ -836,7 +885,7 @@ function DungeonsContent() {
         }
         .dungeon-planner {
           display: grid;
-          grid-template-columns: minmax(17rem, 1.35fr) repeat(4, minmax(10rem, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
           grid-template-areas:
             "search action playtime profit efficiency"
             "mf completion filter toggle toggle";
@@ -1040,6 +1089,9 @@ function DungeonsContent() {
         .dungeon-table td {
           vertical-align: middle;
         }
+        .dungeon-table table {
+          min-width: 980px;
+        }
         .dungeon-completed-input,
         .dungeon-mobile-completed input {
           width: 6.5rem;
@@ -1217,12 +1269,16 @@ function DungeonsContent() {
           display: inline-flex;
           align-items: center;
           gap: 0.3rem;
+          min-width: 0;
+          max-width: 100%;
           border: 1px solid var(--border-subtle);
           border-radius: 5px;
           color: var(--text-muted);
           background: rgba(255,255,255,0.03);
           padding: 0.2rem 0.5rem;
           font-size: 0.75rem;
+          overflow-wrap: anywhere;
+          white-space: normal;
         }
         .dungeon-modal-grid {
           display: grid;
@@ -1257,9 +1313,13 @@ function DungeonsContent() {
         }
         .dungeon-detail-row span {
           color: var(--text-muted);
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
         .dungeon-detail-row strong {
           color: #fff;
+          min-width: 0;
+          overflow-wrap: anywhere;
           text-align: right;
         }
         .dungeon-loot-heading {
@@ -1419,9 +1479,9 @@ function DungeonsContent() {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
-        @media (min-width: 1101px) and (max-width: 1380px) {
+        @media (min-width: 1101px) and (max-width: 1500px) {
           .dungeon-planner {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(min(100%, 12rem), 1fr));
             grid-template-areas:
               "search action playtime"
               "mf completion filter"
@@ -1441,6 +1501,9 @@ function DungeonsContent() {
           .dungeon-card-top,
           .dungeon-loot-row {
             align-items: stretch;
+          }
+          .dungeon-card-top {
+            flex-direction: column;
           }
           .dungeon-loot-row {
             grid-template-columns: 1fr;
@@ -1464,7 +1527,16 @@ function DungeonsContent() {
             text-align: left;
           }
           .dungeon-readiness {
-            max-width: none;
+            width: fit-content;
+            max-width: 100%;
+          }
+          .dungeon-detail-row {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.2rem;
+          }
+          .dungeon-detail-row strong {
+            text-align: left;
           }
         }
       `}</style>

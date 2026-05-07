@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { AssaultRank } from "@/lib/skill-profit";
+import { createDefaultHousing, sanitizeHousing, type ProfileHousing } from "@/lib/housing";
 
 export const PROFILE_STORAGE_KEY = "zenith_character_profiles_v1";
 export const PROFILE_UPDATED_EVENT = "zenith-profiles-updated";
@@ -87,10 +88,7 @@ export type CharacterProfile = {
   gear: Record<string, string>;
   gearTiers: Record<string, number | "">;
   tools: Record<string, string>;
-  housing: {
-    mode: "owner" | "guest" | "none";
-    notes: string;
-  };
+  housing: ProfileHousing;
   createdAt: string;
   updatedAt: string;
 };
@@ -230,10 +228,7 @@ export function createDefaultProfile(name = "New Character"): CharacterProfile {
     gear: { ...DEFAULT_GEAR },
     gearTiers: { ...DEFAULT_GEAR_TIERS },
     tools: { ...DEFAULT_TOOLS },
-    housing: {
-      mode: "none",
-      notes: "",
-    },
+    housing: createDefaultHousing(),
     createdAt: now,
     updatedAt: now,
   };
@@ -261,7 +256,7 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
     gear: { ...DEFAULT_GEAR, ...(input?.gear || {}) },
     gearTiers: { ...DEFAULT_GEAR_TIERS, ...(input?.gearTiers || {}) },
     tools: { ...DEFAULT_TOOLS, ...(input?.tools || {}) },
-    housing: { ...base.housing, ...(input?.housing || {}) },
+    housing: sanitizeHousing({ ...base.housing, ...(input?.housing || {}) }),
     createdAt: typeof input?.createdAt === "string" ? input.createdAt : base.createdAt,
     updatedAt: typeof input?.updatedAt === "string" ? input.updatedAt : base.updatedAt,
   };
@@ -301,7 +296,7 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
     next.gearTiers[key] = cleanNumber(next.gearTiers[key]);
     if (next.gearTiers[key] !== "") next.gearTiers[key] = Math.max(1, Number(next.gearTiers[key]));
   }
-  next.housing.mode = next.housing.mode === "owner" || next.housing.mode === "guest" ? next.housing.mode : "none";
+  next.housing = sanitizeHousing(next.housing);
 
   return next;
 }

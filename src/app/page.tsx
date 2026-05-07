@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowRight, BarChart3, BookOpen, Castle, Package,
   Skull, Star, Swords, TrendingUp, Hammer, Sparkles,
-  AlertCircle, ShoppingCart, Target, PawPrint, UserRound
+  AlertCircle, ShoppingCart, Target, PawPrint, UserRound, Home
 } from "lucide-react";
 import { ALCHEMY_ITEMS, getMerchantBuyPrice } from "../constants";
 import { formatGold } from "@/lib/format";
@@ -25,6 +25,7 @@ import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { calculateHousingBuffs } from "@/lib/housing";
 
 const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = "zenith_mythic_active_recipes";
 
@@ -53,6 +54,18 @@ export default function DashboardPage() {
     [activeProfile?.id],
   );
   const activeProfileId = activeProfile?.id || null;
+  const housingSummary = useMemo(() => calculateHousingBuffs(activeProfile?.housing), [activeProfile?.housing]);
+  const dashboardHousingStatus = useMemo(() => {
+    if (housingSummary.mode === "none") return "Not set";
+    if (housingSummary.mode === "guest") {
+      const count = housingSummary.activeComponentCount;
+      return count > 0 ? `Guest · ${count} buff${count === 1 ? "" : "s"}` : "Guest · No buffs";
+    }
+    if (housingSummary.slotCapacity <= 0) return "Owner · No foundation";
+    const overage = Math.max(0, housingSummary.activeComponentCount - housingSummary.slotCapacity);
+    if (overage > 0) return `Owner · ${overage} over`;
+    return `Owner · ${housingSummary.activeComponentCount}/${housingSummary.slotCapacity} slots`;
+  }, [housingSummary]);
   
   useEffect(() => {
     const saved = localStorage.getItem(activeMythicStorageKey) ?? (activeProfileId ? null : localStorage.getItem(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY));
@@ -230,6 +243,13 @@ export default function DashboardPage() {
             <div className="tile-info">
               <span className="tile-label">Pet Database</span>
               <span className="tile-value">{petDatabaseCount || "Open"}</span>
+            </div>
+          </div>
+          <div className="metric-tile clickable" onClick={() => router.push('/housing')}>
+            <div className="tile-icon"><Home size={20} /></div>
+            <div className="tile-info">
+              <span className="tile-label">Housing</span>
+              <span className="tile-value">{dashboardHousingStatus}</span>
             </div>
           </div>
           <div className="metric-tile clickable" onClick={() => router.push('/crafting')}>
@@ -448,6 +468,10 @@ export default function DashboardPage() {
                  <Link href="/pets" className="s-card">
                     <PawPrint size={20} />
                     <span>Pet Database</span>
+                 </Link>
+                 <Link href="/housing" className="s-card">
+                    <Home size={20} />
+                    <span>Housing</span>
                  </Link>
                  <Link href="/dungeons" className="s-card">
                     <Castle size={20} />

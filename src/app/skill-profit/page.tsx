@@ -19,6 +19,7 @@ import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { calculateHousingBuffs, formatHours, type HousingActivity } from "@/lib/housing";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import {
@@ -42,6 +43,17 @@ import {
 import styles from "./page.module.css";
 
 const STORAGE_KEY = "zenith_skill_profit_finder";
+
+const SKILL_TO_HOUSING_ACTIVITY: Partial<Record<SkillName, HousingActivity>> = {
+  Woodcutting: "woodcutting",
+  Mining: "mining",
+  Fishing: "fishing",
+  Cooking: "cooking",
+  Smelting: "smelting",
+  Alchemy: "alchemy",
+  Forge: "forge",
+  Construction: "construction",
+};
 
 const DEFAULT_SETTINGS: SkillProfitSettings = {
   membership: false,
@@ -264,6 +276,19 @@ export default function SkillProfitPage() {
     () => getBuffTotals(settings, activeSkill !== "Construction", activeSkill),
     [activeSkill, settings],
   );
+  const housingSummary = useMemo(
+    () => calculateHousingBuffs(activeProfile?.housing),
+    [activeProfile?.housing],
+  );
+  const housingActivity = activeSkill === "All" ? null : SKILL_TO_HOUSING_ACTIVITY[activeSkill];
+  const housingWindowHours = housingActivity ? housingSummary.idleHours[housingActivity] : 0;
+  const housingWindowSub = !activeProfile
+    ? "profile needed"
+    : housingWindowHours <= 0
+      ? "no profile bonus"
+      : housingSummary.mode === "guest" || housingSummary.availableAnywhere
+        ? "available anywhere"
+        : "location-limited";
   const lastUpdated = marketData?._meta?.last_updated;
   const marketAgeMinutes = lastUpdated
     ? Math.max(0, Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000))
@@ -352,6 +377,7 @@ export default function SkillProfitPage() {
           <Metric label="Top liquid route" value={rowModel.topOverall?.name || "Waiting"} sub={rowModel.topOverall ? `${formatGold(rowModel.topOverall.profitPerHour)}g/hr` : "0g/hr"} tone="profit" />
           <Metric label="Market pulse" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
           <Metric label="Buffs" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active total"} />
+          <Metric label="Housing window" value={housingWindowHours > 0 ? `+${formatHours(housingWindowHours)}` : "None"} sub={activeSkill === "All" ? "choose a skill" : housingWindowSub} />
         </div>
       </section>
 

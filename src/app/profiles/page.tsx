@@ -45,6 +45,7 @@ import {
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
 import { ASSAULT_OPTIONS, type AssaultRank } from "@/lib/skill-profit";
+import { calculateHousingBuffs, formatHours, getHousingActivityLabel } from "@/lib/housing";
 
 const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
   ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
@@ -350,6 +351,7 @@ export default function ProfilesPage() {
   const lastPetStatKey = useRef("");
 
   const profile = activeProfile;
+  const housingSummary = useMemo(() => calculateHousingBuffs(profile?.housing), [profile?.housing]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1052,9 +1054,9 @@ export default function ProfilesPage() {
             <div className="profile-panel-heading">
               <div>
                 <h2>Housing Snapshot</h2>
-                <p>Housing gets its own page later. This stores the current profile boundary.</p>
+                <p>Housing is profile-scoped and powers connected timers where available.</p>
               </div>
-              <Home size={18} color="var(--text-accent)" />
+              <a className="profile-secondary-link" href="/housing"><Home size={16} /> Open Housing</a>
             </div>
             <div className="profile-grid">
               <label className="profile-field">
@@ -1065,6 +1067,18 @@ export default function ProfilesPage() {
                   <option value="guest">Guest Buffs</option>
                 </select>
               </label>
+              <div className="profile-info-card">
+                <strong>{housingSummary.availableAnywhere ? "Available anywhere" : housingSummary.locationLimited ? "Location-limited" : "Inactive"}</strong>
+                <span>
+                  {housingSummary.strongestIdleBonus
+                    ? `${getHousingActivityLabel(housingSummary.strongestIdleBonus.activity)} +${formatHours(housingSummary.strongestIdleBonus.hours)}`
+                    : "No active idle-time bonus"}
+                </span>
+              </div>
+              <div className="profile-info-card">
+                <strong>{housingSummary.activeComponentCount} active</strong>
+                <span>{housingSummary.guestCapacity ? `${housingSummary.guestCapacity} guest slots` : "No guest capacity"}</span>
+              </div>
               <label className="profile-field profile-field-wide">
                 <span>Housing Notes</span>
                 <textarea className="control-input" value={profile.housing.notes} onChange={(event) => updateNested("housing", "notes", event.target.value)} />
