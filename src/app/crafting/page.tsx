@@ -20,6 +20,8 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { useCrafting } from "@/context/CraftingContext";
 import { usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
+import { useProfiles } from "@/lib/profiles";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import {
     calculateCraftingQueuePlan,
     isCraftingQueueRecipe,
@@ -32,6 +34,7 @@ export default function CraftingPage() {
     const { openItemByName, prefetchItem } = useItemModal();
     const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
     const { preferences } = usePreferences();
+    const { activeProfile } = useProfiles();
     const { marketData, allItemsDb } = useData();
     const [adding, setAdding] = useState("");
     const [recipeSearch, setRecipeSearch] = useState("");
@@ -70,8 +73,11 @@ export default function CraftingPage() {
     );
 
     const plan = useMemo(
-        () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, preferences),
-        [allItemsDb, marketData, preferences, queue],
+        () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
+            ...preferences,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
+        }),
+        [activeProfile, allItemsDb, marketData, preferences, queue],
     );
 
     useEffect(() => {

@@ -28,6 +28,7 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { usePreferences } from "@/lib/preferences";
 import { getProfileDungeonStatTotal, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
@@ -75,6 +76,10 @@ function getProfileIdleActionHours(profile: ReturnType<typeof useProfiles>["acti
   return profile.kind === "main" ? 8 : 4;
 }
 
+function getOptionalNumber(value: number | "") {
+  return value === "" ? null : Number(value);
+}
+
 function DungeonsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,6 +97,10 @@ function DungeonsContent() {
   const [dungeonMagicFind, setDungeonMagicFind] = useState<number | "">("");
   const [completedRunsByDungeon, setCompletedRunsByDungeon] = useState<Record<string, number | "">>({});
   const [includeMagicFindEv, setIncludeMagicFindEv] = useState(false);
+  const completionsStorageKey = useMemo(
+    () => getProfileStorageKey(DUNGEON_COMPLETIONS_STORAGE_KEY, activeProfile?.id),
+    [activeProfile?.id],
+  );
 
   useEffect(() => {
     const searchParam = searchParams.get("search");
@@ -108,17 +117,27 @@ function DungeonsContent() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(DUNGEON_COMPLETIONS_STORAGE_KEY);
+      const stored = localStorage.getItem(completionsStorageKey) ?? localStorage.getItem(DUNGEON_COMPLETIONS_STORAGE_KEY);
       if (stored) setCompletedRunsByDungeon(JSON.parse(stored));
+      else setCompletedRunsByDungeon({});
     } catch {}
-  }, []);
+  }, [completionsStorageKey]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      localStorage.setItem(DUNGEON_COMPLETIONS_STORAGE_KEY, JSON.stringify(completedRunsByDungeon));
+      localStorage.setItem(completionsStorageKey, JSON.stringify(completedRunsByDungeon));
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [completedRunsByDungeon]);
+  }, [completedRunsByDungeon, completionsStorageKey]);
+
+  const completionMagicFindBonus = useMemo(() => {
+    if (!staticData?.dungeons) return 0;
+    return (staticData.dungeons || []).filter((dungeon: any) => {
+      const requirement = Number(dungeon.completion_requirement || 0);
+      const completed = Number(completedRunsByDungeon[getDungeonKey(dungeon)] || 0);
+      return requirement > 0 && completed >= requirement;
+    }).length;
+  }, [completedRunsByDungeon, staticData?.dungeons]);
 
   const rows = useMemo(() => {
     if (!staticData?.dungeons || !marketData || !allItemsDb) return [];
@@ -132,15 +151,12 @@ function DungeonsContent() {
     const profileDungeoneering = Number(activeProfile?.levels.dungeoneering || 0);
     const playtimeHours = Math.max(0, Number(activeProfile?.timers.activeHours || 0));
     const idleActionLimitHours = getProfileIdleActionHours(activeProfile);
-    const efficiency = Math.max(0, Number(dungeonEfficiency) || Number(activeProfile?.efficiency.dungeon) || 0);
-    const completedDungeonBonus = (staticData.dungeons || []).filter((dungeon: any) => {
-      const requirement = Number(dungeon.completion_requirement || 0);
-      const completed = Number(completedRunsByDungeon[getDungeonKey(dungeon)] || 0);
-      return requirement > 0 && completed >= requirement;
-    }).length;
+    const manualEfficiency = getOptionalNumber(dungeonEfficiency);
+    const manualMagicFind = getOptionalNumber(dungeonMagicFind);
+    const efficiency = Math.max(0, manualEfficiency ?? Number(activeProfile?.efficiency.dungeon || 0));
     const totalMagicFind = Math.max(
       0,
-      (Number(dungeonMagicFind) || Number(activeProfile?.magicFind.dungeon) || 0) + completedDungeonBonus,
+      (manualMagicFind ?? Number(activeProfile?.magicFind.dungeon || 0)) + completionMagicFindBonus,
     );
 
     for (const dungeon of staticData.dungeons) {
@@ -221,7 +237,7 @@ function DungeonsContent() {
         completedRuns,
         completionRequirement,
         completionMagicFindActive,
-        completedDungeonBonus,
+        completedDungeonBonus: completionMagicFindBonus,
         dungeonEfficiency: efficiency,
         dungeonMagicFind: totalMagicFind,
         includeMagicFindEv,
@@ -266,6 +282,7 @@ function DungeonsContent() {
   }, [
     activeProfile,
     allItemsDb,
+    completionMagicFindBonus,
     completedRunsByDungeon,
     dungeonEfficiency,
     dungeonMagicFind,
@@ -398,7 +415,7 @@ function DungeonsContent() {
         </label>
         <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
           <span className="control-label">Completion MF</span>
-          <strong>+{rows[0]?.completedDungeonBonus || 0}%</strong>
+          <strong>+{completionMagicFindBonus}%</strong>
           <small>One point per completed dungeon requirement met.</small>
         </div>
         <div className="dungeon-planner-field dungeon-filter-field">

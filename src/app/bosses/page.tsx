@@ -40,6 +40,7 @@ import {
     buildWorldBossRoutinePlan,
     getRoutineBossKey,
 } from "@/lib/world-boss-routing";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 
 type BossPhase = "active" | "ready" | "respawning" | "scheduled" | "unknown";
 
@@ -313,6 +314,11 @@ function BossesContent() {
     const [routineLocationOpen, setRoutineLocationOpen] = useState(false);
     const routineLocationRef = useRef<HTMLDivElement | null>(null);
     const profileDefaultsAppliedRef = useRef<string | null>(null);
+    const activeProfileId = activeProfile?.id || null;
+    const routineStorageKey = useMemo(
+        () => getProfileStorageKey(WORLD_BOSS_ROUTINE_STORAGE_KEY, activeProfile?.id),
+        [activeProfile?.id],
+    );
 
     useEffect(() => {
         const interval = window.setInterval(() => setNow(Date.now()), 1000);
@@ -320,8 +326,9 @@ function BossesContent() {
     }, []);
 
     useEffect(() => {
+        setRoutineSettingsLoaded(false);
         try {
-            const stored = localStorage.getItem(WORLD_BOSS_ROUTINE_STORAGE_KEY);
+            const stored = localStorage.getItem(routineStorageKey) ?? (activeProfileId ? null : localStorage.getItem(WORLD_BOSS_ROUTINE_STORAGE_KEY));
             if (stored) {
                 const saved = JSON.parse(stored);
                 if (Array.isArray(saved.routineBossKeys)) {
@@ -343,17 +350,25 @@ function BossesContent() {
                 if (saved.routineTravelMode === "teleport" || saved.routineTravelMode === "travel") {
                     setRoutineTravelMode(saved.routineTravelMode);
                 }
+            } else {
+                setRoutineBossKeys([]);
+                setRoutineInitialized(false);
+                setRoutineStartLocation("The Citadel");
+                setRoutineTeleportLevel(DEFAULT_EFFECTIVE_TELEPORT_LEVEL);
+                setRoutineMovementSpeed(DEFAULT_MOVEMENT_SPEED);
+                setRoutineClassDiscount(false);
+                setRoutineTravelMode("teleport");
             }
         } catch {
             // Ignore malformed local planner settings and fall back to defaults.
         } finally {
             setRoutineSettingsLoaded(true);
         }
-    }, []);
+    }, [activeProfileId, routineStorageKey]);
 
     useEffect(() => {
         if (!routineSettingsLoaded) return;
-        localStorage.setItem(WORLD_BOSS_ROUTINE_STORAGE_KEY, JSON.stringify({
+        localStorage.setItem(routineStorageKey, JSON.stringify({
             routineBossKeys,
             routineStartLocation,
             routineTeleportLevel,
@@ -365,6 +380,7 @@ function BossesContent() {
         routineBossKeys,
         routineClassDiscount,
         routineMovementSpeed,
+        routineStorageKey,
         routineSettingsLoaded,
         routineStartLocation,
         routineTeleportLevel,

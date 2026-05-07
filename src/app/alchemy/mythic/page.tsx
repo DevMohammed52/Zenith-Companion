@@ -7,6 +7,7 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import { getMerchantBuyPrice } from "@/constants";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
 
@@ -80,6 +81,8 @@ const STORAGE_KEYS = {
   sellPrices: "zenith_mythic_sell_prices",
   costMode: "zenith_mythic_recipe_cost_mode",
 };
+
+export const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = STORAGE_KEYS.active;
 
 const MYTHIC_CRAFT_TIME_SECONDS = 1363.6;
 
@@ -166,6 +169,16 @@ export default function MythicAlchemyPage() {
   const marketData = useMemo(() => (data || {}) as Record<string, MarketItem>, [data]);
   const itemsByName = useMemo(() => (allItemsDb || {}) as Record<string, DbItem>, [allItemsDb]);
   const settingsPrices = useMemo(() => preferences.customPrices || {}, [preferences.customPrices]);
+  const activeProfileId = activeProfile?.id || null;
+  const profileBarteringBoost = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
+  const profileStorageKeys = useMemo(() => ({
+    active: getProfileStorageKey(STORAGE_KEYS.active, activeProfile?.id),
+    recipePrices: getProfileStorageKey(STORAGE_KEYS.recipePrices, activeProfile?.id),
+    uses: getProfileStorageKey(STORAGE_KEYS.uses, activeProfile?.id),
+    materialPrices: getProfileStorageKey(STORAGE_KEYS.materialPrices, activeProfile?.id),
+    sellPrices: getProfileStorageKey(STORAGE_KEYS.sellPrices, activeProfile?.id),
+    costMode: getProfileStorageKey(STORAGE_KEYS.costMode, activeProfile?.id),
+  }), [activeProfile?.id]);
 
   const mythicRecipes = useMemo(() => {
     const grouped = new Map<string, MythicRecipe>();
@@ -220,14 +233,22 @@ export default function MythicAlchemyPage() {
   }, [mythicRecipes]);
 
   useEffect(() => {
-    setActiveRecipeNames(readJson(STORAGE_KEYS.active, [], isStringArray));
-    setCustomRecipePrices(readJson(STORAGE_KEYS.recipePrices, {}, isNumberRecord));
-    setUsesLeft(readJson(STORAGE_KEYS.uses, {}, isNumberRecord));
-    setCustomMaterialPrices(readJson(STORAGE_KEYS.materialPrices, {}, isNestedNumberRecord));
-    setCustomSellPrices(readJson(STORAGE_KEYS.sellPrices, {}, isNumberRecord));
+    setLoaded(false);
+    const legacyActive = activeProfileId ? [] : readJson(STORAGE_KEYS.active, [], isStringArray);
+    const legacyRecipePrices = activeProfileId ? {} : readJson(STORAGE_KEYS.recipePrices, {}, isNumberRecord);
+    const legacyUses = activeProfileId ? {} : readJson(STORAGE_KEYS.uses, {}, isNumberRecord);
+    const legacyMaterialPrices = activeProfileId ? {} : readJson(STORAGE_KEYS.materialPrices, {}, isNestedNumberRecord);
+    const legacySellPrices = activeProfileId ? {} : readJson(STORAGE_KEYS.sellPrices, {}, isNumberRecord);
 
-    const storedCostMode = localStorage.getItem(STORAGE_KEYS.costMode);
+    setActiveRecipeNames(readJson(profileStorageKeys.active, legacyActive, isStringArray));
+    setCustomRecipePrices(readJson(profileStorageKeys.recipePrices, legacyRecipePrices, isNumberRecord));
+    setUsesLeft(readJson(profileStorageKeys.uses, legacyUses, isNumberRecord));
+    setCustomMaterialPrices(readJson(profileStorageKeys.materialPrices, legacyMaterialPrices, isNestedNumberRecord));
+    setCustomSellPrices(readJson(profileStorageKeys.sellPrices, legacySellPrices, isNumberRecord));
+
+    const storedCostMode = localStorage.getItem(profileStorageKeys.costMode) ?? (activeProfileId ? null : localStorage.getItem(STORAGE_KEYS.costMode));
     if (isRecipeCostMode(storedCostMode)) setRecipeCostMode(storedCostMode);
+    else setRecipeCostMode("full");
 
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -238,17 +259,17 @@ export default function MythicAlchemyPage() {
     document.addEventListener("mousedown", handleClickOutside);
     setLoaded(true);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [activeProfileId, profileStorageKeys]);
 
   useEffect(() => {
     if (!loaded) return;
-    localStorage.setItem(STORAGE_KEYS.active, JSON.stringify(activeRecipeNames));
-    localStorage.setItem(STORAGE_KEYS.recipePrices, JSON.stringify(customRecipePrices));
-    localStorage.setItem(STORAGE_KEYS.uses, JSON.stringify(usesLeft));
-    localStorage.setItem(STORAGE_KEYS.materialPrices, JSON.stringify(customMaterialPrices));
-    localStorage.setItem(STORAGE_KEYS.sellPrices, JSON.stringify(customSellPrices));
-    localStorage.setItem(STORAGE_KEYS.costMode, recipeCostMode);
-  }, [activeRecipeNames, customMaterialPrices, customRecipePrices, customSellPrices, loaded, recipeCostMode, usesLeft]);
+    localStorage.setItem(profileStorageKeys.active, JSON.stringify(activeRecipeNames));
+    localStorage.setItem(profileStorageKeys.recipePrices, JSON.stringify(customRecipePrices));
+    localStorage.setItem(profileStorageKeys.uses, JSON.stringify(usesLeft));
+    localStorage.setItem(profileStorageKeys.materialPrices, JSON.stringify(customMaterialPrices));
+    localStorage.setItem(profileStorageKeys.sellPrices, JSON.stringify(customSellPrices));
+    localStorage.setItem(profileStorageKeys.costMode, recipeCostMode);
+  }, [activeRecipeNames, customMaterialPrices, customRecipePrices, customSellPrices, loaded, profileStorageKeys, recipeCostMode, usesLeft]);
 
   useEffect(() => {
     if (!loaded || mythicRecipes.length === 0) return;
@@ -320,7 +341,6 @@ export default function MythicAlchemyPage() {
   }, [activeRecipeNames, mythicRecipes, searchTerm]);
 
   const activeRows = useMemo(() => {
-    const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0;
     const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     return activeRecipeNames
@@ -353,7 +373,7 @@ export default function MythicAlchemyPage() {
         const salePrice = getPricedItem(recipe.resultName, localSellPrice, false);
         const marketGross = salePrice.price;
         const revenue = marketGross * marketTaxMultiplier;
-        const vendorRevenue = getVendorPrice(recipe.resultName) * (1 + parsedBartering / 100);
+        const vendorRevenue = getVendorPrice(recipe.resultName) * (1 + profileBarteringBoost / 100);
         const bestRevenue = Math.max(revenue, vendorRevenue);
         const bestPath: BestPath =
           vendorRevenue > revenue ? "VENDOR" : salePrice.source === "custom" || salePrice.source === "settings" ? "CUSTOM" : "MARKET";
@@ -397,8 +417,7 @@ export default function MythicAlchemyPage() {
     getPricedItem,
     getVendorPrice,
     marketData,
-    activeProfile,
-    preferences.barteringBoost,
+    profileBarteringBoost,
     preferences.membership,
     recipeByResult,
     recipeCostMode,
@@ -688,7 +707,7 @@ export default function MythicAlchemyPage() {
 
                       <div className={`vendor-revenue-box ${row.bestPath === "VENDOR" ? "highlight" : ""}`}>
                         <div>
-                          <div className="vendor-label">Vendor path (+{activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost || 0}%)</div>
+                          <div className="vendor-label">Vendor path (+{profileBarteringBoost}% profile bartering)</div>
                           <div className="vendor-note">Market tax is {Math.round(taxRate * 100)}%</div>
                         </div>
                         <div className="vendor-val">{formatGold(row.vendorRevenue)}g</div>

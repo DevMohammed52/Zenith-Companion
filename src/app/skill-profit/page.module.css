@@ -494,12 +494,15 @@
   display: flex;
   gap: 1rem;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .tabRow {
   display: flex;
   gap: 0.4rem;
+  max-width: 100%;
   overflow-x: auto;
+  width: 100%;
 }
 
 .tab {
@@ -1083,6 +1086,17 @@ th.left-align .sortButton {
   .tableHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .tabRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+
+  .tab {
+    text-align: center;
+    width: 100%;
   }
 }
 

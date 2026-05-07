@@ -22,6 +22,7 @@ import {
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
@@ -114,7 +115,7 @@ type PersistedAlchemySettings = {
   minVolume: number | "";
   onlyProfitable: boolean;
   hideMissing: boolean;
-  ownedCostMode: boolean;
+  ownedCostMode?: boolean;
   sortCol: AlchemySortKey;
   sortDesc: boolean;
 };
@@ -190,9 +191,9 @@ const highlightMatch = (text: string, query: string) => {
   );
 };
 
-function readOwnedMaterials(): Record<string, string[]> {
+function readOwnedMaterials(storageKey: string, legacyKey?: string): Record<string, string[]> {
   try {
-    const stored = localStorage.getItem(OWNED_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey) ?? (legacyKey ? localStorage.getItem(legacyKey) : null);
     if (!stored) return {};
     const parsed = JSON.parse(stored);
     return parsed && typeof parsed === "object" ? parsed : {};
@@ -232,8 +233,12 @@ function AlchemyContent() {
   const [sortDesc, setSortDesc] = useState(true);
   const [selectedRow, setSelectedRow] = useState<AlchemyRow | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const activeProfileId = activeProfile?.id || null;
+  const ownedStorageKey = useMemo(() => getProfileStorageKey(OWNED_STORAGE_KEY, activeProfile?.id), [activeProfile?.id]);
+  const ownedModeStorageKey = useMemo(() => getProfileStorageKey(OWNED_MODE_STORAGE_KEY, activeProfile?.id), [activeProfile?.id]);
 
   useEffect(() => {
+    setSettingsLoaded(false);
     const saved = readAlchemySettings();
     if (saved.minLevel !== undefined) setMinLevel(saved.minLevel);
     if (saved.maxLevel !== undefined) setMaxLevel(saved.maxLevel);
@@ -244,13 +249,17 @@ function AlchemyContent() {
     if (saved.sortCol === "craftsPerHour") setSortCol("profitPerHour");
     else if (saved.sortCol) setSortCol(saved.sortCol);
     if (typeof saved.sortDesc === "boolean") setSortDesc(saved.sortDesc);
-    setOwnedMaterials(readOwnedMaterials());
-    const savedOwnedMode = typeof saved.ownedCostMode === "boolean"
-      ? saved.ownedCostMode
-      : localStorage.getItem(OWNED_MODE_STORAGE_KEY) === "true";
+    setOwnedMaterials(readOwnedMaterials(ownedStorageKey, activeProfileId ? undefined : OWNED_STORAGE_KEY));
+    const storedOwnedMode = localStorage.getItem(ownedModeStorageKey);
+    const legacyOwnedMode = activeProfileId ? null : localStorage.getItem(OWNED_MODE_STORAGE_KEY);
+    const savedOwnedMode = storedOwnedMode !== null
+      ? storedOwnedMode === "true"
+      : legacyOwnedMode !== null
+        ? legacyOwnedMode === "true"
+        : Boolean(saved.ownedCostMode);
     setOwnedCostMode(savedOwnedMode);
     setSettingsLoaded(true);
-  }, []);
+  }, [activeProfileId, ownedModeStorageKey, ownedStorageKey]);
 
   useEffect(() => {
     if (!settingsLoaded) return;
@@ -261,16 +270,15 @@ function AlchemyContent() {
       minVolume,
       onlyProfitable,
       hideMissing,
-      ownedCostMode,
       sortCol,
       sortDesc,
     };
     localStorage.setItem(ALCHEMY_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-  }, [hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, ownedCostMode, settingsLoaded, sortCol, sortDesc]);
+  }, [hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, settingsLoaded, sortCol, sortDesc]);
 
   const persistOwnedMaterials = (next: Record<string, string[]>) => {
     setOwnedMaterials(next);
-    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(ownedStorageKey, JSON.stringify(next));
   };
 
   const toggleOwnedMaterial = (recipeName: string, materialName: string) => {
@@ -292,12 +300,13 @@ function AlchemyContent() {
 
   const setOwnedMode = (next: boolean) => {
     setOwnedCostMode(next);
-    localStorage.setItem(OWNED_MODE_STORAGE_KEY, String(next));
+    localStorage.setItem(ownedModeStorageKey, String(next));
   };
 
   const marketData = useMemo(() => (data || {}) as Record<string, MarketData>, [data]);
   const parsedActiveHours = Number(activeProfile?.timers.activeHours || 0) || 0;
-  const activeHoursSource = activeProfile ? "profile" : "no profile";
+  const activeProfileName = activeProfile?.name?.trim() || "Active profile";
+  const activeHoursSource = activeProfile ? `${activeProfileName} playtime` : "No active profile";
   const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
   const marketTaxRate = getMarketTaxRate(preferences.membership);
   const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
@@ -581,9 +590,9 @@ function AlchemyContent() {
         </div>
 
         <div className="control-group">
-          <label className="control-label">Bartering Bonus</label>
+          <label className="control-label">Profile Bartering</label>
           <div className="control-input" aria-label="Active profile bartering bonus">
-            +{parsedBartering}% {activeProfile ? "from profile" : "without profile"}
+            +{parsedBartering}% {activeProfile ? `from ${activeProfileName}` : "No active profile"}
           </div>
         </div>
 
@@ -598,7 +607,7 @@ function AlchemyContent() {
             <PackageCheck size={15} /> Owned mode
           </button>
           <span className="alchemy-settings-pill">
-            <Clock size={14} /> {parsedActiveHours}h/day from {activeHoursSource}
+            <Clock size={14} /> {parsedActiveHours}h/day - {activeHoursSource}
           </span>
         </div>
       </div>

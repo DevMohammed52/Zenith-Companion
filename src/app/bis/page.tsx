@@ -28,10 +28,17 @@ const QUALITY_COLOR: Record<string, string> = {
 };
 
 const COMBAT_STYLES = [
-    { id: "sword_shield", label: "Sword + Shield", icon: <Shield size={14} /> },
-    { id: "dual_daggers", label: "Dual Daggers",   icon: <Zap size={14} /> },
+    { id: "swordShield", label: "Sword + Shield", icon: <Shield size={14} /> },
+    { id: "dualDaggers", label: "Dual Daggers",   icon: <Zap size={14} /> },
     { id: "bow",          label: "Single Bow",     icon: <Target size={14} /> },
 ];
+
+function normalizeCombatStyle(value: string | undefined) {
+    if (value === "sword_shield") return "swordShield";
+    if (value === "dual_daggers") return "dualDaggers";
+    if (value === "dualDaggers" || value === "bow") return value;
+    return "swordShield";
+}
 
 interface GearItem {
     name: string;
@@ -73,6 +80,7 @@ export default function BISPage() {
     const profileStrength = activeProfile && activeProfile.levels.strength !== "" ? activeProfile.levels.strength : preferences.strStat;
     const profileDexterity = activeProfile && activeProfile.levels.dexterity !== "" ? activeProfile.levels.dexterity : preferences.dexStat;
     const profileDefence = activeProfile && activeProfile.levels.defence !== "" ? activeProfile.levels.defence : preferences.defStat;
+    const activeCombatStyle = normalizeCombatStyle(activeProfile?.combatStyle || preferences.combatStyle);
 
     useEffect(() => {
         fetch("/gear-data.json?t=" + Date.now()).then(r => r.json()).then(setGearData).catch(() => {});
@@ -127,15 +135,15 @@ export default function BISPage() {
 
     const activeSlots = useMemo(() => {
         const slots = ["HELMET", "CHESTPLATE", "GREAVES", "BOOTS", "GAUNTLETS"];
-        if (preferences.combatStyle === "sword_shield") {
+        if (activeCombatStyle === "swordShield") {
             slots.unshift("SWORD", "SHIELD");
-        } else if (preferences.combatStyle === "dual_daggers") {
+        } else if (activeCombatStyle === "dualDaggers") {
             slots.unshift("DAGGER");
-        } else if (preferences.combatStyle === "bow") {
+        } else if (activeCombatStyle === "bow") {
             slots.unshift("BOW");
         }
         return slots;
-    }, [preferences.combatStyle]);
+    }, [activeCombatStyle]);
 
     const getPrice = (item: GearItem | undefined): number | null => {
         if (!item || !item.name) return null;
@@ -148,11 +156,11 @@ export default function BISPage() {
             const item = bisSet[slot]?.best;
             if (item && item.stats) {
                 const itemPower = Object.values(item.stats).reduce((s, v) => s + v, 0);
-                sum += (slot === "DAGGER" && preferences.combatStyle === "dual_daggers") ? itemPower * 2 : itemPower;
+                sum += (slot === "DAGGER" && activeCombatStyle === "dualDaggers") ? itemPower * 2 : itemPower;
             }
         }
         return sum;
-    }, [bisSet, activeSlots, preferences.combatStyle]);
+    }, [bisSet, activeSlots, activeCombatStyle]);
 
     if (!gearData) {
         return <main className="container"><div className="header"><h1 className="header-title">LOADING...</h1></div></main>;
@@ -192,32 +200,35 @@ export default function BISPage() {
 
             <div className="controls bento-controls-stack">
                 <div className="control-group">
-                    <label className="control-label">Level (60-96)</label>
+                    <label className="control-label">Combat Level</label>
                     <input type="number" className="control-input" value={profileCombatLevel}
                         onChange={e => handleNumChange('combatLevel', e.target.value)}
-                        onBlur={() => clamp('combatLevel', 60, 96)}
+                        onBlur={() => clamp('combatLevel', 1, 600)}
                     />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">STR Stat (0-100)</label>
-                    <input type="number" className="control-input" value={profileStrength} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 0, 100)} />
+                    <label className="control-label">Strength</label>
+                    <input type="number" className="control-input" value={profileStrength} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">DEX Stat (0-100)</label>
-                    <input type="number" className="control-input" value={profileDexterity} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 0, 100)} />
+                    <label className="control-label">Dexterity</label>
+                    <input type="number" className="control-input" value={profileDexterity} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
                 </div>
                 <div className="control-group">
-                    <label className="control-label">DEF Stat (0-100)</label>
-                    <input type="number" className="control-input" value={profileDefence} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 0, 100)} />
+                    <label className="control-label">Defence</label>
+                    <input type="number" className="control-input" value={profileDefence} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
                 </div>
                 <div className="control-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="control-label">Combat Style</label>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                         {COMBAT_STYLES.map(s => (
-                            <button key={s.id} onClick={() => setPreferences({ combatStyle: s.id })} style={{
+                            <button key={s.id} onClick={() => {
+                                if (activeProfile) updateProfile(activeProfile.id, { combatStyle: s.id as typeof activeProfile.combatStyle });
+                                else setPreferences({ combatStyle: s.id });
+                            }} style={{
                                 flex: 1, minWidth: '100px', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-subtle)',
-                                background: preferences.combatStyle === s.id ? 'var(--text-accent)' : 'var(--bg-card)',
-                                color: preferences.combatStyle === s.id ? '#000' : 'var(--text-muted)',
+                                background: activeCombatStyle === s.id ? 'var(--text-accent)' : 'var(--bg-card)',
+                                color: activeCombatStyle === s.id ? '#000' : 'var(--text-muted)',
                                 cursor: 'pointer', transition: '0.2s', fontSize: '0.75rem', fontWeight: 600,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem'
                             }}>
@@ -241,7 +252,7 @@ export default function BISPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-accent)' }}>
                                     {cfg.icon}
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.07em', fontWeight: 600 }}>
-                                        {cfg.label.toUpperCase()} {type === "DAGGER" && preferences.combatStyle === "dual_daggers" && "(DUAL)"}
+                                        {cfg.label.toUpperCase()} {type === "DAGGER" && activeCombatStyle === "dualDaggers" && "(DUAL)"}
                                     </span>
                                 </div>
                                 {entry && entry.alts.length > 0 && (
@@ -273,7 +284,7 @@ export default function BISPage() {
                         if (!item) return null;
                         const cfg = SLOT_CONFIG[type];
                         const price = getPrice(item);
-                        const isDual = type === "DAGGER" && preferences.combatStyle === "dual_daggers";
+                        const isDual = type === "DAGGER" && activeCombatStyle === "dualDaggers";
                         const totalStats = Object.values(item.stats || {}).reduce((s, v) => s + v, 0);
 
                         return (
@@ -312,7 +323,7 @@ export default function BISPage() {
                                     let total = 0;
                                     activeSlots.forEach(type => {
                                         const p = getPrice(bisSet[type]?.best);
-                                        if (p) total += (type === "DAGGER" && preferences.combatStyle === "dual_daggers") ? p * 2 : p;
+                                        if (p) total += (type === "DAGGER" && activeCombatStyle === "dualDaggers") ? p * 2 : p;
                                     });
                                     return total > 0 ? total.toLocaleString(undefined, { maximumFractionDigits: 0 }) + 'g' : '—';
                                 })()}

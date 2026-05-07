@@ -7,6 +7,8 @@ import {
   sanitizeCraftingQueue,
   sanitizeQueueQty,
 } from '@/lib/crafting-queue';
+import { useProfiles } from '@/lib/profiles';
+import { getProfileStorageKey } from '@/lib/profile-storage';
 
 interface CraftingContextType {
   queue: Record<string, number>;
@@ -19,28 +21,30 @@ interface CraftingContextType {
 const CraftingContext = createContext<CraftingContextType | undefined>(undefined);
 
 export function CraftingProvider({ children }: { children: React.ReactNode }) {
+  const { activeProfile } = useProfiles();
+  const activeProfileId = activeProfile?.id || null;
+  const storageKey = useMemo(() => getProfileStorageKey(CRAFTING_QUEUE_STORAGE_KEY, activeProfile?.id), [activeProfile?.id]);
   const [queue, setQueue] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initial load from localStorage
   useEffect(() => {
-    setQueue(readStoredQueue());
+    setIsLoaded(false);
+    setQueue(readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY));
     setIsLoaded(true);
 
     const handleStorageUpdate = (event: StorageEvent) => {
-      if (event.key === CRAFTING_QUEUE_STORAGE_KEY) setQueue(readStoredQueue());
+      if (event.key === storageKey) setQueue(readStoredQueue(storageKey, CRAFTING_QUEUE_STORAGE_KEY));
     };
 
     window.addEventListener("storage", handleStorageUpdate);
     return () => window.removeEventListener("storage", handleStorageUpdate);
-  }, []);
+  }, [activeProfileId, storageKey]);
 
-  // Save to localStorage on change
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(CRAFTING_QUEUE_STORAGE_KEY, JSON.stringify(sanitizeCraftingQueue(queue)));
+      localStorage.setItem(storageKey, JSON.stringify(sanitizeCraftingQueue(queue)));
     }
-  }, [queue, isLoaded]);
+  }, [queue, isLoaded, storageKey]);
 
   const addToQueue = useCallback((name: string, qty: number = 1) => {
     if (!isCraftingQueueRecipe(name)) return;
@@ -92,9 +96,9 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function readStoredQueue() {
+function readStoredQueue(storageKey: string, legacyKey?: string) {
   try {
-    const saved = localStorage.getItem(CRAFTING_QUEUE_STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey) ?? (legacyKey ? localStorage.getItem(legacyKey) : null);
     return saved ? sanitizeCraftingQueue(JSON.parse(saved)) : {};
   } catch (e) {
     console.error('Failed to parse craft queue:', e);

@@ -24,6 +24,9 @@ import { getSafeMarketValue } from "@/lib/market-pricing";
 import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "@/data/lore";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
+
+const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = "zenith_mythic_active_recipes";
 
 function getDashboardInputPrice(
   name: string,
@@ -45,13 +48,20 @@ export default function DashboardPage() {
 
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
   const [petDatabaseCount, setPetDatabaseCount] = useState(0);
+  const activeMythicStorageKey = useMemo(
+    () => getProfileStorageKey(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY, activeProfile?.id),
+    [activeProfile?.id],
+  );
+  const activeProfileId = activeProfile?.id || null;
   
   useEffect(() => {
-    const saved = localStorage.getItem("zenith_mythic_active_recipes");
+    const saved = localStorage.getItem(activeMythicStorageKey) ?? (activeProfileId ? null : localStorage.getItem(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY));
     if (saved) {
       try { setActiveMythicNames(JSON.parse(saved)); } catch {}
+    } else {
+      setActiveMythicNames([]);
     }
-  }, []);
+  }, [activeMythicStorageKey, activeProfileId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +83,7 @@ export default function DashboardPage() {
   const profitableAlchemy = useMemo(() => {
     if (!marketData) return [];
 
-    const barter = (Number(activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost) || 0) / 100;
+    const barter = (Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0) / 100;
     const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
 
     return Object.entries(ALCHEMY_ITEMS)
@@ -110,12 +120,12 @@ export default function DashboardPage() {
       .filter((item): item is NonNullable<typeof item> => item !== null && item.profit > 0)
       .sort((a, b) => b.profit - a.profit)
       .slice(0, 6);
-  }, [activeProfile, marketData, allItemsDb, preferences.barteringBoost, preferences.customPrices, preferences.membership]);
+  }, [activeProfile, marketData, allItemsDb, preferences.customPrices, preferences.membership]);
 
   const queuePlan = useMemo(
     () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
       ...preferences,
-      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
     }),
     [activeProfile, allItemsDb, marketData, preferences, queue],
   );
@@ -136,11 +146,10 @@ export default function DashboardPage() {
       ...(activeProfile?.tools.fishing ? { Fishing: activeProfile.tools.fishing } : {}),
     },
     customPrices: preferences.customPrices,
-    barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+    barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
   }), [
     activeProfile,
     preferences.assaultRank,
-    preferences.barteringBoost,
     preferences.customPrices,
     preferences.membership,
     preferences.skillClassBonus,

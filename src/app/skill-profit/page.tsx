@@ -284,17 +284,21 @@ export default function SkillProfitPage() {
         },
       });
     }
-    if ("membership" in patch || "classBonus" in patch || "tools" in patch || "customPrices" in patch) {
+    if ("membership" in patch || "classBonus" in patch || (!activeProfile && "tools" in patch) || "customPrices" in patch) {
       setPreferences({
         ...(typeof patch.membership === "boolean" ? { membership: patch.membership } : {}),
         ...(!activeProfile && typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
-        ...(patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
+        ...(!activeProfile && patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
         ...(patch.customPrices ? { customPrices: patch.customPrices } : {}),
       });
     }
   };
 
   const patchTool = (skill: ToolSkill, toolName: string) => {
+    if (activeProfile) {
+      const profileToolKey = skill === "Woodcutting" ? "woodcutting" : skill === "Mining" ? "mining" : "fishing";
+      updateProfile(activeProfile.id, { tools: { ...activeProfile.tools, [profileToolKey]: toolName } });
+    }
     patchSettings({ tools: { ...settings.tools, [skill]: toolName } });
   };
 
@@ -572,7 +576,7 @@ export default function SkillProfitPage() {
                   <td className="mono">{row.level}</td>
                   <td className={`mono ${row.profitPerHour >= 0 ? styles.positive : styles.negative}`}>{formatGold(row.profitPerHour)}g</td>
                   <td className="mono">{row.roi.toFixed(1)}%</td>
-                  <td className="mono">{row.expPerHour.toLocaleString()}</td>
+                  <td className="mono">{formatOptionalNumber(row.expPerHour)}</td>
                   <td className="mono">{row.volume3d.toLocaleString()}</td>
                   <td>
                     <span className={`${styles.saleBadge} ${row.bestSaleSource === "vendor" ? styles.saleVendor : row.bestSaleSource === "custom" ? styles.saleCustom : styles.saleMarket}`}>
@@ -721,7 +725,7 @@ function SkillStrategyModal({
                 <CalcRow label="Items per hour" value={row.itemsPerHour.toLocaleString()} />
                 {row.toolBonus > 0 && <CalcRow label="Tool efficiency" value={`+${row.toolBonus}%`} />}
                 <CalcRow label="Gold per hour" value={`${formatGold(row.profitPerHour)}g`} tone={row.profitPerHour >= 0 ? "good" : "bad"} />
-                <CalcRow label="EXP per second" value={row.expPerSecond.toFixed(2)} />
+                <CalcRow label="EXP per second" value={row.expPerSecond === null ? "Unknown" : row.expPerSecond.toFixed(2)} muted={row.expPerSecond === null} />
                 <CalcRow label="3-day volume" value={row.volume3d.toLocaleString()} />
               </div>
               <div className={styles.formula}>
@@ -746,8 +750,8 @@ function SkillStrategyModal({
                 <DetailPill label="Level" value={row.level.toLocaleString()} />
                 <DetailPill label="Base Time" value={`${formatNumber(row.baseDuration)}s`} />
                 <DetailPill label="Final Time" value={`${formatNumber(row.finalDuration)}s`} />
-                <DetailPill label="Base EXP" value={formatNumber(row.experience)} />
-                <DetailPill label="EXP/hr" value={formatNumber(row.expPerHour)} />
+                <DetailPill label="Base EXP" value={formatOptionalNumber(row.experience)} muted={row.experience === null} />
+                <DetailPill label="EXP/hr" value={formatOptionalNumber(row.expPerHour)} muted={row.expPerHour === null} />
                 <DetailPill label="Type" value={formatType(item?.type)} muted={!item?.type} />
                 <DetailPill label="Quality" value={formatType(item?.quality)} muted={!item?.quality} />
                 <DetailPill label="Tradeable" value={item ? (item.is_tradeable ? "Yes" : "No") : "Unknown"} muted={!item} />
@@ -856,6 +860,10 @@ function formatNumber(value: number): string {
   return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function formatOptionalNumber(value: number | null): string {
+  return value === null ? "Unknown" : formatNumber(value);
+}
+
 function CalcRow({ label, value, tone, muted }: { label: string; value: string; tone?: "good" | "bad"; muted?: boolean }) {
   return (
     <div className={styles.calcRow}>
@@ -886,6 +894,6 @@ function isExcludedFromTop(row: SkillProfitRow, minVolume: number) {
 function getSortValue(row: SkillProfitRow, key: SkillProfitSortKey) {
   if (key === "name") return row.name.toLowerCase();
   if (key === "skill") return row.skill;
-  return row[key];
+  return row[key] ?? -Infinity;
 }
 

@@ -32,7 +32,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
 
   const activeLabel = activeProfile?.name || "No profile";
   const activeMeta = activeProfile
-    ? `${activeProfile.kind === "main" ? "Main" : "Alt"} · TL ${activeProfile.levels.totalLevel || 0}`
+    ? `${activeProfile.kind === "main" ? "Main" : "Alt"} - TL ${activeProfile.levels.totalLevel || 0}`
     : "Create a profile";
 
   return (
@@ -79,7 +79,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
                   <span className="profile-switcher-avatar">{profile.name.slice(0, 1).toUpperCase() || "?"}</span>
                   <span>
                     <strong>{profile.name || "Unnamed profile"}</strong>
-                    <small>{profile.kind === "main" ? "Main" : "Alt"} · {profile.className || "Other"} · TL {profile.levels.totalLevel || 0}</small>
+                    <small>{profile.kind === "main" ? "Main" : "Alt"} - {profile.className || "Other"} - TL {profile.levels.totalLevel || 0}</small>
                   </span>
                   {selected && <Check size={15} />}
                 </button>

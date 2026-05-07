@@ -88,7 +88,7 @@ export type SkillRecipe = {
   name: string;
   level: number;
   baseDuration: number;
-  experience: number;
+  experience: number | null;
   ingredients: Ingredient[];
   note?: string;
 };
@@ -107,8 +107,8 @@ export type SkillProfitRow = SkillRecipe & {
   finalDuration: number;
   itemsPerHour: number;
   profitPerHour: number;
-  expPerSecond: number;
-  expPerHour: number;
+  expPerSecond: number | null;
+  expPerHour: number | null;
   roi: number;
   volume3d: number;
   isLiquid: boolean;
@@ -185,52 +185,76 @@ export const SKILL_TOOLS: Record<ToolSkill, Array<{
 };
 
 const ALCHEMY_EXPERIENCE: Record<string, number> = {
-  "Battle Potion": 52,
-  "Lumberjack Essence Crystal": 61,
-  "Miners Essence Crystal": 69,
-  "Anglers Essence Crystal": 77,
-  "Smelting Essence Crystal": 86,
-  "Chefs Essence Crystal": 100,
-  "Dungeon Potion": 266,
-  "Timberfall Essence Crystal": 266,
-  "Rocksplitter Essence Crystal": 298,
-  "Deepsea Essence Crystal": 330,
-  "Bastion Essence": 362,
-  "Falcon's Grace Essence": 362,
-  "Galeforce Speed Essence": 362,
-  "Herculean Strength Essence": 362,
-  "Hammerfell Essence Crystal": 362,
-  "Flavorburst Essence Crystal": 394,
-  "Protection Potion": 805,
-  "Felling Essence Crystal": 805,
-  "Attack Power Potion": 865,
-  "Merfolk Essence Crystal": 865,
-  "Precision Essence": 865,
-  "Quickstep Essence": 865,
-  "Fortified Essence": 865,
-  "Titan Power Essence": 865,
-  "Oreseeker Essence Crystal": 865,
-  "Molten Core Essence Crystal": 1263,
-  "Vortex Brew": 1346,
-  "Spicefinder Essence Crystal": 1328,
-  "Bulwark Brew": 1449,
-  "Bladeburst Elixir": 1449,
-  "Ironclad Essence": 1553,
-  "Acrobatic's Essence": 1863,
-  "Strike Essence": 1863,
-  "Impenetrable Essence": 1863,
-  "Windrider Essence": 1863,
-  "Dungeon Master's Tonic": 2277,
-  "Yggdrasil Essence Crystal": 2381,
-  "Earthcore Essence Crystal": 3312,
-  "Riverbend Essence Crystal": 3531,
-  "Tampering Essence Crystal": 3623,
-  "Shieldbearer's Infusion": 3738,
-  "Unyielding Fortitude": 3738,
-  "Lightning Sprint": 3738,
-  "Twinstrike Elixir": 3738,
-  "Stoneheart Solution": 3738,
-  "Frenzy Potion": 3853,
+  "Battle Potion": 45,
+  "Lumberjack Essence Crystal": 53,
+  "Miners Essence Crystal": 60,
+  "Anglers Essence Crystal": 67,
+  "Smelting Essence Crystal": 75,
+  "Chefs Essence Crystal": 87,
+  "Dungeon Potion": 231,
+  "Timberfall Essence Crystal": 231,
+  "Rocksplitter Essence Crystal": 259,
+  "Deepsea Essence Crystal": 287,
+  "Bastion Essence": 315,
+  "Falcon's Grace Essence": 315,
+  "Galeforce Speed Essence": 315,
+  "Herculean Strength Essence": 315,
+  "Hammerfell Essence Crystal": 315,
+  "Flavorburst Essence Crystal": 343,
+  "Protection Potion": 700,
+  "Felling Essence Crystal": 700,
+  "Attack Power Potion": 752,
+  "Merfolk Essence Crystal": 752,
+  "Precision Essence": 752,
+  "Quickstep Essence": 752,
+  "Fortified Essence": 752,
+  "Titan Power Essence": 752,
+  "Oreseeker Essence Crystal": 752,
+  "Molten Core Essence Crystal": 1098,
+  "Vortex Brew": 1170,
+  "Spicefinder Essence Crystal": 1242,
+  "Bulwark Brew": 1260,
+  "Bladeburst Elixir": 1260,
+  "Ironclad Essence": 1350,
+  "Acrobatic's Essence": 1620,
+  "Strike Essence": 1620,
+  "Impenetrable Essence": 1620,
+  "Windrider Essence": 1620,
+  "Dungeon Master's Tonic": 1980,
+  "Yggdrasil Essence Crystal": 2070,
+  "Earthcore Essence Crystal": 2880,
+  "Riverbend Essence Crystal": 3070,
+  "Tampering Essence Crystal": 3150,
+  "Shieldbearer's Infusion": 3250,
+  "Unyielding Fortitude": 3250,
+  "Lightning Sprint": 3250,
+  "Twinstrike Elixir": 3250,
+  "Stoneheart Solution": 3250,
+  "Frenzy Potion": 3350,
+  "Dragonblood Tonic": 3450,
+  "Gourmet Essence Crystal": 3450,
+  "Wraithbane Essence": 3450,
+  "Titans Essence": 8000,
+  "Cosmic Barrier": 8000,
+  "Divine Essence Crystal": 8000,
+  "Potion of the Hunter": 8000,
+  "Essence of a Kraken": 8000,
+  "Guardian's Soul": 8000,
+  "Cosmic Finesse Essence": 8000,
+  "Cosmic Crystal": 8000,
+  "Fallen Star Essence": 8000,
+  "Flash Velocity Essence": 8000,
+  "Magma Vein Infusion": 8000,
+  "Mjolnir's Essence Crystal": 8000,
+  "Neptune's Soul": 8000,
+  "Omnipotent Might Essence": 8000,
+  "Phoenix Ashes": 8000,
+  "Potion of the Gods": 8000,
+  "Primordial Timber Crystal": 8000,
+  "Titanwood Crystal": 8000,
+  "Dragon's Essence": 8000,
+  "Eternal Feast Essence Crystal": 8000,
+  "Sun's Light": 8000,
 };
 
 export const ASCENSION_BUFFS = [
@@ -446,7 +470,7 @@ const alchemyRecipes: SkillRecipe[] = Object.entries(ALCHEMY_ITEMS)
     name,
     level: recipe.level,
     baseDuration: recipe.time,
-    experience: ALCHEMY_EXPERIENCE[name] || 0,
+    experience: ALCHEMY_EXPERIENCE[name] ?? null,
     ingredients: [
       ...Object.entries(recipe.materials).map(([material, quantity]) => ({
         name: material,
@@ -574,8 +598,8 @@ export function calculateSkillProfitRows(
     const finalDuration = recipe.baseDuration / ((buffs.efficiency + toolBonus + 100) / 100);
     const itemsPerHour = Math.round(3600 / finalDuration);
     const profitPerHour = Math.round(profitEach * itemsPerHour);
-    const expPerAction = recipe.experience * ((buffs.experience + 100) / 100);
-    const expPerSecond = expPerAction / finalDuration;
+    const expPerAction = recipe.experience === null ? null : recipe.experience * ((buffs.experience + 100) / 100);
+    const expPerSecond = expPerAction === null ? null : expPerAction / finalDuration;
     const volume3d = marketData?.[recipe.name]?.vol_3 || 0;
     const isLiquid = sale.source !== "market" || volume3d >= minVolume;
 
@@ -595,7 +619,7 @@ export function calculateSkillProfitRows(
       itemsPerHour,
       profitPerHour,
       expPerSecond,
-      expPerHour: Math.round(expPerSecond * 3600),
+      expPerHour: expPerSecond === null ? null : Math.round(expPerSecond * 3600),
       roi: inputCost > 0 ? (profitEach / inputCost) * 100 : profitEach > 0 ? 100 : 0,
       volume3d,
       isLiquid,
