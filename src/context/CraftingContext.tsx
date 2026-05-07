@@ -33,7 +33,7 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true);
 
     const handleStorageUpdate = (event: StorageEvent) => {
-      if (event.key === storageKey) setQueue(readStoredQueue(storageKey, CRAFTING_QUEUE_STORAGE_KEY));
+      if (event.key === storageKey) setQueue(readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY));
     };
 
     window.addEventListener("storage", handleStorageUpdate);

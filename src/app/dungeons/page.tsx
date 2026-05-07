@@ -117,11 +117,11 @@ function DungeonsContent() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(completionsStorageKey) ?? localStorage.getItem(DUNGEON_COMPLETIONS_STORAGE_KEY);
+      const stored = localStorage.getItem(completionsStorageKey) ?? (activeProfile?.id ? null : localStorage.getItem(DUNGEON_COMPLETIONS_STORAGE_KEY));
       if (stored) setCompletedRunsByDungeon(JSON.parse(stored));
       else setCompletedRunsByDungeon({});
     } catch {}
-  }, [completionsStorageKey]);
+  }, [activeProfile?.id, completionsStorageKey]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
