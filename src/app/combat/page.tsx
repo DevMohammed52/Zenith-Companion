@@ -13,18 +13,47 @@ import { getItemTrueValue } from "@/lib/ev-logic";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
+
+const COMBAT_CONTROLS_STORAGE_KEY = "zenith_combat_controls_v1";
+const DEFAULT_KILLS_PER_HOUR = 360;
 
 function CombatContent() {
     const router = useRouter();
     const { openItemByName, prefetchItem } = useItemModal();
     const searchParams = useSearchParams();
     const { staticData, marketData, allItemsDb } = useData();
-    const { preferences, setPreferences } = usePreferences();
+    const { preferences } = usePreferences();
     const { activeProfile } = useProfiles();
+    const activeProfileId = activeProfile?.id || null;
+    const combatControlsStorageKey = useMemo(
+        () => getProfileStorageKey(COMBAT_CONTROLS_STORAGE_KEY, activeProfile?.id),
+        [activeProfile?.id],
+    );
     const [selectedEnemy, setSelectedEnemy] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("ev");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [killsPerHour, setKillsPerHour] = useState<number | "">(DEFAULT_KILLS_PER_HOUR);
+
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(combatControlsStorageKey);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                setKillsPerHour(parsed.killsPerHour === "" ? "" : Math.max(0, Number(parsed.killsPerHour) || 0));
+                return;
+            }
+        } catch {}
+        setKillsPerHour(activeProfileId ? DEFAULT_KILLS_PER_HOUR : (preferences.killsPerHour || DEFAULT_KILLS_PER_HOUR));
+    }, [activeProfileId, combatControlsStorageKey, preferences.killsPerHour]);
+
+    useEffect(() => {
+        const timeout = window.setTimeout(() => {
+            localStorage.setItem(combatControlsStorageKey, JSON.stringify({ killsPerHour }));
+        }, 200);
+        return () => window.clearTimeout(timeout);
+    }, [combatControlsStorageKey, killsPerHour]);
 
     useEffect(() => {
         const search = searchParams.get("search");
@@ -50,11 +79,11 @@ function CombatContent() {
     const combatRows = useMemo(() => {
         if (!staticData || !marketData || !allItemsDb) return [];
         const calculated = [];
-        const parsedKph = Number(preferences.killsPerHour) || 0;
+        const parsedKph = Number(killsPerHour) || 0;
         const evOptions = {
             customPrices: preferences.customPrices,
             marketTaxMultiplier: preferences.membership ? 0.88 : 0.85,
-            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
         };
 
         for (const enemy of staticData.enemies) {
@@ -92,10 +121,9 @@ function CombatContent() {
         marketData,
         allItemsDb,
         activeProfile,
-        preferences.barteringBoost,
         preferences.customPrices,
-        preferences.killsPerHour,
         preferences.membership,
+        killsPerHour,
     ]);
 
     const areaSummaries = useMemo(() => {
@@ -227,12 +255,15 @@ function CombatContent() {
                     <input 
                         type="number" 
                         className="control-input"
-                        value={preferences.killsPerHour}
+                        value={killsPerHour}
                         onChange={(e) => {
                             const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value) || 0);
-                            setPreferences({ killsPerHour: val });
+                            setKillsPerHour(val);
                         }}
                     />
+                    <span className="control-helper">
+                        {activeProfile ? `Saved for ${activeProfile.name || "active profile"}` : "Saved as no-profile fallback"}
+                    </span>
                 </div>
                 <div className="control-group" style={{ flex: 1 }}>
                     <label className="control-label">Search</label>
@@ -382,7 +413,7 @@ function CombatContent() {
                                             {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
                                             <span className="m-name">{row.name}</span>
                                         </div>
-                                        <span className="m-lvl">{row.location?.name || "Unknown"} • LVL {row.level}</span>
+                                        <span className="m-lvl">{row.location?.name || "Unknown"} - LVL {row.level}</span>
                                     </div>
                                     <div className="m-roi pos">{row.dropsCount} DROPS</div>
                                 </div>

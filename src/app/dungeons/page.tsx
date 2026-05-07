@@ -145,7 +145,7 @@ function DungeonsContent() {
     const evOptions = {
       customPrices: preferences.customPrices,
       marketTaxMultiplier: preferences.membership ? 0.88 : 0.85,
-      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
     };
     const profileDungeonStats = getProfileDungeonStatTotal(activeProfile);
     const profileDungeoneering = Number(activeProfile?.levels.dungeoneering || 0);
@@ -289,7 +289,6 @@ function DungeonsContent() {
     includeMagicFindEv,
     marketData,
     minimumProfit,
-    preferences.barteringBoost,
     preferences.customPrices,
     preferences.membership,
     readinessFilter,

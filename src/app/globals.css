@@ -1538,6 +1538,12 @@ input[type="number"] {
   gap: 0.5rem;
 }
 
+.control-helper {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 .control-label {
   font-size: 0.7rem;
   color: var(--text-muted);

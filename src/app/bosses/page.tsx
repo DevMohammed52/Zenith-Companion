@@ -429,7 +429,9 @@ function BossesContent() {
         routineTeleportLevel,
     ]);
 
-    const profileWorldBossMagicFind = activeProfile && activeProfile.magicFind.worldBoss !== "" ? activeProfile.magicFind.worldBoss : preferences.worldBossMagicFind;
+    const profileWorldBossMagicFind = activeProfile
+        ? (activeProfile.magicFind.worldBoss !== "" ? activeProfile.magicFind.worldBoss : 0)
+        : preferences.worldBossMagicFind;
     const magicFind = clampNumber(Number(profileWorldBossMagicFind) || 0, 0, 500);
 
     const calculatedRows = useMemo(() => {
@@ -438,7 +440,7 @@ function BossesContent() {
         const evOptions = {
             customPrices: preferences.customPrices,
             marketTaxMultiplier: getMarketTaxMultiplier(preferences.membership),
-            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
         };
 
         for (const boss of staticData.world_bosses) {
@@ -490,7 +492,6 @@ function BossesContent() {
         marketData,
         now,
         activeProfile,
-        preferences.barteringBoost,
         preferences.customPrices,
         preferences.membership,
         staticData,
@@ -922,6 +923,9 @@ function BossesContent() {
                             }}
                         />
                     </div>
+                    <span className="control-helper">
+                        {activeProfile ? `Saved for ${activeProfile.name || "active profile"}` : "Saved as no-profile fallback"}
+                    </span>
                 </div>
             </div>
 

@@ -197,10 +197,10 @@ export default function SettingsPage() {
 
         <div className="settings-panel settings-panel-wide">
           <h2><BarChart3 size={17} /> Compatibility Fallbacks</h2>
-          <p className="settings-panel-note">These are kept for older calculators and no-profile states. Active profile values remain the preferred source wherever supported.</p>
+          <p className="settings-panel-note">These are only fallback values for no-profile states. When a profile is active, calculators use the profile's class, tools, bartering level, conquest, and page-local controls instead.</p>
           <div className="settings-fields settings-compat-fields">
             <label className="settings-field">
-              <span><strong>Skill Class Helper</strong><small>Temporary fallback for skill calculations that still need full profile-class integration.</small></span>
+              <span><strong>Skill Class Helper</strong><small>Used only when no active profile is available.</small></span>
               <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
                 {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class helper active" : "No helper"}
               </button>
@@ -209,7 +209,7 @@ export default function SettingsPage() {
           <div className="settings-fields">
             {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
               <label className="settings-field" key={skill}>
-                <span><strong>{skill} Tool</strong><small>Fallback tool for Skill Profit Finder when no profile tool is selected.</small></span>
+                <span><strong>{skill} Tool</strong><small>Used only when no active profile tool is available.</small></span>
                 <select
                   className="control-input"
                   value={preferences.skillTools[skill]}

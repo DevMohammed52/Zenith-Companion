@@ -81,6 +81,9 @@ export default function BISPage() {
     const profileDexterity = activeProfile && activeProfile.levels.dexterity !== "" ? activeProfile.levels.dexterity : preferences.dexStat;
     const profileDefence = activeProfile && activeProfile.levels.defence !== "" ? activeProfile.levels.defence : preferences.defStat;
     const activeCombatStyle = normalizeCombatStyle(activeProfile?.combatStyle || preferences.combatStyle);
+    const profileSourceText = activeProfile
+        ? `Using ${activeProfile.name || "active profile"}`
+        : "Using no-profile fallback settings";
 
     useEffect(() => {
         fetch("/gear-data.json?t=" + Date.now()).then(r => r.json()).then(setGearData).catch(() => {});
@@ -205,18 +208,22 @@ export default function BISPage() {
                         onChange={e => handleNumChange('combatLevel', e.target.value)}
                         onBlur={() => clamp('combatLevel', 1, 600)}
                     />
+                    <span className="control-helper">{profileSourceText}</span>
                 </div>
                 <div className="control-group">
                     <label className="control-label">Strength</label>
                     <input type="number" className="control-input" value={profileStrength} onChange={e => handleNumChange('strStat', e.target.value)} onBlur={() => clamp('strStat', 1, 100)} />
+                    <span className="control-helper">{profileSourceText}</span>
                 </div>
                 <div className="control-group">
                     <label className="control-label">Dexterity</label>
                     <input type="number" className="control-input" value={profileDexterity} onChange={e => handleNumChange('dexStat', e.target.value)} onBlur={() => clamp('dexStat', 1, 100)} />
+                    <span className="control-helper">{profileSourceText}</span>
                 </div>
                 <div className="control-group">
                     <label className="control-label">Defence</label>
                     <input type="number" className="control-input" value={profileDefence} onChange={e => handleNumChange('defStat', e.target.value)} onBlur={() => clamp('defStat', 1, 100)} />
+                    <span className="control-helper">{profileSourceText}</span>
                 </div>
                 <div className="control-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="control-label">Combat Style</label>
@@ -236,6 +243,7 @@ export default function BISPage() {
                             </button>
                         ))}
                     </div>
+                    <span className="control-helper">{profileSourceText}</span>
                 </div>
             </div>
 

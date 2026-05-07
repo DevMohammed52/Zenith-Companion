@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   Check,
@@ -18,6 +18,7 @@ import { formatGold } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import {
@@ -105,14 +106,20 @@ export default function SkillProfitPage() {
   const [gearData, setGearData] = useState<GearData | null>(null);
   const [itemRegistry, setItemRegistry] = useState<ItemRegistry | null>(null);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
+  const loadedStorageKeyRef = useRef<string | null>(null);
 
+  const activeProfileId = activeProfile?.id || null;
+  const storageKey = useMemo(
+    () => getProfileStorageKey(STORAGE_KEY, activeProfileId),
+    [activeProfileId],
+  );
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const deferredSettings = useDeferredValue(settings);
 
   useEffect(() => {
     if (!preferencesLoaded || !loadedStoredState) return;
     const profileTools = activeProfile?.tools || {};
-    const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : Number(preferences.barteringBoost) || 0;
+    const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : 0;
     setSettings((current) => ({
       ...current,
       membership: preferences.membership,
@@ -134,7 +141,6 @@ export default function SkillProfitPage() {
     activeProfile?.tools,
     loadedStoredState,
     preferences.assaultRank,
-    preferences.barteringBoost,
     preferences.customPrices,
     preferences.membership,
     preferences.skillClassBonus,
@@ -143,8 +149,17 @@ export default function SkillProfitPage() {
   ]);
 
   useEffect(() => {
+    loadedStorageKeyRef.current = null;
+    setLoadedStoredState(false);
+    setSettings(DEFAULT_STATE.settings);
+    setActiveSkill(DEFAULT_STATE.activeSkill);
+    setSortKey(DEFAULT_STATE.sortKey);
+    setSortDesc(DEFAULT_STATE.sortDesc);
+    setSearchTerm(DEFAULT_STATE.searchTerm);
+    setMinVolume(DEFAULT_STATE.minVolume);
+    setAscensionOpen(DEFAULT_STATE.ascensionOpen);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey) || (!activeProfileId ? localStorage.getItem(STORAGE_KEY) : null);
       if (!stored) return;
       const parsed = JSON.parse(stored) as Partial<PersistedState>;
       setSettings({
@@ -161,12 +176,14 @@ export default function SkillProfitPage() {
       if (typeof parsed.ascensionOpen === "boolean") setAscensionOpen(parsed.ascensionOpen);
     } catch {
     } finally {
+      loadedStorageKeyRef.current = storageKey;
       setLoadedStoredState(true);
     }
-  }, []);
+  }, [activeProfileId, storageKey]);
 
   useEffect(() => {
     if (!loadedStoredState) return;
+    if (loadedStorageKeyRef.current !== storageKey) return;
     const payload: PersistedState = {
       settings,
       activeSkill,
@@ -177,10 +194,10 @@ export default function SkillProfitPage() {
       ascensionOpen,
     };
     const timeout = window.setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(storageKey, JSON.stringify(payload));
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [activeSkill, ascensionOpen, loadedStoredState, minVolume, searchTerm, settings, sortDesc, sortKey]);
+  }, [activeSkill, ascensionOpen, loadedStoredState, minVolume, searchTerm, settings, sortDesc, sortKey, storageKey]);
 
   useEffect(() => {
     fetch("/gear-data.json")
