@@ -276,7 +276,7 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "power", label: "Total Power" },
   { value: "speed", label: "Movement Speed" },
   { value: "battleProfit", label: "Battle Profit" },
-  { value: "market", label: "Exchange Floor" },
+  { value: "market", label: "Lowest Sale Listing" },
   { value: "drop", label: "Drop Chance" },
   { value: "quality", label: "Quality" },
   { value: "name", label: "Name" },
@@ -556,7 +556,7 @@ function PetImage({ pet }: { pet: PetRecord }) {
   const image = pet.imageUrl || pet.egg?.imageUrl;
   return (
     <div className="pet-avatar">
-      {image ? <img src={image} alt="" /> : <PawPrint size={30} />}
+      {image ? <img src={image} alt="" className={pet.name === "Dead Wyrmshadow" ? "pet-image-upside-down" : undefined} /> : <PawPrint size={30} />}
     </div>
   );
 }
@@ -977,7 +977,7 @@ export default function PetsPage() {
             </div>
             <div>
               <Database size={18} />
-              <span>Highest Exchange Floor</span>
+              <span>Highest Sale Value</span>
               <strong>{bestMarket ? `${bestMarket.pet.name} - ${formatGold(bestMarket.pet.exchange?.minPrice)}` : "-"}</strong>
             </div>
           </section>
@@ -1150,7 +1150,7 @@ export default function PetsPage() {
                       <strong>{selectedRow.pet.exchange?.listingCount || 0}</strong>
                     </div>
                     <div>
-                      <span>Floor</span>
+                      <span>Lowest sale listing</span>
                       <strong>{formatGold(selectedRow.pet.exchange?.minPrice)}</strong>
                     </div>
                     <div>

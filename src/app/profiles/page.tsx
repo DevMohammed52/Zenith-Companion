@@ -265,6 +265,7 @@ function ProfilePicker<T>({
 }) {
   const [query, setQuery] = useState("");
   const open = openId === id;
+  const selectedImageClass = selected?.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined;
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return options.slice(0, 90);
@@ -285,7 +286,7 @@ function ProfilePicker<T>({
         disabled={disabled}
       >
         <span className="profile-picker-image">
-          {selected?.image ? <img src={selected.image} alt="" /> : <Package size={16} />}
+          {selected?.image ? <img src={selected.image} alt="" className={selectedImageClass} /> : <Package size={16} />}
         </span>
         <span className="profile-picker-text">
           <strong>{selected?.title || placeholder}</strong>
@@ -296,6 +297,19 @@ function ProfilePicker<T>({
       </button>
       {open && (
         <div className="profile-picker-menu">
+          <div className="profile-picker-menu-head">
+            <span>Choose {label}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setOpenId(null);
+                setQuery("");
+              }}
+              aria-label={`Close ${label.toLowerCase()} picker`}
+            >
+              <X size={15} />
+            </button>
+          </div>
           <label className="profile-picker-search">
             <Search size={16} />
             <input value={query} placeholder={`Search ${label.toLowerCase()}...`} onChange={(event) => setQuery(event.target.value)} autoFocus />
@@ -313,7 +327,7 @@ function ProfilePicker<T>({
                 }}
               >
                 <span className="profile-picker-image">
-                  {option.image ? <img src={option.image} alt="" /> : <Package size={16} />}
+                  {option.image ? <img src={option.image} alt="" className={option.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined} /> : <Package size={16} />}
                 </span>
                 <span>
                   <strong>{option.title}</strong>
@@ -387,8 +401,8 @@ export default function ProfilesPage() {
 
   const itemByName = useMemo(() => (allItemsDb || {}) as Record<string, ProfileItemRecord>, [allItemsDb]);
   const pets = useMemo(() => [...(petDb?.pets || [])].sort((a, b) => {
-    const qualityDelta = ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"].indexOf(String(a.quality || "")) -
-      ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"].indexOf(String(b.quality || ""));
+    const rarityOrder = ["UNKNOWN", "STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC", "UNIQUE"];
+    const qualityDelta = rarityOrder.indexOf(String(b.quality || "UNKNOWN")) - rarityOrder.indexOf(String(a.quality || "UNKNOWN"));
     if (qualityDelta !== 0) return qualityDelta;
     return a.name.localeCompare(b.name);
   }), [petDb]);
@@ -933,7 +947,7 @@ export default function ProfilesPage() {
             </div>
             {selectedPet && (
               <div className="profile-selected-card">
-                <img src={selectedPet.imageUrl} alt="" />
+                <img src={selectedPet.imageUrl} alt="" className={selectedPet.name === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined} />
                 <div>
                   <h3>{selectedPet.name}</h3>
                   <p>{selectedPet.quality} - {selectedPet.acquisition?.[0]?.boss || "Pet Database"}</p>

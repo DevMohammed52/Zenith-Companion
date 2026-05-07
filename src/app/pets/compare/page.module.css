@@ -1,0 +1,710 @@
+.page {
+  width: min(100%, 1500px);
+  margin: 0 auto;
+  padding: clamp(1rem, 2vw, 1.8rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.hero,
+.panel,
+.emptyState {
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.12), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border-radius: 8px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+.hero {
+  min-height: 220px;
+  padding: clamp(1.3rem, 4vw, 2rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.2rem;
+  align-items: end;
+}
+
+.hero h1 {
+  margin: 0.4rem 0 0.45rem;
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.hero p,
+.emptyState p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.heroActions,
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.heroActions {
+  align-self: start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.secondaryLink,
+.profilePetButton,
+.toggle,
+.addSlot {
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.secondaryLink:hover,
+.profilePetButton:hover,
+.toggle:hover,
+.addSlot:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.panel,
+.emptyState {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.panelHeader {
+  margin-bottom: 1rem;
+}
+
+.panelHeader h2,
+.emptyState h2 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+}
+
+.countPill {
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.11);
+  color: var(--text-accent);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-weight: 900;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.field {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field > span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.field input,
+.menuTrigger {
+  width: 100%;
+  min-width: 0;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.28));
+  color: var(--text-primary);
+  padding: 0 0.9rem;
+  font-size: 1.03rem;
+  font-weight: 800;
+  outline: none;
+}
+
+.field input:focus,
+.menuTrigger:focus-visible,
+.pickerTrigger:focus-visible,
+.clearSlot:focus-visible,
+.quickPicks button:focus-visible {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.menuTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.menuTrigger span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.menuPanel,
+.pickerPanel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  border-radius: 8px;
+  background: rgba(5, 10, 12, 0.98);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.42);
+  padding: 0.45rem;
+}
+
+.menuPanel button {
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  padding: 0.8rem 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.menuPanel button:hover,
+.selectedOption {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: var(--text-accent) !important;
+}
+
+.toggle {
+  height: 52px;
+}
+
+.activeToggle {
+  border-color: rgba(134, 239, 172, 0.45);
+  background: rgba(34, 197, 94, 0.13);
+  color: #bbf7d0;
+}
+
+.pickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 0.8rem;
+  align-items: stretch;
+}
+
+.picker {
+  position: relative;
+  min-width: 0;
+}
+
+.pickerTrigger {
+  width: 100%;
+  min-height: 78px;
+  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 45%, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent, #38bdf8) 16%, transparent), transparent 45%),
+    rgba(255, 255, 255, 0.035);
+  color: var(--text-primary);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pickerTrigger span,
+.petOptions button span {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.pickerTrigger strong,
+.petOptions strong,
+.compareCard h3 {
+  overflow-wrap: anywhere;
+}
+
+.pickerTrigger small,
+.petOptions small {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.petAvatar,
+.emptyAvatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.045);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.petAvatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.petImageLoading {
+  opacity: 0;
+}
+
+.petImageLoaded {
+  opacity: 1;
+  transition: opacity 140ms ease;
+}
+
+.petImageUpsideDown {
+  transform: rotate(180deg);
+}
+
+.emptyAvatar {
+  color: var(--text-muted);
+  font-weight: 900;
+}
+
+.clearSlot {
+  position: absolute;
+  right: 0.45rem;
+  top: 0.45rem;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.pickerPanel {
+  width: min(460px, calc(100vw - 2rem));
+  right: auto;
+}
+
+.pickerPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.2rem 0.15rem 0.55rem;
+}
+
+.pickerPanelHeader span {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pickerPanelHeader button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-primary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.pickerPanelHeader button:hover {
+  border-color: rgba(56, 189, 248, 0.48);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.searchBox {
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.8rem;
+  color: var(--text-muted);
+}
+
+.searchBox input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.petOptions {
+  max-height: min(420px, 58vh);
+  overflow: auto;
+  padding-top: 0.45rem;
+}
+
+.petOptions button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.petOptions button:hover,
+.petOptionSelected {
+  background: rgba(56, 189, 248, 0.11) !important;
+}
+
+.petOptions em {
+  justify-self: end;
+  color: #a7f3d0;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.emptyList {
+  color: var(--text-muted);
+  padding: 1rem;
+  text-align: center;
+}
+
+.addSlot {
+  min-height: 78px;
+  border-style: dashed;
+  color: var(--text-accent);
+}
+
+.quickPicks {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 0.65rem;
+}
+
+.quickPicks button {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  text-align: left;
+  display: grid;
+  gap: 0.2rem;
+  cursor: pointer;
+}
+
+.quickPicks span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.quickPicks strong {
+  overflow-wrap: anywhere;
+}
+
+.emptyState {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.compareCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 285px), 1fr));
+  gap: 0.9rem;
+}
+
+.compareCard {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 55%, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent, #38bdf8) 14%, transparent), transparent 48%),
+    rgba(255, 255, 255, 0.035);
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+  animation: cardIn 200ms ease both;
+}
+
+.cardTop {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.cardTop h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.cardTop p {
+  margin: 0.12rem 0 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.cardTop > span {
+  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 65%, transparent);
+  border-radius: 999px;
+  color: var(--accent, #38bdf8);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cardStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.cardStats div {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cardStats strong {
+  overflow-wrap: anywhere;
+}
+
+.cardStats span,
+.cardFooter span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.cardFooter {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.cardFooter span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cardFooter strong {
+  color: #a7f3d0;
+  white-space: nowrap;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compareTable {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.compareTable th,
+.compareTable td {
+  padding: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.compareTable th {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.compareTable td:not(:first-child) {
+  font-weight: 900;
+}
+
+.metricLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.bestCell {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.state {
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.08);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--text-secondary);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1180px) {
+  .page {
+    padding-top: 5.2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .heroActions,
+  .panelHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .heroActions > *,
+  .profilePetButton {
+    width: 100%;
+  }
+
+  .cardStats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .compareTable {
+    min-width: max(100%, calc(8.75rem + (var(--compare-cols, 2) * 6rem)));
+    table-layout: fixed;
+  }
+
+  .compareTable th,
+  .compareTable td {
+    padding: 0.65rem 0.5rem;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+  }
+
+  .metricLabel {
+    gap: 0.3rem;
+  }
+
+  .hero,
+  .panel,
+  .emptyState {
+    padding: 1rem;
+  }
+
+  .pickerPanel {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 5.2rem;
+    width: auto;
+    max-height: calc(100vh - 6rem);
+  }
+
+  .petOptions {
+    max-height: calc(100vh - 12rem);
+  }
+
+  .petOptions em {
+    display: none;
+  }
+}

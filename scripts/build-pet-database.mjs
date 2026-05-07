@@ -107,6 +107,8 @@ const PET_SOURCE_OVERRIDES = {
     type: "unique",
     availability: "limited_manual_gift",
     label: "Moderator joke gift",
+    imageUrl:
+      "https://cdn.idle-mmo.com/uploaded/skins/lOaQrWAuTogaKVDK9DlQvFWY5AReaS-metad3lybXNoYWRvdy5wbmc=-.png",
     merchant: null,
     notes: ["Meme pet given to a few Discord moderators by Mike."],
   },
@@ -114,6 +116,8 @@ const PET_SOURCE_OVERRIDES = {
     type: "unique",
     availability: "unique_owner",
     label: "Unique owner pet",
+    imageUrl:
+      "https://cdn.idle-mmo.com/uploaded/skins/DpVEdSnstXmP6B33W4SZ5lQxa6nlkN-metaY2hyb21pdGUucG5n-.png",
     merchant: null,
     notes: ["Unique pet for MavenTheLost."],
   },

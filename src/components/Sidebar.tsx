@@ -26,7 +26,8 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: '/', label: 'Dashboard', icon: LayoutDashboard },
             { href: '/profiles', label: 'Profiles', icon: Users },
-            { href: '/pets', label: 'Pet Database', icon: PawPrint, matchPrefix: true },
+            { href: '/pets', label: 'Pet Database', icon: PawPrint },
+            { href: '/pets/compare', label: 'Pet Comparison', icon: BarChart3 },
             { href: '/housing', label: 'Housing', icon: Home },
             { href: '/items', label: 'Items Database', icon: Package, matchPrefix: true },
             { href: '/weather', label: 'Weather Guide', icon: Sparkles },
