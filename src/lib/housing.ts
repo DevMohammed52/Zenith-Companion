@@ -345,6 +345,7 @@ export function createDefaultHousing(): ProfileHousing {
 export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefined): ProfileHousing {
   const base = createDefaultHousing();
   const mode: HousingMode = input?.mode === "owner" || input?.mode === "guest" ? input.mode : "none";
+  if (mode === "none") return base;
   const selectedComponents = Array.isArray(input?.selectedComponents)
     ? Array.from(new Set(input.selectedComponents.filter((id) => typeof id === "string" && HOUSING_COMPONENTS_BY_ID[id])))
     : [];
@@ -358,14 +359,14 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
     ...base,
     ...input,
     mode,
-    location: typeof input?.location === "string" ? input.location.slice(0, 60) : "",
-    foundationBuilt: Boolean(input?.foundationBuilt),
-    extraSlots: Math.min(15, Math.max(0, Math.floor(Number(input?.extraSlots || 0)))),
-    selectedComponents,
-    guestBuffs,
-    guestRemoteConduit: Boolean(input?.guestRemoteConduit),
-    guestPetQuarters: Boolean(input?.guestPetQuarters),
-    guestHouseLedger: Boolean(input?.guestHouseLedger),
+    location: mode === "owner" && typeof input?.location === "string" ? input.location.slice(0, 60) : "",
+    foundationBuilt: mode === "owner" ? Boolean(input?.foundationBuilt) : false,
+    extraSlots: mode === "owner" && input?.foundationBuilt ? Math.min(15, Math.max(0, Math.floor(Number(input?.extraSlots || 0)))) : 0,
+    selectedComponents: mode === "owner" && input?.foundationBuilt ? selectedComponents : [],
+    guestBuffs: mode === "guest" ? guestBuffs : {},
+    guestRemoteConduit: mode === "guest" ? Boolean(input?.guestRemoteConduit) : false,
+    guestPetQuarters: mode === "guest" ? Boolean(input?.guestPetQuarters) : false,
+    guestHouseLedger: mode === "guest" ? Boolean(input?.guestHouseLedger) : false,
     notes: typeof input?.notes === "string" ? input.notes.slice(0, 500) : "",
   };
 }
@@ -378,7 +379,7 @@ export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | 
   let houseLedger = false;
   let guestCapacity = 0;
 
-  const activeComponentCount = safeHousing.mode === "owner"
+  const activeComponentCount = safeHousing.mode === "owner" && safeHousing.foundationBuilt
     ? safeHousing.selectedComponents.filter((id) => HOUSING_COMPONENTS_BY_ID[id]?.category !== "structure").length
     : Object.values(safeHousing.guestBuffs).filter((value) => Number(value || 0) > 0).length;
   const slotCapacity = safeHousing.mode === "owner" && safeHousing.foundationBuilt ? 1 + safeHousing.extraSlots : 0;
@@ -390,7 +391,7 @@ export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | 
     for (const [activity, hours] of Object.entries(safeHousing.guestBuffs) as Array<[HousingActivity, number]>) {
       idleHours[activity] = Math.max(idleHours[activity], Number(hours || 0));
     }
-  } else if (safeHousing.mode === "owner") {
+  } else if (safeHousing.mode === "owner" && safeHousing.foundationBuilt) {
     for (const id of safeHousing.selectedComponents) {
       const component = HOUSING_COMPONENTS_BY_ID[id];
       if (!component) continue;

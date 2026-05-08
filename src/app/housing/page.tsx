@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Castle,
   Check,
@@ -104,26 +104,56 @@ function ChoicePicker<T extends string>({
   onChange: (value: T) => void;
   placeholder?: string;
 }) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, setOpen]);
+
   return (
     <div
       className="choice-picker"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
-      }}
+      ref={rootRef}
     >
       {label && <span className="choice-label">{label}</span>}
-      <button type="button" className="choice-trigger" onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        className="choice-trigger"
+        onClick={() => setOpen(!open)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
         <span>{selected?.label || placeholder}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className="choice-menu">
+        <div className="choice-menu custom-scrollbar" role="listbox">
+          <div className="choice-menu-head">
+            <span>{label || placeholder}</span>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close menu">
+              <X size={15} />
+            </button>
+          </div>
           {options.map((option) => (
             <button
               type="button"
               key={option.value}
               className={option.value === value ? "active" : ""}
+              role="option"
+              aria-selected={option.value === value}
               onClick={() => {
                 onChange(option.value);
                 setOpen(false);
@@ -327,7 +357,9 @@ export default function HousingPage() {
                     className={`mode-card ${housing.mode === option.mode ? "active" : ""}`}
                     onClick={() => saveHousing(option.mode === "none"
                       ? { mode: "none", foundationBuilt: false, extraSlots: 0, selectedComponents: [], guestBuffs: {}, guestRemoteConduit: false, guestPetQuarters: false, guestHouseLedger: false, location: "" }
-                      : { mode: option.mode })}
+                      : option.mode === "guest"
+                        ? { mode: "guest", foundationBuilt: false, extraSlots: 0, selectedComponents: [], location: "" }
+                        : { mode: "owner", guestBuffs: {}, guestRemoteConduit: false, guestPetQuarters: false, guestHouseLedger: false })}
                   >
                     <strong>{option.label}</strong>
                     <span>{option.hint}</span>
@@ -360,6 +392,7 @@ export default function HousingPage() {
                   </button>
                   <label className="housing-field compact-field">
                     <span>Extra Slots Built</span>
+                    <small>Foundation gives 1 slot. Each extra slot adds 1 more component slot.</small>
                     <input
                       type="number"
                       min={0}
@@ -375,7 +408,7 @@ export default function HousingPage() {
               {housing.mode === "guest" && (
                 <div className="guest-note">
                   <Users size={18} />
-                  <span>Select the component tiers from the host house. Guest buffs override your own house setup while this mode is active.</span>
+                  <span>Select the host component tiers you receive. T1 is 30m, T2 is 1h, T3 is 2h, T4 is 3h, and T5 is 4h. Special host components can be toggled below.</span>
                 </div>
               )}
             </div>
@@ -835,9 +868,13 @@ export default function HousingPage() {
         .housing-field {
           margin-top: 1rem;
         }
+        .housing-field small {
+          color: var(--text-muted);
+          line-height: 1.35;
+        }
         .owner-setup-grid {
           display: grid;
-          grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.9fr) minmax(160px, 0.5fr);
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
           gap: 0.8rem;
           align-items: end;
           margin-top: 1rem;
@@ -874,6 +911,13 @@ export default function HousingPage() {
           font: inherit;
           font-weight: 800;
           cursor: pointer;
+          min-width: 0;
+        }
+        :global(.choice-trigger span) {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         :global(.choice-menu) {
           position: absolute;
@@ -886,8 +930,31 @@ export default function HousingPage() {
           border-radius: 8px;
           padding: 0.4rem;
           box-shadow: 0 18px 50px rgba(0,0,0,0.42);
-          max-height: 280px;
+          max-height: min(320px, 52vh);
           overflow-y: auto;
+        }
+        :global(.choice-menu-head) {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          padding: 0.45rem 0.5rem 0.55rem;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-size: 0.68rem;
+          font-weight: 900;
+        }
+        :global(.choice-menu-head button) {
+          width: 30px;
+          height: 30px;
+          display: grid;
+          place-items: center;
+          border: 1px solid var(--border-subtle);
+          background: rgba(255,255,255,0.05);
+          color: #fff;
+          border-radius: 7px;
+          padding: 0;
         }
         :global(.choice-menu button) {
           width: 100%;
@@ -898,15 +965,35 @@ export default function HousingPage() {
           padding: 0.72rem 0.75rem;
           text-align: left;
           cursor: pointer;
+          min-width: 0;
         }
         :global(.choice-menu button.active),
         :global(.choice-menu button:hover) {
           background: rgba(56, 189, 248, 0.12);
           color: #fff;
         }
+        :global(.choice-menu .choice-menu-head button) {
+          width: 30px;
+          height: 30px;
+          display: grid;
+          place-items: center;
+          flex: 0 0 auto;
+          border: 1px solid var(--border-subtle);
+          background: rgba(255,255,255,0.05);
+          color: #fff;
+          border-radius: 7px;
+          padding: 0;
+          text-align: center;
+        }
+        :global(.choice-menu .choice-menu-head button:hover) {
+          border-color: rgba(56, 189, 248, 0.45);
+          background: rgba(56, 189, 248, 0.12);
+        }
         :global(.choice-menu strong),
         :global(.choice-menu small) {
           display: block;
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
         :global(.choice-menu small) {
           margin-top: 0.25rem;
@@ -1422,6 +1509,14 @@ export default function HousingPage() {
           .add-button,
           .selected-button {
             justify-content: center;
+          }
+          :global(.choice-menu) {
+            position: fixed;
+            left: 0.75rem;
+            right: 0.75rem;
+            top: auto;
+            bottom: 0.75rem;
+            max-height: min(420px, 70dvh);
           }
         }
       `}</style>
