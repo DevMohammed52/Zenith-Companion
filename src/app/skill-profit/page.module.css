@@ -1034,6 +1034,73 @@ th.left-align .sortButton {
   gap: 0.5rem;
 }
 
+.tryPriceHeader {
+  align-items: center;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.tryPriceHeader div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tryPriceHeader strong {
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.tryPriceHeader span,
+.tryPriceHeader small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.tryPriceHeader small {
+  white-space: nowrap;
+}
+
+.tryPriceSummary {
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
+  border: 1px solid var(--border-focus);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 0.75rem;
+  padding: 0.65rem;
+}
+
+.tryPriceSummary div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tryPriceSummary span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tryPriceSummary strong {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
 .materialScenario {
   background: rgba(255,255,255,0.018);
   border: 1px solid var(--border-subtle);
@@ -1123,8 +1190,15 @@ th.left-align .sortButton {
   min-width: 0;
 }
 
+.tryPriceGrid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+}
+
 .scenarioInput span,
-.targetProfitField span {
+.targetProfitField span,
+.breakEvenLine span {
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 800;
@@ -1146,9 +1220,16 @@ th.left-align .sortButton {
 }
 
 .breakEvenLine {
+  background: rgba(0,0,0,0.16);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
   color: var(--text-muted);
+  display: grid;
   font-size: 0.76rem;
+  gap: 0.25rem;
   line-height: 1.4;
+  min-height: 36px;
+  padding: 0.45rem 0.55rem;
 }
 
 .fixedPriceNote {
@@ -1166,6 +1247,14 @@ th.left-align .sortButton {
 
 .breakEvenLine strong {
   color: var(--text-success);
+}
+
+.goodValue {
+  color: var(--text-success);
+}
+
+.badValue {
+  color: var(--text-danger);
 }
 
 .targetProfitField {
@@ -1355,6 +1444,20 @@ th.left-align .sortButton {
 
   .toolClose {
     display: block;
+  }
+
+  .tryPriceHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tryPriceHeader small {
+    white-space: normal;
+  }
+
+  .tryPriceSummary,
+  .tryPriceGrid {
+    grid-template-columns: 1fr;
   }
 }
 

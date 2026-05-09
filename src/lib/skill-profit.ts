@@ -126,6 +126,10 @@ export type SkillProfitRow = SkillRecipe & {
 
 export type PriceSource = "scenario" | "custom" | "market" | "vendor" | "missing";
 
+export function isFixedBuyPriceItem(name: string) {
+  return getMerchantBuyPrice(name) > 0;
+}
+
 export type AssaultRank = "none" | "first" | "second" | "third" | "fourthSeventh" | "eighthTenth";
 export type ToolSkill = "Woodcutting" | "Mining" | "Fishing";
 export type ToolSelections = Record<ToolSkill, string>;

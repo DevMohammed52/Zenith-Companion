@@ -45,6 +45,7 @@ import {
   calculateSkillProfitRow,
   calculateSkillProfitRows,
   getBuffTotals,
+  isFixedBuyPriceItem,
 } from "@/lib/skill-profit";
 import styles from "./page.module.css";
 
@@ -849,6 +850,14 @@ function SkillStrategyModal({
   );
   const taxRate = membership ? 12 : 15;
   const hasScenarioPrices = Object.keys(cleanScenarioPrices).length > 0;
+  const baseIngredientCosts = useMemo(
+    () => new Map(row.ingredientCosts.map((ingredient) => [ingredient.name, ingredient])),
+    [row.ingredientCosts],
+  );
+  const target = Number(targetGoldPerHour);
+  const targetPerAction = Number.isFinite(target) && target > 0 ? target / Math.max(activeRow.itemsPerHour, 1) : null;
+  const editableInputCount = activeRow.ingredientCosts.filter((ingredient) => !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor").length;
+  const profitPerHourDelta = activeRow.profitPerHour - row.profitPerHour;
   const isMarketLikeSale = activeRow.saleSource === "market" || activeRow.saleSource === "custom" || activeRow.saleSource === "scenario";
   const grossRevenue = isMarketLikeSale ? activeRow.salePrice : 0;
   const taxPaid = isMarketLikeSale ? grossRevenue - activeRow.marketRevenue : 0;
@@ -880,6 +889,29 @@ function SkillStrategyModal({
           <div className={styles.modalGrid}>
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><PackageSearch size={16} /> Inputs</div>
+              <div className={styles.tryPriceHeader}>
+                <div>
+                  <strong>Try Buy Prices</strong>
+                  <span>Test bulk-buy prices without changing your saved custom prices.</span>
+                </div>
+                <small>{editableInputCount > 0 ? `${editableInputCount} editable material${editableInputCount === 1 ? "" : "s"}` : "Fixed inputs"}</small>
+              </div>
+              {hasScenarioPrices && (
+                <div className={styles.tryPriceSummary}>
+                  <div>
+                    <span>With try prices</span>
+                    <strong className={activeRow.profitPerHour >= 0 ? styles.goodValue : styles.badValue}>{formatGold(activeRow.profitPerHour)}g/hr</strong>
+                  </div>
+                  <div>
+                    <span>Change</span>
+                    <strong className={profitPerHourDelta >= 0 ? styles.goodValue : styles.badValue}>{formatSignedGold(profitPerHourDelta)}/hr</strong>
+                  </div>
+                  <div>
+                    <span>Profit each</span>
+                    <strong className={activeRow.profitEach >= 0 ? styles.goodValue : styles.badValue}>{formatSignedGold(activeRow.profitEach)}</strong>
+                  </div>
+                </div>
+              )}
               <div className={styles.materialList}>
                 {activeRow.ingredients.length === 0 ? (
                   <div className={styles.materialLine}>
@@ -887,56 +919,64 @@ function SkillStrategyModal({
                     <strong>0g</strong>
                   </div>
                 ) : activeRow.ingredientCosts.map((ingredient) => {
-                  const canTryBuyPrice = ingredient.source !== "vendor";
-                  const target = Number(targetGoldPerHour);
-                  const targetPerAction = Number.isFinite(target) && target > 0 ? target / Math.max(activeRow.itemsPerHour, 1) : null;
+                  const baseIngredient = baseIngredientCosts.get(ingredient.name) || ingredient;
+                  const canTryBuyPrice = !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor";
                   const otherInputCost = activeRow.inputCost - ingredient.unitPrice * ingredient.quantity;
+                  const maxUnitForBreakEven = Math.floor((activeRow.netRevenue - otherInputCost) / Math.max(ingredient.quantity, 1));
                   const maxUnitForTarget = targetPerAction === null
                     ? null
                     : Math.floor((activeRow.netRevenue - otherInputCost - targetPerAction) / Math.max(ingredient.quantity, 1));
+                  const currentTryPrice = scenarioPrices[ingredient.name] ?? "";
                   return (
-                  <div className={styles.materialScenario} key={ingredient.name}>
-                  <button
-                    className={styles.materialLine}
-                    onClick={() => onOpenItem(ingredient.name)}
-                    type="button"
-                  >
-                    <span className={styles.materialName}>
-                      <strong>{ingredient.quantity}x {ingredient.name}</strong>
-                      <small>{formatGold(ingredient.unitPrice)}g ea - {formatPriceSource(ingredient.source)}</small>
-                    </span>
-                    <strong>{formatGold(ingredient.totalPrice)}g</strong>
-                  </button>
-                    {canTryBuyPrice ? (
-                      <label className={styles.scenarioInput}>
-                        <span>Try buy price</span>
-                        <input
-                          inputMode="numeric"
-                          min={0}
-                          placeholder={`${formatGold(ingredient.unitPrice)}g`}
-                          type="number"
-                          value={scenarioPrices[ingredient.name] ?? ""}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            setScenarioSaved(false);
-                            setScenarioPrices((current) => {
-                              const next = { ...current };
-                              if (value === "") delete next[ingredient.name];
-                              else next[ingredient.name] = value;
-                              return next;
-                            });
-                          }}
-                        />
-                      </label>
-                    ) : (
-                      <div className={styles.fixedPriceNote}>Fixed vendor price</div>
-                    )}
-                    {canTryBuyPrice && maxUnitForTarget !== null && (
-                      <div className={styles.breakEvenLine}>
-                        Max for target: <strong>{maxUnitForTarget > 0 ? `${formatGold(maxUnitForTarget)}g ea` : "not profitable"}</strong>
-                      </div>
-                    )}
-                  </div>
+                    <div className={styles.materialScenario} key={ingredient.name}>
+                      <button
+                        className={styles.materialLine}
+                        onClick={() => onOpenItem(ingredient.name)}
+                        type="button"
+                      >
+                        <span className={styles.materialName}>
+                          <strong>{ingredient.quantity}x {ingredient.name}</strong>
+                          <small>Current {formatGold(baseIngredient.unitPrice)}g ea - {formatPriceSource(baseIngredient.source)}</small>
+                        </span>
+                        <strong>{formatGold(ingredient.totalPrice)}g</strong>
+                      </button>
+                      {canTryBuyPrice ? (
+                        <div className={styles.tryPriceGrid}>
+                          <label className={styles.scenarioInput}>
+                            <span>Try buy price</span>
+                            <input
+                              inputMode="numeric"
+                              min={0}
+                              placeholder={`${formatGold(baseIngredient.unitPrice)}g`}
+                              type="number"
+                              value={currentTryPrice}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                setScenarioSaved(false);
+                                setScenarioPrices((current) => {
+                                  const next = { ...current };
+                                  if (value === "") delete next[ingredient.name];
+                                  else next[ingredient.name] = value;
+                                  return next;
+                                });
+                              }}
+                            />
+                          </label>
+                          <div className={styles.breakEvenLine}>
+                            <span>Break-even</span>
+                            <strong>{maxUnitForBreakEven > 0 ? `${formatGold(maxUnitForBreakEven)}g ea` : "Not profitable"}</strong>
+                          </div>
+                          {maxUnitForTarget !== null && (
+                            <div className={styles.breakEvenLine}>
+                              <span>Max for target</span>
+                              <strong>{maxUnitForTarget > 0 ? `${formatGold(maxUnitForTarget)}g ea` : "Not possible"}</strong>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className={styles.fixedPriceNote}>Fixed vendor price</div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -957,7 +997,7 @@ function SkillStrategyModal({
               </label>
               {hasScenarioPrices && (
                 <div className={styles.scenarioActions}>
-                  <button type="button" onClick={() => setScenarioPrices({})}>Clear scenario</button>
+                  <button type="button" onClick={() => setScenarioPrices({})}>Clear try prices</button>
                   <button
                     type="button"
                     onClick={() => {
@@ -983,7 +1023,7 @@ function SkillStrategyModal({
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><Info size={16} /> Calculation</div>
               <div className={styles.calcRows}>
-                <CalcRow label={activeRow.saleSource === "custom" ? "Custom gross" : activeRow.saleSource === "scenario" ? "Scenario gross" : "Market gross"} value={isMarketLikeSale ? `${formatGold(grossRevenue)}g` : "No market"} muted={!isMarketLikeSale} />
+                <CalcRow label={activeRow.saleSource === "custom" ? "Custom gross" : activeRow.saleSource === "scenario" ? "Try price gross" : "Market gross"} value={isMarketLikeSale ? `${formatGold(grossRevenue)}g` : "No market"} muted={!isMarketLikeSale} />
                 <CalcRow label={`Market tax (${taxRate}%)`} value={isMarketLikeSale ? `-${formatGold(taxPaid)}g` : "0g"} muted={!isMarketLikeSale} />
                 <CalcRow label="Market net" value={`${formatGold(activeRow.marketRevenue)}g`} muted={activeRow.marketRevenue <= 0} />
                 <CalcRow label="Vendor net" value={`${formatGold(activeRow.vendorRevenue)}g`} muted={activeRow.vendorRevenue <= 0} />
@@ -1133,11 +1173,16 @@ function formatType(value: any): string {
 }
 
 function formatPriceSource(value: string): string {
-  if (value === "scenario") return "Scenario";
+  if (value === "scenario") return "Try price";
   if (value === "custom") return "Custom";
   if (value === "market") return "Market";
   if (value === "vendor") return "Vendor";
   return "Missing";
+}
+
+function formatSignedGold(value: number): string {
+  const sign = value >= 0 ? "+" : "-";
+  return `${sign}${formatGold(Math.abs(value))}g`;
 }
 
 function formatNumber(value: number): string {
