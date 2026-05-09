@@ -19,7 +19,12 @@ import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
-import { calculateHousingBuffs, formatHours, type HousingActivity } from "@/lib/housing";
+import {
+  SKILL_TO_HOUSING_ACTIVITY,
+  calculateHousingBuffs,
+  formatHours,
+  getHousingIdleHoursForActivity,
+} from "@/lib/housing";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import {
@@ -37,23 +42,13 @@ import {
   SkillProfitSortKey,
   ToolSkill,
   buildForgeRecipes,
+  calculateSkillProfitRow,
   calculateSkillProfitRows,
   getBuffTotals,
 } from "@/lib/skill-profit";
 import styles from "./page.module.css";
 
 const STORAGE_KEY = "zenith_skill_profit_finder";
-
-const SKILL_TO_HOUSING_ACTIVITY: Partial<Record<SkillName, HousingActivity>> = {
-  Woodcutting: "woodcutting",
-  Mining: "mining",
-  Fishing: "fishing",
-  Cooking: "cooking",
-  Smelting: "smelting",
-  Alchemy: "alchemy",
-  Forge: "forge",
-  Construction: "construction",
-};
 
 const DEFAULT_SETTINGS: SkillProfitSettings = {
   membership: false,
@@ -126,25 +121,43 @@ export default function SkillProfitPage() {
     [activeProfileId],
   );
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const deferredSettings = useDeferredValue(settings);
+  const effectiveToolSelections = useMemo(
+    () => activeProfile
+      ? {
+          Woodcutting: activeProfile.tools.woodcutting ?? "",
+          Mining: activeProfile.tools.mining ?? "",
+          Fishing: activeProfile.tools.fishing ?? "",
+        }
+      : settings.tools,
+    [activeProfile, settings.tools],
+  );
+  const effectiveSettings = useMemo<SkillProfitSettings>(
+    () => ({ ...settings, tools: effectiveToolSelections }),
+    [effectiveToolSelections, settings],
+  );
+  const deferredSettings = useDeferredValue(effectiveSettings);
 
   useEffect(() => {
     if (!preferencesLoaded || !loadedStoredState) return;
     const profileTools = activeProfile?.tools || {};
     const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : 0;
+    const syncedTools = activeProfile
+      ? {
+          Woodcutting: profileTools.woodcutting ?? "",
+          Mining: profileTools.mining ?? "",
+          Fishing: profileTools.fishing ?? "",
+        }
+      : {
+          ...DEFAULT_TOOL_SELECTIONS,
+          ...preferences.skillTools,
+        };
     setSettings((current) => ({
       ...current,
       membership: preferences.membership,
       classBonus: activeProfile ? false : preferences.skillClassBonus,
       profileClassName: activeProfile?.className || undefined,
       assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
-      tools: {
-        ...DEFAULT_TOOL_SELECTIONS,
-        ...preferences.skillTools,
-        ...(profileTools.woodcutting ? { Woodcutting: profileTools.woodcutting } : {}),
-        ...(profileTools.mining ? { Mining: profileTools.mining } : {}),
-        ...(profileTools.fishing ? { Fishing: profileTools.fishing } : {}),
-      },
+      tools: syncedTools,
       customPrices: preferences.customPrices,
       barteringBoost: profileBarteringBoost,
     }));
@@ -227,10 +240,27 @@ export default function SkillProfitPage() {
     () => buildForgeRecipes(gearData, itemRegistry),
     [gearData, itemRegistry],
   );
+  const housingSummary = useMemo(
+    () => calculateHousingBuffs(activeProfile?.housing),
+    [activeProfile?.housing],
+  );
+  const housingIdleHoursBySkill = useMemo(() => {
+    const entries = SKILLS.map((skill) => {
+      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
+      return [skill, activity ? getHousingIdleHoursForActivity(housingSummary, activity) : 0] as const;
+    });
+    return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
+  }, [housingSummary]);
 
   const rows = useMemo(
-    () => calculateSkillProfitRows(marketData, allItemsDb, deferredSettings, forgeRecipes, 0),
-    [marketData, allItemsDb, deferredSettings, forgeRecipes],
+    () => calculateSkillProfitRows(
+      marketData,
+      allItemsDb,
+      { ...deferredSettings, housingIdleHoursBySkill },
+      forgeRecipes,
+      0,
+    ),
+    [marketData, allItemsDb, deferredSettings, forgeRecipes, housingIdleHoursBySkill],
   );
 
   const rowModel = useMemo(() => {
@@ -276,12 +306,15 @@ export default function SkillProfitPage() {
     () => getBuffTotals(settings, activeSkill !== "Construction", activeSkill),
     [activeSkill, settings],
   );
-  const housingSummary = useMemo(
-    () => calculateHousingBuffs(activeProfile?.housing),
-    [activeProfile?.housing],
-  );
-  const housingActivity = activeSkill === "All" ? null : SKILL_TO_HOUSING_ACTIVITY[activeSkill];
-  const housingWindowHours = housingActivity ? housingSummary.idleHours[housingActivity] : 0;
+  const housingWindowHours = activeSkill !== "All" ? Number(housingIdleHoursBySkill[activeSkill] || 0) : 0;
+  const strongestHousingWindow = useMemo(() => {
+    let best: { skill: SkillName; hours: number } | null = null;
+    for (const skill of SKILLS) {
+      const hours = Number(housingIdleHoursBySkill[skill] || 0);
+      if (hours > 0 && (!best || hours > best.hours)) best = { skill, hours };
+    }
+    return best;
+  }, [housingIdleHoursBySkill]);
   const housingWindowSub = !activeProfile
     ? "profile needed"
     : housingWindowHours <= 0
@@ -377,25 +410,39 @@ export default function SkillProfitPage() {
           <Metric label="Top liquid route" value={rowModel.topOverall?.name || "Waiting"} sub={rowModel.topOverall ? `${formatGold(rowModel.topOverall.profitPerHour)}g/hr` : "0g/hr"} tone="profit" />
           <Metric label="Market pulse" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
           <Metric label="Buffs" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active total"} />
-          <Metric label="Housing window" value={housingWindowHours > 0 ? `+${formatHours(housingWindowHours)}` : "None"} sub={activeSkill === "All" ? "choose a skill" : housingWindowSub} />
+          <Metric
+            label="Housing window"
+            value={activeSkill === "All"
+              ? strongestHousingWindow ? `+${formatHours(strongestHousingWindow.hours)}` : "None"
+              : housingWindowHours > 0 ? `+${formatHours(housingWindowHours)}` : "None"}
+            sub={activeSkill === "All"
+              ? strongestHousingWindow ? `${strongestHousingWindow.skill} bonus` : "choose a skill"
+              : housingWindowSub}
+          />
         </div>
       </section>
 
       <section className={styles.toolPanel}>
         {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => {
-          const selectedTool = SKILL_TOOLS[skill].find((tool) => tool.name === settings.tools[skill]);
+          const toolValue = effectiveToolSelections[skill] || "";
+          const selectedTool = SKILL_TOOLS[skill].find((tool) => tool.name === toolValue);
           return (
-            <label className={styles.toolField} key={skill}>
+            <div className={styles.toolField} key={skill}>
               <span>{skill} tool</span>
-              <select value={settings.tools[skill]} onChange={(event) => patchTool(skill, event.target.value)}>
-                {SKILL_TOOLS[skill].map((tool) => (
-                  <option key={tool.name} value={tool.name}>
-                    {tool.name} (+{tool.efficiency}% eff)
-                  </option>
-                ))}
-              </select>
-              <small>{selectedTool ? `Lvl ${selectedTool.level} · ${selectedTool.quality}` : "No tool bonus"}</small>
-            </label>
+              <ToolPicker
+                options={SKILL_TOOLS[skill]}
+                value={toolValue}
+                onChange={(toolName) => patchTool(skill, toolName)}
+              />
+              <small>
+                {selectedTool
+                  ? `Lvl ${selectedTool.level} - ${selectedTool.quality}`
+                  : activeProfile
+                    ? "No tool selected"
+                    : "No tool bonus"}
+                {activeProfile ? " - synced with profile" : " - global fallback"}
+              </small>
+            </div>
           );
         })}
       </section>
@@ -431,7 +478,7 @@ export default function SkillProfitPage() {
           />
         </label>
         <label className={styles.numberField}>
-          <span>Bartering Lvl</span>
+          <span>Bartering Level</span>
           <input
             type="number"
             min={0}
@@ -645,6 +692,7 @@ export default function SkillProfitPage() {
       {selectedRow && (
         <SkillStrategyModal
           row={selectedRow}
+          settings={{ ...effectiveSettings, housingIdleHoursBySkill }}
           membership={settings.membership}
           onClose={() => setSelectedRow(null)}
           onOpenItem={(name) => {
@@ -681,23 +729,131 @@ function SortableTh({
   );
 }
 
+function ToolPicker({
+  options,
+  value,
+  onChange,
+}: {
+  options: typeof SKILL_TOOLS[ToolSkill];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.find((option) => option.name === value) || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (pickerRef.current?.contains(event.target as Node)) return;
+      close();
+    };
+    window.addEventListener("zenith-tool-picker-close", close);
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("zenith-tool-picker-close", close);
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={`${styles.toolPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
+      <button
+        aria-expanded={open}
+        className={styles.toolTrigger}
+        onClick={() => {
+          if (!open) window.dispatchEvent(new Event("zenith-tool-picker-close"));
+          setOpen((current) => !current);
+        }}
+        type="button"
+      >
+        <span>
+          <strong>{selected?.name || "No tool selected"}</strong>
+          <small>{selected ? `+${selected.efficiency}% efficiency` : "No tool bonus"}</small>
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className={styles.toolMenu}>
+          <button
+            className={`${styles.toolOption} ${!value ? styles.toolOptionActive : ""}`}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            type="button"
+          >
+            <span>
+              <strong>No tool selected</strong>
+              <small>Use no tool bonus for this profile</small>
+            </span>
+            <em>+0%</em>
+            {!value && <Check size={15} />}
+          </button>
+          {options.map((option) => (
+            <button
+              className={`${styles.toolOption} ${option.name === value ? styles.toolOptionActive : ""}`}
+              key={option.name}
+              onClick={() => {
+                onChange(option.name);
+                setOpen(false);
+              }}
+              type="button"
+            >
+              <span>
+                <strong>{option.name}</strong>
+                <small>Lvl {option.level} - {option.quality}</small>
+              </span>
+              <em>+{option.efficiency}%</em>
+              {option.name === value && <Check size={15} />}
+            </button>
+          ))}
+          <button className={styles.toolClose} onClick={() => setOpen(false)} type="button">
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SkillStrategyModal({
   row,
+  settings,
   membership,
   onClose,
   onOpenItem,
 }: {
   row: SkillProfitRow;
+  settings: SkillProfitSettings;
   membership: boolean;
   onClose: () => void;
   onOpenItem: (name: string) => void;
 }) {
   const { marketData, allItemsDb } = useData();
+  const { preferences, setPreferences } = usePreferences();
+  const [scenarioPrices, setScenarioPrices] = useState<Record<string, string>>({});
+  const [targetGoldPerHour, setTargetGoldPerHour] = useState("");
+  const [scenarioSaved, setScenarioSaved] = useState(false);
+  const cleanScenarioPrices = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(scenarioPrices)
+        .map(([name, value]) => [name, Number(value)] as const)
+        .filter(([, value]) => Number.isFinite(value) && value > 0),
+    );
+  }, [scenarioPrices]);
+  const activeRow = useMemo(
+    () => calculateSkillProfitRow(row, marketData, allItemsDb, { ...settings, scenarioPrices: cleanScenarioPrices }),
+    [allItemsDb, cleanScenarioPrices, marketData, row, settings],
+  );
   const taxRate = membership ? 12 : 15;
-  const grossRevenue = row.saleSource === "market" || row.saleSource === "custom" ? row.salePrice : 0;
-  const taxPaid = row.saleSource === "market" || row.saleSource === "custom" ? grossRevenue - row.marketRevenue : 0;
-  const item = allItemsDb?.[row.name];
-  const market = marketData?.[row.name] || {};
+  const hasScenarioPrices = Object.keys(cleanScenarioPrices).length > 0;
+  const isMarketLikeSale = activeRow.saleSource === "market" || activeRow.saleSource === "custom" || activeRow.saleSource === "scenario";
+  const grossRevenue = isMarketLikeSale ? activeRow.salePrice : 0;
+  const taxPaid = isMarketLikeSale ? grossRevenue - activeRow.marketRevenue : 0;
+  const item = allItemsDb?.[activeRow.name];
+  const market = marketData?.[activeRow.name] || {};
   const itemStats = item?.stats && typeof item.stats === "object" ? Object.entries(item.stats).filter(([, value]) => value !== null && value !== 0 && value !== "") : [];
   const itemRequirements = item?.requirements && typeof item.requirements === "object" ? Object.entries(item.requirements).filter(([, value]) => value !== null && value !== "") : [];
   const itemEffects = item?.effects
@@ -717,7 +873,7 @@ function SkillStrategyModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className={`modal-content ${styles.strategyModalContent}`} onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <h2>{row.name} Strategy</h2>
+          <h2>{activeRow.name} Strategy</h2>
           <button className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
         </div>
         <div className="modal-body">
@@ -725,56 +881,133 @@ function SkillStrategyModal({
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><PackageSearch size={16} /> Inputs</div>
               <div className={styles.materialList}>
-                {row.ingredients.length === 0 ? (
+                {activeRow.ingredients.length === 0 ? (
                   <div className={styles.materialLine}>
                     <span>Zero input</span>
                     <strong>0g</strong>
                   </div>
-                ) : row.ingredientCosts.map((ingredient) => (
+                ) : activeRow.ingredientCosts.map((ingredient) => {
+                  const canTryBuyPrice = ingredient.source !== "vendor";
+                  const target = Number(targetGoldPerHour);
+                  const targetPerAction = Number.isFinite(target) && target > 0 ? target / Math.max(activeRow.itemsPerHour, 1) : null;
+                  const otherInputCost = activeRow.inputCost - ingredient.unitPrice * ingredient.quantity;
+                  const maxUnitForTarget = targetPerAction === null
+                    ? null
+                    : Math.floor((activeRow.netRevenue - otherInputCost - targetPerAction) / Math.max(ingredient.quantity, 1));
+                  return (
+                  <div className={styles.materialScenario} key={ingredient.name}>
                   <button
                     className={styles.materialLine}
-                    key={ingredient.name}
                     onClick={() => onOpenItem(ingredient.name)}
                     type="button"
                   >
                     <span className={styles.materialName}>
                       <strong>{ingredient.quantity}x {ingredient.name}</strong>
-                      <small>{formatGold(ingredient.unitPrice)}g ea · {ingredient.source}</small>
+                      <small>{formatGold(ingredient.unitPrice)}g ea - {formatPriceSource(ingredient.source)}</small>
                     </span>
                     <strong>{formatGold(ingredient.totalPrice)}g</strong>
                   </button>
-                ))}
+                    {canTryBuyPrice ? (
+                      <label className={styles.scenarioInput}>
+                        <span>Try buy price</span>
+                        <input
+                          inputMode="numeric"
+                          min={0}
+                          placeholder={`${formatGold(ingredient.unitPrice)}g`}
+                          type="number"
+                          value={scenarioPrices[ingredient.name] ?? ""}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setScenarioSaved(false);
+                            setScenarioPrices((current) => {
+                              const next = { ...current };
+                              if (value === "") delete next[ingredient.name];
+                              else next[ingredient.name] = value;
+                              return next;
+                            });
+                          }}
+                        />
+                      </label>
+                    ) : (
+                      <div className={styles.fixedPriceNote}>Fixed vendor price</div>
+                    )}
+                    {canTryBuyPrice && maxUnitForTarget !== null && (
+                      <div className={styles.breakEvenLine}>
+                        Max for target: <strong>{maxUnitForTarget > 0 ? `${formatGold(maxUnitForTarget)}g ea` : "not profitable"}</strong>
+                      </div>
+                    )}
+                  </div>
+                  );
+                })}
               </div>
               <div className={styles.modalTotal}>
                 <span>Total input cost</span>
-                <strong>{formatGold(row.inputCost)}g</strong>
+                <strong>{formatGold(activeRow.inputCost)}g</strong>
               </div>
-              {row.inputMissing.length > 0 && (
-                <div className={styles.modalWarning}>Missing prices: {row.inputMissing.join(", ")}</div>
+              <label className={styles.targetProfitField}>
+                <span>Target gold per hour</span>
+                <input
+                  inputMode="numeric"
+                  min={0}
+                  placeholder="Optional"
+                  type="number"
+                  value={targetGoldPerHour}
+                  onChange={(event) => setTargetGoldPerHour(event.target.value)}
+                />
+              </label>
+              {hasScenarioPrices && (
+                <div className={styles.scenarioActions}>
+                  <button type="button" onClick={() => setScenarioPrices({})}>Clear scenario</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreferences({
+                        customPrices: {
+                          ...preferences.customPrices,
+                          ...Object.fromEntries(Object.entries(cleanScenarioPrices).map(([name, price]) => [name, Math.round(price)])),
+                        },
+                      });
+                      setScenarioSaved(true);
+                    }}
+                  >
+                    Save as custom prices
+                  </button>
+                  {scenarioSaved && <span className={styles.scenarioSaved}>Saved to custom prices</span>}
+                </div>
+              )}
+              {activeRow.inputMissing.length > 0 && (
+                <div className={styles.modalWarning}>Missing prices: {activeRow.inputMissing.join(", ")}</div>
               )}
             </section>
 
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><Info size={16} /> Calculation</div>
               <div className={styles.calcRows}>
-                <CalcRow label={row.saleSource === "custom" ? "Custom gross" : "Market gross"} value={row.saleSource === "market" || row.saleSource === "custom" ? `${formatGold(grossRevenue)}g` : "No market"} muted={row.saleSource !== "market" && row.saleSource !== "custom"} />
-                <CalcRow label={`Market tax (${taxRate}%)`} value={row.saleSource === "market" || row.saleSource === "custom" ? `-${formatGold(taxPaid)}g` : "0g"} muted={row.saleSource !== "market" && row.saleSource !== "custom"} />
-                <CalcRow label="Market net" value={`${formatGold(row.marketRevenue)}g`} muted={row.marketRevenue <= 0} />
-                <CalcRow label="Vendor net" value={`${formatGold(row.vendorRevenue)}g`} muted={row.vendorRevenue <= 0} />
-                <CalcRow label="Best sell path" value={row.bestSaleSource.toUpperCase()} tone={row.bestSaleSource === "vendor" ? "good" : undefined} />
-                <CalcRow label="Net revenue used" value={`${formatGold(row.netRevenue)}g`} />
-                <CalcRow label="Input cost" value={`-${formatGold(row.inputCost)}g`} />
-                <CalcRow label="Profit each" value={`${row.profitEach >= 0 ? "+" : ""}${formatGold(row.profitEach)}g`} tone={row.profitEach >= 0 ? "good" : "bad"} />
-                <CalcRow label="Items per hour" value={row.itemsPerHour.toLocaleString()} />
-                {row.toolBonus > 0 && <CalcRow label="Tool efficiency" value={`+${row.toolBonus}%`} />}
-                <CalcRow label="Gold per hour" value={`${formatGold(row.profitPerHour)}g`} tone={row.profitPerHour >= 0 ? "good" : "bad"} />
-                <CalcRow label="EXP per second" value={row.expPerSecond === null ? "Unknown" : row.expPerSecond.toFixed(2)} muted={row.expPerSecond === null} />
-                <CalcRow label="3-day volume" value={row.volume3d.toLocaleString()} />
+                <CalcRow label={activeRow.saleSource === "custom" ? "Custom gross" : activeRow.saleSource === "scenario" ? "Scenario gross" : "Market gross"} value={isMarketLikeSale ? `${formatGold(grossRevenue)}g` : "No market"} muted={!isMarketLikeSale} />
+                <CalcRow label={`Market tax (${taxRate}%)`} value={isMarketLikeSale ? `-${formatGold(taxPaid)}g` : "0g"} muted={!isMarketLikeSale} />
+                <CalcRow label="Market net" value={`${formatGold(activeRow.marketRevenue)}g`} muted={activeRow.marketRevenue <= 0} />
+                <CalcRow label="Vendor net" value={`${formatGold(activeRow.vendorRevenue)}g`} muted={activeRow.vendorRevenue <= 0} />
+                <CalcRow label="Best sell path" value={formatPriceSource(activeRow.bestSaleSource)} tone={activeRow.bestSaleSource === "vendor" ? "good" : undefined} />
+                <CalcRow label="Net revenue used" value={`${formatGold(activeRow.netRevenue)}g`} />
+                <CalcRow label="Input cost" value={`-${formatGold(activeRow.inputCost)}g`} />
+                <CalcRow label="Profit each" value={`${activeRow.profitEach >= 0 ? "+" : ""}${formatGold(activeRow.profitEach)}g`} tone={activeRow.profitEach >= 0 ? "good" : "bad"} />
+                <CalcRow label="Items per hour" value={activeRow.itemsPerHour.toLocaleString()} />
+                {activeRow.housingWindowHours > 0 && (
+                  <>
+                    <CalcRow label="Housing window" value={formatHours(activeRow.housingWindowHours)} />
+                    <CalcRow label="Actions per housing window" value={activeRow.itemsPerHousingWindow.toLocaleString()} />
+                    <CalcRow label="Gold per housing window" value={`${formatGold(activeRow.profitPerHousingWindow)}g`} tone={activeRow.profitPerHousingWindow >= 0 ? "good" : "bad"} />
+                  </>
+                )}
+                {activeRow.toolBonus > 0 && <CalcRow label="Tool efficiency" value={`+${activeRow.toolBonus}%`} />}
+                <CalcRow label="Gold per hour" value={`${formatGold(activeRow.profitPerHour)}g`} tone={activeRow.profitPerHour >= 0 ? "good" : "bad"} />
+                <CalcRow label="EXP per second" value={activeRow.expPerSecond === null ? "Unknown" : activeRow.expPerSecond.toFixed(2)} muted={activeRow.expPerSecond === null} />
+                <CalcRow label="3-day volume" value={activeRow.volume3d.toLocaleString()} />
               </div>
               <div className={styles.formula}>
-                ({formatGold(row.netRevenue)}g net - {formatGold(row.inputCost)}g input) x {row.itemsPerHour.toLocaleString()} actions/hr = {formatGold(row.profitPerHour)}g/hr
+                ({formatGold(activeRow.netRevenue)}g net - {formatGold(activeRow.inputCost)}g input) x {activeRow.itemsPerHour.toLocaleString()} actions/hr = {formatGold(activeRow.profitPerHour)}g/hr
               </div>
-              <button className={styles.openItemButton} onClick={() => onOpenItem(row.name)} type="button">
+              <button className={styles.openItemButton} onClick={() => onOpenItem(activeRow.name)} type="button">
                 Open item database details
               </button>
             </section>
@@ -784,17 +1017,17 @@ function SkillStrategyModal({
               <div className={styles.itemDetailHeader}>
                 {item?.image_url && <img src={item.image_url} alt="" />}
                 <div>
-                  <strong>{row.name}</strong>
-                  <span>{item?.description || row.note || "No item description available in the local database."}</span>
+                  <strong>{activeRow.name}</strong>
+                  <span>{item?.description || activeRow.note || "No item description available in the local database."}</span>
                 </div>
               </div>
               <div className={styles.detailGrid}>
-                <DetailPill label="Skill" value={row.skill} />
-                <DetailPill label="Level" value={row.level.toLocaleString()} />
-                <DetailPill label="Base Time" value={`${formatNumber(row.baseDuration)}s`} />
-                <DetailPill label="Final Time" value={`${formatNumber(row.finalDuration)}s`} />
-                <DetailPill label="Base EXP" value={formatOptionalNumber(row.experience)} muted={row.experience === null} />
-                <DetailPill label="EXP/hr" value={formatOptionalNumber(row.expPerHour)} muted={row.expPerHour === null} />
+                <DetailPill label="Skill" value={activeRow.skill} />
+                <DetailPill label="Level" value={activeRow.level.toLocaleString()} />
+                <DetailPill label="Base Time" value={`${formatNumber(activeRow.baseDuration)}s`} />
+                <DetailPill label="Final Time" value={`${formatNumber(activeRow.finalDuration)}s`} />
+                <DetailPill label="Base EXP" value={formatOptionalNumber(activeRow.experience)} muted={activeRow.experience === null} />
+                <DetailPill label="EXP/hr" value={formatOptionalNumber(activeRow.expPerHour)} muted={activeRow.expPerHour === null} />
                 <DetailPill label="Type" value={formatType(item?.type)} muted={!item?.type} />
                 <DetailPill label="Quality" value={formatType(item?.quality)} muted={!item?.quality} />
                 <DetailPill label="Tradeable" value={item ? (item.is_tradeable ? "Yes" : "No") : "Unknown"} muted={!item} />
@@ -802,7 +1035,7 @@ function SkillStrategyModal({
                 <DetailPill label="3d Avg" value={market?.avg_3 ? `${formatGold(market.avg_3)}g` : "No data"} muted={!market?.avg_3} />
                 <DetailPill label="7d Avg" value={market?.avg_7 ? `${formatGold(market.avg_7)}g` : "No data"} muted={!market?.avg_7} />
                 <DetailPill label="30d Avg" value={market?.avg_30 ? `${formatGold(market.avg_30)}g` : "No data"} muted={!market?.avg_30} />
-                <DetailPill label="3d Volume" value={row.volume3d.toLocaleString()} muted={row.volume3d <= 0} />
+                <DetailPill label="3d Volume" value={activeRow.volume3d.toLocaleString()} muted={activeRow.volume3d <= 0} />
               </div>
 
               {(itemRequirements.length > 0 || itemStats.length > 0 || itemEffects.length > 0 || findSources.length > 0 || item?.health_restore || item?.hunger_restore) && (
@@ -897,6 +1130,14 @@ function formatType(value: any): string {
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatPriceSource(value: string): string {
+  if (value === "scenario") return "Scenario";
+  if (value === "custom") return "Custom";
+  if (value === "market") return "Market";
+  if (value === "vendor") return "Vendor";
+  return "Missing";
 }
 
 function formatNumber(value: number): string {

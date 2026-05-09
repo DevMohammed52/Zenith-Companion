@@ -64,6 +64,16 @@ export type HousingBuffSummary = {
   strongestIdleBonus: { activity: HousingActivity; hours: number } | null;
 };
 
+export type HousingSkillName =
+  | "Woodcutting"
+  | "Mining"
+  | "Fishing"
+  | "Cooking"
+  | "Smelting"
+  | "Alchemy"
+  | "Forge"
+  | "Construction";
+
 const ACTIVITY_LABELS: Record<HousingActivity, string> = {
   woodcutting: "Woodcutting",
   mining: "Mining",
@@ -94,6 +104,17 @@ const EMPTY_IDLE_HOURS: Record<HousingActivity, number> = {
   dungeon: 0,
   hunting: 0,
   construction: 0,
+};
+
+export const SKILL_TO_HOUSING_ACTIVITY: Partial<Record<HousingSkillName, HousingActivity>> = {
+  Woodcutting: "woodcutting",
+  Mining: "mining",
+  Fishing: "fishing",
+  Cooking: "cooking",
+  Smelting: "smelting",
+  Alchemy: "alchemy",
+  Forge: "forge",
+  Construction: "construction",
 };
 
 export const HOUSING_LOCATIONS = [
@@ -345,9 +366,13 @@ export function createDefaultHousing(): ProfileHousing {
 export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefined): ProfileHousing {
   const base = createDefaultHousing();
   const mode: HousingMode = input?.mode === "owner" || input?.mode === "guest" ? input.mode : "none";
-  if (mode === "none") return base;
+  const foundationBuilt = Boolean(input?.foundationBuilt);
+  const extraSlots = foundationBuilt ? Math.min(15, Math.max(0, Math.floor(Number(input?.extraSlots || 0)))) : 0;
+  const slotCapacity = foundationBuilt ? 1 + extraSlots : 0;
   const selectedComponents = Array.isArray(input?.selectedComponents)
     ? Array.from(new Set(input.selectedComponents.filter((id) => typeof id === "string" && HOUSING_COMPONENTS_BY_ID[id])))
+        .filter((id) => HOUSING_COMPONENTS_BY_ID[id]?.category !== "structure")
+        .slice(0, slotCapacity)
     : [];
   const guestBuffs: HousingManualBuffs = {};
   const rawGuestBuffs = input?.guestBuffs && typeof input.guestBuffs === "object" ? input.guestBuffs : {};
@@ -359,14 +384,14 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
     ...base,
     ...input,
     mode,
-    location: mode === "owner" && typeof input?.location === "string" ? input.location.slice(0, 60) : "",
-    foundationBuilt: mode === "owner" ? Boolean(input?.foundationBuilt) : false,
-    extraSlots: mode === "owner" && input?.foundationBuilt ? Math.min(15, Math.max(0, Math.floor(Number(input?.extraSlots || 0)))) : 0,
-    selectedComponents: mode === "owner" && input?.foundationBuilt ? selectedComponents : [],
-    guestBuffs: mode === "guest" ? guestBuffs : {},
-    guestRemoteConduit: mode === "guest" ? Boolean(input?.guestRemoteConduit) : false,
-    guestPetQuarters: mode === "guest" ? Boolean(input?.guestPetQuarters) : false,
-    guestHouseLedger: mode === "guest" ? Boolean(input?.guestHouseLedger) : false,
+    location: typeof input?.location === "string" ? input.location.slice(0, 60) : "",
+    foundationBuilt,
+    extraSlots,
+    selectedComponents,
+    guestBuffs,
+    guestRemoteConduit: Boolean(input?.guestRemoteConduit),
+    guestPetQuarters: Boolean(input?.guestPetQuarters),
+    guestHouseLedger: Boolean(input?.guestHouseLedger),
     notes: typeof input?.notes === "string" ? input.notes.slice(0, 500) : "",
   };
 }
@@ -381,7 +406,9 @@ export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | 
 
   const activeComponentCount = safeHousing.mode === "owner" && safeHousing.foundationBuilt
     ? safeHousing.selectedComponents.filter((id) => HOUSING_COMPONENTS_BY_ID[id]?.category !== "structure").length
-    : Object.values(safeHousing.guestBuffs).filter((value) => Number(value || 0) > 0).length;
+    : safeHousing.mode === "guest"
+      ? Object.values(safeHousing.guestBuffs).filter((value) => Number(value || 0) > 0).length
+      : 0;
   const slotCapacity = safeHousing.mode === "owner" && safeHousing.foundationBuilt ? 1 + safeHousing.extraSlots : 0;
 
   if (safeHousing.mode === "guest") {
@@ -410,7 +437,7 @@ export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | 
   return {
     mode: safeHousing.mode,
     location: safeHousing.location,
-    availableAnywhere: remoteConduit,
+    availableAnywhere: safeHousing.mode !== "none" && remoteConduit,
     locationLimited: safeHousing.mode !== "none" && !remoteConduit,
     idleHours,
     remoteConduit,
@@ -422,6 +449,35 @@ export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | 
     freeSlots: Math.max(0, slotCapacity - activeComponentCount),
     strongestIdleBonus: strongestIdleBonus ? { activity: strongestIdleBonus[0], hours: strongestIdleBonus[1] } : null,
   };
+}
+
+export function getProfileBaseIdleActionHours(profile: { kind?: string } | null | undefined) {
+  if (!profile) return 0;
+  return profile.kind === "main" ? 8 : 4;
+}
+
+export function getHousingIdleHoursForActivity(
+  housing: Partial<ProfileHousing> | HousingBuffSummary | null | undefined,
+  activity: HousingActivity,
+  location?: string | null,
+) {
+  const summary = housing && "idleHours" in housing
+    ? housing as HousingBuffSummary
+    : calculateHousingBuffs(housing as Partial<ProfileHousing> | null | undefined);
+  const hours = Number(summary.idleHours[activity] || 0);
+  if (hours <= 0) return 0;
+  if (summary.availableAnywhere) return hours;
+  const requestedLocation = String(location || "").trim().toLowerCase();
+  if (!requestedLocation) return 0;
+  const houseLocation = String(summary.location || "").trim().toLowerCase();
+  return houseLocation && houseLocation === requestedLocation ? hours : 0;
+}
+
+export function getHousingAvailabilityText(summary: HousingBuffSummary, hours: number, activityLabel = "housing bonus") {
+  if (hours <= 0) return `No ${activityLabel}.`;
+  if (summary.availableAnywhere) return `${activityLabel} ${formatHours(hours)} anywhere.`;
+  if (summary.mode === "guest") return `Guest ${activityLabel} ${formatHours(hours)} only at ${summary.location || "host location"}.`;
+  return `${activityLabel} ${formatHours(hours)} only at ${summary.location || "house location"}.`;
 }
 
 export function getHousingActivityLabel(activity: HousingActivity) {

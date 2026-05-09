@@ -91,6 +91,8 @@
   animation: riseIn 280ms ease both;
   min-width: 0;
   max-width: 100%;
+  position: relative;
+  z-index: 10;
 }
 
 .toolPanel {
@@ -104,6 +106,9 @@
   animation: riseIn 300ms ease both;
   min-width: 0;
   max-width: 100%;
+  overflow: visible;
+  position: relative;
+  z-index: 20;
 }
 
 .commandBar select,
@@ -179,6 +184,123 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.toolPicker {
+  position: relative;
+  min-width: 0;
+}
+
+.toolPickerOpen {
+  z-index: 30;
+}
+
+.toolTrigger {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  width: 100%;
+}
+
+.toolTrigger span,
+.toolOption span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.toolTrigger strong,
+.toolOption strong {
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolTrigger small,
+.toolOption small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.toolPickerOpen .toolTrigger {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
+}
+
+.toolMenu {
+  background: color-mix(in srgb, var(--bg-base), black 20%);
+  border: 1px solid var(--border-focus);
+  border-radius: 8px;
+  box-shadow: 0 24px 55px rgba(0,0,0,0.42);
+  display: grid;
+  gap: 0.25rem;
+  left: 0;
+  max-height: min(360px, 70vh);
+  overflow-y: auto;
+  padding: 0.35rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 50;
+}
+
+.toolOption,
+.toolClose {
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.toolOption {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 44px;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+}
+
+.toolOption em {
+  color: var(--text-success);
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.toolOption:hover,
+.toolOptionActive {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border-color: var(--border-focus);
+}
+
+.toolClose {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  display: none;
+  min-height: 38px;
 }
 
 .conquestSelect {
@@ -912,6 +1034,16 @@ th.left-align .sortButton {
   gap: 0.5rem;
 }
 
+.materialScenario {
+  background: rgba(255,255,255,0.018);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.45rem;
+  min-width: 0;
+}
+
 .materialLine,
 .calcRow,
 .modalTotal {
@@ -931,6 +1063,7 @@ th.left-align .sortButton {
   padding: 0.65rem 0.75rem;
   text-align: left;
   min-width: 0;
+  width: 100%;
 }
 
 .materialLine:hover {
@@ -981,6 +1114,91 @@ th.left-align .sortButton {
   border-top: 1px solid var(--border-subtle);
   margin-top: 0.8rem;
   padding-top: 0.8rem;
+}
+
+.scenarioInput,
+.targetProfitField {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.scenarioInput span,
+.targetProfitField span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scenarioInput input,
+.targetProfitField input {
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-main);
+  font: inherit;
+  height: 36px;
+  min-width: 0;
+  padding: 0 0.65rem;
+  width: 100%;
+}
+
+.breakEvenLine {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.fixedPriceNote {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  min-height: 34px;
+  padding: 0.55rem 0.65rem;
+  text-transform: uppercase;
+}
+
+.breakEvenLine strong {
+  color: var(--text-success);
+}
+
+.targetProfitField {
+  margin-top: 0.75rem;
+}
+
+.scenarioActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.scenarioActions button {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border: 1px solid var(--border-focus);
+  border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 0.45rem 0.65rem;
+}
+
+.scenarioSaved {
+  align-items: center;
+  color: var(--text-success);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  min-height: 34px;
 }
 
 .modalWarning {
@@ -1123,6 +1341,20 @@ th.left-align .sortButton {
   .tab {
     text-align: center;
     width: 100%;
+  }
+
+  .toolMenu {
+    max-height: min(420px, 72vh);
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    top: auto;
+    bottom: 1rem;
+    z-index: 300;
+  }
+
+  .toolClose {
+    display: block;
   }
 }
 

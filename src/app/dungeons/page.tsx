@@ -29,7 +29,13 @@ import { usePreferences } from "@/lib/preferences";
 import { getProfileDungeonStatTotal, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
-import { calculateHousingBuffs, formatHours } from "@/lib/housing";
+import {
+  calculateHousingBuffs,
+  formatHours,
+  getHousingAvailabilityText,
+  getHousingIdleHoursForActivity,
+  getProfileBaseIdleActionHours,
+} from "@/lib/housing";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
@@ -72,38 +78,25 @@ function getReadinessText(row: any, hasProfile: boolean) {
   return `Dungeoneering +${row.dungeoneeringGap}`;
 }
 
-function getBaseProfileIdleActionHours(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
-  if (!profile) return 0;
-  return profile.kind === "main" ? 8 : 4;
-}
-
 function getOptionalNumber(value: number | "") {
   return value === "" ? null : Number(value);
 }
 
 function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
   if (!profile) return 0;
-  const summary = calculateHousingBuffs(profile.housing);
-  const hours = summary.idleHours.dungeon;
-  if (hours <= 0) return 0;
-  if (summary.mode === "guest" || summary.availableAnywhere) return hours;
-  const houseLocation = String(summary.location || "").trim().toLowerCase();
-  const dungeonLocation = String(dungeon?.location?.name || dungeon?.location || "").trim().toLowerCase();
-  return houseLocation && dungeonLocation && houseLocation === dungeonLocation ? hours : 0;
+  const dungeonLocation = String(dungeon?.location?.name || dungeon?.location || "").trim();
+  return getHousingIdleHoursForActivity(profile.housing, "dungeon", dungeonLocation);
 }
 
 function getProfileIdleActionHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
-  return getBaseProfileIdleActionHours(profile) + getHousingDungeonHoursForDungeon(profile, dungeon);
+  return getProfileBaseIdleActionHours(profile) + getHousingDungeonHoursForDungeon(profile, dungeon);
 }
 
 function getHousingDungeonScopeText(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
   if (!profile) return "Select a profile.";
   const summary = calculateHousingBuffs(profile.housing);
   const hours = summary.idleHours.dungeon;
-  if (hours <= 0) return "No dungeon housing bonus.";
-  if (summary.mode === "guest") return `Guest dungeon bonus ${formatHours(hours)}.`;
-  if (summary.availableAnywhere) return `Housing dungeon bonus ${formatHours(hours)} anywhere.`;
-  return `Housing dungeon bonus ${formatHours(hours)} only at ${summary.location || "house location"}.`;
+  return getHousingAvailabilityText(summary, hours, "dungeon housing bonus");
 }
 
 function DungeonsContent() {
@@ -351,7 +344,7 @@ function DungeonsContent() {
   }, [rows]);
 
   const actionLimitSummary = useMemo(() => {
-    const base = getBaseProfileIdleActionHours(activeProfile);
+    const base = getProfileBaseIdleActionHours(activeProfile);
     const maxHousing = rows.reduce((max, row) => Math.max(max, Number(row.housingDungeonHours || 0)), 0);
     return {
       base,

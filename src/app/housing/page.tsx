@@ -57,9 +57,9 @@ const GUEST_BUFF_OPTIONS = [
 ] as const;
 
 const MODE_OPTIONS: Array<{ mode: HousingMode; label: string; hint: string }> = [
-  { mode: "none", label: "None", hint: "No house buffs" },
-  { mode: "owner", label: "Owner", hint: "Plan built components" },
-  { mode: "guest", label: "Guest", hint: "Select received tiers" },
+  { mode: "none", label: "None", hint: "Disable housing buffs" },
+  { mode: "owner", label: "Owner", hint: "Use built components" },
+  { mode: "guest", label: "Guest", hint: "Enter received buffs" },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -181,6 +181,7 @@ export default function HousingPage() {
   const housing = sanitizeHousing(activeProfile?.housing);
   const summary = useMemo(() => calculateHousingBuffs(housing), [housing]);
   const selected = new Set(housing.selectedComponents);
+  const ownerSlotsAvailable = housing.foundationBuilt ? 1 + housing.extraSlots : 0;
 
   const materialPrices = useMemo(() => {
     const prices: Record<string, number> = {};
@@ -232,7 +233,7 @@ export default function HousingPage() {
     for (const component of visible) {
       if (component.category === "idle" || component.category === "guest") {
         if (seen.has(component.family)) continue;
-        const variants = visible.filter((candidate) => candidate.family === component.family);
+        const variants = HOUSING_COMPONENTS.filter((candidate) => candidate.family === component.family);
         groups.push({
           key: component.family,
           family: component.family,
@@ -254,10 +255,25 @@ export default function HousingPage() {
     return groups;
   }, [category, draftTiers, housing.selectedComponents, search]);
 
+  const getSlottedComponents = (componentIds: string[], slotCapacity = ownerSlotsAvailable) => {
+    const slotted: string[] = [];
+    for (const id of Array.from(new Set(componentIds))) {
+      const component = HOUSING_COMPONENTS.find((candidate) => candidate.id === id);
+      if (!component || component.category === "structure") continue;
+      if (slotted.length >= slotCapacity) break;
+      slotted.push(id);
+    }
+    return slotted;
+  };
+
   const saveHousing = (patch: Partial<typeof housing>) => {
     if (!activeProfile) return;
+    const next = sanitizeHousing({ ...housing, ...patch });
+    if (next.foundationBuilt) {
+      next.selectedComponents = getSlottedComponents(next.selectedComponents, 1 + next.extraSlots);
+    }
     updateProfile(activeProfile.id, {
-      housing: sanitizeHousing({ ...housing, ...patch }),
+      housing: next,
     });
   };
 
@@ -268,13 +284,14 @@ export default function HousingPage() {
     if (next.has(componentId)) {
       next.delete(componentId);
     } else {
+      if (!housing.foundationBuilt || summary.freeSlots <= 0) return;
       if (component.category === "idle" || component.category === "guest") {
         for (const selectedId of Array.from(next)) {
           const existing = HOUSING_COMPONENTS.find((candidate) => candidate.id === selectedId);
           if (existing?.family === component.family) next.delete(selectedId);
         }
       }
-      next.add(componentId);
+      if (getSlottedComponents([...Array.from(next), componentId]).includes(componentId)) next.add(componentId);
     }
     saveHousing({ selectedComponents: Array.from(next) });
   };
@@ -343,8 +360,8 @@ export default function HousingPage() {
                   <h2>Profile Housing</h2>
                 </div>
                 {housing.mode !== "none" && (
-                  <button className="ghost-button" type="button" onClick={() => saveHousing({ mode: "none", location: "", foundationBuilt: false, extraSlots: 0, selectedComponents: [], guestBuffs: {}, guestRemoteConduit: false, guestPetQuarters: false, guestHouseLedger: false })}>
-                    <X size={16} /> Clear
+                  <button className="ghost-button" type="button" onClick={() => saveHousing({ mode: "none" })}>
+                    <X size={16} /> Disable
                   </button>
                 )}
               </div>
@@ -356,10 +373,10 @@ export default function HousingPage() {
                     type="button"
                     className={`mode-card ${housing.mode === option.mode ? "active" : ""}`}
                     onClick={() => saveHousing(option.mode === "none"
-                      ? { mode: "none", foundationBuilt: false, extraSlots: 0, selectedComponents: [], guestBuffs: {}, guestRemoteConduit: false, guestPetQuarters: false, guestHouseLedger: false, location: "" }
+                      ? { mode: "none" }
                       : option.mode === "guest"
-                        ? { mode: "guest", foundationBuilt: false, extraSlots: 0, selectedComponents: [], location: "" }
-                        : { mode: "owner", guestBuffs: {}, guestRemoteConduit: false, guestPetQuarters: false, guestHouseLedger: false })}
+                        ? { mode: "guest" }
+                        : { mode: "owner" })}
                   >
                     <strong>{option.label}</strong>
                     <span>{option.hint}</span>
@@ -399,7 +416,13 @@ export default function HousingPage() {
                       max={15}
                       value={housing.extraSlots}
                       disabled={!housing.foundationBuilt}
-                      onChange={(event) => saveHousing({ extraSlots: Math.min(15, Math.max(0, Number(event.target.value || 0))) })}
+                      onChange={(event) => {
+                        const extraSlots = Math.min(15, Math.max(0, Number(event.target.value || 0)));
+                        saveHousing({
+                          extraSlots,
+                          selectedComponents: getSlottedComponents(housing.selectedComponents, 1 + extraSlots),
+                        });
+                      }}
                     />
                   </label>
                 </div>
@@ -408,7 +431,13 @@ export default function HousingPage() {
               {housing.mode === "guest" && (
                 <div className="guest-note">
                   <Users size={18} />
-                  <span>Select the host component tiers you receive. T1 is 30m, T2 is 1h, T3 is 2h, T4 is 3h, and T5 is 4h. Special host components can be toggled below.</span>
+                  <span>Enter the host buffs this profile receives. No foundation or slots are needed for guest mode.</span>
+                </div>
+              )}
+              {housing.mode === "none" && (
+                <div className="guest-note inactive-note">
+                  <Home size={18} />
+                  <span>Housing buffs are disabled. Your owner build, guest buffs, and notes are preserved for when you switch back.</span>
                 </div>
               )}
             </div>
@@ -499,6 +528,17 @@ export default function HousingPage() {
                   <h2>Received Idle-Time Buffs</h2>
                   <p>Choose the tier of each host component you are using. T1 is 30m, then T2 1h, T3 2h, T4 3h, and T5 4h.</p>
                 </div>
+                <ChoicePicker
+                  label={housing.guestRemoteConduit ? "Guest Scope" : "Guest Buff Location"}
+                  value={housing.guestRemoteConduit ? "Available anywhere" : housing.location}
+                  options={housing.guestRemoteConduit
+                    ? [{ value: "Available anywhere", label: "Available anywhere", hint: "Remote Conduit is active" }]
+                    : HOUSING_LOCATIONS.map((location) => ({ value: location, label: location, hint: "Host buffs apply here" }))}
+                  open={openPicker === "guest-location"}
+                  setOpen={(open) => setOpenPicker(open ? "guest-location" : null)}
+                  onChange={(location) => saveHousing({ location })}
+                  placeholder="Select buff location"
+                />
               </div>
               <div className="guest-buff-grid">
                 {BUFF_ACTIVITIES.map((activity) => {
@@ -535,7 +575,7 @@ export default function HousingPage() {
                   <MapPin size={16} />
                   <span>
                     <strong>Remote Conduit</strong>
-                    <small>Host lets these buffs work anywhere.</small>
+                    <small>Host makes these received buffs available anywhere.</small>
                   </span>
                 </button>
                 <button
@@ -658,8 +698,8 @@ export default function HousingPage() {
             ) : (
               <div className="planner-empty-state">
                 <Home size={24} />
-                <strong>{housing.mode === "guest" ? "Guest buffs are entered above" : "No house setup active"}</strong>
-                <span>{housing.mode === "guest" ? "Component slots are only needed when this profile owns a house." : "Switch to Owner when you want to plan a build."}</span>
+                <strong>{housing.mode === "guest" ? "Guest buffs are entered above" : "Housing buffs are disabled"}</strong>
+                <span>{housing.mode === "guest" ? "Component slots are only needed when this profile owns a house." : "Switch back to Owner or Guest to reactivate the preserved setup."}</span>
               </div>
             )}
           </section>
@@ -806,7 +846,7 @@ export default function HousingPage() {
           gap: 0.75rem;
         }
         .mode-grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
         }
         .mode-card {
           border: 1px solid var(--border-subtle);
@@ -816,6 +856,7 @@ export default function HousingPage() {
           color: var(--text-muted);
           text-align: left;
           cursor: pointer;
+          min-width: 0;
           transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
         }
         .mode-card:hover,

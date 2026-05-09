@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import {
   calculateSkillProfitRows,
   DEFAULT_TOOL_SELECTIONS,
+  SKILLS,
+  type SkillName,
   type SkillProfitSettings,
 } from "@/lib/skill-profit";
 import { calculateCraftingQueuePlan } from "@/lib/crafting-queue";
@@ -25,7 +27,13 @@ import { LORE_ENTRIES, LORE_RELATIONS, LORE_THEORIES, type LoreRelation } from "
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
-import { calculateHousingBuffs } from "@/lib/housing";
+import {
+  SKILL_TO_HOUSING_ACTIVITY,
+  calculateHousingBuffs,
+  formatHours,
+  getHousingActivityLabel,
+  getHousingIdleHoursForActivity,
+} from "@/lib/housing";
 
 const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = "zenith_mythic_active_recipes";
 
@@ -55,7 +63,7 @@ export default function DashboardPage() {
   );
   const activeProfileId = activeProfile?.id || null;
   const housingSummary = useMemo(() => calculateHousingBuffs(activeProfile?.housing), [activeProfile?.housing]);
-  const dashboardHousingStatus = useMemo(() => {
+  const dashboardHousingSlotStatus = useMemo(() => {
     if (housingSummary.mode === "none") return "Not set";
     if (housingSummary.mode === "guest") {
       const count = housingSummary.activeComponentCount;
@@ -67,6 +75,21 @@ export default function DashboardPage() {
     return `Owner · ${housingSummary.activeComponentCount}/${housingSummary.slotCapacity} slots`;
   }, [housingSummary]);
   
+  const dashboardHousingStatus = useMemo(() => {
+    if (housingSummary.mode === "none") return "Not set";
+    const strongest = housingSummary.strongestIdleBonus;
+    if (strongest) {
+      const scope = housingSummary.availableAnywhere ? "anywhere" : housingSummary.location ? housingSummary.location : "location-limited";
+      return `${housingSummary.mode === "guest" ? "Guest" : "Owner"} ${getHousingActivityLabel(strongest.activity)} +${formatHours(strongest.hours)} (${scope})`;
+    }
+    if (housingSummary.mode === "guest") return "Guest - No buffs";
+    if (housingSummary.slotCapacity <= 0) return "Owner - No foundation";
+    if (housingSummary.remoteConduit) return "Remote access";
+    if (housingSummary.petQuarters) return "Pet Quarters";
+    if (housingSummary.houseLedger) return "House Ledger";
+    return dashboardHousingSlotStatus.includes("over") ? "Slot over limit" : "Owner - No buffs";
+  }, [dashboardHousingSlotStatus, housingSummary]);
+
   useEffect(() => {
     const saved = localStorage.getItem(activeMythicStorageKey) ?? (activeProfileId ? null : localStorage.getItem(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY));
     if (saved) {
@@ -151,17 +174,25 @@ export default function DashboardPage() {
     energizingPoolExp: 0,
     assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
     ascensionBuffIds: [],
-    tools: {
-      ...DEFAULT_TOOL_SELECTIONS,
-      ...preferences.skillTools,
-      ...(activeProfile?.tools.woodcutting ? { Woodcutting: activeProfile.tools.woodcutting } : {}),
-      ...(activeProfile?.tools.mining ? { Mining: activeProfile.tools.mining } : {}),
-      ...(activeProfile?.tools.fishing ? { Fishing: activeProfile.tools.fishing } : {}),
-    },
+    tools: activeProfile
+      ? {
+          Woodcutting: activeProfile.tools.woodcutting ?? "",
+          Mining: activeProfile.tools.mining ?? "",
+          Fishing: activeProfile.tools.fishing ?? "",
+        }
+      : {
+          ...DEFAULT_TOOL_SELECTIONS,
+          ...preferences.skillTools,
+        },
     customPrices: preferences.customPrices,
     barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
+    housingIdleHoursBySkill: Object.fromEntries(SKILLS.map((skill) => {
+      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
+      return [skill, activity ? getHousingIdleHoursForActivity(housingSummary, activity) : 0];
+    })) as Partial<Record<SkillName, number>>,
   }), [
     activeProfile,
+    housingSummary,
     preferences.assaultRank,
     preferences.customPrices,
     preferences.membership,

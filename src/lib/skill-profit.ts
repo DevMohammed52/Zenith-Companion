@@ -75,7 +75,9 @@ export type SkillProfitSettings = {
   ascensionBuffIds: string[];
   tools: ToolSelections;
   customPrices?: Record<string, number>;
+  scenarioPrices?: Record<string, number>;
   barteringBoost: number | "";
+  housingIdleHoursBySkill?: Partial<Record<SkillName, number>>;
 };
 
 export type Ingredient = {
@@ -95,14 +97,14 @@ export type SkillRecipe = {
 
 export type SkillProfitRow = SkillRecipe & {
   salePrice: number;
-  saleSource: "custom" | "market" | "vendor" | "missing";
+  saleSource: PriceSource;
   marketRevenue: number;
   vendorRevenue: number;
-  bestSaleSource: "custom" | "market" | "vendor" | "missing";
+  bestSaleSource: PriceSource;
   netRevenue: number;
   inputCost: number;
   inputMissing: string[];
-  ingredientCosts: Array<Ingredient & { unitPrice: number; totalPrice: number; source: "custom" | "market" | "vendor" | "missing" }>;
+  ingredientCosts: Array<Ingredient & { unitPrice: number; totalPrice: number; source: PriceSource }>;
   profitEach: number;
   finalDuration: number;
   itemsPerHour: number;
@@ -116,7 +118,13 @@ export type SkillProfitRow = SkillRecipe & {
   toolBonus: number;
   priceAdjusted: boolean;
   priceWarning?: string;
+  housingWindowHours: number;
+  itemsPerHousingWindow: number;
+  profitPerHousingWindow: number;
+  expPerHousingWindow: number | null;
 };
+
+export type PriceSource = "scenario" | "custom" | "market" | "vendor" | "missing";
 
 export type AssaultRank = "none" | "first" | "second" | "third" | "fourthSeventh" | "eighthTenth";
 export type ToolSkill = "Woodcutting" | "Mining" | "Fishing";
@@ -566,76 +574,103 @@ export function calculateSkillProfitRows(
   const taxMultiplier = settings.membership ? 0.88 : 0.85;
   const barterMultiplier = 1 + ((Number(settings.barteringBoost) || 0) / 100);
 
-  return [...SKILL_RECIPES, ...dynamicRecipes].map((recipe): SkillProfitRow => {
-    const buffs = getBuffTotals(settings, recipe.skill !== "Construction", recipe.skill);
-    const toolBonus = getToolEfficiencyBonus(settings, recipe.skill);
-    const sale = getPrice(recipe.name, marketData, items, settings.customPrices);
-    const vendorBase = getVendorPrice(recipe.name, marketData, items);
-    const ingredientPrices = recipe.ingredients.map((ingredient) => ({
-      ingredient,
-      price: getPrice(ingredient.name, marketData, items, settings.customPrices),
-    }));
-    const inputMissing = ingredientPrices
-      .filter(({ price }) => price.source === "missing")
-      .map(({ ingredient }) => ingredient.name);
-    const ingredientCosts = ingredientPrices.map(({ ingredient, price }) => ({
-      ...ingredient,
-      unitPrice: price.value,
-      totalPrice: price.value * ingredient.quantity,
-      source: price.source,
-    }));
-    const inputCost = ingredientPrices.reduce(
-      (sum, { ingredient, price }) => sum + price.value * ingredient.quantity,
-      0,
-    );
-    const marketRevenue = sale.source === "market" || sale.source === "custom" ? sale.value * taxMultiplier : 0;
-    const vendorRevenue = vendorBase * barterMultiplier;
-    const bestSaleSource = marketRevenue <= 0 && vendorRevenue <= 0
-      ? "missing"
-      : vendorRevenue > marketRevenue
-        ? "vendor"
-        : sale.source === "custom" ? "custom" : "market";
-    const netRevenue = bestSaleSource === "vendor" ? vendorRevenue : marketRevenue;
-    const profitEach = netRevenue - inputCost;
-    const finalDuration = recipe.baseDuration / ((buffs.efficiency + toolBonus + 100) / 100);
-    const itemsPerHour = Math.round(3600 / finalDuration);
-    const profitPerHour = Math.round(profitEach * itemsPerHour);
-    const expPerAction = recipe.experience === null ? null : recipe.experience * ((buffs.experience + 100) / 100);
-    const expPerSecond = expPerAction === null ? null : expPerAction / finalDuration;
-    const volume3d = marketData?.[recipe.name]?.vol_3 || 0;
-    const isLiquid = sale.source !== "market" || volume3d >= minVolume;
+  return [...SKILL_RECIPES, ...dynamicRecipes].map((recipe) => calculateSkillProfitRow(
+    recipe,
+    marketData,
+    items,
+    settings,
+    taxMultiplier,
+    barterMultiplier,
+    minVolume,
+  ));
+}
 
-    return {
-      ...recipe,
-      salePrice: sale.value,
-      saleSource: sale.source,
-      marketRevenue: Math.round(marketRevenue),
-      vendorRevenue: Math.round(vendorRevenue),
-      bestSaleSource,
-      netRevenue: Math.round(netRevenue),
-      inputCost: Math.round(inputCost),
-      inputMissing,
-      ingredientCosts,
-      profitEach: Math.round(profitEach),
-      finalDuration,
-      itemsPerHour,
-      profitPerHour,
-      expPerSecond,
-      expPerHour: expPerSecond === null ? null : Math.round(expPerSecond * 3600),
-      roi: inputCost > 0 ? (profitEach / inputCost) * 100 : profitEach > 0 ? 100 : 0,
-      volume3d,
-      isLiquid,
-      excludedFromTop: recipe.skill === "Forge" || !isLiquid,
-      toolBonus,
-      priceAdjusted: sale.adjusted,
-      priceWarning: sale.adjusted ? "3d average ignored as a market spike" : undefined,
-    };
-  });
+export function calculateSkillProfitRow(
+  recipe: SkillRecipe,
+  marketData: MarketData | null,
+  items: ItemLookup | null,
+  settings: SkillProfitSettings,
+  taxMultiplier = settings.membership ? 0.88 : 0.85,
+  barterMultiplier = 1 + ((Number(settings.barteringBoost) || 0) / 100),
+  minVolume = 0,
+): SkillProfitRow {
+  const buffs = getBuffTotals(settings, recipe.skill !== "Construction", recipe.skill);
+  const toolBonus = getToolEfficiencyBonus(settings, recipe.skill);
+  const sale = getPrice(recipe.name, marketData, items, settings.customPrices, settings.scenarioPrices);
+  const vendorBase = getVendorPrice(recipe.name, marketData, items);
+  const ingredientPrices = recipe.ingredients.map((ingredient) => ({
+    ingredient,
+    price: getPrice(ingredient.name, marketData, items, settings.customPrices, settings.scenarioPrices),
+  }));
+  const inputMissing = ingredientPrices
+    .filter(({ price }) => price.source === "missing")
+    .map(({ ingredient }) => ingredient.name);
+  const ingredientCosts = ingredientPrices.map(({ ingredient, price }) => ({
+    ...ingredient,
+    unitPrice: price.value,
+    totalPrice: price.value * ingredient.quantity,
+    source: price.source,
+  }));
+  const inputCost = ingredientPrices.reduce(
+    (sum, { ingredient, price }) => sum + price.value * ingredient.quantity,
+    0,
+  );
+  const marketRevenue = sale.source === "market" || sale.source === "custom" || sale.source === "scenario" ? sale.value * taxMultiplier : 0;
+  const vendorRevenue = vendorBase * barterMultiplier;
+  const bestSaleSource: PriceSource = marketRevenue <= 0 && vendorRevenue <= 0
+    ? "missing"
+    : vendorRevenue > marketRevenue
+      ? "vendor"
+      : sale.source === "custom" ? "custom" : sale.source === "scenario" ? "scenario" : "market";
+  const netRevenue = bestSaleSource === "vendor" ? vendorRevenue : marketRevenue;
+  const profitEach = netRevenue - inputCost;
+  const finalDuration = recipe.baseDuration / ((buffs.efficiency + toolBonus + 100) / 100);
+  const itemsPerHour = Math.round(3600 / finalDuration);
+  const profitPerHour = Math.round(profitEach * itemsPerHour);
+  const expPerAction = recipe.experience === null ? null : recipe.experience * ((buffs.experience + 100) / 100);
+  const expPerSecond = expPerAction === null ? null : expPerAction / finalDuration;
+  const housingWindowHours = Math.max(0, Number(settings.housingIdleHoursBySkill?.[recipe.skill] || 0));
+  const itemsPerHousingWindow = housingWindowHours > 0 ? Math.floor((housingWindowHours * 3600) / finalDuration) : 0;
+  const profitPerHousingWindow = Math.round(profitEach * itemsPerHousingWindow);
+  const expPerHousingWindow = expPerAction === null ? null : Math.round(expPerAction * itemsPerHousingWindow);
+  const volume3d = marketData?.[recipe.name]?.vol_3 || 0;
+  const isLiquid = sale.source !== "market" || volume3d >= minVolume;
+
+  return {
+    ...recipe,
+    salePrice: sale.value,
+    saleSource: sale.source,
+    marketRevenue: Math.round(marketRevenue),
+    vendorRevenue: Math.round(vendorRevenue),
+    bestSaleSource,
+    netRevenue: Math.round(netRevenue),
+    inputCost: Math.round(inputCost),
+    inputMissing,
+    ingredientCosts,
+    profitEach: Math.round(profitEach),
+    finalDuration,
+    itemsPerHour,
+    profitPerHour,
+    expPerSecond,
+    expPerHour: expPerSecond === null ? null : Math.round(expPerSecond * 3600),
+    roi: inputCost > 0 ? (profitEach / inputCost) * 100 : profitEach > 0 ? 100 : 0,
+    volume3d,
+    isLiquid,
+    excludedFromTop: recipe.skill === "Forge" || !isLiquid,
+    toolBonus,
+    priceAdjusted: sale.adjusted,
+    priceWarning: sale.adjusted ? "3d average ignored as a market spike" : undefined,
+    housingWindowHours,
+    itemsPerHousingWindow,
+    profitPerHousingWindow,
+    expPerHousingWindow,
+  };
 }
 
 function getToolEfficiencyBonus(settings: SkillProfitSettings, skill: SkillName) {
   if (skill !== "Woodcutting" && skill !== "Mining" && skill !== "Fishing") return 0;
-  const selectedTool = settings.tools?.[skill] || DEFAULT_TOOL_SELECTIONS[skill];
+  const selectedTool = settings.tools?.[skill];
+  if (!selectedTool) return 0;
   return SKILL_TOOLS[skill].find((tool) => tool.name === selectedTool)?.efficiency || 0;
 }
 
@@ -644,7 +679,11 @@ function getPrice(
   marketData: MarketData | null,
   items: ItemLookup | null,
   customPrices?: Record<string, number>,
-): { value: number; source: "custom" | "market" | "vendor" | "missing"; adjusted: boolean } {
+  scenarioPrices?: Record<string, number>,
+): { value: number; source: PriceSource; adjusted: boolean } {
+  const scenarioPrice = scenarioPrices?.[name];
+  if (Number(scenarioPrice) > 0) return { value: Number(scenarioPrice), source: "scenario", adjusted: false };
+
   const customPrice = customPrices?.[name];
   if (Number(customPrice) > 0) return { value: Number(customPrice), source: "custom", adjusted: false };
 

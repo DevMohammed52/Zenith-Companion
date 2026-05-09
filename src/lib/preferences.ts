@@ -97,10 +97,11 @@ export function usePreferences() {
       const next = { ...current, ...patch };
       localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(next));
       applyTheme(next.theme);
-      // Notify other instances of usePreferences in the same tab
-      window.dispatchEvent(new Event("zenith-preferences-updated"));
       return next;
     });
+    window.setTimeout(() => {
+      window.dispatchEvent(new Event("zenith-preferences-updated"));
+    }, 0);
   };
 
   return { preferences, setPreferences, loaded };

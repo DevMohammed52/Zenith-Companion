@@ -1073,14 +1073,26 @@ export default function ProfilesPage() {
               <a className="profile-secondary-link" href="/housing"><Home size={16} /> Open Housing</a>
             </div>
             <div className="profile-grid">
-              <label className="profile-field">
+              <div className="profile-field profile-field-wide">
                 <span>Mode</span>
-                <select className="control-input" value={profile.housing.mode} onChange={(event) => updateNested("housing", "mode", event.target.value as CharacterProfile["housing"]["mode"])}>
-                  <option value="none">Not Set</option>
-                  <option value="owner">Own House</option>
-                  <option value="guest">Guest Buffs</option>
-                </select>
-              </label>
+                <div className="profile-housing-mode-grid" role="group" aria-label="Housing mode">
+                  {[
+                    { value: "none", label: "None", hint: "No house buffs" },
+                    { value: "owner", label: "Owner", hint: "Use built components" },
+                    { value: "guest", label: "Guest", hint: "Use received buffs" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={profile.housing.mode === option.value ? "active" : ""}
+                      onClick={() => updateNested("housing", "mode", option.value as CharacterProfile["housing"]["mode"])}
+                    >
+                      <strong>{option.label}</strong>
+                      <span>{option.hint}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="profile-info-card">
                 <strong>{housingSummary.availableAnywhere ? "Available anywhere" : housingSummary.locationLimited ? "Location-limited" : "Inactive"}</strong>
                 <span>
