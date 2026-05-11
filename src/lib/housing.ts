@@ -25,12 +25,35 @@ export type ProfileHousing = {
   foundationBuilt: boolean;
   extraSlots: number;
   selectedComponents: string[];
+  componentConditions: Record<string, number>;
+  componentDecayDays: Record<string, number>;
+  componentRepairGold: Record<string, number>;
+  guestHostName: string;
   guestBuffs: HousingManualBuffs;
   guestRemoteConduit: boolean;
   guestPetQuarters: boolean;
   guestHouseLedger: boolean;
   notes: string;
 };
+
+export const HOUSING_GUEST_BLOCKED_CLASSES = ["Cursed", "Banished"] as const;
+
+const HOUSING_GUEST_BLOCKED_CLASS_SET = new Set<string>(HOUSING_GUEST_BLOCKED_CLASSES);
+
+export function canUseHousingGuestAccess(className: string | null | undefined) {
+  return !HOUSING_GUEST_BLOCKED_CLASS_SET.has(String(className || ""));
+}
+
+export function getEffectiveHousingForProfileClass(
+  housing: Partial<ProfileHousing> | null | undefined,
+  profileClassName: string | null | undefined,
+) {
+  const safeHousing = sanitizeHousing(housing);
+  if (safeHousing.mode === "guest" && !canUseHousingGuestAccess(profileClassName)) {
+    return { ...safeHousing, mode: "none" as HousingMode };
+  }
+  return safeHousing;
+}
 
 export type HousingComponent = {
   id: string;
@@ -48,6 +71,29 @@ export type HousingComponent = {
   materials: Array<{ name: string; quantity: number }>;
 };
 
+export type HousingCostEntry = {
+  component: HousingComponent;
+  quantity?: number;
+  conditionPercent?: number;
+  repairGoldOverride?: number;
+};
+
+export type HousingCostMaterial = {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalCost: number;
+  missingPrice: boolean;
+};
+
+export type HousingCostSummary = {
+  goldCost: number;
+  materialCost: number;
+  totalCost: number;
+  materials: HousingCostMaterial[];
+  missingMaterials: string[];
+};
+
 export type HousingBuffSummary = {
   mode: HousingMode;
   location: string;
@@ -62,6 +108,10 @@ export type HousingBuffSummary = {
   slotCapacity: number;
   freeSlots: number;
   strongestIdleBonus: { activity: HousingActivity; hours: number } | null;
+};
+
+type HousingBuffOptions = {
+  profileClassName?: string | null;
 };
 
 export type HousingSkillName =
@@ -116,6 +166,10 @@ export const SKILL_TO_HOUSING_ACTIVITY: Partial<Record<HousingSkillName, Housing
   Forge: "forge",
   Construction: "construction",
 };
+
+export const HOUSING_ACTIVITY_TO_SKILL = Object.fromEntries(
+  Object.entries(SKILL_TO_HOUSING_ACTIVITY).map(([skill, activity]) => [activity, skill]),
+) as Partial<Record<HousingActivity, HousingSkillName>>;
 
 export const HOUSING_LOCATIONS = [
   "Bluebell Hollow",
@@ -355,12 +409,36 @@ export function createDefaultHousing(): ProfileHousing {
     foundationBuilt: false,
     extraSlots: 0,
     selectedComponents: [],
+    componentConditions: {},
+    componentDecayDays: {},
+    componentRepairGold: {},
+    guestHostName: "",
     guestBuffs: {},
     guestRemoteConduit: false,
     guestPetQuarters: false,
     guestHouseLedger: false,
     notes: "",
   };
+}
+
+export function normalizeHousingCondition(value: unknown, fallback = 100) {
+  const numeric = Number(value);
+  const safeFallback = Number.isFinite(Number(fallback)) ? Number(fallback) : 100;
+  const condition = Number.isFinite(numeric) ? numeric : safeFallback;
+  return Math.round(Math.min(100, Math.max(0, condition)) * 10) / 10;
+}
+
+export function normalizeHousingDecayDays(value: unknown, fallback = 60) {
+  const numeric = Number(value);
+  const safeFallback = Number.isFinite(Number(fallback)) ? Number(fallback) : 60;
+  return Math.min(365, Math.max(1, Math.round(Number.isFinite(numeric) ? numeric : safeFallback)));
+}
+
+export function normalizeHousingRepairGold(value: unknown) {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) return undefined;
+  return Math.round(numeric);
 }
 
 export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefined): ProfileHousing {
@@ -374,6 +452,30 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
         .filter((id) => HOUSING_COMPONENTS_BY_ID[id]?.category !== "structure")
         .slice(0, slotCapacity)
     : [];
+  const rawComponentConditions = input?.componentConditions && typeof input.componentConditions === "object"
+    ? input.componentConditions
+    : {};
+  const rawComponentDecayDays = input?.componentDecayDays && typeof input.componentDecayDays === "object"
+    ? input.componentDecayDays
+    : {};
+  const rawComponentRepairGold = input?.componentRepairGold && typeof input.componentRepairGold === "object"
+    ? input.componentRepairGold
+    : {};
+  const conditionIds = new Set(selectedComponents);
+  if (extraSlots > 0) conditionIds.add("slot");
+  const componentConditions: Record<string, number> = {};
+  const componentDecayDays: Record<string, number> = {};
+  const componentRepairGold: Record<string, number> = {};
+  for (const componentId of conditionIds) {
+    const component = HOUSING_COMPONENTS_BY_ID[componentId];
+    if (!component || component.id === "foundation") continue;
+    const rawCondition = (rawComponentConditions as Record<string, unknown>)[componentId];
+    if (rawCondition !== undefined) componentConditions[componentId] = normalizeHousingCondition(rawCondition, 100);
+    const rawDecayDays = (rawComponentDecayDays as Record<string, unknown>)[componentId];
+    if (rawDecayDays !== undefined) componentDecayDays[componentId] = normalizeHousingDecayDays(rawDecayDays, 60);
+    const repairGold = normalizeHousingRepairGold((rawComponentRepairGold as Record<string, unknown>)[componentId]);
+    if (repairGold !== undefined) componentRepairGold[componentId] = repairGold;
+  }
   const guestBuffs: HousingManualBuffs = {};
   const rawGuestBuffs = input?.guestBuffs && typeof input.guestBuffs === "object" ? input.guestBuffs : {};
   for (const activity of Object.keys(EMPTY_IDLE_HOURS) as HousingActivity[]) {
@@ -388,6 +490,10 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
     foundationBuilt,
     extraSlots,
     selectedComponents,
+    componentConditions,
+    componentDecayDays,
+    componentRepairGold,
+    guestHostName: typeof input?.guestHostName === "string" ? input.guestHostName.trim().slice(0, 80) : "",
     guestBuffs,
     guestRemoteConduit: Boolean(input?.guestRemoteConduit),
     guestPetQuarters: Boolean(input?.guestPetQuarters),
@@ -396,8 +502,11 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
   };
 }
 
-export function calculateHousingBuffs(housing: Partial<ProfileHousing> | null | undefined): HousingBuffSummary {
-  const safeHousing = sanitizeHousing(housing);
+export function calculateHousingBuffs(
+  housing: Partial<ProfileHousing> | null | undefined,
+  options: HousingBuffOptions = {},
+): HousingBuffSummary {
+  const safeHousing = getEffectiveHousingForProfileClass(housing, options.profileClassName);
   const idleHours = { ...EMPTY_IDLE_HOURS };
   let remoteConduit = false;
   let petQuarters = false;
@@ -460,10 +569,11 @@ export function getHousingIdleHoursForActivity(
   housing: Partial<ProfileHousing> | HousingBuffSummary | null | undefined,
   activity: HousingActivity,
   location?: string | null,
+  options: HousingBuffOptions = {},
 ) {
   const summary = housing && "idleHours" in housing
     ? housing as HousingBuffSummary
-    : calculateHousingBuffs(housing as Partial<ProfileHousing> | null | undefined);
+    : calculateHousingBuffs(housing as Partial<ProfileHousing> | null | undefined, options);
   const hours = Number(summary.idleHours[activity] || 0);
   if (hours <= 0) return 0;
   if (summary.availableAnywhere) return hours;
@@ -501,5 +611,224 @@ export function getComponentBuildCost(
     materialCost,
     totalCost: component.goldCost + materialCost,
     missingMaterials,
+  };
+}
+
+export function getComponentCostBreakdown(
+  component: HousingComponent,
+  prices: Record<string, number>,
+) {
+  return component.materials.map((material) => {
+    const unitPrice = Number(prices[material.name] || 0);
+    return {
+      ...material,
+      unitPrice,
+      totalCost: unitPrice > 0 ? unitPrice * material.quantity : 0,
+      missingPrice: unitPrice <= 0,
+    };
+  });
+}
+
+function normalizeCostQuantity(quantity: number | undefined) {
+  return Math.max(1, Math.floor(Number(quantity) || 1));
+}
+
+function addMaterialCost(
+  materials: Map<string, { quantity: number; unitPrice: number }>,
+  material: { name: string; quantity: number },
+  prices: Record<string, number>,
+) {
+  if (material.quantity <= 0) return;
+  const unitPrice = Number(prices[material.name] || 0);
+  const current = materials.get(material.name);
+  materials.set(material.name, {
+    quantity: (current?.quantity || 0) + material.quantity,
+    unitPrice: current?.unitPrice || unitPrice,
+  });
+}
+
+function summarizeHousingCost(goldCost: number, materials: Map<string, { quantity: number; unitPrice: number }>): HousingCostSummary {
+  const rows = Array.from(materials.entries()).map(([name, material]) => {
+    const unitPrice = Number(material.unitPrice || 0);
+    return {
+      name,
+      quantity: material.quantity,
+      unitPrice,
+      totalCost: unitPrice > 0 ? unitPrice * material.quantity : 0,
+      missingPrice: unitPrice <= 0,
+    };
+  });
+  const materialCost = rows.reduce((sum, material) => sum + material.totalCost, 0);
+  return {
+    goldCost,
+    materialCost,
+    totalCost: goldCost + materialCost,
+    materials: rows,
+    missingMaterials: rows.filter((material) => material.missingPrice).map((material) => material.name),
+  };
+}
+
+export function getHousingBuildCostSummary(
+  entries: HousingCostEntry[],
+  prices: Record<string, number>,
+): HousingCostSummary {
+  const materials = new Map<string, { quantity: number; unitPrice: number }>();
+  let goldCost = 0;
+  for (const entry of entries) {
+    const quantity = normalizeCostQuantity(entry.quantity);
+    goldCost += entry.component.goldCost * quantity;
+    for (const material of entry.component.materials) {
+      addMaterialCost(materials, {
+        name: material.name,
+        quantity: material.quantity * quantity,
+      }, prices);
+    }
+  }
+  return summarizeHousingCost(goldCost, materials);
+}
+
+export function estimateHousingRepairCostSummary(
+  entries: HousingCostEntry[],
+  prices: Record<string, number>,
+  conditionPercent: number,
+): HousingCostSummary & { conditionPercent: number; repairPercent: number } {
+  const fallbackCondition = normalizeHousingCondition(conditionPercent, 100);
+  const materials = new Map<string, { quantity: number; unitPrice: number }>();
+  let goldCost = 0;
+  let weightedCondition = 0;
+  let totalQuantity = 0;
+  for (const entry of entries) {
+    const quantity = normalizeCostQuantity(entry.quantity);
+    if (quantity <= 0) continue;
+    const fullGoldCost = entry.component.goldCost * quantity;
+    const repairGoldOverride = normalizeHousingRepairGold(entry.repairGoldOverride);
+    const hasRepairGoldOverride = repairGoldOverride !== undefined && fullGoldCost > 0;
+    const clampedRepairGold = hasRepairGoldOverride
+      ? Math.min(fullGoldCost, Math.max(0, repairGoldOverride))
+      : 0;
+    const condition = hasRepairGoldOverride
+      ? normalizeHousingCondition(100 - (clampedRepairGold / fullGoldCost) * 100, fallbackCondition)
+      : normalizeHousingCondition(entry.conditionPercent, fallbackCondition);
+    const repairPercent = hasRepairGoldOverride
+      ? (clampedRepairGold / fullGoldCost) * 100
+      : Math.max(0, 100 - condition);
+    const repairRatio = repairPercent / 100;
+    weightedCondition += condition * quantity;
+    totalQuantity += quantity;
+    goldCost += hasRepairGoldOverride
+      ? clampedRepairGold
+      : Math.ceil(entry.component.goldCost * quantity * repairRatio);
+    for (const material of entry.component.materials) {
+      addMaterialCost(materials, {
+        name: material.name,
+        quantity: Math.ceil(material.quantity * quantity * repairRatio),
+      }, prices);
+    }
+  }
+  const condition = totalQuantity > 0 ? normalizeHousingCondition(weightedCondition / totalQuantity, fallbackCondition) : fallbackCondition;
+  const repairPercent = Math.max(0, 100 - condition);
+  return {
+    ...summarizeHousingCost(goldCost, materials),
+    conditionPercent: condition,
+    repairPercent,
+  };
+}
+
+export function calculateRecoveredIdleHours(
+  baseIdleHours: number,
+  roomIdleHours: number,
+  playtimeHours: number,
+) {
+  const roomBonus = Math.max(0, Number(roomIdleHours) || 0);
+  const baseCovered = calculateUsefulCoveredIdleHours(0, playtimeHours);
+  const roomCovered = calculateUsefulCoveredIdleHours(roomBonus, playtimeHours);
+  return Math.max(0, roomCovered - baseCovered);
+}
+
+export function calculateUsefulCoveredIdleHours(
+  actionHours: number,
+  playtimeHours: number,
+) {
+  const bonusHours = Math.max(0, Number(actionHours) || 0);
+  const played = Math.min(24, Math.max(0, Number(playtimeHours) || 0));
+  return Math.min(24, played + bonusHours);
+}
+
+export function calculateRoomProfitProjection({
+  baseIdleHours,
+  roomIdleHours,
+  playtimeHours,
+  profitPerHour,
+  buildCost,
+  essenceCost = 0,
+  costShare = 1,
+}: {
+  baseIdleHours: number;
+  roomIdleHours: number;
+  playtimeHours: number;
+  profitPerHour: number;
+  buildCost: number;
+  essenceCost?: number;
+  costShare?: number;
+}) {
+  const baseCap = Math.max(0, Number(baseIdleHours) || 0);
+  const roomBonus = Math.max(0, Number(roomIdleHours) || 0);
+  const roomCap = baseCap + roomBonus;
+  const hourlyProfit = Math.max(0, Number(profitPerHour) || 0);
+  const costPerEssence = Math.max(0, Number(essenceCost) || 0);
+  const baseCoveredHoursPerDay = calculateUsefulCoveredIdleHours(0, playtimeHours);
+  const roomCoveredHoursPerDay = calculateUsefulCoveredIdleHours(roomBonus, playtimeHours);
+  const baseMissedHoursPerDay = Math.max(0, 24 - baseCoveredHoursPerDay);
+  const roomMissedHoursPerDay = Math.max(0, 24 - roomCoveredHoursPerDay);
+  const extraHoursPerDay = calculateRecoveredIdleHours(baseIdleHours, roomIdleHours, playtimeHours);
+  const baseCoveredProfitPerDay = Math.round(baseCoveredHoursPerDay * hourlyProfit);
+  const roomCoveredProfitPerDay = Math.round(roomCoveredHoursPerDay * hourlyProfit);
+  const extraProfitPerDay = Math.max(0, roomCoveredProfitPerDay - baseCoveredProfitPerDay);
+  const fullBuildCost = Math.max(0, Number(buildCost) || 0);
+  const split = Math.max(1, Math.floor(Number(costShare) || 1));
+  const cost = Math.ceil(fullBuildCost / split);
+  const baseStartsPerDay = baseCap > 0 && baseCoveredHoursPerDay > 0 ? Math.ceil(baseCoveredHoursPerDay / baseCap) : 0;
+  const roomStartsPerDay = roomCap > 0 && roomCoveredHoursPerDay > 0 ? Math.ceil(roomCoveredHoursPerDay / roomCap) : 0;
+  const baseEssenceCostPerDay = Math.round(baseStartsPerDay * costPerEssence);
+  const roomEssenceCostPerDay = Math.round(roomStartsPerDay * costPerEssence);
+  const essenceSavingsPerDay = Math.max(0, baseEssenceCostPerDay - roomEssenceCostPerDay);
+  const fullDayProfit = Math.round(hourlyProfit * 24);
+  const baseDailyNetAfterEssence = baseCoveredProfitPerDay - baseEssenceCostPerDay;
+  const roomDailyNetAfterEssence = roomCoveredProfitPerDay - roomEssenceCostPerDay;
+  const netGainPerDay = roomDailyNetAfterEssence - baseDailyNetAfterEssence;
+  const paybackDays = netGainPerDay > 0 && cost > 0 ? cost / netGainPerDay : null;
+  return {
+    baseActionHours: baseCap,
+    roomActionHours: roomCap,
+    roomBonusHours: roomBonus,
+    baseStartsPerDay,
+    roomStartsPerDay,
+    savedStartsPerDay: Math.max(0, baseStartsPerDay - roomStartsPerDay),
+    essenceCost: costPerEssence,
+    baseEssenceCostPerDay,
+    roomEssenceCostPerDay,
+    essenceSavingsPerDay,
+    fullDayProfit,
+    baseCoveredHoursPerDay,
+    roomCoveredHoursPerDay,
+    baseMissedHoursPerDay,
+    roomMissedHoursPerDay,
+    baseCoveredProfitPerDay,
+    roomCoveredProfitPerDay,
+    baseDailyNetAfterEssence,
+    roomDailyNetAfterEssence,
+    netGainPerDay,
+    profitPerAction: Math.round((hourlyProfit * roomCap) - costPerEssence),
+    extraHoursPerDay,
+    extraProfitPerDay,
+    fullBuildCost,
+    costShare: split,
+    buildCostShare: cost,
+    paybackDays,
+    horizons: [1, 7, 30, 60, 90].map((days) => ({
+      days,
+      grossProfit: netGainPerDay * days,
+      netProfit: (netGainPerDay * days) - cost,
+    })),
   };
 }

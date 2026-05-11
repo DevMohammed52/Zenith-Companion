@@ -27,12 +27,13 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
 import { useData } from "@/context/DataContext";
-import { getSafeMarketValue } from "@/lib/market-pricing";
+import { getMarketLiquidity, getSafeMarketValue } from "@/lib/market-pricing";
+import { useModalA11y } from "@/lib/use-modal-a11y";
 
 type Trend = "up" | "down" | "flat";
 type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
 type RowStatus = "ok" | "missing";
-type LiquiditySignal = "LIQUID" | "STEADY" | "THIN" | "NO SALES" | "VENDOR SAFE" | "MISSING";
+type LiquiditySignal = "LIQUID" | "STEADY" | "VOLUME SWINGS" | "SPIKE RISK" | "THIN" | "NO SALES" | "VENDOR SAFE" | "MISSING";
 
 type MarketData = {
   avg_3?: number;
@@ -41,6 +42,12 @@ type MarketData = {
   avg_30?: number;
   price?: number;
   vol_3?: number;
+  stable_vol_3?: number;
+  daily_sales_trimmed_avg_30?: number;
+  daily_sales_median_30?: number;
+  daily_sales_max_30?: number;
+  sales_outlier_days_30?: number;
+  sales_spike_ratio?: number;
   vendor_price?: number;
   quality?: string;
 };
@@ -83,9 +90,11 @@ type AlchemyRow = {
   profit: number;
   profitPerHour: number;
   opportunityProfit: number;
-  roi: number;
   dailyProfit: number;
   vol_3: number;
+  stableVol_3: number;
+  liquidityNote: string;
+  liquidityRisk: boolean;
   outputSource: "custom" | "market" | "missing";
   inputMissing: string[];
   ingredientCosts: IngredientCost[];
@@ -95,14 +104,30 @@ type AlchemySortKey =
   | "name"
   | "level"
   | "action"
+  | "cost"
+  | "bestRevenue"
   | "profit"
   | "profitPerHour"
-  | "roi"
   | "dailyProfit"
   | "vol_3"
   | "craftsPerHour"
   | "time"
   | "signal";
+
+const ALCHEMY_SORT_KEYS: readonly AlchemySortKey[] = [
+  "name",
+  "level",
+  "action",
+  "cost",
+  "bestRevenue",
+  "profit",
+  "profitPerHour",
+  "dailyProfit",
+  "vol_3",
+  "craftsPerHour",
+  "time",
+  "signal",
+];
 
 const OWNED_STORAGE_KEY = "zenith_alchemy_owned_materials";
 const OWNED_MODE_STORAGE_KEY = "zenith_alchemy_owned_cost_mode";
@@ -111,12 +136,12 @@ const ALCHEMY_SETTINGS_STORAGE_KEY = "zenith_alchemy_settings";
 type PersistedAlchemySettings = {
   minLevel: number | "";
   maxLevel: number | "";
-  minRoi: number | "";
+  minProfit: number | "";
   minVolume: number | "";
   onlyProfitable: boolean;
   hideMissing: boolean;
   ownedCostMode?: boolean;
-  sortCol: AlchemySortKey;
+  sortCol: AlchemySortKey | "roi";
   sortDesc: boolean;
 };
 
@@ -163,12 +188,15 @@ const getTrend = (item?: MarketData): Trend => {
   return "flat";
 };
 
-const getSignal = (action: ActionPath, volume: number, missing: boolean): LiquiditySignal => {
+const getSignal = (action: ActionPath, item: MarketData | undefined, missing: boolean): LiquiditySignal => {
   if (missing) return "MISSING";
   if (action === "VENDOR") return "VENDOR SAFE";
-  if (volume >= 150) return "LIQUID";
-  if (volume >= 40) return "STEADY";
-  if (volume > 0) return "THIN";
+  const liquidity = getMarketLiquidity(item);
+  if (liquidity.isSpikeRisk) return "SPIKE RISK";
+  if (liquidity.hasVolumeSwings) return "VOLUME SWINGS";
+  if (liquidity.tone === "active") return "LIQUID";
+  if (liquidity.tone === "steady") return "STEADY";
+  if (liquidity.rawVolume3d > 0 || liquidity.stableVolume3d > 0) return "THIN";
   return "NO SALES";
 };
 
@@ -177,6 +205,17 @@ const getSignalClass = (signal: LiquiditySignal) => {
   if (signal === "STEADY") return "action-vendor";
   return "action-liquidate";
 };
+
+const getVisibleAlchemyWarnings = (row: AlchemyRow) => {
+  const repeatedBySignal = new Set<string>();
+  if (row.signal === "SPIKE RISK") repeatedBySignal.add("Bulk-sale spike risk");
+  if (row.signal === "VOLUME SWINGS") repeatedBySignal.add("Volume swings");
+  if (row.signal === "THIN") repeatedBySignal.add("Thin market");
+  return row.warnings.filter((warning) => !repeatedBySignal.has(warning));
+};
+
+const isAlchemySortKey = (value: unknown): value is AlchemySortKey =>
+  typeof value === "string" && ALCHEMY_SORT_KEYS.includes(value as AlchemySortKey);
 
 const highlightMatch = (text: string, query: string) => {
   if (!query.trim()) return text;
@@ -223,13 +262,13 @@ function AlchemyContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [minLevel, setMinLevel] = useState<number | "">(0);
   const [maxLevel, setMaxLevel] = useState<number | "">(89);
-  const [minRoi, setMinRoi] = useState<number | "">("");
+  const [minProfit, setMinProfit] = useState<number | "">("");
   const [minVolume, setMinVolume] = useState<number | "">("");
   const [onlyProfitable, setOnlyProfitable] = useState(false);
   const [hideMissing, setHideMissing] = useState(true);
   const [ownedCostMode, setOwnedCostMode] = useState(false);
   const [ownedMaterials, setOwnedMaterials] = useState<Record<string, string[]>>({});
-  const [sortCol, setSortCol] = useState<AlchemySortKey>("profit");
+  const [sortCol, setSortCol] = useState<AlchemySortKey>("profitPerHour");
   const [sortDesc, setSortDesc] = useState(true);
   const [selectedRow, setSelectedRow] = useState<AlchemyRow | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -242,12 +281,12 @@ function AlchemyContent() {
     const saved = readAlchemySettings();
     if (saved.minLevel !== undefined) setMinLevel(saved.minLevel);
     if (saved.maxLevel !== undefined) setMaxLevel(saved.maxLevel);
-    if (saved.minRoi !== undefined) setMinRoi(saved.minRoi);
+    if (saved.minProfit !== undefined) setMinProfit(saved.minProfit);
     if (saved.minVolume !== undefined) setMinVolume(saved.minVolume);
     if (typeof saved.onlyProfitable === "boolean") setOnlyProfitable(saved.onlyProfitable);
     if (typeof saved.hideMissing === "boolean") setHideMissing(saved.hideMissing);
-    if (saved.sortCol === "craftsPerHour") setSortCol("profitPerHour");
-    else if (saved.sortCol) setSortCol(saved.sortCol);
+    if (saved.sortCol === "craftsPerHour" || saved.sortCol === "roi") setSortCol("profitPerHour");
+    else if (isAlchemySortKey(saved.sortCol)) setSortCol(saved.sortCol);
     if (typeof saved.sortDesc === "boolean") setSortDesc(saved.sortDesc);
     setOwnedMaterials(readOwnedMaterials(ownedStorageKey, activeProfileId ? undefined : OWNED_STORAGE_KEY));
     const storedOwnedMode = localStorage.getItem(ownedModeStorageKey);
@@ -266,7 +305,7 @@ function AlchemyContent() {
     const next: PersistedAlchemySettings = {
       minLevel,
       maxLevel,
-      minRoi,
+      minProfit,
       minVolume,
       onlyProfitable,
       hideMissing,
@@ -274,7 +313,7 @@ function AlchemyContent() {
       sortDesc,
     };
     localStorage.setItem(ALCHEMY_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-  }, [hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, settingsLoaded, sortCol, sortDesc]);
+  }, [hideMissing, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, settingsLoaded, sortCol, sortDesc]);
 
   const persistOwnedMaterials = (next: Record<string, string[]>) => {
     setOwnedMaterials(next);
@@ -366,7 +405,6 @@ function AlchemyContent() {
       const bestRevenue = Math.max(marketNet, vendorNet, liquidationNet);
       const profit = missing ? 0 : bestRevenue - cost;
       const opportunityProfit = missing ? 0 : bestRevenue - opportunityCost;
-      const roi = !missing && cost > 0 ? (profit / cost) * 100 : 0;
       const craftsPerHour = recipe.time > 0 ? 3600 / recipe.time : 0;
       const profitPerHour = profit * craftsPerHour;
       const craftsPerDay = craftsPerHour * parsedActiveHours;
@@ -376,10 +414,17 @@ function AlchemyContent() {
       if (bestRevenue === vendorNet && vendorNet > liquidationNet) action = "VENDOR";
       else if (bestRevenue === marketNet && marketNet > liquidationNet) action = "MARKET";
 
-      const signal = getSignal(action, item?.vol_3 || 0, missing);
+      const liquidity = getMarketLiquidity(item);
+      const signal = getSignal(action, item, missing);
       const warnings: string[] = [];
       if (missing) warnings.push(outputMissing ? "Missing result price" : `Missing inputs: ${inputMissing.join(", ")}`);
-      if (!missing && action === "MARKET" && (item?.vol_3 || 0) < 40) warnings.push("Thin market");
+      if (!missing && action === "MARKET" && liquidity.isSpikeRisk) {
+        warnings.push("Bulk-sale spike risk");
+      } else if (!missing && action === "MARKET" && liquidity.hasVolumeSwings) {
+        warnings.push("Volume swings");
+      } else if (!missing && action === "MARKET" && liquidity.stableVolume3d < 40 && signal !== "THIN" && signal !== "NO SALES") {
+        warnings.push("Thin market");
+      }
       if (!missing && profit > 0 && opportunityProfit < 0 && ownedCostMode) warnings.push("Only profitable with owned inputs");
       if (!missing && preferences.customPrices?.[name]) warnings.push("Custom sell price");
       if (!missing && ingredientCosts.some((ingredient) => ingredient.source === "custom")) warnings.push("Custom input price");
@@ -421,9 +466,11 @@ function AlchemyContent() {
         profit,
         profitPerHour,
         opportunityProfit,
-        roi,
         dailyProfit,
         vol_3: item?.vol_3 || 0,
+        stableVol_3: liquidity.stableVolume3d || item?.vol_3 || 0,
+        liquidityNote: liquidity.note,
+        liquidityRisk: liquidity.isSpikeRisk || liquidity.hasVolumeSwings,
         outputSource: outputPrice.source === "custom" ? "custom" : outputPrice.source === "market" ? "market" : "missing",
         inputMissing,
         ingredientCosts,
@@ -445,7 +492,7 @@ function AlchemyContent() {
 
   const rows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    const roiLimit = minRoi === "" ? -Infinity : Number(minRoi);
+    const profitLimit = minProfit === "" ? -Infinity : Number(minProfit);
     const volumeLimit = minVolume === "" ? 0 : Number(minVolume);
 
     const filtered = allRows.filter((row) => {
@@ -454,16 +501,16 @@ function AlchemyContent() {
       if (maxLevel !== "" && row.level > Number(maxLevel)) return false;
       if (hideMissing && row.status === "missing") return false;
       if (onlyProfitable && row.profit <= 0) return false;
-      if (row.status === "ok" && row.roi < roiLimit) return false;
-      if (row.status === "ok" && row.vol_3 < volumeLimit) return false;
+      if (row.status === "ok" && row.profit < profitLimit) return false;
+      if (row.status === "ok" && row.stableVol_3 < volumeLimit) return false;
       return true;
     });
 
     filtered.sort((a, b) => {
       if (a.status === "missing" && b.status !== "missing") return 1;
       if (a.status !== "missing" && b.status === "missing") return -1;
-      const valA = a[sortCol];
-      const valB = b[sortCol];
+      const valA = sortCol === "vol_3" ? a.stableVol_3 : a[sortCol];
+      const valB = sortCol === "vol_3" ? b.stableVol_3 : b[sortCol];
       if (typeof valA === "number" && typeof valB === "number") return sortDesc ? valB - valA : valA - valB;
       return sortDesc
         ? String(valB).localeCompare(String(valA))
@@ -471,17 +518,17 @@ function AlchemyContent() {
     });
 
     return filtered;
-  }, [allRows, hideMissing, maxLevel, minLevel, minRoi, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
+  }, [allRows, hideMissing, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
 
   const summary = useMemo(() => {
     const valid = allRows.filter((row) => row.status === "ok");
     const byProfit = [...valid].sort((a, b) => b.profit - a.profit);
+    const hourly = [...valid].sort((a, b) => b.profitPerHour - a.profitPerHour)[0];
     const market = valid.filter((row) => row.action === "MARKET").sort((a, b) => b.profit - a.profit)[0];
     const vendor = valid.filter((row) => row.action === "VENDOR").sort((a, b) => b.profit - a.profit)[0];
-    const roi = [...valid].sort((a, b) => b.roi - a.roi)[0];
-    const volume = [...valid].sort((a, b) => b.vol_3 - a.vol_3)[0];
-    const risky = byProfit.find((row) => row.profit > 0 && row.vol_3 > 0 && row.vol_3 < 40);
-    return { market, vendor, roi, volume, risky, best: byProfit[0] };
+    const volume = [...valid].sort((a, b) => b.stableVol_3 - a.stableVol_3)[0];
+    const risky = byProfit.find((row) => row.profit > 0 && (row.liquidityRisk || (row.stableVol_3 > 0 && row.stableVol_3 < 40)));
+    return { market, vendor, hourly, volume, risky, best: byProfit[0] };
   }, [allRows]);
 
   useEffect(() => {
@@ -553,8 +600,8 @@ function AlchemyContent() {
       <div className="alchemy-summary-grid">
         <SummaryCard icon={<Coins size={16} />} label="Best Market Craft" row={summary.market} value={summary.market ? formatSignedGold(summary.market.profit) : "N/A"} onSelect={setSelectedRow} />
         <SummaryCard icon={<PackageCheck size={16} />} label="Best Vendor Play" row={summary.vendor} value={summary.vendor ? formatSignedGold(summary.vendor.profit) : "N/A"} onSelect={setSelectedRow} />
-        <SummaryCard icon={<BarChart3 size={16} />} label="Best ROI" row={summary.roi} value={summary.roi ? `+${summary.roi.roi.toFixed(1)}%` : "N/A"} onSelect={setSelectedRow} />
-        <SummaryCard icon={<Activity size={16} />} label="Highest Volume" row={summary.volume} value={summary.volume ? `${formatGold(summary.volume.vol_3)} vol` : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<BarChart3 size={16} />} label="Best Profit/Hr" row={summary.hourly} value={summary.hourly ? `${formatSignedGold(summary.hourly.profitPerHour)}/hr` : "N/A"} onSelect={setSelectedRow} />
+        <SummaryCard icon={<Activity size={16} />} label="Highest Stable Volume" row={summary.volume} value={summary.volume ? `${formatGold(summary.volume.stableVol_3)} vol` : "N/A"} onSelect={setSelectedRow} />
         <SummaryCard icon={<AlertTriangle size={16} />} label="Risky High Profit" row={summary.risky} value={summary.risky ? formatSignedGold(summary.risky.profit) : "None"} onSelect={setSelectedRow} />
       </div>
 
@@ -564,6 +611,7 @@ function AlchemyContent() {
           <div className="alchemy-search-field">
             <Search size={14} />
             <input
+              aria-label="Search alchemy recipes"
               type="text"
               className="control-input"
               placeholder="Filter by name..."
@@ -576,16 +624,16 @@ function AlchemyContent() {
         <div className="control-group">
           <label className="control-label">Level Range</label>
           <div className="alchemy-inline-fields">
-            <input type="number" className="control-input" placeholder="Min" value={minLevel} onChange={(e) => setMinLevel(e.target.value === "" ? "" : Number(e.target.value))} />
-            <input type="number" className="control-input" placeholder="Max" value={maxLevel} onChange={(e) => setMaxLevel(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input aria-label="Minimum alchemy level" type="number" className="control-input" placeholder="Min" value={minLevel} onChange={(e) => setMinLevel(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input aria-label="Maximum alchemy level" type="number" className="control-input" placeholder="Max" value={maxLevel} onChange={(e) => setMaxLevel(e.target.value === "" ? "" : Number(e.target.value))} />
           </div>
         </div>
 
         <div className="control-group">
-          <label className="control-label">Min ROI / Volume</label>
+          <label className="control-label">Min Profit / Stable Vol</label>
           <div className="alchemy-inline-fields">
-            <input type="number" className="control-input" placeholder="ROI %" value={minRoi} onChange={(e) => setMinRoi(e.target.value === "" ? "" : Number(e.target.value))} />
-            <input type="number" className="control-input" placeholder="3D Vol" value={minVolume} onChange={(e) => setMinVolume(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input aria-label="Minimum profit per piece" type="number" className="control-input" placeholder="Profit/Piece" value={minProfit} onChange={(e) => setMinProfit(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input aria-label="Minimum stable volume" type="number" className="control-input" placeholder="Stable Vol" value={minVolume} onChange={(e) => setMinVolume(e.target.value === "" ? "" : Number(e.target.value))} />
           </div>
         </div>
 
@@ -621,17 +669,31 @@ function AlchemyContent() {
                   <th className="sortable left-align" onClick={() => handleSort("name")}>Recipe {renderSortIcon("name")}</th>
                   <th className="sortable" onClick={() => handleSort("level")}>Lvl {renderSortIcon("level")}</th>
                   <th className="sortable" onClick={() => handleSort("action")}>Best Path {renderSortIcon("action")}</th>
-                  <th className="sortable" onClick={() => handleSort("profit")}>Net/Craft {renderSortIcon("profit")}</th>
-                  <th className="sortable" onClick={() => handleSort("roi")}>ROI {renderSortIcon("roi")}</th>
-                  <th className="sortable" onClick={() => handleSort("vol_3")}>3D Vol {renderSortIcon("vol_3")}</th>
-                  <th className="sortable" onClick={() => handleSort("time")}>Time {renderSortIcon("time")}</th>
+                  <th className="sortable" onClick={() => handleSort("cost")}>Cost {renderSortIcon("cost")}</th>
+                  <th className="sortable" onClick={() => handleSort("bestRevenue")}>Return {renderSortIcon("bestRevenue")}</th>
                   <th className="sortable" onClick={() => handleSort("profitPerHour")}>Profit/Hr {renderSortIcon("profitPerHour")}</th>
-                  <th>Signals</th>
+                  <th className="sortable" onClick={() => handleSort("profit")}>Profit/Piece {renderSortIcon("profit")}</th>
+                  <th className="sortable" onClick={() => handleSort("vol_3")}>Stable Vol {renderSortIcon("vol_3")}</th>
+                  <th className="sortable" onClick={() => handleSort("time")}>Time {renderSortIcon("time")}</th>
+                  <th>Liquidity</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.name} onClick={() => row.status === "ok" && setSelectedRow(row)} className={`clickable-row ${row.status === "missing" ? "row-muted" : ""}`}>
+                  <tr
+                    aria-disabled={row.status !== "ok"}
+                    aria-label={`Open ${row.name} alchemy strategy`}
+                    key={row.name}
+                    onClick={() => row.status === "ok" && setSelectedRow(row)}
+                    onKeyDown={(event) => {
+                      if (row.status !== "ok" || (event.key !== "Enter" && event.key !== " ")) return;
+                      event.preventDefault();
+                      setSelectedRow(row);
+                    }}
+                    className={`clickable-row ${row.status === "missing" ? "row-muted" : ""}`}
+                    role="button"
+                    tabIndex={row.status === "ok" ? 0 : -1}
+                  >
                     <td className="item-name left-align">
                       <button
                         type="button"
@@ -648,15 +710,16 @@ function AlchemyContent() {
                     </td>
                     <td className="mono text-muted">{row.level}</td>
                     <td>{row.status === "missing" ? <Badge label="NO DATA" tone="bad" /> : <PathBadge action={row.action} />}</td>
-                    <td className={`mono ${row.profit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit)}</td>
-                    <td className={`mono ${row.roi >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : `${row.roi >= 0 ? "+" : ""}${row.roi.toFixed(1)}%`}</td>
-                    <td className={`mono ${row.vol_3 > 0 ? "text-main" : "text-muted"}`}>{formatGold(row.vol_3)}</td>
-                    <td className="mono text-muted">{formatDuration(row.time)}</td>
+                    <td className="mono text-muted">{row.status === "missing" ? "N/A" : `${formatGold(row.cost)}g`}</td>
+                    <td className="mono text-main">{row.status === "missing" ? "N/A" : `${formatGold(row.bestRevenue)}g`}</td>
                     <td className={`mono ${row.profitPerHour >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profitPerHour)}</td>
+                    <td className={`mono ${row.profit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit)}</td>
+                    <td className={`mono ${row.stableVol_3 > 0 ? "text-main" : "text-muted"}`} title={row.stableVol_3 !== row.vol_3 ? `Raw 3-day volume: ${formatGold(row.vol_3)}` : row.liquidityNote}>{formatGold(row.stableVol_3)}</td>
+                    <td className="mono text-muted">{formatDuration(row.time)}</td>
                     <td>
                       <div className="alchemy-signal-stack">
                         <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
-                        {row.warnings.slice(0, 2).map((warning) => <span key={warning} className="alchemy-warning-chip">{warning}</span>)}
+                        {getVisibleAlchemyWarnings(row).slice(0, 2).map((warning) => <span key={warning} className="alchemy-warning-chip">{warning}</span>)}
                       </div>
                     </td>
                   </tr>
@@ -674,24 +737,38 @@ function AlchemyContent() {
             onSort={(value) => handleSort(value as AlchemySortKey)}
             onToggleDirection={() => setSortDesc((prev) => !prev)}
             options={[
-              { value: "profit", label: "Net/Craft" },
               { value: "profitPerHour", label: "Profit/Hr" },
-              { value: "roi", label: "ROI" },
+              { value: "profit", label: "Profit/Piece" },
+              { value: "cost", label: "Cost" },
+              { value: "bestRevenue", label: "Return" },
               { value: "dailyProfit", label: "Daily Profit" },
-              { value: "vol_3", label: "Volume" },
+              { value: "vol_3", label: "Stable Volume" },
               { value: "level", label: "Level" },
               { value: "name", label: "Name" },
             ]}
           />
           <div className="mobile-card-grid">
             {rows.map((row) => (
-              <div key={row.name} className="mobile-alchemy-card rich" onClick={() => row.status === "ok" && setSelectedRow(row)}>
+              <div
+                aria-disabled={row.status !== "ok"}
+                aria-label={`Open ${row.name} alchemy strategy`}
+                key={row.name}
+                className="mobile-alchemy-card rich"
+                onClick={() => row.status === "ok" && setSelectedRow(row)}
+                onKeyDown={(event) => {
+                  if (row.status !== "ok" || (event.key !== "Enter" && event.key !== " ")) return;
+                  event.preventDefault();
+                  setSelectedRow(row);
+                }}
+                role="button"
+                tabIndex={row.status === "ok" ? 0 : -1}
+              >
                 <div className="m-card-header">
                   <div className="m-card-title">
                     <span className="m-name">{highlightMatch(row.name, searchTerm)}</span>
                     <span className="m-lvl">LVL {row.level}</span>
                   </div>
-                  {row.status === "ok" && <div className={`m-roi ${row.roi > 0 ? "pos" : "neg"}`}>{row.roi.toFixed(1)}% ROI</div>}
+                  {row.status === "ok" && <div className={`m-profit-rate ${row.profitPerHour > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profitPerHour)}/hr</div>}
                 </div>
                 {row.status === "missing" ? (
                   <p className="alchemy-card-note">{row.warnings[0] || "Missing market data"}</p>
@@ -699,9 +776,11 @@ function AlchemyContent() {
                   <>
                     <div className="m-card-body">
                       <div className="m-stat"><span className="m-label">PATH</span><PathBadge action={row.action} /></div>
-                      <div className="m-stat"><span className="m-label">NET/CRAFT</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
+                      <div className="m-stat"><span className="m-label">COST</span><span className="m-val">{formatGold(row.cost)}g</span></div>
+                      <div className="m-stat"><span className="m-label">RETURN</span><span className="m-val">{formatGold(row.bestRevenue)}g</span></div>
                       <div className="m-stat"><span className="m-label">PROFIT/HR</span><span className={`m-val ${row.profitPerHour > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profitPerHour)}</span></div>
-                      <div className="m-stat"><span className="m-label">VOLUME</span><span className="m-val">{formatGold(row.vol_3)}</span></div>
+                      <div className="m-stat"><span className="m-label">PROFIT/PIECE</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
+                      <div className="m-stat"><span className="m-label">STABLE VOL</span><span className="m-val">{formatGold(row.stableVol_3)}</span></div>
                     </div>
                     <div className="m-card-footer">
                       <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
@@ -718,7 +797,7 @@ function AlchemyContent() {
           <div className="alchemy-empty-state">
             <Search size={28} />
             <h3>No alchemy strategies match those filters</h3>
-            <p>Relax the ROI, volume, level, or search filters to bring recipes back.</p>
+            <p>Relax the profit, volume, level, or search filters to bring recipes back.</p>
           </div>
         )}
       </section>
@@ -788,38 +867,122 @@ function AlchemyStrategyModal({
   onOpenItem: (name: string) => void;
   onToggleOwned: (materialName: string) => void;
 }) {
+  const dialogRef = useModalA11y<HTMLDivElement>(true, onClose);
+  const [targetGoldPerHour, setTargetGoldPerHour] = useState("");
+  const target = Number(targetGoldPerHour);
+  const targetPerCraft = Number.isFinite(target) && target > 0 && row.craftsPerHour > 0
+    ? target / row.craftsPerHour
+    : null;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content alchemy-strategy-modal" onClick={(event) => event.stopPropagation()}>
+    <div className="modal-overlay alchemy-strategy-overlay" onClick={onClose}>
+      <div
+        aria-labelledby="alchemy-strategy-title"
+        aria-modal="true"
+        className="modal-content alchemy-strategy-modal"
+        onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="modal-header">
-          <h2 onClick={() => onOpenItem(row.name)} style={{ cursor: "pointer" }}>{row.name} Strategy</h2>
-          <button className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
+          <h2 id="alchemy-strategy-title">
+            <button
+              aria-label={`Open ${row.name} item details`}
+              onClick={() => onOpenItem(row.name)}
+              style={{ background: "none", border: 0, color: "inherit", cursor: "pointer", font: "inherit", padding: 0, textAlign: "left" }}
+              type="button"
+            >
+              {row.name} Strategy
+            </button>
+          </h2>
+          <button aria-label="Close alchemy strategy" className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
         </div>
         <div className="modal-body">
+          <div className="alchemy-modal-kpi-grid">
+            <div>
+              <span>Cost</span>
+              <strong className="mono">{formatGold(row.cost)}g</strong>
+            </div>
+            <div>
+              <span>Return</span>
+              <strong className="mono">{formatGold(row.bestRevenue)}g</strong>
+            </div>
+            <div>
+              <span>Profit / piece</span>
+              <strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit)}</strong>
+            </div>
+            <div>
+              <span>Profit / hr</span>
+              <strong className={`mono ${row.profitPerHour >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profitPerHour)}</strong>
+            </div>
+          </div>
           <div className="alchemy-modal-grid">
             <section className="alchemy-modal-panel">
               <div className="alchemy-modal-panel-title"><Target size={16} /> Inputs</div>
+              <label className="alchemy-target-profit-field">
+                <span>Target profit / hr</span>
+                <input
+                  aria-label="Target alchemy profit per hour"
+                  inputMode="numeric"
+                  min={0}
+                  placeholder="Optional"
+                  type="number"
+                  value={targetGoldPerHour}
+                  onChange={(event) => setTargetGoldPerHour(event.target.value)}
+                />
+              </label>
+              {targetPerCraft !== null && (
+                <div className="alchemy-target-profit-note">
+                  {formatGold(targetPerCraft)}g target profit per craft.
+                </div>
+              )}
               <div className="alchemy-material-list">
-                {row.ingredientCosts.map((ingredient) => (
-                  <div key={ingredient.name} className="alchemy-material-card">
-                    <div className="alchemy-material-row">
-                      <span className="alchemy-material-name">
-                        <label className="alchemy-owned-check">
-                          <input type="checkbox" checked={ingredient.owned} onChange={() => onToggleOwned(ingredient.name)} />
-                          <span>{ingredient.quantity}x</span>
-                        </label>{" "}
-                        <button type="button" className="alchemy-material-button hover-underline" onClick={() => onOpenItem(ingredient.name)}>
-                          {ingredient.name}
-                        </button>
-                      </span>
-                      <span className="alchemy-material-price mono">
-                        <span>{formatGold(ingredient.unitPrice, 3)} ea</span>
-                        <span>{"->"}</span>
-                        <strong>{ownedCostMode && ingredient.owned ? "Owned" : `${formatGold(ingredient.totalPrice, 3)}g`}</strong>
-                      </span>
+                {row.ingredientCosts.map((ingredient) => {
+                  const quantity = Math.max(ingredient.quantity, 1);
+                  const ingredientCostUsed = ownedCostMode && ingredient.owned ? 0 : ingredient.totalPrice;
+                  const otherCost = row.cost - ingredientCostUsed;
+                  const maxUnitForBreakEven = Math.floor((row.bestRevenue - otherCost) / quantity);
+                  const maxUnitForTarget = targetPerCraft === null
+                    ? null
+                    : Math.floor((row.bestRevenue - otherCost - targetPerCraft) / quantity);
+                  return (
+                    <div key={ingredient.name} className="alchemy-material-card">
+                      <div className="alchemy-material-row">
+                        <span className="alchemy-material-name">
+                          <label className="alchemy-owned-check">
+                            <input aria-label={`Mark ${ingredient.name} as owned`} type="checkbox" checked={ingredient.owned} onChange={() => onToggleOwned(ingredient.name)} />
+                            <span>{ingredient.quantity}x</span>
+                          </label>{" "}
+                          <button type="button" className="alchemy-material-button hover-underline" onClick={() => onOpenItem(ingredient.name)}>
+                            {ingredient.name}
+                          </button>
+                        </span>
+                        <span className="alchemy-material-price mono">
+                          <span>{formatGold(ingredient.unitPrice, 3)} ea</span>
+                          <span>{"->"}</span>
+                          <strong>{ownedCostMode && ingredient.owned ? "Owned" : `${formatGold(ingredient.totalPrice, 3)}g`}</strong>
+                        </span>
+                      </div>
+                      <div className="alchemy-break-even-grid">
+                        <div className="alchemy-break-even-line">
+                          <span>Break-even max</span>
+                          <strong className={maxUnitForBreakEven > 0 ? "" : "danger-value"}>
+                            {maxUnitForBreakEven > 0 ? `${formatGold(maxUnitForBreakEven)}g ea` : "Not profitable"}
+                          </strong>
+                        </div>
+                        {maxUnitForTarget !== null && (
+                          <div className="alchemy-break-even-line">
+                            <span>Target max</span>
+                            <strong className={maxUnitForTarget > 0 ? "" : "danger-value"}>
+                              {maxUnitForTarget > 0 ? `${formatGold(maxUnitForTarget)}g ea` : "Not possible"}
+                            </strong>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div className="alchemy-modal-total"><span>Material cost</span><strong className="mono">{formatGold(row.materialCost, 3)}g</strong></div>
                 <div className="alchemy-modal-total"><span>Cash material cost</span><strong className="mono">{formatGold(row.cashMaterialCost, 3)}g</strong></div>
                 <div className="alchemy-modal-total"><span>Vial cost</span><strong className="mono">{formatGold(row.vialCost)}g</strong></div>
@@ -828,7 +991,7 @@ function AlchemyStrategyModal({
             </section>
 
             <section className="alchemy-modal-panel">
-              <div className="alchemy-modal-panel-title"><Info size={16} /> Revenue Paths</div>
+              <div className="alchemy-modal-panel-title"><Info size={16} /> Return Paths</div>
               <div className="alchemy-math-list">
                 <div className="alchemy-math-row"><span>Market gross</span><strong className="mono">{formatGold(row.marketGross, 3)}g</strong></div>
                 <div className="alchemy-math-row"><span>Market tax ({Math.round(marketTaxRate * 100)}%)</span><strong className="mono">-{formatGold(row.marketTax, 3)}g</strong></div>
@@ -846,9 +1009,14 @@ function AlchemyStrategyModal({
                 <div className="alchemy-math-row"><span>Daily profit ({activeHours}h)</span><strong className={`mono ${row.dailyProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.dailyProfit, 2)}</strong></div>
                 <div className="alchemy-formula-line">{row.formula}</div>
                 <div className="alchemy-liquidity-row">
-                  <span>3-day liquidity</span>
+                  <span>Stable liquidity</span>
+                  <strong>{formatGold(row.stableVol_3)} <small>sold pace</small></strong>
+                </div>
+                <div className="alchemy-liquidity-row">
+                  <span>Raw 3-day sold</span>
                   <strong>{formatGold(row.vol_3)} <small>sold</small></strong>
                 </div>
+                {row.liquidityRisk && <p className="alchemy-reason"><AlertTriangle size={14} /> {row.liquidityNote}</p>}
                 <p className="alchemy-reason"><Eye size={14} /> {row.reason}</p>
               </div>
             </section>
@@ -861,7 +1029,7 @@ function AlchemyStrategyModal({
 
 export default function AlchemyPage() {
   return (
-    <main className="container">
+    <main className="container alchemy-page-shell">
       <Suspense fallback={<div className="loading-state">Loading Alchemy Data...</div>}>
         <AlchemyContent />
       </Suspense>

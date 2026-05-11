@@ -16,20 +16,21 @@ import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
 import { getLoreEntry, getLoreForItem } from '@/data/lore';
-import { getSafeMarketValue } from '@/lib/market-pricing';
+import { getMarketLiquidity, getSafeMarketValue } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
+import { getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
+import { useModalA11y } from '@/lib/use-modal-a11y';
 
 interface ItemModalProps {
   id: string;
   onClose: () => void;
 }
 
-type AcquisitionSource = {
+type AcquisitionSource = DropSourceWithLocation & {
   type?: string;
   name?: string;
   chance?: number | string;
-  location?: string;
 };
 
 const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
@@ -77,19 +78,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usageMap, setUsageMap] = useState<any>(null);
+  const modalDialogRef = useModalA11y<HTMLDivElement>(true, onClose);
 
   useEffect(() => {
     fetch('/usage-map.json').then(r => r.json()).then(setUsageMap).catch(() => {});
   }, []);
-
-  // Keyboard support for Esc
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
 
   useEffect(() => {
     async function fetchItem() {
@@ -221,6 +214,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     }).sort((a: AcquisitionSource, b: AcquisitionSource) => Number(b.chance || 0) - Number(a.chance || 0));
   }, [item, relationEntry]);
 
+  const gatheredLocations = useMemo(() => (
+    item?.name ? getResourceLocationsForItem(item.name) : []
+  ), [item?.name]);
+
   const groupedUtility = useMemo(() => {
     const direct = Array.isArray(item?.required_for) ? item.required_for : [];
 
@@ -263,6 +260,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     const vendorNet = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
     const bestPath = marketNet >= vendorNet ? 'Market' : 'Vendor';
     const bestRevenue = Math.max(marketNet, vendorNet);
+    const liquidity = getMarketLiquidity({ ...item, ...(marketData?.[item.name] || {}) });
 
     return {
       bestPath,
@@ -272,12 +270,19 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       vendorNet,
       taxRate,
       volume: Number(item.vol_3 || marketData?.[item.name]?.vol_3 || 0),
+      stableVolume: liquidity.stableVolume3d,
     };
   }, [item, marketData, preferences.membership, profileBarteringBoost]);
+  const modalMarketValue = item ? (getSafeMarketValue(marketData?.[item.name]) || getSafeMarketValue(item)) : 0;
+  const modalMarketVolume = Number((item?.name ? marketData?.[item.name]?.vol_3 : 0) || item?.vol_3 || 0);
+  const modalMarketDatum = item?.name ? { ...item, ...(marketData?.[item.name] || {}) } : item;
+  const modalLiquidity = getMarketLiquidity(modalMarketDatum);
+  const modalStableVolume = modalLiquidity.stableVolume3d || modalMarketVolume;
 
   const showUtility = Object.keys(groupedUtility).length > 0;
   const showMarket = item && item.is_tradeable;
   const showAcquisition = acquisitionSources.length > 0;
+  const showGatheredLocations = gatheredLocations.length > 0;
   const showRecipe = item && (item.recipe || item.produced_from);
   const showYield = item && item.recipe_yield;
   const showLootTable = (item && item.loot_table && item.loot_table.length > 0) || (item && item.chest_drops && item.chest_drops.length > 0);
@@ -292,10 +297,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     return (
       <div className="modal-container">
         <div className="modal-backdrop" onClick={onClose} />
-        <div className="error-card">
-          <div className="error-label">Registry Error</div>
+        <div
+          aria-labelledby="item-modal-error-title"
+          aria-modal="true"
+          className="error-card"
+          ref={modalDialogRef}
+          role="alertdialog"
+          tabIndex={-1}
+        >
+          <div className="error-label" id="item-modal-error-title">Registry Error</div>
           <div className="error-msg">{error}</div>
-          <button onClick={onClose} className="error-btn">Dismiss</button>
+          <button onClick={onClose} className="error-btn" type="button">Dismiss</button>
         </div>
         <style jsx>{`
           .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
@@ -313,13 +325,20 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     <div className="modal-container">
       <div className="modal-backdrop" onClick={onClose} />
 
-      <div className="modal-card">
+      <div
+        aria-labelledby="item-modal-title"
+        aria-modal="true"
+        className="modal-card"
+        ref={modalDialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="modal-header-section" style={{ borderBottomColor: qColor + '33' }}>
           <div className="header-flex">
             <div className="header-left">
               {item?.image_url && <img src={item.image_url} alt="" className="item-icon-large" />}
               <div>
-                <h2 className="item-title" style={{ color: qColor }}>
+                <h2 className="item-title" id="item-modal-title" style={{ color: qColor }}>
                   {item?.name || 'Loading...'}
                 </h2>
                 <div className="badge-row">
@@ -352,7 +371,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 </div>
               </div>
             </div>
-            <button className="modal-close-btn" onClick={onClose}><X size={20} /></button>
+            <button className="modal-close-btn" type="button" aria-label="Close item details" onClick={onClose}><X size={20} /></button>
           </div>
         </div>
 
@@ -367,7 +386,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <div className="bento-card vendor-info-card full-width">
                   <div className="card-label"><Package size={14} /> VENDOR EXCLUSIVE</div>
                   <div className="vendor-message">
-                    This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
+                    This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" rel="noopener noreferrer" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
                     <p className="vendor-warning">You cannot obtain this from the market and cannot sell it on the market as well and it is not tradable as well.</p>
                   </div>
                 </div>
@@ -401,8 +420,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <strong>{saleInsight.vendorNet ? formatGold(saleInsight.vendorNet) : 'No vendor'}</strong>
                       </div>
                       <div>
-                        <span>3-day volume</span>
-                        <strong>{saleInsight.volume.toLocaleString()}</strong>
+                        <span>Stable volume</span>
+                        <strong title={saleInsight.stableVolume !== saleInsight.volume ? `Raw 3-day volume: ${saleInsight.volume.toLocaleString()}` : undefined}>{saleInsight.stableVolume.toLocaleString()}</strong>
                       </div>
                     </div>
                   </div>
@@ -442,17 +461,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               {showMarket && (
                 <div className="bento-card market-card">
                   <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
-                  {getSafeMarketValue(item) ? (
+                  {modalMarketValue ? (
                     <>
                       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                         <div className="price-row">
                           <div className="price-main">
-                            {Math.round(getSafeMarketValue(item)).toLocaleString()}g
+                            {Math.round(modalMarketValue).toLocaleString()}g
                           </div>
                           <div className="price-sub">Current Market Price</div>
                         </div>
 
-                        {intrinsicValue > 0 && Math.abs(intrinsicValue - getSafeMarketValue(item)) > 1 && (
+                        {intrinsicValue > 0 && Math.abs(intrinsicValue - modalMarketValue) > 1 && (
                           <div className="price-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2rem' }}>
                             <div className="price-main" style={{ color: 'var(--text-accent)' }}>
                               {Math.floor(intrinsicValue).toLocaleString()}g
@@ -465,11 +484,19 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <div className="market-stats">
                         <div className="m-stat">
                           <span>3D Average</span>
-                          <strong>{getSafeMarketValue(item) ? `${Math.round(getSafeMarketValue(item)).toLocaleString()}g` : '—'}</strong>
+                          <strong>{modalMarketValue ? `${Math.round(modalMarketValue).toLocaleString()}g` : '-'}</strong>
                         </div>
                         <div className="m-stat">
-                          <span>3D Volume</span>
-                          <strong>{(item.vol_3 || 0).toLocaleString()}</strong>
+                          <span>Stable Volume</span>
+                          <strong title={modalStableVolume !== modalMarketVolume ? `Raw 3-day volume: ${modalMarketVolume.toLocaleString()}` : undefined}>{modalStableVolume.toLocaleString()}</strong>
+                        </div>
+                        <div className="m-stat">
+                          <span>Raw 3D Volume</span>
+                          <strong>{modalMarketVolume.toLocaleString()}</strong>
+                        </div>
+                        <div className="m-stat">
+                          <span>Liquidity</span>
+                          <strong className={`liquidity-status ${modalLiquidity.tone}`}>{modalLiquidity.label}</strong>
                         </div>
                         <div className="m-stat">
                           <span>Vendor Sell</span>
@@ -478,6 +505,12 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           </strong>
                         </div>
                       </div>
+                      {modalLiquidity.tone !== 'active' && (
+                        <div className="market-liquidity-note">
+                          <Info size={15} />
+                          <span>{modalLiquidity.note} For rare gear, mythic consumables, expensive crafts, or bulk alchemy output, treat the price as a market clue and check official listings before assuming it will sell quickly.</span>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="market-empty">
@@ -611,7 +644,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <div key={i} className="loot-row" onClick={() => openItemByName?.(drop.item_name || drop.name)}>
                         <div className="loot-info">
                             <div className="loot-name">{drop.item_name || drop.name}</div>
-                            <div className="loot-qty">x{drop.quantity}</div>
+                            {(Number(drop.quantity) || 1) > 1 && <div className="loot-qty">x{drop.quantity}</div>}
                         </div>
                         <div className="loot-chance">{drop.chance}%</div>
                       </div>
@@ -624,23 +657,67 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <div className="bento-card acquisition-card">
                   <div className="card-label"><MapPin size={14} /> Acquisition</div>
                   <div className="list-container scroll-y">
-                    {acquisitionSources.map((src: any, i: number) => (
-                      <div 
-                        key={i} 
-                        className="source-pill group-source" 
+                    {acquisitionSources.map((src: AcquisitionSource, i: number) => {
+                      const sourceLocation = getDropSourceLocation(src);
+                      return (
+                        <div className="source-actions-row" key={`${src.type || 'source'}-${src.name || i}-${sourceLocation.key || i}`}>
+                          <button
+                            type="button"
+                            className="source-pill group-source"
+                            onClick={() => {
+                              onClose();
+                              router.push(getSourceRoute(src));
+                            }}
+                          >
+                            <div className="source-meta">
+                              <span className="source-type">{src.type}</span>
+                              <span className="source-chance">{src.chance === 'Unknown' ? '' : `${src.chance}%`}</span>
+                            </div>
+                            <div className="source-name">{src.name}</div>
+                            <div className="source-loc">{sourceLocation.name || ''}</div>
+                          </button>
+                          {sourceLocation.key && (
+                            <button
+                              type="button"
+                              className="source-map-btn"
+                              aria-label={`Open ${sourceLocation.name || src.name} on map`}
+                              onClick={() => {
+                                onClose();
+                                router.push(`/map?location=${encodeURIComponent(sourceLocation.key || '')}`);
+                              }}
+                            >
+                              <MapPin size={14} aria-hidden="true" />
+                              Map
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {showGatheredLocations && (
+                <div className="bento-card acquisition-card">
+                  <div className="card-label"><MapPin size={14} /> Gathering Locations</div>
+                  <div className="list-container scroll-y">
+                    {gatheredLocations.map((location) => (
+                      <button
+                        type="button"
+                        key={`${item.name}-${location.key}`}
+                        className="source-pill group-source map-source"
                         onClick={() => {
                           onClose();
-                          router.push(getSourceRoute(src));
+                          router.push(`/map?location=${encodeURIComponent(location.key)}&resource=${encodeURIComponent(item.name)}`);
                         }}
-                        style={{ cursor: 'pointer' }}
                       >
                         <div className="source-meta">
-                          <span className="source-type">{src.type}</span>
-                          <span className="source-chance">{src.chance === 'Unknown' ? '' : `${src.chance}%`}</span>
+                          <span className="source-type">Resource</span>
+                          <span className="source-chance">Lv.{location.level}</span>
                         </div>
-                        <div className="source-name">{src.name}</div>
-                        <div className="source-loc">{src.location}</div>
-                      </div>
+                        <div className="source-name">{location.name}</div>
+                        <div className="source-loc">Open map location</div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -803,7 +880,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         <div className="modal-footer">
           <div className="item-id">ID: {id}</div>
           {item?.is_tradeable && (
-            <a href={`https://web.idle-mmo.com/item/inspect/${id}`} target="_blank" className="market-link">
+            <a href={`https://web.idle-mmo.com/item/inspect/${id}`} target="_blank" rel="noopener noreferrer" className="market-link">
               View Official Listings <ExternalLink size={12} />
             </a>
           )}
@@ -856,6 +933,29 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .m-stat { display: flex; flex-direction: column; gap: 4px; }
         .m-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 600; text-transform: uppercase; }
         .m-stat strong { font-size: 1.1rem; color: #fff; }
+        .liquidity-status.active { color: #4ade80; }
+        .liquidity-status.steady { color: #facc15; }
+        .liquidity-status.thin { color: #fbbf24; }
+        .liquidity-status.risk { color: #f87171; }
+        .market-liquidity-note {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.65rem;
+          margin-top: 1rem;
+          border: 1px solid rgba(251,191,36,0.28);
+          background: rgba(251,191,36,0.08);
+          border-radius: 12px;
+          color: rgba(255,255,255,0.72);
+          font-size: 0.84rem;
+          font-weight: 650;
+          line-height: 1.45;
+          padding: 0.8rem 0.9rem;
+        }
+        .market-liquidity-note svg {
+          color: #fbbf24;
+          flex: 0 0 auto;
+          margin-top: 0.1rem;
+        }
 
         .req-card { border-color: rgba(239, 68, 68, 0.2); background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent); flex: 1 1 300px; }
         .req-pill { border-color: rgba(239, 68, 68, 0.2); }
@@ -1045,9 +1145,36 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .scroll-y::-webkit-scrollbar { width: 4px; }
         .scroll-y::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
-        .source-pill { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1rem; border-radius: 16px; margin-bottom: 0.5rem; width: 100%; transition: all 0.2s ease; }
+        .source-actions-row { align-items: stretch; display: grid; gap: 0.5rem; grid-template-columns: minmax(0, 1fr) auto; margin-bottom: 0.5rem; }
+        .source-pill { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: inherit; cursor: pointer; display: block; font: inherit; padding: 1rem; border-radius: 16px; margin-bottom: 0.5rem; text-align: left; width: 100%; transition: all 0.2s ease; }
+        .source-actions-row .source-pill { margin-bottom: 0; }
+        .source-pill:focus-visible,
         .source-pill:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
         .source-pill:hover .source-name { color: var(--text-accent); }
+        .map-source { border-color: rgba(34,211,238,0.2); background: rgba(34,211,238,0.055); }
+        .source-map-btn {
+          align-items: center;
+          background: rgba(34,211,238,0.07);
+          border: 1px solid rgba(34,211,238,0.2);
+          border-radius: 14px;
+          color: #67e8f9;
+          cursor: pointer;
+          display: inline-flex;
+          font: inherit;
+          font-size: 0.75rem;
+          font-weight: 900;
+          gap: 0.35rem;
+          justify-content: center;
+          min-width: 68px;
+          padding: 0.75rem;
+          text-transform: uppercase;
+        }
+        .source-map-btn:hover,
+        .source-map-btn:focus-visible {
+          background: rgba(34,211,238,0.13);
+          border-color: rgba(34,211,238,0.42);
+          outline: none;
+        }
         .source-meta { display: flex; justify-content: space-between; margin-bottom: 6px; }
         .source-type { font-size: 0.65rem; font-weight: 800; color: var(--text-accent); text-transform: uppercase; }
         .source-chance { font-size: 0.7rem; font-weight: 700; color: var(--text-success); }
@@ -1223,6 +1350,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             border-radius: 10px;
             gap: 0.75rem;
             padding: 0.75rem;
+          }
+          .source-actions-row {
+            grid-template-columns: 1fr;
+          }
+          .source-map-btn {
+            min-height: 42px;
+            width: 100%;
           }
           .source-meta,
           .loot-row,

@@ -30,8 +30,6 @@ import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
   SKILL_TO_HOUSING_ACTIVITY,
   calculateHousingBuffs,
-  formatHours,
-  getHousingActivityLabel,
   getHousingIdleHoursForActivity,
 } from "@/lib/housing";
 
@@ -77,17 +75,17 @@ export default function DashboardPage() {
   
   const dashboardHousingStatus = useMemo(() => {
     if (housingSummary.mode === "none") return "Not set";
-    const strongest = housingSummary.strongestIdleBonus;
-    if (strongest) {
-      const scope = housingSummary.availableAnywhere ? "anywhere" : housingSummary.location ? housingSummary.location : "location-limited";
-      return `${housingSummary.mode === "guest" ? "Guest" : "Owner"} ${getHousingActivityLabel(strongest.activity)} +${formatHours(strongest.hours)} (${scope})`;
+    const scope = housingSummary.availableAnywhere ? "remote" : "local";
+    if (housingSummary.mode === "guest") {
+      const count = housingSummary.activeComponentCount;
+      return count > 0 ? `Guest ${count} buff${count === 1 ? "" : "s"} ${scope}` : "Guest no buffs";
     }
-    if (housingSummary.mode === "guest") return "Guest - No buffs";
-    if (housingSummary.slotCapacity <= 0) return "Owner - No foundation";
-    if (housingSummary.remoteConduit) return "Remote access";
-    if (housingSummary.petQuarters) return "Pet Quarters";
-    if (housingSummary.houseLedger) return "House Ledger";
-    return dashboardHousingSlotStatus.includes("over") ? "Slot over limit" : "Owner - No buffs";
+    if (housingSummary.slotCapacity <= 0) return "Owner no foundation";
+    const utilityCount = [housingSummary.remoteConduit, housingSummary.petQuarters, housingSummary.houseLedger]
+      .filter(Boolean).length;
+    const slotText = `${housingSummary.activeComponentCount}/${housingSummary.slotCapacity} slots`;
+    if (dashboardHousingSlotStatus.includes("over")) return "Slot over limit";
+    return utilityCount > 0 ? `Owner ${slotText} +${utilityCount} utility ${scope}` : `Owner ${slotText} ${scope}`;
   }, [dashboardHousingSlotStatus, housingSummary]);
 
   useEffect(() => {
@@ -241,62 +239,62 @@ export default function DashboardPage() {
       <section className="bento-dashboard">
         {/* Row 1: Key Metrics */}
         <div className="bento-row metrics-row">
-          <div className="metric-tile clickable" onClick={() => router.push('/items')}>
+          <Link href="/items" className="metric-tile clickable">
             <div className="tile-icon"><Package size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Global Registry</span>
               <span className="tile-value">{(Object.keys(allItemsDb || {}).length || 0).toLocaleString()}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/alchemy')}>
+          </Link>
+          <Link href="/alchemy" className="metric-tile clickable">
             <div className="tile-icon"><TrendingUp size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Profitable Recipes</span>
               <span className="tile-value">{profitableAlchemy.length}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/skill-profit')}>
+          </Link>
+          <Link href="/skill-profit" className="metric-tile clickable">
             <div className="tile-icon"><BarChart3 size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Skill Routes</span>
               <span className="tile-value">{topSkillProfitRows.length}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/profiles')}>
+          </Link>
+          <Link href="/profiles" className="metric-tile clickable">
             <div className="tile-icon"><UserRound size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Active Profile</span>
               <span className="tile-value">{activeProfile?.name?.trim() || `${profileState.profiles.length}/5`}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/pets')}>
+          </Link>
+          <Link href="/pets" className="metric-tile clickable">
             <div className="tile-icon"><PawPrint size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Pet Database</span>
               <span className="tile-value">{petDatabaseCount || "Open"}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/housing')}>
+          </Link>
+          <Link href="/housing" className="metric-tile clickable">
             <div className="tile-icon"><Home size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Housing</span>
               <span className="tile-value">{dashboardHousingStatus}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/crafting')}>
+          </Link>
+          <Link href="/crafting" className="metric-tile clickable">
             <div className="tile-icon"><Hammer size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Queue Crafts</span>
               <span className="tile-value">{queuePlan.totalCrafts}</span>
             </div>
-          </div>
-          <div className="metric-tile clickable" onClick={() => router.push('/alchemy/mythic')}>
+          </Link>
+          <Link href="/alchemy/mythic" className="metric-tile clickable">
             <div className="tile-icon"><Sparkles size={20} /></div>
             <div className="tile-info">
               <span className="tile-label">Active Lab Projects</span>
               <span className="tile-value">{activeMythicNames.length}</span>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Row 2: Deep Insights */}
@@ -313,13 +311,13 @@ export default function DashboardPage() {
             </div>
             <div className="insight-list">
               {profitableAlchemy.length > 0 ? profitableAlchemy.map(item => (
-                <div key={item.name} className="insight-row group" onClick={() => openItemByName(item.name)}>
+                <button key={item.name} type="button" className="insight-row group" onClick={() => openItemByName(item.name)}>
                   <div className="insight-name">
                     <span className="name-text">{item.name}</span>
                     <span className="roi-badge">{Math.round(item.roi)}% ROI</span>
                   </div>
                   <div className="insight-profit">+{formatGold(item.profit)}g</div>
-                </div>
+                </button>
               )) : (
                 <div className="empty-state">No profitable opportunities found in current cache.</div>
               )}
@@ -346,13 +344,13 @@ export default function DashboardPage() {
                   </button>
                   <div className="insight-list">
                     {topSkillProfitRows.slice(1).map(row => (
-                      <div key={`${row.skill}-${row.name}`} className="insight-row group" onClick={() => router.push('/skill-profit')}>
+                      <button key={`${row.skill}-${row.name}`} type="button" className="insight-row group" onClick={() => router.push('/skill-profit')}>
                         <div className="insight-name">
                           <span className="name-text">{row.name}</span>
                           <span className="roi-badge">{row.skill} · {Math.round(row.roi)}% ROI</span>
                         </div>
                         <div className="insight-profit">+{formatGold(row.profitPerHour)}g/hr</div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </>
@@ -397,11 +395,11 @@ export default function DashboardPage() {
                   </div>
                   <div className="queue-preview-list">
                     {queueEntries.slice(0, 5).map((entry) => (
-                      <div key={entry.name} className="preview-item-row" onClick={() => openItemByName(entry.name)}>
+                      <button key={entry.name} type="button" className="preview-item-row" onClick={() => openItemByName(entry.name)}>
                         <div className="preview-dot"></div>
                         <span className="preview-name">{entry.name}</span>
                         <span className="preview-qty">x{entry.quantity}</span>
-                      </div>
+                      </button>
                     ))}
                     {queueEntries.length > 5 && <div className="preview-more-link">+{queueEntries.length - 5} more items in queue...</div>}
                   </div>
@@ -463,10 +461,10 @@ export default function DashboardPage() {
                    </div>
                    <div className="lab-projects-row">
                       {activeMythicNames.map(name => (
-                        <div key={name} className="lab-project-card" onClick={() => openItemByName(name)}>
+                        <button key={name} type="button" className="lab-project-card" onClick={() => openItemByName(name)}>
                           <span className="project-name">{name}</span>
                           <span className="project-tag">ACTIVE</span>
-                        </div>
+                        </button>
                       ))}
                    </div>
                  </>

@@ -1,5 +1,6 @@
 import { ALCHEMY_ITEMS, VENDOR_ITEMS, getMerchantBuyPrice, parseVendorGoldPrice } from "@/constants";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import type { EssenceBuff, EssencePriceInfo } from "@/lib/essences";
+import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 
 export type SkillName =
   | "Woodcutting"
@@ -33,6 +34,12 @@ export type MarketDatum = {
   avg_30?: number;
   price?: number;
   vol_3?: number;
+  stable_vol_3?: number;
+  daily_sales_trimmed_avg_30?: number;
+  daily_sales_median_30?: number;
+  daily_sales_max_30?: number;
+  sales_outlier_days_30?: number;
+  sales_spike_ratio?: number;
   vendor_price?: number;
 };
 
@@ -78,6 +85,10 @@ export type SkillProfitSettings = {
   scenarioPrices?: Record<string, number>;
   barteringBoost: number | "";
   housingIdleHoursBySkill?: Partial<Record<SkillName, number>>;
+  essenceBySkill?: Partial<Record<SkillName, string>>;
+  essenceBuffsBySkill?: Partial<Record<SkillName, EssenceBuff>>;
+  essencePricesBySkill?: Partial<Record<SkillName, EssencePriceInfo>>;
+  idleActionHoursBySkill?: Partial<Record<SkillName, number>>;
 };
 
 export type Ingredient = {
@@ -122,6 +133,25 @@ export type SkillProfitRow = SkillRecipe & {
   itemsPerHousingWindow: number;
   profitPerHousingWindow: number;
   expPerHousingWindow: number | null;
+  baseFinalDuration: number;
+  baseItemsPerHour: number;
+  baseProfitPerHour: number;
+  essenceName: string;
+  essenceActive: boolean;
+  essenceEfficiencyBonus: number;
+  essenceExperienceBonus: number;
+  essenceCostPerStart: number;
+  essenceCostPerHour: number | null;
+  essenceIdleActionHours: number;
+  essencePriceSource: EssencePriceInfo["source"];
+  essencePriceAdjusted: boolean;
+  essenceNeedsPrice: boolean;
+  profitBeforeEssenceCostPerHour: number;
+  profitWithEssencePerHour: number | null;
+  stableVolume3d: number;
+  liquidityRisk: boolean;
+  liquidityLabel: string;
+  liquidityNote: string;
 };
 
 export type PriceSource = "scenario" | "custom" | "market" | "vendor" | "missing";
@@ -552,19 +582,22 @@ export function getBuffTotals(settings: SkillProfitSettings, includeAscension = 
   const assault = ASSAULT_BUFFS[settings.assaultRank];
   const classEffect = getClassSkillEffect(settings, skill);
   const supportsClass = !skill || skill === "All" || (skill !== "Alchemy" && skill !== "Forge" && skill !== "Construction");
+  const essence = skill && skill !== "All" ? settings.essenceBuffsBySkill?.[skill] : undefined;
 
   return {
     efficiency:
       (settings.membership ? 10 : 0) +
       (settings.profileClassName ? classEffect.efficiency : settings.classBonus && supportsClass ? 10 : 0) +
       assault.efficiency +
-      ascensionEfficiency,
+      ascensionEfficiency +
+      (Number(essence?.efficiency) || 0),
     experience:
       (settings.membership ? 15 : 0) +
       (settings.profileClassName ? classEffect.exp : settings.classBonus && supportsClass ? 10 : 0) +
       settings.energizingPoolExp +
       assault.exp +
-      ascensionExp,
+      ascensionExp +
+      (Number(essence?.experience) || 0),
   };
 }
 
@@ -598,6 +631,12 @@ export function calculateSkillProfitRow(
   barterMultiplier = 1 + ((Number(settings.barteringBoost) || 0) / 100),
   minVolume = 0,
 ): SkillProfitRow {
+  const essenceName = settings.essenceBySkill?.[recipe.skill] || "";
+  const essenceBuff = essenceName ? settings.essenceBuffsBySkill?.[recipe.skill] : undefined;
+  const essencePrice = essenceName ? settings.essencePricesBySkill?.[recipe.skill] : undefined;
+  const essenceActive = Boolean(essenceName && essenceBuff);
+  const essenceEfficiencyBonus = essenceActive ? Number(essenceBuff?.efficiency || 0) : 0;
+  const essenceExperienceBonus = essenceActive ? Number(essenceBuff?.experience || 0) : 0;
   const buffs = getBuffTotals(settings, recipe.skill !== "Construction", recipe.skill);
   const toolBonus = getToolEfficiencyBonus(settings, recipe.skill);
   const sale = getPrice(recipe.name, marketData, items, settings.customPrices, settings.scenarioPrices);
@@ -628,6 +667,10 @@ export function calculateSkillProfitRow(
       : sale.source === "custom" ? "custom" : sale.source === "scenario" ? "scenario" : "market";
   const netRevenue = bestSaleSource === "vendor" ? vendorRevenue : marketRevenue;
   const profitEach = netRevenue - inputCost;
+  const baseEfficiency = Math.max(-99, buffs.efficiency - essenceEfficiencyBonus);
+  const baseFinalDuration = recipe.baseDuration / ((baseEfficiency + toolBonus + 100) / 100);
+  const baseItemsPerHour = Math.round(3600 / baseFinalDuration);
+  const baseProfitPerHour = Math.round(profitEach * baseItemsPerHour);
   const finalDuration = recipe.baseDuration / ((buffs.efficiency + toolBonus + 100) / 100);
   const itemsPerHour = Math.round(3600 / finalDuration);
   const profitPerHour = Math.round(profitEach * itemsPerHour);
@@ -637,8 +680,20 @@ export function calculateSkillProfitRow(
   const itemsPerHousingWindow = housingWindowHours > 0 ? Math.floor((housingWindowHours * 3600) / finalDuration) : 0;
   const profitPerHousingWindow = Math.round(profitEach * itemsPerHousingWindow);
   const expPerHousingWindow = expPerAction === null ? null : Math.round(expPerAction * itemsPerHousingWindow);
+  const essenceIdleActionHours = Math.max(0, Number(settings.idleActionHoursBySkill?.[recipe.skill] || 0));
+  const essenceCostPerStart = essenceActive ? Math.max(0, Number(essencePrice?.value || 0)) : 0;
+  const essenceCostPerHour = essenceActive && essenceIdleActionHours > 0 && essenceCostPerStart > 0
+    ? essenceCostPerStart / essenceIdleActionHours
+    : null;
+  const essenceNeedsPrice = essenceActive && essenceCostPerStart <= 0;
+  const profitWithEssencePerHour = essenceActive && essenceCostPerHour !== null
+    ? Math.round(profitPerHour - essenceCostPerHour)
+    : null;
+  const liquidity = getMarketLiquidity(marketData?.[recipe.name]);
   const volume3d = marketData?.[recipe.name]?.vol_3 || 0;
-  const isLiquid = sale.source !== "market" || volume3d >= minVolume;
+  const stableVolume3d = liquidity.stableVolume3d || volume3d;
+  const liquidityRisk = liquidity.isSpikeRisk || liquidity.hasVolumeSwings;
+  const isLiquid = sale.source !== "market" || (stableVolume3d >= minVolume && !liquidityRisk);
 
   return {
     ...recipe,
@@ -668,6 +723,25 @@ export function calculateSkillProfitRow(
     itemsPerHousingWindow,
     profitPerHousingWindow,
     expPerHousingWindow,
+    baseFinalDuration,
+    baseItemsPerHour,
+    baseProfitPerHour,
+    essenceName: essenceActive ? essenceName : "",
+    essenceActive,
+    essenceEfficiencyBonus,
+    essenceExperienceBonus,
+    essenceCostPerStart,
+    essenceCostPerHour,
+    essenceIdleActionHours,
+    essencePriceSource: essencePrice?.source || "missing",
+    essencePriceAdjusted: Boolean(essencePrice?.adjusted),
+    essenceNeedsPrice,
+    profitBeforeEssenceCostPerHour: profitPerHour,
+    profitWithEssencePerHour,
+    stableVolume3d,
+    liquidityRisk,
+    liquidityLabel: liquidity.label,
+    liquidityNote: liquidity.note,
   };
 }
 

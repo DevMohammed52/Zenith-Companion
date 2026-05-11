@@ -10,12 +10,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(min(100%, 360px), 0.7fr);
   gap: 1rem;
-  align-items: end;
+  align-items: start;
   min-width: 0;
 }
 
 .heroCopy {
   min-width: 0;
+  padding-top: 0.2rem;
 }
 
 .eyebrow {
@@ -111,6 +112,16 @@
   z-index: 20;
 }
 
+.dropdownLayerActive {
+  z-index: 220;
+}
+
+.toolPanel.dropdownLayerActive,
+.essencePanel.dropdownLayerActive,
+.commandBar.dropdownLayerActive {
+  z-index: 220;
+}
+
 .commandBar select,
 .toolField select,
 .numberField input,
@@ -191,8 +202,13 @@
   min-width: 0;
 }
 
+.compactPicker {
+  position: relative;
+  min-width: 0;
+}
+
 .toolPickerOpen {
-  z-index: 30;
+  z-index: 240;
 }
 
 .toolTrigger {
@@ -212,26 +228,48 @@
   width: 100%;
 }
 
+.compactTrigger {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  justify-content: space-between;
+  min-height: 42px;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  width: 100%;
+}
+
 .toolTrigger span,
-.toolOption span {
+.toolOption span,
+.compactTrigger span,
+.compactOption span {
   display: grid;
   gap: 0.15rem;
   min-width: 0;
 }
 
 .toolTrigger strong,
-.toolOption strong {
+.toolOption strong,
+.compactTrigger strong,
+.compactOption strong {
   color: var(--text-main);
   font-family: inherit;
   font-size: 0.9rem;
   line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .toolTrigger small,
-.toolOption small {
+.toolOption small,
+.compactTrigger small,
+.compactOption small {
   color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
@@ -240,7 +278,27 @@
   text-transform: none;
 }
 
+.compactTrigger strong,
+.compactTrigger small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactTrigger strong {
+  font-size: 0.86rem;
+}
+
+.compactTrigger small {
+  font-size: 0.68rem;
+}
+
 .toolPickerOpen .toolTrigger {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
+}
+
+.toolPickerOpen .compactTrigger {
   border-color: var(--text-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
 }
@@ -259,17 +317,19 @@
   position: absolute;
   right: 0;
   top: calc(100% + 0.35rem);
-  z-index: 50;
+  z-index: 260;
 }
 
 .toolOption,
+.compactOption,
 .toolClose {
   border-radius: 6px;
   cursor: pointer;
   font: inherit;
 }
 
-.toolOption {
+.toolOption,
+.compactOption {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
@@ -282,6 +342,10 @@
   text-align: left;
 }
 
+.compactOption {
+  min-height: 40px;
+}
+
 .toolOption em {
   color: var(--text-success);
   font-style: normal;
@@ -290,9 +354,15 @@
 }
 
 .toolOption:hover,
+.compactOption:hover,
 .toolOptionActive {
   background: color-mix(in srgb, var(--text-accent), transparent 90%);
   border-color: var(--border-focus);
+}
+
+.compactMenu {
+  min-width: min(260px, calc(100vw - 2rem));
+  right: auto;
 }
 
 .toolClose {
@@ -301,6 +371,96 @@
   color: var(--text-muted);
   display: none;
   min-height: 38px;
+}
+
+.toolEmpty {
+  border: 1px dashed var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.65rem;
+  text-align: center;
+}
+
+.essencePanel {
+  background: color-mix(in srgb, var(--bg-panel), transparent 8%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: visible;
+  position: relative;
+  z-index: 25;
+  animation: riseIn 310ms ease both;
+}
+
+.essenceHeader {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 800;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0.75rem;
+  width: 100%;
+}
+
+.essenceHeader span {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.essenceHeader span:last-child {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  justify-content: flex-end;
+}
+
+.essenceGrid {
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  padding: 0.75rem;
+  align-items: start;
+}
+
+.essenceField {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  position: relative;
+}
+
+.essenceField > span,
+.essenceField > small {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.essenceField > small {
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.essenceNote {
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.65rem 0.75rem 0.75rem;
 }
 
 .conquestSelect {
@@ -705,6 +865,28 @@
   width: 11%;
 }
 
+.profitCell {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.profitCell strong {
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+
+.profitCell span {
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+  white-space: normal;
+}
+
 .sortButton {
   align-items: center;
   background: transparent;
@@ -720,7 +902,7 @@
   width: 100%;
 }
 
-th.left-align .sortButton {
+.sortHeaderLeft .sortButton {
   justify-content: flex-start;
 }
 
@@ -787,7 +969,7 @@ th.left-align .sortButton {
 }
 
 .sourceBadge,
-.signal {
+.liquidityBadge {
   align-items: center;
   border-radius: 4px;
   display: inline-flex;
@@ -832,24 +1014,24 @@ th.left-align .sortButton {
   color: var(--text-accent);
 }
 
-.signal {
+.liquidityBadge {
   gap: 0.25rem;
   min-width: 70px;
 }
 
-.signalGood {
+.liquidityGood {
   background: color-mix(in srgb, var(--text-success), transparent 91%);
   border: 1px solid color-mix(in srgb, var(--text-success), transparent 78%);
   color: var(--text-success);
 }
 
-.signalWarn {
+.liquidityWarn {
   background: color-mix(in srgb, var(--text-accent), transparent 91%);
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
   color: var(--text-accent);
 }
 
-.signalInfo {
+.liquidityInfo {
   background: rgba(255,255,255,0.035);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);

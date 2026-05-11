@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   Check,
@@ -11,25 +11,34 @@ import {
   PackageSearch,
   Search,
   Sparkles,
-  TrendingUp,
   X,
 } from "lucide-react";
 import { formatGold } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
+import { barteringBuffPercent, getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
   SKILL_TO_HOUSING_ACTIVITY,
   calculateHousingBuffs,
   formatHours,
+  getProfileBaseIdleActionHours,
   getHousingIdleHoursForActivity,
+  getHousingActivityLabel,
 } from "@/lib/housing";
+import {
+  SUPPORTED_ESSENCE_SKILLS,
+  calculateEssenceSession,
+  formatEssenceBuff,
+  getEssenceOptionsForSkill,
+  type EssenceSession,
+  type EssenceSkillName,
+} from "@/lib/essences";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
+import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
   ASCENSION_BUFFS,
-  ASSAULT_OPTIONS,
   AssaultRank,
   DEFAULT_TOOL_SELECTIONS,
   GearData,
@@ -60,6 +69,7 @@ const DEFAULT_SETTINGS: SkillProfitSettings = {
   tools: DEFAULT_TOOL_SELECTIONS,
   customPrices: {},
   barteringBoost: 0,
+  essenceBySkill: {},
 };
 
 type PersistedState = {
@@ -70,7 +80,10 @@ type PersistedState = {
   searchTerm: string;
   minVolume: number;
   ascensionOpen: boolean;
+  essenceOpen: boolean;
 };
+
+type DropdownLayer = "tools" | "essences" | "command";
 
 const DEFAULT_STATE: PersistedState = {
   settings: DEFAULT_SETTINGS,
@@ -80,29 +93,39 @@ const DEFAULT_STATE: PersistedState = {
   searchTerm: "",
   minVolume: 100,
   ascensionOpen: true,
+  essenceOpen: false,
 };
 
 const SORT_LABELS: Record<SkillProfitSortKey, string> = {
   name: "Item",
   skill: "Skill",
   level: "Level",
-  profitEach: "Net Each",
+  profitEach: "Profit/Piece",
   profitPerHour: "Gold/Hr",
-  roi: "ROI",
+  roi: "Profit/Piece",
   itemsPerHour: "Items/Hr",
   expPerSecond: "Exp/S",
   expPerHour: "Exp/Hr",
   finalDuration: "Duration",
-  volume3d: "3D Vol",
-  inputCost: "Input",
-  salePrice: "Price",
+  volume3d: "Stable Vol",
+  inputCost: "Cost",
+  salePrice: "Return",
 };
+
+const CONQUEST_PICKER_OPTIONS: Array<{ value: AssaultRank; label: string; hint: string }> = [
+  { value: "none", label: "No conquest", hint: "No profile buff" },
+  { value: "first", label: "1st place", hint: "+15% EXP, +3% Eff" },
+  { value: "second", label: "2nd place", hint: "+10% EXP, +3% Eff" },
+  { value: "third", label: "3rd place", hint: "+8% EXP, +3% Eff" },
+  { value: "fourthSeventh", label: "4th-7th", hint: "+6% EXP, +2% Eff" },
+  { value: "eighthTenth", label: "8th-10th", hint: "+2% EXP, +1% Eff" },
+];
 
 export default function SkillProfitPage() {
   const { marketData, allItemsDb } = useData();
   const { openItemByName, prefetchItem } = useItemModal();
   const { preferences, setPreferences, loaded: preferencesLoaded } = usePreferences();
-  const { activeProfile, updateProfile } = useProfiles();
+  const { activeProfile, updateProfile, loaded: profilesLoaded } = useProfiles();
   const [settings, setSettings] = useState<SkillProfitSettings>(DEFAULT_STATE.settings);
   const [activeSkill, setActiveSkill] = useState<SkillName | "All">(DEFAULT_STATE.activeSkill);
   const [sortKey, setSortKey] = useState<SkillProfitSortKey>(DEFAULT_STATE.sortKey);
@@ -110,11 +133,28 @@ export default function SkillProfitPage() {
   const [searchTerm, setSearchTerm] = useState(DEFAULT_STATE.searchTerm);
   const [minVolume, setMinVolume] = useState(DEFAULT_STATE.minVolume);
   const [ascensionOpen, setAscensionOpen] = useState(DEFAULT_STATE.ascensionOpen);
+  const [essenceOpen, setEssenceOpen] = useState(DEFAULT_STATE.essenceOpen);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
   const [gearData, setGearData] = useState<GearData | null>(null);
   const [itemRegistry, setItemRegistry] = useState<ItemRegistry | null>(null);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
+  const [activeDropdownLayer, setActiveDropdownLayer] = useState<DropdownLayer | null>(null);
   const loadedStorageKeyRef = useRef<string | null>(null);
+  const setDropdownLayerOpen = useCallback((layer: DropdownLayer, open: boolean) => {
+    setActiveDropdownLayer((current) => {
+      if (open) return layer;
+      return current === layer ? null : current;
+    });
+  }, []);
+  const handleToolPickerOpenChange = useCallback((open: boolean) => {
+    setDropdownLayerOpen("tools", open);
+  }, [setDropdownLayerOpen]);
+  const handleEssencePickerOpenChange = useCallback((open: boolean) => {
+    setDropdownLayerOpen("essences", open);
+  }, [setDropdownLayerOpen]);
+  const handleCommandPickerOpenChange = useCallback((open: boolean) => {
+    setDropdownLayerOpen("command", open);
+  }, [setDropdownLayerOpen]);
 
   const activeProfileId = activeProfile?.id || null;
   const storageKey = useMemo(
@@ -132,14 +172,14 @@ export default function SkillProfitPage() {
       : settings.tools,
     [activeProfile, settings.tools],
   );
-  const effectiveSettings = useMemo<SkillProfitSettings>(
-    () => ({ ...settings, tools: effectiveToolSelections }),
-    [effectiveToolSelections, settings],
-  );
-  const deferredSettings = useDeferredValue(effectiveSettings);
+  const displayedBarteringLevel = activeProfile
+    ? activeProfile.boosts.barteringLevel
+    : settings.barteringBoost === ""
+      ? ""
+      : Math.min(100, Math.max(0, Math.round((Number(settings.barteringBoost) || 0) / 0.2)));
 
   useEffect(() => {
-    if (!preferencesLoaded || !loadedStoredState) return;
+    if (!preferencesLoaded || !profilesLoaded || !loadedStoredState) return;
     const profileTools = activeProfile?.tools || {};
     const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : 0;
     const syncedTools = activeProfile
@@ -171,10 +211,12 @@ export default function SkillProfitPage() {
     preferences.membership,
     preferences.skillClassBonus,
     preferences.skillTools,
+    profilesLoaded,
     preferencesLoaded,
   ]);
 
   useEffect(() => {
+    if (!profilesLoaded) return;
     loadedStorageKeyRef.current = null;
     setLoadedStoredState(false);
     setSettings(DEFAULT_STATE.settings);
@@ -184,6 +226,7 @@ export default function SkillProfitPage() {
     setSearchTerm(DEFAULT_STATE.searchTerm);
     setMinVolume(DEFAULT_STATE.minVolume);
     setAscensionOpen(DEFAULT_STATE.ascensionOpen);
+    setEssenceOpen(DEFAULT_STATE.essenceOpen);
     try {
       const stored = localStorage.getItem(storageKey) || (!activeProfileId ? localStorage.getItem(STORAGE_KEY) : null);
       if (!stored) return;
@@ -192,23 +235,25 @@ export default function SkillProfitPage() {
         ...DEFAULT_SETTINGS,
         ...parsed.settings,
         tools: { ...DEFAULT_TOOL_SELECTIONS, ...parsed.settings?.tools },
+        essenceBySkill: { ...DEFAULT_SETTINGS.essenceBySkill, ...parsed.settings?.essenceBySkill },
         customPrices: DEFAULT_SETTINGS.customPrices,
       });
       if (parsed.activeSkill) setActiveSkill(parsed.activeSkill);
-      if (parsed.sortKey) setSortKey(parsed.sortKey);
+      if (parsed.sortKey) setSortKey(parsed.sortKey === "roi" ? "profitEach" : parsed.sortKey);
       if (typeof parsed.sortDesc === "boolean") setSortDesc(parsed.sortDesc);
       if (typeof parsed.searchTerm === "string") setSearchTerm(parsed.searchTerm);
       if (typeof parsed.minVolume === "number") setMinVolume(parsed.minVolume);
       if (typeof parsed.ascensionOpen === "boolean") setAscensionOpen(parsed.ascensionOpen);
+      if (typeof parsed.essenceOpen === "boolean") setEssenceOpen(parsed.essenceOpen);
     } catch {
     } finally {
       loadedStorageKeyRef.current = storageKey;
       setLoadedStoredState(true);
     }
-  }, [activeProfileId, storageKey]);
+  }, [activeProfileId, profilesLoaded, storageKey]);
 
   useEffect(() => {
-    if (!loadedStoredState) return;
+    if (!profilesLoaded || !loadedStoredState) return;
     if (loadedStorageKeyRef.current !== storageKey) return;
     const payload: PersistedState = {
       settings,
@@ -218,12 +263,13 @@ export default function SkillProfitPage() {
       searchTerm,
       minVolume,
       ascensionOpen,
+      essenceOpen,
     };
     const timeout = window.setTimeout(() => {
       localStorage.setItem(storageKey, JSON.stringify(payload));
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [activeSkill, ascensionOpen, loadedStoredState, minVolume, searchTerm, settings, sortDesc, sortKey, storageKey]);
+  }, [activeSkill, ascensionOpen, essenceOpen, loadedStoredState, minVolume, profilesLoaded, searchTerm, settings, sortDesc, sortKey, storageKey]);
 
   useEffect(() => {
     fetch("/gear-data.json")
@@ -242,9 +288,18 @@ export default function SkillProfitPage() {
     [gearData, itemRegistry],
   );
   const housingSummary = useMemo(
-    () => calculateHousingBuffs(activeProfile?.housing),
-    [activeProfile?.housing],
+    () => calculateHousingBuffs(activeProfile?.housing, { profileClassName: activeProfile?.className }),
+    [activeProfile?.className, activeProfile?.housing],
   );
+  const rawHousingIdleHoursBySkill = useMemo(() => {
+    const entries = SKILLS.map((skill) => {
+      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
+      return [skill, activity ? Number(housingSummary.idleHours[activity] || 0) : 0] as const;
+    });
+    return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
+  }, [housingSummary]);
+  const hasAnyLocationLimitedHousing = housingSummary.locationLimited
+    && Object.values(rawHousingIdleHoursBySkill).some((hours) => Number(hours || 0) > 0);
   const housingIdleHoursBySkill = useMemo(() => {
     const entries = SKILLS.map((skill) => {
       const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
@@ -252,6 +307,69 @@ export default function SkillProfitPage() {
     });
     return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
   }, [housingSummary]);
+  const baseIdleActionHours = activeProfile ? getProfileBaseIdleActionHours(activeProfile) : 8;
+  const idleActionHoursBySkill = useMemo(() => {
+    const entries = SKILLS.map((skill) => [
+      skill,
+      baseIdleActionHours + Number(housingIdleHoursBySkill[skill] || 0),
+    ] as const);
+    return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
+  }, [baseIdleActionHours, housingIdleHoursBySkill]);
+  const essenceSessionsBySkill = useMemo(() => {
+    const entries = SUPPORTED_ESSENCE_SKILLS.map((skill) => [
+      skill,
+      calculateEssenceSession({
+        essenceName: settings.essenceBySkill?.[skill] || "",
+        skill,
+        items: allItemsDb,
+        marketData,
+        customPrices: preferences.customPrices,
+        actionHours: idleActionHoursBySkill[skill] || baseIdleActionHours,
+      }),
+    ] as const);
+    return Object.fromEntries(entries) as Partial<Record<EssenceSkillName, EssenceSession>>;
+  }, [
+    allItemsDb,
+    baseIdleActionHours,
+    idleActionHoursBySkill,
+    marketData,
+    preferences.customPrices,
+    settings.essenceBySkill,
+  ]);
+  const essenceBuffsBySkill = useMemo(() => {
+    const result: SkillProfitSettings["essenceBuffsBySkill"] = {};
+    for (const skill of SUPPORTED_ESSENCE_SKILLS) {
+      const buff = essenceSessionsBySkill[skill]?.buff;
+      if (buff) result[skill] = buff;
+    }
+    return result;
+  }, [essenceSessionsBySkill]);
+  const essencePricesBySkill = useMemo(() => {
+    const result: SkillProfitSettings["essencePricesBySkill"] = {};
+    for (const skill of SUPPORTED_ESSENCE_SKILLS) {
+      const price = essenceSessionsBySkill[skill]?.price;
+      if (price) result[skill] = price;
+    }
+    return result;
+  }, [essenceSessionsBySkill]);
+  const activeEssenceCount = SUPPORTED_ESSENCE_SKILLS.filter((skill) => essenceSessionsBySkill[skill]?.active).length;
+  const effectiveSettings = useMemo<SkillProfitSettings>(
+    () => ({
+      ...settings,
+      tools: effectiveToolSelections,
+      essenceBuffsBySkill,
+      essencePricesBySkill,
+      idleActionHoursBySkill,
+    }),
+    [
+      effectiveToolSelections,
+      essenceBuffsBySkill,
+      essencePricesBySkill,
+      idleActionHoursBySkill,
+      settings,
+    ],
+  );
+  const deferredSettings = useDeferredValue(effectiveSettings);
 
   const rows = useMemo(
     () => calculateSkillProfitRows(
@@ -272,10 +390,10 @@ export default function SkillProfitPage() {
     for (const row of rows) {
       if (!isExcludedFromTop(row, minVolume)) {
         const currentSkillTop = topBySkill.get(row.skill);
-        if (!currentSkillTop || row.profitPerHour > currentSkillTop.profitPerHour) {
+        if (!currentSkillTop || getRankedProfitPerHour(row) > getRankedProfitPerHour(currentSkillTop)) {
           topBySkill.set(row.skill, row);
         }
-        if (!topOverall || row.profitPerHour > topOverall.profitPerHour) {
+        if (!topOverall || getRankedProfitPerHour(row) > getRankedProfitPerHour(topOverall)) {
           topOverall = row;
         }
       }
@@ -304,23 +422,83 @@ export default function SkillProfitPage() {
   }, [activeSkill, deferredSearchTerm, minVolume, rows, sortDesc, sortKey]);
 
   const buffTotals = useMemo(
-    () => getBuffTotals(settings, activeSkill !== "Construction", activeSkill),
-    [activeSkill, settings],
+    () => getBuffTotals(effectiveSettings, activeSkill !== "Construction", activeSkill),
+    [activeSkill, effectiveSettings],
   );
   const housingWindowHours = activeSkill !== "All" ? Number(housingIdleHoursBySkill[activeSkill] || 0) : 0;
-  const strongestHousingWindow = useMemo(() => {
-    let best: { skill: SkillName; hours: number } | null = null;
-    for (const skill of SKILLS) {
+  const rawHousingWindowHours = activeSkill !== "All" ? Number(rawHousingIdleHoursBySkill[activeSkill] || 0) : 0;
+  const hasLocationLimitedHousing = housingSummary.locationLimited && rawHousingWindowHours > 0 && housingWindowHours <= 0;
+  const appliedHousingWindows = useMemo(() => (
+    SKILLS.map((skill) => {
+      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
       const hours = Number(housingIdleHoursBySkill[skill] || 0);
-      if (hours > 0 && (!best || hours > best.hours)) best = { skill, hours };
-    }
-    return best;
-  }, [housingIdleHoursBySkill]);
+      return {
+        skill,
+        label: activity ? getHousingActivityLabel(activity) : skill,
+        hours,
+      };
+    })
+      .filter((entry) => entry.hours > 0)
+      .sort((a, b) => b.hours - a.hours || a.label.localeCompare(b.label))
+  ), [housingIdleHoursBySkill]);
+  const rawHousingWindows = useMemo(() => (
+    SKILLS.map((skill) => {
+      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
+      const hours = Number(rawHousingIdleHoursBySkill[skill] || 0);
+      return {
+        skill,
+        label: activity ? getHousingActivityLabel(activity) : skill,
+        hours,
+      };
+    })
+      .filter((entry) => entry.hours > 0)
+      .sort((a, b) => b.hours - a.hours || a.label.localeCompare(b.label))
+  ), [rawHousingIdleHoursBySkill]);
+  const visibleHousingWindows = appliedHousingWindows.length ? appliedHousingWindows : rawHousingWindows;
+  const housingWindowSummary = visibleHousingWindows
+    .slice(0, 3)
+    .map((entry) => `${entry.label} +${formatHours(entry.hours)}`)
+    .join(", ");
+  const housingWindowExtraCount = Math.max(0, visibleHousingWindows.length - 3);
+  const housingWindowAllValue = !activeProfile
+    ? "Profile needed"
+    : visibleHousingWindows.length === 0
+      ? "None"
+      : visibleHousingWindows.length === 1
+        ? `${visibleHousingWindows[0].label} +${formatHours(visibleHousingWindows[0].hours)}`
+        : `${visibleHousingWindows.length} housing buffs`;
+  const housingWindowAllScope = visibleHousingWindows.length === 0
+    ? ""
+    : appliedHousingWindows.length
+      ? housingSummary.mode === "guest"
+        ? " - guest remote, available anywhere"
+        : housingSummary.availableAnywhere
+          ? " - available anywhere"
+          : ""
+      : housingSummary.mode === "guest"
+        ? " - guest local, not applied"
+        : " - location-limited, not applied";
+  const housingWindowAllSub = !activeProfile
+    ? "load a profile"
+    : visibleHousingWindows.length === 0
+      ? "no profile bonus"
+      : `${housingWindowSummary}${housingWindowExtraCount ? `, +${housingWindowExtraCount} more` : ""}${housingWindowAllScope}`;
+  const activeSkillActivity = activeSkill !== "All" ? SKILL_TO_HOUSING_ACTIVITY[activeSkill] : undefined;
+  const activeSkillHousingLabel = activeSkillActivity
+    ? getHousingActivityLabel(activeSkillActivity)
+    : activeSkill !== "All" ? activeSkill : "";
+  const activeSkillHousingHours = activeSkill !== "All"
+    ? housingWindowHours || (hasLocationLimitedHousing ? rawHousingWindowHours : 0)
+    : 0;
   const housingWindowSub = !activeProfile
     ? "profile needed"
-    : housingWindowHours <= 0
-      ? "no profile bonus"
-      : housingSummary.mode === "guest" || housingSummary.availableAnywhere
+    : hasLocationLimitedHousing
+      ? housingSummary.mode === "guest" ? "guest local, not applied" : "location-limited, not applied"
+      : housingWindowHours <= 0
+        ? "no profile bonus"
+      : housingSummary.mode === "guest"
+        ? "guest remote, available anywhere"
+        : housingSummary.availableAnywhere
         ? "available anywhere"
         : "location-limited";
   const lastUpdated = marketData?._meta?.last_updated;
@@ -350,7 +528,12 @@ export default function SkillProfitPage() {
   }, [selectedRow]);
 
   const patchSettings = (patch: Partial<SkillProfitSettings>) => {
-    setSettings((current) => ({ ...current, ...patch, tools: { ...current.tools, ...patch.tools } }));
+    setSettings((current) => ({
+      ...current,
+      ...patch,
+      tools: { ...current.tools, ...patch.tools },
+      essenceBySkill: { ...current.essenceBySkill, ...patch.essenceBySkill },
+    }));
     if (activeProfile && (patch.assaultRank || patch.barteringBoost !== undefined)) {
       updateProfile(activeProfile.id, {
         boosts: {
@@ -378,6 +561,10 @@ export default function SkillProfitPage() {
     patchSettings({ tools: { ...settings.tools, [skill]: toolName } });
   };
 
+  const patchEssence = (skill: EssenceSkillName, essenceName: string) => {
+    patchSettings({ essenceBySkill: { [skill]: essenceName } });
+  };
+
   const toggleAscension = (id: string) => {
     setSettings((current) => {
       const isSelected = current.ascensionBuffIds.includes(id);
@@ -395,7 +582,7 @@ export default function SkillProfitPage() {
       return;
     }
     setSortKey(key);
-    setSortDesc(key !== "name" && key !== "skill" && key !== "level" && key !== "finalDuration");
+    setSortDesc(key !== "name" && key !== "skill" && key !== "level" && key !== "finalDuration" && key !== "inputCost");
   };
 
   return (
@@ -408,22 +595,22 @@ export default function SkillProfitPage() {
           </h1>
         </div>
         <div className={styles.heroStats}>
-          <Metric label="Top liquid route" value={rowModel.topOverall?.name || "Waiting"} sub={rowModel.topOverall ? `${formatGold(rowModel.topOverall.profitPerHour)}g/hr` : "0g/hr"} tone="profit" />
+          <Metric label="Top liquid route" value={rowModel.topOverall?.name || "Waiting"} sub={rowModel.topOverall ? getProfitSummary(rowModel.topOverall) : "0g/hr"} tone="profit" />
           <Metric label="Market pulse" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
           <Metric label="Buffs" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active total"} />
           <Metric
             label="Housing window"
             value={activeSkill === "All"
-              ? strongestHousingWindow ? `+${formatHours(strongestHousingWindow.hours)}` : "None"
-              : housingWindowHours > 0 ? `+${formatHours(housingWindowHours)}` : "None"}
+              ? housingWindowAllValue
+              : activeSkillHousingHours > 0 ? `${activeSkillHousingLabel} +${formatHours(activeSkillHousingHours)}` : "None"}
             sub={activeSkill === "All"
-              ? strongestHousingWindow ? `${strongestHousingWindow.skill} bonus` : "choose a skill"
+              ? housingWindowAllSub
               : housingWindowSub}
           />
         </div>
       </section>
 
-      <section className={styles.toolPanel}>
+      <section className={`${styles.toolPanel} ${activeDropdownLayer === "tools" ? styles.dropdownLayerActive : ""}`}>
         {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => {
           const toolValue = effectiveToolSelections[skill] || "";
           const selectedTool = SKILL_TOOLS[skill].find((tool) => tool.name === toolValue);
@@ -434,6 +621,7 @@ export default function SkillProfitPage() {
                 options={SKILL_TOOLS[skill]}
                 value={toolValue}
                 onChange={(toolName) => patchTool(skill, toolName)}
+                onOpenChange={handleToolPickerOpenChange}
               />
               <small>
                 {selectedTool
@@ -448,29 +636,73 @@ export default function SkillProfitPage() {
         })}
       </section>
 
-      <section className={styles.commandBar}>
+      <section className={`${styles.essencePanel} ${activeDropdownLayer === "essences" ? styles.dropdownLayerActive : ""}`}>
+        <button className={styles.essenceHeader} onClick={() => setEssenceOpen((open) => !open)} type="button">
+          <span><Sparkles size={16} /> Essences</span>
+          <span>
+            {activeEssenceCount > 0 ? `${activeEssenceCount}/5 active` : "No essence"}
+            <ChevronDown size={16} className={essenceOpen ? styles.chevronOpen : ""} />
+          </span>
+        </button>
+        {essenceOpen && (
+          <div className={styles.essenceGrid}>
+            {SUPPORTED_ESSENCE_SKILLS.map((skill) => {
+              const selectedName = settings.essenceBySkill?.[skill] || "";
+              const session = essenceSessionsBySkill[skill];
+              const actionHours = idleActionHoursBySkill[skill] || baseIdleActionHours;
+              return (
+                <div className={styles.essenceField} key={skill}>
+                  <span>{skill}</span>
+                  <EssencePicker
+                    label={`${skill} essence`}
+                    options={getEssenceOptionsForSkill(skill, allItemsDb, marketData, preferences.customPrices)}
+                    value={selectedName}
+                    onChange={(essenceName) => patchEssence(skill, essenceName)}
+                    onOpenChange={handleEssencePickerOpenChange}
+                  />
+                  <small>
+                    {session?.active
+                      ? session.needsPrice
+                        ? "Needs price/data"
+                        : `${formatGold(session.costPerStart)}g per start - ${formatGold(session.costPerHour || 0)}g/hr`
+                      : `No essence - ${formatHours(actionHours)} timer`}
+                  </small>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className={styles.essenceNote}>
+          {(activeProfile
+            ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? "; location-limited housing time is not added on this page." : ", plus housing time when it is available anywhere."}`
+            : "No active profile is loaded, so essence costs use an 8h fallback timer.")}
+          {" "}Dungeon, combat, hunting, and world boss potions are future support.
+        </p>
+      </section>
+
+      <section className={`${styles.commandBar} ${activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""}`}>
         <div className={styles.searchBox}>
           <Search size={16} />
           <input
+            aria-label="Search skill profit items"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search item"
           />
         </div>
-        <label className={styles.numberField}>
+        <div className={styles.numberField}>
           <span>Conquest</span>
-          <select
-            aria-label="Conquest buff"
-            className={styles.conquestSelect}
+          <OptionPicker
+            options={CONQUEST_PICKER_OPTIONS}
             value={settings.assaultRank}
-            onChange={(event) => patchSettings({ assaultRank: event.target.value as AssaultRank })}
-          >
-            {ASSAULT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
+            onChange={(value) => patchSettings({ assaultRank: value as AssaultRank })}
+            onOpenChange={handleCommandPickerOpenChange}
+          />
+        </div>
         <label className={styles.numberField}>
           <span>Pool EXP</span>
           <input
+            aria-label="Energizing pool EXP bonus"
             type="number"
             min={0}
             max={15}
@@ -481,17 +713,18 @@ export default function SkillProfitPage() {
         <label className={styles.numberField}>
           <span>Bartering Level</span>
           <input
+            aria-label="Bartering Level"
             type="number"
             min={0}
             max={100}
-            value={activeProfile?.boosts.barteringLevel ?? ""}
+            value={displayedBarteringLevel}
             placeholder="0"
             onChange={(event) => {
-                const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
+              const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
               if (activeProfile) {
                 updateProfile(activeProfile.id, { boosts: { ...activeProfile.boosts, barteringLevel: level } });
               } else {
-                patchSettings({ barteringBoost: level === "" ? "" : Math.round(Number(level) * 0.2) });
+                patchSettings({ barteringBoost: level === "" ? "" : barteringBuffPercent(level) });
               }
             }}
           />
@@ -499,6 +732,7 @@ export default function SkillProfitPage() {
         <label className={styles.numberField}>
           <span>Min Vol</span>
           <input
+            aria-label="Minimum stable volume"
             type="number"
             min={0}
             value={minVolume}
@@ -591,7 +825,7 @@ export default function SkillProfitPage() {
               className={`${styles.skillCard} ${activeSkill === skill ? styles.skillCardActive : ""}`}
               key={skill}
               onClick={() => setActiveSkill(skill)}
-              title={skill === "Forge" ? `${forgeRecipes.length} forge recipes loaded for display only` : top ? `${top.name}: ${formatGold(top.profitPerHour)}g/hr` : "No liquid route"}
+              title={skill === "Forge" ? `${forgeRecipes.length} forge recipes loaded for display only` : top ? `${top.name}: ${getProfitSummary(top)}` : "No liquid route"}
               type="button"
             >
               <div className={styles.skillCardTop}>
@@ -600,7 +834,7 @@ export default function SkillProfitPage() {
               </div>
               <div className={styles.skillCardBody}>
                 <span>{skill === "Forge" ? "Info only" : top?.name || "No liquid route"}</span>
-                <strong>{skill === "Forge" ? `${forgeRecipes.length} recipes` : top ? `${formatGold(top.profitPerHour)}g/hr` : "0g/hr"}</strong>
+                <strong>{skill === "Forge" ? `${forgeRecipes.length} recipes` : top ? getProfitCardValue(top) : "0g/hr"}</strong>
               </div>
             </button>
           );
@@ -633,17 +867,28 @@ export default function SkillProfitPage() {
               <SortableTh sortKey="skill" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <SortableTh sortKey="level" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <SortableTh sortKey="profitPerHour" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
-              <SortableTh sortKey="roi" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
-              <SortableTh sortKey="expPerHour" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
+              <SortableTh sortKey="profitEach" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
+              <SortableTh sortKey="inputCost" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <SortableTh sortKey="volume3d" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <th>Sell</th>
-              <th>Signal</th>
+              <th>Liquidity</th>
             </tr>
           </thead>
           <tbody>
             {rowModel.filtered.map((row) => {
               return (
-                <tr key={`${row.skill}-${row.name}`} onClick={() => setSelectedRow(row)}>
+                <tr
+                  aria-label={`Open ${row.name} skill strategy`}
+                  key={`${row.skill}-${row.name}`}
+                  onClick={() => setSelectedRow(row)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    setSelectedRow(row);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
                   <td className="left-align">
                     <div className={styles.nameCell}>
                       <button
@@ -659,16 +904,25 @@ export default function SkillProfitPage() {
                         {row.name}
                       </button>
                       <span className={styles.itemMeta}>
-                        {row.note || `${row.bestSaleSource} net · ${formatGold(row.netRevenue)}g`}
+                        {row.note || `Return ${formatGold(row.netRevenue)}g - cost ${formatGold(row.inputCost)}g`}
                       </span>
                     </div>
                   </td>
                   <td>{row.skill}</td>
                   <td className="mono">{row.level}</td>
-                  <td className={`mono ${row.profitPerHour >= 0 ? styles.positive : styles.negative}`}>{formatGold(row.profitPerHour)}g</td>
-                  <td className="mono">{row.roi.toFixed(1)}%</td>
-                  <td className="mono">{formatOptionalNumber(row.expPerHour)}</td>
-                  <td className="mono">{row.volume3d.toLocaleString()}</td>
+                  <td className={`mono ${getRankedProfitPerHour(row) >= 0 ? styles.positive : styles.negative}`}>
+                    <div className={styles.profitCell}>
+                      <strong>{getProfitCellValue(row)}</strong>
+                      {row.essenceActive && (
+                        <span>{row.essenceNeedsPrice ? `${formatGold(row.baseProfitPerHour)}g/hr base` : "with essence"}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className={`mono ${row.profitEach >= 0 ? styles.positive : styles.negative}`}>{formatSignedGold(row.profitEach)}</td>
+                  <td className="mono">{formatGold(row.inputCost)}g</td>
+                  <td className="mono" title={row.stableVolume3d !== row.volume3d ? `Raw 3-day volume: ${row.volume3d.toLocaleString()}` : undefined}>
+                    {row.stableVolume3d.toLocaleString()}
+                  </td>
                   <td>
                     <span className={`${styles.saleBadge} ${row.bestSaleSource === "vendor" ? styles.saleVendor : row.bestSaleSource === "custom" ? styles.saleCustom : styles.saleMarket}`}>
                       {row.bestSaleSource}
@@ -676,11 +930,15 @@ export default function SkillProfitPage() {
                   </td>
                   <td>
                     {row.skill === "Forge" ? (
-                      <span className={`${styles.signal} ${styles.signalInfo}`}><Info size={12} /> Info</span>
+                      <span className={`${styles.liquidityBadge} ${styles.liquidityInfo}`}><Info size={12} /> Info</span>
+                    ) : row.liquidityRisk ? (
+                      <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`} title={row.liquidityNote}>
+                        <Eye size={12} /> {row.liquidityLabel === "Spike risk" ? "Spike" : "Swings"}
+                      </span>
                     ) : isLiquid(row, minVolume) ? (
-                      <span className={`${styles.signal} ${styles.signalGood}`}><TrendingUp size={12} /> Liquid</span>
+                      <span className={`${styles.liquidityBadge} ${styles.liquidityGood}`}><BarChart3 size={12} /> Liquid</span>
                     ) : (
-                      <span className={`${styles.signal} ${styles.signalWarn}`}><Eye size={12} /> Thin</span>
+                      <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`}><Eye size={12} /> Thin</span>
                     )}
                   </td>
                 </tr>
@@ -721,7 +979,7 @@ function SortableTh({
 }) {
   const active = sortKey === activeKey;
   return (
-    <th className={`sortable ${align === "left" ? "left-align" : ""}`}>
+    <th className={align === "left" ? styles.sortHeaderLeft : undefined}>
       <button className={styles.sortButton} onClick={() => onSort(sortKey)} type="button">
         {SORT_LABELS[sortKey]}
         {active && <span>{sortDesc ? "v" : "^"}</span>}
@@ -730,16 +988,113 @@ function SortableTh({
   );
 }
 
+function usePickerOpen(onOpenChange?: (open: boolean) => void) {
+  const [open, setOpenState] = useState(false);
+  const setOpen = useCallback((next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  }, [onOpenChange]);
+
+  useEffect(() => () => onOpenChange?.(false), [onOpenChange]);
+
+  return [open, setOpen] as const;
+}
+
+function OptionPicker<T extends string>({
+  options,
+  value,
+  onChange,
+  onOpenChange,
+}: {
+  options: Array<{ value: T; label: string; hint?: string }>;
+  value: T;
+  onChange: (value: T) => void;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [open, setOpen] = usePickerOpen(onOpenChange);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.find((option) => option.value === value) || options[0] || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (pickerRef.current?.contains(event.target as Node)) return;
+      close();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("zenith-tool-picker-close", close);
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("zenith-tool-picker-close", close);
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={`${styles.compactPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
+      <button
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className={styles.compactTrigger}
+        onClick={() => {
+          if (!open) window.dispatchEvent(new Event("zenith-tool-picker-close"));
+          setOpen(!open);
+        }}
+        type="button"
+      >
+        <span>
+          <strong>{selected?.label || "Select"}</strong>
+          <small>{selected?.hint || "Profile buff"}</small>
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className={`${styles.toolMenu} ${styles.compactMenu}`} role="listbox">
+          {options.map((option) => (
+            <button
+              aria-selected={option.value === value}
+              className={`${styles.compactOption} ${option.value === value ? styles.toolOptionActive : ""}`}
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              role="option"
+              type="button"
+            >
+              <span>
+                <strong>{option.label}</strong>
+                <small>{option.hint || "Conquest buff"}</small>
+              </span>
+              {option.value === value && <Check size={15} />}
+            </button>
+          ))}
+          <button className={styles.toolClose} onClick={() => setOpen(false)} type="button">
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ToolPicker({
   options,
   value,
   onChange,
+  onOpenChange,
 }: {
   options: typeof SKILL_TOOLS[ToolSkill];
   value: string;
   onChange: (value: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePickerOpen(onOpenChange);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const selected = options.find((option) => option.name === value) || null;
 
@@ -750,11 +1105,16 @@ function ToolPicker({
       if (pickerRef.current?.contains(event.target as Node)) return;
       close();
     };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
     window.addEventListener("zenith-tool-picker-close", close);
     window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("zenith-tool-picker-close", close);
       window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
@@ -762,10 +1122,11 @@ function ToolPicker({
     <div className={`${styles.toolPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
       <button
         aria-expanded={open}
+        aria-haspopup="listbox"
         className={styles.toolTrigger}
         onClick={() => {
           if (!open) window.dispatchEvent(new Event("zenith-tool-picker-close"));
-          setOpen((current) => !current);
+          setOpen(!open);
         }}
         type="button"
       >
@@ -776,13 +1137,15 @@ function ToolPicker({
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className={styles.toolMenu}>
+        <div className={styles.toolMenu} role="listbox">
           <button
+            aria-selected={!value}
             className={`${styles.toolOption} ${!value ? styles.toolOptionActive : ""}`}
             onClick={() => {
               onChange("");
               setOpen(false);
             }}
+            role="option"
             type="button"
           >
             <span>
@@ -794,12 +1157,14 @@ function ToolPicker({
           </button>
           {options.map((option) => (
             <button
+              aria-selected={option.name === value}
               className={`${styles.toolOption} ${option.name === value ? styles.toolOptionActive : ""}`}
               key={option.name}
               onClick={() => {
                 onChange(option.name);
                 setOpen(false);
               }}
+              role="option"
               type="button"
             >
               <span>
@@ -810,6 +1175,113 @@ function ToolPicker({
               {option.name === value && <Check size={15} />}
             </button>
           ))}
+          <button className={styles.toolClose} onClick={() => setOpen(false)} type="button">
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EssencePicker({
+  label,
+  options,
+  value,
+  onChange,
+  onOpenChange,
+}: {
+  label: string;
+  options: ReturnType<typeof getEssenceOptionsForSkill>;
+  value: string;
+  onChange: (value: string) => void;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [open, setOpen] = usePickerOpen(onOpenChange);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.find((option) => option.value === value) || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (pickerRef.current?.contains(event.target as Node)) return;
+      close();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("zenith-tool-picker-close", close);
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("zenith-tool-picker-close", close);
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={`${styles.toolPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
+      <button
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={label}
+        className={styles.toolTrigger}
+        onClick={() => {
+          if (!open) window.dispatchEvent(new Event("zenith-tool-picker-close"));
+          setOpen(!open);
+        }}
+        type="button"
+      >
+        <span>
+          <strong>{selected?.label || "No essence"}</strong>
+          <small>{selected ? formatEssenceBuff(selected.buff) : "No crystal cost or boost"}</small>
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className={styles.toolMenu} role="listbox" aria-label={label}>
+          <button
+            aria-selected={!value}
+            className={`${styles.toolOption} ${!value ? styles.toolOptionActive : ""}`}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            role="option"
+            type="button"
+          >
+            <span>
+              <strong>No essence</strong>
+              <small>No crystal cost or boost</small>
+            </span>
+            <em>0g</em>
+            {!value && <Check size={15} />}
+          </button>
+          {options.map((option) => (
+            <button
+              aria-selected={option.value === value}
+              className={`${styles.toolOption} ${option.value === value ? styles.toolOptionActive : ""}`}
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              role="option"
+              type="button"
+            >
+              <span>
+                <strong>{option.label}</strong>
+                <small>{option.hint}</small>
+              </span>
+              <em>{option.price.value > 0 ? `${formatGold(option.price.value)}g` : "Data"}</em>
+              {option.value === value && <Check size={15} />}
+            </button>
+          ))}
+          {options.length === 0 && (
+            <div className={styles.toolEmpty}>No supported essence data yet</div>
+          )}
           <button className={styles.toolClose} onClick={() => setOpen(false)} type="button">
             Close
           </button>
@@ -844,6 +1316,24 @@ function SkillStrategyModal({
         .filter(([, value]) => Number.isFinite(value) && value > 0),
     );
   }, [scenarioPrices]);
+  const settingsWithoutRowEssence = useMemo<SkillProfitSettings>(() => {
+    const essenceBySkill = { ...settings.essenceBySkill };
+    const essenceBuffsBySkill = { ...settings.essenceBuffsBySkill };
+    const essencePricesBySkill = { ...settings.essencePricesBySkill };
+    delete essenceBySkill[row.skill];
+    delete essenceBuffsBySkill[row.skill];
+    delete essencePricesBySkill[row.skill];
+    return {
+      ...settings,
+      essenceBySkill,
+      essenceBuffsBySkill,
+      essencePricesBySkill,
+    };
+  }, [row.skill, settings]);
+  const baseRouteRow = useMemo(
+    () => calculateSkillProfitRow(row, marketData, allItemsDb, { ...settingsWithoutRowEssence, scenarioPrices: cleanScenarioPrices }),
+    [allItemsDb, cleanScenarioPrices, marketData, row, settingsWithoutRowEssence],
+  );
   const activeRow = useMemo(
     () => calculateSkillProfitRow(row, marketData, allItemsDb, { ...settings, scenarioPrices: cleanScenarioPrices }),
     [allItemsDb, cleanScenarioPrices, marketData, row, settings],
@@ -854,10 +1344,20 @@ function SkillStrategyModal({
     () => new Map(row.ingredientCosts.map((ingredient) => [ingredient.name, ingredient])),
     [row.ingredientCosts],
   );
+  const actionRate = Math.max(activeRow.itemsPerHour, 1);
   const target = Number(targetGoldPerHour);
-  const targetPerAction = Number.isFinite(target) && target > 0 ? target / Math.max(activeRow.itemsPerHour, 1) : null;
+  const targetNeedsEssencePrice = activeRow.essenceActive && activeRow.essenceNeedsPrice;
+  const essenceCostPerAction = activeRow.essenceActive && activeRow.essenceCostPerHour !== null
+    ? activeRow.essenceCostPerHour / actionRate
+    : 0;
+  const targetPerAction = !targetNeedsEssencePrice && Number.isFinite(target) && target > 0
+    ? (target + (activeRow.essenceActive ? activeRow.essenceCostPerHour || 0 : 0)) / actionRate
+    : null;
   const editableInputCount = activeRow.ingredientCosts.filter((ingredient) => !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor").length;
-  const profitPerHourDelta = activeRow.profitPerHour - row.profitPerHour;
+  const displayProfitPerHour = getDisplayProfitPerHour(activeRow);
+  const rankedProfitPerHour = getRankedProfitPerHour(activeRow);
+  const changeNeedsPriceData = (row.essenceActive && row.essenceNeedsPrice) || (activeRow.essenceActive && activeRow.essenceNeedsPrice);
+  const profitPerHourDelta = changeNeedsPriceData ? null : rankedProfitPerHour - getRankedProfitPerHour(row);
   const isMarketLikeSale = activeRow.saleSource === "market" || activeRow.saleSource === "custom" || activeRow.saleSource === "scenario";
   const grossRevenue = isMarketLikeSale ? activeRow.salePrice : 0;
   const taxPaid = isMarketLikeSale ? grossRevenue - activeRow.marketRevenue : 0;
@@ -877,13 +1377,22 @@ function SkillStrategyModal({
     ["Hunger", item?.hunger_restore ? `+${item.hunger_restore}` : "0"],
   ].filter(([, value]) => value !== "0") as Array<[string, string]>;
   const findSources = Array.isArray(item?.where_to_find) ? item.where_to_find.filter(Boolean).slice(0, 4) : [];
+  const dialogRef = useModalA11y<HTMLDivElement>(true, onClose);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-content ${styles.strategyModalContent}`} onClick={(event) => event.stopPropagation()}>
+    <div className="modal-overlay skill-profit-strategy-overlay" onClick={onClose}>
+      <div
+        aria-labelledby="skill-strategy-title"
+        aria-modal="true"
+        className={`modal-content ${styles.strategyModalContent}`}
+        onClick={(event) => event.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
         <div className="modal-header">
-          <h2>{activeRow.name} Strategy</h2>
-          <button className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
+          <h2 id="skill-strategy-title">{activeRow.name} Strategy</h2>
+          <button aria-label="Close skill strategy" className="close-btn" onClick={onClose} type="button"><X size={20} /></button>
         </div>
         <div className="modal-body">
           <div className={styles.modalGrid}>
@@ -900,11 +1409,15 @@ function SkillStrategyModal({
                 <div className={styles.tryPriceSummary}>
                   <div>
                     <span>With try prices</span>
-                    <strong className={activeRow.profitPerHour >= 0 ? styles.goodValue : styles.badValue}>{formatGold(activeRow.profitPerHour)}g/hr</strong>
+                    <strong className={rankedProfitPerHour >= 0 ? styles.goodValue : styles.badValue}>
+                      {displayProfitPerHour === null ? "Needs price/data" : `${formatGold(displayProfitPerHour)}g/hr`}
+                    </strong>
                   </div>
                   <div>
                     <span>Change</span>
-                    <strong className={profitPerHourDelta >= 0 ? styles.goodValue : styles.badValue}>{formatSignedGold(profitPerHourDelta)}/hr</strong>
+                    <strong className={profitPerHourDelta === null || profitPerHourDelta >= 0 ? styles.goodValue : styles.badValue}>
+                      {profitPerHourDelta === null ? "Needs price/data" : `${formatSignedGold(profitPerHourDelta)}/hr`}
+                    </strong>
                   </div>
                   <div>
                     <span>Profit each</span>
@@ -922,7 +1435,9 @@ function SkillStrategyModal({
                   const baseIngredient = baseIngredientCosts.get(ingredient.name) || ingredient;
                   const canTryBuyPrice = !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor";
                   const otherInputCost = activeRow.inputCost - ingredient.unitPrice * ingredient.quantity;
-                  const maxUnitForBreakEven = Math.floor((activeRow.netRevenue - otherInputCost) / Math.max(ingredient.quantity, 1));
+                  const maxUnitForBreakEven = targetNeedsEssencePrice
+                    ? null
+                    : Math.floor((activeRow.netRevenue - otherInputCost - essenceCostPerAction) / Math.max(ingredient.quantity, 1));
                   const maxUnitForTarget = targetPerAction === null
                     ? null
                     : Math.floor((activeRow.netRevenue - otherInputCost - targetPerAction) / Math.max(ingredient.quantity, 1));
@@ -945,6 +1460,7 @@ function SkillStrategyModal({
                           <label className={styles.scenarioInput}>
                             <span>Try buy price</span>
                             <input
+                              aria-label={`Try buy price for ${ingredient.name}`}
                               inputMode="numeric"
                               min={0}
                               placeholder={`${formatGold(baseIngredient.unitPrice)}g`}
@@ -964,7 +1480,11 @@ function SkillStrategyModal({
                           </label>
                           <div className={styles.breakEvenLine}>
                             <span>Break-even</span>
-                            <strong>{maxUnitForBreakEven > 0 ? `${formatGold(maxUnitForBreakEven)}g ea` : "Not profitable"}</strong>
+                            <strong>
+                              {maxUnitForBreakEven === null
+                                ? "Needs essence price"
+                                : maxUnitForBreakEven > 0 ? `${formatGold(maxUnitForBreakEven)}g ea` : "Not profitable"}
+                            </strong>
                           </div>
                           {maxUnitForTarget !== null && (
                             <div className={styles.breakEvenLine}>
@@ -987,6 +1507,7 @@ function SkillStrategyModal({
               <label className={styles.targetProfitField}>
                 <span>Target gold per hour</span>
                 <input
+                  aria-label="Target gold per hour"
                   inputMode="numeric"
                   min={0}
                   placeholder="Optional"
@@ -995,6 +1516,9 @@ function SkillStrategyModal({
                   onChange={(event) => setTargetGoldPerHour(event.target.value)}
                 />
               </label>
+              {targetNeedsEssencePrice && (
+                <div className={styles.fixedPriceNote}>Essence price required for boosted caps</div>
+              )}
               {hasScenarioPrices && (
                 <div className={styles.scenarioActions}>
                   <button type="button" onClick={() => setScenarioPrices({})}>Clear try prices</button>
@@ -1034,18 +1558,42 @@ function SkillStrategyModal({
                 <CalcRow label="Items per hour" value={activeRow.itemsPerHour.toLocaleString()} />
                 {activeRow.housingWindowHours > 0 && (
                   <>
-                    <CalcRow label="Housing window" value={formatHours(activeRow.housingWindowHours)} />
+                    <CalcRow label={`${activeRow.skill} housing window`} value={`+${formatHours(activeRow.housingWindowHours)}`} />
                     <CalcRow label="Actions per housing window" value={activeRow.itemsPerHousingWindow.toLocaleString()} />
                     <CalcRow label="Gold per housing window" value={`${formatGold(activeRow.profitPerHousingWindow)}g`} tone={activeRow.profitPerHousingWindow >= 0 ? "good" : "bad"} />
                   </>
                 )}
                 {activeRow.toolBonus > 0 && <CalcRow label="Tool efficiency" value={`+${activeRow.toolBonus}%`} />}
-                <CalcRow label="Gold per hour" value={`${formatGold(activeRow.profitPerHour)}g`} tone={activeRow.profitPerHour >= 0 ? "good" : "bad"} />
+                <CalcRow label={activeRow.essenceActive ? "Boosted before essence cost" : "Gold per hour"} value={`${formatGold(activeRow.profitPerHour)}g`} tone={activeRow.profitPerHour >= 0 ? "good" : "bad"} />
+                {activeRow.essenceActive ? (
+                  <>
+                    <CalcRow label="Base route profit/hr" value={`${formatGold(baseRouteRow.profitPerHour)}g`} />
+                    <CalcRow label="Essence effect" value={formatEssenceBuff({ efficiency: activeRow.essenceEfficiencyBonus, experience: activeRow.essenceExperienceBonus })} />
+                    <CalcRow label="Idle action window" value={activeRow.essenceIdleActionHours > 0 ? formatHours(activeRow.essenceIdleActionHours) : "Profile needed"} muted={activeRow.essenceIdleActionHours <= 0} />
+                    <CalcRow label="Cost per start" value={activeRow.essenceNeedsPrice ? "Needs price/data" : `${formatGold(activeRow.essenceCostPerStart)}g`} muted={activeRow.essenceNeedsPrice} />
+                    <CalcRow label="Cost per hour" value={activeRow.essenceCostPerHour === null ? "Needs price/data" : `${formatGold(activeRow.essenceCostPerHour)}g`} muted={activeRow.essenceCostPerHour === null} />
+                    <CalcRow
+                      label="Profit with essence"
+                      value={activeRow.profitWithEssencePerHour === null ? "Needs price/data" : `${formatGold(activeRow.profitWithEssencePerHour)}g`}
+                      tone={activeRow.profitWithEssencePerHour === null ? undefined : activeRow.profitWithEssencePerHour >= 0 ? "good" : "bad"}
+                      muted={activeRow.profitWithEssencePerHour === null}
+                    />
+                  </>
+                ) : (
+                  <CalcRow label="Essence" value="None" muted />
+                )}
                 <CalcRow label="EXP per second" value={activeRow.expPerSecond === null ? "Unknown" : activeRow.expPerSecond.toFixed(2)} muted={activeRow.expPerSecond === null} />
-                <CalcRow label="3-day volume" value={activeRow.volume3d.toLocaleString()} />
+                <CalcRow label="Stable volume" value={activeRow.stableVolume3d.toLocaleString()} />
+                <CalcRow label="Raw 3-day volume" value={activeRow.volume3d.toLocaleString()} muted={activeRow.stableVolume3d === activeRow.volume3d} />
+                <CalcRow label="Liquidity" value={activeRow.liquidityLabel} muted={!activeRow.liquidityRisk && activeRow.liquidityLabel === "No market"} />
+                {activeRow.liquidityRisk && <CalcRow label="Market caution" value={activeRow.liquidityNote} muted />}
               </div>
               <div className={styles.formula}>
-                ({formatGold(activeRow.netRevenue)}g net - {formatGold(activeRow.inputCost)}g input) x {activeRow.itemsPerHour.toLocaleString()} actions/hr = {formatGold(activeRow.profitPerHour)}g/hr
+                {activeRow.essenceActive && activeRow.profitWithEssencePerHour !== null
+                  ? `(${formatGold(activeRow.netRevenue)}g net - ${formatGold(activeRow.inputCost)}g input) x ${activeRow.itemsPerHour.toLocaleString()} actions/hr - ${formatGold(activeRow.essenceCostPerHour || 0)}g essence/hr = ${formatGold(activeRow.profitWithEssencePerHour)}g/hr`
+                  : activeRow.essenceActive
+                    ? `Base route is ${formatGold(baseRouteRow.profitPerHour)}g/hr. Profit with essence needs price/data before it can be ranked.`
+                  : `(${formatGold(activeRow.netRevenue)}g net - ${formatGold(activeRow.inputCost)}g input) x ${activeRow.itemsPerHour.toLocaleString()} actions/hr = ${formatGold(activeRow.profitPerHour)}g/hr`}
               </div>
               <button className={styles.openItemButton} onClick={() => onOpenItem(activeRow.name)} type="button">
                 Open item database details
@@ -1075,7 +1623,8 @@ function SkillStrategyModal({
                 <DetailPill label="3d Avg" value={market?.avg_3 ? `${formatGold(market.avg_3)}g` : "No data"} muted={!market?.avg_3} />
                 <DetailPill label="7d Avg" value={market?.avg_7 ? `${formatGold(market.avg_7)}g` : "No data"} muted={!market?.avg_7} />
                 <DetailPill label="30d Avg" value={market?.avg_30 ? `${formatGold(market.avg_30)}g` : "No data"} muted={!market?.avg_30} />
-                <DetailPill label="3d Volume" value={activeRow.volume3d.toLocaleString()} muted={activeRow.volume3d <= 0} />
+                <DetailPill label="Stable Volume" value={activeRow.stableVolume3d.toLocaleString()} muted={activeRow.stableVolume3d <= 0} />
+                <DetailPill label="Raw 3d Volume" value={activeRow.volume3d.toLocaleString()} muted={activeRow.stableVolume3d === activeRow.volume3d} />
               </div>
 
               {(itemRequirements.length > 0 || itemStats.length > 0 || itemEffects.length > 0 || findSources.length > 0 || item?.health_restore || item?.hunger_restore) && (
@@ -1213,7 +1762,7 @@ function Metric({ label, value, sub, tone }: { label: string; value: string; sub
 }
 
 function isLiquid(row: SkillProfitRow, minVolume: number) {
-  return row.saleSource !== "market" || row.volume3d >= minVolume;
+  return row.saleSource !== "market" || (row.stableVolume3d >= minVolume && !row.liquidityRisk);
 }
 
 function isExcludedFromTop(row: SkillProfitRow, minVolume: number) {
@@ -1223,6 +1772,36 @@ function isExcludedFromTop(row: SkillProfitRow, minVolume: number) {
 function getSortValue(row: SkillProfitRow, key: SkillProfitSortKey) {
   if (key === "name") return row.name.toLowerCase();
   if (key === "skill") return row.skill;
+  if (key === "profitPerHour") return getRankedProfitPerHour(row);
+  if (key === "volume3d") return row.stableVolume3d;
   return row[key] ?? -Infinity;
+}
+
+function getDisplayProfitPerHour(row: SkillProfitRow) {
+  if (row.essenceActive && row.profitWithEssencePerHour !== null) return row.profitWithEssencePerHour;
+  if (row.essenceActive && row.essenceNeedsPrice) return null;
+  return row.profitPerHour;
+}
+
+function getRankedProfitPerHour(row: SkillProfitRow) {
+  const displayProfit = getDisplayProfitPerHour(row);
+  if (displayProfit !== null) return displayProfit;
+  return row.baseProfitPerHour;
+}
+
+function getProfitCellValue(row: SkillProfitRow) {
+  const displayProfit = getDisplayProfitPerHour(row);
+  return displayProfit === null ? "Needs price/data" : `${formatGold(displayProfit)}g`;
+}
+
+function getProfitCardValue(row: SkillProfitRow) {
+  const displayProfit = getDisplayProfitPerHour(row);
+  return displayProfit === null ? "Needs price/data" : `${formatGold(displayProfit)}g/hr`;
+}
+
+function getProfitSummary(row: SkillProfitRow) {
+  const displayProfit = getDisplayProfitPerHour(row);
+  if (displayProfit === null) return `Needs price/data - base ${formatGold(row.baseProfitPerHour)}g/hr`;
+  return `${formatGold(displayProfit)}g/hr`;
 }
 

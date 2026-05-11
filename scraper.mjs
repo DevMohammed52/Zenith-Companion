@@ -14,6 +14,7 @@ const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
+const WORLD_LOCATIONS_FILE = path.join(__dirname, 'public', 'world-locations.json');
 const MARKET_SPIKE_MULTIPLIER = 5;
 const MARKET_SPIKE_MIN_DELTA = 100;
 
@@ -107,6 +108,7 @@ const ALCHEMY_ITEMS = {
 
 const IS_PRIORITY_ONLY = process.argv.includes('--priority');
 const IS_PETS_ONLY = process.argv.includes('--pets-only');
+const IS_WORLD_LOCATIONS_ONLY = process.argv.includes('--world-locations-only');
 const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 
 const itemsToFetch = new Set();
@@ -161,7 +163,7 @@ async function safeWriteJson(filePath, data) {
 }
 
 // 3. Add drops from enemies/dungeons/bosses
-if (!IS_PETS_ONLY && staticData) {
+if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && staticData) {
     const addLootItems = (entityList) => {
         if (!entityList) return;
         for (const entity of entityList) {
@@ -190,7 +192,7 @@ if (!IS_PETS_ONLY && staticData) {
 // 4. Load ALL items from global database to ensure 100% coverage
 const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
 
-if (!IS_PETS_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
+if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
     try {
         const allItems = JSON.parse(fs.readFileSync(ALL_ITEMS_DB_FILE, 'utf8'));
         let addedCount = 0;
@@ -258,6 +260,34 @@ function median(values) {
     return clean.length % 2 === 0 ? (clean[mid - 1] + clean[mid]) / 2 : clean[mid];
 }
 
+function asNonNegativeNumber(value) {
+    const parsed = Number(value ?? 0);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function averageIncludingZero(values) {
+    const clean = values.map(asNonNegativeNumber);
+    if (clean.length === 0) return 0;
+    return clean.reduce((sum, value) => sum + value, 0) / clean.length;
+}
+
+function medianIncludingZero(values) {
+    const clean = values.map(asNonNegativeNumber).sort((a, b) => a - b);
+    if (clean.length === 0) return 0;
+    const mid = Math.floor(clean.length / 2);
+    return clean.length % 2 === 0 ? (clean[mid - 1] + clean[mid]) / 2 : clean[mid];
+}
+
+function trimmedAverageIncludingZero(values, trimPercent = 0.1) {
+    const clean = values.map(asNonNegativeNumber).sort((a, b) => a - b);
+    if (clean.length === 0) return 0;
+    const trimCount = Math.floor(clean.length * trimPercent);
+    const trimmed = clean.length - (trimCount * 2) >= 3
+        ? clean.slice(trimCount, clean.length - trimCount)
+        : clean;
+    return averageIncludingZero(trimmed);
+}
+
 function weightedAverage(rows) {
     let totalValue = 0;
     let totalSold = 0;
@@ -289,6 +319,38 @@ function isMarketSpike(value, anchor) {
 
 function latestSoldMedian(latestSold) {
     return median((latestSold || []).slice(0, 10).map(sale => sale.price_per_item));
+}
+
+function buildLiquidityMetrics(history) {
+    const getVolume = (days) => {
+        const sales = recentRows(history, days);
+        return sales.reduce((sum, row) => sum + asNonNegativeNumber(row.total_sold), 0);
+    };
+    const rows30 = recentRows(history, 30);
+    const soldByDay = rows30.map(row => asNonNegativeNumber(row.total_sold));
+    const dailyAverage30 = averageIncludingZero(soldByDay);
+    const dailyMedian30 = medianIncludingZero(soldByDay);
+    const dailyTrimmedAverage30 = trimmedAverageIncludingZero(soldByDay);
+    const dailyMax30 = soldByDay.length > 0 ? Math.max(...soldByDay) : 0;
+    const stableDaily = dailyTrimmedAverage30 || dailyMedian30 || dailyAverage30;
+    const spikeRatio = stableDaily > 0 && dailyMax30 > 0 ? dailyMax30 / stableDaily : 0;
+    const outlierFloor = stableDaily + Math.max(25, stableDaily);
+    const outlierDays30 = stableDaily > 0
+        ? soldByDay.filter(value => value >= Math.max(stableDaily * 3, outlierFloor)).length
+        : 0;
+
+    return {
+        vol3: getVolume(3),
+        vol7: getVolume(7),
+        vol30: getVolume(30),
+        stableVol3: Math.round(stableDaily * 3),
+        dailyAverage30,
+        dailyTrimmedAverage30,
+        dailyMedian30,
+        dailyMax30,
+        salesSpikeRatio: spikeRatio,
+        salesOutlierDays30: outlierDays30,
+    };
 }
 
 function buildSafeMarketAverages(history, latestSold) {
@@ -699,6 +761,52 @@ async function fetchLiveDungeons() {
     }
 }
 
+function normalizeWorldLocationPayload(payload) {
+    const locations = Array.isArray(payload?.locations)
+        ? payload.locations.map(location => ({
+            id: location.id,
+            name: location.name,
+            key: location.key,
+            description: location.description ?? null,
+            image_url: location.image_url ?? null,
+            x: Number(location.x),
+            y: Number(location.y),
+            forecast: Array.isArray(location.forecast) ? location.forecast : [],
+        }))
+        : [];
+
+    return {
+        _meta: {
+            source: "/v1/world/locations/list",
+            fetched_at: new Date().toISOString(),
+            endpoint_updates_at: payload?.endpoint_updates_at ?? null,
+            location_count: locations.length,
+        },
+        endpoint_updates_at: payload?.endpoint_updates_at ?? null,
+        locations,
+    };
+}
+
+async function fetchWorldLocations() {
+    try {
+        console.log("Fetching world location data...");
+        const res = await apiFetch(`${BASE_URL}/world/locations/list`, { headers });
+        if (!res.ok) {
+            console.error(`Failed to fetch world locations: ${res.status}`);
+            return false;
+        }
+
+        const data = await res.json();
+        const normalized = normalizeWorldLocationPayload(data);
+        await safeWriteJson(WORLD_LOCATIONS_FILE, normalized);
+        console.log(`World locations updated: ${normalized.locations.length} locations.`);
+        return true;
+    } catch (e) {
+        console.error("Error updating world locations:", e.message);
+        return false;
+    }
+}
+
 function formatDuration(ms) {
     const totalSeconds = Math.max(0, Math.round(ms / 1000));
     const hours = Math.floor(totalSeconds / 3600);
@@ -736,12 +844,7 @@ async function fetchItem(itemName, cycleHistoryCache) {
         if (history.length === 0) return null;
 
         const safeMarket = buildSafeMarketAverages(history, histData.latest_sold || []);
-
-        const getVol = (days) => {
-            const sales = recentRows(history, days);
-            return sales.reduce((sum, h) => sum + (h.total_sold || 0), 0);
-        };
-        const vol_3 = getVol(3);
+        const liquidity = buildLiquidityMetrics(history);
         
         let latest = history.reduce((latest, current) => new Date(current.date) > new Date(latest.date) ? current : latest, history[0]);
         let latest_price = latest.average_price;
@@ -769,7 +872,17 @@ async function fetchItem(itemName, cycleHistoryCache) {
             price_warning: safeMarket.adjusted ? "Recent market spike filtered" : undefined,
             price_outlier_rows: safeMarket.removedRows,
             latest_sale_median: safeMarket.latestSaleMedian,
-            vol_3: vol_3,
+            vol_3: liquidity.vol3,
+            vol_7: liquidity.vol7,
+            vol_30: liquidity.vol30,
+            stable_vol_3: liquidity.stableVol3,
+            daily_sales_avg_30: liquidity.dailyAverage30,
+            daily_sales_trimmed_avg_30: liquidity.dailyTrimmedAverage30,
+            daily_sales_median_30: liquidity.dailyMedian30,
+            daily_sales_max_30: liquidity.dailyMax30,
+            sales_outlier_days_30: liquidity.salesOutlierDays30,
+            sales_spike_ratio: liquidity.salesSpikeRatio,
+            liquidity_warning: liquidity.salesOutlierDays30 > 0 ? "Daily sold volume has bulk-sale spikes" : undefined,
             vendor_price: itemRecord.vendor_price || 0,
             last_updated: new Date().toISOString()
         };
@@ -796,11 +909,19 @@ async function start() {
     if (IS_PETS_ONLY) {
         await updatePetDatabaseExchange();
         console.log("Pet data scrape completed. Exiting.");
-        process.exit(0);
+        return;
+    }
+
+    if (IS_WORLD_LOCATIONS_ONLY) {
+        const ok = await fetchWorldLocations();
+        console.log("World location scrape completed. Exiting.");
+        process.exitCode = ok ? 0 : 1;
+        return;
     }
 
     while (true) {
         // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
+        await fetchWorldLocations();
         await fetchLiveWorldBosses();
         await fetchLiveEnemies();
         await fetchLiveDungeons();
@@ -849,7 +970,7 @@ async function start() {
         
         if (process.env.SCRAPE_ONCE === "true") {
             console.log("Process complete. Exiting.");
-            process.exit(0);
+            return;
         }
 
         console.log(`Cycle finished. Restarting in ${formatDuration(SCRAPE_INTERVAL_MS)}...`);

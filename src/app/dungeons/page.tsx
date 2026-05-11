@@ -22,13 +22,19 @@ import {
   Zap,
 } from "lucide-react";
 import { getItemTrueValueBreakdown } from "@/lib/ev-logic";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import { usePreferences } from "@/lib/preferences";
 import { getProfileDungeonStatTotal, useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import {
+  getItemEffectBonus,
+  getProfileBarteringBoost,
+  getProfileEquippedSpecialItem,
+  type ProfileItemRecord,
+} from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
   calculateHousingBuffs,
   formatHours,
@@ -41,7 +47,35 @@ import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
 
 type ReadinessFilter = "all" | "ready" | "blocked";
+type DungeonDropValuationMode = "safe-market" | "vendor" | "manual" | "exclude";
+
 const DUNGEON_COMPLETIONS_STORAGE_KEY = "zenith_dungeon_completed_runs_v1";
+const EVENT_DUNGEON_COMPLETIONS_STORAGE_KEY = "zenith_event_dungeon_completion_count_v1";
+const DUNGEON_ITEM_MODIFIERS_STORAGE_KEY = "zenith_dungeon_item_modifiers_v1";
+const EMPTY_DUNGEON_ITEM_MODIFIERS = { efficiencyItem: "", magicFindItem: "" };
+type DungeonItemModifierSelections = typeof EMPTY_DUNGEON_ITEM_MODIFIERS;
+type DungeonItemModifier = {
+  name: string;
+  type: string;
+  quality: string;
+  imageUrl: string;
+  efficiency: number;
+  magicFind: number;
+  durationMs: number;
+  isTradeable: boolean;
+};
+const DROP_VALUATION_OPTIONS: Array<{ value: DungeonDropValuationMode; label: string }> = [
+  { value: "safe-market", label: "Safe market" },
+  { value: "vendor", label: "Vendor" },
+  { value: "manual", label: "Manual" },
+  { value: "exclude", label: "Exclude" },
+];
+const DROP_VALUATION_LABELS: Record<DungeonDropValuationMode, string> = {
+  "safe-market": "Safe market",
+  vendor: "Vendor",
+  manual: "Manual",
+  exclude: "Excluded",
+};
 
 const formatGold = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value).toLocaleString()}g`;
 const formatPlainGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
@@ -52,8 +86,132 @@ const VALUE_PATH_LABELS: Record<string, string> = {
   vendor: "Sell to vendor",
   chest_ev: "Open alchemy chest",
   recipe_craft: "Craft output and sell",
+  manual: "Manual value",
+  excluded: "Excluded",
   missing: "Missing price",
 };
+
+const EQUIPMENT_DROP_PATTERN = /\b(armor|amulet|bow|breastplate|boots|buckler|chestplate|crown|cuirass|gauntlets|gloves|greaves|helm|helmet|legplates|plate|ring|shield|shinplates|soulplate|staff|striders|sword|treads)\b/i;
+const POTION_DROP_PATTERN = /\b(elixir|infusion|potion)\b/i;
+
+function getRecipeOutputName(item: any) {
+  return String(item?.recipe?.result?.item_name || item?.recipe?.result?.name || "").trim();
+}
+
+function isHighTierQuality(quality: unknown) {
+  const normalized = String(quality || "").toUpperCase();
+  return normalized === "LEGENDARY" || normalized === "MYTHIC";
+}
+
+function isMarketSensitiveDungeonDrop(itemName: string, item: any) {
+  const type = String(item?.type || "").toUpperCase();
+  const quality = String(item?.quality || "").toUpperCase();
+  const text = `${itemName} ${item?.description || ""} ${getRecipeOutputName(item)} ${type}`;
+  const highTier = isHighTierQuality(quality);
+  const isGearRecipe = type === "RECIPE" && highTier && EQUIPMENT_DROP_PATTERN.test(text);
+  const isDirectGear = highTier && EQUIPMENT_DROP_PATTERN.test(text) && type !== "CHEST";
+  const isMythicPotionStyle = quality === "MYTHIC" && POTION_DROP_PATTERN.test(text);
+  return isGearRecipe || isDirectGear || isMythicPotionStyle;
+}
+
+function resolveDungeonDropValue(
+  itemName: string,
+  marketData: any,
+  allItemsDb: any,
+  evOptions: any,
+  valuationMode: DungeonDropValuationMode,
+  manualValue: number,
+  depth = 0,
+): any {
+  const item = allItemsDb?.[itemName];
+  const marketItem = marketData?.[itemName];
+  const marketPriceInfo = getSafeMarketPrice(marketItem);
+  const marketLiquidity = getMarketLiquidity(marketItem);
+  let valueBreakdown: any = getItemTrueValueBreakdown(itemName, marketData, allItemsDb, depth, evOptions);
+  let trueValue = Number(valueBreakdown.value || 0);
+  const marketSensitive = isMarketSensitiveDungeonDrop(itemName, item);
+  let valuationModeApplied = false;
+  let chestAdjusted = false;
+  let manualMissingValue = false;
+  let sensitiveCount = marketSensitive ? 1 : 0;
+  let manualMissingCount = 0;
+  let valuationNote = marketSensitive ? `${marketLiquidity.label}. Check listings before treating this as fast-sale value.` : "";
+
+  if (valuationMode !== "safe-market" && valueBreakdown.chest?.drops?.length && depth < 3) {
+    const adjustedDrops = valueBreakdown.chest.drops.map((chestDrop: any) => {
+      const adjusted = resolveDungeonDropValue(
+        chestDrop.name,
+        marketData,
+        allItemsDb,
+        evOptions,
+        valuationMode,
+        manualValue,
+        depth + 1,
+      );
+      const chance = Number(chestDrop.chance || 0);
+      const quantity = Number(chestDrop.quantity || 1);
+      const expectedValue = (chance / 100) * quantity * adjusted.trueValue;
+      chestAdjusted = chestAdjusted || adjusted.valuationModeApplied || adjusted.chestAdjusted;
+      sensitiveCount += Number(adjusted.sensitiveCount || 0);
+      manualMissingCount += Number(adjusted.manualMissingCount || 0);
+      return {
+        ...chestDrop,
+        value: adjusted.trueValue,
+        expectedValue,
+        path: adjusted.valueBreakdown?.chosenPath || chestDrop.path,
+        valuationModeApplied: adjusted.valuationModeApplied,
+        valuationLabel: adjusted.valuationLabel,
+      };
+    });
+    const chestExpectedValue = adjustedDrops.reduce((sum: number, chestDrop: any) => sum + Number(chestDrop.expectedValue || 0), 0);
+    const vendorNet = Number(valueBreakdown.vendorNet || 0);
+    trueValue = Math.max(chestExpectedValue, vendorNet);
+    valueBreakdown = {
+      ...valueBreakdown,
+      value: trueValue,
+      chosenPath: chestExpectedValue >= vendorNet ? "chest_ev" : "vendor",
+      chest: {
+        expectedValue: chestExpectedValue,
+        drops: adjustedDrops,
+      },
+    };
+  }
+
+  if (marketSensitive && valuationMode !== "safe-market") {
+    valuationModeApplied = true;
+    if (valuationMode === "vendor") {
+      trueValue = Math.max(0, Number(valueBreakdown.vendorNet || item?.vendor_price || marketItem?.vendor_price || 0));
+      valueBreakdown = { ...valueBreakdown, value: trueValue, chosenPath: "vendor" };
+      valuationNote = "Vendor value is used for this sensitive drop.";
+    } else if (valuationMode === "manual") {
+      trueValue = manualValue;
+      manualMissingValue = manualValue <= 0;
+      manualMissingCount += manualMissingValue ? 1 : 0;
+      valueBreakdown = { ...valueBreakdown, value: trueValue, chosenPath: "manual" };
+      valuationNote = manualMissingValue ? "Enter a manual value to include this drop." : `${formatPlainGold(manualValue)} per drop is used.`;
+    } else {
+      trueValue = 0;
+      valueBreakdown = { ...valueBreakdown, value: trueValue, chosenPath: "excluded" };
+      valuationNote = "This sensitive drop is excluded from EV.";
+    }
+  }
+
+  return {
+    trueValue,
+    marketPrice: marketPriceInfo.value,
+    marketPriceInfo,
+    marketLiquidity,
+    marketSensitive,
+    sensitiveCount,
+    manualMissingCount,
+    valueBreakdown,
+    valuationModeApplied,
+    chestAdjusted,
+    valuationLabel: DROP_VALUATION_LABELS[valuationMode],
+    valuationNote,
+    manualMissingValue,
+  };
+}
 
 function getValuePathLabel(path?: string) {
   return VALUE_PATH_LABELS[path || ""] || "Value";
@@ -73,19 +231,104 @@ function getDungeonKey(dungeon: any) {
 function getReadinessText(row: any, hasProfile: boolean) {
   if (!hasProfile) return "No profile";
   if (row.profileReady) return "Ready";
-  if (row.statGap > 0 && row.dungeoneeringGap > 0) return `Need ${row.statGap} stats +${row.dungeoneeringGap} dung`;
+  if (row.statGap > 0 && row.dungeoneeringGap > 0) return `Need ${row.statGap} stats +${row.dungeoneeringGap} Dungeoneering`;
   if (row.statGap > 0) return `Need ${row.statGap} stats`;
   return `Dungeoneering +${row.dungeoneeringGap}`;
+}
+
+function isSpecialEquipmentModifier(item: { type?: string }) {
+  return String(item.type || "").toUpperCase() === "SPECIAL";
+}
+
+function getTradeableVariantKey(name: string) {
+  return name.replace(/\s*\(Untradable\)\s*$/i, "").trim().toLowerCase();
+}
+
+function removeUntradeableDuplicateModifiers(options: DungeonItemModifier[]) {
+  const tradeableVariantKeys = new Set(
+    options
+      .filter((item) => item.isTradeable)
+      .map((item) => getTradeableVariantKey(item.name)),
+  );
+  return options.filter((item) => item.isTradeable || !tradeableVariantKeys.has(getTradeableVariantKey(item.name)));
 }
 
 function getOptionalNumber(value: number | "") {
   return value === "" ? null : Number(value);
 }
 
+function normalizeCompletionCount(value: unknown) {
+  return Math.max(0, Math.floor(Number(value) || 0));
+}
+
+function getConfirmedDungeonItemModifiers(allItemsDb: any): DungeonItemModifier[] {
+  const records = Object.values(allItemsDb || {});
+  return records
+    .map((item: any) => {
+      const effects = Array.isArray(item?.effects)
+        ? item.effects.filter((effect: any) => String(effect?.target || "").toLowerCase() === "dungeon")
+        : [];
+      if (effects.length === 0) return null;
+      const efficiency = effects.reduce((total: number, effect: any) => {
+        const attribute = String(effect?.attribute || "").toLowerCase();
+        const valueType = String(effect?.value_type || "").toLowerCase();
+        return attribute === "wait_length" || valueType === "efficiency"
+          ? total + Number(effect?.value || 0)
+          : total;
+      }, 0);
+      const magicFind = effects.reduce((total: number, effect: any) => {
+        const attribute = String(effect?.attribute || "").toLowerCase();
+        return attribute === "magic_find" ? total + Number(effect?.value || 0) : total;
+      }, 0);
+      if (efficiency <= 0 && magicFind <= 0) return null;
+      return {
+        name: String(item?.name || ""),
+        type: String(item?.type || "ITEM"),
+        quality: String(item?.quality || "UNKNOWN"),
+        imageUrl: String(item?.image_url || ""),
+        efficiency,
+        magicFind,
+        durationMs: effects.reduce((max: number, effect: any) => Math.max(max, Number(effect?.length || 0)), 0),
+        isTradeable: item?.is_tradeable !== false,
+      };
+    })
+    .filter((item): item is DungeonItemModifier => Boolean(item?.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getStoredDungeonModifierSelections(payload: string | null): DungeonItemModifierSelections {
+  if (!payload) return { ...EMPTY_DUNGEON_ITEM_MODIFIERS };
+  try {
+    const parsed = JSON.parse(payload);
+    return {
+      efficiencyItem: typeof parsed?.efficiencyItem === "string" ? parsed.efficiencyItem : "",
+      magicFindItem: typeof parsed?.magicFindItem === "string" ? parsed.magicFindItem : "",
+    };
+  } catch {
+    return { ...EMPTY_DUNGEON_ITEM_MODIFIERS };
+  }
+}
+
+function formatDungeonModifierDuration(durationMs: number) {
+  if (!durationMs) return "Passive";
+  const minutes = Math.max(1, Math.round(durationMs / 60000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+}
+
+function getDungeonItemModifierSummary(option: DungeonItemModifier) {
+  const parts = [];
+  if (option.efficiency > 0) parts.push(`+${option.efficiency}% speed`);
+  if (option.magicFind > 0) parts.push(`+${option.magicFind}% MF`);
+  parts.push(formatDungeonModifierDuration(option.durationMs));
+  return parts.join(" - ");
+}
+
 function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
   if (!profile) return 0;
   const dungeonLocation = String(dungeon?.location?.name || dungeon?.location || "").trim();
-  return getHousingIdleHoursForActivity(profile.housing, "dungeon", dungeonLocation);
+  return getHousingIdleHoursForActivity(profile.housing, "dungeon", dungeonLocation, { profileClassName: profile.className });
 }
 
 function getProfileIdleActionHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
@@ -94,7 +337,7 @@ function getProfileIdleActionHoursForDungeon(profile: ReturnType<typeof useProfi
 
 function getHousingDungeonScopeText(profile: ReturnType<typeof useProfiles>["activeProfile"]) {
   if (!profile) return "Select a profile.";
-  const summary = calculateHousingBuffs(profile.housing);
+  const summary = calculateHousingBuffs(profile.housing, { profileClassName: profile.className });
   const hours = summary.idleHours.dungeon;
   return getHousingAvailabilityText(summary, hours, "dungeon housing bonus");
 }
@@ -106,18 +349,30 @@ function DungeonsContent() {
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
-  const [selectedDungeon, setSelectedDungeon] = useState<any>(null);
-  const [sortCol, setSortCol] = useState<string>("netProfitPerHour");
+  const [selectedDungeonKey, setSelectedDungeonKey] = useState<string | null>(null);
+  const [sortCol, setSortCol] = useState<string>("netProfitPerRun");
   const [sortDesc, setSortDesc] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>("all");
   const [minimumProfit, setMinimumProfit] = useState<number | "">("");
   const [dungeonEfficiency, setDungeonEfficiency] = useState<number | "">("");
   const [dungeonMagicFind, setDungeonMagicFind] = useState<number | "">("");
+  const [dropValuationMode, setDropValuationMode] = useState<DungeonDropValuationMode>("safe-market");
+  const [manualSensitiveDropValue, setManualSensitiveDropValue] = useState<number | "">("");
   const [completedRunsByDungeon, setCompletedRunsByDungeon] = useState<Record<string, number | "">>({});
+  const [eventDungeonCompletionCount, setEventDungeonCompletionCount] = useState<number | "">("");
+  const [dungeonItemModifierSelections, setDungeonItemModifierSelections] = useState<DungeonItemModifierSelections>(EMPTY_DUNGEON_ITEM_MODIFIERS);
   const [includeMagicFindEv, setIncludeMagicFindEv] = useState(false);
   const completionsStorageKey = useMemo(
     () => getProfileStorageKey(DUNGEON_COMPLETIONS_STORAGE_KEY, activeProfile?.id),
+    [activeProfile?.id],
+  );
+  const eventCompletionsStorageKey = useMemo(
+    () => getProfileStorageKey(EVENT_DUNGEON_COMPLETIONS_STORAGE_KEY, activeProfile?.id),
+    [activeProfile?.id],
+  );
+  const itemModifiersStorageKey = useMemo(
+    () => getProfileStorageKey(DUNGEON_ITEM_MODIFIERS_STORAGE_KEY, activeProfile?.id),
     [activeProfile?.id],
   );
 
@@ -128,7 +383,7 @@ function DungeonsContent() {
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedDungeon(null);
+      if (event.key === "Escape") setSelectedDungeonKey(null);
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
@@ -149,7 +404,40 @@ function DungeonsContent() {
     return () => window.clearTimeout(timeout);
   }, [completedRunsByDungeon, completionsStorageKey]);
 
-  const completionMagicFindBonus = useMemo(() => {
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(eventCompletionsStorageKey) ?? (activeProfile?.id ? null : localStorage.getItem(EVENT_DUNGEON_COMPLETIONS_STORAGE_KEY));
+      if (!stored) {
+        setEventDungeonCompletionCount("");
+        return;
+      }
+      const parsed = normalizeCompletionCount(JSON.parse(stored));
+      setEventDungeonCompletionCount(parsed > 0 ? parsed : "");
+    } catch {
+      setEventDungeonCompletionCount("");
+    }
+  }, [activeProfile?.id, eventCompletionsStorageKey]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      localStorage.setItem(eventCompletionsStorageKey, JSON.stringify(normalizeCompletionCount(eventDungeonCompletionCount)));
+    }, 200);
+    return () => window.clearTimeout(timeout);
+  }, [eventDungeonCompletionCount, eventCompletionsStorageKey]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(itemModifiersStorageKey) ?? (activeProfile?.id ? null : localStorage.getItem(DUNGEON_ITEM_MODIFIERS_STORAGE_KEY));
+    setDungeonItemModifierSelections(getStoredDungeonModifierSelections(stored));
+  }, [activeProfile?.id, itemModifiersStorageKey]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      localStorage.setItem(itemModifiersStorageKey, JSON.stringify(dungeonItemModifierSelections));
+    }, 200);
+    return () => window.clearTimeout(timeout);
+  }, [dungeonItemModifierSelections, itemModifiersStorageKey]);
+
+  const listedCompletionMagicFindBonus = useMemo(() => {
     if (!staticData?.dungeons) return 0;
     return (staticData.dungeons || []).filter((dungeon: any) => {
       const requirement = Number(dungeon.completion_requirement || 0);
@@ -157,6 +445,57 @@ function DungeonsContent() {
       return requirement > 0 && completed >= requirement;
     }).length;
   }, [completedRunsByDungeon, staticData?.dungeons]);
+  const eventCompletionMagicFindBonus = useMemo(
+    () => normalizeCompletionCount(eventDungeonCompletionCount),
+    [eventDungeonCompletionCount],
+  );
+  const completionMagicFindBonus = listedCompletionMagicFindBonus + eventCompletionMagicFindBonus;
+  const dungeonItemModifierOptions = useMemo(() => getConfirmedDungeonItemModifiers(allItemsDb), [allItemsDb]);
+  const itemByName = useMemo(() => (allItemsDb || {}) as Record<string, ProfileItemRecord>, [allItemsDb]);
+  const equippedDungeonSpecial = useMemo(
+    () => getProfileEquippedSpecialItem(activeProfile, itemByName),
+    [activeProfile, itemByName],
+  );
+  const equippedDungeonSpecialMagicFind = useMemo(
+    () => getItemEffectBonus(equippedDungeonSpecial, "dungeon", "magic_find"),
+    [equippedDungeonSpecial],
+  );
+  const dungeonEfficiencyItemOptions = useMemo(
+    () => removeUntradeableDuplicateModifiers(dungeonItemModifierOptions.filter((item) => item.efficiency > 0))
+      .sort((a, b) => b.efficiency - a.efficiency || a.name.localeCompare(b.name)),
+    [dungeonItemModifierOptions],
+  );
+  const dungeonMagicFindItemOptions = useMemo(
+    () => dungeonItemModifierOptions
+      .filter((item) => item.magicFind > 0 && !isSpecialEquipmentModifier(item))
+      .sort((a, b) => b.magicFind - a.magicFind || a.name.localeCompare(b.name)),
+    [dungeonItemModifierOptions],
+  );
+  const selectedDungeonEfficiencyItem = useMemo(
+    () => dungeonEfficiencyItemOptions.find((item) => item.name === dungeonItemModifierSelections.efficiencyItem) || null,
+    [dungeonEfficiencyItemOptions, dungeonItemModifierSelections.efficiencyItem],
+  );
+  const selectedDungeonMagicFindItem = useMemo(
+    () => dungeonMagicFindItemOptions.find((item) => item.name === dungeonItemModifierSelections.magicFindItem) || null,
+    [dungeonMagicFindItemOptions, dungeonItemModifierSelections.magicFindItem],
+  );
+  const itemEfficiencyBonus = Number(selectedDungeonEfficiencyItem?.efficiency || 0);
+  const itemMagicFindBonus = Number(selectedDungeonMagicFindItem?.magicFind || 0);
+
+  useEffect(() => {
+    setDungeonItemModifierSelections((current) => {
+      const next = { ...current };
+      if (next.efficiencyItem && !dungeonEfficiencyItemOptions.some((item) => item.name === next.efficiencyItem)) {
+        next.efficiencyItem = "";
+      }
+      if (next.magicFindItem && !dungeonMagicFindItemOptions.some((item) => item.name === next.magicFindItem)) {
+        next.magicFindItem = "";
+      }
+      return next.efficiencyItem === current.efficiencyItem && next.magicFindItem === current.magicFindItem
+        ? current
+        : next;
+    });
+  }, [dungeonEfficiencyItemOptions, dungeonMagicFindItemOptions]);
 
   const rows = useMemo(() => {
     if (!staticData?.dungeons || !marketData || !allItemsDb) return [];
@@ -171,30 +510,58 @@ function DungeonsContent() {
     const playtimeHours = Math.max(0, Number(activeProfile?.timers.activeHours || 0));
     const manualEfficiency = getOptionalNumber(dungeonEfficiency);
     const manualMagicFind = getOptionalNumber(dungeonMagicFind);
-    const efficiency = Math.max(0, manualEfficiency ?? Number(activeProfile?.efficiency.dungeon || 0));
+    const manualDropValue = Math.max(0, getOptionalNumber(manualSensitiveDropValue) ?? 0);
+    const baseEfficiency = Math.max(0, manualEfficiency ?? Number(activeProfile?.efficiency.dungeon || 0));
+    const baseMagicFind = Math.max(0, manualMagicFind ?? Number(activeProfile?.magicFind.dungeon || 0));
+    const efficiency = Math.max(0, baseEfficiency + itemEfficiencyBonus);
     const totalMagicFind = Math.max(
       0,
-      (manualMagicFind ?? Number(activeProfile?.magicFind.dungeon || 0)) + completionMagicFindBonus,
+      baseMagicFind + completionMagicFindBonus + itemMagicFindBonus + equippedDungeonSpecialMagicFind,
     );
 
     for (const dungeon of staticData.dungeons) {
-      let totalEv = 0;
+      let lootEv = 0;
       let combinedDropChance = 0;
+      let marketSensitiveDropCount = 0;
+      let manualMissingValueCount = 0;
+      const entryCost = Number(dungeon.cost || 0);
       const lootDetails = (dungeon.loot || []).map((drop: any) => {
-        const valueBreakdown = getItemTrueValueBreakdown(drop.name, marketData, allItemsDb, 0, evOptions);
-        const trueValue = valueBreakdown.value;
-        const marketPriceInfo = getSafeMarketPrice(marketData[drop.name]);
-        const marketPrice = marketPriceInfo.value;
+        const dropValue = resolveDungeonDropValue(drop.name, marketData, allItemsDb, evOptions, dropValuationMode, manualDropValue);
+        const trueValue = dropValue.trueValue;
+        const marketPriceInfo = dropValue.marketPriceInfo;
+        const marketPrice = dropValue.marketPrice;
         const baseChancePercent = Number(drop.chance) || 0;
         const adjustedChancePercent = includeMagicFindEv
           ? Math.min(100, baseChancePercent * (1 + totalMagicFind / 100))
           : baseChancePercent;
         const dropChance = adjustedChancePercent / 100;
         const expectedVal = dropChance * (Number(drop.quantity) || 1) * trueValue;
-        totalEv += expectedVal;
+        lootEv += expectedVal;
         combinedDropChance += dropChance;
-        return { ...drop, trueValue, marketPrice, expectedVal, valueBreakdown, marketPriceInfo, baseChancePercent, adjustedChancePercent };
+        marketSensitiveDropCount += Number(dropValue.sensitiveCount || 0);
+        manualMissingValueCount += Number(dropValue.manualMissingCount || 0);
+        return {
+          ...drop,
+          trueValue,
+          marketPrice,
+          expectedVal,
+          valueBreakdown: dropValue.valueBreakdown,
+          marketPriceInfo,
+          marketLiquidity: dropValue.marketLiquidity,
+          marketSensitive: dropValue.marketSensitive,
+          valuationModeApplied: dropValue.valuationModeApplied,
+          chestAdjusted: dropValue.chestAdjusted,
+          valuationLabel: dropValue.valuationLabel,
+          valuationNote: dropValue.valuationNote,
+          manualMissingValue: dropValue.manualMissingValue,
+          baseChancePercent,
+          adjustedChancePercent,
+        };
       });
+      const shardCount = Number(dungeon.shards || 0);
+      const shardValuePerUnit = shardCount > 0 ? entryCost / shardCount : 0;
+      const shardEv = shardCount > 0 ? entryCost : 0;
+      const totalEv = lootEv + shardEv;
 
       const durationMins = getDungeonLengthMinutes(dungeon);
       const durationHours = durationMins / 60;
@@ -202,9 +569,7 @@ function DungeonsContent() {
       const effectiveDurationHours = effectiveDurationMins / 60;
       const housingDungeonHours = getHousingDungeonHoursForDungeon(activeProfile, dungeon);
       const idleActionLimitHours = getProfileIdleActionHoursForDungeon(activeProfile, dungeon);
-      const entryCost = Number(dungeon.cost || 0);
       const netProfitPerRun = totalEv - entryCost;
-      const netProfitPerHour = effectiveDurationHours > 0 ? netProfitPerRun / effectiveDurationHours : 0;
       const runsToDrop = combinedDropChance > 0 ? 1 / combinedDropChance : Infinity;
       const requiredDungeonStats = Math.ceil(Number(dungeon.difficulty || 0) * 0.7);
       const statGap = Math.max(0, requiredDungeonStats - profileDungeonStats);
@@ -228,13 +593,16 @@ function DungeonsContent() {
       calculated.push({
         ...dungeon,
         ev: totalEv,
+        lootEv,
+        shardCount,
+        shardValue: shardValuePerUnit,
+        shardEv,
         durationMins,
         durationHours,
         effectiveDurationMins,
         effectiveDurationHours,
         entryCost,
         netProfitPerRun,
-        netProfitPerHour,
         runsToDrop,
         requiredDungeonStats,
         profileDungeonStats,
@@ -259,8 +627,21 @@ function DungeonsContent() {
         completionRequirement,
         completionMagicFindActive,
         completedDungeonBonus: completionMagicFindBonus,
+        listedCompletionMagicFindBonus,
+        eventCompletionMagicFindBonus,
+        dropValuationMode,
+        marketSensitiveDropCount,
+        manualMissingValueCount,
+        baseDungeonEfficiency: baseEfficiency,
         dungeonEfficiency: efficiency,
+        itemEfficiencyBonus,
+        dungeonEfficiencyItemName: selectedDungeonEfficiencyItem?.name || "",
+        baseDungeonMagicFind: baseMagicFind,
         dungeonMagicFind: totalMagicFind,
+        itemMagicFindBonus,
+        equippedSpecialMagicFindBonus: equippedDungeonSpecialMagicFind,
+        equippedSpecialName: equippedDungeonSpecial?.name || "",
+        dungeonMagicFindItemName: selectedDungeonMagicFindItem?.name || "",
         includeMagicFindEv,
         combatExp: Number(dungeon.experience?.skills?.combat || 0),
         dungeoneeringExp: Number(dungeon.experience?.skills?.dungeoneering || 0),
@@ -307,17 +688,33 @@ function DungeonsContent() {
     completedRunsByDungeon,
     dungeonEfficiency,
     dungeonMagicFind,
+    dropValuationMode,
+    equippedDungeonSpecial,
+    equippedDungeonSpecialMagicFind,
+    eventCompletionMagicFindBonus,
     includeMagicFindEv,
+    itemEfficiencyBonus,
+    itemMagicFindBonus,
+    listedCompletionMagicFindBonus,
     marketData,
+    manualSensitiveDropValue,
     minimumProfit,
     preferences.customPrices,
     preferences.membership,
     readinessFilter,
     searchTerm,
+    selectedDungeonEfficiencyItem,
+    selectedDungeonMagicFindItem,
     sortCol,
     sortDesc,
     staticData,
   ]);
+
+  const selectedDungeon = useMemo(() => {
+    if (!selectedDungeonKey) return null;
+    return rows.find((row) => getDungeonKey(row) === selectedDungeonKey) ?? null;
+  }, [rows, selectedDungeonKey]);
+  const dungeonDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedDungeon), () => setSelectedDungeonKey(null));
 
   const autoOpenedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -327,7 +724,7 @@ function DungeonsContent() {
       if (dungeonParam === autoOpenedRef.current) return;
       const found = rows.find((row) => row.name.toLowerCase() === dungeonParam.toLowerCase());
       if (found) {
-        setSelectedDungeon(found);
+        setSelectedDungeonKey(getDungeonKey(found));
         autoOpenedRef.current = dungeonParam;
       }
     } else {
@@ -337,19 +734,30 @@ function DungeonsContent() {
 
   const summary = useMemo(() => {
     const readyRows = rows.filter((row) => row.profileReady);
-    const bestProfit = rows.reduce((best, row) => row.netProfitPerHour > (best?.netProfitPerHour ?? -Infinity) ? row : best, null as any);
-    const bestReady = readyRows.reduce((best, row) => row.netProfitPerHour > (best?.netProfitPerHour ?? -Infinity) ? row : best, null as any);
+    const bestProfit = rows.reduce((best, row) => row.netProfitPerRun > (best?.netProfitPerRun ?? -Infinity) ? row : best, null as any);
+    const bestReady = readyRows.reduce((best, row) => row.netProfitPerRun > (best?.netProfitPerRun ?? -Infinity) ? row : best, null as any);
     const cheapest = rows.reduce((best, row) => row.entryCost < (best?.entryCost ?? Infinity) ? row : best, null as any);
     return { readyRows, bestProfit, bestReady, cheapest };
   }, [rows]);
 
   const actionLimitSummary = useMemo(() => {
     const base = getProfileBaseIdleActionHours(activeProfile);
-    const maxHousing = rows.reduce((max, row) => Math.max(max, Number(row.housingDungeonHours || 0)), 0);
+    const housingRows = rows.filter((row) => Number(row.housingDungeonHours || 0) > 0);
+    const maxHousing = housingRows.reduce((max, row) => Math.max(max, Number(row.housingDungeonHours || 0)), 0);
+    const matchingLocations = Array.from(new Set(
+      housingRows
+        .map((row) => String(row.location?.name || row.location || "").trim())
+        .filter(Boolean),
+    ));
+    const visibleLocationText = matchingLocations.length > 0
+      ? `${matchingLocations.slice(0, 2).join(", ")}${matchingLocations.length > 2 ? ` +${matchingLocations.length - 2}` : ""}`
+      : "";
     return {
       base,
       maxHousing,
       maxLimit: base + maxHousing,
+      matchingRows: housingRows.length,
+      matchingLocationText: visibleLocationText,
     };
   }, [activeProfile, rows]);
 
@@ -363,7 +771,7 @@ function DungeonsContent() {
   }, [selectedDungeon]);
 
   const openLoreThread = (entryId: string) => {
-    setSelectedDungeon(null);
+    setSelectedDungeonKey(null);
     router.push(`/lore?thread=${entryId}`);
   };
 
@@ -379,6 +787,20 @@ function DungeonsContent() {
     if (sortCol !== col) return null;
     return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
   };
+
+  const getSortDirection = (col: string): "ascending" | "descending" | "none" => {
+    if (sortCol !== col) return "none";
+    return sortDesc ? "descending" : "ascending";
+  };
+
+  const renderSortHeader = (col: string, label: string, align: "left" | "center" = "center") => (
+    <th className={`sortable ${align === "left" ? "left-align" : ""}`} aria-sort={getSortDirection(col)}>
+      <button type="button" className="dungeon-sort-button" onClick={() => handleSort(col)}>
+        <span>{label}</span>
+        {renderSortIcon(col)}
+      </button>
+    </th>
+  );
 
   return (
     <main className="container dungeons-page">
@@ -397,12 +819,12 @@ function DungeonsContent() {
           <span className="dungeon-eyebrow"><ShieldCheck size={14} /> Dungeon Planner</span>
           <h2>{summary.bestReady?.name || summary.bestProfit?.name || "Build a dungeon plan"}</h2>
           <p>
-            Compare entry readiness, expected value, run costs, speed-style dungeon efficiency, and optional magic-find adjusted EV.
+            Compare entry readiness, expected value, run costs, speed-style dungeon efficiency, gold per shard from cost and payout, and magic-find adjusted EV.
           </p>
         </div>
         <div className="dungeon-command-stats">
           <div><span>Ready</span><strong>{activeProfile ? `${summary.readyRows.length}/${rows.length}` : "No profile"}</strong></div>
-          <div><span>Best Ready</span><strong>{summary.bestReady ? formatGold(summary.bestReady.netProfitPerHour) + "/hr" : "-"}</strong></div>
+          <div><span>Best Ready EV</span><strong>{summary.bestReady ? formatGold(summary.bestReady.netProfitPerRun) : "-"}</strong></div>
           <div><span>Cheapest</span><strong>{summary.cheapest ? formatPlainGold(summary.cheapest.entryCost) : "-"}</strong></div>
         </div>
       </section>
@@ -413,21 +835,22 @@ function DungeonsContent() {
           <div className="dungeon-input-icon">
             <Search size={14} />
             <input
+              aria-label="Search dungeons"
               type="text"
               className="control-input"
-              placeholder="Dungeon or location..."
+              placeholder="Search dungeon or location"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
           </div>
         </div>
         <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
-          <span className="control-label">Idle Action Limit</span>
-          <strong>{formatHours(actionLimitSummary.maxLimit)}</strong>
+          <span className="control-label">Best Action Limit</span>
+          <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : formatHours(actionLimitSummary.base)}</strong>
           <small>
             {activeProfile
               ? actionLimitSummary.maxHousing > 0
-                ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)} + housing up to ${formatHours(actionLimitSummary.maxHousing)}. ${getHousingDungeonScopeText(activeProfile)}`
+                ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)}. Housing applies per matching row${actionLimitSummary.matchingLocationText ? ` (${actionLimitSummary.matchingLocationText})` : ""}.`
                 : `${activeProfile.kind === "main" ? "Main" : "Alt"} base. ${getHousingDungeonScopeText(activeProfile)}`
               : "Select a profile."}
           </small>
@@ -439,21 +862,34 @@ function DungeonsContent() {
         </div>
         <label className="dungeon-planner-field dungeon-profit-field">
           <span className="control-label">Min Profit / Run</span>
-          <input className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number(event.target.value))} />
+          <input aria-label="Minimum profit per run" className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number(event.target.value))} />
         </label>
         <label className="dungeon-planner-field dungeon-efficiency-field">
           <span className="control-label">Dungeon Efficiency</span>
-          <input className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
+          <input aria-label="Dungeon Efficiency" className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
         </label>
         <label className="dungeon-planner-field dungeon-mf-field">
           <span className="control-label">Dungeon MF</span>
-          <input className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
+          <input aria-label="Dungeon Magic Find" className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
         </label>
         <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
           <span className="control-label">Completion MF</span>
           <strong>+{completionMagicFindBonus}%</strong>
-          <small>One point per completed dungeon requirement met.</small>
+          <small>{listedCompletionMagicFindBonus}% current list + {eventCompletionMagicFindBonus}% limited-time.</small>
         </div>
+        <label className="dungeon-planner-field dungeon-event-completion-field">
+          <span className="control-label">Limited-Time Completions</span>
+          <input
+            aria-label="Limited-time dungeon completions"
+            className="control-input"
+            type="number"
+            min="0"
+            value={eventDungeonCompletionCount}
+            placeholder="0"
+            onChange={(event) => setEventDungeonCompletionCount(event.target.value === "" ? "" : normalizeCompletionCount(event.target.value))}
+          />
+          <small>Adds completion MF for completed limited-time dungeons.</small>
+        </label>
         <div className="dungeon-planner-field dungeon-filter-field">
           <span className="control-label">Profile Filter</span>
           <div className="dungeon-segmented">
@@ -478,14 +914,81 @@ function DungeonsContent() {
         </button>
       </section>
 
+      <section className="dungeon-modifier-panel" aria-label="Dungeon item modifiers">
+        <div className="dungeon-modifier-copy">
+          <span className="control-label">Confirmed Item Modifiers</span>
+          <strong>
+            {itemEfficiencyBonus > 0 || itemMagicFindBonus > 0 || equippedDungeonSpecialMagicFind > 0
+              ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} / ${itemMagicFindBonus + equippedDungeonSpecialMagicFind > 0 ? `+${itemMagicFindBonus + equippedDungeonSpecialMagicFind}% MF` : "No MF"}`
+              : "No item effect"}
+          </strong>
+          <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
+        </div>
+        <div className="dungeon-modifier-pickers">
+          <DungeonItemEffectPicker
+            ariaLabel="Active dungeon efficiency item"
+            emptyLabel="No speed item"
+            label="Efficiency Item"
+            onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, efficiencyItem: value }))}
+            options={dungeonEfficiencyItemOptions}
+            value={dungeonItemModifierSelections.efficiencyItem}
+          />
+          <DungeonItemEffectPicker
+            ariaLabel="Active dungeon magic find item"
+            emptyLabel="No magic-find item"
+            label="Magic-Find Item"
+            onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, magicFindItem: value }))}
+            options={dungeonMagicFindItemOptions}
+            value={dungeonItemModifierSelections.magicFindItem}
+          />
+        </div>
+      </section>
+
+      <section className="dungeon-valuation-panel" aria-label="Dungeon drop valuation">
+        <div className="dungeon-valuation-copy">
+          <span className="control-label">Gear & Mythic Potion Value</span>
+          <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
+          <small>Applies to high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
+        </div>
+        <div className="dungeon-valuation-controls">
+          <div className="dungeon-segmented dungeon-valuation-segmented" role="group" aria-label="Sensitive drop valuation mode">
+            {DROP_VALUATION_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={dropValuationMode === option.value ? "active" : ""}
+                aria-pressed={dropValuationMode === option.value}
+                onClick={() => setDropValuationMode(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {dropValuationMode === "manual" && (
+            <label className="dungeon-manual-value-field">
+              <span className="control-label">Manual Value / Drop</span>
+              <input
+                aria-label="Manual value for sensitive dungeon drops"
+                className="control-input"
+                type="number"
+                min="0"
+                value={manualSensitiveDropValue}
+                placeholder="0"
+                onChange={(event) => setManualSensitiveDropValue(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))}
+              />
+            </label>
+          )}
+        </div>
+      </section>
+
       <section className="dungeon-insights">
-        <button type="button" className="dungeon-insight" onClick={() => summary.bestProfit && setSelectedDungeon(summary.bestProfit)}>
+        <button type="button" className="dungeon-insight" onClick={() => summary.bestProfit && setSelectedDungeonKey(getDungeonKey(summary.bestProfit))}>
           <BarChart3 size={16} />
-          <span>Best EV/hr</span>
+          <span>Best EV/run</span>
           <strong>{summary.bestProfit ? summary.bestProfit.name : "-"}</strong>
-          <small>{summary.bestProfit ? formatGold(summary.bestProfit.netProfitPerHour) + "/hr" : "No data"}</small>
+          <small>{summary.bestProfit ? formatGold(summary.bestProfit.netProfitPerRun) : "No data"}</small>
         </button>
-        <button type="button" className="dungeon-insight" onClick={() => summary.bestReady && setSelectedDungeon(summary.bestReady)}>
+        <button type="button" className="dungeon-insight" onClick={() => summary.bestReady && setSelectedDungeonKey(getDungeonKey(summary.bestReady))}>
           <ShieldCheck size={16} />
           <span>Best Ready</span>
           <strong>{summary.bestReady ? summary.bestReady.name : "-"}</strong>
@@ -493,11 +996,11 @@ function DungeonsContent() {
         </button>
         <div className="dungeon-insight passive">
           <Timer size={16} />
-          <span>Action Limit</span>
-          <strong>{formatHours(actionLimitSummary.maxLimit)} action limit</strong>
+          <span>Best Action Limit</span>
+          <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : `${formatHours(actionLimitSummary.base)} action limit`}</strong>
           <small>
             {actionLimitSummary.maxHousing > 0
-              ? `Base ${formatHours(actionLimitSummary.base)} + dungeon housing where available.`
+              ? `Base ${formatHours(actionLimitSummary.base)}; housing applies only on ${actionLimitSummary.matchingRows} matching row${actionLimitSummary.matchingRows === 1 ? "" : "s"}.`
               : "No dungeon housing bonus applied."}
           </small>
         </div>
@@ -509,28 +1012,30 @@ function DungeonsContent() {
             <table>
               <thead>
                 <tr>
-                  <th className="sortable left-align" onClick={() => handleSort("name")}>Dungeon {renderSortIcon("name")}</th>
-                  <th className="sortable left-align" onClick={() => handleSort("location")}>Location {renderSortIcon("location")}</th>
-                  <th className="sortable" onClick={() => handleSort("readiness")}>Profile {renderSortIcon("readiness")}</th>
-                  <th className="sortable" onClick={() => handleSort("netProfitPerRun")}>EV / Run {renderSortIcon("netProfitPerRun")}</th>
-                  <th className="sortable" onClick={() => handleSort("netProfitPerHour")}>EV / Hr {renderSortIcon("netProfitPerHour")}</th>
-                  <th className="sortable" onClick={() => handleSort("runsInIdleAction")}>Runs / Action {renderSortIcon("runsInIdleAction")}</th>
+                  {renderSortHeader("name", "Dungeon", "left")}
+                  {renderSortHeader("location", "Location", "left")}
+                  {renderSortHeader("readiness", "Profile")}
+                  {renderSortHeader("netProfitPerRun", "EV / Run")}
+                  {renderSortHeader("shardValue", "Gold / Shard")}
+                  {renderSortHeader("runsInIdleAction", "Runs / Action")}
                   <th>Done</th>
-                  <th className="sortable" onClick={() => handleSort("runsToDrop")}>Runs / Drop {renderSortIcon("runsToDrop")}</th>
+                  {renderSortHeader("runsToDrop", "Runs / Drop")}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr
+                    aria-label={`Open ${row.name} dungeon details`}
                     key={row.id || row.name}
                     className="clickable-row"
-                    onClick={() => setSelectedDungeon(row)}
+                    onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        setSelectedDungeon(row);
+                        setSelectedDungeonKey(getDungeonKey(row));
                       }
                     }}
+                    role="button"
                     tabIndex={0}
                   >
                     <td className="item-name left-align">
@@ -545,7 +1050,7 @@ function DungeonsContent() {
                     <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
                     <td><span className={`dungeon-readiness ${row.profileReady ? "ready" : activeProfile ? "blocked" : "neutral"}`}>{getReadinessText(row, Boolean(activeProfile))}</span></td>
                     <td className={`mono ${row.netProfitPerRun >= 0 ? "profit-positive" : "profit-negative"}`}>{formatGold(row.netProfitPerRun)}</td>
-                    <td className={`mono ${row.netProfitPerHour >= 0 ? "profit-positive" : "profit-negative"}`}>{formatGold(row.netProfitPerHour)}</td>
+                    <td className="mono text-muted">{row.shardValue > 0 ? formatPlainGold(row.shardValue) : "-"}</td>
                     <td className="mono text-muted">{row.runsInIdleAction}</td>
                     <td>
                       <input
@@ -589,8 +1094,8 @@ function DungeonsContent() {
             onSort={handleSort}
             onToggleDirection={() => setSortDesc((prev) => !prev)}
             options={[
-              { value: "netProfitPerHour", label: "EV / Hr" },
               { value: "netProfitPerRun", label: "EV / Run" },
+              { value: "shardValue", label: "Gold / Shard" },
               { value: "runsInIdleAction", label: "Runs / Action" },
               { value: "readiness", label: "Profile Gap" },
               { value: "durationMins", label: "Duration" },
@@ -606,15 +1111,16 @@ function DungeonsContent() {
             )}
             {rows.map((row) => (
               <div
+                aria-label={`Open ${row.name} dungeon details`}
                 key={row.id || row.name}
                 role="button"
                 tabIndex={0}
                 className="dungeon-card"
-                onClick={() => setSelectedDungeon(row)}
+                onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    setSelectedDungeon(row);
+                    setSelectedDungeonKey(getDungeonKey(row));
                   }
                 }}
               >
@@ -627,12 +1133,12 @@ function DungeonsContent() {
                     </div>
                   </div>
                   <span className={`dungeon-readiness ${row.profileReady ? "ready" : activeProfile ? "blocked" : "neutral"}`}>
-                    {row.profileReady ? "Ready" : activeProfile ? "Blocked" : "No Profile"}
+                    {getReadinessText(row, Boolean(activeProfile))}
                   </span>
                 </div>
                 <div className="dungeon-card-stats">
                   <span><small>EV/run</small><strong className={row.netProfitPerRun >= 0 ? "profit-positive" : "profit-negative"}>{formatGold(row.netProfitPerRun)}</strong></span>
-                  <span><small>EV/hr</small><strong className={row.netProfitPerHour >= 0 ? "profit-positive" : "profit-negative"}>{formatGold(row.netProfitPerHour)}</strong></span>
+                  <span><small>Gold / Shard</small><strong>{row.shardValue > 0 ? formatPlainGold(row.shardValue) : "-"}</strong></span>
                   <span><small>Runs / Action</small><strong>{row.runsInIdleAction}</strong></span>
                   <span><small>Daily Runs</small><strong>{row.dailyRunsByPlaytime}</strong></span>
                   <span><small>Cost</small><strong>{formatPlainGold(row.entryCost)}</strong></span>
@@ -640,6 +1146,7 @@ function DungeonsContent() {
                 <label className="dungeon-mobile-completed" onClick={(event) => event.stopPropagation()}>
                   <span>Completed runs</span>
                   <input
+                    aria-label={`${row.name} completed runs`}
                     type="number"
                     min="0"
                     value={completedRunsByDungeon[getDungeonKey(row)] ?? ""}
@@ -658,13 +1165,21 @@ function DungeonsContent() {
       </section>
 
       {selectedDungeon && (
-        <div className="modal-overlay" onClick={() => setSelectedDungeon(null)}>
-          <div className="modal-content dungeon-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setSelectedDungeonKey(null)}>
+          <div
+            aria-labelledby="dungeon-details-title"
+            aria-modal="true"
+            className="modal-content dungeon-modal"
+            onClick={(event) => event.stopPropagation()}
+            ref={dungeonDialogRef}
+            role="dialog"
+            tabIndex={-1}
+          >
             <div className="modal-header">
               <div className="dungeon-modal-title">
                 {selectedDungeon.image_url && <img src={selectedDungeon.image_url} alt="" />}
                 <div>
-                  <h2>{selectedDungeon.name}</h2>
+                  <h2 id="dungeon-details-title">{selectedDungeon.name}</h2>
                   <div className="dungeon-modal-tags">
                     <span><MapPin size={12} /> {selectedDungeon.location?.name || "Unknown"}</span>
                     <span><Zap size={12} /> Difficulty {selectedDungeon.difficulty}</span>
@@ -672,7 +1187,7 @@ function DungeonsContent() {
                   </div>
                 </div>
               </div>
-              <button className="close-btn" type="button" aria-label="Close dungeon details" onClick={() => setSelectedDungeon(null)}><X size={20} /></button>
+              <button className="close-btn" type="button" aria-label="Close dungeon details" onClick={() => setSelectedDungeonKey(null)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               <div className="stats-grid dungeon-modal-stats">
@@ -685,8 +1200,8 @@ function DungeonsContent() {
                   <div className="stat-value" style={{ color: selectedDungeon.netProfitPerRun >= 0 ? "var(--text-success)" : "#f87171" }}>{formatGold(selectedDungeon.netProfitPerRun)}</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-label">EV / Hour</div>
-                  <div className="stat-value" style={{ color: selectedDungeon.netProfitPerHour >= 0 ? "var(--text-success)" : "#f87171" }}>{formatGold(selectedDungeon.netProfitPerHour)}</div>
+                  <div className="stat-label">Gold / Shard</div>
+                  <div className="stat-value">{selectedDungeon.shardValue > 0 ? formatPlainGold(selectedDungeon.shardValue) : "-"}</div>
                 </div>
                 <div className="stat-card highlight">
                   <div className="stat-label">Action Net</div>
@@ -717,15 +1232,26 @@ function DungeonsContent() {
                   <h3><Sparkles size={15} /> Rewards</h3>
                   <div className="dungeon-detail-row"><span>Combat EXP</span><strong>{formatNumber(selectedDungeon.combatExp)}</strong></div>
                   <div className="dungeon-detail-row"><span>Dungeoneering EXP</span><strong>{formatNumber(selectedDungeon.dungeoneeringExp)}</strong></div>
-                  <div className="dungeon-detail-row"><span>Shards</span><strong>{formatNumber(Number(selectedDungeon.shards || 0))}</strong></div>
+                  <div className="dungeon-detail-row"><span>Shards</span><strong>{formatNumber(selectedDungeon.shardCount)}</strong></div>
+                  <div className="dungeon-detail-row"><span>Gold / shard</span><strong>{selectedDungeon.shardValue > 0 ? `${formatPlainGold(selectedDungeon.shardValue)} each` : "-"}</strong></div>
                   <div className="dungeon-detail-row"><span>Completion requirement</span><strong>{selectedDungeon.completedRuns || 0} / {selectedDungeon.completionRequirement || 0}</strong></div>
-                  <div className="dungeon-detail-row"><span>Completion MF</span><strong>{selectedDungeon.completionMagicFindActive ? "+1% active" : "Not active"}</strong></div>
+                  <div className="dungeon-detail-row"><span>This dungeon MF</span><strong>{selectedDungeon.completionMagicFindActive ? "+1% active" : "Not active"}</strong></div>
+                  <div className="dungeon-detail-row"><span>Total completion MF</span><strong>+{selectedDungeon.completedDungeonBonus}%</strong></div>
+                  <div className="dungeon-detail-row"><span>Limited-time MF</span><strong>+{selectedDungeon.eventCompletionMagicFindBonus || 0}%</strong></div>
+                  <div className="dungeon-detail-row"><span>Item speed</span><strong>{selectedDungeon.itemEfficiencyBonus > 0 ? `+${selectedDungeon.itemEfficiencyBonus}%${selectedDungeon.dungeonEfficiencyItemName ? ` (${selectedDungeon.dungeonEfficiencyItemName})` : ""}` : "None"}</strong></div>
+                  <div className="dungeon-detail-row"><span>Temporary item MF</span><strong>{selectedDungeon.itemMagicFindBonus > 0 ? `+${selectedDungeon.itemMagicFindBonus}%${selectedDungeon.dungeonMagicFindItemName ? ` (${selectedDungeon.dungeonMagicFindItemName})` : ""}` : "None"}</strong></div>
+                  <div className="dungeon-detail-row"><span>Equipped special MF</span><strong>{selectedDungeon.equippedSpecialMagicFindBonus > 0 ? `+${selectedDungeon.equippedSpecialMagicFindBonus}%${selectedDungeon.equippedSpecialName ? ` (${selectedDungeon.equippedSpecialName})` : ""}` : "None"}</strong></div>
                 </section>
                 <section className="dungeon-modal-panel">
                   <h3><Coins size={15} /> Cost Model</h3>
                   <div className="dungeon-detail-row"><span>Queued action entry cost</span><strong>{formatPlainGold(selectedDungeon.idleActionCost)}</strong></div>
+                  <div className="dungeon-detail-row"><span>Drop value mode</span><strong>{DROP_VALUATION_LABELS[selectedDungeon.dropValuationMode as DungeonDropValuationMode]}</strong></div>
+                  <div className="dungeon-detail-row"><span>Sensitive drops</span><strong>{selectedDungeon.marketSensitiveDropCount > 0 ? `${selectedDungeon.marketSensitiveDropCount} checked` : "None"}</strong></div>
+                  <div className="dungeon-detail-row"><span>Loot EV / run</span><strong>{formatPlainGold(selectedDungeon.lootEv)}</strong></div>
+                  <div className="dungeon-detail-row"><span>Shard EV / run</span><strong>{selectedDungeon.shardValue > 0 ? `${formatPlainGold(selectedDungeon.shardEv)} (${formatPlainGold(selectedDungeon.entryCost)} / ${formatNumber(selectedDungeon.shardCount)} shards)` : "-"}</strong></div>
                   <div className="dungeon-detail-row"><span>Gross EV / run</span><strong>{formatPlainGold(selectedDungeon.ev)}</strong></div>
                   <div className="dungeon-detail-row"><span>Dungeon MF in EV</span><strong>{selectedDungeon.includeMagicFindEv ? `${selectedDungeon.dungeonMagicFind}%` : "Off"}</strong></div>
+                  <div className="dungeon-detail-row"><span>Effective speed</span><strong>{selectedDungeon.dungeonEfficiency}%</strong></div>
                   <div className="dungeon-detail-row"><span>Runs / any drop</span><strong>{selectedDungeon.runsToDrop === Infinity ? "-" : selectedDungeon.runsToDrop.toFixed(1)}</strong></div>
                 </section>
               </div>
@@ -747,7 +1273,10 @@ function DungeonsContent() {
                       <div className="dungeon-loot-main">
                         {drop.image_url && <img src={drop.image_url} alt="" />}
                         <div>
-                          <strong>{drop.name} <span>x{drop.quantity || 1}</span></strong>
+                          <strong>
+                            {drop.name}
+                            {(Number(drop.quantity) || 1) > 1 && <span> x{drop.quantity}</span>}
+                          </strong>
                           <small>{drop.adjustedChancePercent !== drop.baseChancePercent ? `${drop.baseChancePercent}% -> ${drop.adjustedChancePercent.toFixed(2)}%` : `${drop.chance}% drop`} - {drop.quality || "Unknown"}</small>
                         </div>
                       </div>
@@ -757,7 +1286,14 @@ function DungeonsContent() {
                           {getValuePathLabel(drop.valueBreakdown?.chosenPath)} {formatPlainGold(drop.trueValue || 0)}
                           {drop.marketPriceInfo?.adjusted ? " safe" : ""} <ExternalLink size={10} />
                         </span>
-                        {drop.valueBreakdown?.recipe && (
+                        {(drop.marketSensitive || drop.chestAdjusted) && (
+                          <small className={`dungeon-market-note ${drop.manualMissingValue ? "risk" : drop.marketLiquidity?.tone || "none"}`}>
+                            {drop.valuationModeApplied || drop.chestAdjusted
+                              ? `${drop.valuationLabel}. ${drop.valuationNote || "Sensitive loot value adjusted."}`
+                              : drop.valuationNote}
+                          </small>
+                        )}
+                        {drop.valueBreakdown?.recipe && !drop.valuationModeApplied && (
                           <small>
                             Crafted item value: {formatPlainGold(drop.valueBreakdown.recipe.resultValue)}
                             {" - "}
@@ -786,11 +1322,16 @@ function DungeonsContent() {
                               <div className="dungeon-chest-row" key={`${drop.name}-${chestDrop.name}`}>
                                 <span>
                                   <strong>{chestDrop.name}</strong>
-                                  <small>{getValuePathLabel(chestDrop.path)}</small>
+                                  <small>
+                                    {getValuePathLabel(chestDrop.path)}
+                                    {chestDrop.valuationModeApplied ? ` - ${chestDrop.valuationLabel}` : ""}
+                                  </small>
                                 </span>
                                 <span>
                                   <em>{formatPlainGold(chestDrop.expectedValue)}</em>
-                                  <small>{Number(chestDrop.chance || 0)}% x {chestDrop.quantity || 1} x {formatPlainGold(chestDrop.value || 0)}</small>
+                                  <small>
+                                    {Number(chestDrop.chance || 0)}% x {(Number(chestDrop.quantity) || 1) > 1 ? `${chestDrop.quantity} x ` : ""}{formatPlainGold(chestDrop.value || 0)}
+                                  </small>
                                 </span>
                               </div>
                             ))}
@@ -878,10 +1419,10 @@ function DungeonsContent() {
         }
         .dungeon-planner {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           grid-template-areas:
             "search action playtime profit efficiency"
-            "mf completion filter toggle toggle";
+            "mf completion event filter toggle";
           gap: 0.75rem;
           padding: 1rem;
           border: 1px solid var(--border-subtle);
@@ -896,6 +1437,7 @@ function DungeonsContent() {
         .dungeon-efficiency-field { grid-area: efficiency; }
         .dungeon-mf-field { grid-area: mf; }
         .dungeon-completion-field { grid-area: completion; }
+        .dungeon-event-completion-field { grid-area: event; }
         .dungeon-filter-field { grid-area: filter; }
         .dungeon-mf-toggle { grid-area: toggle; }
         .dungeon-planner-field {
@@ -909,6 +1451,11 @@ function DungeonsContent() {
           width: 100%;
           min-width: 0;
           min-height: 42px;
+        }
+        .dungeon-planner-field > small {
+          color: var(--text-muted);
+          font-size: 0.68rem;
+          line-height: 1.25;
         }
         .dungeon-readonly-field {
           justify-content: center;
@@ -1002,15 +1549,19 @@ function DungeonsContent() {
           color: var(--text-muted);
           z-index: 1;
           pointer-events: none;
+          flex: 0 0 auto;
         }
         .dungeon-input-icon .control-input {
           display: block;
+          width: 100%;
+          min-width: 0;
           height: 40px;
           min-height: 40px;
-          padding-left: 2.45rem;
+          padding: 0 0.75rem 0 2.35rem;
           border: 0;
           background: transparent;
           box-shadow: none;
+          font-size: 0.86rem;
         }
         .dungeon-input-icon .control-input:focus {
           box-shadow: none;
@@ -1036,6 +1587,198 @@ function DungeonsContent() {
         .dungeon-segmented button.active {
           background: var(--text-accent);
           color: #000;
+        }
+        .dungeon-modifier-panel {
+          display: grid;
+          grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1.35fr);
+          align-items: stretch;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+          padding: 0.9rem 1rem;
+          border: 1px solid color-mix(in srgb, #a78bfa, transparent 78%);
+          border-radius: 8px;
+          background:
+            linear-gradient(135deg, rgba(167,139,250,0.08), transparent 42%),
+            rgba(255,255,255,0.025);
+        }
+        .dungeon-modifier-copy,
+        .dungeon-modifier-pickers {
+          min-width: 0;
+        }
+        .dungeon-modifier-copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 0.3rem;
+        }
+        .dungeon-modifier-copy strong {
+          color: #fff;
+          font-family: var(--font-mono);
+          overflow-wrap: anywhere;
+        }
+        .dungeon-modifier-copy small {
+          color: var(--text-muted);
+          line-height: 1.35;
+        }
+        .dungeon-modifier-pickers {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.75rem;
+        }
+        :global(.dungeon-effect-picker) {
+          position: relative;
+          min-width: 0;
+        }
+        :global(.dungeon-effect-trigger) {
+          width: 100%;
+          min-height: 4.4rem;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 0.65rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: 7px;
+          background: rgba(255,255,255,0.03);
+          color: #fff;
+          padding: 0.65rem 0.75rem;
+          text-align: left;
+          cursor: pointer;
+          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        :global(.dungeon-effect-trigger:hover),
+        :global(.dungeon-effect-trigger:focus-visible),
+        :global(.dungeon-effect-picker.open .dungeon-effect-trigger) {
+          border-color: color-mix(in srgb, #a78bfa, transparent 45%);
+          box-shadow: 0 0 0 3px rgba(167,139,250,0.14);
+          outline: none;
+        }
+        :global(.dungeon-effect-trigger span) {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.18rem;
+        }
+        :global(.dungeon-effect-trigger small),
+        :global(.dungeon-effect-trigger em) {
+          color: var(--text-muted);
+          font-size: 0.68rem;
+          font-style: normal;
+          line-height: 1.25;
+        }
+        :global(.dungeon-effect-trigger strong) {
+          color: #fff;
+          overflow-wrap: anywhere;
+        }
+        :global(.dungeon-effect-menu) {
+          position: absolute;
+          z-index: 45;
+          inset-inline: 0;
+          top: calc(100% + 0.35rem);
+          display: grid;
+          gap: 0.35rem;
+          max-height: min(22rem, 60vh);
+          overflow-y: auto;
+          padding: 0.45rem;
+          border: 1px solid color-mix(in srgb, #a78bfa, transparent 48%);
+          border-radius: 8px;
+          background: #07080d;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.48);
+        }
+        :global(.dungeon-effect-option) {
+          min-height: 42px;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) minmax(5rem, auto) auto;
+          align-items: center;
+          gap: 0.6rem;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          background: transparent;
+          color: var(--text-muted);
+          padding: 0.5rem;
+          text-align: left;
+          cursor: pointer;
+        }
+        :global(.dungeon-effect-option:hover),
+        :global(.dungeon-effect-option.active) {
+          border-color: color-mix(in srgb, #a78bfa, transparent 56%);
+          background: rgba(167,139,250,0.12);
+          color: #fff;
+        }
+        :global(.dungeon-effect-option img),
+        :global(.dungeon-effect-icon-placeholder) {
+          width: 30px;
+          height: 30px;
+          border-radius: 6px;
+          object-fit: cover;
+          background: rgba(255,255,255,0.06);
+        }
+        :global(.dungeon-effect-option span) {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.16rem;
+        }
+        :global(.dungeon-effect-option strong) {
+          color: inherit;
+          overflow-wrap: anywhere;
+        }
+        :global(.dungeon-effect-option small),
+        :global(.dungeon-effect-option em) {
+          color: var(--text-muted);
+          font-size: 0.68rem;
+          font-style: normal;
+          line-height: 1.25;
+        }
+        .dungeon-valuation-panel {
+          display: grid;
+          grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
+          align-items: stretch;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+          padding: 0.9rem 1rem;
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
+          border-radius: 8px;
+          background:
+            linear-gradient(135deg, rgba(56,189,248,0.08), transparent 42%),
+            rgba(255,255,255,0.025);
+        }
+        .dungeon-valuation-copy,
+        .dungeon-valuation-controls {
+          min-width: 0;
+        }
+        .dungeon-valuation-copy {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 0.3rem;
+        }
+        .dungeon-valuation-copy strong {
+          color: #fff;
+          font-family: var(--font-mono);
+        }
+        .dungeon-valuation-copy small {
+          color: var(--text-muted);
+          line-height: 1.35;
+        }
+        .dungeon-valuation-controls {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.4fr);
+          align-items: end;
+          gap: 0.75rem;
+        }
+        .dungeon-valuation-segmented {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          min-height: 42px;
+        }
+        .dungeon-manual-value-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          min-width: 0;
+        }
+        .dungeon-manual-value-field .control-input {
+          width: 100%;
+          min-height: 42px;
         }
         .dungeon-insight {
           display: grid;
@@ -1082,8 +1825,32 @@ function DungeonsContent() {
         .dungeon-table td {
           vertical-align: middle;
         }
+        .dungeon-sort-button {
+          width: 100%;
+          min-width: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.35rem;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          letter-spacing: inherit;
+          text-transform: inherit;
+          cursor: pointer;
+          padding: 0;
+        }
+        .dungeon-table th.left-align .dungeon-sort-button {
+          justify-content: flex-start;
+        }
+        .dungeon-sort-button:focus-visible {
+          outline: none;
+          color: #fff;
+          text-shadow: 0 0 12px rgba(56,189,248,0.7);
+        }
         .dungeon-table table {
-          min-width: 980px;
+          min-width: 1060px;
         }
         .dungeon-completed-input,
         .dungeon-mobile-completed input {
@@ -1234,6 +2001,13 @@ function DungeonsContent() {
         }
         .dungeon-modal {
           max-width: min(980px, calc(100vw - 2rem));
+          max-height: min(90dvh, calc(100dvh - 2rem));
+        }
+        .modal-overlay:has(.dungeon-modal) {
+          align-items: center;
+          justify-content: center;
+          overflow-y: auto;
+          padding: max(1rem, env(safe-area-inset-top)) clamp(0.75rem, 2vw, 1.5rem) max(1rem, env(safe-area-inset-bottom));
         }
         .dungeon-modal-title {
           display: flex;
@@ -1388,6 +2162,18 @@ function DungeonsContent() {
           font-size: 0.66rem;
           line-height: 1.25;
         }
+        .dungeon-loot-value .dungeon-market-note {
+          color: #fde68a;
+        }
+        .dungeon-loot-value .dungeon-market-note.thin,
+        .dungeon-loot-value .dungeon-market-note.risk,
+        .dungeon-loot-value .dungeon-market-note.none {
+          color: #fca5a5;
+        }
+        .dungeon-loot-value .dungeon-market-note.steady,
+        .dungeon-loot-value .dungeon-market-note.active {
+          color: #bfdbfe;
+        }
         .dungeon-chest-breakdown {
           grid-column: 1 / -1;
           display: grid;
@@ -1464,6 +2250,7 @@ function DungeonsContent() {
               "efficiency"
               "mf"
               "completion"
+              "event"
               "filter"
               "toggle";
           }
@@ -1471,14 +2258,21 @@ function DungeonsContent() {
           .dungeon-insights {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
+          .dungeon-modifier-panel,
+          .dungeon-valuation-panel,
+          .dungeon-modifier-pickers,
+          .dungeon-valuation-controls {
+            grid-template-columns: 1fr;
+          }
         }
         @media (min-width: 1101px) and (max-width: 1500px) {
           .dungeon-planner {
             grid-template-columns: repeat(3, minmax(min(100%, 12rem), 1fr));
             grid-template-areas:
               "search action playtime"
-              "mf completion filter"
-              "profit efficiency toggle";
+              "profit efficiency toggle"
+              "mf completion event"
+              "filter filter filter";
           }
         }
         @media (max-width: 720px) {
@@ -1490,6 +2284,15 @@ function DungeonsContent() {
           .dungeon-insights,
           .dungeon-modal-grid {
             grid-template-columns: 1fr;
+          }
+          .dungeon-valuation-panel {
+            padding: 0.85rem;
+          }
+          .dungeon-modifier-panel {
+            padding: 0.85rem;
+          }
+          .dungeon-valuation-segmented {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .dungeon-card-top,
           .dungeon-loot-row {
@@ -1534,6 +2337,108 @@ function DungeonsContent() {
         }
       `}</style>
     </main>
+  );
+}
+
+function DungeonItemEffectPicker({
+  ariaLabel,
+  emptyLabel,
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  ariaLabel: string;
+  emptyLabel: string;
+  label: string;
+  onChange: (value: string) => void;
+  options: DungeonItemModifier[];
+  value: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.find((option) => option.name === value) || null;
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointer = (event: MouseEvent) => {
+      if (pickerRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div className={`dungeon-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
+      <button
+        type="button"
+        className="dungeon-effect-trigger"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>
+          <small>{label}</small>
+          <strong>{selected?.name || emptyLabel}</strong>
+          <em>{selected ? getDungeonItemModifierSummary(selected) : "No item effect applied."}</em>
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className="dungeon-effect-menu" role="listbox" aria-label={ariaLabel}>
+          <button
+            type="button"
+            className={`dungeon-effect-option ${!value ? "active" : ""}`}
+            role="option"
+            aria-selected={!value}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+          >
+            <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />
+            <span>
+              <strong>{emptyLabel}</strong>
+              <small>Use only the profile/manual field.</small>
+            </span>
+            {!value && <Check size={14} />}
+          </button>
+          {options.map((option) => {
+            const active = option.name === value;
+            return (
+              <button
+                type="button"
+                className={`dungeon-effect-option ${active ? "active" : ""}`}
+                key={option.name}
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(option.name);
+                  setOpen(false);
+                }}
+              >
+                {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
+                <span>
+                  <strong>{option.name}</strong>
+                  <small>{option.quality} {option.type}</small>
+                </span>
+                <em>{getDungeonItemModifierSummary(option)}</em>
+                {active && <Check size={14} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

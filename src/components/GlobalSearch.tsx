@@ -25,6 +25,7 @@ const navShortcuts: Record<string, string> = {
   "7": "/bis",
   "8": "/crafting",
   "9": "/lore",
+  m: "/map",
   s: "/settings",
 };
 
@@ -37,7 +38,7 @@ type GlobalSearchProps = {
 export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps) {
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
-  const { marketData, staticData, allItemsDb } = useData();
+  const { marketData, staticData, allItemsDb, worldLocations } = useData();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
@@ -114,6 +115,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       { label: "Pet Comparison", type: "Page", href: "/pets/compare", detail: "Side-by-side pet planner" },
       { label: "Housing", type: "Page", href: "/housing", detail: "Profile housing buffs" },
       { label: "Items Database", type: "Page", href: "/items", detail: "Market data repository" },
+      { label: "World Map", type: "Page", href: "/map", detail: "Locations, weather, and sources" },
+      { label: "Weather Guide", type: "Page", href: "/weather", detail: "Weather effects" },
       { label: "Combat", type: "Page", href: "/combat", detail: "Enemy drops and profit" },
       { label: "Dungeons", type: "Page", href: "/dungeons", detail: "Loot tables and efficiency" },
       { label: "World Bosses", type: "Page", href: "/bosses", detail: "Rare drops and locations" },
@@ -170,9 +173,19 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     staticData?.world_bosses?.forEach((boss: any) => {
       next.push({ label: boss.name, type: "Boss", href: `/bosses?search=${encodeURIComponent(boss.name)}`, detail: boss.location?.name });
     });
+    worldLocations?.forEach((location) => {
+      if (!location.name) return;
+      const key = location.key || location.name;
+      next.push({
+        label: location.name,
+        type: "Location",
+        href: `/map?location=${encodeURIComponent(key)}`,
+        detail: "World map",
+      });
+    });
 
     return next;
-  }, [marketData, staticData, allItemsDb]);
+  }, [marketData, staticData, allItemsDb, worldLocations]);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
 

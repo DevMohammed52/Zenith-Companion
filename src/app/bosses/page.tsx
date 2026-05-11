@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
     AlertTriangle,
+    Check,
     ChevronDown,
     ChevronUp,
     Clock,
@@ -26,11 +27,17 @@ import { formatGold } from "@/lib/format";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import {
+    getItemEffectBonus,
+    getProfileBarteringBoost,
+    getProfileEquippedSpecialItem,
+    type ProfileItemRecord,
+} from "@/lib/profile-calculations";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
+import { useModalA11y } from "@/lib/use-modal-a11y";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
@@ -43,6 +50,7 @@ import {
 import { getProfileStorageKey } from "@/lib/profile-storage";
 
 type BossPhase = "active" | "ready" | "respawning" | "scheduled" | "unknown";
+type BossView = "details" | "planner";
 
 type BossSchedule = {
     respawnHours?: number;
@@ -58,9 +66,19 @@ type BossDrop = {
 };
 
 type ValueSource = "Custom" | "Market" | "Vendor" | "Chest EV" | "Recipe EV" | "True Value" | "Missing";
-type LiquiditySignal = "LIQUID" | "STEADY" | "THIN" | "NO SALES" | "VENDOR SAFE" | "CUSTOM" | "EV MODEL" | "MISSING";
+type LiquiditySignal = "LIQUID" | "STEADY" | "THIN" | "NO SALES" | "VENDOR SAFE" | "CUSTOM" | "EV MODEL" | "RARE MARKET" | "MIXED VALUES" | "MISSING";
+type WorldBossItemModifier = {
+    name: string;
+    type: string;
+    quality: string;
+    imageUrl: string;
+    magicFind: number;
+    durationMs: number;
+};
 
 const WORLD_BOSS_ROUTINE_STORAGE_KEY = "zenith_world_boss_routine_planner";
+const WORLD_BOSS_ITEM_MODIFIER_STORAGE_KEY = "zenith_world_boss_item_modifier_v1";
+const LOBBY_OPEN_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 const isFiniteDate = (date: Date | null | undefined): date is Date => Boolean(date && Number.isFinite(date.getTime()));
 
@@ -159,9 +177,10 @@ function getBossWindow(boss: any, now: number) {
     }
 
     const isActive = now >= nextStart.getTime() && now < nextEnd.getTime();
+    const isLobbyOpen = now >= nextStart.getTime() - LOBBY_OPEN_WINDOW_MS && now < nextStart.getTime();
     let phase: BossPhase = "scheduled";
     if (isActive) phase = "active";
-    else if (status === "READY_FOR_LOBBY") phase = "ready";
+    else if (isLobbyOpen) phase = "ready";
     else if (status === "RESPAWNING") phase = "respawning";
 
     const statusLabel = phase === "active"
@@ -249,8 +268,15 @@ function getValueBreakdown(
     };
 }
 
-function getLiquiditySignal(source: ValueSource, volume: number, trueValue: number): LiquiditySignal {
+function isRareMarketDrop(drop: any, dbItem: any) {
+    const type = String(dbItem?.type || "").toUpperCase();
+    const quality = String(drop?.quality || dbItem?.quality || "").toUpperCase();
+    return type === "PET_EGG" || (/ Egg$/i.test(String(drop?.name || "")) && quality === "MYTHIC");
+}
+
+function getLiquiditySignal(source: ValueSource, volume: number, trueValue: number, rareMarketDrop = false): LiquiditySignal {
     if (trueValue <= 0) return "MISSING";
+    if (rareMarketDrop) return "RARE MARKET";
     if (source === "Vendor") return "VENDOR SAFE";
     if (source === "Custom") return "CUSTOM";
     if (source === "Chest EV" || source === "Recipe EV" || source === "True Value") return "EV MODEL";
@@ -262,26 +288,58 @@ function getLiquiditySignal(source: ValueSource, volume: number, trueValue: numb
 
 function getSignalClass(signal: LiquiditySignal) {
     if (signal === "LIQUID" || signal === "VENDOR SAFE" || signal === "CUSTOM") return "boss-signal-good";
-    if (signal === "STEADY" || signal === "EV MODEL") return "boss-signal-neutral";
-    if (signal === "THIN") return "boss-signal-warn";
+    if (signal === "STEADY" || signal === "EV MODEL" || signal === "MIXED VALUES") return "boss-signal-neutral";
+    if (signal === "THIN" || signal === "RARE MARKET") return "boss-signal-warn";
     return "boss-signal-bad";
 }
 
-const signalRank: Record<LiquiditySignal, number> = {
-    "MISSING": 0,
-    "NO SALES": 1,
-    "THIN": 2,
-    "EV MODEL": 3,
-    "STEADY": 4,
-    "CUSTOM": 5,
-    "VENDOR SAFE": 6,
-    "LIQUID": 7,
-};
+function getBossMarketNote(signals: LiquiditySignal[]): LiquiditySignal {
+    const uniqueSignals = Array.from(new Set(signals));
+    if (uniqueSignals.length === 0) return "MISSING";
+    if (uniqueSignals.length > 1) return "MIXED VALUES";
+    return uniqueSignals[0];
+}
 
-function getBestBossSignal(signals: LiquiditySignal[]): LiquiditySignal {
-    return signals.reduce<LiquiditySignal>((best, signal) => (
-        signalRank[signal] > signalRank[best] ? signal : best
-    ), "MISSING");
+function isSpecialEquipmentModifier(item: { type?: string }) {
+    return String(item.type || "").toUpperCase() === "SPECIAL";
+}
+
+function getConfirmedWorldBossItemModifiers(allItemsDb: any): WorldBossItemModifier[] {
+    const records = Object.values(allItemsDb || {});
+    return records
+        .map((item: any) => {
+            const effects = Array.isArray(item?.effects)
+                ? item.effects.filter((effect: any) => (
+                    String(effect?.target || "").toLowerCase() === "world_boss" &&
+                    String(effect?.attribute || "").toLowerCase() === "magic_find"
+                ))
+                : [];
+            const magicFind = effects.reduce((total: number, effect: any) => total + Number(effect?.value || 0), 0);
+            if (magicFind <= 0) return null;
+            return {
+                name: String(item?.name || ""),
+                type: String(item?.type || "ITEM"),
+                quality: String(item?.quality || "UNKNOWN"),
+                imageUrl: String(item?.image_url || ""),
+                magicFind,
+                durationMs: effects.reduce((max: number, effect: any) => Math.max(max, Number(effect?.length || 0)), 0),
+            };
+        })
+        .filter((item): item is WorldBossItemModifier => Boolean(item?.name))
+        .filter((item) => !isSpecialEquipmentModifier(item))
+        .sort((a, b) => b.magicFind - a.magicFind || a.name.localeCompare(b.name));
+}
+
+function formatWorldBossModifierDuration(durationMs: number) {
+    if (!durationMs) return "Passive";
+    const minutes = Math.max(1, Math.round(durationMs / 60000));
+    if (minutes < 60) return `${minutes}m`;
+    const hours = minutes / 60;
+    return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+}
+
+function getWorldBossItemModifierSummary(option: WorldBossItemModifier) {
+    return `+${option.magicFind}% MF - ${formatWorldBossModifierDuration(option.durationMs)}`;
 }
 
 function getPhaseClass(phase: BossPhase) {
@@ -302,6 +360,7 @@ function BossesContent() {
     const [sortCol, setSortCol] = useState<string>("nextSpawnTime");
     const [sortDesc, setSortDesc] = useState<boolean>(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeBossView, setActiveBossView] = useState<BossView>("details");
     const [now, setNow] = useState(() => Date.now());
     const [routineBossKeys, setRoutineBossKeys] = useState<string[]>([]);
     const [routineInitialized, setRoutineInitialized] = useState(false);
@@ -312,11 +371,16 @@ function BossesContent() {
     const [routineClassDiscount, setRoutineClassDiscount] = useState(false);
     const [routineTravelMode, setRoutineTravelMode] = useState<TravelMode>("teleport");
     const [routineLocationOpen, setRoutineLocationOpen] = useState(false);
+    const [worldBossItemModifierName, setWorldBossItemModifierName] = useState("");
     const routineLocationRef = useRef<HTMLDivElement | null>(null);
     const profileDefaultsAppliedRef = useRef<string | null>(null);
     const activeProfileId = activeProfile?.id || null;
     const routineStorageKey = useMemo(
         () => getProfileStorageKey(WORLD_BOSS_ROUTINE_STORAGE_KEY, activeProfile?.id),
+        [activeProfile?.id],
+    );
+    const worldBossItemStorageKey = useMemo(
+        () => getProfileStorageKey(WORLD_BOSS_ITEM_MODIFIER_STORAGE_KEY, activeProfile?.id),
         [activeProfile?.id],
     );
 
@@ -388,6 +452,19 @@ function BossesContent() {
     ]);
 
     useEffect(() => {
+        try {
+            const stored = localStorage.getItem(worldBossItemStorageKey) ?? (activeProfileId ? null : localStorage.getItem(WORLD_BOSS_ITEM_MODIFIER_STORAGE_KEY));
+            setWorldBossItemModifierName(typeof stored === "string" ? stored : "");
+        } catch {
+            setWorldBossItemModifierName("");
+        }
+    }, [activeProfileId, worldBossItemStorageKey]);
+
+    useEffect(() => {
+        localStorage.setItem(worldBossItemStorageKey, worldBossItemModifierName);
+    }, [worldBossItemModifierName, worldBossItemStorageKey]);
+
+    useEffect(() => {
         const searchParam = searchParams.get("search");
         if (searchParam) setSearchTerm(searchParam);
     }, [searchParams]);
@@ -432,7 +509,28 @@ function BossesContent() {
     const profileWorldBossMagicFind = activeProfile
         ? (activeProfile.magicFind.worldBoss !== "" ? activeProfile.magicFind.worldBoss : 0)
         : preferences.worldBossMagicFind;
-    const magicFind = clampNumber(Number(profileWorldBossMagicFind) || 0, 0, 500);
+    const itemByName = useMemo(() => (allItemsDb || {}) as Record<string, ProfileItemRecord>, [allItemsDb]);
+    const equippedWorldBossSpecial = useMemo(
+        () => getProfileEquippedSpecialItem(activeProfile, itemByName),
+        [activeProfile, itemByName],
+    );
+    const equippedSpecialMagicFindBonus = useMemo(
+        () => getItemEffectBonus(equippedWorldBossSpecial, "world_boss", "magic_find"),
+        [equippedWorldBossSpecial],
+    );
+    const worldBossItemOptions = useMemo(() => getConfirmedWorldBossItemModifiers(allItemsDb), [allItemsDb]);
+    const selectedWorldBossItemModifier = useMemo(
+        () => worldBossItemOptions.find((option) => option.name === worldBossItemModifierName) || null,
+        [worldBossItemModifierName, worldBossItemOptions],
+    );
+    const itemMagicFindBonus = selectedWorldBossItemModifier?.magicFind || 0;
+    const baseMagicFind = clampNumber(Number(profileWorldBossMagicFind) || 0, 0, 500);
+    const magicFind = clampNumber(baseMagicFind + itemMagicFindBonus + equippedSpecialMagicFindBonus, 0, 500);
+
+    useEffect(() => {
+        if (!worldBossItemModifierName || worldBossItemOptions.length === 0 || selectedWorldBossItemModifier) return;
+        setWorldBossItemModifierName("");
+    }, [selectedWorldBossItemModifier, worldBossItemModifierName, worldBossItemOptions]);
 
     const calculatedRows = useMemo(() => {
         if (!staticData?.world_bosses || !marketData || !allItemsDb) return [];
@@ -450,7 +548,8 @@ function BossesContent() {
             const lootDetails = adjustedDrops.map((drop: any) => {
                 const value = getValueBreakdown(drop.name, marketData, allItemsDb, evOptions);
                 const expectedVal = (drop.adjustedChance / 100) * (drop.quantity || 1) * value.trueValue;
-                const signal = getLiquiditySignal(value.source, value.volume, value.trueValue);
+                const dbItem = allItemsDb?.[drop.name];
+                const signal = getLiquiditySignal(value.source, value.volume, value.trueValue, isRareMarketDrop(drop, dbItem));
 
                 return {
                     ...drop,
@@ -461,11 +560,14 @@ function BossesContent() {
                 };
             });
             const evPerClear = lootDetails.reduce((sum: number, drop: any) => sum + drop.expectedVal, 0);
-            const bestSignal = getBestBossSignal(lootDetails.map((drop: any) => drop.signal));
+            const marketNote = getBossMarketNote(lootDetails.map((drop: any) => drop.signal));
 
             const warnings = [];
             if (lootDetails.some((drop: any) => drop.signal === "THIN" || drop.signal === "NO SALES")) {
                 warnings.push("Some rare loot uses thin market prices.");
+            }
+            if (lootDetails.some((drop: any) => drop.signal === "RARE MARKET")) {
+                warnings.push("Rare pet eggs need manual market review; vendor value is only a floor.");
             }
             if (lootDetails.some((drop: any) => drop.signal === "MISSING")) {
                 warnings.push("Some loot has missing value data.");
@@ -479,7 +581,7 @@ function BossesContent() {
                 ...timing,
                 ev: evPerClear,
                 dropsCount: boss.loot?.length || 0,
-                liquiditySignal: bestSignal,
+                liquiditySignal: marketNote,
                 warnings,
                 lootDetails,
             });
@@ -608,6 +710,7 @@ function BossesContent() {
             const found = rows.find((row) => row.name.toLowerCase() === bossParam.toLowerCase());
             if (found) {
                 setSelectedBoss(found);
+                setActiveBossView("details");
                 autoOpenedRef.current = bossParam;
             }
         } else {
@@ -620,6 +723,7 @@ function BossesContent() {
         const key = getBossKey(selectedBoss);
         return rows.find((row) => getBossKey(row) === key) || selectedBoss;
     }, [rows, selectedBoss]);
+    const bossDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedBossData), () => setSelectedBoss(null));
 
     const selectedBossLore = useMemo(() => {
         if (!selectedBossData) return [];
@@ -706,6 +810,32 @@ function BossesContent() {
                 </div>
             </section>
 
+            <div className="boss-view-switch" role="tablist" aria-label="World boss views">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeBossView === "details"}
+                    className={activeBossView === "details" ? "active" : ""}
+                    onClick={() => setActiveBossView("details")}
+                >
+                    <PackageOpen size={16} />
+                    <span>Boss Details</span>
+                    <small>{rows.length} tracked</small>
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeBossView === "planner"}
+                    className={activeBossView === "planner" ? "active" : ""}
+                    onClick={() => setActiveBossView("planner")}
+                >
+                    <MapPin size={16} />
+                    <span>Routine Planner</span>
+                    <small>{routineBossKeys.length}/{routineRows.length} selected</small>
+                </button>
+            </div>
+
+            {activeBossView === "planner" && (
             <section className="boss-routine-planner">
                 <div className="boss-routine-header">
                     <div>
@@ -764,6 +894,7 @@ function BossesContent() {
                     <label className="control-group">
                         <span className="control-label">Teleport Level</span>
                         <input
+                            aria-label="Routine teleport level"
                             type="number"
                             min="0"
                             max={MAX_EFFECTIVE_TELEPORT_LEVEL}
@@ -775,6 +906,7 @@ function BossesContent() {
                     <label className="control-group">
                         <span className="control-label">Movement Speed</span>
                         <input
+                            aria-label="Routine movement speed"
                             type="number"
                             min="0.1"
                             step="0.01"
@@ -886,13 +1018,17 @@ function BossesContent() {
                     </div>
                 )}
             </section>
+            )}
 
+            {activeBossView === "details" && (
+            <>
             <div className="controls boss-controls">
                 <div className="control-group boss-search-control">
                     <label className="control-label">Search Bosses</label>
                     <div style={{ position: "relative" }}>
                         <Search size={14} style={{ position: "absolute", left: "10px", top: "12px", color: "var(--text-muted)" }} />
                         <input
+                            aria-label="Search bosses"
                             type="text"
                             className="control-input"
                             placeholder="Search boss, status, or location..."
@@ -907,6 +1043,7 @@ function BossesContent() {
                     <div style={{ position: "relative" }}>
                         <Sparkles size={14} style={{ position: "absolute", left: "10px", top: "12px", color: "var(--text-accent)" }} />
                         <input
+                            aria-label="World Boss Magic Find"
                             type="number"
                             min="0"
                             max="500"
@@ -929,6 +1066,24 @@ function BossesContent() {
                 </div>
             </div>
 
+            <section className="boss-item-modifier-panel" aria-label="World boss item modifier">
+                <div className="boss-item-modifier-copy">
+                    <span className="control-label">Confirmed Item Modifier</span>
+                    <strong>{itemMagicFindBonus > 0 || equippedSpecialMagicFindBonus > 0 ? `+${itemMagicFindBonus + equippedSpecialMagicFindBonus}% world boss MF` : "No item effect"}</strong>
+                    <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
+                </div>
+                <div className="boss-item-modifier-picker">
+                    <WorldBossItemEffectPicker
+                        ariaLabel="World boss magic-find item modifier"
+                        emptyLabel="No item effect"
+                        label="Magic-Find Item"
+                        onChange={setWorldBossItemModifierName}
+                        options={worldBossItemOptions}
+                        value={worldBossItemModifierName}
+                    />
+                </div>
+            </section>
+
             <section className="table-wrapper">
                 <div className="desktop-only">
                     <div className="table-container">
@@ -940,12 +1095,13 @@ function BossesContent() {
                                     <th className="sortable" onClick={() => handleSort("level")}>Level {renderSortIcon("level")}</th>
                                     <th className="sortable" onClick={() => handleSort("nextSpawnTime")}>Status / Timer {renderSortIcon("nextSpawnTime")}</th>
                                     <th className="sortable" onClick={() => handleSort("ev")}>EV / Boss {renderSortIcon("ev")}</th>
-                                    <th>Signal</th>
+                                    <th>Market note</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rows.map((row) => (
                                     <tr
+                                        aria-label={`Open ${row.name} boss details`}
                                         key={getBossKey(row)}
                                         className="clickable-row"
                                         onClick={() => openBoss(row)}
@@ -1006,6 +1162,7 @@ function BossesContent() {
                     <div className="mobile-card-grid">
                         {rows.map((row) => (
                             <div
+                                aria-label={`Open ${row.name} boss details`}
                                 key={getBossKey(row)}
                                 className="mobile-alchemy-card boss-mobile-card"
                                 onClick={() => openBoss(row)}
@@ -1042,17 +1199,27 @@ function BossesContent() {
                     </div>
                 </div>
             </section>
+            </>
+            )}
 
             {selectedBossData && (
                 <div className="modal-overlay boss-modal-overlay" onClick={() => setSelectedBoss(null)}>
-                    <div className="modal-content boss-modal" onClick={(event) => event.stopPropagation()}>
+                    <div
+                        aria-labelledby="boss-details-title"
+                        aria-modal="true"
+                        className="modal-content boss-modal"
+                        onClick={(event) => event.stopPropagation()}
+                        ref={bossDialogRef}
+                        role="dialog"
+                        tabIndex={-1}
+                    >
                         <div className="modal-header">
                             <div className="boss-modal-title">
                                 {selectedBossData.image_url && (
                                     <img src={selectedBossData.image_url} alt="" />
                                 )}
                                 <div>
-                                    <h2>{selectedBossData.name}</h2>
+                                    <h2 id="boss-details-title">{selectedBossData.name}</h2>
                                     <div className="boss-modal-tags">
                                         <span><MapPin size={12} /> {selectedBossData.location?.name || "Unknown"}</span>
                                         <span><Shield size={12} /> Level {selectedBossData.level}</span>
@@ -1060,7 +1227,7 @@ function BossesContent() {
                                     </div>
                                 </div>
                             </div>
-                            <button className="close-btn" aria-label="Close boss details" onClick={() => setSelectedBoss(null)}><X size={20} /></button>
+                            <button className="close-btn" type="button" aria-label="Close boss details" onClick={() => setSelectedBoss(null)}><X size={20} /></button>
                         </div>
                         <div className="modal-body">
                             <div className="stats-grid boss-stat-grid">
@@ -1079,8 +1246,34 @@ function BossesContent() {
                                 <div className="stat-card">
                                     <div className="stat-label">Magic Find</div>
                                     <div className="stat-value">+{magicFind}%</div>
+                                    <div className="boss-stat-note">
+                                        {[
+                                            `${baseMagicFind}% base`,
+                                            equippedSpecialMagicFindBonus > 0 ? `${equippedSpecialMagicFindBonus}% special` : "",
+                                            itemMagicFindBonus > 0 ? `${itemMagicFindBonus}% item` : "",
+                                        ].filter(Boolean).join(" + ") || "Profile/manual only"}
+                                    </div>
                                 </div>
                             </div>
+
+                            {selectedWorldBossItemModifier && (
+                                <div className="boss-item-breakdown">
+                                    <Sparkles size={16} />
+                                    <div>
+                                        <strong>{selectedWorldBossItemModifier.name}</strong>
+                                        <span>{getWorldBossItemModifierSummary(selectedWorldBossItemModifier)} applied to this preview.</span>
+                                    </div>
+                                </div>
+                            )}
+                            {equippedSpecialMagicFindBonus > 0 && equippedWorldBossSpecial && (
+                                <div className="boss-item-breakdown">
+                                    <Sparkles size={16} />
+                                    <div>
+                                        <strong>{equippedWorldBossSpecial.name}</strong>
+                                        <span>+{equippedSpecialMagicFindBonus}% world boss MF from profile special gear.</span>
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedBossData.warnings?.length > 0 && (
                                 <div className="boss-warning-box">
@@ -1113,6 +1306,7 @@ function BossesContent() {
                             <div className="boss-loot-list">
                                 {[...(selectedBossData.lootDetails || [])].sort((a: any, b: any) => b.expectedVal - a.expectedVal).map((drop: any) => (
                                     <div
+                                        aria-label={`Open ${drop.name} item details`}
                                         key={`${drop.name}-${drop.baseChance}`}
                                         onClick={() => openItemByName(drop.name)}
                                         onMouseEnter={() => prefetchItem(drop.name)}
@@ -1130,7 +1324,10 @@ function BossesContent() {
                                         <div className="boss-loot-main">
                                             {drop.image_url && <img src={drop.image_url} alt="" />}
                                             <div>
-                                                <div className="loot-item-name">{drop.name} <span>x{drop.quantity || 1}</span></div>
+                                                <div className="loot-item-name">
+                                                    {drop.name}
+                                                    {(Number(drop.quantity) || 1) > 1 && <span>x{drop.quantity}</span>}
+                                                </div>
                                                 <div className="boss-drop-rate">
                                                     {drop.adjustedChance.toFixed(drop.adjustedChance >= 10 ? 1 : 2)}% adjusted
                                                     {magicFind > 0 && <span>base {drop.baseChance}%</span>}
@@ -1156,14 +1353,20 @@ function BossesContent() {
                     overflow-x: hidden;
                 }
                 .boss-modal-overlay {
+                    align-items: center;
+                    justify-content: center;
+                    overflow-y: auto;
+                    padding: max(1rem, env(safe-area-inset-top)) clamp(0.75rem, 2vw, 1.5rem) max(1rem, env(safe-area-inset-bottom));
                     z-index: 5000;
                 }
                 .table-wrapper,
                 .mobile-only,
                 .mobile-card-grid,
                 .boss-radar,
+                .boss-view-switch,
                 .boss-routine-planner,
-                .boss-controls {
+                .boss-controls,
+                .boss-item-modifier-panel {
                     max-width: 100%;
                     min-width: 0;
                 }
@@ -1202,6 +1405,59 @@ function BossesContent() {
                     margin: 0;
                     color: var(--text-muted);
                     line-height: 1.5;
+                }
+                .boss-view-switch {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 0.45rem;
+                    margin: -0.5rem 0 1rem;
+                    padding: 0.35rem;
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    background: rgba(255,255,255,0.025);
+                }
+                .boss-view-switch button {
+                    min-width: 0;
+                    min-height: 56px;
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr) auto;
+                    align-items: center;
+                    gap: 0.55rem;
+                    border: 1px solid transparent;
+                    border-radius: 7px;
+                    background: transparent;
+                    color: var(--text-muted);
+                    padding: 0.6rem 0.75rem;
+                    text-align: left;
+                    cursor: pointer;
+                    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+                }
+                .boss-view-switch button:hover,
+                .boss-view-switch button:focus-visible {
+                    color: #fff;
+                    border-color: rgba(56,189,248,0.26);
+                    outline: none;
+                }
+                .boss-view-switch button.active {
+                    color: #fff;
+                    border-color: rgba(56,189,248,0.45);
+                    background: rgba(56,189,248,0.12);
+                    box-shadow: inset 0 0 0 1px rgba(56,189,248,0.1);
+                }
+                .boss-view-switch svg {
+                    color: var(--text-accent);
+                    flex: 0 0 auto;
+                }
+                .boss-view-switch span {
+                    min-width: 0;
+                    font-weight: 900;
+                    overflow-wrap: anywhere;
+                }
+                .boss-view-switch small {
+                    color: var(--text-muted);
+                    font-size: 0.68rem;
+                    font-weight: 800;
+                    white-space: nowrap;
                 }
                 .boss-routine-planner {
                     margin-bottom: 1.5rem;
@@ -1579,6 +1835,142 @@ function BossesContent() {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
                 }
+                .boss-item-modifier-panel {
+                    display: grid;
+                    grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1.35fr);
+                    align-items: stretch;
+                    gap: 0.75rem;
+                    margin-bottom: 1rem;
+                    padding: 0.9rem 1rem;
+                    border: 1px solid rgba(56,189,248,0.2);
+                    border-radius: 8px;
+                    background:
+                        linear-gradient(135deg, rgba(56,189,248,0.08), transparent 42%),
+                        rgba(255,255,255,0.025);
+                }
+                .boss-item-modifier-copy,
+                .boss-item-modifier-picker {
+                    min-width: 0;
+                }
+                .boss-item-modifier-copy {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 0.3rem;
+                }
+                .boss-item-modifier-copy strong {
+                    color: #fff;
+                    font-family: var(--font-mono);
+                    overflow-wrap: anywhere;
+                }
+                .boss-item-modifier-copy small {
+                    color: var(--text-muted);
+                    line-height: 1.35;
+                }
+                :global(.world-boss-effect-picker) {
+                    position: relative;
+                    min-width: 0;
+                }
+                :global(.world-boss-effect-trigger) {
+                    width: 100%;
+                    min-height: 4.4rem;
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    align-items: center;
+                    gap: 0.65rem;
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 7px;
+                    background: rgba(255,255,255,0.03);
+                    color: #fff;
+                    padding: 0.65rem 0.75rem;
+                    text-align: left;
+                    cursor: pointer;
+                    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                }
+                :global(.world-boss-effect-trigger:hover),
+                :global(.world-boss-effect-trigger:focus-visible),
+                :global(.world-boss-effect-picker.open .world-boss-effect-trigger) {
+                    border-color: rgba(56,189,248,0.48);
+                    box-shadow: 0 0 0 3px rgba(56,189,248,0.14);
+                    outline: none;
+                }
+                :global(.world-boss-effect-trigger span) {
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.18rem;
+                }
+                :global(.world-boss-effect-trigger small),
+                :global(.world-boss-effect-trigger em) {
+                    color: var(--text-muted);
+                    font-size: 0.68rem;
+                    font-style: normal;
+                    line-height: 1.25;
+                }
+                :global(.world-boss-effect-trigger strong) {
+                    color: #fff;
+                    overflow-wrap: anywhere;
+                }
+                :global(.world-boss-effect-menu) {
+                    position: absolute;
+                    z-index: 45;
+                    inset-inline: 0;
+                    top: calc(100% + 0.35rem);
+                    display: grid;
+                    gap: 0.35rem;
+                    max-height: min(22rem, 60vh);
+                    overflow-y: auto;
+                    padding: 0.45rem;
+                    border: 1px solid rgba(56,189,248,0.34);
+                    border-radius: 8px;
+                    background: #07080d;
+                    box-shadow: 0 18px 50px rgba(0,0,0,0.48);
+                }
+                :global(.world-boss-effect-option) {
+                    min-height: 42px;
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr) minmax(5rem, auto) auto;
+                    align-items: center;
+                    gap: 0.6rem;
+                    border: 1px solid transparent;
+                    border-radius: 6px;
+                    background: transparent;
+                    color: var(--text-muted);
+                    padding: 0.5rem;
+                    text-align: left;
+                    cursor: pointer;
+                }
+                :global(.world-boss-effect-option:hover),
+                :global(.world-boss-effect-option.active) {
+                    border-color: rgba(56,189,248,0.35);
+                    background: rgba(56,189,248,0.12);
+                    color: #fff;
+                }
+                :global(.world-boss-effect-option img),
+                :global(.world-boss-effect-icon-placeholder) {
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 6px;
+                    object-fit: cover;
+                    background: rgba(255,255,255,0.06);
+                }
+                :global(.world-boss-effect-option span) {
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.16rem;
+                }
+                :global(.world-boss-effect-option strong) {
+                    color: inherit;
+                    overflow-wrap: anywhere;
+                }
+                :global(.world-boss-effect-option small),
+                :global(.world-boss-effect-option em) {
+                    color: var(--text-muted);
+                    font-size: 0.68rem;
+                    font-style: normal;
+                    line-height: 1.25;
+                }
                 .boss-name-cell {
                     display: flex;
                     align-items: center;
@@ -1689,6 +2081,7 @@ function BossesContent() {
                 }
                 .boss-modal {
                     max-width: min(920px, calc(100vw - 2rem));
+                    max-height: min(90dvh, calc(100dvh - 2rem));
                 }
                 .boss-modal-title {
                     display: flex;
@@ -1726,6 +2119,38 @@ function BossesContent() {
                 }
                 .boss-stat-grid {
                     margin-bottom: 1rem;
+                }
+                .boss-stat-note {
+                    margin-top: 0.25rem;
+                    color: var(--text-muted);
+                    font-size: 0.72rem;
+                    overflow-wrap: anywhere;
+                }
+                .boss-item-breakdown {
+                    display: flex;
+                    gap: 0.75rem;
+                    align-items: flex-start;
+                    margin-bottom: 1rem;
+                    padding: 0.85rem 1rem;
+                    border-radius: 8px;
+                    color: #7dd3fc;
+                    background: rgba(56,189,248,0.08);
+                    border: 1px solid rgba(56,189,248,0.18);
+                }
+                .boss-item-breakdown div {
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.15rem;
+                }
+                .boss-item-breakdown strong {
+                    color: #fff;
+                    overflow-wrap: anywhere;
+                }
+                .boss-item-breakdown span {
+                    color: rgba(255,255,255,0.76);
+                    font-size: 0.82rem;
+                    line-height: 1.35;
                 }
                 .boss-warning-box {
                     display: flex;
@@ -1902,7 +2327,16 @@ function BossesContent() {
                     .boss-radar-stats {
                         grid-template-columns: repeat(3, minmax(0, 1fr));
                     }
+                    .boss-view-switch button {
+                        grid-template-columns: auto minmax(0, 1fr);
+                    }
+                    .boss-view-switch small {
+                        grid-column: 2 / -1;
+                    }
                     .boss-controls {
+                        grid-template-columns: 1fr;
+                    }
+                    .boss-item-modifier-panel {
                         grid-template-columns: 1fr;
                     }
                     .boss-mf-control,
@@ -1916,8 +2350,12 @@ function BossesContent() {
                         width: 100%;
                     }
                     .boss-radar,
-                    .boss-routine-planner {
+                    .boss-routine-planner,
+                    .boss-item-modifier-panel {
                         padding: 1rem;
+                    }
+                    .boss-view-switch {
+                        grid-template-columns: 1fr;
                     }
                     .boss-radar-stats,
                     .boss-routine-summary,
@@ -1955,6 +2393,12 @@ function BossesContent() {
                         align-items: flex-start;
                         flex-direction: column;
                     }
+                    :global(.world-boss-effect-option) {
+                        grid-template-columns: auto minmax(0, 1fr) auto;
+                    }
+                    :global(.world-boss-effect-option em) {
+                        grid-column: 2 / -1;
+                    }
                     .boss-mobile-card {
                         width: 100%;
                         max-width: 100%;
@@ -1990,8 +2434,11 @@ function BossesContent() {
                 }
                 @media (prefers-reduced-motion: reduce) {
                     .boss-radar,
+                    .boss-view-switch button,
                     .boss-routine-planner,
                     .routine-boss-picker button,
+                    :global(.world-boss-effect-trigger),
+                    :global(.world-boss-effect-option),
                     .boss-loot-row {
                         animation: none;
                         transition: none;
@@ -2003,6 +2450,108 @@ function BossesContent() {
                 }
             `}</style>
         </main>
+    );
+}
+
+function WorldBossItemEffectPicker({
+    ariaLabel,
+    emptyLabel,
+    label,
+    onChange,
+    options,
+    value,
+}: {
+    ariaLabel: string;
+    emptyLabel: string;
+    label: string;
+    onChange: (value: string) => void;
+    options: WorldBossItemModifier[];
+    value: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const pickerRef = useRef<HTMLDivElement | null>(null);
+    const selected = options.find((option) => option.name === value) || null;
+
+    useEffect(() => {
+        if (!open) return;
+        const handlePointer = (event: MouseEvent) => {
+            if (pickerRef.current?.contains(event.target as Node)) return;
+            setOpen(false);
+        };
+        const handleKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("mousedown", handlePointer);
+        document.addEventListener("keydown", handleKey);
+        return () => {
+            document.removeEventListener("mousedown", handlePointer);
+            document.removeEventListener("keydown", handleKey);
+        };
+    }, [open]);
+
+    return (
+        <div className={`world-boss-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
+            <button
+                type="button"
+                className="world-boss-effect-trigger"
+                aria-expanded={open}
+                aria-haspopup="listbox"
+                aria-label={ariaLabel}
+                onClick={() => setOpen((current) => !current)}
+            >
+                <span>
+                    <small>{label}</small>
+                    <strong>{selected?.name || emptyLabel}</strong>
+                    <em>{selected ? getWorldBossItemModifierSummary(selected) : "Use only the profile/manual field."}</em>
+                </span>
+                <ChevronDown size={16} />
+            </button>
+            {open && (
+                <div className="world-boss-effect-menu" role="listbox" aria-label={ariaLabel}>
+                    <button
+                        type="button"
+                        className={`world-boss-effect-option ${!value ? "active" : ""}`}
+                        role="option"
+                        aria-selected={!value}
+                        onClick={() => {
+                            onChange("");
+                            setOpen(false);
+                        }}
+                    >
+                        <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />
+                        <span>
+                            <strong>{emptyLabel}</strong>
+                            <small>Use only the profile/manual field.</small>
+                        </span>
+                        {!value && <Check size={14} />}
+                    </button>
+                    {options.map((option) => {
+                        const active = option.name === value;
+                        return (
+                            <button
+                                type="button"
+                                className={`world-boss-effect-option ${active ? "active" : ""}`}
+                                key={option.name}
+                                role="option"
+                                aria-selected={active}
+                                onClick={() => {
+                                    onChange(option.name);
+                                    setOpen(false);
+                                }}
+                            >
+                                {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />}
+                                <span>
+                                    <strong>{option.name}</strong>
+                                    <small>{option.quality} {option.type}</small>
+                                </span>
+                                <em>{getWorldBossItemModifierSummary(option)}</em>
+                                {active && <Check size={14} />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 }
 

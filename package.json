@@ -12,6 +12,7 @@
     "scrape": "SCRAPE_ONCE=true node scraper.mjs",
     "scrape:priority": "SCRAPE_ONCE=true node scraper.mjs --priority",
     "scrape:pets": "SCRAPE_ONCE=true node scraper.mjs --pets-only",
+    "scrape:locations": "node --env-file=.env scraper.mjs --world-locations-only",
     "idlemmo:cache": "node --env-file=.env scripts/fetch-idlemmo-cache.mjs",
     "idlemmo:guild": "node --env-file=.env scripts/fetch-idlemmo-guild.mjs",
     "idlemmo:persona": "node --env-file=.env scripts/fetch-idlemmo-persona.mjs",

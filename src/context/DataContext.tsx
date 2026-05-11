@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from '@/lib/preferences';
+import type { WorldLocation } from '@/lib/locations';
 
 type MarketData = Record<string, any>;
 type StaticData = Record<string, any>;
@@ -24,6 +25,7 @@ type DataContextType = {
   marketData: MarketData | null;
   staticData: StaticData | null;
   allItemsDb: ItemLookup | null;
+  worldLocations: WorldLocation[] | null;
   scraperStatus: ScraperStatus | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -35,6 +37,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [marketData, setMarketData] = useState<MarketData | null>(null);
   const [staticData, setStaticData] = useState<StaticData | null>(null);
   const [allItemsDb, setAllItemsDb] = useState<ItemLookup | null>(null);
+  const [worldLocations, setWorldLocations] = useState<WorldLocation[] | null>(null);
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,11 +69,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const fetchData = async () => {
     try {
       const t = Date.now();
-      const [marketRes, staticRes, statusRes, itemsRes] = await Promise.all([
+      const [marketRes, staticRes, statusRes, itemsRes, worldLocationsRes] = await Promise.all([
         fetch(`/market-data.json?t=${t}`),
         fetch(`/static-data.json?t=${t}`),
         fetch(`/scraper-status.json?t=${t}`),
-        fetch(`/all-items-db.json?t=${t}`)
+        fetch(`/all-items-db.json?t=${t}`),
+        fetch(`/world-locations.json?t=${t}`)
       ]);
 
       if (marketRes.ok) setMarketData(await marketRes.json());
@@ -84,6 +88,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             if (item.name) byName[item.name] = item;
         });
         setAllItemsDb(byName);
+      }
+      if (worldLocationsRes.ok) {
+        const data = await worldLocationsRes.json() as { locations?: WorldLocation[] };
+        setWorldLocations(Array.isArray(data.locations) ? data.locations : []);
       }
     } catch (e) {
       console.error("Failed to sync Zenith data:", e);
@@ -103,7 +111,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <DataContext.Provider value={{ marketData, staticData, allItemsDb, scraperStatus, loading, refresh: fetchData }}>
+    <DataContext.Provider value={{ marketData, staticData, allItemsDb, worldLocations, scraperStatus, loading, refresh: fetchData }}>
       {children}
     </DataContext.Provider>
   );

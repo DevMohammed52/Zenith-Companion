@@ -45,7 +45,7 @@ import {
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
 import { ASSAULT_OPTIONS, type AssaultRank } from "@/lib/skill-profit";
-import { calculateHousingBuffs, formatHours, getHousingActivityLabel } from "@/lib/housing";
+import { calculateHousingBuffs, canUseHousingGuestAccess, formatHours, getHousingActivityLabel } from "@/lib/housing";
 
 const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
   ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
@@ -160,6 +160,21 @@ function formatShortStats(stats?: Record<string, number> | null, limit = 3) {
   const entries = Object.entries(stats || {}).filter(([, value]) => Number(value) !== 0).slice(0, limit);
   if (!entries.length) return "";
   return entries.map(([key, value]) => `${formatStatName(key)} ${value}`).join(" / ");
+}
+
+function formatItemEffects(effects?: ProfileItemRecord["effects"], limit = 3) {
+  const entries = (effects || [])
+    .filter((effect) => Number(effect?.value || 0) !== 0)
+    .slice(0, limit);
+  if (!entries.length) return "";
+  return entries.map((effect) => {
+    const target = String(effect.target || "").replace(/_/g, " ");
+    const attribute = String(effect.attribute || "").replace(/_/g, " ");
+    const value = Number(effect.value || 0);
+    const suffix = effect.value_type === "percentage" || effect.value_type === "efficiency" ? "%" : "";
+    const label = attribute === "magic find" ? "MF" : formatStatName(attribute);
+    return `${target ? `${target} ` : ""}${label} +${value}${suffix}`;
+  }).join(" / ");
 }
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
@@ -365,7 +380,11 @@ export default function ProfilesPage() {
   const lastPetStatKey = useRef("");
 
   const profile = activeProfile;
-  const housingSummary = useMemo(() => calculateHousingBuffs(profile?.housing), [profile?.housing]);
+  const housingSummary = useMemo(
+    () => calculateHousingBuffs(profile?.housing, { profileClassName: profile?.className }),
+    [profile?.className, profile?.housing],
+  );
+  const canUseGuestHousing = canUseHousingGuestAccess(profile?.className);
 
   useEffect(() => {
     let cancelled = false;
@@ -595,7 +614,7 @@ export default function ProfilesPage() {
     }
     patchActive({ combatStyle, gear: nextGear });
   };
-  const renderGearSlot = (key: string, label: string, types: string[], disabled = false) => {
+  const renderGearSlot = (key: string, label: string, types: string[], disabled = false, tiered = true) => {
     if (!profile) return null;
     const options = getSlotOptions(types);
     const selected = itemByName[profile.gear[key] || ""];
@@ -636,18 +655,20 @@ export default function ProfilesPage() {
             });
           }}
         />
-        <ProfileNumberField
-          label={`Tier / ${maxTier}`}
-          value={profile.gearTiers?.[key] || 1}
-          min={1}
-          max={maxTier}
-          onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: Math.min(Math.max(Number(value) || 1, 1), maxTier) } })}
-        />
+        {tiered && (
+          <ProfileNumberField
+            label={`Tier / ${maxTier}`}
+            value={profile.gearTiers?.[key] || 1}
+            min={1}
+            max={maxTier}
+            onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: Math.min(Math.max(Number(value) || 1, 1), maxTier) } })}
+          />
+        )}
         {selected && (
           <div className="profile-slot-stats">
-            <span>{formatShortStats(selected.stats, 5) || "No base stats"}</span>
+            <span>{formatShortStats(selected.stats, 5) || formatItemEffects(selected.effects, 4) || "No base stats"}</span>
             {selected.tier_modifiers && <small>Tier gain: {formatShortStats(selected.tier_modifiers, 5)}</small>}
-            <small>Slot preview: AP {stats.attackPower}, Prot {stats.protection}, Agi {stats.agility}, Acc {stats.accuracy}</small>
+            {tiered && <small>Slot preview: AP {stats.attackPower}, Prot {stats.protection}, Agi {stats.agility}, Acc {stats.accuracy}</small>}
           </div>
         )}
         {disabled && <div className="profile-slot-stats"><span>Disabled by current weapon setup.</span></div>}
@@ -1002,6 +1023,7 @@ export default function ProfilesPage() {
                 </div>
                 <div className="profile-grid single">
                   {ARMOR_GEAR_FIELDS.map(([key, label, types]) => renderGearSlot(key, label, types))}
+                  {renderGearSlot("special", "Special", ["SPECIAL"], false, false)}
                   {profile.combatStyle === "swordShield" && (
                     <>
                       {renderGearSlot("weapon", "Sword", ["SWORD"])}
@@ -1080,17 +1102,24 @@ export default function ProfilesPage() {
                     { value: "none", label: "None", hint: "No house buffs" },
                     { value: "owner", label: "Owner", hint: "Use built components" },
                     { value: "guest", label: "Guest", hint: "Use received buffs" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={profile.housing.mode === option.value ? "active" : ""}
-                      onClick={() => updateNested("housing", "mode", option.value as CharacterProfile["housing"]["mode"])}
-                    >
-                      <strong>{option.label}</strong>
-                      <span>{option.hint}</span>
-                    </button>
-                  ))}
+                  ].map((option) => {
+                    const blockedGuestOption = option.value === "guest" && !canUseGuestHousing;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={profile.housing.mode === option.value ? "active" : ""}
+                        disabled={blockedGuestOption}
+                        onClick={() => {
+                          if (blockedGuestOption) return;
+                          updateNested("housing", "mode", option.value as CharacterProfile["housing"]["mode"]);
+                        }}
+                      >
+                        <strong>{option.label}</strong>
+                        <span>{blockedGuestOption ? `${profile.className} cannot use guest access` : option.hint}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div className="profile-info-card">

@@ -1,5 +1,5 @@
 import { ALCHEMY_ITEMS, getMerchantBuyPrice, type Recipe } from "@/constants";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 import type { Preferences } from "@/lib/preferences";
 
 export type CraftingQueue = Record<string, number>;
@@ -14,6 +14,12 @@ export type QueueMarketItem = {
   price?: number;
   vendor_price?: number;
   vol_3?: number;
+  stable_vol_3?: number;
+  daily_sales_trimmed_avg_30?: number;
+  daily_sales_median_30?: number;
+  daily_sales_max_30?: number;
+  sales_outlier_days_30?: number;
+  sales_spike_ratio?: number;
   is_tradeable?: boolean;
   quality?: string;
   type?: string;
@@ -204,7 +210,10 @@ export function calculateCraftingQueuePlan(
 
     const warnings: string[] = [];
     if (missingInputs.length > 0) warnings.push(`Missing prices: ${missingInputs.join(", ")}`);
-    if (bestSaleSource === "market" && Number(marketData?.[name]?.vol_3 || 0) > 0 && Number(marketData?.[name]?.vol_3 || 0) < 40) {
+    const liquidity = getMarketLiquidity(marketData?.[name]);
+    if (bestSaleSource === "market" && liquidity.isSpikeRisk) {
+      warnings.push("Bulk-sale spike risk");
+    } else if (bestSaleSource === "market" && liquidity.stableVolume3d > 0 && liquidity.stableVolume3d < 40) {
       warnings.push("Thin market");
     }
     if (sale.source === "custom") warnings.push("Custom sell price");

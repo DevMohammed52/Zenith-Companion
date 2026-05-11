@@ -11,6 +11,8 @@ export default function MobileMenuBtn() {
             onClick={toggleMobile} 
             className="mobile-menu-btn" 
             aria-label="Toggle menu"
+            aria-controls="app-sidebar"
+            aria-expanded={mobileOpen}
         >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>

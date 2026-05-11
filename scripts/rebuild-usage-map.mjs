@@ -4,6 +4,68 @@ import { normalizeProductName, getRecipeUses } from '../src/lib/logic-core.mjs';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
+function loadOptionalJson(fileName, fallback) {
+  const filePath = path.join(PUBLIC_DIR, fileName);
+  if (!fs.existsSync(filePath)) return fallback;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    console.warn(`Could not read ${fileName}: ${error.message}`);
+    return fallback;
+  }
+}
+
+function normalizeLocationKey(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    return normalizeLocationKey(value.key ?? value.name ?? value.id);
+  }
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/['`]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function buildLocationLookup(worldLocations = []) {
+  const lookup = new Map();
+  const register = (location) => {
+    if (!location || typeof location !== 'object') return;
+    const key = normalizeLocationKey(location.key || location.name || location.id);
+    const normalized = {
+      id: location.id ?? null,
+      key,
+      name: String(location.name || location.key || location.id || '').trim(),
+    };
+    if (!normalized.name || !normalized.key) return;
+    lookup.set(normalized.key, normalized);
+    if (normalized.id !== null && normalized.id !== undefined) {
+      lookup.set(`id:${normalized.id}`, normalized);
+    }
+    lookup.set(normalizeLocationKey(normalized.name), normalized);
+  };
+
+  worldLocations.forEach(register);
+  return lookup;
+}
+
+function resolveLocation(location, locationLookup) {
+  if (!location) return { id: null, key: null, name: 'Unknown' };
+  const id = location.id ?? null;
+  const rawKey = normalizeLocationKey(location.key || location.name || id);
+  const match = (id !== null && id !== undefined ? locationLookup.get(`id:${id}`) : null)
+    || locationLookup.get(rawKey);
+  const name = match?.name || String(location.name || location.key || id || 'Unknown').trim();
+  const key = match?.key || normalizeLocationKey(location.key || name || id);
+  return {
+    id: match?.id ?? id,
+    key: key || null,
+    name: name || 'Unknown',
+  };
+}
+
 async function rebuild() {
   console.log('--- Zenith Relational Linker Started ---');
   
@@ -11,6 +73,8 @@ async function rebuild() {
   const staticData = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'static-data.json'), 'utf8'));
   const itemsMap = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'items-map.json'), 'utf8'));
   const allItemsDb = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'all-items-db.json'), 'utf8'));
+  const worldLocationsPayload = loadOptionalJson('world-locations.json', { locations: [] });
+  const locationLookup = buildLocationLookup(worldLocationsPayload.locations || []);
   
   const usageMap = {};
 
@@ -32,11 +96,14 @@ async function rebuild() {
         entity.loot.forEach(drop => {
           const entry = getEntry(drop.name);
           if (!entry.dropped_by.find(d => d.name === entity.name)) {
+            const location = resolveLocation(entity.location, locationLookup);
             entry.dropped_by.push({
               type,
               name: entity.name,
               chance: drop.chance,
-              location: entity.location?.name || 'Unknown'
+              location: location.name,
+              location_id: location.id,
+              location_key: location.key
             });
           }
         });

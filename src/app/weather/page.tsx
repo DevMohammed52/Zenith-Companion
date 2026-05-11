@@ -6,8 +6,18 @@ import {
   Sun, CloudFog, ThermometerSun, Zap, Cloud, 
   CloudRain, CloudSnow, CloudLightning, Wind,
   Info, Calendar, Map, Users, Sparkles,
-  TrendingUp, TrendingDown, Trophy
+  TrendingUp, Trophy
 } from 'lucide-react';
+
+const formatPercent = (value: number | null) => {
+  if (!value) return '0%';
+  return value > 0 ? `+${value}%` : `${value}%`;
+};
+
+const modifierTone = (value: number | null) => {
+  if (!value) return 'neutral';
+  return value > 0 ? 'pos' : 'neg';
+};
 
 export default function WeatherPage() {
   const [activeWeather, setActiveWeather] = useState<WeatherData>(WEATHER_DATA[0]);
@@ -80,41 +90,27 @@ export default function WeatherPage() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="impact-card efficiency">
-                    <div className="card-header">
-                      <TrendingDown size={18} />
-                      <h3>Efficiency Modifiers</h3>
-                    </div>
-                    <div className="stat-list">
-                      {activeWeather.impacts.map((imp) => (
-                        <div key={imp.skill} className="stat-row">
-                          <span>{imp.skill}</span>
-                          <span className={imp.efficiency && imp.efficiency < 0 ? 'neg' : imp.efficiency && imp.efficiency > 0 ? 'pos' : ''}>
-                            {imp.efficiency === 0 ? '-' : imp.efficiency && imp.efficiency > 0 ? `+${imp.efficiency}%` : `${imp.efficiency}%`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                <div className="impact-card modifiers">
+                  <div className="card-header">
+                    <TrendingUp size={18} />
+                    <h3>Skill Modifiers</h3>
                   </div>
-
-                  <div className="impact-card experience">
-                    <div className="card-header">
-                      <TrendingUp size={18} />
-                      <h3>Experience Bonuses</h3>
-                    </div>
-                    <div className="stat-list">
-                      {activeWeather.impacts.map((imp) => (
-                        <div key={imp.skill} className="stat-row">
-                          <span>{imp.skill}</span>
-                          <span className={imp.experience && imp.experience > 0 ? 'pos' : ''}>
-                            {imp.experience === 0 ? '-' : `+${imp.experience}%`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="modifier-list">
+                    {activeWeather.impacts.map((imp) => (
+                      <div key={imp.skill} className="modifier-row">
+                        <span className="modifier-skill">{imp.skill}</span>
+                        <span className={`modifier-chip ${modifierTone(imp.efficiency)}`}>
+                          <span>Eff</span>
+                          <strong>{formatPercent(imp.efficiency)}</strong>
+                        </span>
+                        <span className={`modifier-chip ${modifierTone(imp.experience)}`}>
+                          <span>XP</span>
+                          <strong>{formatPercent(imp.experience)}</strong>
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                </>
+                </div>
               )}
             </div>
           </section>
@@ -218,32 +214,31 @@ export default function WeatherPage() {
         .header-text p { color: rgba(255,255,255,0.5); font-size: 1.1rem; max-width: 650px; margin: 0 auto; }
 
         .weather-selector {
-          display: flex;
-          gap: 0.85rem;
+          display: grid;
+          grid-template-columns: repeat(9, minmax(0, 1fr));
+          gap: 0.55rem;
           margin-top: 2.5rem;
           padding: 0.5rem;
-          overflow-x: auto;
-          scrollbar-width: none;
-          -webkit-overflow-scrolling: touch;
-          scroll-padding-inline: 1rem;
+          overflow: visible;
         }
-        .weather-selector::-webkit-scrollbar { display: none; }
 
         .weather-btn {
           background: rgba(255,255,255,0.03);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255,255,255,0.05);
-          padding: 0.85rem 1.75rem;
-          border-radius: 18px;
+          padding: 0.78rem 0.9rem;
+          border-radius: 16px;
           color: rgba(255,255,255,0.4);
           display: flex;
           align-items: center;
-          gap: 0.85rem;
+          justify-content: center;
+          gap: 0.5rem;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           white-space: nowrap;
           font-weight: 700;
-          font-size: 0.9rem;
+          font-size: 0.8rem;
+          min-width: 0;
         }
         .weather-btn:focus-visible {
           outline: 2px solid var(--accent);
@@ -313,6 +308,63 @@ export default function WeatherPage() {
         .stat-row .pos { color: #4ade80; }
         .stat-row .neg { color: #f87171; }
 
+        .impact-card.modifiers {
+          grid-column: 1 / -1;
+        }
+        .modifier-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
+          gap: 0.85rem;
+        }
+        .modifier-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto auto;
+          align-items: center;
+          gap: 0.7rem;
+          min-width: 0;
+          padding: 0.9rem 1rem;
+          border: 1px solid rgba(255,255,255,0.04);
+          border-radius: 18px;
+          background: rgba(255,255,255,0.02);
+        }
+        .modifier-skill {
+          color: rgba(255,255,255,0.62);
+          font-weight: 800;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .modifier-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          min-width: 4.7rem;
+          justify-content: space-between;
+          padding: 0.42rem 0.55rem;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.56);
+          font-size: 0.75rem;
+          font-weight: 800;
+        }
+        .modifier-chip span {
+          color: rgba(255,255,255,0.38);
+          font-size: 0.68rem;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+        .modifier-chip.pos {
+          color: #4ade80;
+          background: rgba(74, 222, 128, 0.08);
+          border-color: rgba(74, 222, 128, 0.16);
+        }
+        .modifier-chip.neg {
+          color: #f87171;
+          background: rgba(248, 113, 113, 0.08);
+          border-color: rgba(248, 113, 113, 0.16);
+        }
+
         .mf-stats { display: flex; flex-direction: column; gap: 0.85rem; }
         .mf-stat { 
           background: rgba(255,255,255,0.02); 
@@ -369,6 +421,7 @@ export default function WeatherPage() {
 
         @media (max-width: 1100px) {
           .main-grid { grid-template-columns: 1fr; }
+          .weather-selector { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .weather-hero { flex-direction: column; text-align: center; gap: 2rem; }
           .hero-text h2 { font-size: 3.5rem; }
           .active-info-panel { padding: 2.5rem; border-radius: 30px; }
@@ -402,7 +455,23 @@ export default function WeatherPage() {
             overflow-wrap: anywhere;
           }
           .header-text p { font-size: 0.95rem; padding: 0 0.25rem; max-width: 18.5rem; }
-          .weather-selector { justify-content: flex-start; margin-inline: 0; padding-inline: 0; }
+          .weather-selector {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-inline: 0;
+            padding-inline: 0;
+            gap: 0.55rem;
+          }
+          .weather-btn {
+            justify-content: flex-start;
+            padding: 0.68rem 0.62rem;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+          }
+          .weather-btn svg {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+          }
           .hero-text h2 { font-size: 2.5rem; }
           .hero-text .description {
             font-size: 1.1rem;
@@ -414,6 +483,16 @@ export default function WeatherPage() {
           .impact-card, .mf-card { padding: 1.5rem; border-radius: 20px; }
           .mechanics-card { padding: 1.5rem; border-radius: 22px; }
           .stat-row { gap: 1rem; padding-right: 1rem; }
+          .modifier-list { grid-template-columns: 1fr; }
+          .modifier-row {
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            padding: 0.8rem;
+            gap: 0.45rem;
+          }
+          .modifier-chip {
+            min-width: 4.1rem;
+            padding-inline: 0.45rem;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, BarChart3, Trophy } from "lucide-react";
+import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink } from "lucide-react";
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
@@ -14,13 +14,14 @@ import { getSafeMarketValue } from "@/lib/market-pricing";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { useModalA11y } from "@/lib/use-modal-a11y";
 
 const COMBAT_CONTROLS_STORAGE_KEY = "zenith_combat_controls_v1";
 const DEFAULT_KILLS_PER_HOUR = 360;
 
 function CombatContent() {
     const router = useRouter();
-    const { openItemByName, prefetchItem } = useItemModal();
+    const { openItemByName } = useItemModal();
     const searchParams = useSearchParams();
     const { staticData, marketData, allItemsDb } = useData();
     const { preferences } = usePreferences();
@@ -34,7 +35,9 @@ function CombatContent() {
     const [sortCol, setSortCol] = useState<string>("ev");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [selectedArea, setSelectedArea] = useState<string | null>(null);
     const [killsPerHour, setKillsPerHour] = useState<number | "">(DEFAULT_KILLS_PER_HOUR);
+    const selectedEnemyDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedEnemy), () => setSelectedEnemy(null));
 
     useEffect(() => {
         try {
@@ -157,15 +160,34 @@ function CombatContent() {
                     bestEnemy,
                 };
             })
-            .sort((a, b) => b.avgGoldPerHour - a.avgGoldPerHour);
+            .sort((a, b) => {
+                if (a.minLevel !== b.minLevel) return a.minLevel - b.minLevel;
+                if (a.maxLevel !== b.maxLevel) return a.maxLevel - b.maxLevel;
+                return a.area.localeCompare(b.area);
+            });
     }, [combatRows]);
 
+    const selectedAreaSummary = useMemo(() => {
+        if (!selectedArea) return null;
+        return areaSummaries.find(summary => summary.area === selectedArea) || null;
+    }, [areaSummaries, selectedArea]);
+
+    useEffect(() => {
+        if (selectedArea && areaSummaries.length && !areaSummaries.some(summary => summary.area === selectedArea)) {
+            setSelectedArea(null);
+        }
+    }, [areaSummaries, selectedArea]);
+
     const rows = useMemo(() => {
+        const areaFiltered = selectedArea
+            ? combatRows.filter(e => (e.location?.name || "Unknown") === selectedArea)
+            : [...combatRows];
+
         // Search Filter
         const q = debouncedSearch.toLowerCase();
         const filtered = q
-            ? combatRows.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
-            : [...combatRows];
+            ? areaFiltered.filter(e => e.name.toLowerCase().includes(q) || (e.location?.name || '').toLowerCase().includes(q))
+            : areaFiltered;
 
         // Sort
         filtered.sort((a, b) => {
@@ -191,7 +213,7 @@ function CombatContent() {
         });
 
         return filtered;
-    }, [combatRows, sortCol, sortDesc, debouncedSearch]);
+    }, [combatRows, selectedArea, sortCol, sortDesc, debouncedSearch]);
 
     const autoOpenedRef = useRef<string | null>(null);
 
@@ -236,7 +258,7 @@ function CombatContent() {
     };
 
     return (
-        <main className="container">
+        <main className="container combat-page">
             <div className="header">
                 <h1 className="header-title">
                     <Swords size={24} color="var(--text-accent)" /> ZENITH COMBAT
@@ -253,6 +275,7 @@ function CombatContent() {
                 <div className="control-group">
                     <label className="control-label">Kills Per Hour</label>
                     <input 
+                        aria-label="Kills per hour"
                         type="number" 
                         className="control-input"
                         value={killsPerHour}
@@ -270,6 +293,7 @@ function CombatContent() {
                     <div style={{ position: 'relative' }}>
                         <Search size={14} style={{ position: 'absolute', left: '10px', top: '12px', color: 'var(--text-muted)' }} />
                         <input 
+                            aria-label="Search enemies or locations"
                             type="text" 
                             className="control-input"
                             placeholder="Search enemy or location..."
@@ -281,59 +305,127 @@ function CombatContent() {
                 </div>
             </div>
 
-            <section className="area-overview" aria-label="Area combat summary">
-                <div className="area-overview-header">
-                    <div>
-                        <h2>
-                            <BarChart3 size={18} color="var(--text-accent)" /> Area Profit Overview
-                        </h2>
-                        <p>Average value across every enemy in each location, using your kills/hour setting.</p>
+            <section className="combat-zone-panel" aria-label="Zone and enemy browser">
+                <div className="zone-picker-panel">
+                    <div className="zone-panel-header">
+                        <div>
+                            <h2>
+                                <MapPin size={18} color="var(--text-accent)" /> Zones
+                            </h2>
+                            <p>Location-scoped enemy list.</p>
+                        </div>
+                        <span className="zone-count-pill mono">{areaSummaries.length} zones</span>
                     </div>
-                    <div className="area-overview-meta mono">
-                        {areaSummaries.length} AREAS
+
+                    <div className="zone-button-list" aria-label="Combat zones">
+                        <button
+                            type="button"
+                            className={`zone-select-button ${!selectedArea ? "selected" : ""}`}
+                            onClick={() => setSelectedArea(null)}
+                            aria-pressed={!selectedArea}
+                        >
+                            <span>
+                                <strong>All zones</strong>
+                                <small>{combatRows.length} enemies</small>
+                            </span>
+                            <em className="mono">All</em>
+                        </button>
+                        {areaSummaries.map((summary) => (
+                            <button
+                                key={summary.area}
+                                type="button"
+                                className={`zone-select-button ${selectedArea === summary.area ? "selected" : ""}`}
+                                onClick={() => setSelectedArea(summary.area)}
+                                aria-pressed={selectedArea === summary.area}
+                            >
+                                <span>
+                                    <strong>{summary.area}</strong>
+                                    <small>{summary.enemyCount} enemies - L{summary.minLevel}-{summary.maxLevel}</small>
+                                </span>
+                                <em className="mono">{summary.avgGoldPerHour.toLocaleString(undefined, { maximumFractionDigits: 0 })}/h</em>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                <div className="area-summary-grid">
-                    {areaSummaries.map((summary, index) => (
-                        <button
-                            key={summary.area}
-                            type="button"
-                            className="area-summary-card"
-                            onClick={() => setSearchTerm(summary.area)}
-                            aria-label={`Filter enemies to ${summary.area}`}
-                        >
-                            <div className="area-card-top">
-                                <span className="area-rank">#{index + 1}</span>
-                                <span className="area-name">{summary.area}</span>
-                                {index === 0 && <Trophy size={16} color="var(--text-accent)" />}
-                            </div>
-                            <div className="area-main-stat">
-                                <span className="mono">{summary.avgGoldPerHour.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                <small>avg gold / hour</small>
-                            </div>
-                            <div className="area-mini-stats">
-                                <span>
-                                    <strong>{summary.enemyCount}</strong>
-                                    <small>enemies</small>
+                <div className="zone-mob-panel">
+                    <div className="zone-panel-header">
+                        <div>
+                            <h2>
+                                <Swords size={18} color="var(--text-accent)" />
+                                {selectedAreaSummary ? selectedAreaSummary.area : "All Enemies"}
+                            </h2>
+                            <p>
+                                {rows.length} shown
+                                {selectedAreaSummary ? ` from ${selectedAreaSummary.enemyCount} zone enemies` : " across every zone"}
+                                {debouncedSearch ? " after search" : ""}
+                            </p>
+                        </div>
+                        {selectedAreaSummary && (
+                            <button
+                                type="button"
+                                className="zone-clear-button"
+                                onClick={() => setSelectedArea(null)}
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="selected-zone-stats">
+                        <span>
+                            <small>Best enemy</small>
+                            <strong>{(selectedAreaSummary?.bestEnemy || rows[0])?.name || "None"}</strong>
+                        </span>
+                        <span>
+                            <small>Level range</small>
+                            <strong>
+                                {selectedAreaSummary
+                                    ? `${selectedAreaSummary.minLevel}-${selectedAreaSummary.maxLevel}`
+                                    : areaSummaries.length
+                                        ? `${Math.min(...areaSummaries.map(summary => summary.minLevel))}-${Math.max(...areaSummaries.map(summary => summary.maxLevel))}`
+                                        : "-"}
+                            </strong>
+                        </span>
+                        <span>
+                            <small>Avg loot/hour</small>
+                            <strong className="profit-positive">
+                                {(selectedAreaSummary
+                                    ? selectedAreaSummary.avgGoldPerHour
+                                    : rows.length
+                                        ? rows.reduce((sum, row) => sum + row.profitPerHour, 0) / rows.length
+                                        : 0
+                                ).toLocaleString(undefined, { maximumFractionDigits: 0 })}g
+                            </strong>
+                        </span>
+                    </div>
+
+                    <div className="zone-mob-list" aria-label="Enemies matching current zone and search">
+                        {rows.slice(0, 6).map((row) => (
+                            <button
+                                key={`${row.location?.name || "Unknown"}-${row.name}`}
+                                type="button"
+                                className="zone-mob-button"
+                                onClick={() => setSelectedEnemy(row)}
+                            >
+                                <span className="zone-mob-main">
+                                    {row.image_url && <img src={row.image_url} alt="" />}
+                                    <span>
+                                        <strong>{row.name}</strong>
+                                        <small>{row.location?.name || "Unknown"} - Level {row.level}</small>
+                                    </span>
                                 </span>
-                                <span>
-                                    <strong>{summary.avgEv.toLocaleString(undefined, { maximumFractionDigits: 1 })}</strong>
-                                    <small>avg EV</small>
-                                </span>
-                                <span>
-                                    <strong>{summary.minLevel}-{summary.maxLevel}</strong>
-                                    <small>level</small>
-                                </span>
+                                <span className="zone-mob-value mono">{row.profitPerHour.toLocaleString(undefined, { maximumFractionDigits: 0 })}g/h</span>
+                            </button>
+                        ))}
+                        {rows.length === 0 && (
+                            <div className="zone-empty-state">
+                                No enemies match the current zone and search.
                             </div>
-                            <div className="area-best">
-                                Best: <strong>{summary.bestEnemy?.name || "Unknown"}</strong>
-                                <span className="mono">{(summary.bestEnemy?.profitPerHour || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}/h</span>
-                            </div>
-                        </button>
-                    ))}
+                        )}
+                    </div>
                 </div>
-            </section>
+                </section>
 
             <section className="table-wrapper">
                 {/* Desktop View */}
@@ -364,7 +456,20 @@ function CombatContent() {
                             </thead>
                             <tbody>
                                 {rows.map((row, i) => (
-                                    <tr key={i} className="clickable-row" onClick={() => setSelectedEnemy(row)} onMouseEnter={() => prefetchItem(row.name)}>
+                                    <tr
+                                        aria-label={`Open ${row.name} enemy details`}
+                                        key={i}
+                                        className="clickable-row"
+                                        onClick={() => setSelectedEnemy(row)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === "Enter" || event.key === " ") {
+                                                event.preventDefault();
+                                                setSelectedEnemy(row);
+                                            }
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                    >
                                         <td className="item-name left-align">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
@@ -406,7 +511,20 @@ function CombatContent() {
                     />
                     <div className="mobile-card-grid">
                         {rows.map((row, i) => (
-                            <div key={i} className="mobile-alchemy-card" onClick={() => setSelectedEnemy(row)}>
+                            <div
+                                aria-label={`Open ${row.name} enemy details`}
+                                key={i}
+                                className="mobile-alchemy-card"
+                                onClick={() => setSelectedEnemy(row)}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                        event.preventDefault();
+                                        setSelectedEnemy(row);
+                                    }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                            >
                                 <div className="m-card-header">
                                     <div className="m-card-title">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -437,7 +555,15 @@ function CombatContent() {
 
             {selectedEnemy && (
                 <div className="modal-overlay" onClick={() => setSelectedEnemy(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div
+                        aria-labelledby="combat-enemy-title"
+                        aria-modal="true"
+                        className="modal-content"
+                        onClick={e => e.stopPropagation()}
+                        ref={selectedEnemyDialogRef}
+                        role="dialog"
+                        tabIndex={-1}
+                    >
                         <div className="modal-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {selectedEnemy.image_url && (
@@ -446,7 +572,7 @@ function CombatContent() {
                                     </div>
                                 )}
                                 <div>
-                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                    <h2 id="combat-enemy-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                                         {selectedEnemy.name}
                                     </h2>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
@@ -462,7 +588,7 @@ function CombatContent() {
                                     </div>
                                 </div>
                             </div>
-                            <button className="close-btn" onClick={() => setSelectedEnemy(null)}>
+                            <button aria-label="Close enemy details" className="close-btn" onClick={() => setSelectedEnemy(null)} type="button">
                                 <X size={20} />
                             </button>
                         </div>
@@ -501,7 +627,10 @@ function CombatContent() {
                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                              {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
                                              <div>
-                                                 <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>{drop.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}>x{drop.quantity || 1}</span></div>
+                                                <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>
+                                                    {drop.name}
+                                                    {(Number(drop.quantity) || 1) > 1 && <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 400 }}> x{drop.quantity}</span>}
+                                                </div>
                                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-accent)' }}>{drop.chance}% Drop Rate</div>
                                              </div>
                                          </div>
@@ -522,33 +651,41 @@ function CombatContent() {
             )}
             <style jsx>{`
                 .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
-                .area-overview {
+                .combat-zone-panel {
                     background: rgba(255,255,255,0.015);
                     border: 1px solid var(--border-subtle);
                     border-radius: 8px;
+                    display: grid;
+                    gap: 1rem;
+                    grid-template-columns: minmax(220px, 0.85fr) minmax(0, 1.4fr);
                     margin-bottom: 1.5rem;
                     padding: 1rem;
                 }
-                .area-overview-header {
+                .zone-picker-panel,
+                .zone-mob-panel {
+                    min-width: 0;
+                }
+                .zone-panel-header {
                     align-items: center;
                     display: flex;
                     gap: 1rem;
                     justify-content: space-between;
                     margin-bottom: 1rem;
                 }
-                .area-overview-header h2 {
+                .zone-panel-header h2 {
                     align-items: center;
                     display: flex;
                     font-size: 0.95rem;
                     gap: 0.5rem;
                     margin: 0;
                 }
-                .area-overview-header p {
+                .zone-panel-header p {
                     color: var(--text-muted);
                     font-size: 0.78rem;
                     margin-top: 0.2rem;
                 }
-                .area-overview-meta {
+                .zone-count-pill,
+                .zone-clear-button {
                     background: color-mix(in srgb, var(--text-accent), transparent 92%);
                     border: 1px solid var(--border-focus);
                     border-radius: 999px;
@@ -558,116 +695,153 @@ function CombatContent() {
                     padding: 0.3rem 0.7rem;
                     white-space: nowrap;
                 }
-                .area-summary-grid {
-                    display: grid;
-                    gap: 0.75rem;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                .zone-clear-button {
+                    cursor: pointer;
+                    font-family: var(--font-sans);
                 }
-                .area-summary-card {
+                .zone-clear-button:hover {
+                    background: color-mix(in srgb, var(--text-accent), transparent 86%);
+                }
+                .zone-button-list,
+                .zone-mob-list {
+                    display: grid;
+                    gap: 0.5rem;
+                }
+                .zone-button-list {
+                    max-height: 25rem;
+                    overflow-y: auto;
+                    padding-right: 0.2rem;
+                }
+                .zone-select-button,
+                .zone-mob-button {
+                    align-items: center;
                     background: rgba(255,255,255,0.018);
                     border: 1px solid var(--border-subtle);
-                    border-radius: 8px;
+                    border-radius: 7px;
                     color: inherit;
                     cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.85rem;
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: minmax(0, 1fr) auto;
                     min-width: 0;
-                    padding: 1rem;
+                    padding: 0.78rem 0.85rem;
                     text-align: left;
                     transition: all 0.15s ease;
                 }
-                .area-summary-card:hover {
+                .zone-select-button:hover,
+                .zone-select-button.selected,
+                .zone-mob-button:hover,
+                .zone-mob-button:focus-visible {
                     background: color-mix(in srgb, var(--text-accent), transparent 96%);
                     border-color: var(--border-focus);
-                    transform: translateY(-1px);
                 }
-                .area-card-top {
-                    align-items: center;
-                    display: flex;
-                    gap: 0.5rem;
-                    min-width: 0;
+                .zone-select-button.selected {
+                    box-shadow: inset 3px 0 0 var(--text-accent);
                 }
-                .area-rank {
-                    color: var(--text-accent);
-                    font-family: var(--font-mono);
-                    font-size: 0.74rem;
-                    font-weight: 800;
-                }
-                .area-name {
+                .zone-select-button strong,
+                .zone-mob-button strong {
                     color: #fff;
-                    flex: 1;
-                    font-weight: 800;
+                    display: block;
+                    font-size: 0.82rem;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                 }
-                .area-main-stat span {
-                    color: var(--text-success);
-                    display: block;
-                    font-size: 1.35rem;
-                    font-weight: 800;
-                    line-height: 1;
-                }
-                .area-main-stat small,
-                .area-mini-stats small {
+                .zone-select-button small,
+                .zone-mob-button small {
                     color: var(--text-muted);
                     display: block;
-                    font-size: 0.68rem;
+                    font-size: 0.7rem;
                     font-weight: 700;
-                    letter-spacing: 0.04em;
-                    margin-top: 0.25rem;
-                    text-transform: uppercase;
+                    margin-top: 0.18rem;
                 }
-                .area-mini-stats {
+                .zone-select-button em {
+                    color: var(--text-success);
+                    font-size: 0.72rem;
+                    font-style: normal;
+                    font-weight: 800;
+                    white-space: nowrap;
+                }
+                .selected-zone-stats {
                     display: grid;
-                    gap: 0.5rem;
+                    gap: 0.65rem;
                     grid-template-columns: repeat(3, minmax(0, 1fr));
+                    margin-bottom: 0.85rem;
                 }
-                .area-mini-stats span {
+                .selected-zone-stats span {
                     background: rgba(255,255,255,0.018);
                     border: 1px solid var(--border-subtle);
                     border-radius: 6px;
-                    padding: 0.55rem;
+                    min-width: 0;
+                    padding: 0.65rem;
                 }
-                .area-mini-stats strong {
+                .selected-zone-stats small {
+                    color: var(--text-muted);
+                    display: block;
+                    font-size: 0.68rem;
+                    font-weight: 800;
+                    letter-spacing: 0.04em;
+                    margin-bottom: 0.25rem;
+                    text-transform: uppercase;
+                }
+                .selected-zone-stats strong {
                     color: #fff;
                     display: block;
-                    font-family: var(--font-mono);
-                    font-size: 0.86rem;
-                }
-                .area-best {
-                    align-items: center;
-                    border-top: 1px solid var(--border-subtle);
-                    color: var(--text-muted);
-                    display: flex;
-                    gap: 0.35rem;
-                    justify-content: space-between;
-                    min-width: 0;
-                    padding-top: 0.75rem;
-                    font-size: 0.78rem;
-                }
-                .area-best strong {
-                    color: #fff;
-                    flex: 1;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                 }
-                .area-best span {
+                .zone-mob-main {
+                    align-items: center;
+                    display: flex;
+                    min-width: 0;
+                    gap: 0.65rem;
+                }
+                .zone-mob-main img {
+                    border-radius: 4px;
+                    height: 26px;
+                    width: 26px;
+                }
+                .zone-mob-value {
                     color: var(--text-success);
+                    font-size: 0.78rem;
                     font-weight: 800;
                     white-space: nowrap;
                 }
+                .zone-empty-state {
+                    border: 1px dashed var(--border-subtle);
+                    border-radius: 7px;
+                    color: var(--text-muted);
+                    font-size: 0.82rem;
+                    padding: 1rem;
+                }
                 @media (max-width: 768px) {
-                    .area-overview {
+                    .combat-zone-panel {
+                        grid-template-columns: 1fr;
                         padding: 0.85rem;
                     }
-                    .area-overview-header {
+                    .zone-panel-header {
                         align-items: flex-start;
                         flex-direction: column;
                     }
-                    .area-summary-grid {
+                    .zone-button-list {
+                        display: grid;
+                        grid-auto-columns: minmax(11rem, 68vw);
+                        grid-auto-flow: column;
+                        max-height: none;
+                        overflow-x: auto;
+                        overflow-y: hidden;
+                        padding: 0 0 0.25rem;
+                        scroll-snap-type: x proximity;
+                    }
+                    .selected-zone-stats {
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                    }
+                    .zone-select-button {
+                        scroll-snap-align: start;
+                    }
+                    .zone-mob-button {
+                        align-items: start;
                         grid-template-columns: 1fr;
                     }
                 }

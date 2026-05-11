@@ -307,6 +307,39 @@ export function getToolEfficiency(item: ProfileItemRecord | undefined) {
   }, 0);
 }
 
+export function getItemEffectBonus(
+  item: ProfileItemRecord | undefined,
+  target: string,
+  attribute: string,
+) {
+  if (!item?.effects) return 0;
+  const normalizedTarget = target.toLowerCase();
+  const normalizedAttribute = attribute.toLowerCase();
+  return item.effects.reduce((total, effect) => {
+    const effectTarget = String(effect.target || "").toLowerCase();
+    const effectAttribute = String(effect.attribute || "").toLowerCase();
+    if (effectTarget !== normalizedTarget || effectAttribute !== normalizedAttribute) return total;
+    return total + Number(effect.value || 0);
+  }, 0);
+}
+
+export function getProfileEquippedSpecialItem(
+  profile: CharacterProfile | null | undefined,
+  itemByName: Record<string, ProfileItemRecord | undefined>,
+) {
+  if (!profile) return undefined;
+  return itemByName[profile.gear.special || ""];
+}
+
+export function getProfileSpecialEffectBonus(
+  profile: CharacterProfile | null | undefined,
+  itemByName: Record<string, ProfileItemRecord | undefined>,
+  target: string,
+  attribute: string,
+) {
+  return getItemEffectBonus(getProfileEquippedSpecialItem(profile, itemByName), target, attribute);
+}
+
 export function calculateProfileSecondaryStats(
   profile: CharacterProfile,
   itemByName: Record<string, ProfileItemRecord | undefined>,
@@ -338,6 +371,7 @@ export function calculateProfileSecondaryStats(
     "greaves",
     "boots",
     "gauntlets",
+    "special",
     ...(profile.combatStyle === "dualDaggers"
       ? ["weapon", "offhandWeapon"]
       : profile.combatStyle === "bow"

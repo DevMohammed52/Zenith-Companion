@@ -187,8 +187,8 @@ export const QUALITY_ORDER: Record<Quality, number> = {
 export const QUALITY_COLORS: Record<Quality, string> = {
   UNKNOWN: "#94a3b8",
   STANDARD: "#e4e4e7",
-  REFINED: "#4ade80",
-  PREMIUM: "#60a5fa",
+  REFINED: "#60a5fa",
+  PREMIUM: "#4ade80",
   EPIC: "#a855f7",
   LEGENDARY: "#f59e0b",
   MYTHIC: "#ef4444",

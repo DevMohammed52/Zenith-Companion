@@ -1,24 +1,34 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   ArrowDownUp,
   BookOpen,
   Boxes,
+  Check,
+  ChevronDown,
   ChevronRight,
   Database,
   Hammer,
+  MapPin,
   Package,
   Search,
   Shield,
+  ShoppingCart,
   Store,
-  TrendingUp,
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
 import { getLoreForItem } from '@/data/lore';
-import { getSafeMarketValue } from '@/lib/market-pricing';
+import {
+  buildDropLocationOptions,
+  getDropSourceLocation,
+  getResourceLocationsForItem,
+  type DropSourceWithLocation,
+  type GatheredResourceLocation,
+} from '@/lib/locations';
+import { getMarketLiquidity, getSafeMarketValue, type MarketLiquidityInfo } from '@/lib/market-pricing';
 
 interface SearchIndexItem {
   id: string;
@@ -28,12 +38,13 @@ interface SearchIndexItem {
   image: string;
 }
 
-type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage';
-type SignalFilter = 'ALL' | 'MARKET' | 'VENDOR' | 'CRAFTABLE' | 'USED' | 'DROPPED' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
+type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage' | 'requiredLevel';
+type SignalFilter = 'ALL' | 'MARKET' | 'VENDOR' | 'CRAFTABLE' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
 type ViewMode = 'table' | 'cards';
+type FilterOption<T extends string> = { value: T; label: string };
 
 type UsageEntry = {
-  dropped_by?: unknown[];
+  dropped_by?: DropSourceWithLocation[];
   required_for?: unknown[];
   produced_from?: unknown;
   shops?: unknown[];
@@ -43,6 +54,10 @@ type EnrichedItem = SearchIndexItem & {
   description: string;
   marketPrice: number;
   marketVolume: number;
+  stableMarketVolume: number;
+  liquidity: MarketLiquidityInfo;
+  requiredLevel: number;
+  requirementsText: string;
   vendorPrice: number;
   tradeable: boolean;
   hasMarket: boolean;
@@ -51,6 +66,9 @@ type EnrichedItem = SearchIndexItem & {
   hasEffects: boolean;
   hasLore: boolean;
   loreCount: number;
+  dropLocations: string[];
+  dropLocationKeys: string[];
+  resourceLocations: GatheredResourceLocation[];
   droppedByCount: number;
   usedInCount: number;
   usageScore: number;
@@ -76,23 +94,49 @@ const QUALITY_COLORS: Record<string, string> = {
   UNIQUE: '#ec4899',
 };
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'volume', label: '3D Volume' },
+function getNumericRequirementEntries(item: Record<string, any>) {
+  const requirements = item.requirements;
+  if (!requirements || typeof requirements !== 'object' || Array.isArray(requirements)) return [];
+  return Object.entries(requirements)
+    .map(([name, value]) => [name, Number(value)] as const)
+    .filter(([, value]) => Number.isFinite(value) && value > 0);
+}
+
+function getRequiredLevel(item: Record<string, any>) {
+  const requirementValues = getNumericRequirementEntries(item).map(([, value]) => value);
+  const directValues = [item.required_level, item.requiredLevel, item.item_level, item.level]
+    .map(Number)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return Math.max(0, ...requirementValues, ...directValues);
+}
+
+function formatRequirements(item: Record<string, any>) {
+  const entries = getNumericRequirementEntries(item);
+  if (entries.length === 0) return '';
+  return entries
+    .map(([name, value]) => `${formatLabel(name)} ${value}`)
+    .join(' / ');
+}
+
+const SORT_OPTIONS: FilterOption<SortKey>[] = [
+  { value: 'requiredLevel', label: 'Required Level' },
+  { value: 'quality', label: 'Rarity' },
+  { value: 'volume', label: 'Stable Volume' },
   { value: 'price', label: 'Market Price' },
   { value: 'usage', label: 'Usage' },
   { value: 'vendor', label: 'Vendor Value' },
-  { value: 'quality', label: 'Quality' },
   { value: 'type', label: 'Type' },
   { value: 'name', label: 'Name' },
 ];
 
-const SIGNAL_OPTIONS: { value: SignalFilter; label: string }[] = [
-  { value: 'ALL', label: 'All signals' },
+const SIGNAL_OPTIONS: FilterOption<SignalFilter>[] = [
+  { value: 'ALL', label: 'All tags' },
   { value: 'MARKET', label: 'Market listed' },
   { value: 'VENDOR', label: 'Vendor value' },
   { value: 'CRAFTABLE', label: 'Craftable' },
   { value: 'USED', label: 'Used in recipes' },
   { value: 'DROPPED', label: 'Dropped by enemies' },
+  { value: 'FARMABLE', label: 'Farmable' },
   { value: 'EQUIPMENT', label: 'Equipment' },
   { value: 'EFFECTS', label: 'Has effects' },
   { value: 'LORE', label: 'Has lore' },
@@ -128,6 +172,7 @@ function ItemsArchiveContent() {
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedQuality, setSelectedQuality] = useState('ALL');
   const [selectedSignal, setSelectedSignal] = useState<SignalFilter>('ALL');
+  const [selectedLocation, setSelectedLocation] = useState('ALL');
   const [sortBy, setSortBy] = useState<SortKey>('volume');
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewModeState] = useState<ViewMode>('table');
@@ -190,24 +235,44 @@ function ItemsArchiveContent() {
 
   useEffect(() => {
     setVisibleCount(150);
-  }, [debouncedSearch, selectedType, selectedQuality, selectedSignal, sortBy, sortDesc]);
+  }, [debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc]);
 
   const enrichedItems = useMemo<EnrichedItem[]>(() => {
     return index.map(item => {
       const full = allItemsDb?.[item.name] || {};
       const market = marketData?.[item.name] || {};
       const usage = usageMap[item.name] || {};
-      const droppedByCount = Array.isArray(usage.dropped_by) ? usage.dropped_by.length : 0;
+      const dropSources = Array.isArray(usage.dropped_by)
+        ? usage.dropped_by.filter((source): source is DropSourceWithLocation => Boolean(source && typeof source === 'object'))
+        : [];
+      const dropLocationRefs = dropSources.map(getDropSourceLocation).filter(location => location.key && location.name && location.name !== 'Unknown');
+      const resourceLocations = getResourceLocationsForItem(item.name);
+      const dropLocations = Array.from(new Set([
+        ...dropLocationRefs.map(location => location.name).filter(Boolean),
+        ...resourceLocations.map(location => location.name),
+      ])) as string[];
+      const dropLocationKeys = Array.from(new Set([
+        ...dropLocationRefs.map(location => location.key).filter(Boolean),
+        ...resourceLocations.map(location => location.key),
+      ])) as string[];
+      const droppedByCount = dropSources.length;
       const usedInCount = Array.isArray(usage.required_for) ? usage.required_for.length : 0;
       const vendorPrice = Number(market.vendor_price || full.vendor_price || 0);
       const marketPrice = getSafeMarketValue(market);
+      const marketVolume = Number(market.vol_3 || 0);
+      const liquidity = getMarketLiquidity(market);
       const loreCount = getLoreForItem(item.name).length;
+      const requiredLevel = getRequiredLevel(full);
 
       return {
         ...item,
         description: full.description || '',
         marketPrice,
-        marketVolume: Number(market.vol_3 || 0),
+        marketVolume,
+        stableMarketVolume: liquidity.stableVolume3d || marketVolume,
+        liquidity,
+        requiredLevel,
+        requirementsText: formatRequirements(full),
         vendorPrice,
         tradeable: Boolean(full.is_tradeable ?? marketPrice > 0),
         hasMarket: marketPrice > 0,
@@ -216,9 +281,12 @@ function ItemsArchiveContent() {
         hasEffects: Boolean(full.effects && (Array.isArray(full.effects) ? full.effects.length > 0 : Object.keys(full.effects).length > 0)),
         hasLore: loreCount > 0,
         loreCount,
+        dropLocations,
+        dropLocationKeys,
+        resourceLocations,
         droppedByCount,
         usedInCount,
-        usageScore: droppedByCount + usedInCount + (usage.produced_from ? 1 : 0),
+        usageScore: droppedByCount + usedInCount + resourceLocations.length + (usage.produced_from ? 1 : 0),
       };
     });
   }, [index, allItemsDb, marketData, usageMap]);
@@ -232,6 +300,28 @@ function ItemsArchiveContent() {
     const q = new Set(enrichedItems.map(i => i.quality).filter(Boolean));
     return ['ALL', ...Array.from(q).sort((a, b) => (QUALITY_ORDER[a] || 0) - (QUALITY_ORDER[b] || 0))];
   }, [enrichedItems]);
+  const typeOptions = useMemo<FilterOption<string>[]>(
+    () => types.map((type) => ({ value: type, label: type === 'ALL' ? 'All types' : formatLabel(type) })),
+    [types],
+  );
+  const qualityOptions = useMemo<FilterOption<string>[]>(
+    () => qualities.map((quality) => ({ value: quality, label: quality === 'ALL' ? 'All qualities' : quality })),
+    [qualities],
+  );
+  const locationOptions = useMemo<FilterOption<string>[]>(
+    () => buildDropLocationOptions(usageMap, true).map((option) => ({
+      value: option.value,
+      label: option.value === 'ALL' ? 'All source locations' : option.label,
+    })),
+    [usageMap],
+  );
+
+  useEffect(() => {
+    if (selectedLocation === 'ALL') return;
+    if (!locationOptions.some(option => option.value === selectedLocation)) {
+      setSelectedLocation('ALL');
+    }
+  }, [locationOptions, selectedLocation]);
 
   const filteredItems = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -243,6 +333,10 @@ function ItemsArchiveContent() {
         item.type,
         item.quality,
         item.description,
+        item.requirementsText,
+        item.dropLocations.join(' '),
+        item.resourceLocations.length > 0 ? 'farmable gathered resource map location' : '',
+        item.requiredLevel ? `level ${item.requiredLevel}` : '',
         item.hasRecipe ? 'craftable recipe' : '',
         item.hasMarket ? 'market listed tradeable' : '',
         item.vendorPrice > 0 ? 'vendor value' : '',
@@ -254,6 +348,7 @@ function ItemsArchiveContent() {
       const matchSearch = tokens.length === 0 || tokens.every(token => haystack.includes(token));
       const matchType = selectedType === 'ALL' || item.type === selectedType;
       const matchQuality = selectedQuality === 'ALL' || item.quality === selectedQuality;
+      const matchLocation = selectedLocation === 'ALL' || item.dropLocationKeys.includes(selectedLocation);
       const matchSignal =
         selectedSignal === 'ALL' ||
         (selectedSignal === 'MARKET' && item.hasMarket) ||
@@ -261,11 +356,12 @@ function ItemsArchiveContent() {
         (selectedSignal === 'CRAFTABLE' && item.hasRecipe) ||
         (selectedSignal === 'USED' && item.usedInCount > 0) ||
         (selectedSignal === 'DROPPED' && item.droppedByCount > 0) ||
+        (selectedSignal === 'FARMABLE' && item.resourceLocations.length > 0) ||
         (selectedSignal === 'EQUIPMENT' && (EQUIPMENT_TYPES.has(item.type) || item.hasStats)) ||
         (selectedSignal === 'EFFECTS' && item.hasEffects) ||
         (selectedSignal === 'LORE' && item.hasLore);
 
-      return matchSearch && matchType && matchQuality && matchSignal;
+      return matchSearch && matchType && matchQuality && matchLocation && matchSignal;
     });
 
     return filtered.sort((a, b) => {
@@ -281,6 +377,9 @@ function ItemsArchiveContent() {
       } else if (sortBy === 'quality') {
         valA = QUALITY_ORDER[a.quality] || 0;
         valB = QUALITY_ORDER[b.quality] || 0;
+      } else if (sortBy === 'requiredLevel') {
+        valA = a.requiredLevel;
+        valB = b.requiredLevel;
       } else if (sortBy === 'price') {
         valA = a.marketPrice;
         valB = b.marketPrice;
@@ -291,16 +390,27 @@ function ItemsArchiveContent() {
         valA = a.usageScore;
         valB = b.usageScore;
       } else {
-        valA = a.marketVolume;
-        valB = b.marketVolume;
+        valA = a.stableMarketVolume;
+        valB = b.stableMarketVolume;
       }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
-        return sortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+        const primary = sortDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+        return primary || a.name.localeCompare(b.name);
       }
-      return sortDesc ? Number(valB) - Number(valA) : Number(valA) - Number(valB);
+      const primary = sortDesc ? Number(valB) - Number(valA) : Number(valA) - Number(valB);
+      if (primary !== 0) return primary;
+      if (sortBy === 'requiredLevel') {
+        const rarityTieBreak = (QUALITY_ORDER[b.quality] || 0) - (QUALITY_ORDER[a.quality] || 0);
+        if (rarityTieBreak !== 0) return rarityTieBreak;
+      }
+      if (sortBy === 'quality') {
+        const levelTieBreak = b.requiredLevel - a.requiredLevel;
+        if (levelTieBreak !== 0) return sortDesc ? levelTieBreak : -levelTieBreak;
+      }
+      return a.name.localeCompare(b.name);
     });
-  }, [enrichedItems, debouncedSearch, selectedType, selectedQuality, selectedSignal, sortBy, sortDesc]);
+  }, [enrichedItems, debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc]);
 
   const visibleItems = filteredItems.slice(0, visibleCount);
 
@@ -320,14 +430,29 @@ function ItemsArchiveContent() {
       setSortDesc(key !== 'name' && key !== 'type');
     }
   };
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    if (type === 'ALL') {
+      setSortBy('volume');
+      setSortDesc(true);
+      return;
+    }
+    setSortBy(EQUIPMENT_TYPES.has(type) ? 'requiredLevel' : 'quality');
+    setSortDesc(true);
+  };
 
   const open = (item: EnrichedItem) => openItem(item.id);
 
   const renderBadges = (item: EnrichedItem) => (
     <div className="item-badges">
-      {item.hasMarket && <span className="badge market"><TrendingUp size={12} aria-hidden="true" /> <span>Market</span></span>}
+      {item.hasMarket && (
+        <span className={`badge market ${item.liquidity.tone}`} title={item.liquidity.note}>
+          <ShoppingCart size={12} aria-hidden="true" /> <span>{item.liquidity.label}</span>
+        </span>
+      )}
       {!item.tradeable && <span className="badge vendor"><Store size={12} aria-hidden="true" /> <span>Vendor</span></span>}
       {item.hasRecipe && <span className="badge craft"><Hammer size={12} aria-hidden="true" /> <span>Craft</span></span>}
+      {item.resourceLocations.length > 0 && <span className="badge source"><MapPin size={12} aria-hidden="true" /> <span>Farmable</span></span>}
       {(EQUIPMENT_TYPES.has(item.type) || item.hasStats) && <span className="badge gear"><Shield size={12} aria-hidden="true" /> <span>Gear</span></span>}
       {item.hasEffects && <span className="badge effect"><Boxes size={12} aria-hidden="true" /> <span>Effect</span></span>}
       {item.hasLore && <span className="badge lore"><BookOpen size={12} aria-hidden="true" /> <span>Lore</span></span>}
@@ -369,12 +494,20 @@ function ItemsArchiveContent() {
         </div>
       </section>
 
+      <section className="db-note" aria-label="Market and tag guidance">
+        <ShoppingCart size={16} />
+        <span>
+          Tags describe what data exists for an item. Market prices are recent snapshots, not guaranteed sell paths; stable volume trims unusual sold-day spikes when available, and rare or expensive items should still be checked against official listings before mass buying or crafting.
+        </span>
+      </section>
+
       <section className="db-controls">
         <div className="control-group search-control">
           <label className="control-label">Search</label>
           <div className="search-shell">
             <Search size={15} />
             <input
+              aria-label="Search items"
               type="text"
               className="control-input"
               placeholder="Name, type, quality, effects, recipe..."
@@ -386,30 +519,52 @@ function ItemsArchiveContent() {
 
         <div className="control-group">
           <label className="control-label">Type</label>
-          <select className="control-input" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-            {types.map(t => <option key={t} value={t}>{t === 'ALL' ? 'All types' : formatLabel(t)}</option>)}
-          </select>
+          <ItemFilterPicker
+            ariaLabel="Item type filter"
+            options={typeOptions}
+            value={selectedType}
+            onChange={handleTypeChange}
+          />
         </div>
 
         <div className="control-group">
           <label className="control-label">Quality</label>
-          <select className="control-input" value={selectedQuality} onChange={(e) => setSelectedQuality(e.target.value)}>
-            {qualities.map(q => <option key={q} value={q}>{q === 'ALL' ? 'All qualities' : q}</option>)}
-          </select>
+          <ItemFilterPicker
+            ariaLabel="Item quality filter"
+            options={qualityOptions}
+            value={selectedQuality}
+            onChange={setSelectedQuality}
+          />
         </div>
 
         <div className="control-group">
-          <label className="control-label">Signal</label>
-          <select className="control-input" value={selectedSignal} onChange={(e) => setSelectedSignal(e.target.value as SignalFilter)}>
-            {SIGNAL_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <label className="control-label">Tag</label>
+          <ItemFilterPicker
+            ariaLabel="Item tag filter"
+            options={SIGNAL_OPTIONS}
+            value={selectedSignal}
+            onChange={setSelectedSignal}
+          />
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Source Location</label>
+          <ItemFilterPicker
+            ariaLabel="Item source location filter"
+            options={locationOptions}
+            value={selectedLocation}
+            onChange={setSelectedLocation}
+          />
         </div>
 
         <div className="control-group">
           <label className="control-label">Sort</label>
-          <select className="control-input" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)}>
-            {SORT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
+          <ItemFilterPicker
+            ariaLabel="Item sort"
+            options={SORT_OPTIONS}
+            value={sortBy}
+            onChange={setSortBy}
+          />
         </div>
 
         <button type="button" className="control-input icon-toggle" onClick={() => setSortDesc(prev => !prev)}>
@@ -445,6 +600,9 @@ function ItemsArchiveContent() {
             setSelectedType('ALL');
             setSelectedQuality('ALL');
             setSelectedSignal('ALL');
+            setSelectedLocation('ALL');
+            setSortBy('volume');
+            setSortDesc(true);
           }}>
             Reset filters
           </button>
@@ -465,18 +623,29 @@ function ItemsArchiveContent() {
                   <th className="left">Item</th>
                   <th onClick={() => handleSort('type')}>Type</th>
                   <th onClick={() => handleSort('quality')}>Quality</th>
+                  <th onClick={() => handleSort('requiredLevel')}>Level</th>
                   <th onClick={() => handleSort('price')}>Market</th>
                   <th onClick={() => handleSort('vendor')}>Vendor</th>
-                  <th onClick={() => handleSort('volume')}>3D Vol</th>
+                  <th onClick={() => handleSort('volume')}>Stable Vol</th>
                   <th onClick={() => handleSort('usage')}>Usage</th>
-                  <th className="left">Signals</th>
+                  <th className="left">Tags</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleItems.map(item => (
-                  <tr key={item.id} onClick={() => open(item)} tabIndex={0} onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') open(item);
-                  }}>
+                  <tr
+                    aria-label={`Open ${item.name} item details`}
+                    key={item.id}
+                    onClick={() => open(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        open(item);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <td className="item-cell">
                       <div className="item-cell-inner">
                         <img src={item.image} alt="" />
@@ -488,9 +657,12 @@ function ItemsArchiveContent() {
                     </td>
                     <td>{formatLabel(item.type)}</td>
                     <td style={{ color: QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD }}>{item.quality}</td>
+                    <td className="mono" title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</td>
                     <td className="mono">{formatGold(item.marketPrice)}</td>
                     <td className="mono">{formatGold(item.vendorPrice)}</td>
-                    <td className="mono">{item.marketVolume ? item.marketVolume.toLocaleString() : '-'}</td>
+                    <td className={`mono liquidity-volume ${item.liquidity.tone}`} title={item.stableMarketVolume !== item.marketVolume ? `Raw 3-day volume: ${item.marketVolume.toLocaleString()}` : item.liquidity.note}>
+                      {item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}
+                    </td>
                     <td className="mono">{item.usageScore ? item.usageScore.toLocaleString() : '-'}</td>
                     <td className="signals-cell">{renderBadges(item)}</td>
                   </tr>
@@ -501,7 +673,7 @@ function ItemsArchiveContent() {
 
           <div className={viewMode === 'cards' ? 'item-grid forced' : 'item-grid'}>
             {visibleItems.map(item => (
-              <button key={item.id} type="button" onClick={() => open(item)} className="item-card">
+              <button aria-label={`Open ${item.name} item details`} key={item.id} type="button" onClick={() => open(item)} className="item-card">
                 <div className="quality-strip" style={{ '--quality-color': QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD } as React.CSSProperties} />
                 <img src={item.image} alt="" />
                 <div className="item-card-body">
@@ -515,9 +687,16 @@ function ItemsArchiveContent() {
                   </div>
                   <div className="card-stats">
                     <span><small>Market</small><strong>{formatGold(item.marketPrice)}</strong></span>
-                    <span><small>Vol</small><strong>{item.marketVolume ? item.marketVolume.toLocaleString() : '-'}</strong></span>
+                    <span><small>Level</small><strong title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</strong></span>
+                    <span><small>Stable Vol</small><strong className={`liquidity-volume ${item.liquidity.tone}`}>{item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}</strong></span>
                     <span><small>Usage</small><strong>{item.usageScore || '-'}</strong></span>
                   </div>
+                  {item.resourceLocations.length > 0 && (
+                    <div className="source-preview" aria-label={`${item.name} gathered locations`}>
+                      <MapPin size={13} aria-hidden="true" />
+                      <span>{item.resourceLocations.slice(0, 2).map(location => location.name).join(', ')}{item.resourceLocations.length > 2 ? ` +${item.resourceLocations.length - 2}` : ''}</span>
+                    </div>
+                  )}
                   {renderBadges(item)}
                 </div>
               </button>
@@ -564,6 +743,25 @@ function ItemsArchiveContent() {
           font-size: 1.35rem;
           margin-top: 0.35rem;
         }
+        .db-note {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.65rem;
+          border: 1px solid rgba(56,189,248,0.22);
+          background: rgba(56,189,248,0.07);
+          border-radius: 8px;
+          color: var(--text-muted);
+          font-size: 0.86rem;
+          font-weight: 650;
+          line-height: 1.45;
+          margin-bottom: 1rem;
+          padding: 0.8rem 0.95rem;
+        }
+        .db-note svg {
+          color: var(--text-accent);
+          flex: 0 0 auto;
+          margin-top: 0.1rem;
+        }
         .db-controls {
           align-items: end;
           background: rgba(255,255,255,0.015);
@@ -571,7 +769,7 @@ function ItemsArchiveContent() {
           border-radius: 8px;
           display: grid;
           gap: 0.85rem;
-          grid-template-columns: minmax(240px, 2fr) repeat(4, minmax(128px, 1fr)) minmax(88px, auto) minmax(118px, auto);
+          grid-template-columns: minmax(240px, 2fr) repeat(5, minmax(128px, 1fr)) minmax(88px, auto) minmax(118px, auto);
           padding: 1rem;
           max-width: 100%;
           min-width: 0;
@@ -595,6 +793,93 @@ function ItemsArchiveContent() {
         .db-controls :global(.control-input) {
           min-width: 0;
           width: 100%;
+        }
+        :global(.items-db-page .item-select) {
+          min-width: 0;
+          position: relative;
+          z-index: 8;
+        }
+        :global(.items-db-page .item-select.open) {
+          z-index: 80;
+        }
+        :global(.items-db-page .item-select-trigger) {
+          align-items: center;
+          background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)), var(--bg-base);
+          border: 1px solid var(--border-subtle);
+          border-radius: 7px;
+          color: var(--text-main);
+          cursor: pointer;
+          display: flex;
+          font: inherit;
+          font-size: 0.84rem;
+          font-weight: 800;
+          gap: 0.55rem;
+          justify-content: space-between;
+          min-height: 38px;
+          min-width: 0;
+          padding: 0.45rem 0.62rem;
+          text-align: left;
+          width: 100%;
+        }
+        :global(.items-db-page .item-select-trigger span) {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        :global(.items-db-page .item-select-trigger svg) {
+          color: var(--text-muted);
+          flex: 0 0 auto;
+        }
+        :global(.items-db-page .item-select.open .item-select-trigger),
+        :global(.items-db-page .item-select-trigger:focus-visible) {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+          outline: none;
+        }
+        :global(.items-db-page .item-select-menu) {
+          background: color-mix(in srgb, var(--bg-base), black 18%);
+          border: 1px solid var(--border-focus);
+          border-radius: 8px;
+          box-shadow: 0 18px 45px rgba(0,0,0,0.42);
+          display: grid;
+          gap: 0.25rem;
+          left: 0;
+          margin-top: 0.35rem;
+          max-height: min(320px, 58vh);
+          min-width: min(250px, calc(100vw - 2rem));
+          overflow-y: auto;
+          padding: 0.35rem;
+          position: absolute;
+          right: auto;
+          top: 100%;
+        }
+        :global(.items-db-page .item-select-option) {
+          align-items: center;
+          background: transparent;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          color: var(--text-main);
+          cursor: pointer;
+          display: flex;
+          font: inherit;
+          font-size: 0.82rem;
+          font-weight: 800;
+          gap: 0.55rem;
+          justify-content: space-between;
+          min-height: 36px;
+          padding: 0.45rem 0.55rem;
+          text-align: left;
+          width: 100%;
+        }
+        :global(.items-db-page .item-select-option:hover),
+        :global(.items-db-page .item-select-option.active) {
+          background: color-mix(in srgb, var(--text-accent), transparent 90%);
+          border-color: rgba(56,189,248,0.24);
+        }
+        :global(.items-db-page .item-select-option svg) {
+          color: var(--text-accent);
+          flex: 0 0 auto;
         }
         .icon-toggle {
           align-items: center;
@@ -644,7 +929,7 @@ function ItemsArchiveContent() {
         }
         .items-table {
           border-collapse: collapse;
-          min-width: 1060px;
+          min-width: 1140px;
           table-layout: fixed;
           width: 100%;
         }
@@ -672,21 +957,23 @@ function ItemsArchiveContent() {
           vertical-align: middle;
         }
         .items-table th:nth-child(1),
-        .items-table td:nth-child(1) { width: 32%; }
+        .items-table td:nth-child(1) { width: 30%; }
         .items-table th:nth-child(2),
-        .items-table td:nth-child(2) { width: 12%; }
+        .items-table td:nth-child(2) { width: 11%; }
         .items-table th:nth-child(3),
-        .items-table td:nth-child(3) { width: 10%; }
+        .items-table td:nth-child(3) { width: 9%; }
         .items-table th:nth-child(4),
-        .items-table td:nth-child(4),
+        .items-table td:nth-child(4) { width: 7%; }
         .items-table th:nth-child(5),
         .items-table td:nth-child(5),
         .items-table th:nth-child(6),
         .items-table td:nth-child(6),
         .items-table th:nth-child(7),
-        .items-table td:nth-child(7) { width: 8%; }
+        .items-table td:nth-child(7),
         .items-table th:nth-child(8),
-        .items-table td:nth-child(8) { width: 14%; }
+        .items-table td:nth-child(8) { width: 8%; }
+        .items-table th:nth-child(9),
+        .items-table td:nth-child(9) { width: 11%; }
         .items-table tr {
           cursor: pointer;
           transition: background 0.16s ease;
@@ -731,6 +1018,21 @@ function ItemsArchiveContent() {
         .signals-cell {
           text-align: left !important;
         }
+        .liquidity-volume.thin {
+          color: #fbbf24;
+        }
+        .liquidity-volume.none {
+          color: var(--text-muted);
+        }
+        .liquidity-volume.steady {
+          color: var(--text-accent);
+        }
+        .liquidity-volume.active {
+          color: var(--text-success);
+        }
+        .liquidity-volume.risk {
+          color: var(--text-danger);
+        }
         :global(.items-db-page .item-badges) {
           display: flex;
           flex-wrap: wrap;
@@ -757,8 +1059,13 @@ function ItemsArchiveContent() {
           stroke-width: 2.2;
         }
         :global(.items-db-page .badge.market) { color: var(--text-success); background: rgba(34,197,94,0.08); }
+        :global(.items-db-page .badge.market.none) { color: var(--text-muted); background: rgba(255,255,255,0.04); }
+        :global(.items-db-page .badge.market.thin) { color: #fbbf24; background: rgba(251,191,36,0.08); }
+        :global(.items-db-page .badge.market.steady) { color: var(--text-accent); background: rgba(234,179,8,0.08); }
+        :global(.items-db-page .badge.market.risk) { color: var(--text-danger); background: rgba(239,68,68,0.08); }
         :global(.items-db-page .badge.vendor) { color: #fbbf24; background: rgba(251,191,36,0.08); }
         :global(.items-db-page .badge.craft) { color: #60a5fa; background: rgba(96,165,250,0.08); }
+        :global(.items-db-page .badge.source) { color: #22d3ee; background: rgba(34,211,238,0.08); }
         :global(.items-db-page .badge.gear) { color: #a78bfa; background: rgba(167,139,250,0.08); }
         :global(.items-db-page .badge.effect) { color: #f472b6; background: rgba(244,114,182,0.08); }
         :global(.items-db-page .badge.lore) { color: #f5b041; background: rgba(245,176,65,0.1); }
@@ -842,7 +1149,7 @@ function ItemsArchiveContent() {
         .card-stats {
           display: grid;
           gap: 0.4rem;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           margin: 0.8rem 0;
         }
         .card-stats span {
@@ -865,6 +1172,30 @@ function ItemsArchiveContent() {
           font-family: var(--font-mono);
           font-size: 0.78rem;
           margin-top: 0.2rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .source-preview {
+          align-items: center;
+          background: rgba(34,211,238,0.055);
+          border: 1px solid rgba(34,211,238,0.16);
+          border-radius: 7px;
+          color: var(--text-muted);
+          display: flex;
+          font-size: 0.76rem;
+          font-weight: 800;
+          gap: 0.42rem;
+          margin: 0 0 0.75rem;
+          min-width: 0;
+          padding: 0.48rem 0.55rem;
+        }
+        .source-preview svg {
+          color: #22d3ee;
+          flex: 0 0 auto;
+        }
+        .source-preview span {
+          min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -925,6 +1256,9 @@ function ItemsArchiveContent() {
           .db-controls {
             grid-template-columns: 1fr;
           }
+          :global(.items-db-page .item-select-menu) {
+            min-width: 100%;
+          }
           .result-meta {
             flex-direction: column;
             gap: 0.3rem;
@@ -962,6 +1296,161 @@ function ItemsArchiveContent() {
         }
       `}</style>
     </main>
+  );
+}
+
+function ItemFilterPicker<T extends string>({
+  ariaLabel,
+  options,
+  value,
+  onChange,
+}: {
+  ariaLabel: string;
+  options: FilterOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selected = options.find((option) => option.value === value) || options[0] || null;
+
+  const closePicker = (returnFocus = false) => {
+    setOpen(false);
+    if (returnFocus) {
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
+    }
+  };
+
+  const selectOption = (option: FilterOption<T> | undefined) => {
+    if (!option) return;
+    onChange(option.value);
+    closePicker(true);
+  };
+
+  const moveActive = (direction: number) => {
+    setActiveIndex((current) => {
+      const next = (current + direction + options.length) % options.length;
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (pickerRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      setActiveIndex(selectedIndex);
+      return;
+    }
+    setActiveIndex(selectedIndex);
+  }, [open, selectedIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+    optionRefs.current[activeIndex]?.focus();
+  }, [activeIndex, open]);
+
+  const handleTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(event.key === 'ArrowDown' ? selectedIndex : options.length - 1);
+    }
+  };
+
+  const handleListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveActive(1);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveActive(-1);
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setActiveIndex(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      selectOption(options[activeIndex]);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closePicker(true);
+    }
+  };
+
+  return (
+    <div className={`item-select ${open ? 'open' : ''}`} ref={pickerRef}>
+      <button
+        type="button"
+        className="item-select-trigger"
+        ref={triggerRef}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <span>{selected?.label || 'Select'}</span>
+        <ChevronDown size={15} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="item-select-menu" role="listbox" aria-label={ariaLabel} onKeyDown={handleListKeyDown}>
+          {options.map((option, index) => {
+            const active = option.value === value;
+            return (
+              <button
+                type="button"
+                key={option.value}
+                ref={(node) => { optionRefs.current[index] = node; }}
+                className={`item-select-option ${active ? 'active' : ''}`}
+                role="option"
+                aria-selected={active}
+                tabIndex={index === activeIndex ? 0 : -1}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => {
+                  selectOption(option);
+                }}
+              >
+                <span>{option.label}</span>
+                {active && <Check size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

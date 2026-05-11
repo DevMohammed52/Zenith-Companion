@@ -15,6 +15,69 @@
   --shell-breakpoint: 1180px;
 }
 
+.metric-tile,
+.insight-row,
+.preview-item-row,
+.lab-project-card {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+button.insight-row,
+button.preview-item-row,
+button.lab-project-card {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  width: 100%;
+  cursor: pointer;
+}
+
+button.insight-row,
+button.preview-item-row {
+  border: 1px solid transparent;
+}
+
+.metric-tile:focus-visible,
+.insight-row:focus-visible,
+.preview-item-row:focus-visible,
+.lab-project-card:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 78%);
+}
+
+.dungeons-page .dungeon-sort-button {
+  appearance: none;
+  -webkit-appearance: none;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 0.35rem;
+  justify-content: center;
+  letter-spacing: inherit;
+  min-width: 0;
+  padding: 0;
+  text-transform: inherit;
+  width: 100%;
+}
+
+.dungeons-page th.left-align .dungeon-sort-button {
+  justify-content: flex-start;
+}
+
+.dungeons-page .dungeon-sort-button:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+}
+
 :root[data-theme="forest"] {
   --text-accent: #65a30d;
   --text-success: #22c55e;
@@ -614,6 +677,10 @@ body.pet-modal-open {
   opacity: 0.82;
 }
 
+.pet-card-market-secondary strong {
+  color: var(--text-muted);
+}
+
 .pets-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border-subtle);
@@ -897,6 +964,13 @@ body.pet-modal-open {
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.pet-section-note {
+  margin: -0.2rem 0 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .pet-source-override a {
@@ -1881,7 +1955,45 @@ th.sortable:hover {
 }
 
 .alchemy-strategy-modal {
-  max-width: 800px;
+  max-width: min(920px, calc(100vw - 2rem));
+}
+
+.modal-overlay:has(.alchemy-strategy-modal) {
+  align-items: center;
+  overflow-y: auto;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.alchemy-modal-kpi-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.alchemy-modal-kpi-grid > div {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  padding: 0.75rem;
+}
+
+.alchemy-modal-kpi-grid span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.alchemy-modal-kpi-grid strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #fff;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .alchemy-modal-grid {
@@ -2231,7 +2343,7 @@ th.sortable:hover {
 
 .alchemy-table {
   border-spacing: 0;
-  min-width: 980px;
+  min-width: 920px;
 }
 
 .alchemy-table thead th {
@@ -2251,6 +2363,7 @@ th.sortable:hover {
 
 .alchemy-table tbody td {
   padding-block: 0.9rem;
+  padding-inline: 0.65rem;
   vertical-align: middle;
 }
 
@@ -5391,6 +5504,9 @@ kbd {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  .alchemy-modal-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .alchemy-modal-panel { padding: 1rem; }
   .alchemy-material-row,
   .alchemy-math-row {
@@ -5505,15 +5621,15 @@ kbd {
   letter-spacing: 0.05em;
 }
 
-.m-roi {
+.m-profit-rate {
   font-size: 0.75rem;
   font-weight: 800;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
 }
 
-.m-roi.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
-.m-roi.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
+.m-profit-rate.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
+.m-profit-rate.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
 
 .m-card-body {
   display: grid;
@@ -5695,6 +5811,7 @@ kbd {
   .stats-grid { grid-template-columns: 1fr; }
   .alchemy-summary-grid { grid-template-columns: 1fr; }
   .alchemy-inline-fields { grid-template-columns: 1fr; }
+  .alchemy-modal-kpi-grid { grid-template-columns: 1fr; }
   .alchemy-modal-panel-title { margin-bottom: 1rem; }
   .modal-body { padding: 1rem; }
   .mobile-alchemy-card.rich .m-card-body { grid-template-columns: 1fr; }
@@ -5851,14 +5968,14 @@ kbd {
     font-weight: 600;
   }
 
-  .m-roi {
+  .m-profit-rate {
     font-size: 0.75rem;
     font-weight: 800;
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
   }
-  .m-roi.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
-  .m-roi.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
+  .m-profit-rate.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
+  .m-profit-rate.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
 
   .m-card-body {
     display: grid;
@@ -5967,6 +6084,291 @@ kbd {
   border-color: var(--border-focus);
   color: #fff;
 }
+}
+
+/* ---- Alchemy responsive refinements ---- */
+.alchemy-page-shell {
+  overflow-x: clip;
+}
+
+.alchemy-page-shell .alchemy-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.alchemy-page-shell .alchemy-controls-panel {
+  grid-template-columns: minmax(16rem, 1.35fr) repeat(3, minmax(10.5rem, 1fr));
+}
+
+.alchemy-page-shell .desktop-only .table-container {
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.012);
+  scrollbar-gutter: stable both-edges;
+}
+
+.alchemy-page-shell .alchemy-table {
+  min-width: 980px;
+  table-layout: fixed;
+}
+
+.alchemy-page-shell .alchemy-table th,
+.alchemy-page-shell .alchemy-table td {
+  overflow-wrap: anywhere;
+  padding-inline: clamp(0.45rem, 0.75vw, 0.65rem);
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(1),
+.alchemy-page-shell .alchemy-table td:nth-child(1) {
+  width: 24%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(2),
+.alchemy-page-shell .alchemy-table td:nth-child(2) {
+  width: 5%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(3),
+.alchemy-page-shell .alchemy-table td:nth-child(3) {
+  width: 9%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(4),
+.alchemy-page-shell .alchemy-table td:nth-child(4),
+.alchemy-page-shell .alchemy-table th:nth-child(5),
+.alchemy-page-shell .alchemy-table td:nth-child(5),
+.alchemy-page-shell .alchemy-table th:nth-child(8),
+.alchemy-page-shell .alchemy-table td:nth-child(8) {
+  width: 8%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(6),
+.alchemy-page-shell .alchemy-table td:nth-child(6),
+.alchemy-page-shell .alchemy-table th:nth-child(7),
+.alchemy-page-shell .alchemy-table td:nth-child(7) {
+  width: 9%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(9),
+.alchemy-page-shell .alchemy-table td:nth-child(9) {
+  width: 7%;
+}
+
+.alchemy-page-shell .alchemy-table th:nth-child(10),
+.alchemy-page-shell .alchemy-table td:nth-child(10) {
+  width: 13%;
+}
+
+.alchemy-page-shell .alchemy-table .item-name small {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.alchemy-page-shell .alchemy-table .action-badge,
+.alchemy-page-shell .alchemy-warning-chip {
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+  white-space: normal;
+}
+
+.modal-overlay.alchemy-strategy-overlay {
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: max(1rem, env(safe-area-inset-top)) clamp(0.75rem, 2vw, 1.5rem) max(1rem, env(safe-area-inset-bottom));
+}
+
+.modal-overlay.alchemy-strategy-overlay .alchemy-strategy-modal {
+  max-width: min(920px, 100%);
+}
+
+.alchemy-target-profit-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+  min-width: 0;
+}
+
+.alchemy-target-profit-field span,
+.alchemy-break-even-line span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.alchemy-target-profit-field input {
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-main);
+  font: inherit;
+  height: 38px;
+  min-width: 0;
+  padding: 0 0.65rem;
+  width: 100%;
+}
+
+.alchemy-target-profit-field input:focus-visible {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 78%);
+  outline: none;
+}
+
+.alchemy-target-profit-note {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin: 0 0 0.65rem;
+}
+
+.alchemy-break-even-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.65rem;
+}
+
+.alchemy-break-even-line {
+  background: rgba(0,0,0,0.16);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.25rem;
+  line-height: 1.4;
+  min-height: 38px;
+  padding: 0.45rem 0.55rem;
+}
+
+.alchemy-break-even-line strong {
+  color: var(--text-success);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.alchemy-break-even-line strong.danger-value {
+  color: var(--text-danger);
+}
+
+@media (max-width: 1380px) and (min-width: 769px) {
+  .alchemy-page-shell .alchemy-controls-panel {
+    grid-template-columns: minmax(16rem, 1.35fr) repeat(2, minmax(10.5rem, 1fr));
+  }
+
+  .alchemy-page-shell .alchemy-controls-panel .control-group:nth-of-type(4) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .alchemy-page-shell .alchemy-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .alchemy-page-shell .alchemy-controls-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .alchemy-page-shell .alchemy-controls-panel .control-group:nth-of-type(4) {
+    grid-column: auto;
+  }
+
+  .modal-overlay.alchemy-strategy-overlay {
+    padding: 0.75rem;
+  }
+
+  .alchemy-break-even-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .alchemy-page-shell .alchemy-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Shared data-page responsive refinements ---- */
+:is(.bosses-page, .combat-page, .dungeons-page, .items-db-page) {
+  overflow-x: clip;
+}
+
+:is(.bosses-page, .combat-page, .dungeons-page) .table-wrapper,
+:is(.bosses-page, .combat-page, .dungeons-page) .desktop-only,
+.items-db-page .desktop-table-shell,
+.pets-page .pets-list {
+  max-width: 100%;
+  min-width: 0;
+}
+
+:is(.bosses-page, .combat-page, .dungeons-page) .desktop-only .table-container,
+.items-db-page .desktop-table-shell,
+.pets-page .pets-table-wrap,
+.pets-page .pet-drop-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
+}
+
+:is(.bosses-page, .combat-page, .dungeons-page) .controls,
+.items-db-page .db-controls,
+.pets-page .pets-toolbar,
+.pets-page .pets-calculator .calculator-fields {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.combat-page .controls {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(10rem, 14rem) minmax(16rem, 1fr);
+}
+
+.combat-page .controls .control-group {
+  min-width: 0;
+}
+
+.combat-page .table-container table {
+  min-width: 820px;
+  table-layout: fixed;
+}
+
+.combat-page .table-container th,
+.combat-page .table-container td {
+  overflow-wrap: anywhere;
+}
+
+.combat-page .modal-overlay,
+.bosses-page .modal-overlay.boss-modal-overlay,
+.dungeons-page .modal-overlay:has(.dungeon-modal),
+.modal-overlay.skill-profit-strategy-overlay {
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: max(1rem, env(safe-area-inset-top)) clamp(0.75rem, 2vw, 1.5rem) max(1rem, env(safe-area-inset-bottom));
+}
+
+.modal-overlay.skill-profit-strategy-overlay .modal-content {
+  max-width: min(980px, 100%);
+}
+
+@media (max-width: 768px) {
+  .combat-page .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-page .modal-overlay,
+  .bosses-page .modal-overlay.boss-modal-overlay,
+  .dungeons-page .modal-overlay:has(.dungeon-modal),
+  .modal-overlay.skill-profit-strategy-overlay {
+    padding: 0.75rem;
+  }
 }
 
 @media (max-width: 620px) {
@@ -8159,7 +8561,7 @@ th.sortable:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 6000;
   padding: 1rem;
   animation: fadeIn 0.18s ease-out;
 }
@@ -8240,7 +8642,45 @@ th.sortable:hover {
 }
 
 .alchemy-strategy-modal {
-  max-width: 800px;
+  max-width: min(920px, calc(100vw - 2rem));
+}
+
+.modal-overlay:has(.alchemy-strategy-modal) {
+  align-items: center;
+  overflow-y: auto;
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.alchemy-modal-kpi-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.alchemy-modal-kpi-grid > div {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  padding: 0.75rem;
+}
+
+.alchemy-modal-kpi-grid span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.alchemy-modal-kpi-grid strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #fff;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .alchemy-modal-grid {
@@ -8590,7 +9030,7 @@ th.sortable:hover {
 
 .alchemy-table {
   border-spacing: 0;
-  min-width: 980px;
+  min-width: 920px;
 }
 
 .alchemy-table thead th {
@@ -8610,6 +9050,7 @@ th.sortable:hover {
 
 .alchemy-table tbody td {
   padding-block: 0.9rem;
+  padding-inline: 0.65rem;
   vertical-align: middle;
 }
 
@@ -8695,6 +9136,52 @@ th.sortable:hover {
   min-height: 220px;
   padding: 2rem;
   text-align: center;
+}
+
+.pet-battle-details {
+  margin-top: 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.14);
+  overflow: hidden;
+}
+
+.pet-battle-details summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.pet-battle-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.pet-battle-details summary strong {
+  color: #fff;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.pet-battle-details .pet-zone-list {
+  margin: 0;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.pet-card-market-secondary strong {
+  color: var(--text-muted);
+}
+
+.pet-detail .pet-section-note {
+  margin: -0.2rem 0 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .alchemy-empty-state h3 {
@@ -10448,11 +10935,16 @@ kbd {
   transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
 }
 
-.profile-housing-mode-grid button:hover,
-.profile-housing-mode-grid button:focus-visible {
+.profile-housing-mode-grid button:hover:not(:disabled),
+.profile-housing-mode-grid button:focus-visible:not(:disabled) {
   border-color: color-mix(in srgb, var(--text-accent), transparent 35%);
   transform: translateY(-1px);
   outline: none;
+}
+
+.profile-housing-mode-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .profile-housing-mode-grid button.active {
@@ -11464,6 +11956,9 @@ kbd {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  .alchemy-modal-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .alchemy-modal-panel { padding: 1rem; }
   .alchemy-material-row,
   .alchemy-math-row {
@@ -11578,15 +12073,15 @@ kbd {
   letter-spacing: 0.05em;
 }
 
-.m-roi {
+.m-profit-rate {
   font-size: 0.75rem;
   font-weight: 800;
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
 }
 
-.m-roi.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
-.m-roi.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
+.m-profit-rate.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
+.m-profit-rate.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
 
 .m-card-body {
   display: grid;
@@ -11768,6 +12263,7 @@ kbd {
   .stats-grid { grid-template-columns: 1fr; }
   .alchemy-summary-grid { grid-template-columns: 1fr; }
   .alchemy-inline-fields { grid-template-columns: 1fr; }
+  .alchemy-modal-kpi-grid { grid-template-columns: 1fr; }
   .alchemy-modal-panel-title { margin-bottom: 1rem; }
   .modal-body { padding: 1rem; }
   .mobile-alchemy-card.rich .m-card-body { grid-template-columns: 1fr; }
@@ -11924,14 +12420,14 @@ kbd {
     font-weight: 600;
   }
 
-  .m-roi {
+  .m-profit-rate {
     font-size: 0.75rem;
     font-weight: 800;
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
   }
-  .m-roi.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
-  .m-roi.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
+  .m-profit-rate.pos { background: rgba(74, 222, 128, 0.1); color: var(--text-success); }
+  .m-profit-rate.neg { background: rgba(248, 113, 113, 0.1); color: var(--text-danger); }
 
   .m-card-body {
     display: grid;

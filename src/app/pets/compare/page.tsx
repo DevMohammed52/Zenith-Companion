@@ -41,6 +41,7 @@ import {
   getPetImage,
   getPetSourceLabel,
   getTotalPower,
+  getZoneProfitValue,
   isUpsideDownPet,
   petSearchText,
   qualityLabel,
@@ -59,6 +60,7 @@ type CompareState = {
   evolutionStat?: StatKey | "all";
   patBonus?: boolean;
   battleMode?: BattleProfitMode;
+  battleZone?: string;
   foodPolicy?: FoodPolicy;
 };
 
@@ -89,6 +91,8 @@ const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
   { value: "standard", label: "Food cost" },
   { value: "none", label: "No food cost" },
 ];
+
+const BEST_BATTLE_ZONE = "best";
 
 function PetImage({ pet }: { pet: PetRecord }) {
   const [failed, setFailed] = useState(false);
@@ -296,6 +300,7 @@ export default function PetComparisonPage() {
   const [evolutionStat, setEvolutionStat] = useState<StatKey | "all">("all");
   const [patBonus, setPatBonus] = useState(false);
   const [battleMode, setBattleMode] = useState<BattleProfitMode>("withSleep");
+  const [battleZone, setBattleZone] = useState(BEST_BATTLE_ZONE);
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const loadedStorage = useRef(false);
@@ -312,6 +317,7 @@ export default function PetComparisonPage() {
         if (stored.evolutionStat) setEvolutionStat(stored.evolutionStat);
         if (typeof stored.patBonus === "boolean") setPatBonus(stored.patBonus);
         if (stored.battleMode) setBattleMode(stored.battleMode);
+        if (stored.battleZone) setBattleZone(stored.battleZone);
         if (stored.foodPolicy) setFoodPolicy(stored.foodPolicy);
       }
     } catch {}
@@ -320,9 +326,9 @@ export default function PetComparisonPage() {
 
   useEffect(() => {
     if (!loadedStorage.current) return;
-    const payload: CompareState = { selectedNames, petLevel, masteryLevel, evolutionStage, evolutionStat, patBonus, battleMode, foodPolicy };
+    const payload: CompareState = { selectedNames, petLevel, masteryLevel, evolutionStage, evolutionStat, patBonus, battleMode, battleZone, foodPolicy };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [battleMode, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedNames]);
+  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedNames]);
 
   useEffect(() => {
     let cancelled = false;
@@ -366,6 +372,37 @@ export default function PetComparisonPage() {
 
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
 
+  const battleZoneOptions = useMemo(() => {
+    const zones = new Set<string>();
+    for (const pet of pets) {
+      for (const zone of pet.battle?.zones || []) {
+        if (zone.zone) zones.add(zone.zone);
+      }
+    }
+    const sortedZones = Array.from(zones).sort((a, b) => {
+      const levelA = Number(a.match(/\d+/)?.[0] || 0);
+      const levelB = Number(b.match(/\d+/)?.[0] || 0);
+      return levelA - levelB || a.localeCompare(b);
+    });
+    return [
+      { value: BEST_BATTLE_ZONE, label: "Best available sample" },
+      ...sortedZones.map((zone) => ({ value: zone, label: zone.replace(/^Level\s+/, "L") })),
+    ];
+  }, [pets]);
+
+  useEffect(() => {
+    if (battleZone !== BEST_BATTLE_ZONE && !battleZoneOptions.some((option) => option.value === battleZone)) {
+      setBattleZone(BEST_BATTLE_ZONE);
+    }
+  }, [battleZone, battleZoneOptions]);
+
+  const getBattleSample = (pet: PetRecord) => {
+    if (battleZone === BEST_BATTLE_ZONE) return getBestBattleProfit(pet, battleMode, foodPolicy);
+    const zone = pet.battle?.zones?.find((entry) => entry.zone === battleZone);
+    if (!zone) return { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null };
+    return { value: getZoneProfitValue(zone, battleMode, foodPolicy), zone: zone.zone, mode: battleMode };
+  };
+
   const rows = useMemo<ComparedPet[]>(() => {
     return selectedNames
       .map((name) => pets.find((pet) => pet.name === name))
@@ -377,10 +414,10 @@ export default function PetComparisonPage() {
           stats,
           totalPower: getTotalPower(stats),
           huntingTime: getHuntingTimeSeconds(stats),
-          battle: getBestBattleProfit(pet, battleMode, foodPolicy),
+          battle: getBattleSample(pet),
         };
       });
-  }, [battleMode, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets, selectedNames]);
+  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets, selectedNames]);
 
   const profilePet = useMemo(() => {
     if (!activeProfile?.pet?.species) return null;
@@ -394,17 +431,15 @@ export default function PetComparisonPage() {
         pet,
         power: getTotalPower(stats),
         hunt: getHuntingTimeSeconds(stats),
-        battle: getBestBattleProfit(pet, battleMode, foodPolicy).value,
         market: pet.exchange?.minPrice || 0,
       };
     });
     const unique = new Map<string, PetRecord>();
     [...compared].sort((a, b) => b.power - a.power).slice(0, 1).forEach((row) => unique.set("Highest power", row.pet));
-    [...compared].filter((row) => row.battle > 0).sort((a, b) => b.battle - a.battle).slice(0, 1).forEach((row) => unique.set("Best battle sample", row.pet));
     [...compared].sort((a, b) => a.hunt - b.hunt).slice(0, 1).forEach((row) => unique.set("Fastest hunter", row.pet));
     [...compared].filter((row) => row.market > 0).sort((a, b) => b.market - a.market).slice(0, 1).forEach((row) => unique.set("Highest sale value", row.pet));
     return Array.from(unique.entries());
-  }, [battleMode, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets]);
+  }, [evolutionStage, evolutionStat, masteryBonus, patBonus, petLevel, pets]);
 
   const addPet = (name: string) => {
     setSelectedNames((current) => {
@@ -444,7 +479,7 @@ export default function PetComparisonPage() {
             <PawPrint size={17} /> Pet Comparison
           </span>
           <h1>Compare Pets</h1>
-          <p>Pick pets, adjust the shared scenario, and compare stats, hunting speed, battle samples, sources, and sale listings.</p>
+          <p>Pick pets, adjust the shared stat setup, and compare hunting speed, fixed battle samples, sources, and sale listings.</p>
         </div>
         <div className={styles.heroActions}>
           <Link href="/pets" className={styles.secondaryLink}>
@@ -479,12 +514,16 @@ export default function PetComparisonPage() {
               <NumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
               <NumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
               <OptionMenu label="Evolution stat" value={evolutionStat} options={EVOLUTION_OPTIONS} open={openMenu === "evolution"} onOpen={(open) => setOpenMenu(open ? "evolution" : null)} onChange={setEvolutionStat} />
-              <OptionMenu label="Battle profit" value={battleMode} options={BATTLE_OPTIONS} open={openMenu === "battle"} onOpen={(open) => setOpenMenu(open ? "battle" : null)} onChange={setBattleMode} />
+              <OptionMenu label="Battle sample" value={battleMode} options={BATTLE_OPTIONS} open={openMenu === "battle"} onOpen={(open) => setOpenMenu(open ? "battle" : null)} onChange={setBattleMode} />
+              <OptionMenu label="Battle zone" value={battleZone} options={battleZoneOptions} open={openMenu === "battle-zone"} onOpen={(open) => setOpenMenu(open ? "battle-zone" : null)} onChange={setBattleZone} />
               <OptionMenu label="Food" value={foodPolicy} options={FOOD_OPTIONS} open={openMenu === "food"} onOpen={(open) => setOpenMenu(open ? "food" : null)} onChange={setFoodPolicy} />
               <button type="button" className={`${styles.toggle} ${patBonus ? styles.activeToggle : ""}`} onClick={() => setPatBonus((value) => !value)}>
                 <HeartPulse size={16} /> Pat +5%
               </button>
             </div>
+            <p className={styles.scenarioNote}>
+              Level, mastery, evolution, and pat affect stats and hunting speed. Battle samples are fixed research snapshots; use the zone picker for same-zone comparison.
+            </p>
           </section>
 
           <section className={styles.panel}>
@@ -562,7 +601,7 @@ export default function PetComparisonPage() {
                     </div>
                     <div className={styles.cardFooter}>
                       <span>{row.battle.zone || "No battle sample"}</span>
-                      <strong>{row.battle.value ? `${formatGold(row.battle.value)}/hr` : formatGold(row.pet.exchange?.minPrice)}</strong>
+                      <strong>{row.battle.value ? `${formatGold(row.battle.value)}/hr` : "No sample"}</strong>
                     </div>
                   </article>
                 ))}
@@ -588,7 +627,7 @@ export default function PetComparisonPage() {
                     <tbody>
                       <MetricRow label="Total power" icon={<Swords size={15} />} rows={rows} metricKey="power" bounds={metricBounds} formatter={(value) => formatNumber(value)} />
                       <MetricRow label="Hunting time" icon={<Search size={15} />} rows={rows} metricKey="hunt" bounds={metricBounds} lowerIsBetter formatter={(value) => secondsToDuration(value)} />
-                      <MetricRow label="Battle sample" icon={<BarChart3 size={15} />} rows={rows} metricKey="battle" bounds={metricBounds} formatter={(value) => (value ? `${formatGold(value)}/hr` : "-")} />
+                      <MetricRow label="Fixed battle sample" icon={<BarChart3 size={15} />} rows={rows} metricKey="battle" bounds={metricBounds} formatter={(value) => (value ? `${formatGold(value)}/hr` : "-")} />
                       <MetricRow label="Lowest sale listing" icon={<CircleDollarSign size={15} />} rows={rows} metricKey="market" bounds={metricBounds} formatter={(value) => formatGold(value)} />
                       {COMPARISON_STAT_KEYS.map((key) => (
                         <MetricRow

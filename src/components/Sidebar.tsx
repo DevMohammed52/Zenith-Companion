@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: '/pets/compare', label: 'Pet Comparison', icon: BarChart3 },
             { href: '/housing', label: 'Housing', icon: Home },
             { href: '/items', label: 'Items Database', icon: Package, matchPrefix: true },
+            { href: '/map', label: 'World Map', icon: MapIcon },
             { href: '/weather', label: 'Weather Guide', icon: Sparkles },
             { href: '/lore', label: 'Lore Wiki', icon: BookOpen, matchPrefix: true },
             { href: '/settings', label: 'Settings', icon: Settings },
@@ -104,9 +105,9 @@ export default function Sidebar() {
 
     return (
         <>
-            {mobileOpen && <div onClick={() => setMobileOpen(false)} className="mobile-backdrop" />}
+            {mobileOpen && <div onClick={() => setMobileOpen(false)} className="mobile-backdrop" aria-hidden="true" />}
 
-            <div className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
+            <div id="app-sidebar" className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`} aria-label="Primary navigation">
                 <div style={{ marginBottom: '1.5rem', padding: '0 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <h2 style={{ fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
@@ -117,6 +118,7 @@ export default function Sidebar() {
                     <button 
                         onClick={() => setMobileOpen(false)} 
                         className="mobile-sidebar-close"
+                        aria-label="Close navigation menu"
                         style={{ 
                             background: 'rgba(255,255,255,0.05)', 
                             border: '1px solid var(--border-subtle)', 
@@ -153,11 +155,14 @@ export default function Sidebar() {
                     {NAV_GROUPS.map(group => {
                         const isExpanded = expandedGroups[group.label];
                         const GroupIcon = group.icon;
+                        const groupPanelId = `sidebar-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
                         
                         return (
                             <div key={group.label} style={{ display: 'flex', flexDirection: 'column' }}>
                                 <button 
                                     onClick={() => toggleGroup(group.label)}
+                                    aria-expanded={isExpanded}
+                                    aria-controls={groupPanelId}
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                         padding: '0.6rem 0.75rem', background: 'transparent', border: 'none',
@@ -175,7 +180,9 @@ export default function Sidebar() {
                                     </div>
                                 </button>
 
-                                <div style={{ 
+                                <div
+                                    id={groupPanelId}
+                                    style={{
                                     display: 'grid',
                                     gridTemplateRows: isExpanded ? '1fr' : '0fr',
                                     transition: 'grid-template-rows 0.3s ease-in-out',
