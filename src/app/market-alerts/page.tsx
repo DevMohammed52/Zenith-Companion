@@ -554,6 +554,13 @@ export default function MarketAlertsPage() {
         </div>
       </section>
 
+      <section className="market-watch-note warning" aria-label="Experimental feature notice">
+        <ShieldAlert size={17} aria-hidden="true" />
+        <span>
+          Market Watch is experimental. It is being trialed to see whether snapshot-based alerts are useful in normal play. If it proves unreliable or creates more confusion than value, it may be changed or removed later.
+        </span>
+      </section>
+
       <section className="market-status-grid" aria-label="Market watch status">
         <div>
           <Clock3 size={17} />
@@ -1014,6 +1021,14 @@ export default function MarketAlertsPage() {
           color: var(--text-accent);
           flex: 0 0 auto;
           margin-top: 0.1rem;
+        }
+        .market-watch-note.warning {
+          background: rgba(245,158,11,0.09);
+          border-color: rgba(245,158,11,0.32);
+          color: #f8e7bd;
+        }
+        .market-watch-note.warning svg {
+          color: #fbbf24;
         }
         .market-watch-layout {
           align-items: start;
