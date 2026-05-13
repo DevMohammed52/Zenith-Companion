@@ -130,6 +130,22 @@ function NumberField({
   max: number;
   onChange: (value: number) => void;
 }) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = (rawValue: string) => {
+    if (rawValue === "") {
+      setDraft("");
+      return;
+    }
+    const nextValue = clampNumber(Number(rawValue), min, max);
+    setDraft(String(nextValue));
+    onChange(nextValue);
+  };
+
   return (
     <label className={styles.field}>
       <span>{label}</span>
@@ -137,8 +153,11 @@ function NumberField({
         type="number"
         min={min}
         max={max}
-        value={value}
-        onChange={(event) => onChange(clampNumber(Number(event.target.value), min, max))}
+        value={draft}
+        onChange={(event) => commit(event.target.value)}
+        onBlur={() => {
+          if (draft === "") setDraft(String(value));
+        }}
       />
     </label>
   );

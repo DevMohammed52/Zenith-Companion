@@ -385,6 +385,7 @@ export default function HousingPage() {
   const [category, setCategory] = useState<"all" | "idle" | "special" | "guest">("all");
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [draftTiers, setDraftTiers] = useState<Record<string, string>>({});
+  const [conditionDrafts, setConditionDrafts] = useState<Record<string, string>>({});
   const [profitPlannerFamily, setProfitPlannerFamily] = useState("Lumber Store");
   const [profitPlannerRoute, setProfitPlannerRoute] = useState("");
   const [profitPlannerEssence, setProfitPlannerEssence] = useState("");
@@ -896,6 +897,11 @@ export default function HousingPage() {
 
   const updateComponentCondition = (componentId: string, condition: number) => {
     if (!Number.isFinite(condition)) return;
+    setConditionDrafts((current) => {
+      const nextDrafts = { ...current };
+      delete nextDrafts[componentId];
+      return nextDrafts;
+    });
     const nextRepairGold = { ...housing.componentRepairGold };
     delete nextRepairGold[componentId];
     saveHousing({
@@ -904,6 +910,23 @@ export default function HousingPage() {
         [componentId]: normalizeHousingCondition(condition, 100),
       },
       componentRepairGold: nextRepairGold,
+    });
+  };
+
+  const updateComponentConditionInput = (componentId: string, rawValue: string) => {
+    if (rawValue === "") {
+      setConditionDrafts((current) => ({ ...current, [componentId]: "" }));
+      return;
+    }
+    updateComponentCondition(componentId, Number(rawValue));
+  };
+
+  const resetComponentConditionInput = (componentId: string) => {
+    setConditionDrafts((current) => {
+      if (current[componentId] !== "") return current;
+      const nextDrafts = { ...current };
+      delete nextDrafts[componentId];
+      return nextDrafts;
     });
   };
 
@@ -1347,9 +1370,10 @@ export default function HousingPage() {
                             min="0"
                             max="100"
                             step="0.1"
-                            value={condition}
+                            value={conditionDrafts[component.id] ?? condition}
                             aria-label={`${component.family} condition percent`}
-                            onChange={(event) => updateComponentCondition(component.id, event.currentTarget.valueAsNumber)}
+                            onChange={(event) => updateComponentConditionInput(component.id, event.currentTarget.value)}
+                            onBlur={() => resetComponentConditionInput(component.id)}
                           />
                           <span>%</span>
                         </label>

@@ -191,6 +191,7 @@ function ProfileNumberField({
   label,
   value,
   onChange,
+  onBlur,
   step = "1",
   min,
   max,
@@ -199,6 +200,7 @@ function ProfileNumberField({
   label: string;
   value: number | "";
   onChange: (value: number | "") => void;
+  onBlur?: () => void;
   step?: string;
   min?: number;
   max?: number;
@@ -215,6 +217,7 @@ function ProfileNumberField({
         max={max}
         value={value}
         onChange={(event) => onChange(numberFromInput(event.target.value))}
+        onBlur={onBlur}
       />
       {hint && <small>{hint}</small>}
     </label>
@@ -658,10 +661,22 @@ export default function ProfilesPage() {
         {tiered && (
           <ProfileNumberField
             label={`Tier / ${maxTier}`}
-            value={profile.gearTiers?.[key] || 1}
+            value={profile.gearTiers?.[key] ?? 1}
             min={1}
             max={maxTier}
-            onChange={(value) => patchActive({ gearTiers: { ...profile.gearTiers, [key]: Math.min(Math.max(Number(value) || 1, 1), maxTier) } })}
+            onChange={(value) => {
+              patchActive({
+                gearTiers: {
+                  ...profile.gearTiers,
+                  [key]: value === "" ? "" : Math.min(Math.max(Number(value) || 1, 1), maxTier),
+                },
+              });
+            }}
+            onBlur={() => {
+              if (profile.gearTiers?.[key] === "") {
+                patchActive({ gearTiers: { ...profile.gearTiers, [key]: 1 } });
+              }
+            }}
           />
         )}
         {selected && (

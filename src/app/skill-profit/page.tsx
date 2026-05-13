@@ -132,6 +132,8 @@ export default function SkillProfitPage() {
   const [sortDesc, setSortDesc] = useState(DEFAULT_STATE.sortDesc);
   const [searchTerm, setSearchTerm] = useState(DEFAULT_STATE.searchTerm);
   const [minVolume, setMinVolume] = useState(DEFAULT_STATE.minVolume);
+  const [poolExpDraft, setPoolExpDraft] = useState(String(DEFAULT_SETTINGS.energizingPoolExp));
+  const [minVolumeDraft, setMinVolumeDraft] = useState(String(DEFAULT_STATE.minVolume));
   const [ascensionOpen, setAscensionOpen] = useState(DEFAULT_STATE.ascensionOpen);
   const [essenceOpen, setEssenceOpen] = useState(DEFAULT_STATE.essenceOpen);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
@@ -177,6 +179,14 @@ export default function SkillProfitPage() {
     : settings.barteringBoost === ""
       ? ""
       : Math.min(100, Math.max(0, Math.round((Number(settings.barteringBoost) || 0) / 0.2)));
+
+  useEffect(() => {
+    setPoolExpDraft(String(settings.energizingPoolExp));
+  }, [settings.energizingPoolExp]);
+
+  useEffect(() => {
+    setMinVolumeDraft(String(minVolume));
+  }, [minVolume]);
 
   useEffect(() => {
     if (!preferencesLoaded || !profilesLoaded || !loadedStoredState) return;
@@ -706,8 +716,16 @@ export default function SkillProfitPage() {
             type="number"
             min={0}
             max={15}
-            value={settings.energizingPoolExp}
-            onChange={(event) => patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(event.target.value) || 0)) })}
+            value={poolExpDraft}
+            onChange={(event) => {
+              const rawValue = event.target.value;
+              setPoolExpDraft(rawValue);
+              if (rawValue === "") return;
+              patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(rawValue) || 0)) });
+            }}
+            onBlur={() => {
+              if (poolExpDraft === "") setPoolExpDraft(String(settings.energizingPoolExp));
+            }}
           />
         </label>
         <label className={styles.numberField}>
@@ -735,8 +753,16 @@ export default function SkillProfitPage() {
             aria-label="Minimum stable volume"
             type="number"
             min={0}
-            value={minVolume}
-            onChange={(event) => setMinVolume(Math.max(0, Number(event.target.value) || 0))}
+            value={minVolumeDraft}
+            onChange={(event) => {
+              const rawValue = event.target.value;
+              setMinVolumeDraft(rawValue);
+              if (rawValue === "") return;
+              setMinVolume(Math.max(0, Number(rawValue) || 0));
+            }}
+            onBlur={() => {
+              if (minVolumeDraft === "") setMinVolumeDraft(String(minVolume));
+            }}
           />
         </label>
         <button
