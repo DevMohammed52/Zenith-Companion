@@ -31,6 +31,7 @@ import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import {
+  GATHERED_RESOURCE_SOURCE_NOTE,
   getGatheredResourcesForLocation,
   normalizeLocationKey,
   type GatheredResourceSource,
@@ -183,21 +184,24 @@ function formatWindow(weather: ForecastWeather | null) {
   return `${start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-function getWeatherTimeline(location: MapLocation) {
+function getWeatherTimeline(location: { forecast?: ForecastDay[] }) {
   const forecast = (location.forecast || []) as ForecastDay[];
-  const timeline = forecast
+  const seen = new Set<string>();
+  return forecast
     .flatMap((day) => (day.weathers || []).map((weather) => ({ ...weather, day_name: day.day_name, date: day.date })))
-    .filter((weather) => weather.starts_at && weather.ends_at)
+    .filter((weather) => {
+      if (!weather.starts_at || !weather.ends_at) return false;
+      const key = `${weather.key || weather.name || "weather"}:${weather.starts_at}:${weather.ends_at}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort((a, b) => new Date(a.starts_at || 0).getTime() - new Date(b.starts_at || 0).getTime());
-  return timeline;
 }
 
 function getCurrentWeather(location: WorldLocation) {
   const now = Date.now();
-  const timeline = ((location.forecast as ForecastDay[] | undefined) || [])
-    .flatMap((day) => (day.weathers || []).map((weather) => ({ ...weather, day_name: day.day_name, date: day.date })))
-    .filter((weather) => weather.starts_at && weather.ends_at)
-    .sort((a, b) => new Date(a.starts_at || 0).getTime() - new Date(b.starts_at || 0).getTime());
+  const timeline = getWeatherTimeline({ forecast: location.forecast as ForecastDay[] | undefined });
 
   const current = timeline.find((weather) => {
     const start = safeDate(weather.starts_at)?.getTime() ?? 0;
@@ -681,6 +685,9 @@ function MapPageContent() {
               <span><Package size={15} /> Gathered Resources</span>
               <strong>{formatCount(selectedLocation.resources.length, "resource")}</strong>
             </header>
+            {selectedLocation.resources.length > 0 && (
+              <p className="source-note">{GATHERED_RESOURCE_SOURCE_NOTE}</p>
+            )}
             <div className="resource-grid">
               {selectedLocation.resources.map((resource) => (
                 <button
@@ -1452,6 +1459,13 @@ function MapPageContent() {
         }
         .muted-empty {
           color: var(--text-muted);
+        }
+        .source-note {
+          margin: -0.15rem 0 0.7rem;
+          color: var(--text-muted);
+          font-size: 0.78rem;
+          font-weight: 750;
+          line-height: 1.35;
         }
         @media (min-width: 1681px) {
           .atlas-shell {

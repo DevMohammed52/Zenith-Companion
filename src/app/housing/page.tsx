@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Castle,
   Check,
   ChevronDown,
@@ -46,7 +47,6 @@ import {
   getHousingActivityLabel,
   getProfileBaseIdleActionHours,
   normalizeHousingCondition,
-  normalizeHousingDecayDays,
   normalizeHousingRepairGold,
   sanitizeHousing,
   type HousingComponent,
@@ -103,10 +103,7 @@ const CATEGORY_OPTIONS = [
 
 const ROOM_PROFIT_BASE_HORIZONS = [1, 7, 30] as const;
 const COST_SHARE_OPTIONS = [1, 2, 3, 4] as const;
-const MEMBER_REPAIR_DECAY_DAYS = 90;
-const FREE_REPAIR_DECAY_DAYS = 60;
-const MEMBER_CURRENT_DECAY_DAYS = 60;
-const FREE_CURRENT_DECAY_DAYS = 45;
+const REPAIR_DECAY_DAYS = 90;
 const HOUSING_TABS = [
   { id: "overview", label: "Overview", hint: "Current state" },
   { id: "setup", label: "Setup", hint: "Mode and slots" },
@@ -403,10 +400,8 @@ export default function HousingPage() {
   );
   const selected = new Set(housing.selectedComponents);
   const ownerSlotsAvailable = housing.foundationBuilt ? 1 + housing.extraSlots : 0;
-  const repairDecayDays = preferences.membership ? MEMBER_REPAIR_DECAY_DAYS : FREE_REPAIR_DECAY_DAYS;
-  const currentDecayDays = preferences.membership ? MEMBER_CURRENT_DECAY_DAYS : FREE_CURRENT_DECAY_DAYS;
+  const repairDecayDays = REPAIR_DECAY_DAYS;
   const componentConditions = housing.componentConditions;
-  const componentDecayDays = housing.componentDecayDays;
   const componentRepairGold = housing.componentRepairGold;
   const roomProfitHorizons = useMemo(
     () => Array.from(new Set([...ROOM_PROFIT_BASE_HORIZONS, repairDecayDays])).sort((a, b) => a - b),
@@ -454,7 +449,7 @@ export default function HousingPage() {
   );
   const repairSetupEntries = useMemo(
     () => selectedSetupEntries
-      .filter((entry) => entry.component.id !== "foundation")
+      .filter((entry) => entry.component.category !== "structure")
       .map((entry) => ({
         ...entry,
         conditionPercent: normalizeHousingCondition(componentConditions[entry.component.id], 100),
@@ -476,14 +471,6 @@ export default function HousingPage() {
   ), [housing.selectedComponents]);
   const repairConditionCards = useMemo<RepairConditionCard[]>(() => {
     const cards: RepairConditionCard[] = [];
-    if (slotComponent && housing.extraSlots > 0) {
-      cards.push({
-        component: slotComponent,
-        quantity: housing.extraSlots,
-        detail: `${housing.extraSlots} extra slot${housing.extraSlots === 1 ? "" : "s"} for active components`,
-        removable: false,
-      });
-    }
     for (const component of selectedComponentDetails) {
       cards.push({
         component,
@@ -803,15 +790,9 @@ export default function HousingPage() {
     const nextConditions = { ...housing.componentConditions };
     const nextDecayDays = { ...housing.componentDecayDays };
     const nextRepairGold = { ...housing.componentRepairGold };
-    if (clampedSlots > 0) {
-      nextConditions.slot = normalizeHousingCondition(nextConditions.slot, 100);
-      nextDecayDays.slot = normalizeHousingDecayDays(nextDecayDays.slot, currentDecayDays);
-      if (clampedSlots !== housing.extraSlots) delete nextRepairGold.slot;
-    } else {
-      delete nextConditions.slot;
-      delete nextDecayDays.slot;
-      delete nextRepairGold.slot;
-    }
+    delete nextConditions.slot;
+    delete nextDecayDays.slot;
+    delete nextRepairGold.slot;
     saveHousing({
       extraSlots: clampedSlots,
       selectedComponents: getSlottedComponents(housing.selectedComponents, 1 + clampedSlots),
@@ -836,13 +817,11 @@ export default function HousingPage() {
     } else {
       if (!housing.foundationBuilt || summary.freeSlots <= 0) return;
       let inheritedCondition: number | undefined = nextConditions[componentId];
-      let inheritedDecayDays: number | undefined = nextDecayDays[componentId];
       if (component.category === "idle" || component.category === "guest") {
         for (const selectedId of Array.from(next)) {
           const existing = HOUSING_COMPONENTS.find((candidate) => candidate.id === selectedId);
           if (existing?.family === component.family) {
             inheritedCondition = nextConditions[selectedId] ?? inheritedCondition;
-            inheritedDecayDays = nextDecayDays[selectedId] ?? inheritedDecayDays;
             next.delete(selectedId);
             delete nextConditions[selectedId];
             delete nextDecayDays[selectedId];
@@ -853,7 +832,7 @@ export default function HousingPage() {
       if (getSlottedComponents([...Array.from(next), componentId]).includes(componentId)) {
         next.add(componentId);
         nextConditions[componentId] = normalizeHousingCondition(inheritedCondition, 100);
-        nextDecayDays[componentId] = normalizeHousingDecayDays(inheritedDecayDays, currentDecayDays);
+        nextDecayDays[componentId] = repairDecayDays;
       }
     }
     saveHousing({
@@ -893,12 +872,10 @@ export default function HousingPage() {
     const nextDecayDays = { ...housing.componentDecayDays };
     const nextRepairGold = { ...housing.componentRepairGold };
     let inheritedCondition: number | undefined = nextConditions[componentId];
-    let inheritedDecayDays: number | undefined = nextDecayDays[componentId];
     for (const selectedId of Array.from(next)) {
       const existing = HOUSING_COMPONENTS.find((candidate) => candidate.id === selectedId);
       if (existing?.family === family) {
         inheritedCondition = nextConditions[selectedId] ?? inheritedCondition;
-        inheritedDecayDays = nextDecayDays[selectedId] ?? inheritedDecayDays;
         next.delete(selectedId);
         delete nextConditions[selectedId];
         delete nextDecayDays[selectedId];
@@ -907,7 +884,7 @@ export default function HousingPage() {
     }
     next.add(componentId);
     nextConditions[componentId] = normalizeHousingCondition(inheritedCondition, 100);
-    nextDecayDays[componentId] = normalizeHousingDecayDays(inheritedDecayDays, currentDecayDays);
+    nextDecayDays[componentId] = repairDecayDays;
     delete nextRepairGold[componentId];
     saveHousing({
       selectedComponents: Array.from(next),
@@ -918,6 +895,7 @@ export default function HousingPage() {
   };
 
   const updateComponentCondition = (componentId: string, condition: number) => {
+    if (!Number.isFinite(condition)) return;
     const nextRepairGold = { ...housing.componentRepairGold };
     delete nextRepairGold[componentId];
     saveHousing({
@@ -943,15 +921,6 @@ export default function HousingPage() {
     saveHousing({
       componentConditions: nextConditions,
       componentRepairGold: nextRepairGold,
-    });
-  };
-
-  const updateComponentDecayDays = (componentId: string, decayDays: number) => {
-    saveHousing({
-      componentDecayDays: {
-        ...housing.componentDecayDays,
-        [componentId]: normalizeHousingDecayDays(decayDays, currentDecayDays),
-      },
     });
   };
 
@@ -1279,12 +1248,12 @@ export default function HousingPage() {
               </div>
               <div className="repair-data-note">
                 <ShieldCheck size={16} />
-                <span>Set each component condition and current decay cycle below. Existing components can stay on the older cycle until repaired; newly repaired components use the longer cycle.</span>
+                <span>Set each component condition below. Repair planning uses the 90-day decay cycle for repaired components.</span>
               </div>
               <div className="setup-cost-panel">
                 <div className="setup-cost-head">
                   <div>
-                    <span>Selected setup materials</span>
+                    <span>Build materials</span>
                     <strong>{selectedBuildCost.materials.length ? `${selectedBuildCost.materials.length} material${selectedBuildCost.materials.length === 1 ? "" : "s"}` : "Gold only"}</strong>
                   </div>
                   <div className="repair-cycle-pill">
@@ -1311,7 +1280,7 @@ export default function HousingPage() {
                       <strong>{formatMaterialPrice(material.unitPrice, material.quantity)}</strong>
                     </span>
                   ))}
-                  {!selectedRepairEstimate.materials.length && <span>No repairable materials until rooms, slots, or special components are selected.</span>}
+                  {!selectedRepairEstimate.materials.length && <span>No repairable materials until rooms or special components are selected.</span>}
                 </div>
               </div>
 
@@ -1327,7 +1296,7 @@ export default function HousingPage() {
                     materialPrices,
                     100,
                   );
-                  const decayDays = normalizeHousingDecayDays(componentDecayDays[component.id], currentDecayDays);
+                  const decayDays = repairDecayDays;
                   const fullDecayDate = formatFullDecayDate(condition, decayDays);
                   const cycleMonthlyCost = getCycleMonthlyValue(cost.totalCost, decayDays);
                   const cycleDailyCost = Math.round(cost.totalCost / Math.max(1, decayDays));
@@ -1397,24 +1366,6 @@ export default function HousingPage() {
                             onChange={(event) => updateComponentRepairGold(component.id, event.currentTarget.value, fullGoldCost)}
                           />
                         </label>
-                        <div className="condition-cycle-row" role="group" aria-label={`${component.family} decay cycle`}>
-                          <button
-                            type="button"
-                            className={decayDays === currentDecayDays ? "active" : ""}
-                            aria-pressed={decayDays === currentDecayDays}
-                            onClick={() => updateComponentDecayDays(component.id, currentDecayDays)}
-                          >
-                            Current {currentDecayDays}d
-                          </button>
-                          <button
-                            type="button"
-                            className={decayDays === repairDecayDays ? "active" : ""}
-                            aria-pressed={decayDays === repairDecayDays}
-                            onClick={() => updateComponentDecayDays(component.id, repairDecayDays)}
-                          >
-                            {repairDecayDays}d
-                          </button>
-                        </div>
                       </div>
                       <div className="selected-material-breakdown">
                         <span><Coins size={13} /> Fixed gold {formatGold(cost.goldCost)}</span>
@@ -1447,12 +1398,12 @@ export default function HousingPage() {
                       </div>
                       <div className="selected-material-breakdown repair-cycle-breakdown">
                         <span className={cost.missingMaterials.length ? "needs-data" : ""}>
-                          Full repair cycle
+                          Full 90d upkeep value
                           <strong>{formatKnownCost(cost.totalCost, cost.missingMaterials)}</strong>
                           <em>{decayDays}d from 100% to 0%</em>
                         </span>
                         <span className={cost.missingMaterials.length ? "needs-data" : ""}>
-                          Average upkeep
+                          Average full-cycle upkeep
                           <strong>{formatKnownCost(cycleMonthlyCost, cost.missingMaterials)} / month</strong>
                           <em>{cost.missingMaterials.length ? "Material prices needed" : `${formatGold(cycleDailyCost)} / day`}</em>
                         </span>
@@ -1537,7 +1488,7 @@ export default function HousingPage() {
                 <div>
                   <span>Build cost split</span>
                   <strong>{roomCostShare === 1 ? "Solo" : `${roomCostShare} ways`}</strong>
-                  <small>Splits build cost only. Daily profit stays per profile.</small>
+                  <small>Manual scenario only. Splits one-time build cost; daily profit stays per profile.</small>
                 </div>
                 <div className="cost-share-row" role="group" aria-label="Build cost split">
                   {COST_SHARE_OPTIONS.map((share) => (
@@ -1553,6 +1504,12 @@ export default function HousingPage() {
                   ))}
                 </div>
               </div>
+              {roomCostShare > summary.guestCapacity + 1 && (
+                <div className="room-profit-capacity-warning">
+                  <AlertTriangle size={15} />
+                  <span>Current Guest Quarters support owner + {summary.guestCapacity} guest{summary.guestCapacity === 1 ? "" : "s"}; this split is a manual what-if.</span>
+                </div>
+              )}
 
               {!plannerSkill ? (
                 <div className="planner-empty-state compact-empty-state">
@@ -1813,6 +1770,10 @@ export default function HousingPage() {
                 <div className="guest-rule-card">
                   <strong>Host condition is manual</strong>
                   <span>Turn off tiers if the host is repairing or has decayed rooms. Pet Quarters and House Ledger are tracked here only.</span>
+                </div>
+                <div className="guest-rule-card">
+                  <strong>Host capacity is not checked</strong>
+                  <span>This guest view assumes the host has enough Guest Quarters for your profile.</span>
                 </div>
               </div>
               <div className="guest-buff-grid">
@@ -2815,7 +2776,7 @@ export default function HousingPage() {
         }
         .selected-component-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
           gap: 0.75rem;
         }
         .selected-component-row,
@@ -2852,7 +2813,8 @@ export default function HousingPage() {
         .selected-row-meta small {
           color: #fff;
           font-weight: 900;
-          white-space: nowrap;
+          white-space: normal;
+          overflow-wrap: anywhere;
         }
         .selected-row-meta button {
           border: 1px solid rgba(248, 113, 113, 0.35);
@@ -2880,13 +2842,19 @@ export default function HousingPage() {
         .component-condition-panel {
           grid-column: 1 / -1;
           display: grid;
-          grid-template-columns: minmax(9rem, 0.85fr) minmax(12rem, 1.35fr) minmax(5rem, 0.4fr) minmax(10rem, 0.75fr);
+          grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
           gap: 0.6rem;
           align-items: center;
           border: 1px solid rgba(56, 189, 248, 0.24);
           background: rgba(56, 189, 248, 0.07);
           border-radius: 8px;
           padding: 0.7rem;
+        }
+        @media (max-width: 980px) {
+          .component-condition-panel {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+            align-items: stretch;
+          }
         }
         .condition-readout span,
         .condition-readout strong,
@@ -2979,28 +2947,6 @@ export default function HousingPage() {
         .repair-gold-calibration input:focus-visible {
           border-color: rgba(56, 189, 248, 0.65);
           box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-        }
-        .condition-cycle-row {
-          grid-column: 1 / -1;
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.45rem;
-        }
-        .condition-cycle-row button {
-          min-height: 36px;
-          border: 1px solid var(--border-subtle);
-          background: rgba(0,0,0,0.22);
-          color: var(--text-muted);
-          border-radius: 7px;
-          font: inherit;
-          font-size: 0.78rem;
-          font-weight: 900;
-          cursor: pointer;
-        }
-        .condition-cycle-row button.active {
-          border-color: rgba(56, 189, 248, 0.58);
-          background: rgba(56, 189, 248, 0.13);
-          color: #fff;
         }
         .selected-material-breakdown {
           grid-column: 1 / -1;
@@ -3119,7 +3065,7 @@ export default function HousingPage() {
           font-size: 0.84rem;
         }
         .guest-buff-grid {
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
         }
         .guest-buff-card {
           border: 1px solid var(--border-subtle);
@@ -3333,6 +3279,28 @@ export default function HousingPage() {
           border-color: rgba(245, 158, 11, 0.8);
           background: rgba(245, 158, 11, 0.14);
           color: #fff;
+        }
+        .room-profit-capacity-warning {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.55rem;
+          border: 1px solid rgba(251, 191, 36, 0.34);
+          background: rgba(251, 191, 36, 0.08);
+          color: #fde68a;
+          border-radius: 8px;
+          padding: 0.72rem 0.8rem;
+          margin: -0.35rem 0 0.9rem;
+          font-size: 0.84rem;
+          font-weight: 750;
+          line-height: 1.4;
+        }
+        .room-profit-capacity-warning svg {
+          flex: 0 0 auto;
+          margin-top: 0.1rem;
+        }
+        .room-profit-capacity-warning span {
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
         .room-profit-explainer {
           display: flex;
@@ -3761,9 +3729,6 @@ export default function HousingPage() {
           .component-condition-panel {
             grid-template-columns: 1fr;
             align-items: stretch;
-          }
-          .condition-cycle-row {
-            grid-template-columns: 1fr;
           }
           .horizon-row {
             grid-template-columns: 1fr;

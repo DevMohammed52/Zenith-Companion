@@ -9,8 +9,10 @@ import {
   ChevronDown,
   CircleDollarSign,
   Clock3,
+  Database,
   Gauge,
   HeartPulse,
+  MapPinned,
   PawPrint,
   Plus,
   Search,
@@ -18,6 +20,7 @@ import {
   Sparkles,
   Swords,
   Trash2,
+  Utensils,
   X,
 } from "lucide-react";
 import { useProfiles } from "@/lib/profiles";
@@ -73,7 +76,7 @@ type ComparedPet = {
 };
 
 const EVOLUTION_OPTIONS: Array<{ value: StatKey | "all"; label: string }> = [
-  { value: "all", label: "All stats" },
+  { value: "all", label: "All-stat preview" },
   { value: "agility", label: "Agility" },
   { value: "accuracy", label: "Accuracy" },
   { value: "protection", label: "Protection" },
@@ -289,6 +292,32 @@ function metricValue(row: ComparedPet, key: string) {
   return Number(row.stats[key as StatKey] || 0);
 }
 
+function getBattleModeLabel(mode: BattleProfitMode) {
+  return BATTLE_OPTIONS.find((option) => option.value === mode)?.label || "Battle sample";
+}
+
+function getFoodPolicyLabel(policy: FoodPolicy) {
+  return policy === "standard" ? "Food cost included" : "Food cost ignored";
+}
+
+function formatBattleEv(value?: number | null) {
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  if (value === 0) return "0g";
+  const rounded = Math.round(value);
+  const sign = rounded > 0 ? "" : "-";
+  return `${sign}${Math.abs(rounded).toLocaleString()}g`;
+}
+
+function getRecordedZoneCount(pet: PetRecord) {
+  return pet.battle?.zones?.filter((zone) => zone.zone).length || 0;
+}
+
+function getRecordedDropCount(pet: PetRecord, zoneName: string | null) {
+  if (!zoneName) return 0;
+  const zone = pet.battle?.zones?.find((entry) => entry.zone === zoneName);
+  return zone?.drops?.filter((drop) => drop.itemName).length || 0;
+}
+
 export default function PetComparisonPage() {
   const { activeProfile } = useProfiles();
   const [database, setDatabase] = useState<PetDatabase | null>(null);
@@ -385,7 +414,7 @@ export default function PetComparisonPage() {
       return levelA - levelB || a.localeCompare(b);
     });
     return [
-      { value: BEST_BATTLE_ZONE, label: "Best available sample" },
+      { value: BEST_BATTLE_ZONE, label: "Best recorded zone" },
       ...sortedZones.map((zone) => ({ value: zone, label: zone.replace(/^Level\s+/, "L") })),
     ];
   }, [pets]);
@@ -431,15 +460,30 @@ export default function PetComparisonPage() {
         pet,
         power: getTotalPower(stats),
         hunt: getHuntingTimeSeconds(stats),
+        battle: getBattleSample(pet).value,
         market: pet.exchange?.minPrice || 0,
       };
     });
     const unique = new Map<string, PetRecord>();
     [...compared].sort((a, b) => b.power - a.power).slice(0, 1).forEach((row) => unique.set("Highest power", row.pet));
-    [...compared].sort((a, b) => a.hunt - b.hunt).slice(0, 1).forEach((row) => unique.set("Fastest hunter", row.pet));
+    [...compared].sort((a, b) => a.hunt - b.hunt).slice(0, 1).forEach((row) => unique.set("Lowest formula hunt time", row.pet));
+    [...compared].filter((row) => row.battle > 0).sort((a, b) => b.battle - a.battle).slice(0, 1).forEach((row) => unique.set("Highest recorded EV", row.pet));
     [...compared].filter((row) => row.market > 0).sort((a, b) => b.market - a.market).slice(0, 1).forEach((row) => unique.set("Highest sale value", row.pet));
     return Array.from(unique.entries());
-  }, [evolutionStage, evolutionStat, masteryBonus, patBonus, petLevel, pets]);
+  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets]);
+
+  const battleCoverage = useMemo(() => {
+    const petsWithBattle = pets.filter((pet) => (pet.battle?.zones || []).some((zone) => zone.zone));
+    const selectedZonePets = battleZone === BEST_BATTLE_ZONE
+      ? petsWithBattle.length
+      : petsWithBattle.filter((pet) => pet.battle?.zones?.some((zone) => zone.zone === battleZone)).length;
+    const comparedWithZone = rows.filter((row) => Boolean(row.battle.zone)).length;
+    return {
+      petsWithBattle: petsWithBattle.length,
+      selectedZonePets,
+      comparedWithZone,
+    };
+  }, [battleZone, pets, rows]);
 
   const addPet = (name: string) => {
     setSelectedNames((current) => {
@@ -479,7 +523,7 @@ export default function PetComparisonPage() {
             <PawPrint size={17} /> Pet Comparison
           </span>
           <h1>Compare Pets</h1>
-          <p>Pick pets, adjust the shared stat setup, and compare hunting speed, fixed battle samples, sources, and sale listings.</p>
+          <p>Pick pets, adjust the shared stat setup, and compare hunting speed, recorded battle EV, sources, and sale listings.</p>
         </div>
         <div className={styles.heroActions}>
           <Link href="/pets" className={styles.secondaryLink}>
@@ -522,8 +566,52 @@ export default function PetComparisonPage() {
               </button>
             </div>
             <p className={styles.scenarioNote}>
-              Level, mastery, evolution, and pat affect stats and hunting speed. Battle samples are fixed research snapshots; use the zone picker for same-zone comparison.
+              Level, mastery, evolution, and pat affect stats and hunting speed. Battle EV uses recorded research data only; it does not import live pet state,
+              route movement, active map position, or future combat scaling.
             </p>
+            <div className={styles.auditGrid} aria-label="Pet comparison assumptions">
+              <div className={styles.auditCard}>
+                <Database size={17} />
+                <span>Battle data</span>
+                <strong>Research snapshot</strong>
+                <small>Compared only where recorded zones exist.</small>
+              </div>
+              <div className={styles.auditCard}>
+                <MapPinned size={17} />
+                <span>Zone picker</span>
+                <strong>{battleZone === BEST_BATTLE_ZONE ? "Best recorded zone" : battleZone.replace(/^Level\s+/, "L")}</strong>
+                <small>No travel path or map-routing rank is applied.</small>
+              </div>
+              <div className={styles.auditCard}>
+                <Clock3 size={17} />
+                <span>Cycle model</span>
+                <strong>{getBattleModeLabel(battleMode)}</strong>
+                <small>Uses the selected recorded sleep/stamina scenario.</small>
+              </div>
+              <div className={styles.auditCard}>
+                <Utensils size={17} />
+                <span>Food model</span>
+                <strong>{getFoodPolicyLabel(foodPolicy)}</strong>
+                <small>Food is toggled from the recorded cheapest food cost.</small>
+              </div>
+            </div>
+            <div className={styles.contextStrip} aria-label="Recorded battle coverage summary">
+              <div>
+                <span>Battle coverage</span>
+                <strong>{battleCoverage.selectedZonePets}/{battleCoverage.petsWithBattle} pets</strong>
+                <small>{battleZone === BEST_BATTLE_ZONE ? "Any recorded zone" : battleZone.replace(/^Level\s+/, "L")}</small>
+              </div>
+              <div>
+                <span>Compared now</span>
+                <strong>{battleCoverage.comparedWithZone}/{rows.length || 0}</strong>
+                <small>Only selected pets are shown below.</small>
+              </div>
+              <div>
+                <span>Ranking scope</span>
+                <strong>Recorded EV only</strong>
+                <small>No route travel, current map position, or live battle state.</small>
+              </div>
+            </div>
           </section>
 
           <section className={styles.panel}>
@@ -561,6 +649,7 @@ export default function PetComparisonPage() {
                 </button>
               ))}
             </div>
+            <p className={styles.quickPickNote}>Quick picks use the shared formula setup and market listings only; they are not personalized map or route recommendations.</p>
           </section>
 
           {rows.length === 0 ? (
@@ -572,39 +661,50 @@ export default function PetComparisonPage() {
           ) : (
             <>
               <section className={styles.compareCards}>
-                {rows.map((row) => (
-                  <article key={row.pet.name} className={styles.compareCard} style={{ "--accent": QUALITY_COLORS[row.pet.quality] } as CSSProperties}>
-                    <div className={styles.cardTop}>
-                      <PetImage pet={row.pet} />
-                      <div>
-                        <h3>{row.pet.name}</h3>
-                        <p>{getPetSourceLabel(row.pet)}</p>
+                {rows.map((row) => {
+                  const recordedZones = getRecordedZoneCount(row.pet);
+                  const recordedDrops = getRecordedDropCount(row.pet, row.battle.zone);
+                  return (
+                    <article key={row.pet.name} className={styles.compareCard} style={{ "--accent": QUALITY_COLORS[row.pet.quality] } as CSSProperties}>
+                      <div className={styles.cardTop}>
+                        <PetImage pet={row.pet} />
+                        <div>
+                          <h3>{row.pet.name}</h3>
+                          <p>{getPetSourceLabel(row.pet)}</p>
+                        </div>
+                        <span>{qualityLabel(row.pet.quality)}</span>
                       </div>
-                      <span>{qualityLabel(row.pet.quality)}</span>
-                    </div>
-                    <div className={styles.cardStats}>
-                      <div>
-                        <Swords size={15} />
-                        <strong>{formatNumber(row.totalPower)}</strong>
-                        <span>Power</span>
+                      <div className={styles.cardStats}>
+                        <div>
+                          <Swords size={15} />
+                          <strong>{formatNumber(row.totalPower)}</strong>
+                          <span>Power</span>
+                        </div>
+                        <div>
+                          <Gauge size={15} />
+                          <strong>{formatNumber(row.stats.movement_speed, 2)}m/s</strong>
+                          <span>Move</span>
+                        </div>
+                        <div>
+                          <Clock3 size={15} />
+                          <strong>{secondsToDuration(row.huntingTime)}</strong>
+                          <span>Hunt</span>
+                        </div>
                       </div>
-                      <div>
-                        <Gauge size={15} />
-                        <strong>{formatNumber(row.stats.movement_speed, 2)}m/s</strong>
-                        <span>Move</span>
+                      <div className={styles.cardFooter}>
+                        <span>{row.battle.zone || "No recorded zone"}</span>
+                        <strong className={row.battle.value < 0 ? styles.lossValue : ""}>
+                          {row.battle.zone ? `${formatBattleEv(row.battle.value)}/hr` : "No EV"}
+                        </strong>
                       </div>
-                      <div>
-                        <Clock3 size={15} />
-                        <strong>{secondsToDuration(row.huntingTime)}</strong>
-                        <span>Hunt</span>
+                      <div className={styles.sampleBadges} aria-label={`${row.pet.name} recorded battle coverage`}>
+                        <span>{recordedZones} recorded zones</span>
+                        <span>{recordedDrops ? `${recordedDrops} drop rows` : "Drops not recorded"}</span>
+                        <span>{battleZone === BEST_BATTLE_ZONE ? "Best recorded only" : "Selected zone"}</span>
                       </div>
-                    </div>
-                    <div className={styles.cardFooter}>
-                      <span>{row.battle.zone || "No battle sample"}</span>
-                      <strong>{row.battle.value ? `${formatGold(row.battle.value)}/hr` : "No sample"}</strong>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </section>
 
               <section className={styles.panel}>
@@ -627,7 +727,7 @@ export default function PetComparisonPage() {
                     <tbody>
                       <MetricRow label="Total power" icon={<Swords size={15} />} rows={rows} metricKey="power" bounds={metricBounds} formatter={(value) => formatNumber(value)} />
                       <MetricRow label="Hunting time" icon={<Search size={15} />} rows={rows} metricKey="hunt" bounds={metricBounds} lowerIsBetter formatter={(value) => secondsToDuration(value)} />
-                      <MetricRow label="Fixed battle sample" icon={<BarChart3 size={15} />} rows={rows} metricKey="battle" bounds={metricBounds} formatter={(value) => (value ? `${formatGold(value)}/hr` : "-")} />
+                      <MetricRow label="Recorded battle EV" icon={<BarChart3 size={15} />} rows={rows} metricKey="battle" bounds={metricBounds} formatter={(value) => (value ? `${formatBattleEv(value)}/hr` : "-")} />
                       <MetricRow label="Lowest sale listing" icon={<CircleDollarSign size={15} />} rows={rows} metricKey="market" bounds={metricBounds} formatter={(value) => formatGold(value)} />
                       {COMPARISON_STAT_KEYS.map((key) => (
                         <MetricRow

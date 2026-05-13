@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
@@ -65,13 +66,13 @@ type DungeonItemModifier = {
   isTradeable: boolean;
 };
 const DROP_VALUATION_OPTIONS: Array<{ value: DungeonDropValuationMode; label: string }> = [
-  { value: "safe-market", label: "Safe market" },
+  { value: "safe-market", label: "Modeled market" },
   { value: "vendor", label: "Vendor" },
   { value: "manual", label: "Manual" },
   { value: "exclude", label: "Exclude" },
 ];
 const DROP_VALUATION_LABELS: Record<DungeonDropValuationMode, string> = {
-  "safe-market": "Safe market",
+  "safe-market": "Modeled market",
   vendor: "Vendor",
   manual: "Manual",
   exclude: "Excluded",
@@ -85,7 +86,7 @@ const VALUE_PATH_LABELS: Record<string, string> = {
   market: "Sell on market",
   vendor: "Sell to vendor",
   chest_ev: "Open alchemy chest",
-  recipe_craft: "Craft output and sell",
+  recipe_craft: "Crafted-output value",
   manual: "Manual value",
   excluded: "Excluded",
   missing: "Missing price",
@@ -948,7 +949,7 @@ function DungeonsContent() {
         <div className="dungeon-valuation-copy">
           <span className="control-label">Gear & Mythic Potion Value</span>
           <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
-          <small>Applies to high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
+          <small>Uses safe market prices plus modeled chest/recipe paths for high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
         </div>
         <div className="dungeon-valuation-controls">
           <div className="dungeon-segmented dungeon-valuation-segmented" role="group" aria-label="Sensitive drop valuation mode">
@@ -1244,6 +1245,7 @@ function DungeonsContent() {
                 </section>
                 <section className="dungeon-modal-panel">
                   <h3><Coins size={15} /> Cost Model</h3>
+                  <p className="dungeon-model-note">Craft paths are modeled value and may require your own skill/materials or a trusted service.</p>
                   <div className="dungeon-detail-row"><span>Queued action entry cost</span><strong>{formatPlainGold(selectedDungeon.idleActionCost)}</strong></div>
                   <div className="dungeon-detail-row"><span>Drop value mode</span><strong>{DROP_VALUATION_LABELS[selectedDungeon.dropValuationMode as DungeonDropValuationMode]}</strong></div>
                   <div className="dungeon-detail-row"><span>Sensitive drops</span><strong>{selectedDungeon.marketSensitiveDropCount > 0 ? `${selectedDungeon.marketSensitiveDropCount} checked` : "None"}</strong></div>
@@ -2071,6 +2073,13 @@ function DungeonsContent() {
           letter-spacing: 0.05em;
           text-transform: uppercase;
         }
+        .dungeon-model-note {
+          color: var(--text-muted);
+          font-size: 0.8rem;
+          font-weight: 650;
+          line-height: 1.45;
+          margin: -0.25rem 0 0.55rem;
+        }
         .dungeon-detail-row {
           display: flex;
           justify-content: space-between;
@@ -2357,7 +2366,59 @@ function DungeonItemEffectPicker({
 }) {
   const [open, setOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selected = options.find((option) => option.name === value) || null;
+
+  const focusOption = (index: number) => {
+    window.requestAnimationFrame(() => {
+      optionRefs.current[index]?.focus();
+    });
+  };
+
+  const selectOption = (nextValue: string) => {
+    onChange(nextValue);
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.name === value) + 1);
+
+  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    setOpen(true);
+    focusOption(event.key === "ArrowUp" ? options.length : selectedIndex);
+  };
+
+  const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    const optionCount = options.length + 1;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusOption((index + 1) % optionCount);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      focusOption((index - 1 + optionCount) % optionCount);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      focusOption(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      focusOption(optionCount - 1);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -2380,11 +2441,13 @@ function DungeonItemEffectPicker({
     <div className={`dungeon-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
       <button
         type="button"
+        ref={triggerRef}
         className="dungeon-effect-trigger"
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((current) => !current)}
+        onKeyDown={handleTriggerKeyDown}
       >
         <span>
           <small>{label}</small>
@@ -2397,13 +2460,12 @@ function DungeonItemEffectPicker({
         <div className="dungeon-effect-menu" role="listbox" aria-label={ariaLabel}>
           <button
             type="button"
+            ref={(node) => { optionRefs.current[0] = node; }}
             className={`dungeon-effect-option ${!value ? "active" : ""}`}
             role="option"
             aria-selected={!value}
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
+            onKeyDown={(event) => handleOptionKeyDown(event, 0)}
+            onClick={() => selectOption("")}
           >
             <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />
             <span>
@@ -2412,19 +2474,18 @@ function DungeonItemEffectPicker({
             </span>
             {!value && <Check size={14} />}
           </button>
-          {options.map((option) => {
+          {options.map((option, index) => {
             const active = option.name === value;
             return (
               <button
                 type="button"
+                ref={(node) => { optionRefs.current[index + 1] = node; }}
                 className={`dungeon-effect-option ${active ? "active" : ""}`}
                 key={option.name}
                 role="option"
                 aria-selected={active}
-                onClick={() => {
-                  onChange(option.name);
-                  setOpen(false);
-                }}
+                onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
+                onClick={() => selectOption(option.name)}
               >
                 {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
                 <span>

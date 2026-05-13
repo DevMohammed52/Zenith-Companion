@@ -38,6 +38,8 @@ export type GatheredResourceLocation = {
   level: number;
 };
 
+export const GATHERED_RESOURCE_SOURCE_NOTE = "Mapped from in-game location views.";
+
 export const ALL_LOCATION_OPTION: LocationOption = {
   value: "ALL",
   label: "All locations",

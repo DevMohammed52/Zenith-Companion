@@ -1,4 +1,6 @@
 export type MarketPriceDatum = {
+  hashed_id?: string;
+  image_url?: string;
   avg_3?: number;
   avg_7?: number;
   avg_14?: number;
@@ -23,6 +25,13 @@ export type MarketPriceDatum = {
   sales_outlier_days_30?: number;
   sales_spike_ratio?: number;
   liquidity_warning?: string;
+  latest_sale_median?: number;
+  latest_sale_min?: number;
+  latest_sale_max?: number;
+  latest_sale_spread_ratio?: number;
+  latest_sale_sample_size?: number;
+  last_updated?: string;
+  is_tradeable?: boolean;
 };
 
 export type SafeMarketPrice = {
@@ -123,8 +132,28 @@ export type MarketLiquidityInfo = {
   salesOutlierDays30: number;
   isSpikeRisk: boolean;
   hasVolumeSwings: boolean;
+  hasPriceSwings: boolean;
+  latestSaleMin: number;
+  latestSaleMax: number;
+  latestSaleSpreadRatio: number;
+  latestSaleSampleSize: number;
   hasStableData: boolean;
 };
+
+const PRICE_SWING_RATIO = 2;
+const PRICE_SWING_MIN_DELTA = 10;
+const PRICE_SWING_MIN_SALES = 4;
+
+function getMarketCautionNote(liquidityNote: string, hasVolumeSwings: boolean, hasPriceSwings: boolean) {
+  const notes = [liquidityNote];
+  if (hasVolumeSwings && !liquidityNote.includes("bulk-sale")) {
+    notes.push("Sold volume has unusual bulk-sale days.");
+  }
+  if (hasPriceSwings) {
+    notes.push("Recent sold prices have a wide spread. Check recent trades/listings before bulk buying or crafting.");
+  }
+  return notes.join(" ");
+}
 
 export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquidityInfo {
   const marketValue = getSafeMarketValue(item);
@@ -138,23 +167,37 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
   const salesSpikeRatio = asNonNegativeNumber(item?.sales_spike_ratio) || (stableDaily > 0 && maxDaily > 0 ? maxDaily / stableDaily : 0);
   const salesOutlierDays30 = Math.round(asNonNegativeNumber(item?.sales_outlier_days_30));
   const hasStableData = trimmedDaily > 0 || medianDaily > 0 || item?.stable_vol_3 !== undefined;
+  const latestSaleMin = asNonNegativeNumber(item?.latest_sale_min);
+  const latestSaleMax = asNonNegativeNumber(item?.latest_sale_max);
+  const latestSaleSpreadRatio = asNonNegativeNumber(item?.latest_sale_spread_ratio)
+    || (latestSaleMin > 0 && latestSaleMax > 0 ? latestSaleMax / latestSaleMin : 0);
+  const latestSaleSampleSize = Math.round(asNonNegativeNumber(item?.latest_sale_sample_size));
+  const hasPriceSwings = marketValue > 0
+    && latestSaleSampleSize >= PRICE_SWING_MIN_SALES
+    && latestSaleSpreadRatio >= PRICE_SWING_RATIO
+    && latestSaleMax - latestSaleMin >= PRICE_SWING_MIN_DELTA;
   const hasVolumeSwings = marketValue > 0
     && hasStableData
     && stableVolume3d > 0
     && salesOutlierDays30 > 0
     && salesSpikeRatio >= 3;
-  const isSpikeRisk = marketValue > 0
-    && hasStableData
-    && rawVolume3d >= 40
-    && stableVolume3d > 0
-    && salesSpikeRatio >= 3
-    && rawVolume3d >= stableVolume3d * 1.5;
+  const isSpikeRisk = marketValue > 0 && Boolean(item?.price_adjusted);
+  const shared = {
+    latestSaleMin,
+    latestSaleMax,
+    latestSaleSpreadRatio,
+    latestSaleSampleSize,
+    hasPriceSwings,
+  };
 
   if (marketValue <= 0) {
+    const isKnownTradeable = item?.is_tradeable === true;
     return {
-      label: "No market",
+      label: isKnownTradeable ? "No sales" : "No market",
       tone: "none",
-      note: "No recent trade history.",
+      note: isKnownTradeable
+        ? "No public sale history was found in the cached market data."
+        : "No recent trade history.",
       rawVolume3d,
       stableVolume3d: 0,
       dailyTrimmedAverage30: trimmedDaily,
@@ -163,6 +206,7 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
       salesOutlierDays30,
       isSpikeRisk: false,
       hasVolumeSwings: false,
+      ...shared,
       hasStableData,
     };
   }
@@ -180,6 +224,7 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
       salesOutlierDays30,
       isSpikeRisk: false,
       hasVolumeSwings: false,
+      ...shared,
       hasStableData,
     };
   }
@@ -188,7 +233,11 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
     return {
       label: "Spike risk",
       tone: "risk",
-      note: "Recent volume may be inflated by bulk-sale days. Check the official graph before mass crafting or assuming fast sales.",
+      note: getMarketCautionNote(
+        "Recent trade history had a market-price spike, so the guarded price is being used instead of the raw average.",
+        hasVolumeSwings,
+        hasPriceSwings,
+      ),
       rawVolume3d,
       stableVolume3d,
       dailyTrimmedAverage30: trimmedDaily,
@@ -197,32 +246,19 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
       salesOutlierDays30,
       isSpikeRisk,
       hasVolumeSwings,
-      hasStableData,
-    };
-  }
-
-  if (hasVolumeSwings) {
-    return {
-      label: "Volume swings",
-      tone: "risk",
-      note: "The 30-day sold history has bulk-sale spikes, so stable volume may not mean steady daily buyers. Check the official graph before mass crafting or assuming fast sales.",
-      rawVolume3d,
-      stableVolume3d,
-      dailyTrimmedAverage30: trimmedDaily,
-      dailyMedian30: medianDaily,
-      salesSpikeRatio,
-      salesOutlierDays30,
-      isSpikeRisk,
-      hasVolumeSwings,
+      ...shared,
       hasStableData,
     };
   }
 
   if (stableVolume3d >= 150) {
+    const note = hasVolumeSwings
+      ? "Stable sales pace is high, but sold volume has unusual bulk-sale days. Check the official graph before mass crafting or assuming fast sales."
+      : hasStableData ? "Stable sales pace stays high after trimming unusual daily spikes." : "At least 150 units moved in the last 3 days.";
     return {
       label: "Active market",
       tone: "active",
-      note: hasStableData ? "Stable sales pace stays high after trimming unusual daily spikes." : "At least 150 units moved in the last 3 days.",
+      note: getMarketCautionNote(note, hasVolumeSwings, hasPriceSwings),
       rawVolume3d,
       stableVolume3d,
       dailyTrimmedAverage30: trimmedDaily,
@@ -231,15 +267,19 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
       salesOutlierDays30,
       isSpikeRisk,
       hasVolumeSwings,
+      ...shared,
       hasStableData,
     };
   }
 
   if (stableVolume3d >= 40) {
+    const note = hasVolumeSwings
+      ? "Stable sales pace is moderate, but sold volume has unusual bulk-sale days. Check the official graph before mass crafting or assuming fast sales."
+      : hasStableData ? "Stable sales pace is moderate after trimming unusual daily spikes." : "Recent volume is moderate.";
     return {
       label: "Steady market",
       tone: "steady",
-      note: hasStableData ? "Stable sales pace is moderate after trimming unusual daily spikes." : "Recent volume is moderate.",
+      note: getMarketCautionNote(note, hasVolumeSwings, hasPriceSwings),
       rawVolume3d,
       stableVolume3d,
       dailyTrimmedAverage30: trimmedDaily,
@@ -248,14 +288,18 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
       salesOutlierDays30,
       isSpikeRisk,
       hasVolumeSwings,
+      ...shared,
       hasStableData,
     };
   }
 
+  const thinNote = hasVolumeSwings
+    ? "Market price exists, but stable recent volume is low and sold volume has unusual bulk-sale days."
+    : "Market price exists, but stable recent volume is low.";
   return {
     label: "Thin market",
     tone: "thin",
-    note: "Market price exists, but stable recent volume is low.",
+    note: getMarketCautionNote(thinNote, hasVolumeSwings, hasPriceSwings),
     rawVolume3d,
     stableVolume3d,
     dailyTrimmedAverage30: trimmedDaily,
@@ -264,6 +308,7 @@ export function getMarketLiquidity(item?: MarketPriceDatum | null): MarketLiquid
     salesOutlierDays30,
     isSpikeRisk,
     hasVolumeSwings,
+    ...shared,
     hasStableData,
   };
 }

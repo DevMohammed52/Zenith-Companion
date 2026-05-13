@@ -322,13 +322,14 @@ export function getZoneProfitValue(zone: BattleZone, mode: BattleProfitMode, foo
 
 export function getBestBattleProfit(pet: PetRecord, mode: BattleProfitMode, foodPolicy: FoodPolicy) {
   const zones = pet.battle?.zones || [];
+  if (!zones.length) return { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null };
   return zones.reduce(
     (best, zone) => {
       const value = getZoneProfitValue(zone, mode, foodPolicy);
       if (value <= best.value) return best;
       return { value, zone: zone.zone, mode };
     },
-    { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null },
+    { value: Number.NEGATIVE_INFINITY, zone: null as string | null, mode: null as BattleProfitMode | null },
   );
 }
 

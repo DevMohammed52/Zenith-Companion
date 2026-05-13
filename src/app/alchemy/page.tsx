@@ -33,7 +33,8 @@ import { useModalA11y } from "@/lib/use-modal-a11y";
 type Trend = "up" | "down" | "flat";
 type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
 type RowStatus = "ok" | "missing";
-type LiquiditySignal = "LIQUID" | "STEADY" | "VOLUME SWINGS" | "SPIKE RISK" | "THIN" | "NO SALES" | "VENDOR SAFE" | "MISSING";
+type LiquiditySignal = "LIQUID" | "STEADY" | "VOLUME SWINGS" | "PRICE SWINGS" | "SPIKE RISK" | "THIN" | "NO SALES" | "VENDOR SAFE" | "MISSING";
+type AlchemyLiquidityFilter = LiquiditySignal | "ALL";
 
 type MarketData = {
   avg_3?: number;
@@ -95,6 +96,8 @@ type AlchemyRow = {
   stableVol_3: number;
   liquidityNote: string;
   liquidityRisk: boolean;
+  sellThroughRisk: boolean;
+  sellThroughNote: string;
   outputSource: "custom" | "market" | "missing";
   inputMissing: string[];
   ingredientCosts: IngredientCost[];
@@ -132,12 +135,24 @@ const ALCHEMY_SORT_KEYS: readonly AlchemySortKey[] = [
 const OWNED_STORAGE_KEY = "zenith_alchemy_owned_materials";
 const OWNED_MODE_STORAGE_KEY = "zenith_alchemy_owned_cost_mode";
 const ALCHEMY_SETTINGS_STORAGE_KEY = "zenith_alchemy_settings";
+const ALCHEMY_LIQUIDITY_FILTERS: { value: AlchemyLiquidityFilter; label: string }[] = [
+  { value: "ALL", label: "All" },
+  { value: "LIQUID", label: "Liquid" },
+  { value: "STEADY", label: "Steady" },
+  { value: "THIN", label: "Thin" },
+  { value: "VOLUME SWINGS", label: "Volume" },
+  { value: "PRICE SWINGS", label: "Price swings" },
+  { value: "SPIKE RISK", label: "Spike" },
+  { value: "VENDOR SAFE", label: "Vendor" },
+  { value: "MISSING", label: "Missing" },
+];
 
 type PersistedAlchemySettings = {
   minLevel: number | "";
   maxLevel: number | "";
   minProfit: number | "";
   minVolume: number | "";
+  liquidityFilter?: AlchemyLiquidityFilter;
   onlyProfitable: boolean;
   hideMissing: boolean;
   ownedCostMode?: boolean;
@@ -156,6 +171,12 @@ const formatDuration = (seconds: number) => {
   if (seconds < 60) return `${seconds.toFixed(0)}s`;
   const minutes = seconds / 60;
   return `${minutes.toFixed(minutes >= 10 ? 0 : 1)}m`;
+};
+
+const formatMinutes = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "0";
+  const minutes = seconds / 60;
+  return minutes >= 10 ? minutes.toFixed(0) : minutes.toFixed(1);
 };
 
 const getCustomPrice = (customPrices: Record<string, number>, name: string) => {
@@ -193,7 +214,6 @@ const getSignal = (action: ActionPath, item: MarketData | undefined, missing: bo
   if (action === "VENDOR") return "VENDOR SAFE";
   const liquidity = getMarketLiquidity(item);
   if (liquidity.isSpikeRisk) return "SPIKE RISK";
-  if (liquidity.hasVolumeSwings) return "VOLUME SWINGS";
   if (liquidity.tone === "active") return "LIQUID";
   if (liquidity.tone === "steady") return "STEADY";
   if (liquidity.rawVolume3d > 0 || liquidity.stableVolume3d > 0) return "THIN";
@@ -214,8 +234,36 @@ const getVisibleAlchemyWarnings = (row: AlchemyRow) => {
   return row.warnings.filter((warning) => !repeatedBySignal.has(warning));
 };
 
+const getSellThroughNote = (
+  action: ActionPath,
+  profit: number,
+  stableVolume3d: number,
+  craftsPerDay: number,
+  activeHours: number,
+  hasVolumeSwings: boolean,
+) => {
+  if (action !== "MARKET" || profit <= 0) return "";
+  const stableDailySales = stableVolume3d / 3;
+  if (stableVolume3d <= 0) {
+    return "Market profit is based on price history, but recent sold volume is missing. Treat it as a listing target, not a fast-sale estimate.";
+  }
+  if (activeHours > 0 && craftsPerDay > stableDailySales) {
+    return `This setup can make about ${formatGold(craftsPerDay)} pcs/day while stable sold pace is about ${formatGold(stableDailySales)} pcs/day. Bulk output may need smaller batches or private buyers.`;
+  }
+  if (hasVolumeSwings) {
+    return "Recent sold volume includes unusual bulk-sale days. Use the stable sold pace instead of the raw spike before mass crafting.";
+  }
+  if (stableVolume3d < 40) {
+    return "Stable sold pace is low. This may still profit, but it can take longer to exit through the market.";
+  }
+  return "";
+};
+
 const isAlchemySortKey = (value: unknown): value is AlchemySortKey =>
   typeof value === "string" && ALCHEMY_SORT_KEYS.includes(value as AlchemySortKey);
+
+const isAlchemyLiquidityFilter = (value: unknown): value is AlchemyLiquidityFilter =>
+  typeof value === "string" && ALCHEMY_LIQUIDITY_FILTERS.some((filter) => filter.value === value);
 
 const highlightMatch = (text: string, query: string) => {
   if (!query.trim()) return text;
@@ -264,6 +312,7 @@ function AlchemyContent() {
   const [maxLevel, setMaxLevel] = useState<number | "">(89);
   const [minProfit, setMinProfit] = useState<number | "">("");
   const [minVolume, setMinVolume] = useState<number | "">("");
+  const [liquidityFilter, setLiquidityFilter] = useState<AlchemyLiquidityFilter>("ALL");
   const [onlyProfitable, setOnlyProfitable] = useState(false);
   const [hideMissing, setHideMissing] = useState(true);
   const [ownedCostMode, setOwnedCostMode] = useState(false);
@@ -283,6 +332,7 @@ function AlchemyContent() {
     if (saved.maxLevel !== undefined) setMaxLevel(saved.maxLevel);
     if (saved.minProfit !== undefined) setMinProfit(saved.minProfit);
     if (saved.minVolume !== undefined) setMinVolume(saved.minVolume);
+    if (isAlchemyLiquidityFilter(saved.liquidityFilter)) setLiquidityFilter(saved.liquidityFilter);
     if (typeof saved.onlyProfitable === "boolean") setOnlyProfitable(saved.onlyProfitable);
     if (typeof saved.hideMissing === "boolean") setHideMissing(saved.hideMissing);
     if (saved.sortCol === "craftsPerHour" || saved.sortCol === "roi") setSortCol("profitPerHour");
@@ -307,13 +357,14 @@ function AlchemyContent() {
       maxLevel,
       minProfit,
       minVolume,
+      liquidityFilter,
       onlyProfitable,
       hideMissing,
       sortCol,
       sortDesc,
     };
     localStorage.setItem(ALCHEMY_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-  }, [hideMissing, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, settingsLoaded, sortCol, sortDesc]);
+  }, [hideMissing, liquidityFilter, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, settingsLoaded, sortCol, sortDesc]);
 
   const persistOwnedMaterials = (next: Record<string, string[]>) => {
     setOwnedMaterials(next);
@@ -416,13 +467,31 @@ function AlchemyContent() {
 
       const liquidity = getMarketLiquidity(item);
       const signal = getSignal(action, item, missing);
+      const stableVol_3 = liquidity.stableVolume3d || item?.vol_3 || 0;
+      const sellThroughNote = missing ? "" : getSellThroughNote(
+        action,
+        profit,
+        stableVol_3,
+        craftsPerDay,
+        parsedActiveHours,
+        liquidity.hasVolumeSwings,
+      );
+      const sellThroughRisk = Boolean(sellThroughNote);
       const warnings: string[] = [];
       if (missing) warnings.push(outputMissing ? "Missing result price" : `Missing inputs: ${inputMissing.join(", ")}`);
       if (!missing && action === "MARKET" && liquidity.isSpikeRisk) {
         warnings.push("Bulk-sale spike risk");
-      } else if (!missing && action === "MARKET" && liquidity.hasVolumeSwings) {
+      }
+      if (sellThroughRisk) {
+        warnings.push("Sell-through risk");
+      }
+      if (!missing && action === "MARKET" && liquidity.hasVolumeSwings) {
         warnings.push("Volume swings");
-      } else if (!missing && action === "MARKET" && liquidity.stableVolume3d < 40 && signal !== "THIN" && signal !== "NO SALES") {
+      }
+      if (!missing && action === "MARKET" && liquidity.hasPriceSwings) {
+        warnings.push("Price swings");
+      }
+      if (!missing && action === "MARKET" && liquidity.stableVolume3d < 40 && signal !== "THIN" && signal !== "NO SALES") {
         warnings.push("Thin market");
       }
       if (!missing && profit > 0 && opportunityProfit < 0 && ownedCostMode) warnings.push("Only profitable with owned inputs");
@@ -468,9 +537,11 @@ function AlchemyContent() {
         opportunityProfit,
         dailyProfit,
         vol_3: item?.vol_3 || 0,
-        stableVol_3: liquidity.stableVolume3d || item?.vol_3 || 0,
+        stableVol_3,
         liquidityNote: liquidity.note,
-        liquidityRisk: liquidity.isSpikeRisk || liquidity.hasVolumeSwings,
+        liquidityRisk: liquidity.isSpikeRisk || liquidity.hasVolumeSwings || liquidity.hasPriceSwings,
+        sellThroughRisk,
+        sellThroughNote,
         outputSource: outputPrice.source === "custom" ? "custom" : outputPrice.source === "market" ? "market" : "missing",
         inputMissing,
         ingredientCosts,
@@ -501,6 +572,9 @@ function AlchemyContent() {
       if (maxLevel !== "" && row.level > Number(maxLevel)) return false;
       if (hideMissing && row.status === "missing") return false;
       if (onlyProfitable && row.profit <= 0) return false;
+      if (liquidityFilter === "VOLUME SWINGS" && !row.warnings.includes("Volume swings")) return false;
+      if (liquidityFilter === "PRICE SWINGS" && !row.warnings.includes("Price swings")) return false;
+      if (liquidityFilter !== "ALL" && liquidityFilter !== "VOLUME SWINGS" && liquidityFilter !== "PRICE SWINGS" && row.signal !== liquidityFilter) return false;
       if (row.status === "ok" && row.profit < profitLimit) return false;
       if (row.status === "ok" && row.stableVol_3 < volumeLimit) return false;
       return true;
@@ -518,7 +592,7 @@ function AlchemyContent() {
     });
 
     return filtered;
-  }, [allRows, hideMissing, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
+  }, [allRows, hideMissing, liquidityFilter, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
 
   const summary = useMemo(() => {
     const valid = allRows.filter((row) => row.status === "ok");
@@ -527,7 +601,7 @@ function AlchemyContent() {
     const market = valid.filter((row) => row.action === "MARKET").sort((a, b) => b.profit - a.profit)[0];
     const vendor = valid.filter((row) => row.action === "VENDOR").sort((a, b) => b.profit - a.profit)[0];
     const volume = [...valid].sort((a, b) => b.stableVol_3 - a.stableVol_3)[0];
-    const risky = byProfit.find((row) => row.profit > 0 && (row.liquidityRisk || (row.stableVol_3 > 0 && row.stableVol_3 < 40)));
+    const risky = byProfit.find((row) => row.profit > 0 && (row.liquidityRisk || row.sellThroughRisk || (row.stableVol_3 > 0 && row.stableVol_3 < 40)));
     return { market, vendor, hourly, volume, risky, best: byProfit[0] };
   }, [allRows]);
 
@@ -597,6 +671,11 @@ function AlchemyContent() {
         </div>
       )}
 
+      <div className="alchemy-alert">
+        <Info size={16} />
+        Market profit uses generated trade-history snapshots. Stable Vol is the safer sell-through clue; private buyers, off-app trades, undercutting, or spike-driven volume can still change how quickly output sells.
+      </div>
+
       <div className="alchemy-summary-grid">
         <SummaryCard icon={<Coins size={16} />} label="Best Market Craft" row={summary.market} value={summary.market ? formatSignedGold(summary.market.profit) : "N/A"} onSelect={setSelectedRow} />
         <SummaryCard icon={<PackageCheck size={16} />} label="Best Vendor Play" row={summary.vendor} value={summary.vendor ? formatSignedGold(summary.vendor.profit) : "N/A"} onSelect={setSelectedRow} />
@@ -632,7 +711,7 @@ function AlchemyContent() {
         <div className="control-group">
           <label className="control-label">Min Profit / Stable Vol</label>
           <div className="alchemy-inline-fields">
-            <input aria-label="Minimum profit per piece" type="number" className="control-input" placeholder="Profit/Piece" value={minProfit} onChange={(e) => setMinProfit(e.target.value === "" ? "" : Number(e.target.value))} />
+            <input aria-label="Minimum profit per piece" type="number" className="control-input" placeholder="Profit / pc" value={minProfit} onChange={(e) => setMinProfit(e.target.value === "" ? "" : Number(e.target.value))} />
             <input aria-label="Minimum stable volume" type="number" className="control-input" placeholder="Stable Vol" value={minVolume} onChange={(e) => setMinVolume(e.target.value === "" ? "" : Number(e.target.value))} />
           </div>
         </div>
@@ -645,18 +724,35 @@ function AlchemyContent() {
         </div>
 
         <div className="alchemy-toggle-row">
-          <button type="button" className={`alchemy-toggle ${onlyProfitable ? "active" : ""}`} onClick={() => setOnlyProfitable((prev) => !prev)}>
+          <button type="button" aria-pressed={onlyProfitable} className={`alchemy-toggle ${onlyProfitable ? "active" : ""}`} onClick={() => setOnlyProfitable((prev) => !prev)}>
             <CheckCircle2 size={15} /> Profitable only
           </button>
-          <button type="button" className={`alchemy-toggle ${hideMissing ? "active" : ""}`} onClick={() => setHideMissing((prev) => !prev)}>
+          <button type="button" aria-pressed={hideMissing} className={`alchemy-toggle ${hideMissing ? "active" : ""}`} onClick={() => setHideMissing((prev) => !prev)}>
             <Filter size={15} /> Hide missing
           </button>
-          <button type="button" className={`alchemy-toggle ${ownedCostMode ? "active" : ""}`} onClick={() => setOwnedMode(!ownedCostMode)}>
+          <button type="button" aria-pressed={ownedCostMode} className={`alchemy-toggle ${ownedCostMode ? "active" : ""}`} onClick={() => setOwnedMode(!ownedCostMode)}>
             <PackageCheck size={15} /> Owned mode
           </button>
           <span className="alchemy-settings-pill">
             <Clock size={14} /> {parsedActiveHours}h/day - {activeHoursSource}
           </span>
+        </div>
+
+        <div className="alchemy-liquidity-filter" aria-label="Filter alchemy rows by liquidity" role="group">
+          <span><Filter size={14} /> Liquidity</span>
+          <div className="alchemy-liquidity-filter-options">
+            {ALCHEMY_LIQUIDITY_FILTERS.map((filter) => (
+              <button
+                aria-pressed={liquidityFilter === filter.value}
+                className={`alchemy-filter-chip ${liquidityFilter === filter.value ? "active" : ""}`}
+                key={filter.value}
+                onClick={() => setLiquidityFilter(filter.value)}
+                type="button"
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -672,9 +768,9 @@ function AlchemyContent() {
                   <th className="sortable" onClick={() => handleSort("cost")}>Cost {renderSortIcon("cost")}</th>
                   <th className="sortable" onClick={() => handleSort("bestRevenue")}>Return {renderSortIcon("bestRevenue")}</th>
                   <th className="sortable" onClick={() => handleSort("profitPerHour")}>Profit/Hr {renderSortIcon("profitPerHour")}</th>
-                  <th className="sortable" onClick={() => handleSort("profit")}>Profit/Piece {renderSortIcon("profit")}</th>
+                  <th className="sortable" onClick={() => handleSort("profit")}>Profit / pc {renderSortIcon("profit")}</th>
                   <th className="sortable" onClick={() => handleSort("vol_3")}>Stable Vol {renderSortIcon("vol_3")}</th>
-                  <th className="sortable" onClick={() => handleSort("time")}>Time {renderSortIcon("time")}</th>
+                  <th className="sortable" onClick={() => handleSort("time")}>Time (min) {renderSortIcon("time")}</th>
                   <th>Liquidity</th>
                 </tr>
               </thead>
@@ -715,7 +811,7 @@ function AlchemyContent() {
                     <td className={`mono ${row.profitPerHour >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profitPerHour)}</td>
                     <td className={`mono ${row.profit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit)}</td>
                     <td className={`mono ${row.stableVol_3 > 0 ? "text-main" : "text-muted"}`} title={row.stableVol_3 !== row.vol_3 ? `Raw 3-day volume: ${formatGold(row.vol_3)}` : row.liquidityNote}>{formatGold(row.stableVol_3)}</td>
-                    <td className="mono text-muted">{formatDuration(row.time)}</td>
+                    <td className="mono text-muted">{formatMinutes(row.time)}</td>
                     <td>
                       <div className="alchemy-signal-stack">
                         <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
@@ -738,7 +834,7 @@ function AlchemyContent() {
             onToggleDirection={() => setSortDesc((prev) => !prev)}
             options={[
               { value: "profitPerHour", label: "Profit/Hr" },
-              { value: "profit", label: "Profit/Piece" },
+              { value: "profit", label: "Profit / pc" },
               { value: "cost", label: "Cost" },
               { value: "bestRevenue", label: "Return" },
               { value: "dailyProfit", label: "Daily Profit" },
@@ -779,13 +875,20 @@ function AlchemyContent() {
                       <div className="m-stat"><span className="m-label">COST</span><span className="m-val">{formatGold(row.cost)}g</span></div>
                       <div className="m-stat"><span className="m-label">RETURN</span><span className="m-val">{formatGold(row.bestRevenue)}g</span></div>
                       <div className="m-stat"><span className="m-label">PROFIT/HR</span><span className={`m-val ${row.profitPerHour > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profitPerHour)}</span></div>
-                      <div className="m-stat"><span className="m-label">PROFIT/PIECE</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
+                      <div className="m-stat"><span className="m-label">PROFIT / PC</span><span className={`m-val ${row.profit > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profit)}</span></div>
                       <div className="m-stat"><span className="m-label">STABLE VOL</span><span className="m-val">{formatGold(row.stableVol_3)}</span></div>
                     </div>
                     <div className="m-card-footer">
                       <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
-                      <div className="m-vol">{formatDuration(row.time)} each</div>
+                      <div className="m-vol">{formatMinutes(row.time)} min each</div>
                     </div>
+                    {getVisibleAlchemyWarnings(row).length > 0 && (
+                      <div className="m-card-warnings">
+                        {getVisibleAlchemyWarnings(row).slice(0, 3).map((warning) => (
+                          <span key={warning} className="alchemy-warning-chip">{warning}</span>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -797,7 +900,7 @@ function AlchemyContent() {
           <div className="alchemy-empty-state">
             <Search size={28} />
             <h3>No alchemy strategies match those filters</h3>
-            <p>Relax the profit, volume, level, or search filters to bring recipes back.</p>
+            <p>Relax the profit, volume, liquidity, level, or search filters to bring recipes back.</p>
           </div>
         )}
       </section>
@@ -868,14 +971,43 @@ function AlchemyStrategyModal({
   onToggleOwned: (materialName: string) => void;
 }) {
   const dialogRef = useModalA11y<HTMLDivElement>(true, onClose);
+  const backdropPointerStarted = useRef(false);
   const [targetGoldPerHour, setTargetGoldPerHour] = useState("");
   const target = Number(targetGoldPerHour);
   const targetPerCraft = Number.isFinite(target) && target > 0 && row.craftsPerHour > 0
     ? target / row.craftsPerHour
     : null;
+  const sharedInputs = row.ingredientCosts
+    .map((ingredient) => {
+      const usedTotal = ownedCostMode && ingredient.owned ? 0 : ingredient.totalPrice;
+      return { ingredient, usedTotal };
+    })
+    .filter(({ ingredient, usedTotal }) => ingredient.unitPrice > 0 && usedTotal > 0);
+  const sharedInputCost = sharedInputs.reduce((sum, entry) => sum + entry.usedTotal, 0);
+  const sharedFixedCost = row.cost - sharedInputCost;
+  const sharedBreakEvenBudget = row.bestRevenue - sharedFixedCost;
+  const sharedTargetBudget = targetPerCraft === null ? null : row.bestRevenue - sharedFixedCost - targetPerCraft;
+  const sharedBreakEvenRatio = sharedInputCost > 0 && sharedBreakEvenBudget > 0 ? sharedBreakEvenBudget / sharedInputCost : null;
+  const sharedTargetRatio = sharedInputCost > 0 && sharedTargetBudget !== null && sharedTargetBudget > 0 ? sharedTargetBudget / sharedInputCost : null;
+  const sharedBreakEvenLabel = sharedBreakEvenRatio === null
+    ? "No margin"
+    : sharedBreakEvenRatio >= 1
+      ? `+${Math.round((sharedBreakEvenRatio - 1) * 100)}% room`
+      : `${Math.round((1 - sharedBreakEvenRatio) * 100)}% lower`;
 
   return (
-    <div className="modal-overlay alchemy-strategy-overlay" onClick={onClose}>
+    <div
+      className="modal-overlay alchemy-strategy-overlay"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && backdropPointerStarted.current) {
+          onClose();
+        }
+        backdropPointerStarted.current = false;
+      }}
+      onPointerDown={(event) => {
+        backdropPointerStarted.current = event.target === event.currentTarget;
+      }}
+    >
       <div
         aria-labelledby="alchemy-strategy-title"
         aria-modal="true"
@@ -909,7 +1041,7 @@ function AlchemyStrategyModal({
               <strong className="mono">{formatGold(row.bestRevenue)}g</strong>
             </div>
             <div>
-              <span>Profit / piece</span>
+              <span>Profit / pc</span>
               <strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit)}</strong>
             </div>
             <div>
@@ -935,6 +1067,52 @@ function AlchemyStrategyModal({
               {targetPerCraft !== null && (
                 <div className="alchemy-target-profit-note">
                   {formatGold(targetPerCraft)}g target profit per craft.
+                </div>
+              )}
+              {sharedInputs.length > 1 && (
+                <div className="alchemy-shared-scenario">
+                  <div className="alchemy-shared-header">
+                    <div>
+                      <strong>Shared material move</strong>
+                      <span>Current paid input mix: {formatGold(sharedInputCost, 3)}g</span>
+                    </div>
+                    <small>{sharedBreakEvenLabel}</small>
+                  </div>
+                  <div className="alchemy-shared-summary">
+                    <div>
+                      <span>Break-even basket</span>
+                      <strong className={sharedBreakEvenBudget > 0 ? "" : "danger-value"}>
+                        {sharedBreakEvenBudget > 0 ? `${formatGold(sharedBreakEvenBudget, 3)}g` : "Not profitable"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Target basket</span>
+                      <strong className={sharedTargetBudget === null || sharedTargetBudget > 0 ? "" : "danger-value"}>
+                        {sharedTargetBudget === null
+                          ? "Set target"
+                          : sharedTargetBudget > 0 ? `${formatGold(sharedTargetBudget, 3)}g` : "Not possible"}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="alchemy-shared-grid">
+                    {sharedInputs.map(({ ingredient }) => {
+                      const breakEvenUnit = sharedBreakEvenRatio === null ? null : Math.floor(ingredient.unitPrice * sharedBreakEvenRatio);
+                      const targetUnit = sharedTargetRatio === null ? null : Math.floor(ingredient.unitPrice * sharedTargetRatio);
+                      return (
+                        <div key={ingredient.name} className="alchemy-break-even-line">
+                          <span>{ingredient.name}</span>
+                          <strong className={breakEvenUnit !== null && breakEvenUnit > 0 ? "" : "danger-value"}>
+                            {breakEvenUnit !== null && breakEvenUnit > 0 ? `${formatGold(breakEvenUnit)}g ea` : "No room"}
+                          </strong>
+                          {targetPerCraft !== null && (
+                            <em className={targetUnit !== null && targetUnit > 0 ? "" : "danger-value"}>
+                              Target {targetUnit !== null && targetUnit > 0 ? `${formatGold(targetUnit)}g ea` : "not possible"}
+                            </em>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               <div className="alchemy-material-list">
@@ -1002,7 +1180,7 @@ function AlchemyStrategyModal({
                 <div className="alchemy-math-row"><span>Best path</span><PathBadge action={row.action} /></div>
                 <div className="alchemy-math-row"><span>Best revenue</span><strong className="mono accent-value">{formatGold(row.bestRevenue, 3)}g</strong></div>
                 <div className="alchemy-math-row"><span>Cost used</span><strong className="mono">{formatGold(row.cost, 3)}g</strong></div>
-                <div className="alchemy-math-row"><span>Profit per craft</span><strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit, 3)}</strong></div>
+                <div className="alchemy-math-row"><span>Profit / pc</span><strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit, 3)}</strong></div>
                 <div className="alchemy-math-row"><span>Opportunity profit</span><strong className={`mono ${row.opportunityProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.opportunityProfit, 3)}</strong></div>
                 <div className="alchemy-math-row"><span>Craft time</span><strong className="mono">{formatDuration(row.time)}</strong></div>
                 <div className="alchemy-math-row"><span>Crafts/hr</span><strong className="mono">{row.craftsPerHour.toFixed(2)}</strong></div>
@@ -1016,6 +1194,7 @@ function AlchemyStrategyModal({
                   <span>Raw 3-day sold</span>
                   <strong>{formatGold(row.vol_3)} <small>sold</small></strong>
                 </div>
+                {row.sellThroughRisk && <p className="alchemy-reason"><AlertTriangle size={14} /> {row.sellThroughNote}</p>}
                 {row.liquidityRisk && <p className="alchemy-reason"><AlertTriangle size={14} /> {row.liquidityNote}</p>}
                 <p className="alchemy-reason"><Eye size={14} /> {row.reason}</p>
               </div>

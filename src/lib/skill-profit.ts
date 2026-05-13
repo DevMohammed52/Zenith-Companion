@@ -152,6 +152,8 @@ export type SkillProfitRow = SkillRecipe & {
   liquidityRisk: boolean;
   liquidityLabel: string;
   liquidityNote: string;
+  priceSwingRisk: boolean;
+  priceSwingNote: string;
 };
 
 export type PriceSource = "scenario" | "custom" | "market" | "vendor" | "missing";
@@ -693,6 +695,10 @@ export function calculateSkillProfitRow(
   const volume3d = marketData?.[recipe.name]?.vol_3 || 0;
   const stableVolume3d = liquidity.stableVolume3d || volume3d;
   const liquidityRisk = liquidity.isSpikeRisk || liquidity.hasVolumeSwings;
+  const priceSwingRisk = sale.source === "market" && liquidity.hasPriceSwings;
+  const priceSwingNote = priceSwingRisk
+    ? `Recent sold prices range from ${Math.round(liquidity.latestSaleMin).toLocaleString()}g to ${Math.round(liquidity.latestSaleMax).toLocaleString()}g. Check recent trades/listings before bulk crafting.`
+    : "";
   const isLiquid = sale.source !== "market" || (stableVolume3d >= minVolume && !liquidityRisk);
 
   return {
@@ -742,6 +748,8 @@ export function calculateSkillProfitRow(
     liquidityRisk,
     liquidityLabel: liquidity.label,
     liquidityNote: liquidity.note,
+    priceSwingRisk,
+    priceSwingNote,
   };
 }
 

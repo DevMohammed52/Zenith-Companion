@@ -1,9 +1,9 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon, BellRing } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface NavItem {
     href: string;
@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: '/pets/compare', label: 'Pet Comparison', icon: BarChart3 },
             { href: '/housing', label: 'Housing', icon: Home },
             { href: '/items', label: 'Items Database', icon: Package, matchPrefix: true },
+            { href: '/market-alerts', label: 'Market Watch', icon: BellRing },
             { href: '/map', label: 'World Map', icon: MapIcon },
             { href: '/weather', label: 'Weather Guide', icon: Sparkles },
             { href: '/lore', label: 'Lore Wiki', icon: BookOpen, matchPrefix: true },
@@ -61,12 +62,24 @@ const NAV_GROUPS: NavGroup[] = [
 import { useData } from '@/context/DataContext';
 
 import { useSidebar } from '@/context/SidebarContext';
+import {
+    evaluateMarketWatchRule,
+    MARKET_WATCH_RULES_EVENT,
+    MARKET_WATCH_STORAGE_KEY,
+    sanitizeMarketWatchRules,
+    type MarketWatchRule,
+} from '@/lib/market-alerts';
+import type { MarketPriceDatum } from '@/lib/market-pricing';
+import { getProfileBarteringBoost } from '@/lib/profile-calculations';
+import { useProfiles } from '@/lib/profiles';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { scraperStatus } = useData();
+    const { scraperStatus, marketData, allItemsDb } = useData();
+    const { activeProfile } = useProfiles();
     const { mobileOpen, setMobileOpen } = useSidebar();
     const previousPathname = useRef(pathname);
+    const [marketWatchRules, setMarketWatchRules] = useState<MarketWatchRule[]>([]);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         'General': true,
         'Skills': true,
@@ -102,6 +115,58 @@ export default function Sidebar() {
         : ageMinutes < 1
             ? 'Just now'
             : `${ageMinutes}m ago`;
+    const typedMarketData = marketData as Record<string, MarketPriceDatum> | null;
+    const barteringBoost = getProfileBarteringBoost(activeProfile);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const loadMarketWatchRules = () => {
+            try {
+                const stored = localStorage.getItem(MARKET_WATCH_STORAGE_KEY);
+                setMarketWatchRules(sanitizeMarketWatchRules(stored ? JSON.parse(stored) : []));
+            } catch {
+                setMarketWatchRules([]);
+            }
+        };
+
+        const onStorage = (event: StorageEvent) => {
+            if (event.key && event.key !== MARKET_WATCH_STORAGE_KEY) return;
+            loadMarketWatchRules();
+        };
+
+        loadMarketWatchRules();
+        window.addEventListener('storage', onStorage);
+        window.addEventListener(MARKET_WATCH_RULES_EVENT, loadMarketWatchRules);
+
+        return () => {
+            window.removeEventListener('storage', onStorage);
+            window.removeEventListener(MARKET_WATCH_RULES_EVENT, loadMarketWatchRules);
+        };
+    }, []);
+
+    const marketWatchSummary = useMemo(() => {
+        const enabledRules = marketWatchRules.filter((rule) => rule.enabled);
+        const fallbackUpdatedAt = typeof scraperStatus?.timestamp === 'string' ? scraperStatus.timestamp : undefined;
+        const evaluations = enabledRules.map((rule) => evaluateMarketWatchRule({
+            rule,
+            market: typedMarketData?.[rule.itemName],
+            item: allItemsDb?.[rule.itemName],
+            barteringBoostPercent: barteringBoost,
+            fallbackUpdatedAt,
+        }));
+        const met = evaluations.filter((evaluation) => evaluation.conditionMet).length;
+        const waiting = evaluations.filter((evaluation) => evaluation.hasValue && !evaluation.conditionMet).length;
+        const missing = evaluations.filter((evaluation) => !evaluation.hasValue).length;
+        return {
+            total: marketWatchRules.length,
+            enabled: enabledRules.length,
+            met,
+            waiting,
+            missing,
+        };
+    }, [allItemsDb, barteringBoost, marketWatchRules, scraperStatus?.timestamp, typedMarketData]);
+    const marketWatchAriaLabel = `Market Watch, ${marketWatchSummary.met} rules met, ${marketWatchSummary.enabled} enabled rules`;
 
     return (
         <>
@@ -123,7 +188,13 @@ export default function Sidebar() {
                             background: 'rgba(255,255,255,0.05)', 
                             border: '1px solid var(--border-subtle)', 
                             borderRadius: '6px', 
-                            padding: '4px',
+                            width: '40px',
+                            height: '40px',
+                            minWidth: '40px',
+                            minHeight: '40px',
+                            padding: 0,
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             color: 'var(--text-muted)'
                         }}
                     >
@@ -192,12 +263,17 @@ export default function Sidebar() {
                                         {group.items.map(item => {
                                             const active = isActive(item);
                                             const Icon = item.icon;
+                                            const watchBadge = item.href === '/market-alerts' && marketWatchSummary.enabled > 0
+                                                ? `${marketWatchSummary.met}/${marketWatchSummary.enabled}`
+                                                : item.badge;
+                                            const watchBadgeActive = item.href === '/market-alerts' && marketWatchSummary.met > 0;
                                             return (
                                                 <Link 
                                                     key={item.href} 
                                                     href={item.href} 
                                                     className={`nav-link ${active ? 'nav-link-active' : ''}`}
                                                     onClick={closeMobileMenu}
+                                                    aria-label={item.href === '/market-alerts' ? marketWatchAriaLabel : undefined}
                                                     style={{ 
                                                         paddingLeft: '1.25rem', 
                                                         fontSize: '0.82rem',
@@ -222,12 +298,22 @@ export default function Sidebar() {
                                                         }} />
                                                         {item.label}
                                                     </div>
-                                                    {item.badge && (
+                                                    {watchBadge && (
                                                         <span style={{ 
-                                                            fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', 
-                                                            padding: '2px 6px', borderRadius: '4px', color: 'var(--text-muted)' 
+                                                            fontFamily: 'var(--font-mono)',
+                                                            fontSize: '0.63rem',
+                                                            background: watchBadgeActive ? 'color-mix(in srgb, var(--text-warning), transparent 84%)' : 'rgba(255,255,255,0.05)',
+                                                            border: watchBadgeActive ? '1px solid color-mix(in srgb, var(--text-warning), transparent 50%)' : '1px solid transparent',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '999px',
+                                                            color: watchBadgeActive ? 'var(--text-warning)' : 'var(--text-muted)',
+                                                            flex: '0 0 auto',
+                                                            maxWidth: '4.25rem',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
                                                         }}>
-                                                            {item.badge}
+                                                            {watchBadge}
                                                         </span>
                                                     )}
                                                 </Link>

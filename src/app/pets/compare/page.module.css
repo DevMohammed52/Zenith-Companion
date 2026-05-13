@@ -136,6 +136,98 @@
   line-height: 1.5;
 }
 
+.auditGrid {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 0.65rem;
+}
+
+.auditCard {
+  min-width: 0;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 50%),
+    rgba(255, 255, 255, 0.03);
+  padding: 0.8rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.22rem 0.55rem;
+  align-items: start;
+}
+
+.auditCard svg {
+  grid-row: span 3;
+  color: var(--text-accent);
+  margin-top: 0.1rem;
+}
+
+.auditCard span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.auditCard strong,
+.auditCard small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.auditCard small,
+.quickPickNote {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.auditCard small {
+  font-size: 0.76rem;
+}
+
+.contextStrip {
+  margin-top: 0.85rem;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 55%),
+    rgba(0, 0, 0, 0.2);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 0.72rem;
+}
+
+.contextStrip div {
+  min-width: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.7rem 0.75rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.contextStrip span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.contextStrip strong,
+.contextStrip small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contextStrip small {
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 .field {
   position: relative;
   min-width: 0;
@@ -326,8 +418,8 @@
   position: absolute;
   right: 0.45rem;
   top: 0.45rem;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   color: var(--text-primary);
@@ -475,6 +567,11 @@
   overflow-wrap: anywhere;
 }
 
+.quickPickNote {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+}
+
 .emptyState {
   min-height: 220px;
   display: grid;
@@ -577,6 +674,27 @@
   white-space: nowrap;
 }
 
+.lossValue {
+  color: #fda4af !important;
+}
+
+.sampleBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.sampleBadges span {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-secondary);
+  padding: 0.32rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .tableWrap {
   max-width: 100%;
   overflow-x: auto;
@@ -668,6 +786,10 @@
   .cardStats {
     grid-template-columns: 1fr;
   }
+
+  .contextStrip {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -698,6 +820,7 @@
     padding: 1rem;
   }
 
+  .menuPanel,
   .pickerPanel {
     position: fixed;
     left: 0.75rem;
@@ -705,6 +828,7 @@
     top: 5.2rem;
     width: auto;
     max-height: calc(100vh - 6rem);
+    overflow-y: auto;
   }
 
   .petOptions {
@@ -714,4 +838,5 @@
   .petOptions em {
     display: none;
   }
+
 }

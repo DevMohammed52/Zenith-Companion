@@ -910,7 +910,7 @@ export default function SkillProfitPage() {
                   </td>
                   <td>{row.skill}</td>
                   <td className="mono">{row.level}</td>
-                  <td className={`mono ${getRankedProfitPerHour(row) >= 0 ? styles.positive : styles.negative}`}>
+                  <td className={`mono ${getDisplayProfitPerHour(row) === null ? styles.mutedValue : getRankedProfitPerHour(row) >= 0 ? styles.positive : styles.negative}`}>
                     <div className={styles.profitCell}>
                       <strong>{getProfitCellValue(row)}</strong>
                       {row.essenceActive && (
@@ -932,8 +932,19 @@ export default function SkillProfitPage() {
                     {row.skill === "Forge" ? (
                       <span className={`${styles.liquidityBadge} ${styles.liquidityInfo}`}><Info size={12} /> Info</span>
                     ) : row.liquidityRisk ? (
-                      <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`} title={row.liquidityNote}>
-                        <Eye size={12} /> {row.liquidityLabel === "Spike risk" ? "Spike" : "Swings"}
+                      <>
+                        <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`} title={row.liquidityNote}>
+                          <Eye size={12} /> {row.liquidityLabel === "Spike risk" ? "Spike" : "Volume"}
+                        </span>
+                        {row.priceSwingRisk && (
+                          <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`} title={row.priceSwingNote}>
+                            <Eye size={12} /> Price
+                          </span>
+                        )}
+                      </>
+                    ) : row.priceSwingRisk ? (
+                      <span className={`${styles.liquidityBadge} ${styles.liquidityWarn}`} title={row.priceSwingNote}>
+                        <Eye size={12} /> Price
                       </span>
                     ) : isLiquid(row, minVolume) ? (
                       <span className={`${styles.liquidityBadge} ${styles.liquidityGood}`}><BarChart3 size={12} /> Liquid</span>
@@ -1354,6 +1365,29 @@ function SkillStrategyModal({
     ? (target + (activeRow.essenceActive ? activeRow.essenceCostPerHour || 0 : 0)) / actionRate
     : null;
   const editableInputCount = activeRow.ingredientCosts.filter((ingredient) => !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor").length;
+  const sharedInputs = activeRow.ingredientCosts
+    .map((ingredient) => ({
+      ingredient,
+      usedTotal: ingredient.unitPrice * ingredient.quantity,
+    }))
+    .filter(({ ingredient, usedTotal }) => !isFixedBuyPriceItem(ingredient.name) && ingredient.source !== "vendor" && ingredient.unitPrice > 0 && usedTotal > 0);
+  const sharedInputCost = sharedInputs.reduce((sum, entry) => sum + entry.usedTotal, 0);
+  const sharedFixedInputCost = activeRow.inputCost - sharedInputCost;
+  const sharedBreakEvenBudget = targetNeedsEssencePrice
+    ? null
+    : activeRow.netRevenue - sharedFixedInputCost - essenceCostPerAction;
+  const sharedTargetBudget = targetPerAction === null ? null : activeRow.netRevenue - sharedFixedInputCost - targetPerAction;
+  const sharedBreakEvenRatio = sharedInputCost > 0 && sharedBreakEvenBudget !== null && sharedBreakEvenBudget > 0
+    ? sharedBreakEvenBudget / sharedInputCost
+    : null;
+  const sharedTargetRatio = sharedInputCost > 0 && sharedTargetBudget !== null && sharedTargetBudget > 0
+    ? sharedTargetBudget / sharedInputCost
+    : null;
+  const sharedBreakEvenLabel = sharedBreakEvenRatio === null
+    ? targetNeedsEssencePrice ? "Needs price" : "No margin"
+    : sharedBreakEvenRatio >= 1
+      ? `+${Math.round((sharedBreakEvenRatio - 1) * 100)}% room`
+      : `${Math.round((1 - sharedBreakEvenRatio) * 100)}% lower`;
   const displayProfitPerHour = getDisplayProfitPerHour(activeRow);
   const rankedProfitPerHour = getRankedProfitPerHour(activeRow);
   const changeNeedsPriceData = (row.essenceActive && row.essenceNeedsPrice) || (activeRow.essenceActive && activeRow.essenceNeedsPrice);
@@ -1409,13 +1443,13 @@ function SkillStrategyModal({
                 <div className={styles.tryPriceSummary}>
                   <div>
                     <span>With try prices</span>
-                    <strong className={rankedProfitPerHour >= 0 ? styles.goodValue : styles.badValue}>
+                    <strong className={displayProfitPerHour === null ? styles.mutedValue : rankedProfitPerHour >= 0 ? styles.goodValue : styles.badValue}>
                       {displayProfitPerHour === null ? "Needs price/data" : `${formatGold(displayProfitPerHour)}g/hr`}
                     </strong>
                   </div>
                   <div>
                     <span>Change</span>
-                    <strong className={profitPerHourDelta === null || profitPerHourDelta >= 0 ? styles.goodValue : styles.badValue}>
+                    <strong className={profitPerHourDelta === null ? styles.mutedValue : profitPerHourDelta >= 0 ? styles.goodValue : styles.badValue}>
                       {profitPerHourDelta === null ? "Needs price/data" : `${formatSignedGold(profitPerHourDelta)}/hr`}
                     </strong>
                   </div>
@@ -1516,6 +1550,54 @@ function SkillStrategyModal({
                   onChange={(event) => setTargetGoldPerHour(event.target.value)}
                 />
               </label>
+              {sharedInputs.length > 1 && (
+                <div className={styles.sharedScenario}>
+                  <div className={styles.sharedScenarioHeader}>
+                    <div>
+                      <strong>Shared material move</strong>
+                      <span>Current editable input mix: {formatGold(sharedInputCost)}g</span>
+                    </div>
+                    <small>{sharedBreakEvenLabel}</small>
+                  </div>
+                  <div className={styles.sharedScenarioSummary}>
+                    <div>
+                      <span>Break-even basket</span>
+                      <strong className={sharedBreakEvenBudget !== null && sharedBreakEvenBudget > 0 ? styles.goodValue : styles.badValue}>
+                        {sharedBreakEvenBudget === null
+                          ? "Needs essence price"
+                          : sharedBreakEvenBudget > 0 ? `${formatGold(sharedBreakEvenBudget)}g` : "Not profitable"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Target basket</span>
+                      <strong className={sharedTargetBudget === null ? "" : sharedTargetBudget > 0 ? styles.goodValue : styles.badValue}>
+                        {sharedTargetBudget === null
+                          ? targetNeedsEssencePrice ? "Needs essence price" : "Set target"
+                          : sharedTargetBudget > 0 ? `${formatGold(sharedTargetBudget)}g` : "Not possible"}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className={styles.sharedScenarioGrid}>
+                    {sharedInputs.map(({ ingredient }) => {
+                      const breakEvenUnit = sharedBreakEvenRatio === null ? null : Math.floor(ingredient.unitPrice * sharedBreakEvenRatio);
+                      const targetUnit = sharedTargetRatio === null ? null : Math.floor(ingredient.unitPrice * sharedTargetRatio);
+                      return (
+                        <div className={styles.breakEvenLine} key={ingredient.name}>
+                          <span>{ingredient.name}</span>
+                          <strong className={breakEvenUnit !== null && breakEvenUnit > 0 ? styles.goodValue : styles.badValue}>
+                            {breakEvenUnit !== null && breakEvenUnit > 0 ? `${formatGold(breakEvenUnit)}g ea` : "No room"}
+                          </strong>
+                          {targetPerAction !== null && (
+                            <em className={targetUnit !== null && targetUnit > 0 ? styles.goodValue : styles.badValue}>
+                              Target {targetUnit !== null && targetUnit > 0 ? `${formatGold(targetUnit)}g ea` : "not possible"}
+                            </em>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {targetNeedsEssencePrice && (
                 <div className={styles.fixedPriceNote}>Essence price required for boosted caps</div>
               )}
@@ -1587,6 +1669,7 @@ function SkillStrategyModal({
                 <CalcRow label="Raw 3-day volume" value={activeRow.volume3d.toLocaleString()} muted={activeRow.stableVolume3d === activeRow.volume3d} />
                 <CalcRow label="Liquidity" value={activeRow.liquidityLabel} muted={!activeRow.liquidityRisk && activeRow.liquidityLabel === "No market"} />
                 {activeRow.liquidityRisk && <CalcRow label="Market caution" value={activeRow.liquidityNote} muted />}
+                {activeRow.priceSwingRisk && <CalcRow label="Price caution" value={activeRow.priceSwingNote} muted />}
               </div>
               <div className={styles.formula}>
                 {activeRow.essenceActive && activeRow.profitWithEssencePerHour !== null

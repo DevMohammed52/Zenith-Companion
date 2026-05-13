@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
+  AlertTriangle,
   ArrowDownUp,
   BookOpen,
   Boxes,
@@ -11,6 +12,7 @@ import {
   ChevronRight,
   Database,
   Hammer,
+  LockKeyhole,
   MapPin,
   Package,
   Search,
@@ -29,6 +31,7 @@ import {
   type GatheredResourceLocation,
 } from '@/lib/locations';
 import { getMarketLiquidity, getSafeMarketValue, type MarketLiquidityInfo } from '@/lib/market-pricing';
+import { getMerchantBuyPrice } from '@/constants';
 
 interface SearchIndexItem {
   id: string;
@@ -39,7 +42,7 @@ interface SearchIndexItem {
 }
 
 type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage' | 'requiredLevel';
-type SignalFilter = 'ALL' | 'MARKET' | 'VENDOR' | 'CRAFTABLE' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
+type SignalFilter = 'ALL' | 'MARKET' | 'PRICE_SWINGS' | 'VENDOR' | 'UNTRADABLE' | 'CRAFTABLE' | 'PRODUCED' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
 type ViewMode = 'table' | 'cards';
 type FilterOption<T extends string> = { value: T; label: string };
 
@@ -56,12 +59,15 @@ type EnrichedItem = SearchIndexItem & {
   marketVolume: number;
   stableMarketVolume: number;
   liquidity: MarketLiquidityInfo;
+  marketConfidence: MarketConfidence;
   requiredLevel: number;
   requirementsText: string;
   vendorPrice: number;
+  merchantBuyPrice: number;
   tradeable: boolean;
   hasMarket: boolean;
   hasRecipe: boolean;
+  isSecondaryProduction: boolean;
   hasStats: boolean;
   hasEffects: boolean;
   hasLore: boolean;
@@ -69,9 +75,23 @@ type EnrichedItem = SearchIndexItem & {
   dropLocations: string[];
   dropLocationKeys: string[];
   resourceLocations: GatheredResourceLocation[];
+  gatheringActionSource: GatheringActionSource | null;
+  hasFarmableSource: boolean;
   droppedByCount: number;
   usedInCount: number;
   usageScore: number;
+};
+
+type GatheringActionSource = {
+  skill: string;
+  level: number;
+  note: string;
+};
+
+type MarketConfidence = {
+  label: 'Likely market' | 'Check listings' | 'Vendor safer' | 'Needs recent sales' | 'No market';
+  tone: 'good' | 'warn' | 'bad' | 'muted';
+  note: string;
 };
 
 const QUALITY_ORDER: Record<string, number> = {
@@ -118,6 +138,110 @@ function formatRequirements(item: Record<string, any>) {
     .join(' / ');
 }
 
+function isRareManualMarketItem(name: string, type: string, quality: string) {
+  const normalizedType = String(type || '').toUpperCase();
+  const normalizedQuality = String(quality || '').toUpperCase();
+  return normalizedType === 'PET_EGG' || (/ Egg$/i.test(name) && normalizedQuality === 'MYTHIC');
+}
+
+function isRareOrLimitedHistoryItem(type: string, quality: string) {
+  const normalizedType = String(type || '').toUpperCase();
+  const normalizedQuality = String(quality || '').toUpperCase();
+  return normalizedQuality === 'UNIQUE'
+    || normalizedQuality === 'MYTHIC'
+    || normalizedType === 'RELIC'
+    || normalizedType === 'PET_EGG';
+}
+
+function descriptionMarksNonTradeable(description: string) {
+  return /cannot sell (?:it )?on the market|not tradable|not tradeable|untradable/i.test(description);
+}
+
+function getMarketConfidence({
+  name,
+  type,
+  quality,
+  marketPrice,
+  vendorValue,
+  liquidity,
+  tradeable,
+}: {
+  name: string;
+  type: string;
+  quality: string;
+  marketPrice: number;
+  vendorValue: number;
+  liquidity: MarketLiquidityInfo;
+  tradeable: boolean;
+}): MarketConfidence {
+  if (!tradeable) {
+    return {
+      label: 'No market',
+      tone: 'muted',
+      note: 'This item is not tradeable, so market history is not a sell path.',
+    };
+  }
+  const rareManualMarketItem = isRareManualMarketItem(name, type, quality);
+  if (marketPrice <= 0) {
+    if (rareManualMarketItem || isRareOrLimitedHistoryItem(type, quality)) {
+      return {
+        label: 'Check listings',
+        tone: 'warn',
+        note: 'Rare or limited-history items need manual review; vendor value is only a floor, not the recommended exit.',
+      };
+    }
+    return vendorValue > 0
+      ? {
+        label: 'Vendor safer',
+        tone: 'warn',
+        note: 'No usable market price was found; vendor value is the clearer fallback.',
+      }
+      : {
+        label: 'No market',
+        tone: 'muted',
+        note: 'No usable market price or vendor fallback was found.',
+      };
+  }
+  if (liquidity.label === 'No sales' || liquidity.stableVolume3d <= 0) {
+    return {
+      label: 'Needs recent sales',
+      tone: 'bad',
+      note: 'A market price exists, but recent sold volume is missing. Check current listings before treating market as the best exit.',
+    };
+  }
+  if (
+    !rareManualMarketItem
+    && vendorValue > 0
+    && vendorValue >= marketPrice * 0.85
+    && (liquidity.tone === 'thin' || liquidity.tone === 'none' || liquidity.tone === 'risk' || liquidity.hasVolumeSwings || liquidity.hasPriceSwings)
+  ) {
+    return {
+      label: 'Vendor safer',
+      tone: 'warn',
+      note: 'Vendor value is close enough to the market price that it may be safer than waiting on an unstable or thin market.',
+    };
+  }
+  if (liquidity.tone === 'active' && !liquidity.hasVolumeSwings && !liquidity.hasPriceSwings && !liquidity.isSpikeRisk) {
+    return {
+      label: 'Likely market',
+      tone: 'good',
+      note: 'Recent stable sold pace is high enough that market is the clearer public exit path.',
+    };
+  }
+  if (liquidity.tone === 'steady' && !liquidity.hasVolumeSwings && !liquidity.hasPriceSwings && !liquidity.isSpikeRisk) {
+    return {
+      label: 'Likely market',
+      tone: 'good',
+      note: 'Recent stable sold pace is moderate; market is plausible, but still check current listings for expensive batches.',
+    };
+  }
+  return {
+    label: 'Check listings',
+    tone: 'warn',
+    note: 'Market data has low volume, price spread, volume spikes, or guarded price history. Check current listings before using market as the best path.',
+  };
+}
+
 const SORT_OPTIONS: FilterOption<SortKey>[] = [
   { value: 'requiredLevel', label: 'Required Level' },
   { value: 'quality', label: 'Rarity' },
@@ -132,8 +256,11 @@ const SORT_OPTIONS: FilterOption<SortKey>[] = [
 const SIGNAL_OPTIONS: FilterOption<SignalFilter>[] = [
   { value: 'ALL', label: 'All tags' },
   { value: 'MARKET', label: 'Market listed' },
-  { value: 'VENDOR', label: 'Vendor value' },
+  { value: 'PRICE_SWINGS', label: 'Price swings' },
+  { value: 'VENDOR', label: 'Merchant source' },
+  { value: 'UNTRADABLE', label: 'Untradable' },
   { value: 'CRAFTABLE', label: 'Craftable' },
+  { value: 'PRODUCED', label: 'Produced' },
   { value: 'USED', label: 'Used in recipes' },
   { value: 'DROPPED', label: 'Dropped by enemies' },
   { value: 'FARMABLE', label: 'Farmable' },
@@ -156,12 +283,36 @@ const EQUIPMENT_TYPES = new Set([
   'RING',
 ]);
 
+const SECONDARY_PRODUCTION_TYPES = new Set(['METAL_BAR', 'FOOD']);
+const CONSTRUCTION_OUTPUT_PATTERN = /\b(plank|beam|brick|glass|fitting)\b/i;
+const GATHERING_ACTION_ITEMS: Record<string, GatheringActionSource> = {
+  clay: {
+    skill: 'Construction',
+    level: 1,
+    note: 'Gathered directly through Construction; no world location is currently mapped.',
+  },
+  sand: {
+    skill: 'Construction',
+    level: 1,
+    note: 'Gathered directly through Construction; no world location is currently mapped.',
+  },
+};
+
+function getGatheringActionSource(itemName: string): GatheringActionSource | null {
+  return GATHERING_ACTION_ITEMS[itemName.trim().toLowerCase()] || null;
+}
+
 const formatGold = (value: number) => {
   if (!value) return '-';
   return `${value.toLocaleString(undefined, { maximumFractionDigits: value < 100 ? 2 : 0 })}g`;
 };
 
-const formatLabel = (value: string) => value.replace(/_/g, ' ');
+const TYPE_LABEL_OVERRIDES: Record<string, string> = {
+  CHEST: 'Loot Chests',
+  CHESTPLATE: 'Chest Armor',
+};
+
+const formatLabel = (value: string) => TYPE_LABEL_OVERRIDES[value] || value.replace(/_/g, ' ');
 const ITEM_DB_VIEW_STORAGE_KEY = 'zenith_items_view_mode';
 
 function ItemsArchiveContent() {
@@ -173,6 +324,7 @@ function ItemsArchiveContent() {
   const [selectedQuality, setSelectedQuality] = useState('ALL');
   const [selectedSignal, setSelectedSignal] = useState<SignalFilter>('ALL');
   const [selectedLocation, setSelectedLocation] = useState('ALL');
+  const [hideNonMarket, setHideNonMarket] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('volume');
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewModeState] = useState<ViewMode>('table');
@@ -235,7 +387,7 @@ function ItemsArchiveContent() {
 
   useEffect(() => {
     setVisibleCount(150);
-  }, [debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc]);
+  }, [debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc, hideNonMarket]);
 
   const enrichedItems = useMemo<EnrichedItem[]>(() => {
     return index.map(item => {
@@ -247,26 +399,45 @@ function ItemsArchiveContent() {
         : [];
       const dropLocationRefs = dropSources.map(getDropSourceLocation).filter(location => location.key && location.name && location.name !== 'Unknown');
       const resourceLocations = getResourceLocationsForItem(item.name);
+      const gatheringActionSource = getGatheringActionSource(item.name);
+      const hasFarmableSource = resourceLocations.length > 0 || Boolean(gatheringActionSource);
       const dropLocations = Array.from(new Set([
         ...dropLocationRefs.map(location => location.name).filter(Boolean),
         ...resourceLocations.map(location => location.name),
+        ...(gatheringActionSource ? [gatheringActionSource.skill] : []),
       ])) as string[];
       const dropLocationKeys = Array.from(new Set([
         ...dropLocationRefs.map(location => location.key).filter(Boolean),
         ...resourceLocations.map(location => location.key),
+        ...(gatheringActionSource ? [gatheringActionSource.skill.toLowerCase()] : []),
       ])) as string[];
       const droppedByCount = dropSources.length;
       const usedInCount = Array.isArray(usage.required_for) ? usage.required_for.length : 0;
+      const merchantBuyPrice = getMerchantBuyPrice(item.name);
       const vendorPrice = Number(market.vendor_price || full.vendor_price || 0);
       const marketPrice = getSafeMarketValue(market);
       const marketVolume = Number(market.vol_3 || 0);
-      const liquidity = getMarketLiquidity(market);
+      const description = full.description || '';
+      const tradeable = Boolean(full.is_tradeable ?? marketPrice > 0)
+        && !descriptionMarksNonTradeable(description);
+      const liquidity = getMarketLiquidity({ ...market, is_tradeable: tradeable });
+      const marketConfidence = getMarketConfidence({
+        name: item.name,
+        type: item.type,
+        quality: item.quality,
+        marketPrice,
+        vendorValue: Math.max(vendorPrice, merchantBuyPrice),
+        liquidity,
+        tradeable,
+      });
       const loreCount = getLoreForItem(item.name).length;
       const requiredLevel = getRequiredLevel(full);
+      const isSecondaryProduction = SECONDARY_PRODUCTION_TYPES.has(item.type)
+        || (item.type === 'CONSTRUCTION_MATERIAL' && CONSTRUCTION_OUTPUT_PATTERN.test(item.name));
 
       return {
         ...item,
-        description: full.description || '',
+        description,
         marketPrice,
         marketVolume,
         stableMarketVolume: liquidity.stableVolume3d || marketVolume,
@@ -274,9 +445,12 @@ function ItemsArchiveContent() {
         requiredLevel,
         requirementsText: formatRequirements(full),
         vendorPrice,
-        tradeable: Boolean(full.is_tradeable ?? marketPrice > 0),
+        merchantBuyPrice,
+        tradeable,
         hasMarket: marketPrice > 0,
+        marketConfidence,
         hasRecipe: Boolean(full.recipe || usage.produced_from),
+        isSecondaryProduction,
         hasStats: Boolean(full.stats && Object.keys(full.stats).length > 0),
         hasEffects: Boolean(full.effects && (Array.isArray(full.effects) ? full.effects.length > 0 : Object.keys(full.effects).length > 0)),
         hasLore: loreCount > 0,
@@ -284,9 +458,11 @@ function ItemsArchiveContent() {
         dropLocations,
         dropLocationKeys,
         resourceLocations,
+        gatheringActionSource,
+        hasFarmableSource,
         droppedByCount,
         usedInCount,
-        usageScore: droppedByCount + usedInCount + resourceLocations.length + (usage.produced_from ? 1 : 0),
+        usageScore: droppedByCount + usedInCount + resourceLocations.length + (gatheringActionSource ? 1 : 0) + (usage.produced_from ? 1 : 0),
       };
     });
   }, [index, allItemsDb, marketData, usageMap]);
@@ -335,11 +511,15 @@ function ItemsArchiveContent() {
         item.description,
         item.requirementsText,
         item.dropLocations.join(' '),
-        item.resourceLocations.length > 0 ? 'farmable gathered resource map location' : '',
+        item.hasFarmableSource ? 'farmable gathered resource map location skill action construction' : '',
         item.requiredLevel ? `level ${item.requiredLevel}` : '',
         item.hasRecipe ? 'craftable recipe' : '',
+        item.isSecondaryProduction ? 'produced secondary production processed output bar food construction material' : '',
         item.hasMarket ? 'market listed tradeable' : '',
-        item.vendorPrice > 0 ? 'vendor value' : '',
+        item.marketConfidence.label.toLowerCase(),
+        item.liquidity.hasPriceSwings ? 'price swings wide price spread unstable sale prices recent trades' : '',
+        !item.tradeable ? 'untradable non tradeable' : '',
+        item.merchantBuyPrice > 0 ? 'merchant source merchant item vendor buy vendor linked' : '',
         item.hasStats ? 'stats equipment gear' : '',
         item.hasEffects ? 'effects buff potion essence' : '',
         item.hasLore ? 'lore thread valaron archive' : '',
@@ -349,19 +529,26 @@ function ItemsArchiveContent() {
       const matchType = selectedType === 'ALL' || item.type === selectedType;
       const matchQuality = selectedQuality === 'ALL' || item.quality === selectedQuality;
       const matchLocation = selectedLocation === 'ALL' || item.dropLocationKeys.includes(selectedLocation);
+      const matchMarketVisibility = !hideNonMarket
+        || item.hasMarket
+        || (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0)
+        || (selectedSignal === 'UNTRADABLE' && !item.tradeable);
       const matchSignal =
         selectedSignal === 'ALL' ||
         (selectedSignal === 'MARKET' && item.hasMarket) ||
-        (selectedSignal === 'VENDOR' && item.vendorPrice > 0) ||
+        (selectedSignal === 'PRICE_SWINGS' && item.liquidity.hasPriceSwings) ||
+        (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0) ||
+        (selectedSignal === 'UNTRADABLE' && !item.tradeable) ||
         (selectedSignal === 'CRAFTABLE' && item.hasRecipe) ||
+        (selectedSignal === 'PRODUCED' && item.isSecondaryProduction) ||
         (selectedSignal === 'USED' && item.usedInCount > 0) ||
         (selectedSignal === 'DROPPED' && item.droppedByCount > 0) ||
-        (selectedSignal === 'FARMABLE' && item.resourceLocations.length > 0) ||
+        (selectedSignal === 'FARMABLE' && item.hasFarmableSource) ||
         (selectedSignal === 'EQUIPMENT' && (EQUIPMENT_TYPES.has(item.type) || item.hasStats)) ||
         (selectedSignal === 'EFFECTS' && item.hasEffects) ||
         (selectedSignal === 'LORE' && item.hasLore);
 
-      return matchSearch && matchType && matchQuality && matchLocation && matchSignal;
+      return matchSearch && matchType && matchQuality && matchLocation && matchMarketVisibility && matchSignal;
     });
 
     return filtered.sort((a, b) => {
@@ -410,7 +597,7 @@ function ItemsArchiveContent() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [enrichedItems, debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc]);
+  }, [enrichedItems, debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
 
   const visibleItems = filteredItems.slice(0, visibleCount);
 
@@ -430,6 +617,10 @@ function ItemsArchiveContent() {
       setSortDesc(key !== 'name' && key !== 'type');
     }
   };
+  const handleSortPickerChange = (key: SortKey) => {
+    setSortBy(key);
+    setSortDesc(key !== 'name' && key !== 'type');
+  };
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
     if (type === 'ALL') {
@@ -445,14 +636,39 @@ function ItemsArchiveContent() {
 
   const renderBadges = (item: EnrichedItem) => (
     <div className="item-badges">
-      {item.hasMarket && (
+      {(item.hasMarket || item.tradeable) && (
         <span className={`badge market ${item.liquidity.tone}`} title={item.liquidity.note}>
           <ShoppingCart size={12} aria-hidden="true" /> <span>{item.liquidity.label}</span>
         </span>
       )}
-      {!item.tradeable && <span className="badge vendor"><Store size={12} aria-hidden="true" /> <span>Vendor</span></span>}
+      <span className={`badge confidence ${item.marketConfidence.tone}`} title={item.marketConfidence.note}>
+        {item.marketConfidence.label === 'Likely market'
+          ? <Check size={12} aria-hidden="true" />
+          : item.marketConfidence.label === 'Vendor safer'
+            ? <Store size={12} aria-hidden="true" />
+            : <AlertTriangle size={12} aria-hidden="true" />}
+        <span>{item.marketConfidence.label}</span>
+      </span>
+      {item.liquidity.hasVolumeSwings && (
+        <span className="badge warning" title="Sold volume has unusual bulk-sale days. This is a volume warning, not a price-stability label.">
+          <AlertTriangle size={12} aria-hidden="true" /> <span>Volume swings</span>
+        </span>
+      )}
+      {item.liquidity.hasPriceSwings && (
+        <span className="badge warning" title={`Recent sold prices range from ${formatGold(item.liquidity.latestSaleMin)} to ${formatGold(item.liquidity.latestSaleMax)}. Check recent trades/listings before bulk buying or crafting.`}>
+          <AlertTriangle size={12} aria-hidden="true" /> <span>Price swings</span>
+        </span>
+      )}
+      {item.merchantBuyPrice > 0 && <span className="badge vendor" title={`Merchant purchase price: ${formatGold(item.merchantBuyPrice)}`}><Store size={12} aria-hidden="true" /> <span>Merchant item</span></span>}
+      {!item.tradeable && <span className="badge untradable"><LockKeyhole size={12} aria-hidden="true" /> <span>Untradable</span></span>}
       {item.hasRecipe && <span className="badge craft"><Hammer size={12} aria-hidden="true" /> <span>Craft</span></span>}
-      {item.resourceLocations.length > 0 && <span className="badge source"><MapPin size={12} aria-hidden="true" /> <span>Farmable</span></span>}
+      {item.isSecondaryProduction && <span className="badge produced"><Boxes size={12} aria-hidden="true" /> <span>Produced</span></span>}
+      {item.hasFarmableSource && (
+        <span className="badge source" title={item.gatheringActionSource?.note || 'Mapped gathered resource location.'}>
+          {item.gatheringActionSource ? <Hammer size={12} aria-hidden="true" /> : <MapPin size={12} aria-hidden="true" />}
+          <span>Farmable</span>
+        </span>
+      )}
       {(EQUIPMENT_TYPES.has(item.type) || item.hasStats) && <span className="badge gear"><Shield size={12} aria-hidden="true" /> <span>Gear</span></span>}
       {item.hasEffects && <span className="badge effect"><Boxes size={12} aria-hidden="true" /> <span>Effect</span></span>}
       {item.hasLore && <span className="badge lore"><BookOpen size={12} aria-hidden="true" /> <span>Lore</span></span>}
@@ -495,10 +711,17 @@ function ItemsArchiveContent() {
       </section>
 
       <section className="db-note" aria-label="Market and tag guidance">
-        <ShoppingCart size={16} />
-        <span>
-          Tags describe what data exists for an item. Market prices are recent snapshots, not guaranteed sell paths; stable volume trims unusual sold-day spikes when available, and rare or expensive items should still be checked against official listings before mass buying or crafting.
-        </span>
+          <ShoppingCart size={16} />
+          <span>
+          Tags describe what data exists for an item. Market confidence labels separate likely public market exits from thin, stale, or vendor-safer paths; private buyers, off-app trades, or bulk undercutting can still change the real exit.
+          </span>
+      </section>
+
+      <section className="tag-guide" aria-label="Item tag definitions">
+        <span><strong>No sales</strong> means tradeable, but no usable recent sale volume.</span>
+        <span><strong>Vendor safer</strong> means vendor value is a clearer exit than a thin or unstable market.</span>
+        <span><strong>Merchant item</strong> means bought from an NPC merchant, not player-market liquidity.</span>
+        <span><strong>Untradable</strong> means the item is not a market exit path.</span>
       </section>
 
       <section className="db-controls">
@@ -563,12 +786,21 @@ function ItemsArchiveContent() {
             ariaLabel="Item sort"
             options={SORT_OPTIONS}
             value={sortBy}
-            onChange={setSortBy}
+            onChange={handleSortPickerChange}
           />
         </div>
 
         <button type="button" className="control-input icon-toggle" onClick={() => setSortDesc(prev => !prev)}>
           <ArrowDownUp size={15} /> {sortDesc ? 'Desc' : 'Asc'}
+        </button>
+
+        <button
+          type="button"
+          className={`control-input icon-toggle market-toggle ${hideNonMarket ? 'active' : ''}`}
+          aria-pressed={hideNonMarket}
+          onClick={() => setHideNonMarket(prev => !prev)}
+        >
+          <ShoppingCart size={15} /> Market only
         </button>
 
         <div className="view-toggle" aria-label="View mode">
@@ -601,6 +833,7 @@ function ItemsArchiveContent() {
             setSelectedQuality('ALL');
             setSelectedSignal('ALL');
             setSelectedLocation('ALL');
+            setHideNonMarket(false);
             setSortBy('volume');
             setSortDesc(true);
           }}>
@@ -658,10 +891,12 @@ function ItemsArchiveContent() {
                     <td>{formatLabel(item.type)}</td>
                     <td style={{ color: QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD }}>{item.quality}</td>
                     <td className="mono" title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</td>
-                    <td className="mono">{formatGold(item.marketPrice)}</td>
+                    <td className="mono" title={item.marketConfidence.note}>{formatGold(item.marketPrice)}</td>
                     <td className="mono">{formatGold(item.vendorPrice)}</td>
-                    <td className={`mono liquidity-volume ${item.liquidity.tone}`} title={item.stableMarketVolume !== item.marketVolume ? `Raw 3-day volume: ${item.marketVolume.toLocaleString()}` : item.liquidity.note}>
+                    <td className={`mono liquidity-volume ${item.liquidity.tone}`} title={item.stableMarketVolume !== item.marketVolume || item.liquidity.hasPriceSwings ? item.liquidity.note : `Raw 3-day volume: ${item.marketVolume.toLocaleString()}`}>
                       {item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}
+                      {item.liquidity.hasVolumeSwings ? <span className="volume-warning-dot" aria-label="Volume swings">!</span> : null}
+                      {item.liquidity.hasPriceSwings ? <span className="volume-warning-dot" aria-label="Price swings">!</span> : null}
                     </td>
                     <td className="mono">{item.usageScore ? item.usageScore.toLocaleString() : '-'}</td>
                     <td className="signals-cell">{renderBadges(item)}</td>
@@ -686,15 +921,21 @@ function ItemsArchiveContent() {
                     <span style={{ color: QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD }}>{item.quality}</span>
                   </div>
                   <div className="card-stats">
-                    <span><small>Market</small><strong>{formatGold(item.marketPrice)}</strong></span>
+                    <span><small>Market</small><strong title={item.marketConfidence.note}>{formatGold(item.marketPrice)}</strong></span>
                     <span><small>Level</small><strong title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</strong></span>
-                    <span><small>Stable Vol</small><strong className={`liquidity-volume ${item.liquidity.tone}`}>{item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}</strong></span>
+                    <span><small>Stable Vol</small><strong className={`liquidity-volume ${item.liquidity.tone}`}>{item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}{item.liquidity.hasVolumeSwings ? <span className="volume-warning-dot" aria-label="Volume swings">!</span> : null}{item.liquidity.hasPriceSwings ? <span className="volume-warning-dot" aria-label="Price swings">!</span> : null}</strong></span>
                     <span><small>Usage</small><strong>{item.usageScore || '-'}</strong></span>
                   </div>
                   {item.resourceLocations.length > 0 && (
                     <div className="source-preview" aria-label={`${item.name} gathered locations`}>
                       <MapPin size={13} aria-hidden="true" />
                       <span>{item.resourceLocations.slice(0, 2).map(location => location.name).join(', ')}{item.resourceLocations.length > 2 ? ` +${item.resourceLocations.length - 2}` : ''}</span>
+                    </div>
+                  )}
+                  {item.resourceLocations.length === 0 && item.gatheringActionSource && (
+                    <div className="source-preview" aria-label={`${item.name} gathered source`}>
+                      <Hammer size={13} aria-hidden="true" />
+                      <span>{item.gatheringActionSource.skill} Lv.{item.gatheringActionSource.level}</span>
                     </div>
                   )}
                   {renderBadges(item)}
@@ -762,17 +1003,44 @@ function ItemsArchiveContent() {
           flex: 0 0 auto;
           margin-top: 0.1rem;
         }
+        .tag-guide {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin: -0.35rem 0 1rem;
+        }
+        .tag-guide span {
+          background: rgba(255,255,255,0.035);
+          border: 1px solid var(--border-subtle);
+          border-radius: 999px;
+          color: var(--text-muted);
+          font-size: 0.75rem;
+          font-weight: 700;
+          line-height: 1.25;
+          padding: 0.42rem 0.65rem;
+        }
+        .tag-guide strong {
+          color: var(--text-main);
+          font-weight: 900;
+        }
         .db-controls {
           align-items: end;
           background: rgba(255,255,255,0.015);
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
-          display: grid;
+          display: flex;
+          flex-wrap: wrap;
           gap: 0.85rem;
-          grid-template-columns: minmax(240px, 2fr) repeat(5, minmax(128px, 1fr)) minmax(88px, auto) minmax(118px, auto);
-          padding: 1rem;
           max-width: 100%;
           min-width: 0;
+          padding: 1rem;
+        }
+        .control-group {
+          flex: 1 1 132px;
+          min-width: 0;
+        }
+        .search-control {
+          flex: 2 1 280px;
         }
         .search-shell {
           position: relative;
@@ -885,20 +1153,31 @@ function ItemsArchiveContent() {
           align-items: center;
           cursor: pointer;
           display: flex;
+          flex: 0 1 132px;
           gap: 0.4rem;
           justify-content: center;
           min-width: 88px !important;
           white-space: nowrap;
+        }
+        .market-toggle {
+          border-color: rgba(255,255,255,0.08);
+          color: var(--text-muted);
+        }
+        .market-toggle.active {
+          border-color: rgba(34,197,94,0.35);
+          background: rgba(34,197,94,0.1);
+          color: var(--text-success);
         }
         .view-toggle {
           background: var(--bg-base);
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
           display: flex;
+          flex: 0 1 132px;
           justify-self: end;
           min-height: 38px;
           overflow: hidden;
-          width: max-content;
+          width: 100%;
         }
         .view-toggle button {
           background: transparent;
@@ -1033,6 +1312,21 @@ function ItemsArchiveContent() {
         .liquidity-volume.risk {
           color: var(--text-danger);
         }
+        .volume-warning-dot {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 1rem;
+          height: 1rem;
+          margin-left: 0.35rem;
+          border-radius: 999px;
+          background: rgba(251,191,36,0.14);
+          color: #fbbf24;
+          font-size: 0.68rem;
+          font-weight: 900;
+          line-height: 1;
+          vertical-align: middle;
+        }
         :global(.items-db-page .item-badges) {
           display: flex;
           flex-wrap: wrap;
@@ -1050,9 +1344,16 @@ function ItemsArchiveContent() {
           font-weight: 800;
           gap: 0.28rem;
           line-height: 1;
+          max-width: 100%;
+          min-width: 0;
+          overflow-wrap: anywhere;
           padding: 0.25rem 0.5rem;
           text-transform: uppercase;
-          white-space: nowrap;
+          white-space: normal;
+        }
+        :global(.items-db-page .badge span) {
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
         :global(.items-db-page .badge svg) {
           flex: 0 0 auto;
@@ -1063,7 +1364,14 @@ function ItemsArchiveContent() {
         :global(.items-db-page .badge.market.thin) { color: #fbbf24; background: rgba(251,191,36,0.08); }
         :global(.items-db-page .badge.market.steady) { color: var(--text-accent); background: rgba(234,179,8,0.08); }
         :global(.items-db-page .badge.market.risk) { color: var(--text-danger); background: rgba(239,68,68,0.08); }
+        :global(.items-db-page .badge.confidence.good) { color: var(--text-success); background: rgba(34,197,94,0.1); }
+        :global(.items-db-page .badge.confidence.warn) { color: #fbbf24; background: rgba(251,191,36,0.1); }
+        :global(.items-db-page .badge.confidence.bad) { color: #f87171; background: rgba(248,113,113,0.1); }
+        :global(.items-db-page .badge.confidence.muted) { color: var(--text-muted); background: rgba(255,255,255,0.045); }
+        :global(.items-db-page .badge.warning) { color: #fbbf24; background: rgba(251,191,36,0.08); }
         :global(.items-db-page .badge.vendor) { color: #fbbf24; background: rgba(251,191,36,0.08); }
+        :global(.items-db-page .badge.untradable) { color: #f87171; background: rgba(248,113,113,0.08); }
+        :global(.items-db-page .badge.produced) { color: #93c5fd; background: rgba(147,197,253,0.08); }
         :global(.items-db-page .badge.craft) { color: #60a5fa; background: rgba(96,165,250,0.08); }
         :global(.items-db-page .badge.source) { color: #22d3ee; background: rgba(34,211,238,0.08); }
         :global(.items-db-page .badge.gear) { color: #a78bfa; background: rgba(167,139,250,0.08); }
@@ -1226,27 +1534,26 @@ function ItemsArchiveContent() {
           text-align: center;
         }
         @media (max-width: 1200px) {
-          .db-controls {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-          .search-control {
-            grid-column: 1 / -1;
-          }
           .icon-toggle,
           .view-toggle {
             justify-self: stretch;
             width: 100%;
+          }
+          .icon-toggle {
+            flex: 1 1 132px;
           }
           .view-toggle button {
             flex: 1;
           }
         }
         @media (max-width: 980px) {
-          .db-controls {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+          .control-group,
+          .icon-toggle,
+          .view-toggle {
+            flex-basis: calc(50% - 0.45rem);
           }
           .search-control {
-            grid-column: 1 / -1;
+            flex-basis: 100%;
           }
         }
         @media (max-width: 820px) {
@@ -1254,6 +1561,7 @@ function ItemsArchiveContent() {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .db-controls {
+            display: grid;
             grid-template-columns: 1fr;
           }
           :global(.items-db-page .item-select-menu) {

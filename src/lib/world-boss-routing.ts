@@ -20,7 +20,7 @@ export type RoutineBoss = {
 export type RoutineSettings = {
     startLocation: string;
     selectedBossKeys: string[];
-    effectiveTeleportLevel: number;
+    relevantTeleportLevel: number;
     movementSpeed: number;
     classDiscount: boolean;
     travelMode: TravelMode;
@@ -56,9 +56,12 @@ export type RoutinePlan = {
     conflictLegs: number;
 };
 
-export const TELEPORT_DIVISOR = 40197000;
-export const DEFAULT_EFFECTIVE_TELEPORT_LEVEL = 1800;
-export const MAX_EFFECTIVE_TELEPORT_LEVEL = 2300;
+export const TELEPORT_BASE_FACTOR = 1 / 300;
+export const TELEPORT_LEVEL_FACTOR = 1e-6 * (86 / 999);
+export const TELEPORT_LEVEL_EXPONENT = 1.9;
+export const TELEPORT_FORMULA_LABEL = "floor(distance * (1/300 + 1e-6 * 86/999 * relevantLevel^1.9))";
+export const DEFAULT_RELEVANT_TELEPORT_LEVEL = 1359;
+export const MAX_RELEVANT_TELEPORT_LEVEL = 2300;
 export const DEFAULT_MOVEMENT_SPEED = 25.68;
 export const BASE_MOVEMENT_SPEED = 3;
 
@@ -127,11 +130,12 @@ export function getBossRouteDistance(origin: string, destination: string) {
     return distanceLookup.get(getRouteKey(origin, destination)) ?? null;
 }
 
-export function calculateTeleportCost(distanceMeters: number, effectiveTeleportLevel: number, classDiscount = false) {
+export function calculateTeleportCost(distanceMeters: number, relevantTeleportLevel: number, classDiscount = false) {
     const safeDistance = Math.max(0, Number(distanceMeters) || 0);
-    const safeLevel = Math.max(0, Number(effectiveTeleportLevel) || 0);
+    const safeLevel = Math.max(0, Number(relevantTeleportLevel) || 0);
     const multiplier = classDiscount ? 0.5 : 1;
-    return Math.round((safeDistance * safeLevel * safeLevel / TELEPORT_DIVISOR) * multiplier);
+    const teleportFactor = TELEPORT_BASE_FACTOR + TELEPORT_LEVEL_FACTOR * Math.pow(safeLevel, TELEPORT_LEVEL_EXPONENT);
+    return Math.floor(safeDistance * teleportFactor * multiplier);
 }
 
 export function calculateTravelSeconds(distanceMeters: number, movementSpeed: number) {
@@ -160,7 +164,7 @@ export function buildWorldBossRoutinePlan(bosses: RoutineBoss[], settings: Routi
         const travelSeconds = distanceMeters === null ? null : calculateTravelSeconds(distanceMeters, settings.movementSpeed);
         const teleportCost = distanceMeters === null
             ? null
-            : calculateTeleportCost(distanceMeters, settings.effectiveTeleportLevel, settings.classDiscount);
+            : calculateTeleportCost(distanceMeters, settings.relevantTeleportLevel, settings.classDiscount);
         const routeSeconds = settings.travelMode === "travel" ? travelSeconds : distanceMeters === null ? null : 0;
         const ev = Number(boss.ev) || 0;
         const startTime = boss.nextSpawnTime?.getTime?.() ?? null;

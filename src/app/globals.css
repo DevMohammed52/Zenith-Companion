@@ -2341,6 +2341,66 @@ th.sortable:hover {
   margin-left: auto;
 }
 
+.alchemy-liquidity-filter {
+  align-items: center;
+  background: rgba(255,255,255,0.018);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.alchemy-liquidity-filter > span {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 900;
+  gap: 0.35rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.alchemy-liquidity-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.alchemy-filter-chip {
+  align-items: center;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.alchemy-filter-chip:hover,
+.alchemy-filter-chip:focus-visible,
+.alchemy-filter-chip.active {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border-color: var(--border-focus);
+  color: #fff;
+}
+
+.alchemy-filter-chip:hover {
+  transform: translateY(-1px);
+}
+
 .alchemy-table {
   border-spacing: 0;
   min-width: 920px;
@@ -5546,6 +5606,20 @@ kbd {
     margin-left: 0;
     width: 100%;
   }
+  .alchemy-liquidity-filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .alchemy-liquidity-filter > span {
+    justify-content: center;
+  }
+  .alchemy-liquidity-filter-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .alchemy-filter-chip {
+    width: 100%;
+  }
   .alchemy-table .item-name small {
     max-width: 240px;
   }
@@ -5667,6 +5741,13 @@ kbd {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.m-card-warnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .m-volume {
@@ -6254,6 +6335,96 @@ kbd {
   color: var(--text-danger);
 }
 
+.alchemy-shared-scenario {
+  background: rgba(0,0,0,0.16);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0;
+  min-width: 0;
+  padding: 0.7rem;
+}
+
+.alchemy-shared-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.alchemy-shared-header div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.alchemy-shared-header strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.alchemy-shared-header span,
+.alchemy-shared-header small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.alchemy-shared-header small {
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  border: 1px solid var(--border-focus);
+  border-radius: 999px;
+  color: var(--text-main);
+  padding: 0.22rem 0.5rem;
+  white-space: nowrap;
+}
+
+.alchemy-shared-summary,
+.alchemy-shared-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.alchemy-shared-summary > div {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+}
+
+.alchemy-shared-summary span,
+.alchemy-break-even-line em {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.alchemy-shared-summary strong {
+  color: var(--text-success);
+  overflow-wrap: anywhere;
+}
+
+.alchemy-break-even-line em {
+  color: var(--text-success);
+  overflow-wrap: anywhere;
+}
+
+.alchemy-break-even-line em.danger-value,
+.alchemy-shared-summary strong.danger-value {
+  color: var(--text-danger);
+}
+
 @media (max-width: 1380px) and (min-width: 769px) {
   .alchemy-page-shell .alchemy-controls-panel {
     grid-template-columns: minmax(16rem, 1.35fr) repeat(2, minmax(10.5rem, 1fr));
@@ -6282,6 +6453,11 @@ kbd {
   }
 
   .alchemy-break-even-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alchemy-shared-summary,
+  .alchemy-shared-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -12119,6 +12295,13 @@ kbd {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.m-card-warnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .m-volume {

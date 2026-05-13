@@ -109,6 +109,7 @@ const ALCHEMY_ITEMS = {
 const IS_PRIORITY_ONLY = process.argv.includes('--priority');
 const IS_PETS_ONLY = process.argv.includes('--pets-only');
 const IS_WORLD_LOCATIONS_ONLY = process.argv.includes('--world-locations-only');
+const IS_SCRAPE_ONCE = process.env.SCRAPE_ONCE === "true" || process.argv.includes('--once');
 const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 
 const itemsToFetch = new Set();
@@ -321,6 +322,34 @@ function latestSoldMedian(latestSold) {
     return median((latestSold || []).slice(0, 10).map(sale => sale.price_per_item));
 }
 
+function latestSoldPriceStats(latestSold) {
+    const prices = (latestSold || [])
+        .slice(0, 20)
+        .map(sale => asPositiveNumber(sale.price_per_item))
+        .filter(price => price > 0);
+
+    if (prices.length === 0) {
+        return {
+            sampleSize: 0,
+            min: null,
+            max: null,
+            median: null,
+            spreadRatio: 0,
+        };
+    }
+
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+
+    return {
+        sampleSize: prices.length,
+        min,
+        max,
+        median: median(prices),
+        spreadRatio: min > 0 ? max / min : 0,
+    };
+}
+
 function buildLiquidityMetrics(history) {
     const getVolume = (days) => {
         const sales = recentRows(history, days);
@@ -354,7 +383,8 @@ function buildLiquidityMetrics(history) {
 }
 
 function buildSafeMarketAverages(history, latestSold) {
-    const recentSaleAnchor = latestSoldMedian(latestSold);
+    const latestSaleStats = latestSoldPriceStats(latestSold);
+    const recentSaleAnchor = latestSaleStats.median || latestSoldMedian(latestSold);
     const allDailyMedian = median(history.map(row => row.average_price));
 
     const averageForDays = (days) => {
@@ -394,6 +424,10 @@ function buildSafeMarketAverages(history, latestSold) {
         adjusted,
         removedRows: avg3.removed + avg7.removed + avg14.removed + avg30.removed,
         latestSaleMedian: recentSaleAnchor || null,
+        latestSaleMin: latestSaleStats.min,
+        latestSaleMax: latestSaleStats.max,
+        latestSaleSpreadRatio: latestSaleStats.spreadRatio,
+        latestSaleSampleSize: latestSaleStats.sampleSize,
     };
 }
 
@@ -872,6 +906,10 @@ async function fetchItem(itemName, cycleHistoryCache) {
             price_warning: safeMarket.adjusted ? "Recent market spike filtered" : undefined,
             price_outlier_rows: safeMarket.removedRows,
             latest_sale_median: safeMarket.latestSaleMedian,
+            latest_sale_min: safeMarket.latestSaleMin,
+            latest_sale_max: safeMarket.latestSaleMax,
+            latest_sale_spread_ratio: safeMarket.latestSaleSpreadRatio,
+            latest_sale_sample_size: safeMarket.latestSaleSampleSize,
             vol_3: liquidity.vol3,
             vol_7: liquidity.vol7,
             vol_30: liquidity.vol30,
@@ -968,7 +1006,7 @@ async function start() {
             console.error("Failed to rebuild usage map:", e.message);
         }
         
-        if (process.env.SCRAPE_ONCE === "true") {
+        if (IS_SCRAPE_ONCE) {
             console.log("Process complete. Exiting.");
             return;
         }

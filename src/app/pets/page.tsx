@@ -1222,7 +1222,7 @@ export default function PetsPage() {
                         <strong>Open zone details</strong>
                       </summary>
                       <div className="pet-zone-list">
-                        {selectedRow.pet.battle.zones.slice(0, 4).map((zone) => (
+                        {selectedRow.pet.battle.zones.map((zone) => (
                           <button
                             type="button"
                             className="pet-zone-button"

@@ -462,7 +462,6 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
     ? input.componentRepairGold
     : {};
   const conditionIds = new Set(selectedComponents);
-  if (extraSlots > 0) conditionIds.add("slot");
   const componentConditions: Record<string, number> = {};
   const componentDecayDays: Record<string, number> = {};
   const componentRepairGold: Record<string, number> = {};
@@ -472,7 +471,7 @@ export function sanitizeHousing(input: Partial<ProfileHousing> | null | undefine
     const rawCondition = (rawComponentConditions as Record<string, unknown>)[componentId];
     if (rawCondition !== undefined) componentConditions[componentId] = normalizeHousingCondition(rawCondition, 100);
     const rawDecayDays = (rawComponentDecayDays as Record<string, unknown>)[componentId];
-    if (rawDecayDays !== undefined) componentDecayDays[componentId] = normalizeHousingDecayDays(rawDecayDays, 60);
+    if (rawDecayDays !== undefined) componentDecayDays[componentId] = normalizeHousingDecayDays(rawDecayDays, 90);
     const repairGold = normalizeHousingRepairGold((rawComponentRepairGold as Record<string, unknown>)[componentId]);
     if (repairGold !== undefined) componentRepairGold[componentId] = repairGold;
   }

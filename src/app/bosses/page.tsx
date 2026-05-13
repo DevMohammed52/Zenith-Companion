@@ -41,9 +41,9 @@ import { useModalA11y } from "@/lib/use-modal-a11y";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
-    DEFAULT_EFFECTIVE_TELEPORT_LEVEL,
+    DEFAULT_RELEVANT_TELEPORT_LEVEL,
     DEFAULT_MOVEMENT_SPEED,
-    MAX_EFFECTIVE_TELEPORT_LEVEL,
+    MAX_RELEVANT_TELEPORT_LEVEL,
     buildWorldBossRoutinePlan,
     getRoutineBossKey,
 } from "@/lib/world-boss-routing";
@@ -300,6 +300,11 @@ function getBossMarketNote(signals: LiquiditySignal[]): LiquiditySignal {
     return uniqueSignals[0];
 }
 
+function getBossDropSourceLabel(drop: any) {
+    if (drop.signal === "RARE MARKET") return "Rare market floor";
+    return drop.source;
+}
+
 function isSpecialEquipmentModifier(item: { type?: string }) {
     return String(item.type || "").toUpperCase() === "SPECIAL";
 }
@@ -366,13 +371,15 @@ function BossesContent() {
     const [routineInitialized, setRoutineInitialized] = useState(false);
     const [routineSettingsLoaded, setRoutineSettingsLoaded] = useState(false);
     const [routineStartLocation, setRoutineStartLocation] = useState("The Citadel");
-    const [routineTeleportLevel, setRoutineTeleportLevel] = useState<number | "">(DEFAULT_EFFECTIVE_TELEPORT_LEVEL);
+    const [routineTeleportLevel, setRoutineTeleportLevel] = useState<number | "">(DEFAULT_RELEVANT_TELEPORT_LEVEL);
     const [routineMovementSpeed, setRoutineMovementSpeed] = useState<number | "">(DEFAULT_MOVEMENT_SPEED);
     const [routineClassDiscount, setRoutineClassDiscount] = useState(false);
     const [routineTravelMode, setRoutineTravelMode] = useState<TravelMode>("teleport");
     const [routineLocationOpen, setRoutineLocationOpen] = useState(false);
     const [worldBossItemModifierName, setWorldBossItemModifierName] = useState("");
     const routineLocationRef = useRef<HTMLDivElement | null>(null);
+    const routineLocationTriggerRef = useRef<HTMLButtonElement | null>(null);
+    const routineLocationOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
     const profileDefaultsAppliedRef = useRef<string | null>(null);
     const activeProfileId = activeProfile?.id || null;
     const routineStorageKey = useMemo(
@@ -403,7 +410,7 @@ function BossesContent() {
                 if (saved.routineTeleportLevel === "") {
                     setRoutineTeleportLevel("");
                 } else if (Number.isFinite(Number(saved.routineTeleportLevel))) {
-                    setRoutineTeleportLevel(clampNumber(Number(saved.routineTeleportLevel), 0, MAX_EFFECTIVE_TELEPORT_LEVEL));
+                    setRoutineTeleportLevel(clampNumber(Number(saved.routineTeleportLevel), 0, MAX_RELEVANT_TELEPORT_LEVEL));
                 }
                 if (saved.routineMovementSpeed === "") {
                     setRoutineMovementSpeed("");
@@ -418,7 +425,7 @@ function BossesContent() {
                 setRoutineBossKeys([]);
                 setRoutineInitialized(false);
                 setRoutineStartLocation("The Citadel");
-                setRoutineTeleportLevel(DEFAULT_EFFECTIVE_TELEPORT_LEVEL);
+                setRoutineTeleportLevel(DEFAULT_RELEVANT_TELEPORT_LEVEL);
                 setRoutineMovementSpeed(DEFAULT_MOVEMENT_SPEED);
                 setRoutineClassDiscount(false);
                 setRoutineTravelMode("teleport");
@@ -492,9 +499,6 @@ function BossesContent() {
 
     useEffect(() => {
         if (!routineSettingsLoaded || !activeProfile || profileDefaultsAppliedRef.current === activeProfile.id) return;
-        if (activeProfile.levels.totalLevel !== "" && Number(routineTeleportLevel) === DEFAULT_EFFECTIVE_TELEPORT_LEVEL) {
-            setRoutineTeleportLevel(clampNumber(Number(activeProfile.levels.totalLevel), 0, MAX_EFFECTIVE_TELEPORT_LEVEL));
-        }
         if (activeProfile.secondaryStats.movementSpeed !== "" && Number(routineMovementSpeed) === DEFAULT_MOVEMENT_SPEED) {
             setRoutineMovementSpeed(clampNumber(Number(activeProfile.secondaryStats.movementSpeed), 0.1, 500));
         }
@@ -503,7 +507,6 @@ function BossesContent() {
         activeProfile,
         routineMovementSpeed,
         routineSettingsLoaded,
-        routineTeleportLevel,
     ]);
 
     const profileWorldBossMagicFind = activeProfile
@@ -670,10 +673,52 @@ function BossesContent() {
         setRoutineStartLocation(routineLocations[0]);
     }, [routineLocations, routineStartLocation]);
 
+    const focusRoutineLocationOption = (index: number) => {
+        window.requestAnimationFrame(() => {
+            routineLocationOptionRefs.current[index]?.focus();
+        });
+    };
+
+    const handleRoutineLocationTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+        if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        setRoutineLocationOpen(true);
+        const selectedIndex = Math.max(0, routineLocations.indexOf(routineStartLocation));
+        focusRoutineLocationOption(event.key === "ArrowUp" ? routineLocations.length - 1 : selectedIndex);
+    };
+
+    const handleRoutineLocationOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            setRoutineLocationOpen(false);
+            routineLocationTriggerRef.current?.focus();
+            return;
+        }
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            focusRoutineLocationOption((index + 1) % routineLocations.length);
+            return;
+        }
+        if (event.key === "ArrowUp") {
+            event.preventDefault();
+            focusRoutineLocationOption((index - 1 + routineLocations.length) % routineLocations.length);
+            return;
+        }
+        if (event.key === "Home") {
+            event.preventDefault();
+            focusRoutineLocationOption(0);
+            return;
+        }
+        if (event.key === "End") {
+            event.preventDefault();
+            focusRoutineLocationOption(routineLocations.length - 1);
+        }
+    };
+
     const routinePlan = useMemo(() => buildWorldBossRoutinePlan(routineRows, {
         startLocation: routineStartLocation,
         selectedBossKeys: routineBossKeys,
-        effectiveTeleportLevel: Number(routineTeleportLevel) || DEFAULT_EFFECTIVE_TELEPORT_LEVEL,
+        relevantTeleportLevel: Number(routineTeleportLevel) || DEFAULT_RELEVANT_TELEPORT_LEVEL,
         movementSpeed: Number(routineMovementSpeed) || BASE_MOVEMENT_SPEED,
         classDiscount: routineClassDiscount,
         travelMode: routineTravelMode,
@@ -810,11 +855,10 @@ function BossesContent() {
                 </div>
             </section>
 
-            <div className="boss-view-switch" role="tablist" aria-label="World boss views">
+            <div className="boss-view-switch" aria-label="World boss views">
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={activeBossView === "details"}
+                    aria-pressed={activeBossView === "details"}
                     className={activeBossView === "details" ? "active" : ""}
                     onClick={() => setActiveBossView("details")}
                 >
@@ -824,8 +868,7 @@ function BossesContent() {
                 </button>
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={activeBossView === "planner"}
+                    aria-pressed={activeBossView === "planner"}
                     className={activeBossView === "planner" ? "active" : ""}
                     onClick={() => setActiveBossView("planner")}
                 >
@@ -862,26 +905,32 @@ function BossesContent() {
                         <span className="control-label">Start Location</span>
                         <button
                             type="button"
+                            ref={routineLocationTriggerRef}
                             className={`routine-location-trigger ${routineLocationOpen ? "open" : ""}`}
                             onClick={() => setRoutineLocationOpen((open) => !open)}
+                            onKeyDown={handleRoutineLocationTriggerKeyDown}
                             aria-haspopup="listbox"
                             aria-expanded={routineLocationOpen}
+                            aria-label="Routine start location"
                         >
                             <span>{routineStartLocation}</span>
                             <ChevronDown size={16} />
                         </button>
                         {routineLocationOpen && (
                             <div className="routine-location-menu custom-scrollbar" role="listbox">
-                                {routineLocations.map((location) => (
+                                {routineLocations.map((location, index) => (
                                     <button
                                         key={location}
                                         type="button"
+                                        ref={(node) => { routineLocationOptionRefs.current[index] = node; }}
                                         role="option"
                                         aria-selected={location === routineStartLocation}
                                         className={location === routineStartLocation ? "selected" : ""}
+                                        onKeyDown={(event) => handleRoutineLocationOptionKeyDown(event, index)}
                                         onClick={() => {
                                             setRoutineStartLocation(location);
                                             setRoutineLocationOpen(false);
+                                            routineLocationTriggerRef.current?.focus();
                                         }}
                                     >
                                         <MapPin size={13} />
@@ -892,16 +941,18 @@ function BossesContent() {
                         )}
                     </div>
                     <label className="control-group">
-                        <span className="control-label">Teleport Level</span>
+                        <span className="control-label">Relevant TL</span>
                         <input
-                            aria-label="Routine teleport level"
+                            aria-label="Routine relevant teleport total level"
                             type="number"
                             min="0"
-                            max={MAX_EFFECTIVE_TELEPORT_LEVEL}
+                            max={MAX_RELEVANT_TELEPORT_LEVEL}
+                            title="Total level minus Meditation and excluded seasonal/event mastery levels."
                             className="control-input"
                             value={routineTeleportLevel}
-                            onChange={(event) => setRoutineTeleportLevel(event.target.value === "" ? "" : clampNumber(Number(event.target.value) || 0, 0, MAX_EFFECTIVE_TELEPORT_LEVEL))}
+                            onChange={(event) => setRoutineTeleportLevel(event.target.value === "" ? "" : clampNumber(Number(event.target.value) || 0, 0, MAX_RELEVANT_TELEPORT_LEVEL))}
                         />
+                        <span className="routine-teleport-hint">TL minus Meditation and event masteries</span>
                     </label>
                     <label className="control-group">
                         <span className="control-label">Movement Speed</span>
@@ -1336,7 +1387,7 @@ function BossesContent() {
                                         </div>
                                         <div className="boss-loot-value">
                                             <strong>~{formatGold(drop.expectedVal, 2)}g</strong>
-                                            <span>{drop.source} - {formatGold(drop.trueValue)}g ea <ExternalLink size={10} /></span>
+                                            <span>{getBossDropSourceLabel(drop)} - {formatGold(drop.trueValue)}g ea <ExternalLink size={10} /></span>
                                             <em className={`boss-signal ${getSignalClass(drop.signal)}`}>{drop.signal}</em>
                                         </div>
                                     </div>
@@ -1520,6 +1571,11 @@ function BossesContent() {
                 }
                 .boss-routine-controls .control-input {
                     width: 100%;
+                }
+                .routine-teleport-hint {
+                    color: var(--text-muted);
+                    font-size: 0.72rem;
+                    line-height: 1.3;
                 }
                 .routine-location-field {
                     position: relative;
@@ -2470,7 +2526,59 @@ function WorldBossItemEffectPicker({
 }) {
     const [open, setOpen] = useState(false);
     const pickerRef = useRef<HTMLDivElement | null>(null);
+    const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
     const selected = options.find((option) => option.name === value) || null;
+
+    const focusOption = (index: number) => {
+        window.requestAnimationFrame(() => {
+            optionRefs.current[index]?.focus();
+        });
+    };
+
+    const selectOption = (nextValue: string) => {
+        onChange(nextValue);
+        setOpen(false);
+        triggerRef.current?.focus();
+    };
+
+    const selectedIndex = Math.max(0, options.findIndex((option) => option.name === value) + 1);
+
+    const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+        if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        setOpen(true);
+        focusOption(event.key === "ArrowUp" ? options.length : selectedIndex);
+    };
+
+    const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+        const optionCount = options.length + 1;
+        if (event.key === "Escape") {
+            event.preventDefault();
+            setOpen(false);
+            triggerRef.current?.focus();
+            return;
+        }
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            focusOption((index + 1) % optionCount);
+            return;
+        }
+        if (event.key === "ArrowUp") {
+            event.preventDefault();
+            focusOption((index - 1 + optionCount) % optionCount);
+            return;
+        }
+        if (event.key === "Home") {
+            event.preventDefault();
+            focusOption(0);
+            return;
+        }
+        if (event.key === "End") {
+            event.preventDefault();
+            focusOption(optionCount - 1);
+        }
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -2493,11 +2601,13 @@ function WorldBossItemEffectPicker({
         <div className={`world-boss-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
             <button
                 type="button"
+                ref={triggerRef}
                 className="world-boss-effect-trigger"
                 aria-expanded={open}
                 aria-haspopup="listbox"
                 aria-label={ariaLabel}
                 onClick={() => setOpen((current) => !current)}
+                onKeyDown={handleTriggerKeyDown}
             >
                 <span>
                     <small>{label}</small>
@@ -2510,13 +2620,12 @@ function WorldBossItemEffectPicker({
                 <div className="world-boss-effect-menu" role="listbox" aria-label={ariaLabel}>
                     <button
                         type="button"
+                        ref={(node) => { optionRefs.current[0] = node; }}
                         className={`world-boss-effect-option ${!value ? "active" : ""}`}
                         role="option"
                         aria-selected={!value}
-                        onClick={() => {
-                            onChange("");
-                            setOpen(false);
-                        }}
+                        onKeyDown={(event) => handleOptionKeyDown(event, 0)}
+                        onClick={() => selectOption("")}
                     >
                         <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />
                         <span>
@@ -2525,19 +2634,18 @@ function WorldBossItemEffectPicker({
                         </span>
                         {!value && <Check size={14} />}
                     </button>
-                    {options.map((option) => {
+                    {options.map((option, index) => {
                         const active = option.name === value;
                         return (
                             <button
                                 type="button"
+                                ref={(node) => { optionRefs.current[index + 1] = node; }}
                                 className={`world-boss-effect-option ${active ? "active" : ""}`}
                                 key={option.name}
                                 role="option"
                                 aria-selected={active}
-                                onClick={() => {
-                                    onChange(option.name);
-                                    setOpen(false);
-                                }}
+                                onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
+                                onClick={() => selectOption(option.name)}
                             >
                                 {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />}
                                 <span>

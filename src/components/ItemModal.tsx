@@ -19,7 +19,7 @@ import { getLoreEntry, getLoreForItem } from '@/data/lore';
 import { getMarketLiquidity, getSafeMarketValue } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
-import { getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
+import { GATHERED_RESOURCE_SOURCE_NOTE, getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
 import { useModalA11y } from '@/lib/use-modal-a11y';
 
 interface ItemModalProps {
@@ -700,6 +700,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               {showGatheredLocations && (
                 <div className="bento-card acquisition-card">
                   <div className="card-label"><MapPin size={14} /> Gathering Locations</div>
+                  <p className="source-context-note">{GATHERED_RESOURCE_SOURCE_NOTE}</p>
                   <div className="list-container scroll-y">
                     {gatheredLocations.map((location) => (
                       <button
@@ -923,6 +924,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         }
         .full-width { flex: 1 1 100% !important; }
         .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.25); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
+        .source-context-note { color: var(--text-muted); font-size: 0.8rem; font-weight: 650; line-height: 1.35; margin: -0.8rem 0 0.9rem; }
 
         .market-card { flex: 2 1 600px; background: linear-gradient(135deg, rgba(56,189,248,0.08), transparent); }
         .price-row { margin-bottom: 1.5rem; }
