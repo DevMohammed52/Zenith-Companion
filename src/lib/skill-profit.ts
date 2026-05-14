@@ -341,6 +341,10 @@ const ASSAULT_BUFFS: Record<AssaultRank, { exp: number; efficiency: number; labe
   eighthTenth: { exp: 2, efficiency: 1, label: "8th-10th (+2% EXP, +1% Eff)" },
 };
 
+export function getAssaultBuff(rank: AssaultRank | null | undefined) {
+  return ASSAULT_BUFFS[rank || "none"] || ASSAULT_BUFFS.none;
+}
+
 const SKILL_CLASS_EFFECTS: Record<string, { skill: SkillName; exp: number; efficiency: number }> = {
   Miner: { skill: "Mining", exp: 10, efficiency: 10 },
   Angler: { skill: "Fishing", exp: 10, efficiency: 10 },
@@ -581,7 +585,7 @@ export function getBuffTotals(settings: SkillProfitSettings, includeAscension = 
   const ascensionExp = includeAscension ? ascension
     .filter((buff) => buff.type === "Exp")
     .reduce((sum, buff) => sum + buff.value, 0) : 0;
-  const assault = ASSAULT_BUFFS[settings.assaultRank];
+  const assault = getAssaultBuff(settings.assaultRank);
   const classEffect = getClassSkillEffect(settings, skill);
   const supportsClass = !skill || skill === "All" || (skill !== "Alchemy" && skill !== "Forge" && skill !== "Construction");
   const essence = skill && skill !== "All" ? settings.essenceBuffsBySkill?.[skill] : undefined;

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
@@ -29,6 +29,7 @@ import MobileSortControls from "@/components/MobileSortControls";
 import { useData } from "@/context/DataContext";
 import { getMarketLiquidity, getSafeMarketValue } from "@/lib/market-pricing";
 import { useModalA11y } from "@/lib/use-modal-a11y";
+import { getAssaultBuff } from "@/lib/skill-profit";
 
 type Trend = "up" | "down" | "flat";
 type ActionPath = "MARKET" | "VENDOR" | "LIQUIDATE";
@@ -66,7 +67,9 @@ type AlchemyRow = {
   status: RowStatus;
   name: string;
   level: number;
+  baseTime: number;
   time: number;
+  efficiencyBonus: number;
   craftsPerHour: number;
   craftsPerDay: number;
   trend: Trend;
@@ -400,6 +403,10 @@ function AlchemyContent() {
   const parsedBartering = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
   const marketTaxRate = getMarketTaxRate(preferences.membership);
   const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+  const conquestRank = activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank;
+  const conquestBuff = getAssaultBuff(conquestRank);
+  const alchemyEfficiencyBonus = (preferences.membership ? 10 : 0) + conquestBuff.efficiency;
+  const alchemyDurationMultiplier = Math.max(0.01, (100 + alchemyEfficiencyBonus) / 100);
 
   const allRows = useMemo(() => {
     const rows: AlchemyRow[] = [];
@@ -456,7 +463,8 @@ function AlchemyContent() {
       const bestRevenue = Math.max(marketNet, vendorNet, liquidationNet);
       const profit = missing ? 0 : bestRevenue - cost;
       const opportunityProfit = missing ? 0 : bestRevenue - opportunityCost;
-      const craftsPerHour = recipe.time > 0 ? 3600 / recipe.time : 0;
+      const effectiveTime = recipe.time > 0 ? recipe.time / alchemyDurationMultiplier : recipe.time;
+      const craftsPerHour = effectiveTime > 0 ? 3600 / effectiveTime : 0;
       const profitPerHour = profit * craftsPerHour;
       const craftsPerDay = craftsPerHour * parsedActiveHours;
       const dailyProfit = profitPerHour * parsedActiveHours;
@@ -510,7 +518,9 @@ function AlchemyContent() {
         status: missing ? "missing" : "ok",
         name,
         level: recipe.level,
-        time: recipe.time,
+        baseTime: recipe.time,
+        time: effectiveTime,
+        efficiencyBonus: alchemyEfficiencyBonus,
         craftsPerHour,
         craftsPerDay,
         trend: getTrend(item),
@@ -554,9 +564,13 @@ function AlchemyContent() {
     marketData,
     ownedCostMode,
     ownedMaterials,
+    alchemyDurationMultiplier,
+    alchemyEfficiencyBonus,
     parsedActiveHours,
     parsedBartering,
     preferences.customPrices,
+    preferences.membership,
+    preferences.assaultRank,
     marketTaxMultiplier,
     marketTaxRate,
   ]);
@@ -811,7 +825,12 @@ function AlchemyContent() {
                     <td className={`mono ${row.profitPerHour >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profitPerHour)}</td>
                     <td className={`mono ${row.profit >= 0 ? "profit-positive" : "profit-negative"}`}>{row.status === "missing" ? "N/A" : formatSignedGold(row.profit)}</td>
                     <td className={`mono ${row.stableVol_3 > 0 ? "text-main" : "text-muted"}`} title={row.stableVol_3 !== row.vol_3 ? `Raw 3-day volume: ${formatGold(row.vol_3)}` : row.liquidityNote}>{formatGold(row.stableVol_3)}</td>
-                    <td className="mono text-muted">{formatMinutes(row.time)}</td>
+                    <td
+                      className="mono text-muted"
+                      title={row.efficiencyBonus > 0 ? `${formatDuration(row.baseTime)} base with +${row.efficiencyBonus}% efficiency` : undefined}
+                    >
+                      {formatMinutes(row.time)}
+                    </td>
                     <td>
                       <div className="alchemy-signal-stack">
                         <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
@@ -1182,7 +1201,13 @@ function AlchemyStrategyModal({
                 <div className="alchemy-math-row"><span>Cost used</span><strong className="mono">{formatGold(row.cost, 3)}g</strong></div>
                 <div className="alchemy-math-row"><span>Profit / pc</span><strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.profit, 3)}</strong></div>
                 <div className="alchemy-math-row"><span>Opportunity profit</span><strong className={`mono ${row.opportunityProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.opportunityProfit, 3)}</strong></div>
-                <div className="alchemy-math-row"><span>Craft time</span><strong className="mono">{formatDuration(row.time)}</strong></div>
+                <div className="alchemy-math-row">
+                  <span>Craft time</span>
+                  <strong className="mono">
+                    {formatDuration(row.time)}
+                    {row.efficiencyBonus > 0 ? ` (${formatDuration(row.baseTime)} base, +${row.efficiencyBonus}% efficiency)` : ""}
+                  </strong>
+                </div>
                 <div className="alchemy-math-row"><span>Crafts/hr</span><strong className="mono">{row.craftsPerHour.toFixed(2)}</strong></div>
                 <div className="alchemy-math-row"><span>Daily profit ({activeHours}h)</span><strong className={`mono ${row.dailyProfit >= 0 ? "success-value" : "danger-value"}`}>{formatSignedGold(row.dailyProfit, 2)}</strong></div>
                 <div className="alchemy-formula-line">{row.formula}</div>

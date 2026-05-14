@@ -6,10 +6,11 @@ import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import { getMerchantBuyPrice } from "@/constants";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getAssaultBuff } from "@/lib/skill-profit";
 
 type PriceSource = "custom" | "settings" | "guarded" | "3d" | "7d" | "14d" | "30d" | "merchant" | "vendor" | "none";
 type RecipeCostMode = "full" | "remaining" | "owned";
@@ -171,6 +172,10 @@ export default function MythicAlchemyPage() {
   const settingsPrices = useMemo(() => preferences.customPrices || {}, [preferences.customPrices]);
   const activeProfileId = activeProfile?.id || null;
   const profileBarteringBoost = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
+  const conquestRank = activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank;
+  const conquestBuff = getAssaultBuff(conquestRank);
+  const alchemyEfficiencyBonus = (preferences.membership ? 10 : 0) + conquestBuff.efficiency;
+  const mythicCraftTimeSeconds = MYTHIC_CRAFT_TIME_SECONDS / Math.max(0.01, (100 + alchemyEfficiencyBonus) / 100);
   const profileStorageKeys = useMemo(() => ({
     active: getProfileStorageKey(STORAGE_KEYS.active, activeProfile?.id),
     recipePrices: getProfileStorageKey(STORAGE_KEYS.recipePrices, activeProfile?.id),
@@ -379,7 +384,7 @@ export default function MythicAlchemyPage() {
           vendorRevenue > revenue ? "VENDOR" : salePrice.source === "custom" || salePrice.source === "settings" ? "CUSTOM" : "MARKET";
         const totalCostPerCraft = materialCost + recipeCostPerCraft;
         const profit = bestRevenue - totalCostPerCraft;
-        const craftsPerHour = 3600 / MYTHIC_CRAFT_TIME_SECONDS;
+        const craftsPerHour = 3600 / mythicCraftTimeSeconds;
         const profitPerHour = profit * craftsPerHour;
         const roi = totalCostPerCraft > 0 ? (profit / totalCostPerCraft) * 100 : 0;
         const totalRemainingProfit = profit * currentUses;
@@ -402,6 +407,8 @@ export default function MythicAlchemyPage() {
           profitPerHour,
           roi,
           totalRemainingProfit,
+          craftTimeSeconds: mythicCraftTimeSeconds,
+          efficiencyBonus: alchemyEfficiencyBonus,
           vol_3: marketData[recipe.resultName]?.vol_3 || 0,
           bestPath,
           usesLeft: currentUses,
@@ -417,8 +424,11 @@ export default function MythicAlchemyPage() {
     getPricedItem,
     getVendorPrice,
     marketData,
+    alchemyEfficiencyBonus,
+    mythicCraftTimeSeconds,
     profileBarteringBoost,
     preferences.membership,
+    preferences.assaultRank,
     recipeByResult,
     recipeCostMode,
     usesLeft,
