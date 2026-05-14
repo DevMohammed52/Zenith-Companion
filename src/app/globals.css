@@ -5458,10 +5458,14 @@ kbd {
 @media (max-width: 1180px) {
   .sidebar {
     transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
     width: min(300px, 86vw);
   }
   .sidebar.sidebar-open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
   .mobile-menu-btn {
     display: flex;

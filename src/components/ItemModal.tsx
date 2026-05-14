@@ -39,7 +39,7 @@ const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase()
 
 const getSourceRoute = (source: AcquisitionSource) => {
   const type = normalizeSourceType(source.type);
-  const target = type.includes('BOSS') ? 'bosses' : type === 'DUNGEON' ? 'dungeons' : 'combat';
+  const target = type.includes('BOSS') ? 'bosses' : type === 'DUNGEON' ? 'dungeons' : type === 'ENEMY' ? 'enemies' : 'combat';
   return `/${target}?search=${encodeURIComponent(source.name || '')}`;
 };
 
@@ -214,9 +214,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     }).sort((a: AcquisitionSource, b: AcquisitionSource) => Number(b.chance || 0) - Number(a.chance || 0));
   }, [item, relationEntry]);
 
+  const gatheredItemName = item?.name;
   const gatheredLocations = useMemo(() => (
-    item?.name ? getResourceLocationsForItem(item.name) : []
-  ), [item?.name]);
+    gatheredItemName ? getResourceLocationsForItem(gatheredItemName) : []
+  ), [gatheredItemName]);
 
   const groupedUtility = useMemo(() => {
     const direct = Array.isArray(item?.required_for) ? item.required_for : [];
@@ -683,7 +684,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               aria-label={`Open ${sourceLocation.name || src.name} on map`}
                               onClick={() => {
                                 onClose();
-                                router.push(`/map?location=${encodeURIComponent(sourceLocation.key || '')}`);
+                                router.push(`/map?location=${encodeURIComponent(sourceLocation.key || '')}&loot=${encodeURIComponent(item.name)}`);
                               }}
                             >
                               <MapPin size={14} aria-hidden="true" />

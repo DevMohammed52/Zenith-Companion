@@ -1,12 +1,20 @@
 "use client";
 import type { CSSProperties } from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { WEATHER_DATA, WeatherData } from '@/constants/weatherData';
+import { useData } from '@/context/DataContext';
+import {
+  buildEnrichedEnemies,
+  normalizeWeatherKey,
+  type EnrichedEnemy,
+  type WeatherPreferenceKind,
+} from '@/lib/world-intelligence';
 import { 
   Sun, CloudFog, ThermometerSun, Zap, Cloud, 
   CloudRain, CloudSnow, CloudLightning, Wind,
   Info, Calendar, Map, Users, Sparkles,
-  TrendingUp, Trophy
+  TrendingUp, Trophy, Swords, ExternalLink
 } from 'lucide-react';
 
 const formatPercent = (value: number | null) => {
@@ -19,8 +27,52 @@ const modifierTone = (value: number | null) => {
   return value > 0 ? 'pos' : 'neg';
 };
 
+function preferenceIncludes(enemy: EnrichedEnemy, kind: WeatherPreferenceKind, weatherName: string) {
+  const preference = enemy.weatherPreference;
+  if (!preference || kind === "unknown") return false;
+  const weatherKey = normalizeWeatherKey(weatherName);
+  return preference[kind].some((weather) => normalizeWeatherKey(weather) === weatherKey);
+}
+
+function getEnemiesForWeather(enemies: EnrichedEnemy[], weatherName: string) {
+  return {
+    loves: enemies.filter((enemy) => preferenceIncludes(enemy, "loves", weatherName)),
+    likes: enemies.filter((enemy) => preferenceIncludes(enemy, "likes", weatherName)),
+    dislikes: enemies.filter((enemy) => preferenceIncludes(enemy, "dislikes", weatherName)),
+    hates: enemies.filter((enemy) => preferenceIncludes(enemy, "hates", weatherName)),
+  };
+}
+
+function EnemyPreferenceGroup({ title, tone, enemies }: { title: string; tone: "good" | "bad"; enemies: EnrichedEnemy[] }) {
+  return (
+    <div className={`enemy-pref-group ${tone}`}>
+      <h4>{title}</h4>
+      <div className="enemy-pref-list">
+        {enemies.slice(0, 8).map((enemy) => (
+          <Link
+            key={`${title}-${enemy.locationKey}-${enemy.name}`}
+            href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
+            className="enemy-pref-link"
+          >
+            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={20} />}
+            <span>
+              <strong>{enemy.name}</strong>
+              <small>{enemy.locationName} - Lv.{enemy.level}</small>
+            </span>
+            <ExternalLink size={12} />
+          </Link>
+        ))}
+        {enemies.length === 0 && <p className="enemy-pref-empty">No confirmed enemies.</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function WeatherPage() {
+  const { staticData, worldLocations, marketData } = useData();
   const [activeWeather, setActiveWeather] = useState<WeatherData>(WEATHER_DATA[0]);
+  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData }), [marketData, staticData, worldLocations]);
+  const activeWeatherEnemies = useMemo(() => getEnemiesForWeather(enemies, activeWeather.name), [activeWeather.name, enemies]);
   const weatherAccent = {
     '--accent': activeWeather.theme.primary,
     '--accent-2': activeWeather.theme.secondary,
@@ -113,6 +165,19 @@ export default function WeatherPage() {
                 </div>
               )}
             </div>
+
+            <div className="enemy-weather-card">
+              <div className="card-header">
+                <Swords size={18} />
+                <h3>Enemy Preferences</h3>
+              </div>
+              <div className="enemy-weather-groups">
+                <EnemyPreferenceGroup title="Love" tone="good" enemies={activeWeatherEnemies.loves} />
+                <EnemyPreferenceGroup title="Like" tone="good" enemies={activeWeatherEnemies.likes} />
+                <EnemyPreferenceGroup title="Dislike" tone="bad" enemies={activeWeatherEnemies.dislikes} />
+                <EnemyPreferenceGroup title="Hate" tone="bad" enemies={activeWeatherEnemies.hates} />
+              </div>
+            </div>
           </section>
 
           {/* Mechanics Section */}
@@ -148,7 +213,7 @@ export default function WeatherPage() {
                   <Users size={16} />
                   <div>
                     <h4>Creature Behavior</h4>
-                    <p>Some creatures show up more often in certain weather, while others become harder to find. Check enemy reactions in-game.</p>
+                    <p>Enemy preferences are mapped from confirmed in-game reactions and are shown below each weather type.</p>
                   </div>
                 </div>
               </div>
@@ -292,6 +357,94 @@ export default function WeatherPage() {
           transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
           min-width: 0;
         }
+
+        .enemy-weather-card {
+          margin-top: 2rem;
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 28px;
+          background: rgba(255,255,255,0.02);
+          padding: 2rem;
+        }
+        .enemy-weather-groups {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 1rem;
+        }
+        :global(.enemy-pref-group) {
+          min-width: 0;
+          border: 1px solid rgba(255,255,255,0.045);
+          border-radius: 18px;
+          background: rgba(0,0,0,0.16);
+          padding: 0.85rem;
+        }
+        :global(.enemy-pref-group.good) {
+          border-color: rgba(74, 222, 128, 0.14);
+          background: rgba(74, 222, 128, 0.04);
+        }
+        :global(.enemy-pref-group.bad) {
+          border-color: rgba(248, 113, 113, 0.14);
+          background: rgba(248, 113, 113, 0.04);
+        }
+        :global(.enemy-pref-group h4) {
+          color: #fff;
+          font-size: 0.78rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 0.6rem;
+        }
+        :global(.enemy-pref-list) {
+          display: grid;
+          gap: 0.45rem;
+        }
+        :global(.enemy-pref-link) {
+          display: grid;
+          grid-template-columns: 30px minmax(0, 1fr) auto;
+          gap: 0.5rem;
+          align-items: center;
+          min-height: 42px;
+          border: 1px solid rgba(255,255,255,0.055);
+          border-radius: 10px;
+          background: rgba(255,255,255,0.025);
+          color: inherit;
+          padding: 0.4rem;
+          text-decoration: none;
+        }
+        :global(.enemy-pref-link:hover),
+        :global(.enemy-pref-link:focus-visible) {
+          border-color: color-mix(in srgb, var(--accent), white 10%);
+        }
+        :global(.enemy-pref-link img) {
+          width: 30px;
+          height: 30px;
+          object-fit: contain;
+        }
+        :global(.enemy-pref-link span) {
+          display: grid;
+          min-width: 0;
+        }
+        :global(.enemy-pref-link strong),
+        :global(.enemy-pref-link small) {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        :global(.enemy-pref-link strong) {
+          color: #fff;
+          font-size: 0.82rem;
+        }
+        :global(.enemy-pref-link small) {
+          color: rgba(255,255,255,0.46);
+          font-size: 0.72rem;
+          font-weight: 800;
+        }
+        :global(.enemy-pref-link svg) {
+          color: rgba(255,255,255,0.42);
+        }
+        :global(.enemy-pref-empty) {
+          color: rgba(255,255,255,0.42);
+          font-size: 0.82rem;
+          font-weight: 750;
+        }
         .impact-card:hover, .mf-card:hover {
           transform: translateY(-4px);
           border-color: color-mix(in srgb, var(--accent), transparent 70%);
@@ -426,6 +579,7 @@ export default function WeatherPage() {
           .hero-text h2 { font-size: 3.5rem; }
           .active-info-panel { padding: 2.5rem; border-radius: 30px; }
           .impact-grid { grid-template-columns: 1fr; }
+          .enemy-weather-groups { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 600px) {
@@ -481,6 +635,7 @@ export default function WeatherPage() {
           .active-info-panel { padding: 1.5rem; overflow: hidden; }
           .weather-hero { gap: 1rem; }
           .impact-card, .mf-card { padding: 1.5rem; border-radius: 20px; }
+          .enemy-weather-card { padding: 1.25rem; border-radius: 20px; }
           .mechanics-card { padding: 1.5rem; border-radius: 22px; }
           .stat-row { gap: 1rem; padding-right: 1rem; }
           .modifier-list { grid-template-columns: 1fr; }
@@ -546,8 +701,9 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const drawCtx = ctx;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
     let particles: WeatherParticle[] = [];
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -572,6 +728,7 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
       resizeFrameId = requestAnimationFrame(() => {
         resizeFrameId = null;
         resize();
+        if (reducedMotion) drawReducedMotionFrame();
       });
     };
 
@@ -820,6 +977,31 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
       animationFrameId = requestAnimationFrame(update);
     };
 
+    function drawReducedMotionFrame() {
+      drawCtx.clearRect(0, 0, width, height);
+      particles.forEach((p) => {
+        const size = weatherId === 'fog' ? Math.min(p.size, 140) : Math.max(p.size, 2);
+        const gradient = drawCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+        const color = weatherId === 'rain' || weatherId === 'storm'
+          ? '56, 189, 248'
+          : weatherId === 'snow'
+            ? '255, 255, 255'
+            : weatherId === 'magic-storm'
+              ? '167, 139, 250'
+              : weatherId === 'heatwave'
+                ? '251, 191, 36'
+                : weatherId === 'windy'
+                  ? '148, 163, 184'
+                  : '251, 191, 36';
+        gradient.addColorStop(0, `rgba(${color}, ${Math.min(p.opacity, 0.16)})`);
+        gradient.addColorStop(1, `rgba(${color}, 0)`);
+        drawCtx.fillStyle = gradient;
+        drawCtx.beginPath();
+        drawCtx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        drawCtx.fill();
+      });
+    }
+
     const handleVisibilityChange = () => {
       isVisible = !document.hidden;
     };
@@ -827,7 +1009,11 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
     window.addEventListener('resize', scheduleResize);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     resize();
-    update();
+    if (reducedMotion) {
+      drawReducedMotionFrame();
+    } else {
+      update();
+    }
 
     return () => {
       window.removeEventListener('resize', scheduleResize);

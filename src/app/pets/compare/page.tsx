@@ -568,7 +568,7 @@ export default function PetComparisonPage() {
               {profilePet && (
                 <button type="button" className={styles.profilePetButton} onClick={() => addPet(profilePet.name)}>
                   <Sparkles size={16} />
-                  Add {activeProfile?.name}'s {profilePet.name}
+                  Add {activeProfile?.name}&apos;s {profilePet.name}
                 </button>
               )}
             </div>

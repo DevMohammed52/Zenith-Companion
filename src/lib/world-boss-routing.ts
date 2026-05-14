@@ -59,7 +59,8 @@ export type RoutinePlan = {
 export const TELEPORT_BASE_FACTOR = 1 / 300;
 export const TELEPORT_LEVEL_FACTOR = 1e-6 * (86 / 999);
 export const TELEPORT_LEVEL_EXPONENT = 1.9;
-export const TELEPORT_FORMULA_LABEL = "floor(distance * (1/300 + 1e-6 * 86/999 * relevantLevel^1.9))";
+export const MIN_TELEPORT_ACTION_COST = 50;
+export const TELEPORT_FORMULA_LABEL = "max(50, floor(distance * (1/300 + 1e-6 * 86/999 * relevantLevel^1.9)))";
 export const DEFAULT_RELEVANT_TELEPORT_LEVEL = 1359;
 export const MAX_RELEVANT_TELEPORT_LEVEL = 2300;
 export const DEFAULT_MOVEMENT_SPEED = 25.68;
@@ -132,10 +133,13 @@ export function getBossRouteDistance(origin: string, destination: string) {
 
 export function calculateTeleportCost(distanceMeters: number, relevantTeleportLevel: number, classDiscount = false) {
     const safeDistance = Math.max(0, Number(distanceMeters) || 0);
+    if (safeDistance <= 0) return 0;
+
     const safeLevel = Math.max(0, Number(relevantTeleportLevel) || 0);
     const multiplier = classDiscount ? 0.5 : 1;
     const teleportFactor = TELEPORT_BASE_FACTOR + TELEPORT_LEVEL_FACTOR * Math.pow(safeLevel, TELEPORT_LEVEL_EXPONENT);
-    return Math.floor(safeDistance * teleportFactor * multiplier);
+    const rawCost = Math.floor(safeDistance * teleportFactor * multiplier);
+    return Math.max(MIN_TELEPORT_ACTION_COST, rawCost);
 }
 
 export function calculateTravelSeconds(distanceMeters: number, movementSpeed: number) {

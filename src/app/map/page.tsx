@@ -37,8 +37,15 @@ import {
   type GatheredResourceSource,
   type WorldLocation,
 } from "@/lib/locations";
+import {
+  buildEnrichedEnemies,
+  getWeatherPreferenceLabel,
+  isFavorableWeather,
+  isPenalizedWeather,
+  type EnrichedEnemy,
+} from "@/lib/world-intelligence";
 
-type SourceMode = "all" | "combat" | "dungeons" | "bosses" | "resources" | "weather";
+type SourceMode = "all" | "combat" | "dungeons" | "bosses" | "resources" | "weather-match" | "weather";
 type PoiKind = "shrine" | "bank" | "dungeons" | "bosses" | "enemies";
 
 type ForecastWeather = {
@@ -85,6 +92,8 @@ type MapLocation = WorldLocation & {
   forecast?: ForecastDay[];
   level: number | null;
   enemies: any[];
+  favoredEnemies: EnrichedEnemy[];
+  penalizedEnemies: EnrichedEnemy[];
   dungeons: any[];
   bosses: any[];
   drops: DropSummary[];
@@ -105,6 +114,7 @@ const SOURCE_MODES: { value: SourceMode; label: string }[] = [
   { value: "dungeons", label: "Dungeons" },
   { value: "bosses", label: "Bosses" },
   { value: "resources", label: "Resources" },
+  { value: "weather-match", label: "Weather Match" },
   { value: "weather", label: "Weather" },
 ];
 
@@ -331,6 +341,30 @@ function buildGatheredResources(
   });
 }
 
+function WeatherEnemyStrip({ title, enemies, empty }: { title: string; enemies: EnrichedEnemy[]; empty: string }) {
+  return (
+    <div className="weather-enemy-strip">
+      <h3>{title}</h3>
+      <div className="weather-enemy-list">
+        {enemies.slice(0, 6).map((enemy) => (
+          <Link
+            key={`${title}-${enemy.locationKey}-${enemy.name}`}
+            href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
+            className={`weather-enemy-chip ${isFavorableWeather(enemy.currentWeatherMatch) ? "good" : "bad"}`}
+          >
+            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={18} />}
+            <span>
+              <strong>{enemy.name}</strong>
+              <small>{getWeatherPreferenceLabel(enemy.currentWeatherMatch)}</small>
+            </span>
+          </Link>
+        ))}
+        {enemies.length === 0 && <p className="muted-empty">{empty}</p>}
+      </div>
+    </div>
+  );
+}
+
 function MapPageContent() {
   const searchParams = useSearchParams();
   const { staticData, marketData, allItemsDb, worldLocations, loading } = useData();
@@ -338,6 +372,10 @@ function MapPageContent() {
   const [selectedKey, setSelectedKey] = useState("");
   const [sourceMode, setSourceMode] = useState<SourceMode>("all");
   const [query, setQuery] = useState("");
+  const enrichedEnemies = useMemo(
+    () => buildEnrichedEnemies({ staticData, worldLocations, marketData }),
+    [marketData, staticData, worldLocations],
+  );
 
   const locations = useMemo<MapLocation[]>(() => {
     const locationRows = Array.isArray(worldLocations) ? worldLocations : [];
@@ -373,7 +411,7 @@ function MapPageContent() {
           const entityKey = normalizeLocationKey(entity.location?.key || entity.location?.name || entity.location?.id);
           return entityKey === key;
         };
-        const enemies = (staticData?.enemies || []).filter(matchesLocation);
+        const enemies = enrichedEnemies.filter((enemy) => enemy.locationKey === key);
         const dungeons = (staticData?.dungeons || []).filter(matchesLocation);
         const bosses = (staticData?.world_bosses || []).filter(matchesLocation);
         const { current, next } = getCurrentWeather(location);
@@ -391,6 +429,8 @@ function MapPageContent() {
           y: hasMapCoordinates ? Number(location.y) : fallbackY,
           forecast: (location.forecast || []) as ForecastDay[],
           enemies,
+          favoredEnemies: enemies.filter((enemy) => isFavorableWeather(enemy.currentWeatherMatch)),
+          penalizedEnemies: enemies.filter((enemy) => isPenalizedWeather(enemy.currentWeatherMatch)),
           dungeons,
           bosses,
           level: getLocationLevel(enemies, dungeons, bosses),
@@ -406,15 +446,19 @@ function MapPageContent() {
         if (Math.abs(ay - by) > 80) return ay - by;
         return Number(a.x || 0) - Number(b.x || 0);
       });
-  }, [allItemsDb, marketData, staticData, worldLocations]);
+  }, [allItemsDb, enrichedEnemies, marketData, staticData, worldLocations]);
 
   useEffect(() => {
     const key = normalizeLocationKey(searchParams.get("location"));
     const resource = searchParams.get("resource")?.trim();
+    const loot = searchParams.get("loot")?.trim();
     if (key) setSelectedKey(key);
     if (resource) {
       setSourceMode("resources");
       setQuery(resource);
+    } else if (loot) {
+      setSourceMode("all");
+      setQuery(loot);
     }
   }, [searchParams]);
 
@@ -432,6 +476,7 @@ function MapPageContent() {
         (sourceMode === "dungeons" && location.dungeons.length > 0) ||
         (sourceMode === "bosses" && location.bosses.length > 0) ||
         (sourceMode === "resources" && location.resources.length > 0) ||
+        (sourceMode === "weather-match" && (location.favoredEnemies.length > 0 || location.penalizedEnemies.length > 0)) ||
         (sourceMode === "weather" && getWeatherTimeline(location).length > 0);
       if (!sourceMatch) return false;
       if (!normalizedQuery) return true;
@@ -443,6 +488,8 @@ function MapPageContent() {
         ...location.enemies.map((enemy) => enemy.name),
         ...location.dungeons.map((dungeon) => dungeon.name),
         ...location.bosses.map((boss) => boss.name),
+        ...location.favoredEnemies.map((enemy) => enemy.name),
+        ...location.penalizedEnemies.map((enemy) => enemy.name),
         ...location.drops.map((drop) => drop.name),
         ...location.resources.map((resource) => resource.name),
       ].join(" ").toLowerCase();
@@ -465,6 +512,13 @@ function MapPageContent() {
   }), [locations]);
 
   const selectedPointsOfInterest = selectedLocation ? buildPointsOfInterest(selectedLocation) : [];
+  const selectedVisibleDrops = useMemo(() => {
+    if (!selectedLocation) return [];
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return selectedLocation.drops.slice(0, 12);
+    const matchingDrops = selectedLocation.drops.filter((drop) => drop.name.toLowerCase().includes(normalizedQuery));
+    return (matchingDrops.length > 0 ? matchingDrops : selectedLocation.drops).slice(0, 12);
+  }, [query, selectedLocation]);
 
   if (!selectedLocation && loading) {
     return (
@@ -601,6 +655,23 @@ function MapPageContent() {
               </div>
             </div>
 
+            <div className="weather-match-card">
+              <header>
+                <span><Swords size={15} /> Enemy Weather Match</span>
+                <strong>{selectedLocation.favoredEnemies.length} / {selectedLocation.penalizedEnemies.length}</strong>
+              </header>
+              <WeatherEnemyStrip
+                title="Favored now"
+                enemies={selectedLocation.favoredEnemies}
+                empty="No favored enemies in the current weather."
+              />
+              <WeatherEnemyStrip
+                title="Penalized now"
+                enemies={selectedLocation.penalizedEnemies}
+                empty="No penalized enemies in the current weather."
+              />
+            </div>
+
             <div className="poi-card">
               <header>
                 <span><Landmark size={15} /> Points of Interest</span>
@@ -633,6 +704,7 @@ function MapPageContent() {
 
             <div className="quick-links">
               <Link href={`/combat?search=${encodeURIComponent(selectedLocation.name)}`}><Swords size={14} /> Combat <ExternalLink size={12} /></Link>
+              <Link href={`/enemies?location=${encodeURIComponent(selectedLocation.key)}`}><Swords size={14} /> Enemies <ExternalLink size={12} /></Link>
               <Link href={`/dungeons?search=${encodeURIComponent(selectedLocation.name)}`}><Castle size={14} /> Dungeons <ExternalLink size={12} /></Link>
               <Link href={`/bosses?search=${encodeURIComponent(selectedLocation.name)}`}><Skull size={14} /> Bosses <ExternalLink size={12} /></Link>
             </div>
@@ -648,7 +720,7 @@ function MapPageContent() {
               <strong>{selectedLocation.name}</strong>
             </header>
             <div className="source-columns">
-              <SourceColumn title="Enemies" icon={<Swords size={15} />} rows={selectedLocation.enemies} hrefBase="/combat" />
+              <SourceColumn title="Enemies" icon={<Swords size={15} />} rows={selectedLocation.enemies} hrefBase="/enemies" />
               <SourceColumn title="Dungeons" icon={<Castle size={15} />} rows={selectedLocation.dungeons} hrefBase="/dungeons" />
               <SourceColumn title="Bosses" icon={<Skull size={15} />} rows={selectedLocation.bosses} hrefBase="/bosses" />
             </div>
@@ -660,7 +732,7 @@ function MapPageContent() {
               <strong>{formatCount(selectedLocation.drops.length, "drop")}</strong>
             </header>
             <div className="drop-grid">
-              {selectedLocation.drops.slice(0, 12).map((drop) => (
+              {selectedVisibleDrops.map((drop) => (
                 <button
                   type="button"
                   key={drop.name}
@@ -1102,6 +1174,7 @@ function MapPageContent() {
         }
         .location-heading,
         .weather-card,
+        .weather-match-card,
         .poi-card,
         .source-strip,
         .quick-links {
@@ -1156,6 +1229,92 @@ function MapPageContent() {
           font-size: 0.72rem;
           font-weight: 800;
           padding: 0.25rem 0.5rem;
+        }
+        .weather-match-card {
+          display: grid;
+          gap: 0.7rem;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 10px;
+          background: rgba(255,255,255,0.025);
+          padding: 0.78rem;
+        }
+        .weather-match-card header {
+          display: flex;
+          justify-content: space-between;
+          gap: 0.75rem;
+          align-items: center;
+        }
+        .weather-match-card header span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          color: var(--text-accent);
+          font-size: 0.72rem;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .weather-match-card header strong {
+          color: #fff;
+          font-family: var(--font-mono);
+          font-size: 0.8rem;
+        }
+        .weather-enemy-strip h3 {
+          margin-bottom: 0.4rem;
+          color: var(--text-muted);
+          font-size: 0.74rem;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .weather-enemy-list {
+          display: grid;
+          gap: 0.4rem;
+        }
+        .weather-enemy-chip {
+          display: grid;
+          grid-template-columns: 30px minmax(0, 1fr);
+          gap: 0.5rem;
+          align-items: center;
+          min-height: 42px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 8px;
+          background: rgba(0,0,0,0.18);
+          color: inherit;
+          padding: 0.4rem;
+          text-decoration: none;
+        }
+        .weather-enemy-chip.good {
+          border-color: rgba(45, 212, 191, 0.24);
+          background: rgba(45, 212, 191, 0.07);
+        }
+        .weather-enemy-chip.bad {
+          border-color: rgba(248, 113, 113, 0.24);
+          background: rgba(248, 113, 113, 0.07);
+        }
+        .weather-enemy-chip img {
+          width: 30px;
+          height: 30px;
+          object-fit: contain;
+        }
+        .weather-enemy-chip span {
+          display: grid;
+          gap: 0.08rem;
+          min-width: 0;
+        }
+        .weather-enemy-chip strong,
+        .weather-enemy-chip small {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .weather-enemy-chip strong {
+          color: #fff;
+          font-size: 0.8rem;
+        }
+        .weather-enemy-chip small {
+          color: var(--text-muted);
+          font-size: 0.7rem;
+          font-weight: 850;
         }
         .source-strip {
           display: grid;
@@ -1618,7 +1777,7 @@ function SourceColumn({
   title: string;
   icon: ReactNode;
   rows: any[];
-  hrefBase: "/combat" | "/dungeons" | "/bosses";
+  hrefBase: "/combat" | "/enemies" | "/dungeons" | "/bosses";
 }) {
   return (
     <div className="source-column">

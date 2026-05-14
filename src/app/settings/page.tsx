@@ -197,7 +197,7 @@ export default function SettingsPage() {
 
         <div className="settings-panel settings-panel-wide">
           <h2><BarChart3 size={17} /> Compatibility Fallbacks</h2>
-          <p className="settings-panel-note">These are only fallback values for no-profile states. When a profile is active, calculators use the profile's class, tools, bartering level, conquest, and page-local controls instead.</p>
+          <p className="settings-panel-note">These are only fallback values for no-profile states. When a profile is active, calculators use the profile&apos;s class, tools, bartering level, conquest, and page-local controls instead.</p>
           <div className="settings-fields settings-compat-fields">
             <label className="settings-field">
               <span><strong>Skill Class Helper</strong><small>Used only when no active profile is available.</small></span>

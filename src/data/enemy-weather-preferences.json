@@ -1,0 +1,1291 @@
+{
+  "meta": {
+    "generated_at": "2026-05-14T11:38:37.3208773+05:30",
+    "source": "game_info/01_research/enemy_weather_preferences_collected.json",
+    "source_updated_at": "2026-05-14T11:38:37.3208773+05:30",
+    "schema_version": 2,
+    "entry_count": 47,
+    "matched_count": 47,
+    "confirmed_count": 47,
+    "location_count": 10,
+    "weather_names": [
+      "Clear",
+      "Overcast",
+      "Rain",
+      "Fog",
+      "Storm",
+      "Magic Storm",
+      "Windy",
+      "Snow",
+      "Heatwave"
+    ]
+  },
+  "entries": [
+    {
+      "enemy_id": 1,
+      "enemy_name": "Rabbit",
+      "enemy_key": "rabbit",
+      "enemy_level": 1,
+      "location_name": "Bluebell Hollow",
+      "location_key": "bluebell-hollow",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Clear",
+        "Magic Storm",
+        "Windy"
+      ],
+      "neutral": [
+        "Overcast",
+        "Rain",
+        "Heatwave"
+      ],
+      "dislikes": [
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Bluebell Hollow."
+    },
+    {
+      "enemy_id": 16,
+      "enemy_name": "Goblin",
+      "enemy_key": "goblin",
+      "enemy_level": 2,
+      "location_name": "Bluebell Hollow",
+      "location_key": "bluebell-hollow",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast"
+      ],
+      "neutral": [
+        "Clear",
+        "Rain",
+        "Fog",
+        "Storm",
+        "Windy"
+      ],
+      "dislikes": [
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Bluebell Hollow."
+    },
+    {
+      "enemy_id": 2,
+      "enemy_name": "Duck",
+      "enemy_key": "duck",
+      "enemy_level": 4,
+      "location_name": "Bluebell Hollow",
+      "location_key": "bluebell-hollow",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Rain",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Windy"
+      ],
+      "neutral": [
+        "Overcast",
+        "Heatwave"
+      ],
+      "dislikes": [
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Bluebell Hollow."
+    },
+    {
+      "enemy_id": 17,
+      "enemy_name": "Goblin King",
+      "enemy_key": "goblin-king",
+      "enemy_level": 6,
+      "location_name": "Bluebell Hollow",
+      "location_key": "bluebell-hollow",
+      "confidence": "confirmed",
+      "loves": [
+        "Storm"
+      ],
+      "likes": [
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Clear",
+        "Overcast",
+        "Rain",
+        "Fog"
+      ],
+      "dislikes": [
+        "Windy",
+        "Snow"
+      ],
+      "hates": [
+        "Heatwave"
+      ],
+      "notes": "Captured from user screenshot batch for Bluebell Hollow."
+    },
+    {
+      "enemy_id": 6,
+      "enemy_name": "Boar",
+      "enemy_key": "boar",
+      "enemy_level": 8,
+      "location_name": "Whispering Woods",
+      "location_key": "whispering-woods",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Rain",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Fog",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear"
+      ],
+      "hates": [
+        "Windy",
+        "Snow",
+        "Heatwave"
+      ],
+      "notes": "Captured from user screenshot batch for Whispering Woods."
+    },
+    {
+      "enemy_id": 3,
+      "enemy_name": "Deer",
+      "enemy_key": "deer",
+      "enemy_level": 10,
+      "location_name": "Whispering Woods",
+      "location_key": "whispering-woods",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear"
+      ],
+      "likes": [
+        "Overcast",
+        "Magic Storm",
+        "Windy"
+      ],
+      "neutral": [
+        "Rain",
+        "Heatwave"
+      ],
+      "dislikes": [
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Whispering Woods."
+    },
+    {
+      "enemy_id": 24,
+      "enemy_name": "Cultist",
+      "enemy_key": "cultist",
+      "enemy_level": 12,
+      "location_name": "Whispering Woods",
+      "location_key": "whispering-woods",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Whispering Woods."
+    },
+    {
+      "enemy_id": 26,
+      "enemy_name": "Gorgon",
+      "enemy_key": "gorgon",
+      "enemy_level": 14,
+      "location_name": "Whispering Woods",
+      "location_key": "whispering-woods",
+      "confidence": "confirmed",
+      "loves": [
+        "Overcast",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Fog"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Whispering Woods."
+    },
+    {
+      "enemy_id": 25,
+      "enemy_name": "Djinn",
+      "enemy_key": "djinn",
+      "enemy_level": 16,
+      "location_name": "Whispering Woods",
+      "location_key": "whispering-woods",
+      "confidence": "confirmed",
+      "loves": [
+        "Heatwave"
+      ],
+      "likes": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "neutral": [
+        "Clear",
+        "Storm"
+      ],
+      "dislikes": [
+        "Overcast",
+        "Rain",
+        "Fog",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Whispering Woods."
+    },
+    {
+      "enemy_id": 23,
+      "enemy_name": "Spectre",
+      "enemy_key": "spectre",
+      "enemy_level": 18,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Rain"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [
+        "Heatwave"
+      ],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 22,
+      "enemy_name": "Ogre",
+      "enemy_key": "ogre",
+      "enemy_level": 20,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Clear",
+        "Overcast",
+        "Rain"
+      ],
+      "dislikes": [
+        "Fog",
+        "Windy",
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 7,
+      "enemy_name": "Buffalo",
+      "enemy_key": "buffalo",
+      "enemy_level": 22,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Clear",
+        "Heatwave"
+      ],
+      "neutral": [
+        "Overcast",
+        "Rain"
+      ],
+      "dislikes": [
+        "Fog",
+        "Storm",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 21,
+      "enemy_name": "Slimeball",
+      "enemy_key": "slimeball",
+      "enemy_level": 24,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [
+        "Rain",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast",
+        "Fog"
+      ],
+      "neutral": [
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 18,
+      "enemy_name": "Pirate",
+      "enemy_key": "pirate",
+      "enemy_level": 26,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Overcast"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Fog",
+        "Snow",
+        "Heatwave"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 19,
+      "enemy_name": "Skeleton Warrior",
+      "enemy_key": "skeleton-warrior",
+      "enemy_level": 28,
+      "location_name": "Eldoria",
+      "location_key": "eldoria",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Snow"
+      ],
+      "hates": [
+        "Clear",
+        "Windy",
+        "Heatwave"
+      ],
+      "notes": "Captured from user screenshot batch for Eldoria."
+    },
+    {
+      "enemy_id": 20,
+      "enemy_name": "Zombie",
+      "enemy_key": "zombie",
+      "enemy_level": 32,
+      "location_name": "Crystal Caverns",
+      "location_key": "crystal-caverns",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Crystal Caverns. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 28,
+      "enemy_name": "Shadow Beast",
+      "enemy_key": "shadow-beast",
+      "enemy_level": 35,
+      "location_name": "Crystal Caverns",
+      "location_key": "crystal-caverns",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Crystal Caverns. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 8,
+      "enemy_name": "Elephant",
+      "enemy_key": "elephant",
+      "enemy_level": 36,
+      "location_name": "Crystal Caverns",
+      "location_key": "crystal-caverns",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Clear",
+        "Overcast",
+        "Rain"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Fog",
+        "Storm",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Crystal Caverns. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 9,
+      "enemy_name": "Elk",
+      "enemy_key": "elk",
+      "enemy_level": 38,
+      "location_name": "Crystal Caverns",
+      "location_key": "crystal-caverns",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast",
+        "Windy"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain"
+      ],
+      "hates": [
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "notes": "Captured from user screenshot batch for Crystal Caverns. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 29,
+      "enemy_name": "Siren",
+      "enemy_key": "siren",
+      "enemy_level": 42,
+      "location_name": "Crystal Caverns",
+      "location_key": "crystal-caverns",
+      "confidence": "confirmed",
+      "loves": [
+        "Fog",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast"
+      ],
+      "neutral": [
+        "Rain",
+        "Windy"
+      ],
+      "dislikes": [
+        "Storm"
+      ],
+      "hates": [
+        "Clear",
+        "Snow"
+      ],
+      "notes": "Captured from user screenshot batch for Crystal Caverns. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 10,
+      "enemy_name": "Lion",
+      "enemy_key": "lion",
+      "enemy_level": 48,
+      "location_name": "Skyreach Peak",
+      "location_key": "skyreach-peak",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast",
+        "Windy"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain",
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Skyreach Peak. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 30,
+      "enemy_name": "Wraith",
+      "enemy_key": "wraith",
+      "enemy_level": 52,
+      "location_name": "Skyreach Peak",
+      "location_key": "skyreach-peak",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Storm",
+        "Magic Storm"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain",
+        "Snow"
+      ],
+      "hates": [
+        "Clear",
+        "Windy"
+      ],
+      "notes": "Captured from user screenshot batch for Skyreach Peak. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 11,
+      "enemy_name": "Moose",
+      "enemy_key": "moose",
+      "enemy_level": 54,
+      "location_name": "Skyreach Peak",
+      "location_key": "skyreach-peak",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy",
+        "Snow"
+      ],
+      "likes": [
+        "Overcast"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Clear"
+      ],
+      "hates": [
+        "Rain",
+        "Fog",
+        "Storm"
+      ],
+      "notes": "Captured from user screenshot batch for Skyreach Peak. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 31,
+      "enemy_name": "Golem",
+      "enemy_key": "golem",
+      "enemy_level": 58,
+      "location_name": "Skyreach Peak",
+      "location_key": "skyreach-peak",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Clear",
+        "Overcast",
+        "Fog",
+        "Snow"
+      ],
+      "dislikes": [
+        "Rain",
+        "Windy"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Skyreach Peak. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 12,
+      "enemy_name": "Polar Bear",
+      "enemy_key": "polar-bear",
+      "enemy_level": 60,
+      "location_name": "Enchanted Oasis",
+      "location_key": "enchanted-oasis",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Windy"
+      ],
+      "neutral": [
+        "Heatwave"
+      ],
+      "dislikes": [
+        "Overcast"
+      ],
+      "hates": [
+        "Rain",
+        "Storm"
+      ],
+      "notes": "Captured from user screenshot batch for Enchanted Oasis. Fog and Snow rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 32,
+      "enemy_name": "Witch",
+      "enemy_key": "witch",
+      "enemy_level": 62,
+      "location_name": "Enchanted Oasis",
+      "location_key": "enchanted-oasis",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Storm",
+        "Magic Storm",
+        "Heatwave"
+      ],
+      "neutral": [
+        "Overcast",
+        "Windy"
+      ],
+      "dislikes": [
+        "Rain"
+      ],
+      "hates": [
+        "Clear"
+      ],
+      "notes": "Captured from user screenshot batch for Enchanted Oasis. Fog and Snow rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 14,
+      "enemy_name": "Raccoon",
+      "enemy_key": "raccoon",
+      "enemy_level": 64,
+      "location_name": "Enchanted Oasis",
+      "location_key": "enchanted-oasis",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Clear",
+        "Heatwave"
+      ],
+      "neutral": [
+        "Windy"
+      ],
+      "dislikes": [
+        "Overcast",
+        "Rain"
+      ],
+      "hates": [
+        "Storm"
+      ],
+      "notes": "Captured from user screenshot batch for Enchanted Oasis. Fog and Snow rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 33,
+      "enemy_name": "Dwarven Warrior",
+      "enemy_key": "dwarven-warrior",
+      "enemy_level": 68,
+      "location_name": "Enchanted Oasis",
+      "location_key": "enchanted-oasis",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Heatwave"
+      ],
+      "neutral": [
+        "Clear",
+        "Windy"
+      ],
+      "dislikes": [
+        "Overcast",
+        "Rain",
+        "Storm"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Enchanted Oasis. Fog and Snow rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 15,
+      "enemy_name": "Wolf",
+      "enemy_key": "wolf",
+      "enemy_level": 69,
+      "location_name": "Enchanted Oasis",
+      "location_key": "enchanted-oasis",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "neutral": [
+        "Clear",
+        "Heatwave"
+      ],
+      "dislikes": [
+        "Overcast"
+      ],
+      "hates": [
+        "Rain",
+        "Storm"
+      ],
+      "notes": "Captured from user screenshot batch for Enchanted Oasis. Fog and Snow rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 5,
+      "enemy_name": "Black Bear",
+      "enemy_key": "black-bear",
+      "enemy_level": 70,
+      "location_name": "Floating Gardens of Aetheria",
+      "location_key": "floating-gardens-of-aetheria",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Clear",
+        "Overcast",
+        "Windy"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain"
+      ],
+      "hates": [
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "notes": "Captured from user screenshot batch for Floating Gardens of Aetheria. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 34,
+      "enemy_name": "Minotaur",
+      "enemy_key": "minotaur",
+      "enemy_level": 72,
+      "location_name": "Floating Gardens of Aetheria",
+      "location_key": "floating-gardens-of-aetheria",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Clear",
+        "Overcast",
+        "Storm"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain",
+        "Fog",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Floating Gardens of Aetheria. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 35,
+      "enemy_name": "Reaper",
+      "enemy_key": "reaper",
+      "enemy_level": 74,
+      "location_name": "Floating Gardens of Aetheria",
+      "location_key": "floating-gardens-of-aetheria",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Floating Gardens of Aetheria. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 36,
+      "enemy_name": "Harpy",
+      "enemy_key": "harpy",
+      "enemy_level": 76,
+      "location_name": "Floating Gardens of Aetheria",
+      "location_key": "floating-gardens-of-aetheria",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Clear",
+        "Overcast"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain",
+        "Fog",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Floating Gardens of Aetheria. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 37,
+      "enemy_name": "Undead Knight",
+      "enemy_key": "undead-knight",
+      "enemy_level": 78,
+      "location_name": "Celestial Observatory",
+      "location_key": "celestial-observatory",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Celestial Observatory. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 38,
+      "enemy_name": "Wizard of the South",
+      "enemy_key": "wizard-of-the-south",
+      "enemy_level": 82,
+      "location_name": "Celestial Observatory",
+      "location_key": "celestial-observatory",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Clear",
+        "Overcast",
+        "Fog"
+      ],
+      "dislikes": [
+        "Rain",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Celestial Observatory. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 39,
+      "enemy_name": "Air Elemental",
+      "enemy_key": "air-elemental",
+      "enemy_level": 84,
+      "location_name": "Celestial Observatory",
+      "location_key": "celestial-observatory",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Overcast"
+      ],
+      "hates": [
+        "Rain",
+        "Fog",
+        "Snow"
+      ],
+      "notes": "Captured from user screenshot batch for Celestial Observatory. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 40,
+      "enemy_name": "Water Elemental",
+      "enemy_key": "water-elemental",
+      "enemy_level": 86,
+      "location_name": "Celestial Observatory",
+      "location_key": "celestial-observatory",
+      "confidence": "confirmed",
+      "loves": [
+        "Rain",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Overcast",
+        "Fog"
+      ],
+      "dislikes": [
+        "Snow"
+      ],
+      "hates": [
+        "Clear",
+        "Windy"
+      ],
+      "notes": "Captured from user screenshot batch for Celestial Observatory. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 41,
+      "enemy_name": "Fire Elemental",
+      "enemy_key": "fire-elemental",
+      "enemy_level": 89,
+      "location_name": "Celestial Observatory",
+      "location_key": "celestial-observatory",
+      "confidence": "confirmed",
+      "loves": [
+        "Clear",
+        "Storm",
+        "Magic Storm"
+      ],
+      "likes": [
+        "Windy"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Overcast",
+        "Rain",
+        "Fog",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Celestial Observatory. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 46,
+      "enemy_name": "Basilisk",
+      "enemy_key": "basilisk",
+      "enemy_level": 92,
+      "location_name": "Isle of Whispers",
+      "location_key": "isle-of-whispers",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain"
+      ],
+      "dislikes": [
+        "Storm"
+      ],
+      "hates": [
+        "Clear",
+        "Windy"
+      ],
+      "notes": "Captured from user screenshot batch for Isle of Whispers. Snow and Heatwave rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 47,
+      "enemy_name": "Griffon",
+      "enemy_key": "griffon",
+      "enemy_level": 94,
+      "location_name": "Isle of Whispers",
+      "location_key": "isle-of-whispers",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Clear"
+      ],
+      "neutral": [
+        "Overcast"
+      ],
+      "dislikes": [
+        "Rain",
+        "Fog",
+        "Storm"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Isle of Whispers. Snow and Heatwave rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 42,
+      "enemy_name": "Earth Elemental",
+      "enemy_key": "earth-elemental",
+      "enemy_level": 98,
+      "location_name": "Isle of Whispers",
+      "location_key": "isle-of-whispers",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm"
+      ],
+      "likes": [
+        "Overcast",
+        "Fog"
+      ],
+      "neutral": [
+        "Rain"
+      ],
+      "dislikes": [
+        "Clear",
+        "Storm",
+        "Windy"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Isle of Whispers. Snow and Heatwave rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 44,
+      "enemy_name": "Werewolf",
+      "enemy_key": "werewolf",
+      "enemy_level": 99,
+      "location_name": "Isle of Whispers",
+      "location_key": "isle-of-whispers",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for Isle of Whispers. Snow and Heatwave rows were not visible in the screenshot."
+    },
+    {
+      "enemy_id": 63,
+      "enemy_name": "Arvendor Guardian",
+      "enemy_key": "arvendor-guardian",
+      "enemy_level": 100,
+      "location_name": "The Citadel",
+      "location_key": "the-citadel",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Storm"
+      ],
+      "neutral": [
+        "Clear",
+        "Overcast"
+      ],
+      "dislikes": [
+        "Rain",
+        "Snow"
+      ],
+      "hates": [
+        "Fog"
+      ],
+      "notes": "Captured from user screenshot batch for The Citadel. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 61,
+      "enemy_name": "Banshee",
+      "enemy_key": "banshee",
+      "enemy_level": 100,
+      "location_name": "The Citadel",
+      "location_key": "the-citadel",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Storm",
+        "Magic Storm"
+      ],
+      "neutral": [],
+      "dislikes": [
+        "Rain"
+      ],
+      "hates": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "notes": "Captured from user screenshot batch for The Citadel. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 64,
+      "enemy_name": "Kikimora",
+      "enemy_key": "kikimora",
+      "enemy_level": 100,
+      "location_name": "The Citadel",
+      "location_key": "the-citadel",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for The Citadel. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 65,
+      "enemy_name": "Man Moth",
+      "enemy_key": "man-moth",
+      "enemy_level": 100,
+      "location_name": "The Citadel",
+      "location_key": "the-citadel",
+      "confidence": "confirmed",
+      "loves": [
+        "Magic Storm",
+        "Windy"
+      ],
+      "likes": [
+        "Overcast"
+      ],
+      "neutral": [
+        "Clear",
+        "Fog"
+      ],
+      "dislikes": [
+        "Rain",
+        "Storm",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for The Citadel. Heatwave row was not visible in the screenshot."
+    },
+    {
+      "enemy_id": 62,
+      "enemy_name": "Will-o'-the-wisp",
+      "enemy_key": "will-o-the-wisp",
+      "enemy_level": 100,
+      "location_name": "The Citadel",
+      "location_key": "the-citadel",
+      "confidence": "confirmed",
+      "loves": [],
+      "likes": [
+        "Overcast",
+        "Fog",
+        "Magic Storm"
+      ],
+      "neutral": [
+        "Rain",
+        "Storm"
+      ],
+      "dislikes": [
+        "Clear",
+        "Windy",
+        "Snow"
+      ],
+      "hates": [],
+      "notes": "Captured from user screenshot batch for The Citadel. Heatwave row was not visible in the screenshot."
+    }
+  ]
+}

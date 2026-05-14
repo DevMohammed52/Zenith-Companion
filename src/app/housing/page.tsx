@@ -1730,7 +1730,7 @@ export default function HousingPage() {
                 <div>
                   <p className="eyebrow">Guest Setup</p>
                   <h2>Guest buffs are inactive</h2>
-                  <p>Switch this profile to Guest mode when the character is using another player's house.</p>
+                  <p>Switch this profile to Guest mode when the character is using another player&apos;s house.</p>
                 </div>
                 <button
                   className="ghost-button"

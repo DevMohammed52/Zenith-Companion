@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon, BellRing } from 'lucide-react';
+import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon, BellRing, Bug } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -52,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Swords,
         items: [
             { href: '/combat', label: 'Combat', icon: Swords },
+            { href: '/enemies', label: 'Enemy Database', icon: Bug },
             { href: '/dungeons', label: 'Dungeons', icon: Castle },
             { href: '/bosses', label: 'World Bosses', icon: Skull },
             { href: '/bis', label: 'BiS Recommender', icon: Shield },
@@ -100,6 +101,15 @@ export default function Sidebar() {
         setMobileOpen(false);
     }, [pathname, setMobileOpen]);
 
+    useEffect(() => {
+        if (!mobileOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setMobileOpen(false);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [mobileOpen, setMobileOpen]);
+
     const isActive = (item: NavItem) => {
         if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + '/');
         return pathname === item.href;
@@ -145,9 +155,9 @@ export default function Sidebar() {
         };
     }, []);
 
+    const fallbackUpdatedAt = typeof scraperStatus?.timestamp === 'string' ? scraperStatus.timestamp : undefined;
     const marketWatchSummary = useMemo(() => {
         const enabledRules = marketWatchRules.filter((rule) => rule.enabled);
-        const fallbackUpdatedAt = typeof scraperStatus?.timestamp === 'string' ? scraperStatus.timestamp : undefined;
         const evaluations = enabledRules.map((rule) => evaluateMarketWatchRule({
             rule,
             market: typedMarketData?.[rule.itemName],
@@ -165,7 +175,7 @@ export default function Sidebar() {
             waiting,
             missing,
         };
-    }, [allItemsDb, barteringBoost, marketWatchRules, scraperStatus?.timestamp, typedMarketData]);
+    }, [allItemsDb, barteringBoost, fallbackUpdatedAt, marketWatchRules, typedMarketData]);
     const marketWatchAriaLabel = `Market Watch, ${marketWatchSummary.met} rules met, ${marketWatchSummary.enabled} enabled rules`;
 
     return (

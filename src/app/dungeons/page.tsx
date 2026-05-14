@@ -438,14 +438,15 @@ function DungeonsContent() {
     return () => window.clearTimeout(timeout);
   }, [dungeonItemModifierSelections, itemModifiersStorageKey]);
 
+  const staticDungeons = staticData?.dungeons;
   const listedCompletionMagicFindBonus = useMemo(() => {
-    if (!staticData?.dungeons) return 0;
-    return (staticData.dungeons || []).filter((dungeon: any) => {
+    if (!staticDungeons) return 0;
+    return (staticDungeons || []).filter((dungeon: any) => {
       const requirement = Number(dungeon.completion_requirement || 0);
       const completed = Number(completedRunsByDungeon[getDungeonKey(dungeon)] || 0);
       return requirement > 0 && completed >= requirement;
     }).length;
-  }, [completedRunsByDungeon, staticData?.dungeons]);
+  }, [completedRunsByDungeon, staticDungeons]);
   const eventCompletionMagicFindBonus = useMemo(
     () => normalizeCompletionCount(eventDungeonCompletionCount),
     [eventDungeonCompletionCount],
