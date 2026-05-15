@@ -1,0 +1,32 @@
+name = "zenith-profile-import"
+main = "src/index.mjs"
+compatibility_date = "2026-05-15"
+workers_dev = true
+preview_urls = false
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+ALLOWED_ORIGINS = "https://your-vercel-domain.vercel.app,http://localhost:3000"
+IMPORT_MAX_PENDING = "25"
+IMPORT_MAX_CONCURRENT = "1"
+IMPORT_BASELINE_REQUEST_CAP = "45"
+IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER = "8"
+IDLEMMO_IMPORT_DELAY_MS = "1800"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zenith_profile_import"
+database_id = "replace-with-cloudflare-d1-database-id"
+
+[[kv_namespaces]]
+binding = "ZENITH_COORDINATOR"
+id = "replace-with-cloudflare-kv-namespace-id"
+
+# Secrets to set with Wrangler or the Cloudflare dashboard:
+# - IDLEMMO_API_KEY
+# - SCRAPER_COORDINATOR_SECRET
+# - IMPORT_SIGNING_SECRET
+# - IMPORT_ENCRYPTION_SECRET
+# - TURNSTILE_SECRET_KEY

@@ -1,0 +1,13 @@
+{
+  "name": "zenith-profile-import-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:config": "node scripts/prepare-wrangler-config.mjs",
+    "test": "node test/worker.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -8,6 +8,7 @@ import {
   Download,
   FileUp,
   Home,
+  Loader2,
   Package,
   Plus,
   Search,
@@ -22,10 +23,19 @@ import {
 } from "lucide-react";
 import {
   MAX_PROFILES,
+  createDefaultProfile,
   type CharacterProfile,
   type CombatStyle,
+  type ProfileFieldSource,
+  type ProfileOwnedPet,
+  type ProfileUpdateOptions,
   useProfiles,
 } from "@/lib/profiles";
+import {
+  mergeImportedProfileDraft,
+  type ImportedProfileDraft,
+  type ImportedProfileMergeResult,
+} from "@/lib/profile-import";
 import { useData } from "@/context/DataContext";
 import {
   CLASS_DATA,
@@ -119,6 +129,9 @@ const PROFILE_SECTIONS = [
   ["transfer", "Import"],
 ];
 
+const PROFILE_IMPORT_API_URL = (process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
+const CHARACTER_HASH_PATTERN = /^(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_-]{12,80}$/;
+
 function numberFromInput(value: string) {
   return value === "" ? "" : Number(value);
 }
@@ -162,6 +175,104 @@ function formatShortStats(stats?: Record<string, number> | null, limit = 3) {
   return entries.map(([key, value]) => `${formatStatName(key)} ${value}`).join(" / ");
 }
 
+function formatProfileSourceMode(mode?: string) {
+  if (mode === "imported") return "Imported";
+  if (mode === "mixed") return "Mixed";
+  return "Manual";
+}
+
+function formatProfileSourceDate(value?: string) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function profilePetSnapshotKey(pet: Pick<CharacterProfile["pet"], "species" | "level" | "evolution">) {
+  return `${pet.species.toLowerCase()}::${pet.level || ""}::${pet.evolution || ""}`;
+}
+
+type ProfileImportReview = ImportedProfileMergeResult & {
+  draftName?: string;
+  importedSections: string[];
+  missingOrPrivate: string[];
+};
+
+type LiveProfileImportStatus = "idle" | "queued" | "running" | "waiting_for_budget" | "done" | "error" | "expired";
+
+type LiveProfileImportCharacter = {
+  role?: "root" | "visible_alt";
+  draft?: ImportedProfileDraft;
+};
+
+type LiveProfileImportResult = {
+  rootHashTail?: string;
+  requestCount?: number;
+  durationMs?: number;
+  characters?: LiveProfileImportCharacter[];
+  warnings?: string[];
+};
+
+type LiveProfileImportProgress = {
+  current?: number;
+  total?: number;
+  label?: string;
+  estimatedRemainingMs?: number;
+};
+
+function formatWaitTime(ms?: number) {
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return "";
+  const seconds = Math.ceil(ms / 1000);
+  if (seconds < 60) return `${seconds} sec`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} min`;
+}
+
+type PetPickerValue =
+  | { kind: "database"; pet: PetDatabaseRecord }
+  | { kind: "owned"; pet: ProfileOwnedPet };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function liveProfileImportStatusLabel(status: LiveProfileImportStatus) {
+  if (status === "queued") return "Queued";
+  if (status === "running") return "Importing";
+  if (status === "waiting_for_budget") return "Waiting for safe budget";
+  if (status === "done") return "Ready to save";
+  if (status === "error") return "Import failed";
+  if (status === "expired") return "Expired";
+  return "Not started";
+}
+
+function liveProfileImportStatusCopy(status: LiveProfileImportStatus) {
+  if (status === "queued") return "Your import is queued. Keep this page open while Zenith prepares the saved profile preview.";
+  if (status === "running") return "Zenith is fetching visible character details. Please be patient and keep this page open.";
+  if (status === "waiting_for_budget") return "Another scraper or import is using the shared budget, so this job is waiting briefly.";
+  if (status === "done") return "Choose the character you want, check the summary, then save it to the active profile.";
+  if (status === "error") return "The import could not finish. Check the message below and try again later.";
+  if (status === "expired") return "This import result expired. Start a new import if you still need it.";
+  return "Paste a character hash to fetch visible IdleMMO profile details. Nothing is saved until you confirm.";
+}
+
+function profileDraftDisplayName(draft?: ImportedProfileDraft) {
+  return typeof draft?.name === "string" && draft.name.trim() ? draft.name.trim() : "Imported character";
+}
+
+function getLiveImportErrorMessage(payload: unknown, fallback: string) {
+  const retryText = isRecord(payload) && typeof payload.retryAfterMs === "number"
+    ? formatWaitTime(payload.retryAfterMs)
+    : "";
+  if (isRecord(payload) && isRecord(payload.error) && typeof payload.error.message === "string") {
+    return retryText ? `${payload.error.message} Try again in about ${retryText}.` : payload.error.message;
+  }
+  return retryText ? `${fallback} Try again in about ${retryText}.` : fallback;
+}
+
 function formatItemEffects(effects?: ProfileItemRecord["effects"], limit = 3) {
   const entries = (effects || [])
     .filter((effect) => Number(effect?.value || 0) !== 0)
@@ -187,6 +298,27 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   );
 }
 
+function formatFieldSourceLabel(source: ProfileFieldSource["source"]) {
+  if (source === "imported") return "Imported";
+  if (source === "calculated") return "Calculated";
+  return "Manual";
+}
+
+function FieldSourceChip({ source }: { source?: ProfileFieldSource }) {
+  if (!source) return null;
+  const timestamp = source.importedAt || source.updatedAt;
+  const date = timestamp ? new Date(timestamp) : null;
+  const dateLabel = date && Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
+    : "";
+  const label = formatFieldSourceLabel(source.source);
+  return (
+    <em className={`profile-source-chip source-${source.source}`} title={dateLabel ? `${label} - ${dateLabel}` : label}>
+      {label}
+    </em>
+  );
+}
+
 function ProfileNumberField({
   label,
   value,
@@ -196,6 +328,7 @@ function ProfileNumberField({
   min,
   max,
   hint,
+  source,
 }: {
   label: string;
   value: number | "";
@@ -205,10 +338,14 @@ function ProfileNumberField({
   min?: number;
   max?: number;
   hint?: ReactNode;
+  source?: ProfileFieldSource;
 }) {
   return (
     <label className="profile-field">
-      <span>{label}</span>
+      <span className="profile-field-labelrow">
+        <span>{label}</span>
+        <FieldSourceChip source={source} />
+      </span>
       <input
         className="control-input"
         type="number"
@@ -229,15 +366,20 @@ function ProfileTextField({
   value,
   onChange,
   placeholder,
+  source,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  source?: ProfileFieldSource;
 }) {
   return (
     <label className="profile-field">
-      <span>{label}</span>
+      <span className="profile-field-labelrow">
+        <span>{label}</span>
+        <FieldSourceChip source={source} />
+      </span>
       <input
         className="control-input"
         type="text"
@@ -270,6 +412,7 @@ function ProfilePicker<T>({
   setOpenId,
   onSelect,
   disabled,
+  source,
 }: {
   label: string;
   placeholder: string;
@@ -280,6 +423,7 @@ function ProfilePicker<T>({
   setOpenId: (value: string | null) => void;
   onSelect: (value: T | null) => void;
   disabled?: boolean;
+  source?: ProfileFieldSource;
 }) {
   const [query, setQuery] = useState("");
   const open = openId === id;
@@ -292,7 +436,10 @@ function ProfilePicker<T>({
 
   return (
     <div className={`profile-picker ${open ? "open" : ""}`}>
-      <span className="profile-picker-label">{label}</span>
+      <span className="profile-picker-label profile-field-labelrow">
+        <span>{label}</span>
+        <FieldSourceChip source={source} />
+      </span>
       <button
         type="button"
         className="profile-picker-button"
@@ -371,14 +518,28 @@ export default function ProfilesPage() {
     deleteProfile,
     setActiveProfile,
     updateProfile,
+    replaceState,
     exportProfiles,
     importProfiles,
   } = useProfiles();
   const { allItemsDb } = useData();
   const [transferText, setTransferText] = useState("");
+  const [profileHashDraft, setProfileHashDraft] = useState("");
+  const [importReview, setImportReview] = useState<ProfileImportReview | null>(null);
+  const [liveImportHash, setLiveImportHash] = useState("");
+  const [liveImportJobId, setLiveImportJobId] = useState("");
+  const [liveImportStatus, setLiveImportStatus] = useState<LiveProfileImportStatus>("idle");
+  const [liveImportProgress, setLiveImportProgress] = useState<LiveProfileImportProgress | null>(null);
+  const [liveImportResult, setLiveImportResult] = useState<LiveProfileImportResult | null>(null);
+  const [liveImportSelectedIndex, setLiveImportSelectedIndex] = useState(0);
+  const [liveImportError, setLiveImportError] = useState("");
+  const [liveImportRetryAfterMs, setLiveImportRetryAfterMs] = useState<number | null>(null);
+  const [liveImportEstimatedMs, setLiveImportEstimatedMs] = useState<number | null>(null);
   const [toast, setToast] = useState("");
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[]; mastery?: { levels?: PetMasteryLevelRecord[] } } | null>(null);
+  const liveImportPollRef = useRef<number | null>(null);
+  const liveImportAbortRef = useRef<AbortController | null>(null);
   const lastAutoStatKey = useRef("");
   const lastPetStatKey = useRef("");
 
@@ -408,6 +569,13 @@ export default function ProfilesPage() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  useEffect(() => () => {
+    if (liveImportPollRef.current !== null) {
+      window.clearTimeout(liveImportPollRef.current);
+    }
+    liveImportAbortRef.current?.abort();
+  }, []);
+
   const itemOptionsByType = useMemo(() => {
     const grouped: Record<string, ProfileItemRecord[]> = {};
     Object.values((allItemsDb || {}) as Record<string, ProfileItemRecord>).forEach((item) => {
@@ -430,6 +598,14 @@ export default function ProfilesPage() {
   }), [petDb]);
 
   const selectedPet = useMemo(() => pets.find((pet) => pet.name === profile?.pet.species), [pets, profile?.pet.species]);
+  const petByName = useMemo(() => new Map(pets.map((pet) => [pet.name, pet])), [pets]);
+  const selectedOwnedPet = useMemo(() => {
+    if (!profile?.ownedPets.length) return null;
+    const active = profile.ownedPets.find((pet) => pet.active || pet.equipped);
+    if (active) return active;
+    const activeKey = profilePetSnapshotKey(profile.pet);
+    return profile.ownedPets.find((pet) => profilePetSnapshotKey(pet) === activeKey) || null;
+  }, [profile]);
   const classInfo = getClassInfo(profile?.className || "Other");
   const dailyBonus = dailyStreakMagicFind(profile?.magicFind.dailyStreak ?? 0);
   const barteringPercent = barteringBuffPercent(profile?.boosts.barteringLevel ?? 0);
@@ -451,10 +627,12 @@ export default function ProfilesPage() {
     ? calculatedSecondary.attackPower + calculatedSecondary.protection + calculatedSecondary.agility + calculatedSecondary.accuracy
     : 0;
 
-  const patchActive = useCallback((patch: Partial<CharacterProfile>) => {
+  const patchActive = useCallback((patch: Partial<CharacterProfile>, options?: ProfileUpdateOptions) => {
     if (!profile) return;
-    updateProfile(profile.id, patch);
+    updateProfile(profile.id, patch, options);
   }, [profile, updateProfile]);
+
+  const fieldSource = useCallback((path: string) => profile?.fieldSources?.[path], [profile?.fieldSources]);
 
   const updateNested = <Section extends keyof CharacterProfile, Key extends keyof CharacterProfile[Section]>(
     section: Section,
@@ -478,7 +656,12 @@ export default function ProfilesPage() {
     lastAutoStatKey.current = autoStatKey;
     const current = profile.secondaryStats;
     const changed = SECONDARY_FIELDS.some(([key]) => Number(current[key] || 0) !== Number(calculatedSecondary[key] || 0));
-    if (changed) patchActive({ secondaryStats: calculatedSecondary });
+    if (changed) {
+      patchActive(
+        { secondaryStats: calculatedSecondary },
+        { source: "calculated", fieldPaths: SECONDARY_FIELDS.map(([key]) => `secondaryStats.${key}`) },
+      );
+    }
   }, [autoStatKey, calculatedSecondary, itemByName, patchActive, profile]);
 
   useEffect(() => {
@@ -494,7 +677,10 @@ export default function ProfilesPage() {
     const nextStats = calculatePetStats(selectedPet, profile.pet.level || 1, profile.pet.evolution || 0, petMasteryBonus);
     const changed = PET_STAT_FIELDS.some(([key]) => Number(profile.pet.stats[key] || 0) !== Number(nextStats[key] || 0));
     if (!changed) return;
-    patchActive({ pet: { ...profile.pet, stats: nextStats } });
+    patchActive(
+      { pet: { ...profile.pet, stats: nextStats } },
+      { source: "calculated", fieldPaths: PET_STAT_FIELDS.map(([key]) => `pet.stats.${key}`) },
+    );
   }, [patchActive, petMasteryBonus, profile, selectedPet]);
 
   useEffect(() => {
@@ -516,9 +702,9 @@ export default function ProfilesPage() {
     patchActive({ magicFind: updateMagicFindFromStreak(profile.magicFind, value) });
   };
 
-  const selectPet = (pet: PetDatabaseRecord | null) => {
+  const selectPet = (selection: PetPickerValue | null) => {
     if (!profile) return;
-    if (!pet) {
+    if (!selection) {
       patchActive({
         pet: {
           ...profile.pet,
@@ -539,9 +725,43 @@ export default function ProfilesPage() {
             criticalChance: "",
           },
         },
+        ownedPets: profile.ownedPets.map((pet) => ({ ...pet, active: false, equipped: false })),
       });
       return;
     }
+
+    if (selection.kind === "owned") {
+      const ownedPet = selection.pet;
+      const nextPet = {
+        ...profile.pet,
+        species: ownedPet.species,
+        quality: ownedPet.quality || "",
+        level: ownedPet.level || 1,
+        evolution: ownedPet.evolution || 0,
+        stats: { ...ownedPet.stats },
+        notes: ownedPet.notes || `${ownedPet.nickname || ownedPet.species} owned snapshot`,
+      };
+      lastPetStatKey.current = JSON.stringify({
+        species: ownedPet.species,
+        level: nextPet.level,
+        evolution: nextPet.evolution,
+        petMasteryBonus,
+      });
+      patchActive(
+        {
+          pet: nextPet,
+          ownedPets: profile.ownedPets.map((pet) => ({
+            ...pet,
+            active: pet.id === ownedPet.id,
+            equipped: pet.id === ownedPet.id,
+          })),
+        },
+        { source: ownedPet.source === "imported" ? "imported" : "manual", fieldPaths: ["pet", "ownedPets"] },
+      );
+      return;
+    }
+
+    const pet = selection.pet;
     const stats = calculatePetStats(pet, profile.pet.level || 1, profile.pet.evolution || 0, petMasteryBonus);
     patchActive({
       pet: {
@@ -551,6 +771,7 @@ export default function ProfilesPage() {
         stats,
         notes: `${pet.name}${pet.acquisition?.[0]?.boss ? ` from ${pet.acquisition[0].boss}` : ""}`,
       },
+      ownedPets: profile.ownedPets.map((ownedPet) => ({ ...ownedPet, active: false, equipped: false })),
     });
   };
 
@@ -583,6 +804,196 @@ export default function ProfilesPage() {
     setToast(result.ok ? "Profiles imported into this browser." : result.error || "Import failed.");
   };
 
+  const buildProfileImportReview = (importedDraft: ImportedProfileDraft): ProfileImportReview | null => {
+    if (!profile) return null;
+    const result = mergeImportedProfileDraft(profile, importedDraft);
+    return {
+      ...result,
+      draftName: typeof importedDraft.name === "string" ? importedDraft.name : undefined,
+      importedSections: importedDraft.importSource?.importedSections || [],
+      missingOrPrivate: importedDraft.importSource?.missingOrPrivate || [],
+    };
+  };
+
+  const prepareProfileImportReview = (importedDraft: ImportedProfileDraft, source = "Imported character ready to save.") => {
+    const nextReview = buildProfileImportReview(importedDraft);
+    if (!nextReview) return;
+    setImportReview(nextReview);
+    if (source) setToast(source);
+  };
+
+  const scheduleLiveImportPoll = (jobId: string, delayMs = 3500) => {
+    if (liveImportPollRef.current !== null) {
+      window.clearTimeout(liveImportPollRef.current);
+    }
+    const safeDelay = Math.max(2000, Math.min(Number(delayMs) || 3500, 15000));
+    liveImportPollRef.current = window.setTimeout(() => {
+      void pollLiveImportJob(jobId);
+    }, safeDelay);
+  };
+
+  const pollLiveImportJob = async (jobId: string) => {
+    try {
+      const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/status/${encodeURIComponent(jobId)}`);
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 410) {
+        throw new Error(getLiveImportErrorMessage(payload, "Could not read import status."));
+      }
+
+      const nextStatus = (isRecord(payload) && typeof payload.status === "string" ? payload.status : "error") as LiveProfileImportStatus;
+      setLiveImportStatus(nextStatus);
+      setLiveImportProgress(isRecord(payload) && isRecord(payload.progress) ? payload.progress : null);
+      setLiveImportRetryAfterMs(isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null);
+
+      if (nextStatus === "done") {
+        const result = isRecord(payload) && isRecord(payload.result) ? payload.result as LiveProfileImportResult : null;
+        const characters = Array.isArray(result?.characters) ? result.characters.filter((entry) => isRecord(entry?.draft)) : [];
+        setLiveImportResult(result ? { ...result, characters } : { characters: [] });
+        setLiveImportSelectedIndex(0);
+        setLiveImportError(characters.length ? "" : "The import finished, but no visible character profile was returned.");
+        if (characters[0]?.draft) {
+          prepareProfileImportReview(characters[0].draft, "Imported character ready to save.");
+        }
+        return;
+      }
+
+      if (nextStatus === "error" || nextStatus === "expired") {
+        setLiveImportError(getLiveImportErrorMessage(payload, "This import could not finish."));
+        return;
+      }
+
+      scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3500);
+    } catch (error) {
+      setLiveImportStatus("error");
+      setLiveImportError(error instanceof Error ? error.message : "Could not read import status.");
+    }
+  };
+
+  const handleStartLiveProfileImport = async () => {
+    if (!profile) return;
+    const characterHash = liveImportHash.trim();
+    if (!CHARACTER_HASH_PATTERN.test(characterHash)) {
+      setLiveImportError("Paste only the character hashed ID, not a full profile URL.");
+      return;
+    }
+
+    if (liveImportPollRef.current !== null) {
+      window.clearTimeout(liveImportPollRef.current);
+    }
+    liveImportAbortRef.current?.abort();
+    const controller = new AbortController();
+    liveImportAbortRef.current = controller;
+
+    setLiveImportError("");
+    setLiveImportResult(null);
+    setLiveImportProgress(null);
+    setLiveImportRetryAfterMs(null);
+    setLiveImportEstimatedMs(null);
+    setImportReview(null);
+    setLiveImportStatus("queued");
+
+    try {
+      const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterHash, includeVisibleAlts: true, includeMuseum: true }),
+        signal: controller.signal,
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setLiveImportRetryAfterMs(isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null);
+        throw new Error(getLiveImportErrorMessage(payload, "Could not start the import."));
+      }
+      const jobId = isRecord(payload) && typeof payload.jobId === "string" ? payload.jobId : "";
+      if (!jobId) throw new Error("Import started without a job reference. Try again.");
+      setLiveImportJobId(jobId);
+      setLiveImportEstimatedMs(isRecord(payload) && typeof payload.estimatedDurationMs === "number" ? payload.estimatedDurationMs : null);
+      setLiveImportStatus("queued");
+      scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3000);
+      setToast("Import started. Keep this page open while Zenith prepares the saved profile preview.");
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setLiveImportStatus("error");
+      setLiveImportJobId("");
+      setLiveImportError(error instanceof Error ? error.message : "Could not start the import.");
+    }
+  };
+
+  const handleReviewLiveImportCharacter = (index: number) => {
+    const character = liveImportResult?.characters?.[index];
+    if (!character?.draft) return;
+    setLiveImportSelectedIndex(index);
+    prepareProfileImportReview(character.draft, "Selected character ready to save.");
+  };
+
+  useEffect(() => {
+    if (liveImportStatus !== "done") return;
+    const importedDraft = liveImportResult?.characters?.[liveImportSelectedIndex]?.draft;
+    if (!importedDraft) return;
+    const nextReview = buildProfileImportReview(importedDraft);
+    if (nextReview) setImportReview(nextReview);
+  }, [profile, liveImportResult, liveImportSelectedIndex, liveImportStatus]);
+
+  const handleApplyProfileImport = () => {
+    if (!profile || !importReview) return;
+    updateProfile(profile.id, importReview.profile, { markFields: false });
+    setTransferText("");
+    setToast(`Saved ${importReview.draftName || "imported details"} to ${profile.name || "the active profile"}. The other fetched characters are still available below.`);
+  };
+
+  const handleCreateProfileFromSelectedImport = () => {
+    const importedDraft = liveImportResult?.characters?.[liveImportSelectedIndex]?.draft;
+    if (!importedDraft) return;
+    if (state.profiles.length >= MAX_PROFILES) {
+      setToast("Profile limit reached.");
+      return;
+    }
+    const baseProfile = {
+      ...createDefaultProfile(""),
+      kind: "alt" as const,
+    };
+    const created = {
+      ...mergeImportedProfileDraft(baseProfile, importedDraft).profile,
+      kind: "alt" as const,
+    };
+    replaceState({
+      ...state,
+      activeProfileId: created.id,
+      profiles: [...state.profiles, created],
+    });
+    setToast(`Created ${created.name || "a new profile"} from the selected import. The fetched batch is still available.`);
+  };
+
+  const handleCreateProfileFromHash = () => {
+    const hash = profileHashDraft.trim();
+    if (state.profiles.length >= MAX_PROFILES) {
+      setToast("Profile limit reached.");
+      return;
+    }
+    if (!CHARACTER_HASH_PATTERN.test(hash)) {
+      setToast("Enter a valid character hash first.");
+      return;
+    }
+    const created = {
+      ...createDefaultProfile(`Character ${state.profiles.length + 1}`),
+      kind: "alt" as const,
+      importSource: {
+        mode: "manual" as const,
+        characterHashTail: hash.slice(-12),
+        importedSections: [],
+        missingOrPrivate: [],
+        notes: "Hash reference saved for a future optional profile import.",
+      },
+    };
+    replaceState({
+      ...state,
+      activeProfileId: created.id,
+      profiles: [...state.profiles, created],
+    });
+    setProfileHashDraft("");
+    setToast("Alt profile created. Switch to it, then import that character's hash.");
+  };
+
   const handleDeleteProfile = () => {
     if (!profile) return;
     const confirmed = window.confirm(`Delete the local profile "${profile.name || "Unnamed"}" from this browser?`);
@@ -590,6 +1001,11 @@ export default function ProfilesPage() {
     deleteProfile(profile.id);
     setToast("Profile deleted.");
   };
+
+  const liveImportWaitText = formatWaitTime(liveImportProgress?.estimatedRemainingMs || liveImportEstimatedMs || undefined);
+  const liveImportRetryText = formatWaitTime(liveImportRetryAfterMs || undefined);
+  const liveImportBusy = liveImportStatus === "queued" || liveImportStatus === "running" || liveImportStatus === "waiting_for_budget";
+  const liveImportHasUnsavedResult = Boolean(liveImportResult?.characters?.length && importReview);
 
   const getSlotOptions = (types: string[]) => types.flatMap((type) => itemOptionsByType[type] || []);
   const itemPickerOption = (item: ProfileItemRecord): PickerOption<ProfileItemRecord> => ({
@@ -650,6 +1066,7 @@ export default function ProfilesPage() {
           openId={openPicker}
           setOpenId={setOpenPicker}
           disabled={disabled}
+          source={fieldSource(`gear.${key}`)}
           onSelect={(item) => {
             const next = item as ProfileItemRecord | null;
             patchActive({
@@ -677,6 +1094,7 @@ export default function ProfilesPage() {
                 patchActive({ gearTiers: { ...profile.gearTiers, [key]: 1 } });
               }
             }}
+            source={fieldSource(`gearTiers.${key}`)}
           />
         )}
         {selected && (
@@ -710,7 +1128,7 @@ export default function ProfilesPage() {
     searchText: `${classInfo.id} ${classInfo.category}`,
     value: classInfo.id,
   };
-  const petOptions: Array<PickerOption<PetDatabaseRecord>> = [
+  const petOptions: Array<PickerOption<PetPickerValue>> = [
     {
       id: "none",
       title: "No Pet Selected",
@@ -719,19 +1137,43 @@ export default function ProfilesPage() {
       value: null,
       muted: true,
     },
+    ...(profile?.ownedPets || []).map((ownedPet) => {
+      const databasePet = petByName.get(ownedPet.species);
+      const title = ownedPet.nickname || ownedPet.species;
+      const sourceLabel = ownedPet.source === "imported" ? "Imported owned pet" : "Owned pet";
+      return {
+        id: `owned-${ownedPet.id}`,
+        title,
+        subtitle: `${sourceLabel} - ${ownedPet.species} - Lv. ${ownedPet.level || 1} - Evo ${ownedPet.evolution || 0}`,
+        image: ownedPet.imageUrl || databasePet?.imageUrl,
+        badge: ownedPet.equipped || ownedPet.active ? "Active" : "Owned",
+        searchText: [
+          title,
+          ownedPet.species,
+          ownedPet.quality,
+          ownedPet.source,
+          ownedPet.location?.name,
+          ownedPet.hashTail,
+          "owned imported snapshot",
+        ].filter(Boolean).join(" "),
+        value: { kind: "owned", pet: ownedPet } as PetPickerValue,
+      };
+    }),
     ...pets.map((pet) => ({
-      id: pet.name,
+      id: `db-${pet.name}`,
       title: pet.name,
       subtitle: `${pet.quality || "UNKNOWN"}${pet.acquisition?.[0]?.boss ? ` - ${pet.acquisition[0].boss}` : ""}`,
       image: pet.imageUrl,
       badge: pet.quality,
       searchText: `${pet.name} ${pet.quality} ${pet.acquisition?.map((entry) => `${entry.boss} ${entry.location}`).join(" ")}`,
-      value: pet,
+      value: { kind: "database", pet } as PetPickerValue,
     })),
   ];
-  const selectedPetOption = selectedPet
-    ? petOptions.find((option) => option.id === selectedPet.name)
-    : petOptions[0];
+  const selectedPetOption = selectedOwnedPet
+    ? petOptions.find((option) => option.id === `owned-${selectedOwnedPet.id}`)
+    : selectedPet
+      ? petOptions.find((option) => option.id === `db-${selectedPet.name}`)
+      : petOptions[0];
 
   return (
     <main className="container profiles-page" onClick={(event) => {
@@ -775,13 +1217,16 @@ export default function ProfilesPage() {
                 <button
                   key={item.id}
                   type="button"
-                  className={`profile-list-item ${active ? "active" : ""}`}
+                  className={`profile-list-item ${item.imageUrl || item.backgroundUrl ? "has-art" : ""} ${active ? "active" : ""}`}
                   onClick={() => setActiveProfile(item.id)}
                 >
-                  <span className="profile-avatar"><UserRound size={18} /></span>
+                  {item.backgroundUrl && <span className="profile-list-item-bg" style={{ backgroundImage: `url("${item.backgroundUrl}")` }} aria-hidden="true" />}
+                  <span className="profile-avatar">
+                    {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <UserRound size={18} />}
+                  </span>
                   <span>
                     <strong>{item.name || "Unnamed Character"}</strong>
-                    <small>{item.kind === "main" ? "Main" : "Alt"} - {item.className}</small>
+                    <small>{item.kind === "main" ? "Main" : "Alt"} - {item.className}{item.location?.name ? ` - ${item.location.name}` : ""}</small>
                   </span>
                   {active && <BadgeCheck size={16} />}
                 </button>
@@ -809,8 +1254,28 @@ export default function ProfilesPage() {
                 </button>
               </div>
             </div>
+            <div
+              className={`profile-game-hero ${profile.backgroundUrl ? "has-background" : ""}`}
+              style={profile.backgroundUrl ? { backgroundImage: `url(${profile.backgroundUrl})` } : undefined}
+            >
+              <div className="profile-game-hero-character">
+                {profile.imageUrl ? <img src={profile.imageUrl} alt="" /> : <UserRound size={38} />}
+              </div>
+              <div className="profile-game-hero-panel">
+                <div className="profile-game-hero-title">
+                  <h3>{profile.name || "Unnamed Character"}</h3>
+                  <span>{profile.kind === "main" ? "Main" : "Alt"}</span>
+                </div>
+                <div className="profile-chip-row">
+                  <span>{profile.className}</span>
+                  <span>Total Lv. {profile.levels.totalLevel || 0}</span>
+                  <span>{profile.location?.name || "No location imported"}</span>
+                  {profile.guild?.tag && <span>Guild {profile.guild.tag}</span>}
+                </div>
+              </div>
+            </div>
             <div className="profile-grid identity-grid">
-              <ProfileTextField label="Character Name" value={profile.name} onChange={(name) => patchActive({ name })} placeholder="Character name" />
+              <ProfileTextField label="Character Name" value={profile.name} onChange={(name) => patchActive({ name })} placeholder="Character name" source={fieldSource("name")} />
               <ProfilePicker
                 id="class"
                 label="Class"
@@ -821,22 +1286,32 @@ export default function ProfilesPage() {
                   title: entry.id,
                   subtitle: entry.category,
                   image: entry.icon,
-                  badge: entry.category,
                   searchText: `${entry.id} ${entry.category}`,
                   value: entry.id,
                 }))}
                 openId={openPicker}
                 setOpenId={setOpenPicker}
                 onSelect={(value) => patchActive({ className: String(value || "Other") })}
+                source={fieldSource("className")}
               />
               <label className="profile-field">
-                <span>Character Type</span>
+                <span className="profile-field-labelrow">
+                  <span>Character Type</span>
+                  <FieldSourceChip source={fieldSource("kind")} />
+                </span>
                 <div className="profile-segmented">
                   <button type="button" className={profile.kind === "main" ? "active" : ""} onClick={() => patchActive({ kind: "main" })}>Main</button>
                   <button type="button" className={profile.kind === "alt" ? "active" : ""} onClick={() => patchActive({ kind: "alt" })}>Alt</button>
                 </div>
               </label>
             </div>
+            <details className="profile-media-details">
+              <summary>Media</summary>
+              <div className="profile-grid identity-grid">
+                <ProfileTextField label="Character Image URL" value={profile.imageUrl} onChange={(imageUrl) => patchActive({ imageUrl })} placeholder="Imported image URL" source={fieldSource("imageUrl")} />
+                <ProfileTextField label="Background URL" value={profile.backgroundUrl} onChange={(backgroundUrl) => patchActive({ backgroundUrl })} placeholder="Imported background URL" source={fieldSource("backgroundUrl")} />
+              </div>
+            </details>
             <div className="profile-class-card">
               <span className="profile-class-icon">{classInfo.icon ? <img src={classInfo.icon} alt="" /> : <Sparkles size={22} />}</span>
               <div>
@@ -855,7 +1330,10 @@ export default function ProfilesPage() {
               </div>
             </div>
             <label className="profile-field profile-field-wide">
-              <span>Notes</span>
+              <span className="profile-field-labelrow">
+                <span>Notes</span>
+                <FieldSourceChip source={fieldSource("notes")} />
+              </span>
               <textarea className="control-input" value={profile.notes} onChange={(event) => patchActive({ notes: event.target.value })} />
             </label>
           </section>
@@ -879,6 +1357,7 @@ export default function ProfilesPage() {
                     max={limits.max}
                     onChange={(value) => updateNested("levels", key, value)}
                     hint={asc ? `Ascension ${asc}` : undefined}
+                    source={fieldSource(`levels.${key}`)}
                   />
                 );
               })}
@@ -910,6 +1389,7 @@ export default function ProfilesPage() {
                   step={key === "movementSpeed" ? "0.01" : "1"}
                   min={key === "movementSpeed" ? 3 : key === "criticalChance" || key === "criticalDamage" || key === "damage" ? 0 : 2}
                   onChange={(value) => updateNested("secondaryStats", key, value)}
+                  source={fieldSource(`secondaryStats.${key}`)}
                 />
               ))}
             </div>
@@ -924,21 +1404,25 @@ export default function ProfilesPage() {
               <div className="profile-stat-pill"><Sparkles size={14} /> +{dailyBonus}% streak MF</div>
             </div>
             <div className="profile-grid compact">
-              <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} onChange={(value) => updateNested("magicFind", "combat", value)} />
-              <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} onChange={(value) => updateNested("magicFind", "dungeon", value)} />
-              <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} onChange={(value) => updateNested("magicFind", "worldBoss", value)} />
+              <ProfileNumberField label="Combat Magic Find" value={profile.magicFind.combat} min={0} onChange={(value) => updateNested("magicFind", "combat", value)} source={fieldSource("magicFind.combat")} />
+              <ProfileNumberField label="Dungeon Magic Find" value={profile.magicFind.dungeon} min={0} onChange={(value) => updateNested("magicFind", "dungeon", value)} source={fieldSource("magicFind.dungeon")} />
+              <ProfileNumberField label="World Boss Magic Find" value={profile.magicFind.worldBoss} min={0} onChange={(value) => updateNested("magicFind", "worldBoss", value)} source={fieldSource("magicFind.worldBoss")} />
               <ProfileNumberField
                 label="Daily Streak"
                 value={profile.magicFind.dailyStreak}
                 min={0}
                 onChange={updateDailyStreak}
                 hint="1% magic find every 10 days, capped at 10%. Tracked once per UTC reset day after you enter it."
+                source={fieldSource("magicFind.dailyStreak")}
               />
-              <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} onChange={(value) => updateNested("efficiency", "hunting", value)} />
-              <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} onChange={(value) => updateNested("efficiency", "dungeon", value)} />
-              <ProfileNumberField label="Playtime (hours/day)" value={profile.timers.activeHours} min={0} max={24} onChange={(value) => updateNested("timers", "activeHours", value)} />
+              <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} onChange={(value) => updateNested("efficiency", "hunting", value)} source={fieldSource("efficiency.hunting")} />
+              <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} onChange={(value) => updateNested("efficiency", "dungeon", value)} source={fieldSource("efficiency.dungeon")} />
+              <ProfileNumberField label="Playtime (hours/day)" value={profile.timers.activeHours} min={0} max={24} onChange={(value) => updateNested("timers", "activeHours", value)} source={fieldSource("timers.activeHours")} />
               <label className="profile-field">
-                <span>Conquest Buff</span>
+                <span className="profile-field-labelrow">
+                  <span>Conquest Buff</span>
+                  <FieldSourceChip source={fieldSource("boosts.conquestRank")} />
+                </span>
                 <select
                   className="control-input"
                   value={profile.boosts.conquestRank}
@@ -954,6 +1438,7 @@ export default function ProfilesPage() {
                 max={100}
                 onChange={(value) => updateNested("boosts", "barteringLevel", value === "" ? "" : Math.min(100, Math.max(0, Number(value))))}
                 hint={`Vendor bonus: +${barteringPercent}%`}
+                source={fieldSource("boosts.barteringLevel")}
               />
             </div>
           </section>
@@ -976,17 +1461,28 @@ export default function ProfilesPage() {
                 openId={openPicker}
                 setOpenId={setOpenPicker}
                 onSelect={selectPet}
+                source={fieldSource("pet.species")}
               />
-              <ProfileTextField label="Quality" value={profile.pet.quality} onChange={(value) => updateNested("pet", "quality", value)} placeholder="Select a pet" />
-              <ProfileNumberField label="Pet Level" value={profile.pet.level} min={1} max={100} onChange={(value) => updatePetFormula({ level: value })} />
-              <ProfileNumberField label="Evolution Level" value={profile.pet.evolution} min={0} max={5} onChange={(value) => updatePetFormula({ evolution: value })} />
+              <ProfileTextField label="Quality" value={profile.pet.quality} onChange={(value) => updateNested("pet", "quality", value)} placeholder="Select a pet" source={fieldSource("pet.quality")} />
+              <ProfileNumberField label="Pet Level" value={profile.pet.level} min={1} max={100} onChange={(value) => updatePetFormula({ level: value })} source={fieldSource("pet.level")} />
+              <ProfileNumberField label="Evolution Level" value={profile.pet.evolution} min={0} max={5} onChange={(value) => updatePetFormula({ evolution: value })} source={fieldSource("pet.evolution")} />
             </div>
-            {selectedPet && (
+            {(selectedOwnedPet || selectedPet) && (
               <div className="profile-selected-card">
-                <img src={selectedPet.imageUrl} alt="" className={selectedPet.name === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined} />
+                {(selectedOwnedPet?.imageUrl || selectedPet?.imageUrl) && (
+                  <img
+                    src={selectedOwnedPet?.imageUrl || selectedPet?.imageUrl}
+                    alt=""
+                    className={(selectedOwnedPet?.species || selectedPet?.name) === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined}
+                  />
+                )}
                 <div>
-                  <h3>{selectedPet.name}</h3>
-                  <p>{selectedPet.quality} - {selectedPet.acquisition?.[0]?.boss || "Pet Database"}</p>
+                  <h3>{selectedOwnedPet?.nickname || selectedOwnedPet?.species || selectedPet?.name}</h3>
+                  <p>
+                    {selectedOwnedPet
+                      ? `${selectedOwnedPet.quality || "Unknown quality"} - ${selectedOwnedPet.source === "imported" ? "Imported owned snapshot" : "Owned snapshot"}`
+                      : `${selectedPet?.quality || "Unknown quality"} - ${selectedPet?.acquisition?.[0]?.boss || "Pet Database"}`}
+                  </p>
                   <div className="profile-chip-row">
                     {PET_STAT_FIELDS.slice(0, 6).map(([key, label]) => <span key={key}>{label}: {profile.pet.stats[key] || 0}</span>)}
                   </div>
@@ -1001,11 +1497,15 @@ export default function ProfilesPage() {
                   value={profile.pet.stats[key]}
                   step={key === "movementSpeed" || key === "criticalDamage" || key === "criticalChance" ? "0.01" : "1"}
                   onChange={(value) => patchActive({ pet: { ...profile.pet, stats: { ...profile.pet.stats, [key]: value } } })}
+                  source={fieldSource(`pet.stats.${key}`)}
                 />
               ))}
             </div>
             <label className="profile-field profile-field-wide">
-              <span>Pet Notes</span>
+              <span className="profile-field-labelrow">
+                <span>Pet Notes</span>
+                <FieldSourceChip source={fieldSource("pet.notes")} />
+              </span>
               <textarea className="control-input" value={profile.pet.notes} placeholder="Optional notes from screenshots or manual checks..." onChange={(event) => updateNested("pet", "notes", event.target.value)} />
             </label>
           </section>
@@ -1084,6 +1584,7 @@ export default function ProfilesPage() {
                           ]}
                           openId={openPicker}
                           setOpenId={setOpenPicker}
+                          source={fieldSource(`tools.${key}`)}
                           onSelect={(item) => {
                             const next = item as ProfileItemRecord | null;
                             patchActive({ tools: { ...profile.tools, [key]: next?.name || "" } });
@@ -1111,7 +1612,10 @@ export default function ProfilesPage() {
             </div>
             <div className="profile-grid">
               <div className="profile-field profile-field-wide">
-                <span>Mode</span>
+                <span className="profile-field-labelrow">
+                  <span>Mode</span>
+                  <FieldSourceChip source={fieldSource("housing.mode")} />
+                </span>
                 <div className="profile-housing-mode-grid" role="group" aria-label="Housing mode">
                   {[
                     { value: "none", label: "None", hint: "No house buffs" },
@@ -1150,7 +1654,10 @@ export default function ProfilesPage() {
                 <span>{housingSummary.guestCapacity ? `${housingSummary.guestCapacity} guest slots` : "No guest capacity"}</span>
               </div>
               <label className="profile-field profile-field-wide">
-                <span>Housing Notes</span>
+                <span className="profile-field-labelrow">
+                  <span>Housing Notes</span>
+                  <FieldSourceChip source={fieldSource("housing.notes")} />
+                </span>
                 <textarea className="control-input" value={profile.housing.notes} onChange={(event) => updateNested("housing", "notes", event.target.value)} />
               </label>
             </div>
@@ -1159,20 +1666,194 @@ export default function ProfilesPage() {
           <section id="profile-transfer" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
-                <h2>Import / Export</h2>
-                <p>Use this JSON to move profiles between desktop and laptop. API keys and raw cache data are never included.</p>
-              </div>
-              <div className="profile-inline-actions">
-                <button type="button" onClick={handleExport}><Download size={15} /></button>
-                <button type="button" onClick={handleImport}><Upload size={15} /></button>
+                <h2>Import from IdleMMO</h2>
+                <p>Fetch your visible IdleMMO character details, choose the character you want, then save it to this local profile.</p>
               </div>
             </div>
-            <textarea
-              className="control-input profile-transfer"
-              value={transferText}
-              placeholder="Exported profile JSON or paste an import payload here..."
-              onChange={(event) => setTransferText(event.target.value)}
-            />
+            <div className="profile-import-current" aria-label="Saved IdleMMO import status">
+              <div>
+                <strong>
+                  {profile.importSource.importedAt || profile.importSource.refreshedAt
+                    ? `Last import: ${formatProfileSourceDate(profile.importSource.importedAt || profile.importSource.refreshedAt)}`
+                    : "No IdleMMO import saved yet"}
+                </strong>
+                <span>
+                  {profile.importSource.missingOrPrivate.length
+                    ? `${profile.importSource.missingOrPrivate.length} section${profile.importSource.missingOrPrivate.length === 1 ? "" : "s"} could not be imported because they were private or unavailable.`
+                    : profile.importSource.importedSections.length
+                      ? "Visible character details were saved to this profile."
+                      : "Start an import when you want Zenith to fill visible character details."}
+                </span>
+              </div>
+              <span>{formatProfileSourceMode(profile.importSource.mode)}</span>
+            </div>
+            <div className="profile-live-import" aria-label="Import character from IdleMMO">
+              <div className="profile-live-import-copy">
+                <div>
+                  <strong>Character import</strong>
+                  <span>Use the hashed ID shown on your IdleMMO profile. Zenith will fetch visible levels, class, metrics, pets, visible alts, and museum entries.</span>
+                </div>
+                <div className="profile-live-import-notes" aria-label="Import privacy notes">
+                  <span>Usually takes about {liveImportWaitText || "1-2 min"}.</span>
+                  <span>Keep this page open while it runs.</span>
+                  <span>Never paste an IdleMMO API key here.</span>
+                </div>
+              </div>
+              <div className="profile-live-import-form">
+                <label>
+                  <span>Character hashed ID</span>
+                  <input
+                    className="control-input"
+                    value={liveImportHash}
+                    onChange={(event) => {
+                      setLiveImportHash(event.target.value);
+                      setLiveImportError("");
+                    }}
+                    placeholder="VM29l7kQZZ0JbQ80q6WD"
+                    autoComplete="off"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="profile-action primary"
+                  onClick={handleStartLiveProfileImport}
+                  disabled={liveImportBusy || liveImportHasUnsavedResult}
+                >
+                  {liveImportBusy ? <Loader2 size={15} className="spin" /> : <FileUp size={15} />}
+                  {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}
+                </button>
+              </div>
+              <div className={`profile-live-import-status ${liveImportStatus}`} role="status">
+                <div>
+                  <strong>{liveProfileImportStatusLabel(liveImportStatus)}</strong>
+                  <span>{liveImportProgress?.label || liveProfileImportStatusCopy(liveImportStatus)}</span>
+                </div>
+                <div>
+                  <strong>
+                    {liveImportRetryText
+                      ? liveImportRetryText
+                      : liveImportProgress
+                        ? `${liveImportProgress.current || 0}/${liveImportProgress.total || 20}`
+                        : liveImportWaitText
+                          ? `~${liveImportWaitText}`
+                          : "Ready"}
+                  </strong>
+                  <span>{liveImportRetryText ? "Try again in" : liveImportProgress ? "Requests used" : "Estimated time"}</span>
+                </div>
+              </div>
+              {liveImportError && <p className="profile-transfer-message error">{liveImportError}</p>}
+              {liveImportResult?.characters?.length ? (
+                <div className="profile-live-import-results" aria-label="Imported characters ready to save">
+                  <div className="profile-live-import-result-heading">
+                    <strong>{liveImportResult.characters.length} character{liveImportResult.characters.length === 1 ? "" : "s"} found</strong>
+                    <span>{liveImportResult.requestCount || 0} safe request{liveImportResult.requestCount === 1 ? "" : "s"} used</span>
+                  </div>
+                  <div className="profile-live-import-character-list">
+                    {liveImportResult.characters.map((character, index) => {
+                      const draft = character.draft;
+                      const selected = index === liveImportSelectedIndex;
+                      return (
+                        <button
+                          type="button"
+                          key={`${character.role || "character"}-${index}-${profileDraftDisplayName(draft)}`}
+                          className={`profile-live-import-character ${selected ? "selected" : ""}`}
+                          onClick={() => handleReviewLiveImportCharacter(index)}
+                        >
+                          <span>
+                            <strong>{profileDraftDisplayName(draft)}</strong>
+                            <small>{character.role === "visible_alt" ? "Visible alt" : "Entered character"}</small>
+                          </span>
+                          <span>
+                            <b>{draft?.importSource?.importedSections?.length || 0}</b>
+                            <small>Sections</small>
+                          </span>
+                          <span>
+                            <b>{draft?.importSource?.missingOrPrivate?.length || "None"}</b>
+                            <small>Missing/private</small>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {(liveImportResult.warnings || []).length > 0 && (
+                    <p className="profile-transfer-message">{liveImportResult.warnings?.join(" ")}</p>
+                  )}
+                  {importReview && (
+                    <div className="profile-import-savebar">
+                      <div>
+                        <strong>Ready to save {importReview.draftName || "selected character"}</strong>
+                        <span>{importReview.appliedPaths.length} fields will update. {importReview.skippedManualPaths.length ? `${importReview.skippedManualPaths.length} filled manual fields will stay unchanged.` : "Blank/default fields can be filled by the import."}</span>
+                      </div>
+                      <button type="button" className="profile-action primary" onClick={handleApplyProfileImport}>
+                        <BadgeCheck size={15} /> Save to active profile
+                      </button>
+                      <button type="button" className="profile-action" onClick={handleCreateProfileFromSelectedImport} disabled={state.profiles.length >= MAX_PROFILES}>
+                        <Plus size={15} /> Create new profile
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+            {(profile.importSource.importedSections.length > 0 || profile.importSource.missingOrPrivate.length > 0 || profile.importSource.notes) && (
+              <details className="profile-import-review-details profile-import-persistent" aria-label="Saved profile import detail">
+                <summary>Import details</summary>
+                <div>
+                  <strong>Imported</strong>
+                  <span>{profile.importSource.importedSections.join(", ") || "None recorded"}</span>
+                </div>
+                {profile.importSource.missingOrPrivate.length > 0 && (
+                  <div>
+                    <strong>Not imported</strong>
+                    <span>{profile.importSource.missingOrPrivate.join(", ")}</span>
+                  </div>
+                )}
+                {profile.importSource.notes && (
+                  <div>
+                    <strong>Notes</strong>
+                    <span>{profile.importSource.notes}</span>
+                  </div>
+                )}
+              </details>
+            )}
+            <div className="profile-import-handoff">
+              <div>
+                <strong>Hidden alt or separate character?</strong>
+                <span>Create a local alt profile now, then paste that character's hashed ID above and import it when you switch to that profile.</span>
+              </div>
+              <label>
+                <span>Character hash</span>
+                <input
+                  className="control-input"
+                  value={profileHashDraft}
+                  onChange={(event) => setProfileHashDraft(event.target.value)}
+                  placeholder="Paste character hash ID..."
+                  autoComplete="off"
+                />
+              </label>
+              <button
+                type="button"
+                className="profile-action"
+                onClick={handleCreateProfileFromHash}
+                disabled={state.profiles.length >= MAX_PROFILES}
+              >
+                <Plus size={15} /> Create alt profile
+              </button>
+            </div>
+            <details className="profile-json-transfer">
+              <summary>Backup or restore local profiles</summary>
+              <p>This is only for moving Zenith profiles between browsers. It is separate from IdleMMO character import.</p>
+              <div className="profile-inline-actions">
+                <button type="button" onClick={handleExport}><Download size={15} /> Copy backup JSON</button>
+                <button type="button" onClick={handleImport}><Upload size={15} /> Restore from JSON</button>
+              </div>
+              <textarea
+                className="control-input profile-transfer"
+                value={transferText}
+                placeholder="Paste a Zenith profile backup JSON here..."
+                onChange={(event) => setTransferText(event.target.value)}
+              />
+            </details>
           </section>
         </div>
       </section>

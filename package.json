@@ -15,10 +15,18 @@
     "scrape:locations": "node --env-file=.env scraper.mjs --world-locations-only",
     "idlemmo:cache": "node --env-file=.env scripts/fetch-idlemmo-cache.mjs",
     "idlemmo:guild": "node --env-file=.env scripts/fetch-idlemmo-guild.mjs",
+    "idlemmo:guild-intel": "node --env-file=.env scripts/fetch-idlemmo-guild-intelligence.mjs",
+    "idlemmo:guild-full": "node --env-file=.env scripts/fetch-idlemmo-guild-intelligence.mjs --all-guilds --source range --out local_data/guild_intelligence_all --rate-profile isolated",
+    "idlemmo:guild-public": "node scripts/build-guild-public-data.mjs",
+    "idlemmo:guild-public:merge": "node scripts/build-guild-public-data.mjs --merge-existing",
+    "idlemmo:guild-refresh": "node --env-file=.env scripts/refresh-idlemmo-guild-public-data.mjs --tier hot --discover-new --rate-profile shared",
+    "idlemmo:conquest": "node --env-file=.env scraper.mjs --conquest-only",
     "idlemmo:persona": "node --env-file=.env scripts/fetch-idlemmo-persona.mjs",
     "idlemmo:persona-summary": "node scripts/build-idlemmo-persona-summary.mjs",
     "idlemmo:derive": "node scripts/build-idlemmo-derived-cache.mjs",
-    "idlemmo:pets": "node scripts/build-pet-database.mjs"
+    "idlemmo:pets": "node scripts/build-pet-database.mjs",
+    "verify:profile-import": "node scripts/verify-profile-import-normalizer.mjs",
+    "verify:guild-conquest": "node scripts/verify-guild-conquest-pages.mjs"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
