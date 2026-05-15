@@ -165,6 +165,14 @@ export function isPenalizedWeather(kind: WeatherPreferenceKind) {
   return kind === "dislikes" || kind === "hates";
 }
 
+export function compareEnemiesByProgression(a: EnrichedEnemy, b: EnrichedEnemy) {
+  return a.level - b.level
+    || a.health - b.health
+    || a.experience - b.experience
+    || a.chanceOfLoot - b.chanceOfLoot
+    || a.name.localeCompare(b.name);
+}
+
 function preferenceKey(enemyName: string, locationName: string) {
   return `${normalizeLocationKey(enemyName)}:${normalizeLocationKey(locationName)}`;
 }
@@ -262,7 +270,7 @@ export function buildEnrichedEnemies({
       currentWeatherMatch,
       nextFavorableWeather: getNextFavorableWeather(weatherPreference, timeline),
     } satisfies EnrichedEnemy;
-  }).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+  }).sort(compareEnemiesByProgression);
 }
 
 export function buildEnrichedResources(

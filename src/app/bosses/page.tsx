@@ -1165,7 +1165,7 @@ function BossesContent() {
                                                 {row.image_url && <img src={row.image_url} alt="" />}
                                                 <div>
                                                     <span>{row.name}</span>
-                                                    <small>{row.dropsCount} drops - {row.scheduleInfo?.respawnHours || "?"}h cycle</small>
+                                                    <small>{row.dropsCount} drops - {row.scheduleInfo?.respawnHours || "?"}h cycle - {formatDuration(row.battleLengthSeconds)} fight</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -1244,6 +1244,10 @@ function BossesContent() {
                                         <span className="m-label">Battle Ends</span>
                                         <span className="m-val text-muted">{formatTime(row.battleEndTime)}</span>
                                     </div>
+                                    <div className="m-stat">
+                                        <span className="m-label">Fight Duration</span>
+                                        <span className="m-val text-muted">{formatDuration(row.battleLengthSeconds)}</span>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -1293,6 +1297,10 @@ function BossesContent() {
                                 <div className="stat-card">
                                     <div className="stat-label">Spawn Cycle</div>
                                     <div className="stat-value">Every {selectedBossData.scheduleInfo?.respawnHours || "?"}h</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-label">Fight Duration</div>
+                                    <div className="stat-value">{formatDuration(selectedBossData.battleLengthSeconds)}</div>
                                 </div>
                                 <div className="stat-card">
                                     <div className="stat-label">Magic Find</div>

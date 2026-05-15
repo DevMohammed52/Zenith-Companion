@@ -7,6 +7,7 @@ import {
   Box,
   CalendarDays,
   Castle,
+  ChevronDown,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -39,13 +40,13 @@ import {
 } from "@/lib/locations";
 import {
   buildEnrichedEnemies,
+  getWeatherPreferenceKind,
   getWeatherPreferenceLabel,
   isFavorableWeather,
   isPenalizedWeather,
   type EnrichedEnemy,
 } from "@/lib/world-intelligence";
 
-type SourceMode = "all" | "combat" | "dungeons" | "bosses" | "resources" | "weather-match" | "weather";
 type PoiKind = "shrine" | "bank" | "dungeons" | "bosses" | "enemies";
 
 type ForecastWeather = {
@@ -107,16 +108,6 @@ type PointOfInterest = {
   label: string;
   detail: string;
 };
-
-const SOURCE_MODES: { value: SourceMode; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "combat", label: "Combat" },
-  { value: "dungeons", label: "Dungeons" },
-  { value: "bosses", label: "Bosses" },
-  { value: "resources", label: "Resources" },
-  { value: "weather-match", label: "Weather Match" },
-  { value: "weather", label: "Weather" },
-];
 
 const LOCATION_FACILITIES: Record<string, PoiKind[]> = {
   "bluebell-hollow": ["shrine"],
@@ -192,6 +183,60 @@ function formatWindow(weather: ForecastWeather | null) {
   const end = safeDate(weather.ends_at);
   if (!start || !end) return weather.window || "Window unknown";
   return `${start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function getForecastEnemyCrosscheck(weather: ForecastWeather, enemies: EnrichedEnemy[]) {
+  const weatherName = weather.name || weather.key || "";
+  const buckets = {
+    favored: [] as EnrichedEnemy[],
+    neutral: [] as EnrichedEnemy[],
+    penalized: [] as EnrichedEnemy[],
+  };
+
+  for (const enemy of enemies) {
+    const match = getWeatherPreferenceKind(enemy.weatherPreference, weatherName);
+    if (isFavorableWeather(match)) buckets.favored.push(enemy);
+    if (match === "neutral") buckets.neutral.push(enemy);
+    if (isPenalizedWeather(match)) buckets.penalized.push(enemy);
+  }
+
+  return buckets;
+}
+
+function ForecastEnemyGroup({
+  label,
+  enemies,
+  tone,
+}: {
+  label: string;
+  enemies: EnrichedEnemy[];
+  tone: "favored" | "neutral" | "penalized";
+}) {
+  return (
+    <div className={`forecast-enemy-group ${tone}`}>
+      <strong>
+        {label}
+        <span>{enemies.length}</span>
+      </strong>
+      <div className="forecast-enemy-list">
+        {enemies.length === 0 ? (
+          <span className="forecast-none">None mapped</span>
+        ) : (
+          enemies.slice(0, 4).map((enemy) => (
+            <Link
+              className="forecast-enemy-chip"
+              href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
+              key={`${tone}-${enemy.name}`}
+            >
+              {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={13} />}
+              <span>{enemy.name}</span>
+            </Link>
+          ))
+        )}
+        {enemies.length > 4 && <span className="forecast-more">+{enemies.length - 4} more</span>}
+      </div>
+    </div>
+  );
 }
 
 function getWeatherTimeline(location: { forecast?: ForecastDay[] }) {
@@ -370,8 +415,8 @@ function MapPageContent() {
   const { staticData, marketData, allItemsDb, worldLocations, loading } = useData();
   const { openItemByName } = useItemModal();
   const [selectedKey, setSelectedKey] = useState("");
-  const [sourceMode, setSourceMode] = useState<SourceMode>("all");
   const [query, setQuery] = useState("");
+  const [activeForecastKey, setActiveForecastKey] = useState<string | null>(null);
   const enrichedEnemies = useMemo(
     () => buildEnrichedEnemies({ staticData, worldLocations, marketData }),
     [marketData, staticData, worldLocations],
@@ -390,8 +435,6 @@ function MapPageContent() {
             id: entity.location.id,
             key,
             name: entity.location.name,
-            x: 450,
-            y: 420,
             forecast: [],
           });
         }
@@ -454,10 +497,8 @@ function MapPageContent() {
     const loot = searchParams.get("loot")?.trim();
     if (key) setSelectedKey(key);
     if (resource) {
-      setSourceMode("resources");
       setQuery(resource);
     } else if (loot) {
-      setSourceMode("all");
       setQuery(loot);
     }
   }, [searchParams]);
@@ -467,18 +508,13 @@ function MapPageContent() {
     if (locations.length > 0) setSelectedKey(locations[0].key);
   }, [locations, selectedKey]);
 
+  useEffect(() => {
+    setActiveForecastKey(null);
+  }, [selectedKey]);
+
   const filteredLocations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return locations.filter((location) => {
-      const sourceMatch =
-        sourceMode === "all" ||
-        (sourceMode === "combat" && location.enemies.length > 0) ||
-        (sourceMode === "dungeons" && location.dungeons.length > 0) ||
-        (sourceMode === "bosses" && location.bosses.length > 0) ||
-        (sourceMode === "resources" && location.resources.length > 0) ||
-        (sourceMode === "weather-match" && (location.favoredEnemies.length > 0 || location.penalizedEnemies.length > 0)) ||
-        (sourceMode === "weather" && getWeatherTimeline(location).length > 0);
-      if (!sourceMatch) return false;
       if (!normalizedQuery) return true;
       const haystack = [
         location.name,
@@ -495,7 +531,7 @@ function MapPageContent() {
       ].join(" ").toLowerCase();
       return haystack.includes(normalizedQuery);
     });
-  }, [locations, query, sourceMode]);
+  }, [locations, query]);
 
   const selectedLocation = useMemo(
     () => filteredLocations.find((location) => location.key === selectedKey) || filteredLocations[0] || null,
@@ -548,21 +584,6 @@ function MapPageContent() {
             </div>
           </div>
 
-          <div className="mode-rail" role="radiogroup" aria-label="Map source filter">
-            {SOURCE_MODES.map((mode) => (
-              <button
-                key={mode.value}
-                type="button"
-                role="radio"
-                className={sourceMode === mode.value ? "active" : ""}
-                aria-checked={sourceMode === mode.value}
-                onClick={() => setSourceMode(mode.value)}
-              >
-                {mode.label}
-              </button>
-            ))}
-          </div>
-
           <div className="map-result-count" aria-live="polite">
             {filteredLocations.length === locations.length
               ? `${locations.length.toLocaleString()} locations`
@@ -607,7 +628,7 @@ function MapPageContent() {
               <div className="map-empty-state" role="status">
                 <Search size={18} />
                 <strong>No matching locations</strong>
-                <span>Adjust the search or source filter.</span>
+                <span>Adjust the search query.</span>
               </div>
             )}
 
@@ -615,6 +636,25 @@ function MapPageContent() {
               <Compass size={34} />
               <span>N</span>
             </div>
+          </div>
+
+          <div className="mobile-location-rail" aria-label="Map locations">
+            {filteredLocations.map((location) => {
+              const active = selectedLocation?.key === location.key;
+              const weatherKey = String(location.currentWeather?.key || location.nextWeather?.key || "OVERCAST").toUpperCase();
+              return (
+                <button
+                  type="button"
+                  key={`rail-${location.key}`}
+                  className={active ? "active" : ""}
+                  aria-pressed={active}
+                  onClick={() => setSelectedKey(location.key)}
+                >
+                  <span>{weatherIcon(weatherKey, 13)} {location.name}</span>
+                  {location.level !== null && <small>Lv.{location.level}</small>}
+                </button>
+              );
+            })}
           </div>
 
           <div className="atlas-metrics" aria-label="Map totals">
@@ -750,6 +790,9 @@ function MapPageContent() {
               ))}
               {selectedLocation.drops.length === 0 && <p className="muted-empty">No confirmed combat, dungeon, or boss loot drops for this location yet.</p>}
             </div>
+            {selectedLocation.drops.length > selectedVisibleDrops.length && (
+              <p className="board-note">Showing {selectedVisibleDrops.length.toLocaleString()} of {selectedLocation.drops.length.toLocaleString()} mapped drops. Use search to narrow the list.</p>
+            )}
           </div>
 
           <div className="intel-section resource-board">
@@ -772,7 +815,7 @@ function MapPageContent() {
                   {resource.imageUrl ? <img src={resource.imageUrl} alt="" /> : <Package size={18} />}
                   <span className="resource-copy">
                     <span className="resource-name">{resource.name}</span>
-                    <small>{resource.kind}</small>
+                    <small>{resource.kind}{resource.marketValue > 0 ? ` - ${formatGold(resource.marketValue)}` : ""}</small>
                   </span>
                   <strong>Lv.{resource.level}</strong>
                 </button>
@@ -787,12 +830,40 @@ function MapPageContent() {
               <strong>{formatCount(getWeatherTimeline(selectedLocation).length, "window")}</strong>
             </header>
             <div className="forecast-list">
+              {getWeatherTimeline(selectedLocation).length === 0 && (
+                <p className="muted-empty">No forecast windows mapped for this location yet.</p>
+              )}
               {getWeatherTimeline(selectedLocation).slice(0, 10).map((weather, index) => {
                 const key = String(weather.key || "").toUpperCase();
+                const forecastKey = `${weather.starts_at || "window"}-${index}`;
+                const crosscheck = getForecastEnemyCrosscheck(weather, selectedLocation.enemies);
+                const expanded = activeForecastKey === forecastKey;
                 return (
-                  <div className="forecast-row" key={`${weather.starts_at}-${index}`} style={{ "--weather-accent": WEATHER_COLORS[key] || "#f5b041" } as React.CSSProperties}>
-                    <span>{weatherIcon(key, 15)} {weather.name || "Weather"}</span>
-                    <strong>{formatWindow(weather)}</strong>
+                  <div
+                    className={`forecast-item ${expanded ? "active" : ""}`}
+                    key={forecastKey}
+                    style={{ "--weather-accent": WEATHER_COLORS[key] || "#f5b041" } as React.CSSProperties}
+                  >
+                    <button
+                      type="button"
+                      className="forecast-row"
+                      aria-expanded={expanded}
+                      aria-controls={`forecast-crosscheck-${index}`}
+                      onClick={() => setActiveForecastKey(expanded ? null : forecastKey)}
+                    >
+                      <span className="forecast-weather-name">{weatherIcon(key, 15)} {weather.name || "Weather"}</span>
+                      <strong className="forecast-window-time">{formatWindow(weather)}</strong>
+                      <span className="forecast-counts" aria-label={`${crosscheck.favored.length} favored enemies and ${crosscheck.penalized.length} penalized enemies`}>
+                        <em className="favored">{crosscheck.favored.length} favored</em>
+                        <em className="penalized">{crosscheck.penalized.length} penalized</em>
+                      </span>
+                      <ChevronDown className="forecast-chevron" aria-hidden="true" size={17} />
+                    </button>
+                    <div className="forecast-crosscheck" id={`forecast-crosscheck-${index}`} aria-hidden={!expanded}>
+                      <ForecastEnemyGroup label="Favored" enemies={crosscheck.favored} tone="favored" />
+                      <ForecastEnemyGroup label="Penalized" enemies={crosscheck.penalized} tone="penalized" />
+                      <ForecastEnemyGroup label="Neutral" enemies={crosscheck.neutral} tone="neutral" />
+                    </div>
                   </div>
                 );
               })}
@@ -834,7 +905,7 @@ function MapPageContent() {
           gap: 1rem;
           max-width: 1680px;
           margin: 0 auto;
-          align-items: stretch;
+          align-items: start;
         }
         .atlas-panel,
         .location-dossier,
@@ -846,6 +917,7 @@ function MapPageContent() {
         }
         .atlas-panel {
           min-width: 0;
+          align-self: start;
           border-radius: 12px;
           padding: clamp(0.85rem, 1.5vw, 1.2rem);
           overflow: hidden;
@@ -906,13 +978,6 @@ function MapPageContent() {
           border-color: var(--border-focus);
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 82%);
         }
-        .mode-rail {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.45rem;
-          margin-bottom: 0.8rem;
-        }
-        .mode-rail button,
         .quick-links a,
         .drop-chip,
         .resource-chip,
@@ -921,23 +986,6 @@ function MapPageContent() {
         .map-pin {
           color: inherit;
           font: inherit;
-        }
-        .mode-rail button {
-          min-height: 44px;
-          min-width: 44px;
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 999px;
-          background: rgba(255,255,255,0.035);
-          color: var(--text-muted);
-          cursor: pointer;
-          font-size: 0.78rem;
-          font-weight: 850;
-          padding: 0 0.75rem;
-        }
-        .mode-rail button.active {
-          border-color: var(--border-focus);
-          background: color-mix(in srgb, var(--text-accent), transparent 84%);
-          color: #fff;
         }
         .map-result-count {
           display: flex;
@@ -951,7 +999,7 @@ function MapPageContent() {
         }
         .map-stage {
           position: relative;
-          width: min(100%, 900px);
+          width: min(100%, 1040px);
           aspect-ratio: 1 / 1;
           margin: 0 auto;
           overflow: hidden;
@@ -1010,9 +1058,9 @@ function MapPageContent() {
           z-index: 3;
           display: inline-grid;
           gap: 0.32rem;
-          min-width: 148px;
-          width: clamp(148px, 17vw, 210px);
-          max-width: 210px;
+          min-width: 124px;
+          width: clamp(124px, 13vw, 178px);
+          max-width: 178px;
           overflow: hidden;
           border: 1px solid color-mix(in srgb, var(--pin-accent), rgba(255,255,255,0.14) 22%);
           border-radius: 8px;
@@ -1120,8 +1168,11 @@ function MapPageContent() {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
           gap: 0.55rem;
-          width: min(100%, 900px);
+          width: min(100%, 1040px);
           margin: 0.8rem auto 0;
+        }
+        .mobile-location-rail {
+          display: none;
         }
         .atlas-metrics div,
         .source-strip div {
@@ -1156,7 +1207,7 @@ function MapPageContent() {
           overflow: hidden;
         }
         .location-image {
-          display: block;
+          display: grid;
           width: 100%;
           aspect-ratio: 16 / 9;
           height: auto;
@@ -1382,6 +1433,7 @@ function MapPageContent() {
         }
         .quick-links {
           display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 0.45rem;
         }
         .quick-links a {
@@ -1432,7 +1484,7 @@ function MapPageContent() {
         }
         .source-columns {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
           gap: 0.65rem;
         }
         .source-column {
@@ -1452,8 +1504,9 @@ function MapPageContent() {
         }
         .source-card {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 0.5rem;
+          grid-template-columns: minmax(0, 1fr) 18px;
+          gap: 0.8rem;
+          align-items: center;
           min-height: 54px;
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 8px;
@@ -1462,6 +1515,13 @@ function MapPageContent() {
           text-align: left;
           text-decoration: none;
           padding: 0.6rem;
+        }
+        .source-card > span {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) max-content;
+          gap: 0.75rem;
+          align-items: center;
+          min-width: 0;
         }
         .source-card strong,
         .drop-name {
@@ -1472,8 +1532,22 @@ function MapPageContent() {
           white-space: nowrap;
         }
         .source-card small {
+          justify-self: end;
+          max-width: 100%;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.04);
           color: var(--text-muted);
           font-size: 0.75rem;
+          font-weight: 850;
+          line-height: 1;
+          padding: 0.28rem 0.46rem;
+          text-align: right;
+          white-space: nowrap;
+        }
+        .source-card > svg {
+          justify-self: end;
+          color: var(--text-muted);
         }
         .source-card:hover,
         .source-card:focus-visible,
@@ -1488,6 +1562,12 @@ function MapPageContent() {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
           gap: 0.5rem;
+        }
+        .board-note {
+          margin: 0.65rem 0 0;
+          color: var(--text-muted);
+          font-size: 0.76rem;
+          font-weight: 750;
         }
         .drop-chip {
           display: grid;
@@ -1589,17 +1669,27 @@ function MapPageContent() {
           display: grid;
           gap: 0.45rem;
         }
-        .forecast-row {
+        .forecast-item {
           display: grid;
-          grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-          gap: 0.6rem;
-          align-items: center;
           border: 1px solid color-mix(in srgb, var(--weather-accent), transparent 78%);
           border-radius: 8px;
-          background: color-mix(in srgb, var(--weather-accent), transparent 94%);
-          padding: 0.55rem;
+          background: color-mix(in srgb, var(--weather-accent), transparent 95%);
+          overflow: hidden;
+          transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
         }
-        .forecast-row span {
+        .forecast-row {
+          display: grid;
+          grid-template-columns: minmax(8rem, 0.75fr) minmax(11rem, 1fr) max-content 1.25rem;
+          gap: 0.6rem;
+          align-items: center;
+          width: 100%;
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+          padding: 0.58rem 0.65rem;
+          text-align: left;
+        }
+        .forecast-weather-name {
           display: flex;
           align-items: center;
           gap: 0.45rem;
@@ -1607,7 +1697,7 @@ function MapPageContent() {
           color: #fff;
           font-weight: 850;
         }
-        .forecast-row strong {
+        .forecast-window-time {
           min-width: 0;
           overflow: hidden;
           color: var(--text-muted);
@@ -1615,6 +1705,151 @@ function MapPageContent() {
           text-align: right;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+        .forecast-counts {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 0.32rem;
+          justify-self: end;
+          min-width: 0;
+        }
+        .forecast-counts em {
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          background: rgba(0,0,0,0.24);
+          font-size: 0.68rem;
+          font-weight: 900;
+          font-style: normal;
+          line-height: 1;
+          padding: 0.32rem 0.45rem;
+          white-space: nowrap;
+        }
+        .forecast-counts .favored {
+          border-color: rgba(52, 211, 153, 0.28);
+          color: #7cf2c0;
+        }
+        .forecast-counts .penalized {
+          border-color: rgba(251, 113, 133, 0.26);
+          color: #ff9bad;
+        }
+        .forecast-chevron {
+          justify-self: end;
+          color: var(--text-muted);
+          transition: color 160ms ease, transform 160ms ease;
+        }
+        .forecast-item:hover,
+        .forecast-item.active {
+          border-color: color-mix(in srgb, var(--weather-accent), white 8%);
+          background: color-mix(in srgb, var(--weather-accent), transparent 91%);
+        }
+        .forecast-item:hover {
+          transform: translateY(-1px);
+        }
+        .forecast-item.active .forecast-chevron {
+          color: #fff;
+          transform: rotate(180deg);
+        }
+        .forecast-crosscheck {
+          display: none;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.55rem;
+          border-top: 1px solid color-mix(in srgb, var(--weather-accent), transparent 82%);
+          padding: 0.6rem 0.65rem 0.65rem;
+        }
+        .forecast-item.active .forecast-crosscheck {
+          display: grid;
+        }
+        .forecast-enemy-group {
+          display: grid;
+          align-content: start;
+          gap: 0.42rem;
+          min-width: 0;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 7px;
+          background: rgba(0,0,0,0.18);
+          padding: 0.52rem;
+        }
+        .forecast-enemy-group.favored {
+          border-color: rgba(52, 211, 153, 0.16);
+        }
+        .forecast-enemy-group.penalized {
+          border-color: rgba(251, 113, 133, 0.16);
+        }
+        .forecast-enemy-group strong {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.6rem;
+          color: var(--text-muted);
+          font-size: 0.66rem;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .forecast-enemy-group strong span {
+          display: inline-grid;
+          min-width: 1.35rem;
+          place-items: center;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          font-family: var(--font-mono);
+          font-size: 0.64rem;
+          line-height: 1;
+          padding: 0.22rem 0.3rem;
+        }
+        .forecast-enemy-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.35rem;
+          min-width: 0;
+        }
+        .forecast-enemy-chip {
+          display: inline-grid;
+          grid-template-columns: 1.35rem minmax(0, 1fr);
+          align-items: center;
+          gap: 0.35rem;
+          max-width: 100%;
+          min-height: 1.75rem;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.045);
+          color: #fff;
+          font-size: 0.72rem;
+          font-weight: 850;
+          padding: 0.18rem 0.5rem 0.18rem 0.22rem;
+          text-decoration: none;
+          transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+        }
+        .forecast-enemy-chip:hover,
+        .forecast-enemy-chip:focus-visible {
+          border-color: color-mix(in srgb, var(--weather-accent), white 10%);
+          background: rgba(255,255,255,0.08);
+          transform: translateY(-1px);
+        }
+        .forecast-enemy-chip img,
+        .forecast-enemy-chip svg {
+          width: 1.35rem;
+          height: 1.35rem;
+          object-fit: contain;
+        }
+        .forecast-enemy-chip span {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .forecast-none,
+        .forecast-more {
+          display: inline-flex;
+          align-items: center;
+          min-height: 1.75rem;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.035);
+          color: var(--text-muted);
+          font-size: 0.72rem;
+          font-weight: 800;
+          padding: 0.18rem 0.55rem;
         }
         .muted-empty {
           color: var(--text-muted);
@@ -1626,12 +1861,12 @@ function MapPageContent() {
           font-weight: 750;
           line-height: 1.35;
         }
-        @media (min-width: 1681px) {
+        @media (min-width: 1280px) {
           .atlas-shell {
-            grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
           }
         }
-        @media (max-width: 1680px) {
+        @media (max-width: 1279px) {
           .atlas-shell,
           .intel-grid {
             grid-template-columns: 1fr;
@@ -1641,7 +1876,7 @@ function MapPageContent() {
           }
           .location-dossier {
             display: block;
-            width: min(100%, 900px);
+            width: min(100%, 1040px);
             margin-inline: auto;
           }
           .location-image {
@@ -1667,8 +1902,8 @@ function MapPageContent() {
           }
           .map-pin {
             min-width: 116px;
-            width: 150px;
-            max-width: 160px;
+            width: 140px;
+            max-width: 150px;
             padding: 0.45rem 0.5rem;
           }
           .pin-title {
@@ -1692,11 +1927,28 @@ function MapPageContent() {
             min-height: 0;
           }
           .forecast-row {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr) 1.4rem;
+            gap: 0.42rem 0.5rem;
           }
-          .forecast-row strong {
+          .forecast-weather-name {
+            grid-column: 1;
+          }
+          .forecast-chevron {
+            grid-column: 2;
+            grid-row: 1;
+          }
+          .forecast-window-time,
+          .forecast-counts {
+            grid-column: 1 / -1;
+            justify-self: start;
             text-align: left;
             white-space: normal;
+          }
+          .forecast-counts {
+            justify-content: flex-start;
+          }
+          .forecast-crosscheck {
+            grid-template-columns: 1fr;
           }
         }
         @media (max-width: 720px) {
@@ -1744,6 +1996,53 @@ function MapPageContent() {
           .pin-level {
             display: none;
           }
+          .mobile-location-rail {
+            display: flex;
+            gap: 0.45rem;
+            width: 100%;
+            margin: 0.65rem 0 0;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            padding: 0 0.05rem 0.35rem;
+            scrollbar-width: thin;
+          }
+          .mobile-location-rail button {
+            display: grid;
+            gap: 0.16rem;
+            flex: 0 0 auto;
+            min-width: 138px;
+            max-width: 176px;
+            min-height: 48px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.035);
+            color: var(--text-main);
+            font: inherit;
+            padding: 0.45rem 0.55rem;
+            text-align: left;
+          }
+          .mobile-location-rail button.active {
+            border-color: var(--border-focus);
+            background: color-mix(in srgb, var(--text-accent), transparent 84%);
+            color: #fff;
+          }
+          .mobile-location-rail span {
+            display: flex;
+            align-items: center;
+            gap: 0.32rem;
+            min-width: 0;
+            overflow: hidden;
+            font-size: 0.76rem;
+            font-weight: 900;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .mobile-location-rail small {
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            font-weight: 900;
+          }
           .map-compass {
             width: 54px;
             height: 54px;
@@ -1761,6 +2060,16 @@ function MapPageContent() {
           .resource-chip strong {
             grid-column: 2;
             justify-self: start;
+          }
+          .source-card > span {
+            grid-template-columns: 1fr;
+            gap: 0.35rem;
+          }
+          .source-card small {
+            justify-self: start;
+          }
+          .quick-links {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>

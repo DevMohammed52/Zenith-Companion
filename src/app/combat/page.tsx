@@ -271,6 +271,14 @@ function CombatContent() {
                 </div>
             </div>
 
+            <section className="combat-dev-notice" role="status" aria-label="Combat feature status">
+                <span className="combat-dev-pill mono">Feature in Development</span>
+                <div>
+                    <strong>Combat planning is still being calibrated.</strong>
+                    <p>Current values use loot EV from enemy drops and manual kills/hour. Full hit chance, damage, food, and time-to-kill modeling are not final yet.</p>
+                </div>
+            </section>
+
             <div className="controls">
                 <div className="control-group">
                     <label className="control-label">Kills Per Hour</label>
@@ -651,6 +659,40 @@ function CombatContent() {
             )}
             <style jsx>{`
                 .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
+                .combat-dev-notice {
+                    align-items: center;
+                    background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(255,255,255,0.015));
+                    border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
+                    border-radius: 8px;
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1rem;
+                    padding: 0.9rem 1rem;
+                }
+                .combat-dev-notice strong {
+                    color: #fff;
+                    display: block;
+                    font-size: 0.92rem;
+                    margin-bottom: 0.2rem;
+                }
+                .combat-dev-notice p {
+                    color: var(--text-muted);
+                    font-size: 0.82rem;
+                    line-height: 1.45;
+                    margin: 0;
+                }
+                .combat-dev-pill {
+                    background: color-mix(in srgb, #f6c85f, transparent 88%);
+                    border: 1px solid color-mix(in srgb, #f6c85f, transparent 58%);
+                    border-radius: 999px;
+                    color: #f6c85f;
+                    flex: 0 0 auto;
+                    font-size: 0.7rem;
+                    font-weight: 900;
+                    letter-spacing: 0.04em;
+                    padding: 0.34rem 0.72rem;
+                    text-transform: uppercase;
+                }
                 .combat-zone-panel {
                     background: rgba(255,255,255,0.015);
                     border: 1px solid var(--border-subtle);
@@ -816,6 +858,10 @@ function CombatContent() {
                     padding: 1rem;
                 }
                 @media (max-width: 768px) {
+                    .combat-dev-notice {
+                        align-items: flex-start;
+                        flex-direction: column;
+                    }
                     .combat-zone-panel {
                         grid-template-columns: 1fr;
                         padding: 0.85rem;

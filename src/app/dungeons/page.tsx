@@ -254,6 +254,10 @@ function removeUntradeableDuplicateModifiers(options: DungeonItemModifier[]) {
   return options.filter((item) => item.isTradeable || !tradeableVariantKeys.has(getTradeableVariantKey(item.name)));
 }
 
+function getTradeableTemporaryModifiers(options: DungeonItemModifier[]) {
+  return removeUntradeableDuplicateModifiers(options).filter((item) => item.isTradeable);
+}
+
 function getOptionalNumber(value: number | "") {
   return value === "" ? null : Number(value);
 }
@@ -463,12 +467,12 @@ function DungeonsContent() {
     [equippedDungeonSpecial],
   );
   const dungeonEfficiencyItemOptions = useMemo(
-    () => removeUntradeableDuplicateModifiers(dungeonItemModifierOptions.filter((item) => item.efficiency > 0))
+    () => getTradeableTemporaryModifiers(dungeonItemModifierOptions.filter((item) => item.efficiency > 0))
       .sort((a, b) => b.efficiency - a.efficiency || a.name.localeCompare(b.name)),
     [dungeonItemModifierOptions],
   );
   const dungeonMagicFindItemOptions = useMemo(
-    () => dungeonItemModifierOptions
+    () => getTradeableTemporaryModifiers(dungeonItemModifierOptions)
       .filter((item) => item.magicFind > 0 && !isSpecialEquipmentModifier(item))
       .sort((a, b) => b.magicFind - a.magicFind || a.name.localeCompare(b.name)),
     [dungeonItemModifierOptions],
@@ -1823,6 +1827,16 @@ function DungeonsContent() {
         }
         .dungeon-table-wrapper {
           margin-top: 1rem;
+          max-width: 100%;
+          min-width: 0;
+          overflow: hidden;
+        }
+        .dungeon-table {
+          max-width: 100%;
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          scrollbar-gutter: stable both-edges;
+          -webkit-overflow-scrolling: touch;
         }
         .dungeon-table th,
         .dungeon-table td {
@@ -1853,6 +1867,7 @@ function DungeonsContent() {
           text-shadow: 0 0 12px rgba(56,189,248,0.7);
         }
         .dungeon-table table {
+          width: max(100%, 1060px);
           min-width: 1060px;
         }
         .dungeon-completed-input,
@@ -2247,22 +2262,21 @@ function DungeonsContent() {
           text-align: right;
         }
         @media (max-width: 1100px) {
-          .dungeon-command,
           .dungeon-planner {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .dungeon-planner {
             grid-template-areas:
-              "search"
-              "action"
-              "playtime"
-              "profit"
-              "efficiency"
-              "mf"
-              "completion"
-              "event"
-              "filter"
-              "toggle";
+              "search search"
+              "action playtime"
+              "profit efficiency"
+              "mf completion"
+              "event event"
+              "filter filter"
+              "toggle toggle";
+          }
+          .dungeon-command {
+            grid-template-columns: 1fr;
           }
           .dungeon-command-stats,
           .dungeon-insights {
@@ -2277,12 +2291,11 @@ function DungeonsContent() {
         }
         @media (min-width: 1101px) and (max-width: 1500px) {
           .dungeon-planner {
-            grid-template-columns: repeat(3, minmax(min(100%, 12rem), 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             grid-template-areas:
-              "search action playtime"
-              "profit efficiency toggle"
-              "mf completion event"
-              "filter filter filter";
+              "search search action playtime"
+              "profit efficiency mf completion"
+              "event filter filter toggle";
           }
         }
         @media (max-width: 720px) {
@@ -2290,7 +2303,21 @@ function DungeonsContent() {
           .dungeon-planner {
             padding: 1rem;
           }
-          .dungeon-command-stats,
+          .dungeon-command-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+          }
+          .dungeon-command-stats div {
+            padding: 0.65rem;
+          }
+          .dungeon-command-stats span {
+            font-size: 0.6rem;
+            letter-spacing: 0.06em;
+          }
+          .dungeon-command-stats strong {
+            font-size: 0.86rem;
+            line-height: 1.2;
+          }
           .dungeon-insights,
           .dungeon-modal-grid {
             grid-template-columns: 1fr;
