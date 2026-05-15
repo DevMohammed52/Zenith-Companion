@@ -23,7 +23,7 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { useProfiles } from "@/lib/profiles";
+import { useProfiles, type ProfileOwnedPet, type ProfilePetStats } from "@/lib/profiles";
 import {
   BattleProfitMode,
   COMPARISON_STAT_KEYS,
@@ -34,14 +34,17 @@ import {
   QUALITY_ORDER,
   STAT_LABELS,
   StatKey,
+  buildPetMatchLookup,
   calculatePetStats,
   clampNumber,
+  findPetRecordForOwnedPet,
   formatGold,
   formatNumber,
   getBestBattleProfit,
   getHuntingTimeSeconds,
   getMasteryBonus,
   getPetImage,
+  getPetRecordMatchKey,
   getPetSourceLabel,
   getTotalPower,
   getZoneProfitValue,
@@ -56,6 +59,7 @@ const STORAGE_KEY = "zenith_pet_compare_state_v1";
 const MAX_COMPARE = 4;
 
 type CompareState = {
+  selectedIds?: string[];
   selectedNames?: string[];
   petLevel?: number;
   masteryLevel?: number;
@@ -68,11 +72,27 @@ type CompareState = {
 };
 
 type ComparedPet = {
+  id: string;
+  label: string;
+  subtitle: string;
+  source: "database" | "owned";
   pet: PetRecord;
+  ownedPet?: ProfileOwnedPet;
   stats: Partial<Record<StatKey, number>>;
   totalPower: number;
   huntingTime: number;
   battle: ReturnType<typeof getBestBattleProfit>;
+};
+
+type PetOption = {
+  id: string;
+  kind: "database" | "owned";
+  pet: PetRecord;
+  ownedPet?: ProfileOwnedPet;
+  title: string;
+  subtitle: string;
+  meta: string;
+  searchText: string;
 };
 
 const EVOLUTION_OPTIONS: Array<{ value: StatKey | "all"; label: string }> = [
@@ -96,6 +116,65 @@ const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
 ];
 
 const BEST_BATTLE_ZONE = "best";
+const DATABASE_OPTION_PREFIX = "db:";
+const OWNED_OPTION_PREFIX = "owned:";
+
+const PROFILE_STAT_TO_COMPARE_STAT: Array<[keyof ProfilePetStats, StatKey]> = [
+  ["agility", "agility"],
+  ["accuracy", "accuracy"],
+  ["protection", "protection"],
+  ["attackPower", "attack_power"],
+  ["movementSpeed", "movement_speed"],
+  ["maxHealth", "max_health"],
+  ["maxStamina", "max_stamina"],
+  ["criticalDamage", "critical_damage"],
+  ["criticalChance", "critical_chance"],
+];
+
+function databaseOptionId(name: string) {
+  return `${DATABASE_OPTION_PREFIX}${name}`;
+}
+
+function ownedOptionId(id: string) {
+  return `${OWNED_OPTION_PREFIX}${id}`;
+}
+
+function toStatNumber(value: number | "") {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function ownedPetStatsToComparisonStats(stats: ProfilePetStats): Partial<Record<StatKey, number>> {
+  return Object.fromEntries(PROFILE_STAT_TO_COMPARE_STAT.map(([profileKey, compareKey]) => [compareKey, toStatNumber(stats[profileKey])])) as Partial<
+    Record<StatKey, number>
+  >;
+}
+
+function ownedPetMissingStatCount(stats: ProfilePetStats) {
+  return PROFILE_STAT_TO_COMPARE_STAT.filter(([profileKey]) => stats[profileKey] === "").length;
+}
+
+function ownedPetSearchText(ownedPet: ProfileOwnedPet) {
+  return [
+    ownedPet.nickname,
+    ownedPet.species,
+    ownedPet.quality,
+    ownedPet.source,
+    ownedPet.location?.name,
+    ownedPet.hashTail,
+    ownedPet.apiId,
+    ownedPet.petId,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function formatOwnedPetMeta(ownedPet: ProfileOwnedPet) {
+  const level = ownedPet.level === "" ? "Lv. ?" : `Lv. ${ownedPet.level}`;
+  const evolution = ownedPet.evolution === "" ? "Evo ?" : `Evo ${ownedPet.evolution}`;
+  const source = ownedPet.source === "imported" ? "Imported" : "Manual";
+  return `${source} snapshot - ${level} - ${evolution}`;
+}
 
 function PetImage({ pet }: { pet: PetRecord }) {
   const [failed, setFailed] = useState(false);
@@ -210,7 +289,7 @@ function OptionMenu<T extends string>({
 function PetPicker({
   slotIndex,
   value,
-  pets,
+  options,
   open,
   onOpen,
   onSelect,
@@ -218,34 +297,34 @@ function PetPicker({
 }: {
   slotIndex: number;
   value: string | null;
-  pets: PetRecord[];
+  options: PetOption[];
   open: boolean;
   onOpen: (open: boolean) => void;
-  onSelect: (name: string) => void;
+  onSelect: (id: string) => void;
   onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
-  const selected = pets.find((pet) => pet.name === value) || null;
+  const selected = options.find((option) => option.id === value) || null;
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return pets
-      .filter((pet) => !needle || petSearchText(pet).includes(needle))
+    return options
+      .filter((option) => !needle || option.searchText.includes(needle))
       .slice(0, 32);
-  }, [pets, query]);
+  }, [options, query]);
 
   return (
     <div className={styles.picker} data-menu-root>
       <button
         type="button"
         className={styles.pickerTrigger}
-        style={selected ? ({ "--accent": QUALITY_COLORS[selected.quality] } as CSSProperties) : undefined}
+        style={selected ? ({ "--accent": QUALITY_COLORS[selected.pet.quality] } as CSSProperties) : undefined}
         aria-expanded={open}
         onClick={() => onOpen(!open)}
       >
-        {selected ? <PetImage pet={selected} /> : <div className={styles.emptyAvatar}>{slotIndex + 1}</div>}
+        {selected ? <PetImage pet={selected.pet} /> : <div className={styles.emptyAvatar}>{slotIndex + 1}</div>}
         <span>
-          <strong>{selected?.name || `Choose pet ${slotIndex + 1}`}</strong>
-          <small>{selected ? `${qualityLabel(selected.quality)} - ${getPetSourceLabel(selected)}` : "Search pet database"}</small>
+          <strong>{selected?.title || `Choose pet ${slotIndex + 1}`}</strong>
+          <small>{selected ? selected.subtitle : "Search pet database or owned snapshots"}</small>
         </span>
         <ChevronDown size={17} />
       </button>
@@ -274,25 +353,25 @@ function PetPicker({
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pet, boss, source..." autoFocus />
           </label>
           <div className={styles.petOptions}>
-            {filtered.map((pet) => (
+            {filtered.map((option) => (
               <button
                 type="button"
-                key={pet.name}
-                className={pet.name === value ? styles.petOptionSelected : ""}
+                key={option.id}
+                className={option.id === value ? styles.petOptionSelected : ""}
                 onClick={() => {
-                  onSelect(pet.name);
+                  onSelect(option.id);
                   setQuery("");
                   onOpen(false);
                 }}
               >
-                <PetImage pet={pet} />
+                <PetImage pet={option.pet} />
                 <span>
-                  <strong>{pet.name}</strong>
+                  <strong>{option.title}</strong>
                   <small>
-                    {qualityLabel(pet.quality)} - {getPetSourceLabel(pet)}
+                    {option.subtitle}
                   </small>
                 </span>
-                <em>{formatGold(pet.exchange?.minPrice)}</em>
+                <em className={option.kind === "owned" ? styles.ownedOptionMeta : undefined}>{option.meta}</em>
               </button>
             ))}
             {!filtered.length && <div className={styles.emptyList}>No pets match that search.</div>}
@@ -341,7 +420,7 @@ export default function PetComparisonPage() {
   const { activeProfile } = useProfiles();
   const [database, setDatabase] = useState<PetDatabase | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [selectedNames, setSelectedNames] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [petLevel, setPetLevel] = useState(100);
   const [masteryLevel, setMasteryLevel] = useState(100);
   const [evolutionStage, setEvolutionStage] = useState(0);
@@ -358,7 +437,11 @@ export default function PetComparisonPage() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const stored = JSON.parse(raw) as CompareState;
-        if (Array.isArray(stored.selectedNames)) setSelectedNames(stored.selectedNames.slice(0, MAX_COMPARE));
+        if (Array.isArray(stored.selectedIds)) {
+          setSelectedIds(stored.selectedIds.slice(0, MAX_COMPARE));
+        } else if (Array.isArray(stored.selectedNames)) {
+          setSelectedIds(stored.selectedNames.map(databaseOptionId).slice(0, MAX_COMPARE));
+        }
         if (typeof stored.petLevel === "number") setPetLevel(clampNumber(stored.petLevel, 1, 100));
         if (typeof stored.masteryLevel === "number") setMasteryLevel(clampNumber(stored.masteryLevel, 1, 100));
         if (typeof stored.evolutionStage === "number") setEvolutionStage(clampNumber(stored.evolutionStage, 0, 5));
@@ -374,9 +457,9 @@ export default function PetComparisonPage() {
 
   useEffect(() => {
     if (!loadedStorage.current) return;
-    const payload: CompareState = { selectedNames, petLevel, masteryLevel, evolutionStage, evolutionStat, patBonus, battleMode, battleZone, foodPolicy };
+    const payload: CompareState = { selectedIds, petLevel, masteryLevel, evolutionStage, evolutionStat, patBonus, battleMode, battleZone, foodPolicy };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedNames]);
+  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedIds]);
 
   useEffect(() => {
     let cancelled = false;
@@ -418,6 +501,44 @@ export default function PetComparisonPage() {
     });
   }, [database]);
 
+  const petMatchLookup = useMemo(() => buildPetMatchLookup(pets), [pets]);
+  const unmatchedOwnedPetCount = useMemo(
+    () => (activeProfile?.ownedPets || []).filter((ownedPet) => !findPetRecordForOwnedPet(ownedPet, petMatchLookup)).length,
+    [activeProfile?.ownedPets, petMatchLookup],
+  );
+
+  const compareOptions = useMemo<PetOption[]>(() => {
+    const ownedOptions: PetOption[] = [];
+    for (const ownedPet of activeProfile?.ownedPets || []) {
+      const pet = findPetRecordForOwnedPet(ownedPet, petMatchLookup);
+      if (!pet) continue;
+      const title = ownedPet.nickname?.trim() || ownedPet.species;
+      const subtitle = `${formatOwnedPetMeta(ownedPet)} - ${ownedPet.species}`;
+      ownedOptions.push({
+        id: ownedOptionId(ownedPet.id),
+        kind: "owned",
+        pet,
+        ownedPet,
+        title,
+        subtitle,
+        meta: ownedPet.source === "imported" ? "Owned" : "Manual",
+        searchText: `${ownedPetSearchText(ownedPet)} ${petSearchText(pet)}`,
+      });
+    }
+
+    const databaseOptions = pets.map((pet) => ({
+      id: databaseOptionId(pet.name),
+      kind: "database" as const,
+      pet,
+      title: pet.name,
+      subtitle: `${qualityLabel(pet.quality)} - ${getPetSourceLabel(pet)}`,
+      meta: formatGold(pet.exchange?.minPrice),
+      searchText: petSearchText(pet),
+    }));
+
+    return [...ownedOptions, ...databaseOptions];
+  }, [activeProfile?.ownedPets, petMatchLookup, pets]);
+
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
 
   const battleZoneOptions = useMemo(() => {
@@ -452,25 +573,36 @@ export default function PetComparisonPage() {
   };
 
   const rows = useMemo<ComparedPet[]>(() => {
-    return selectedNames
-      .map((name) => pets.find((pet) => pet.name === name))
-      .filter((pet): pet is PetRecord => Boolean(pet))
-      .map((pet) => {
-        const stats = calculatePetStats(pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
+    return selectedIds
+      .map((id) => compareOptions.find((option) => option.id === id))
+      .filter((option): option is PetOption => Boolean(option))
+      .map((option) => {
+        const stats = option.ownedPet
+          ? ownedPetStatsToComparisonStats(option.ownedPet.stats)
+          : calculatePetStats(option.pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
         return {
-          pet,
+          id: option.id,
+          label: option.title,
+          subtitle: option.ownedPet ? option.subtitle : getPetSourceLabel(option.pet),
+          source: option.kind,
+          pet: option.pet,
+          ownedPet: option.ownedPet,
           stats,
           totalPower: getTotalPower(stats),
           huntingTime: getHuntingTimeSeconds(stats),
-          battle: getBattleSample(pet),
+          battle: getBattleSample(option.pet),
         };
       });
-  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets, selectedNames]);
+  }, [battleMode, battleZone, compareOptions, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, selectedIds]);
 
-  const profilePet = useMemo(() => {
+  const profilePetOption = useMemo(() => {
+    const activeOwnedPet = compareOptions.find((option) => option.kind === "owned" && option.ownedPet && (option.ownedPet.active || option.ownedPet.equipped));
+    if (activeOwnedPet) return activeOwnedPet;
     if (!activeProfile?.pet?.species) return null;
-    return pets.find((pet) => pet.name.toLowerCase() === activeProfile.pet.species.toLowerCase()) || null;
-  }, [activeProfile, pets]);
+    const profilePet = findPetRecordForOwnedPet({ species: activeProfile.pet.species }, petMatchLookup);
+    if (!profilePet) return null;
+    return compareOptions.find((option) => option.kind === "database" && getPetRecordMatchKey(option.pet) === getPetRecordMatchKey(profilePet)) || null;
+  }, [activeProfile?.pet?.species, compareOptions, petMatchLookup]);
 
   const topPicks = useMemo(() => {
     const compared = pets.map((pet) => {
@@ -504,22 +636,22 @@ export default function PetComparisonPage() {
     };
   }, [battleZone, pets, rows]);
 
-  const addPet = (name: string) => {
-    setSelectedNames((current) => {
-      const without = current.filter((entry) => entry !== name);
-      return [...without, name].slice(-MAX_COMPARE);
+  const addPet = (id: string) => {
+    setSelectedIds((current) => {
+      const without = current.filter((entry) => entry !== id);
+      return [...without, id].slice(-MAX_COMPARE);
     });
   };
 
-  const setSlot = (index: number, name: string) => {
-    setSelectedNames((current) => {
+  const setSlot = (index: number, id: string) => {
+    setSelectedIds((current) => {
       const next = [...current];
-      next[index] = name;
+      next[index] = id;
       return Array.from(new Set(next.filter(Boolean))).slice(0, MAX_COMPARE);
     });
   };
 
-  const clearSlot = (index: number) => setSelectedNames((current) => current.filter((_, slotIndex) => slotIndex !== index));
+  const clearSlot = (index: number) => setSelectedIds((current) => current.filter((_, slotIndex) => slotIndex !== index));
 
   const metricBounds = useMemo(() => {
     const keys = ["power", "hunt", "battle", "market", ...COMPARISON_STAT_KEYS];
@@ -531,8 +663,8 @@ export default function PetComparisonPage() {
     ) as Record<string, { max: number; min: number }>;
   }, [rows]);
 
-  const slotCount = Math.max(2, Math.min(MAX_COMPARE, selectedNames.length + 1));
-  const slots = Array.from({ length: selectedNames.length >= MAX_COMPARE ? MAX_COMPARE : slotCount }, (_, index) => selectedNames[index] || null);
+  const slotCount = Math.max(2, Math.min(MAX_COMPARE, selectedIds.length + 1));
+  const slots = Array.from({ length: selectedIds.length >= MAX_COMPARE ? MAX_COMPARE : slotCount }, (_, index) => selectedIds[index] || null);
 
   return (
     <main className={styles.page}>
@@ -548,7 +680,7 @@ export default function PetComparisonPage() {
           <Link href="/pets" className={styles.secondaryLink}>
             Pet Database <ArrowRight size={16} />
           </Link>
-          <button type="button" className={styles.secondaryLink} onClick={() => setSelectedNames([])}>
+          <button type="button" className={styles.secondaryLink} onClick={() => setSelectedIds([])}>
             <Trash2 size={16} /> Clear
           </button>
         </div>
@@ -565,10 +697,10 @@ export default function PetComparisonPage() {
                 <span className={styles.kicker}>Scenario</span>
                 <h2>Shared Pet Setup</h2>
               </div>
-              {profilePet && (
-                <button type="button" className={styles.profilePetButton} onClick={() => addPet(profilePet.name)}>
+              {profilePetOption && (
+                <button type="button" className={styles.profilePetButton} onClick={() => addPet(profilePetOption.id)}>
                   <Sparkles size={16} />
-                  Add {activeProfile?.name}&apos;s {profilePet.name}
+                  Add {activeProfile?.name}&apos;s {profilePetOption.title}
                 </button>
               )}
             </div>
@@ -585,8 +717,8 @@ export default function PetComparisonPage() {
               </button>
             </div>
             <p className={styles.scenarioNote}>
-              Level, mastery, evolution, and pat affect stats and hunting speed. Battle EV uses recorded research data only; it does not import live pet state,
-              route movement, active map position, or future combat scaling.
+              Level, mastery, evolution, and pat affect database species previews. Owned snapshots keep imported/manual stat values. Battle EV uses recorded
+              research data only; it does not import live pet state, route movement, active map position, or future combat scaling.
             </p>
             <div className={styles.auditGrid} aria-label="Pet comparison assumptions">
               <div className={styles.auditCard}>
@@ -647,22 +779,27 @@ export default function PetComparisonPage() {
                   key={index}
                   slotIndex={index}
                   value={name}
-                  pets={pets}
+                  options={compareOptions}
                   open={openMenu === `pet-${index}`}
                   onOpen={(open) => setOpenMenu(open ? `pet-${index}` : null)}
-                  onSelect={(petName) => setSlot(index, petName)}
+                  onSelect={(optionId) => setSlot(index, optionId)}
                   onClear={() => clearSlot(index)}
                 />
               ))}
-              {selectedNames.length < MAX_COMPARE && (
-                <button type="button" className={styles.addSlot} onClick={() => setOpenMenu(`pet-${selectedNames.length}`)}>
+              {selectedIds.length < MAX_COMPARE && (
+                <button type="button" className={styles.addSlot} onClick={() => setOpenMenu(`pet-${selectedIds.length}`)}>
                   <Plus size={18} /> Add pet
                 </button>
               )}
             </div>
+            {unmatchedOwnedPetCount > 0 && (
+              <p className={styles.quickPickNote}>
+                {unmatchedOwnedPetCount} owned snapshot{unmatchedOwnedPetCount === 1 ? "" : "s"} cannot be compared yet because the species does not match the pet database.
+              </p>
+            )}
             <div className={styles.quickPicks}>
               {topPicks.map(([label, pet]) => (
-                <button type="button" key={label} onClick={() => addPet(pet.name)}>
+                <button type="button" key={label} onClick={() => addPet(databaseOptionId(pet.name))}>
                   <span>{label}</span>
                   <strong>{pet.name}</strong>
                 </button>
@@ -684,14 +821,14 @@ export default function PetComparisonPage() {
                   const recordedZones = getRecordedZoneCount(row.pet);
                   const recordedDrops = getRecordedDropCount(row.pet, row.battle.zone);
                   return (
-                    <article key={row.pet.name} className={styles.compareCard} style={{ "--accent": QUALITY_COLORS[row.pet.quality] } as CSSProperties}>
+                    <article key={row.id} className={styles.compareCard} style={{ "--accent": QUALITY_COLORS[row.pet.quality] } as CSSProperties}>
                       <div className={styles.cardTop}>
                         <PetImage pet={row.pet} />
                         <div>
-                          <h3>{row.pet.name}</h3>
-                          <p>{getPetSourceLabel(row.pet)}</p>
+                          <h3>{row.label}</h3>
+                          <p>{row.subtitle}</p>
                         </div>
-                        <span>{qualityLabel(row.pet.quality)}</span>
+                        <span>{row.source === "owned" ? "Owned" : qualityLabel(row.pet.quality)}</span>
                       </div>
                       <div className={styles.cardStats}>
                         <div>
@@ -716,7 +853,10 @@ export default function PetComparisonPage() {
                           {row.battle.zone ? `${formatBattleEv(row.battle.value)}/hr` : "No EV"}
                         </strong>
                       </div>
-                      <div className={styles.sampleBadges} aria-label={`${row.pet.name} recorded battle coverage`}>
+                      <div className={styles.sampleBadges} aria-label={`${row.label} recorded battle coverage`}>
+                        {row.ownedPet && <span>{qualityLabel(row.pet.quality)} species match</span>}
+                        {row.ownedPet && <span>Snapshot stats</span>}
+                        {row.ownedPet && ownedPetMissingStatCount(row.ownedPet.stats) > 0 && <span>{ownedPetMissingStatCount(row.ownedPet.stats)} missing stats count as 0</span>}
                         <span>{recordedZones} recorded zones</span>
                         <span>{recordedDrops ? `${recordedDrops} drop rows` : "Drops not recorded"}</span>
                         <span>{battleZone === BEST_BATTLE_ZONE ? "Best recorded only" : "Selected zone"}</span>
@@ -739,7 +879,7 @@ export default function PetComparisonPage() {
                       <tr>
                         <th>Metric</th>
                         {rows.map((row) => (
-                          <th key={row.pet.name}>{row.pet.name}</th>
+                          <th key={row.id}>{row.label}</th>
                         ))}
                       </tr>
                     </thead>
@@ -803,7 +943,7 @@ function MetricRow({
         const value = metricValue(row, metricKey);
         const isBest = value > 0 && (lowerIsBetter ? value === bound.min : value === bound.max);
         return (
-          <td key={row.pet.name} className={isBest ? styles.bestCell : ""}>
+          <td key={row.id} className={isBest ? styles.bestCell : ""}>
             {formatter(value)}
           </td>
         );
