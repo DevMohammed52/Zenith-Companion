@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DEFAULT_ALCHEMY_RECIPES } from './src/lib/default-alchemy-recipes.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,106 +10,29 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = Number(process.env.IDLEMMO_API_DELAY_MS || 1050); // IdleMMO limit is 60 requests/min for this key; 1.05s keeps us just under it.
+const API_DELAY_MS = Math.max(readPositiveNumber(process.env.IDLEMMO_API_DELAY_MS, 1500), 1500); // Reserve budget around 40 req/min even if env is set lower.
+const API_MAX_RETRIES = Math.floor(readPositiveNumber(process.env.IDLEMMO_API_MAX_RETRIES, 5));
+const API_MAX_BACKOFF_MS = readPositiveNumber(process.env.IDLEMMO_API_MAX_BACKOFF_MS, 5 * 60 * 1000);
 const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
 const WORLD_LOCATIONS_FILE = path.join(__dirname, 'public', 'world-locations.json');
+const CONQUEST_DATA_FILE = path.join(__dirname, 'public', 'conquest-data.json');
 const MARKET_SPIKE_MULTIPLIER = 5;
 const MARKET_SPIKE_MIN_DELTA = 100;
 
-const ALCHEMY_ITEMS = {
-    // Level 1-10
-    "Battle Potion": {"materials": {"Lucky Rabbit Foot": 2}},
-    "Lumberjack Essence Crystal": {"materials": {"Goblin Totem": 6}},
-    "Miners Essence Crystal": {"materials": {"Ducks Mouth": 2}},
-    "Anglers Essence Crystal": {"materials": {"Boar Tusk": 1}},
-    "Smelting Essence Crystal": {"materials": {"Goblin Pouch": 3}},
-    "Chefs Essence Crystal": {"materials": {"Goblin Scraps": 2}},
-    "Dungeon Potion": {"materials": {"Goblin Crown": 1}},
-    "Timberfall Essence Crystal": {"materials": {"Deer Antler": 5}},
+function readPositiveNumber(value, fallback) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
-    // Level 12-20
-    "Rocksplitter Essence Crystal": {"materials": {"Cursed Talisman": 5}},
-    "Deepsea Essence Crystal": {"materials": {"Ruined Robes": 10}},
-    "Bastion Essence": {"materials": {"Boar Tusk": 2}},
-    "Falcon's Grace Essence": {"materials": {"Snakes Head": 10}},
-    "Galeforce Speed Essence": {"materials": {"Forbidden Tome": 2}},
-    "Herculean Strength Essence": {"materials": {"Goblin Crown": 1}},
-    "Hammerfell Essence Crystal": {"materials": {"Snakes Head": 12}},
-    "Flavorburst Essence Crystal": {"materials": {"Snakes Head": 5, "Venom Extract": 1}},
-    "Protection Potion": {"materials": {"Raw Onion": 13}},
-    "Felling Essence Crystal": {"materials": {"Djinn's Bottle": 23}},
-
-    // Level 25-30
-    "Attack Power Potion": {"materials": {"Slime Extract": 20, "Raw Onion": 5}},
-    "Merfolk Essence Crystal": {"materials": {"Chest of Scraps": 12}},
-    "Precision Essence": {"materials": {"Bone Fragment": 30}},
-    "Quickstep Essence": {"materials": {"Pirates Code": 4, "Chest of Scraps": 5}},
-    "Fortified Essence": {"materials": {"Buffalo Horn": 8}},
-    "Titan Power Essence": {"materials": {"Slime Extract": 38}},
-    "Oreseeker Essence Crystal": {"materials": {"Swamp Juice": 12}},
-    "Molten Core Essence Crystal": {"materials": {"Long Forgotten Necklace": 38}},
-    "Vortex Brew": {"materials": {"Djinn's Bottle": 18, "Venom Extract": 1}},
-    "Spicefinder Essence Crystal": {"materials": {"Umbral Claw": 11}},
-
-    // Level 35-50
-    "Bulwark Brew": {"materials": {"Goblin Scraps": 3, "Slime Extract": 20}},
-    "Bladeburst Elixir": {"materials": {"Goblin Crown": 1, "Siren's Scales": 4}},
-    "Ironclad Essence": {"materials": {"Goblin Totem": 12, "Goblin Crown": 1}},
-    "Acrobatic's Essence": {"materials": {"Moose Antler": 10}},
-    "Strike Essence": {"materials": {"Siren's Soulstone": 6}},
-    "Impenetrable Essence": {"materials": {"Goblin Totem": 7, "Goblin Pouch": 9}},
-    "Windrider Essence": {"materials": {"Elk Antler": 9}},
-    "Dungeon Master's Tonic": {"materials": {"Lions Teeth": 11}},
-
-    // Level 52-70
-    "Yggdrasil Essence Crystal": {"materials": {"Goblin Crown": 1, "Bone Fragment": 20}},
-    "Earthcore Essence Crystal": {"materials": {"Ivory": 6, "Parchment": 6}},
-    "Riverbend Essence Crystal": {"materials": {"Polar Bear Pelt": 20, "Djinn's Bottle": 30}},
-    "Tampering Essence Crystal": {"materials": {"Snakes Head": 30, "Golem Core Fragment": 25}},
-    "Shieldbearer's Infusion": {"materials": {"Elk Antler": 9, "Siren's Soulstone": 8}},
-    "Unyielding Fortitude": {"materials": {"Snakes Head": 15, "Enigmatic Stone": 15}},
-    "Lightning Sprint": {"materials": {"Goblin Pouch": 15, "Broken Dwarven Plate": 7}},
-    "Twinstrike Elixir": {"materials": {"Dwarven Whetstone": 35, "Cursed Blade Fragment": 25}},
-    "Stoneheart Solution": {"materials": {"Raccoon Fur": 10, "Goblin Scraps": 10}},
-    "Frenzy Potion": {"materials": {"Wolf Pelt": 14, "Goblin Totem": 60}},
-
-    // Level 80-85
-    "Dragonblood Tonic": {"materials": {"Minotaur Hide": 20, "Dragon Bone": 2}},
-    "Gourmet Essence": {"materials": {"Snakes Head": 50, "Cursed Blade Fragment": 25}},
-    "Wraithbane Essence": {"materials": {"Moose Antler": 15, "Minotaur Hide": 20}},
-    "Thunderfury Brew": {"materials": {"Black Bear Pelt": 25, "Orb of Elemental Conjuring": 20}},
-    "Cosmic Tear": {"materials": {"Harpy's Wings": 40, "Air Elemental Essence": 12}},
-    "Titans Essence": {"materials": {"Fire Elemental Essence": 13, "Goblin Crown": 13}},
-    "Cosmic Barrier": {"materials": {"Vial of Spectre Ectoplasm": 15, "Lions Teeth": 30}},
-    "Divine Essence Crystal": {"materials": {"Void Essence": 13, "Pirates Code": 50}},
-    "Potion of the Hunter": {"materials": {"Arcane Starstone": 7, "Goblin Scraps": 50}},
-    "Essence of a Kraken": {"materials": {"Undying Crest": 12, "Goblin Scraps": 50}},
-    "Guardian's Soul": {"materials": {"Petrifying Gaze Crystal": 5, "Broken Dwarven Plate": 25}},
-    "Cosmic Finesse Essence": {"materials": {"Abyssal Scroll": 5, "Lions Teeth": 55}},
-    "Cosmic Crystal": {"materials": {"Abyssal Scroll": 8, "Venom Extract": 20}},
-    "Fallen Star Essence": {"materials": {"Basilisk Venom Vial": 3, "Raccoon Fur": 20}},
-    "Flash Velocity Essence": {"materials": {"Oceanic Essence": 20, "Snakes Head": 20}},
-    "Magma Vein Infusion": {"materials": {"Earth Elemental Essence": 6, "Goblin Crown": 15}},
-    "Mjolnir's Essence Crystal": {"materials": {"Void Essence": 12, "Goblin Crown": 15}},
-    "Neptune's Soul": {"materials": {"Water Elemental Essence": 45, "Snakes Head": 65}},
-    "Omnipotent Might Essence": {"materials": {"Essence of Shadows": 10, "Swamp Juice": 50}},
-    "Phoenix Ashes": {"materials": {"Chest of Scraps": 40, "Grimoire of Shadows": 2}},
-    "Potion of the Gods": {"materials": {"Goblin Crown": 5, "Moonblood Tincture": 1}},
-    "Primordial Timber Crystal": {"materials": {"Void Essence": 8, "Boar Tusk": 30}},
-    "Titanwood Crystal": {"materials": {"Stoneheart Core": 6, "Elk Antler": 15, "Moonblood Tincture": 1}},
-    "Dragon's Essence": {"materials": {"Ivory": 45, "Vial of Wraith Ectoplasm": 30}},
-    "Eternal Feast Essence Crystal": {"materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
-    "Cosmic Finesse Tonic": {"materials": {"Abyssal Scroll": 5, "Lions Teeth": 55}},
-    "Eternal Feast Tonic": {"materials": {"Goblin Totem": 100, "Arcane Starstone": 6}},
-    "Sun's Light": {"materials": {"Ruined Robes": 25, "Enigmatic Stone": 80}}
-};
+const ALCHEMY_ITEMS = DEFAULT_ALCHEMY_RECIPES;
 
 const IS_PRIORITY_ONLY = process.argv.includes('--priority');
 const IS_PETS_ONLY = process.argv.includes('--pets-only');
 const IS_WORLD_LOCATIONS_ONLY = process.argv.includes('--world-locations-only');
+const IS_CONQUEST_ONLY = process.argv.includes('--conquest-only');
 const IS_SCRAPE_ONCE = process.env.SCRAPE_ONCE === "true" || process.argv.includes('--once');
 const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 
@@ -164,7 +88,7 @@ async function safeWriteJson(filePath, data) {
 }
 
 // 3. Add drops from enemies/dungeons/bosses
-if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && staticData) {
+if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && !IS_CONQUEST_ONLY && staticData) {
     const addLootItems = (entityList) => {
         if (!entityList) return;
         for (const entity of entityList) {
@@ -193,7 +117,7 @@ if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && staticData) {
 // 4. Load ALL items from global database to ensure 100% coverage
 const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
 
-if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
+if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && !IS_CONQUEST_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
     try {
         const allItems = JSON.parse(fs.readFileSync(ALL_ITEMS_DB_FILE, 'utf8'));
         let addedCount = 0;
@@ -235,18 +159,25 @@ if (fs.existsSync(DATA_FILE)) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let lastApiRequestAt = 0;
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
-function getRetryDelayMs(response) {
+function getRetryDelayMs(response, attempt = 0) {
     const retryAfter = response.headers.get("retry-after");
-    if (!retryAfter) return API_DELAY_MS * 2;
+    const exponentialBackoffMs = API_DELAY_MS * (2 ** Math.max(1, attempt + 1));
+    const jitterMs = Math.floor(Math.random() * API_DELAY_MS);
+    if (!retryAfter) return Math.min(exponentialBackoffMs + jitterMs, API_MAX_BACKOFF_MS);
 
     const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds)) return Math.max(seconds * 1000, API_DELAY_MS);
+    if (Number.isFinite(seconds)) {
+        return Math.min(Math.max(seconds * 1000, exponentialBackoffMs) + jitterMs, API_MAX_BACKOFF_MS);
+    }
 
     const retryDate = new Date(retryAfter).getTime();
-    if (Number.isFinite(retryDate)) return Math.max(retryDate - Date.now(), API_DELAY_MS);
+    if (Number.isFinite(retryDate)) {
+        return Math.min(Math.max(retryDate - Date.now(), exponentialBackoffMs) + jitterMs, API_MAX_BACKOFF_MS);
+    }
 
-    return API_DELAY_MS * 2;
+    return Math.min(exponentialBackoffMs + jitterMs, API_MAX_BACKOFF_MS);
 }
 
 function asPositiveNumber(value) {
@@ -438,15 +369,29 @@ async function apiFetch(url, options = {}, attempt = 0) {
     }
     lastApiRequestAt = Date.now();
 
-    const response = await fetch(url, options);
-    if (response.status === 429 && attempt < 4) {
-        const delayMs = getRetryDelayMs(response);
-        console.warn(`Rate limited by API. Retrying in ${formatDuration(delayMs)}...`);
-        await sleep(delayMs);
-        return apiFetch(url, options, attempt + 1);
-    }
+    try {
+        const response = await fetch(url, options);
+        if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < API_MAX_RETRIES) {
+            const delayMs = getRetryDelayMs(response, attempt);
+            console.warn(`API returned ${response.status}. Retrying attempt ${attempt + 1}/${API_MAX_RETRIES} in ${formatDuration(delayMs)}...`);
+            await sleep(delayMs);
+            return apiFetch(url, options, attempt + 1);
+        }
 
-    return response;
+        if (response.status === 429) {
+            console.warn(`API rate limit persisted after ${API_MAX_RETRIES} retries.`);
+        }
+
+        return response;
+    } catch (e) {
+        if (attempt < API_MAX_RETRIES) {
+            const delayMs = Math.min(API_DELAY_MS * (2 ** Math.max(1, attempt + 1)), API_MAX_BACKOFF_MS);
+            console.warn(`API request failed (${e.message}). Retrying attempt ${attempt + 1}/${API_MAX_RETRIES} in ${formatDuration(delayMs)}...`);
+            await sleep(delayMs);
+            return apiFetch(url, options, attempt + 1);
+        }
+        throw e;
+    }
 }
 
 async function fetchLiveWorldBosses() {
@@ -841,6 +786,177 @@ async function fetchWorldLocations() {
     }
 }
 
+function addQuery(url, params) {
+    const nextUrl = new URL(url);
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null && value !== false && value !== "") {
+            nextUrl.searchParams.set(key, String(value));
+        }
+    }
+    return nextUrl.toString();
+}
+
+function normalizeApiNumber(value) {
+    if (typeof value === "number") return value;
+    if (typeof value !== "string") return 0;
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function compactConquestGuild(guild) {
+    if (!guild) return null;
+    return {
+        id: guild.id ?? null,
+        name: guild.name || "Unknown guild",
+        tag: guild.tag ?? null,
+        icon_url: guild.icon_url || null,
+        background_url: guild.background_url || null,
+    };
+}
+
+function compactConquestCharacter(character) {
+    if (!character) return null;
+    return {
+        hashed_id: character.hashed_id ?? null,
+        name: character.name || "Unknown",
+        total_level: character.total_level ?? null,
+        image_url: character.image_url || null,
+        background_url: character.background_url || null,
+    };
+}
+
+function summarizeConquestZone(zone, inspectedZone) {
+    const location = inspectedZone?.location || zone?.location || {};
+    const contributions = Array.isArray(inspectedZone?.contributions) ? inspectedZone.contributions : [];
+    const activeAssaults = Array.isArray(zone?.active_assaults) ? zone.active_assaults : [];
+    const leaderboard = Array.isArray(zone?.guilds) ? zone.guilds : [];
+    const contributionRows = contributions.map(row => ({
+        id: row.id ?? null,
+        guild_conquest_progress_id: row.guild_conquest_progress_id ?? null,
+        kills: normalizeApiNumber(row.kills),
+        experience: normalizeApiNumber(row.experience),
+        guild: compactConquestGuild(row.guild),
+        character: compactConquestCharacter(row.character),
+    }));
+
+    return {
+        id: location.id ?? null,
+        key: location.key || String(location.name || location.id || "unknown-zone").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+        name: location.name || "Unknown zone",
+        image_url: location.image_url || null,
+        status: zone?.status || inspectedZone?.status || null,
+        colour: zone?.colour || inspectedZone?.colour || null,
+        kills: normalizeApiNumber(zone?.kills ?? inspectedZone?.kills),
+        experience: normalizeApiNumber(zone?.experience ?? inspectedZone?.experience),
+        guilds_count: Number(zone?.guilds_count || leaderboard.length || 0),
+        active_assaults_count: activeAssaults.length,
+        leaderboard_count: leaderboard.length,
+        contribution_count: contributionRows.length,
+        active_assaults: activeAssaults.map(row => ({
+            kills: normalizeApiNumber(row.kills),
+            experience: normalizeApiNumber(row.experience),
+            guild: compactConquestGuild(row.guild),
+        })),
+        guild_leaderboard: leaderboard.slice(0, 25).map(row => ({
+            position: row.position ?? null,
+            kills: normalizeApiNumber(row.kills),
+            experience: normalizeApiNumber(row.experience),
+            guild: compactConquestGuild(row.guild),
+        })),
+        top_contributors: contributionRows
+            .sort((a, b) => b.experience - a.experience || b.kills - a.kills)
+            .slice(0, 50),
+    };
+}
+
+async function fetchJsonEndpoint(url, label) {
+    const res = await apiFetch(url, { headers });
+    if (!res.ok) {
+        console.error(`Failed to fetch ${label}: ${res.status}`);
+        return null;
+    }
+    return res.json();
+}
+
+async function fetchConquestData() {
+    try {
+        console.log("Fetching conquest data...");
+        const startedAt = new Date().toISOString();
+        let requestCount = 1;
+        const conquest = await fetchJsonEndpoint(`${BASE_URL}/guild/conquest/view`, "conquest view");
+        if (!conquest) return false;
+
+        const zones = Object.values(conquest.zones || {});
+        const inspectedByKey = new Map();
+        for (const zone of zones) {
+            if (!zone?.location?.id) continue;
+            const key = zone.location.key || String(zone.location.name || zone.location.id);
+            const inspected = await fetchJsonEndpoint(
+                addQuery(`${BASE_URL}/guild/conquest/zone/${zone.location.id}/inspect`, {}),
+                `conquest zone ${key}`,
+            );
+            requestCount += 1;
+            if (inspected?.zone) inspectedByKey.set(key, inspected.zone);
+        }
+
+        const zoneSummaries = zones.map(zone => {
+            const key = zone?.location?.key || String(zone?.location?.name || zone?.location?.id || "unknown-zone");
+            return summarizeConquestZone(zone, inspectedByKey.get(key));
+        });
+
+        const guildIds = new Set();
+        for (const zone of zoneSummaries) {
+            for (const row of zone.guild_leaderboard) if (row.guild?.id) guildIds.add(row.guild.id);
+            for (const row of zone.active_assaults) if (row.guild?.id) guildIds.add(row.guild.id);
+            for (const row of zone.top_contributors) if (row.guild?.id) guildIds.add(row.guild.id);
+        }
+
+        const topContributors = zoneSummaries
+            .flatMap(zone => zone.top_contributors.map(row => ({
+                ...row,
+                zone: {
+                    id: zone.id,
+                    key: zone.key,
+                    name: zone.name,
+                },
+            })))
+            .sort((a, b) => b.experience - a.experience || b.kills - a.kills)
+            .slice(0, 75);
+
+        const data = {
+            meta: {
+                generated_at: new Date().toISOString(),
+                fetched_at: startedAt,
+                season_number: null,
+                endpoint_updates_at: conquest.endpoint_updates_at ?? null,
+                rate_profile: "scraper",
+                delay_ms: API_DELAY_MS,
+                stats: {
+                    completed: requestCount,
+                    estimated_total: requestCount,
+                    elapsed_ms: Date.now() - new Date(startedAt).getTime(),
+                },
+                totals: {
+                    zones: zoneSummaries.length,
+                    active_assaults: zoneSummaries.reduce((sum, zone) => sum + zone.active_assaults_count, 0),
+                    leaderboard_rows: zoneSummaries.reduce((sum, zone) => sum + zone.leaderboard_count, 0),
+                    contribution_rows: zoneSummaries.reduce((sum, zone) => sum + zone.contribution_count, 0),
+                    guilds_observed: guildIds.size,
+                },
+            },
+            zones: zoneSummaries,
+            top_contributors: topContributors,
+        };
+
+        await safeWriteJson(CONQUEST_DATA_FILE, data);
+        console.log(`Conquest data updated: ${zoneSummaries.length} zones, ${requestCount} requests.`);
+        return true;
+    } catch (e) {
+        console.error("Error updating conquest data:", e.message);
+        return false;
+    }
+}
+
 function formatDuration(ms) {
     const totalSeconds = Math.max(0, Math.round(ms / 1000));
     const hours = Math.floor(totalSeconds / 3600);
@@ -957,12 +1073,20 @@ async function start() {
         return;
     }
 
+    if (IS_CONQUEST_ONLY) {
+        const ok = await fetchConquestData();
+        console.log("Conquest data scrape completed. Exiting.");
+        process.exitCode = ok ? 0 : 1;
+        return;
+    }
+
     while (true) {
         // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
         await fetchWorldLocations();
         await fetchLiveWorldBosses();
         await fetchLiveEnemies();
         await fetchLiveDungeons();
+        await fetchConquestData();
         await updatePetDatabaseExchange();
 
         const latestStaticData = loadJson(STATIC_DATA_FILE);

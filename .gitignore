@@ -37,6 +37,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare local deploy config
+cloudflare/profile-import-worker/wrangler.toml
+cloudflare/profile-import-worker/.wrangler/
+cloudflare/profile-import-worker/.wrangler-dry-run/
+cloudflare/profile-import-worker/node_modules/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -66,6 +72,7 @@ game_info/06_references/dropCalc/.env*
 maintenance_scripts/
 scratch/
 qa-artifacts/
+tmp-ui-sweep/
 
 # local draft handoff files
 github-profile-readme/

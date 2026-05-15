@@ -3,6 +3,10 @@ import path from "path";
 
 export const BASE_URL = "https://api.idle-mmo.com/v1";
 export const DEFAULT_DELAY_MS = 1050;
+export const RATE_PROFILES = {
+  isolated: 54,
+  shared: 40,
+};
 
 export function parseArgs(argv = process.argv.slice(2)) {
   const args = { _: [] };
@@ -89,6 +93,26 @@ export function writeJson(filePath, data) {
   const tempFile = `${filePath}.tmp`;
   fs.writeFileSync(tempFile, `${JSON.stringify(data, null, 2)}\n`, "utf8");
   fs.renameSync(tempFile, filePath);
+}
+
+export function delayMsForRequestsPerMinute(requestsPerMinute) {
+  const parsed = Number(requestsPerMinute);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_DELAY_MS;
+  return Math.ceil(60000 / Math.min(parsed, 59));
+}
+
+export function resolveRateLimitDelayMs({ explicitDelayMs, explicitRequestsPerMinute, profile } = {}) {
+  if (explicitDelayMs !== undefined) {
+    const parsedDelay = Number(explicitDelayMs);
+    if (Number.isFinite(parsedDelay) && parsedDelay > 0) return Math.ceil(parsedDelay);
+  }
+
+  if (explicitRequestsPerMinute !== undefined) {
+    return delayMsForRequestsPerMinute(explicitRequestsPerMinute);
+  }
+
+  const normalizedProfile = String(profile || process.env.IDLEMMO_RATE_PROFILE || "shared").toLowerCase();
+  return delayMsForRequestsPerMinute(RATE_PROFILES[normalizedProfile] || RATE_PROFILES.shared);
 }
 
 export function responseCount(data) {

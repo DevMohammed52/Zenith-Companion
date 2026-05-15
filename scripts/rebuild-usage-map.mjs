@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { normalizeProductName, getRecipeUses } from '../src/lib/logic-core.mjs';
+import { DEFAULT_ALCHEMY_RECIPES } from '../src/lib/default-alchemy-recipes.mjs';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
@@ -179,6 +180,39 @@ async function rebuild() {
         quantity: d.quantity
       }));
     }
+  });
+
+  // 2b. Map default Alchemy crafts. These are learned by every character and do
+  // not have physical recipe items in the item API, so they need explicit links.
+  Object.entries(DEFAULT_ALCHEMY_RECIPES).forEach(([productName, recipe]) => {
+    const productEntry = getEntry(productName);
+    if (productEntry.produced_from) return;
+
+    const mats = [
+      ...Object.entries(recipe.materials || {}).map(([name, amount]) => ({ name, amount })),
+      ...(recipe.vial ? [{ name: recipe.vial, amount: 1 }] : []),
+    ];
+
+    productEntry.produced_from = {
+      source: 'DEFAULT_ALCHEMY',
+      skill: 'ALCHEMY',
+      level: recipe.level || 1,
+      recipe_name: null,
+      recipe_label: 'Default Alchemy craft',
+      mats,
+    };
+
+    mats.forEach((mat) => {
+      const matEntry = getEntry(mat.name);
+      if (!matEntry.required_for.find(r => r.name === productName && r.type === 'ALCHEMY')) {
+        matEntry.required_for.push({
+          type: 'ALCHEMY',
+          name: productName,
+          amount: mat.amount,
+          source: 'DEFAULT_ALCHEMY',
+        });
+      }
+    });
   });
 
   // 3. Build Search Index

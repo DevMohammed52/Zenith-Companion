@@ -60,6 +60,12 @@
         "type": "FORGE",
         "name": "Whisperwind Bow Recipe",
         "amount": 20
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Battle Potion",
+        "amount": 2,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -244,6 +250,12 @@
         "type": "FORGE",
         "name": "Wildwood Chopper Recipe",
         "amount": 3
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Lumberjack Essence Crystal",
+        "amount": 6,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -337,6 +349,12 @@
         "type": "FORGE",
         "name": "Whisperwind Bow Recipe",
         "amount": 10
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Smelting Essence Crystal",
+        "amount": 3,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -450,6 +468,12 @@
         "type": "FORGE",
         "name": "Windrider Striders Recipe",
         "amount": 20
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Chefs Essence Crystal",
+        "amount": 2,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -530,6 +554,12 @@
         "type": "FORGE",
         "name": "Whisperwind Bow Recipe",
         "amount": 10
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Miners Essence Crystal",
+        "amount": 2,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -685,6 +715,12 @@
         "type": "ALCHEMY",
         "name": "Yggdrasil Nectar Recipe (Untradable)",
         "amount": 1
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Dungeon Potion",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -815,6 +851,12 @@
         "type": "FORGE",
         "name": "Windrider Recipe",
         "amount": 10
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Anglers Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -938,6 +980,12 @@
         "type": "FORGE",
         "name": "Stormcaster Recipe",
         "amount": 20
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Timberfall Essence Crystal",
+        "amount": 5,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -1061,6 +1109,12 @@
         "type": "FORGE",
         "name": "Widow's Kiss Recipe",
         "amount": 41
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Deepsea Essence Crystal",
+        "amount": 10,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -1369,6 +1423,12 @@
         "type": "FORGE",
         "name": "Warfists Recipe",
         "amount": 67
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Rocksplitter Essence Crystal",
+        "amount": 5,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -1502,6 +1562,18 @@
         "type": "FORGE",
         "name": "Warfists Recipe",
         "amount": 100
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Hammerfell Essence Crystal",
+        "amount": 12,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Flavorburst Essence Crystal",
+        "amount": 5,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -1625,6 +1697,12 @@
         "type": "FORGE",
         "name": "Windrider Striders Recipe",
         "amount": 5
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Flavorburst Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -3821,6 +3899,12 @@
         "type": "FORGE",
         "name": "Whisperwind Boots Recipe",
         "amount": 100
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Dungeon Master's Tonic",
+        "amount": 11,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -25145,7 +25229,24 @@
   "Battle Potion": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Lucky Rabbit Foot",
+          "amount": 2
+        },
+        {
+          "name": "Cheap Vial",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Battle Potion (Untradable)": {
     "dropped_by": [],
@@ -25280,12 +25381,46 @@
   "Dungeon Master's Tonic": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Lions Teeth",
+          "amount": 11
+        },
+        {
+          "name": "Elemental Vial",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Dungeon Potion": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Goblin Crown",
+          "amount": 1
+        },
+        {
+          "name": "Cheap Vial",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Dungeon Potion (Untradable)": {
     "dropped_by": [],
@@ -25674,7 +25809,24 @@
   "Anglers Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 4,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Boar Tusk",
+          "amount": 1
+        },
+        {
+          "name": "Cheap Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Bastion Essence": {
     "dropped_by": [],
@@ -25699,7 +25851,24 @@
   "Chefs Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 6,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Goblin Scraps",
+          "amount": 2
+        },
+        {
+          "name": "Cheap Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cosmic Barrier": {
     "dropped_by": [],
@@ -25791,7 +25960,24 @@
   "Deepsea Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 13,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Ruined Robes",
+          "amount": 10
+        },
+        {
+          "name": "Tarnished Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Divine Essence Crystal": {
     "dropped_by": [],
@@ -25981,7 +26167,28 @@
   "Flavorburst Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 17,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Snakes Head",
+          "amount": 5
+        },
+        {
+          "name": "Venom Extract",
+          "amount": 1
+        },
+        {
+          "name": "Tarnished Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Fortified Essence": {
     "dropped_by": [],
@@ -26050,7 +26257,24 @@
   "Hammerfell Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Snakes Head",
+          "amount": 12
+        },
+        {
+          "name": "Tarnished Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Herculean Strength Essence": {
     "dropped_by": [],
@@ -26147,7 +26371,24 @@
   "Lumberjack Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 2,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Goblin Totem",
+          "amount": 6
+        },
+        {
+          "name": "Cheap Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Magma Vein Infusion": {
     "dropped_by": [],
@@ -26201,7 +26442,24 @@
   "Miners Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 3,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Ducks Mouth",
+          "amount": 2
+        },
+        {
+          "name": "Cheap Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Mjolnir's Essence Crystal": {
     "dropped_by": [],
@@ -26445,12 +26703,46 @@
   "Rocksplitter Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 12,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Cursed Talisman",
+          "amount": 5
+        },
+        {
+          "name": "Tarnished Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Smelting Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Goblin Pouch",
+          "amount": 3
+        },
+        {
+          "name": "Cheap Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Spicefinder Essence Crystal": {
     "dropped_by": [],
@@ -26528,7 +26820,24 @@
   "Timberfall Essence Crystal": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_ALCHEMY",
+      "skill": "ALCHEMY",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Alchemy craft",
+      "mats": [
+        {
+          "name": "Deer Antler",
+          "amount": 5
+        },
+        {
+          "name": "Tarnished Crystal",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Titan Power Essence": {
     "dropped_by": [],
@@ -28029,7 +28338,20 @@
   },
   "Cheap Vial": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "ALCHEMY",
+        "name": "Battle Potion",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Dungeon Potion",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      }
+    ],
     "shops": []
   },
   "Eldritch Vial": {
@@ -28140,6 +28462,12 @@
         "type": "ALCHEMY",
         "name": "Vortex Brew Recipe (Untradable)",
         "amount": 1
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Dungeon Master's Tonic",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
@@ -28323,7 +28651,38 @@
   },
   "Cheap Crystal": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "ALCHEMY",
+        "name": "Lumberjack Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Miners Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Anglers Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Smelting Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Chefs Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      }
+    ],
     "shops": []
   },
   "Eldritch Crystal": {
@@ -28611,6 +28970,36 @@
         "type": "ALCHEMY",
         "name": "Herculean Strength Elixir Recipe (Untradable)",
         "amount": 1
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Timberfall Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Rocksplitter Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Deepsea Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Hammerfell Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
+      },
+      {
+        "type": "ALCHEMY",
+        "name": "Flavorburst Essence Crystal",
+        "amount": 1,
+        "source": "DEFAULT_ALCHEMY"
       }
     ],
     "shops": []
