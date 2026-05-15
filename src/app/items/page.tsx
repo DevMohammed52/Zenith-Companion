@@ -23,6 +23,7 @@ import {
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
 import { getLoreForItem } from '@/data/lore';
+import { formatItemTypeLabel, isForcedUntradableItem, isLegacyItem } from '@/lib/item-display';
 import {
   buildDropLocationOptions,
   getDropSourceLocation,
@@ -42,7 +43,7 @@ interface SearchIndexItem {
 }
 
 type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage' | 'requiredLevel';
-type SignalFilter = 'ALL' | 'MARKET' | 'PRICE_SWINGS' | 'VENDOR' | 'UNTRADABLE' | 'CRAFTABLE' | 'PRODUCED' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
+type SignalFilter = 'ALL' | 'MARKET' | 'PRICE_SWINGS' | 'VENDOR' | 'UNTRADABLE' | 'LEGACY' | 'CRAFTABLE' | 'PRODUCED' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
 type ViewMode = 'table' | 'cards';
 type FilterOption<T extends string> = { value: T; label: string };
 
@@ -66,7 +67,9 @@ type EnrichedItem = SearchIndexItem & {
   merchantBuyPrice: number;
   tradeable: boolean;
   hasMarket: boolean;
+  isLegacy: boolean;
   hasRecipe: boolean;
+  hasDefaultCraft: boolean;
   isSecondaryProduction: boolean;
   hasStats: boolean;
   hasEffects: boolean;
@@ -80,6 +83,8 @@ type EnrichedItem = SearchIndexItem & {
   droppedByCount: number;
   usedInCount: number;
   usageScore: number;
+  searchText: string;
+  searchWords: string[];
 };
 
 type GatheringActionSource = {
@@ -259,6 +264,7 @@ const SIGNAL_OPTIONS: FilterOption<SignalFilter>[] = [
   { value: 'PRICE_SWINGS', label: 'Price swings' },
   { value: 'VENDOR', label: 'Merchant source' },
   { value: 'UNTRADABLE', label: 'Untradable' },
+  { value: 'LEGACY', label: 'Legacy / old' },
   { value: 'CRAFTABLE', label: 'Craftable' },
   { value: 'PRODUCED', label: 'Produced' },
   { value: 'USED', label: 'Used in recipes' },
@@ -302,17 +308,91 @@ function getGatheringActionSource(itemName: string): GatheringActionSource | nul
   return GATHERING_ACTION_ITEMS[itemName.trim().toLowerCase()] || null;
 }
 
+function isDefaultAlchemyCraft(producedFrom: unknown) {
+  return Boolean(
+    producedFrom
+    && typeof producedFrom === 'object'
+    && 'source' in producedFrom
+    && producedFrom.source === 'DEFAULT_ALCHEMY',
+  );
+}
+
+function tokenizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean);
+}
+
+function buildItemSearchText(item: {
+  name: string;
+  type: string;
+  quality: string;
+  description: string;
+  requirementsText: string;
+  dropLocations: string[];
+  requiredLevel: number;
+  hasFarmableSource: boolean;
+  hasRecipe: boolean;
+  hasDefaultCraft: boolean;
+  isSecondaryProduction: boolean;
+  hasMarket: boolean;
+  marketConfidence: MarketConfidence;
+  liquidity: MarketLiquidityInfo;
+  tradeable: boolean;
+  isLegacy: boolean;
+  merchantBuyPrice: number;
+  hasStats: boolean;
+  hasEffects: boolean;
+  hasLore: boolean;
+}) {
+  return [
+    item.name,
+    item.type,
+    formatLabel(item.type),
+    item.quality,
+    item.description,
+    item.requirementsText,
+    item.dropLocations.join(' '),
+    item.hasFarmableSource ? 'farmable gathered resource map location skill action construction' : '',
+    item.requiredLevel ? `level ${item.requiredLevel}` : '',
+    item.hasRecipe ? 'craftable recipe' : '',
+    item.hasDefaultCraft ? 'default alchemy craft learned by default no recipe item required' : '',
+    item.isSecondaryProduction ? 'produced secondary production processed output bar food construction material' : '',
+    item.hasMarket ? 'market listed tradeable' : '',
+    item.marketConfidence.label,
+    item.liquidity.label,
+    item.liquidity.hasPriceSwings ? 'price swings wide price spread unstable sale prices recent trades' : '',
+    item.liquidity.hasVolumeSwings ? 'volume swings bulk sale unusual sales outlier' : '',
+    !item.tradeable ? 'untradable non tradeable' : '',
+    item.isLegacy ? 'legacy deprecated old unused retired archive' : '',
+    item.merchantBuyPrice > 0 ? 'merchant source merchant item vendor buy vendor linked' : '',
+    item.hasStats ? 'stats equipment gear' : '',
+    item.hasEffects ? 'effects buff potion essence' : '',
+    item.hasLore ? 'lore thread valaron archive' : '',
+  ].join(' ').toLowerCase();
+}
+
+function matchesSearchToken(item: EnrichedItem, token: string) {
+  if (token.length <= 3) {
+    return item.searchWords.some((word) => word.startsWith(token));
+  }
+  return item.searchWords.some((word) => word.startsWith(token)) || item.name.toLowerCase().includes(token);
+}
+
+function getMarketWarningLabel(item: EnrichedItem) {
+  if (item.liquidity.hasVolumeSwings && item.liquidity.hasPriceSwings) return 'Volume and price swings';
+  if (item.liquidity.hasVolumeSwings) return 'Volume swings';
+  if (item.liquidity.hasPriceSwings) return 'Price swings';
+  return '';
+}
+
 const formatGold = (value: number) => {
   if (!value) return '-';
   return `${value.toLocaleString(undefined, { maximumFractionDigits: value < 100 ? 2 : 0 })}g`;
 };
 
-const TYPE_LABEL_OVERRIDES: Record<string, string> = {
-  CHEST: 'Loot Chests',
-  CHESTPLATE: 'Chest Armor',
-};
-
-const formatLabel = (value: string) => TYPE_LABEL_OVERRIDES[value] || value.replace(/_/g, ' ');
+const formatLabel = formatItemTypeLabel;
 const ITEM_DB_VIEW_STORAGE_KEY = 'zenith_items_view_mode';
 
 function ItemsArchiveContent() {
@@ -328,9 +408,9 @@ function ItemsArchiveContent() {
   const [sortBy, setSortBy] = useState<SortKey>('volume');
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewModeState] = useState<ViewMode>('table');
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [visibleCount, setVisibleCount] = useState(150);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const { openItem } = useItemModal();
   const { marketData, allItemsDb, loading } = useData();
 
@@ -339,6 +419,14 @@ function ItemsArchiveContent() {
       const stored = localStorage.getItem(ITEM_DB_VIEW_STORAGE_KEY);
       if (stored === 'table' || stored === 'cards') setViewModeState(stored);
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 820px)');
+    const updateViewportMode = () => setIsCompactViewport(media.matches);
+    updateViewportMode();
+    media.addEventListener('change', updateViewportMode);
+    return () => media.removeEventListener('change', updateViewportMode);
   }, []);
 
   const setViewMode = (next: ViewMode) => {
@@ -381,13 +469,8 @@ function ItemsArchiveContent() {
   }, [searchParams, openItem]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 150);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
     setVisibleCount(150);
-  }, [debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc, hideNonMarket]);
+  }, [searchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc, hideNonMarket]);
 
   const enrichedItems = useMemo<EnrichedItem[]>(() => {
     return index.map(item => {
@@ -401,6 +484,7 @@ function ItemsArchiveContent() {
       const resourceLocations = getResourceLocationsForItem(item.name);
       const gatheringActionSource = getGatheringActionSource(item.name);
       const hasFarmableSource = resourceLocations.length > 0 || Boolean(gatheringActionSource);
+      const hasDefaultCraft = isDefaultAlchemyCraft(usage.produced_from);
       const dropLocations = Array.from(new Set([
         ...dropLocationRefs.map(location => location.name).filter(Boolean),
         ...resourceLocations.map(location => location.name),
@@ -415,11 +499,13 @@ function ItemsArchiveContent() {
       const usedInCount = Array.isArray(usage.required_for) ? usage.required_for.length : 0;
       const merchantBuyPrice = getMerchantBuyPrice(item.name);
       const vendorPrice = Number(market.vendor_price || full.vendor_price || 0);
-      const marketPrice = getSafeMarketValue(market);
+      const rawMarketPrice = getSafeMarketValue(market);
       const marketVolume = Number(market.vol_3 || 0);
       const description = full.description || '';
-      const tradeable = Boolean(full.is_tradeable ?? marketPrice > 0)
+      const tradeable = !isForcedUntradableItem(item.name)
+        && Boolean(full.is_tradeable ?? rawMarketPrice > 0)
         && !descriptionMarksNonTradeable(description);
+      const marketPrice = tradeable ? rawMarketPrice : 0;
       const liquidity = getMarketLiquidity({ ...market, is_tradeable: tradeable });
       const marketConfidence = getMarketConfidence({
         name: item.name,
@@ -434,8 +520,14 @@ function ItemsArchiveContent() {
       const requiredLevel = getRequiredLevel(full);
       const isSecondaryProduction = SECONDARY_PRODUCTION_TYPES.has(item.type)
         || (item.type === 'CONSTRUCTION_MATERIAL' && CONSTRUCTION_OUTPUT_PATTERN.test(item.name));
+      const isLegacy = isLegacyItem({
+        name: item.name,
+        type: item.type,
+        tradeable,
+        usedInCount,
+      });
 
-      return {
+      const enriched = {
         ...item,
         description,
         marketPrice,
@@ -447,9 +539,11 @@ function ItemsArchiveContent() {
         vendorPrice,
         merchantBuyPrice,
         tradeable,
-        hasMarket: marketPrice > 0,
+        hasMarket: tradeable && marketPrice > 0,
+        isLegacy,
         marketConfidence,
         hasRecipe: Boolean(full.recipe || usage.produced_from),
+        hasDefaultCraft,
         isSecondaryProduction,
         hasStats: Boolean(full.stats && Object.keys(full.stats).length > 0),
         hasEffects: Boolean(full.effects && (Array.isArray(full.effects) ? full.effects.length > 0 : Object.keys(full.effects).length > 0)),
@@ -463,6 +557,12 @@ function ItemsArchiveContent() {
         droppedByCount,
         usedInCount,
         usageScore: droppedByCount + usedInCount + resourceLocations.length + (gatheringActionSource ? 1 : 0) + (usage.produced_from ? 1 : 0),
+      };
+      const searchText = buildItemSearchText(enriched);
+      return {
+        ...enriched,
+        searchText,
+        searchWords: tokenizeSearchText(searchText),
       };
     });
   }, [index, allItemsDb, marketData, usageMap]);
@@ -500,45 +600,26 @@ function ItemsArchiveContent() {
   }, [locationOptions, selectedLocation]);
 
   const filteredItems = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
+    const q = searchTerm.trim().toLowerCase();
     const tokens = q.split(/\s+/).filter(Boolean);
 
     const filtered = enrichedItems.filter(item => {
-      const haystack = [
-        item.name,
-        item.type,
-        item.quality,
-        item.description,
-        item.requirementsText,
-        item.dropLocations.join(' '),
-        item.hasFarmableSource ? 'farmable gathered resource map location skill action construction' : '',
-        item.requiredLevel ? `level ${item.requiredLevel}` : '',
-        item.hasRecipe ? 'craftable recipe' : '',
-        item.isSecondaryProduction ? 'produced secondary production processed output bar food construction material' : '',
-        item.hasMarket ? 'market listed tradeable' : '',
-        item.marketConfidence.label.toLowerCase(),
-        item.liquidity.hasPriceSwings ? 'price swings wide price spread unstable sale prices recent trades' : '',
-        !item.tradeable ? 'untradable non tradeable' : '',
-        item.merchantBuyPrice > 0 ? 'merchant source merchant item vendor buy vendor linked' : '',
-        item.hasStats ? 'stats equipment gear' : '',
-        item.hasEffects ? 'effects buff potion essence' : '',
-        item.hasLore ? 'lore thread valaron archive' : '',
-      ].join(' ').toLowerCase();
-
-      const matchSearch = tokens.length === 0 || tokens.every(token => haystack.includes(token));
+      const matchSearch = tokens.length === 0 || tokens.every(token => matchesSearchToken(item, token));
       const matchType = selectedType === 'ALL' || item.type === selectedType;
       const matchQuality = selectedQuality === 'ALL' || item.quality === selectedQuality;
       const matchLocation = selectedLocation === 'ALL' || item.dropLocationKeys.includes(selectedLocation);
       const matchMarketVisibility = !hideNonMarket
         || item.hasMarket
         || (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0)
-        || (selectedSignal === 'UNTRADABLE' && !item.tradeable);
+        || (selectedSignal === 'UNTRADABLE' && !item.tradeable)
+        || (selectedSignal === 'LEGACY' && item.isLegacy);
       const matchSignal =
         selectedSignal === 'ALL' ||
         (selectedSignal === 'MARKET' && item.hasMarket) ||
         (selectedSignal === 'PRICE_SWINGS' && item.liquidity.hasPriceSwings) ||
         (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0) ||
         (selectedSignal === 'UNTRADABLE' && !item.tradeable) ||
+        (selectedSignal === 'LEGACY' && item.isLegacy) ||
         (selectedSignal === 'CRAFTABLE' && item.hasRecipe) ||
         (selectedSignal === 'PRODUCED' && item.isSecondaryProduction) ||
         (selectedSignal === 'USED' && item.usedInCount > 0) ||
@@ -552,6 +633,10 @@ function ItemsArchiveContent() {
     });
 
     return filtered.sort((a, b) => {
+      if (selectedSignal !== 'LEGACY' && a.isLegacy !== b.isLegacy) {
+        return a.isLegacy ? 1 : -1;
+      }
+
       let valA: string | number;
       let valB: string | number;
 
@@ -597,9 +682,11 @@ function ItemsArchiveContent() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [enrichedItems, debouncedSearch, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
+  }, [enrichedItems, searchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
 
   const visibleItems = filteredItems.slice(0, visibleCount);
+  const showCardLayout = isCompactViewport || viewMode === 'cards';
+  const showTableLayout = !isCompactViewport && viewMode === 'table';
 
   const stats = useMemo(() => {
     const marketListed = enrichedItems.filter(i => i.hasMarket).length;
@@ -636,19 +723,21 @@ function ItemsArchiveContent() {
 
   const renderBadges = (item: EnrichedItem) => (
     <div className="item-badges">
-      {(item.hasMarket || item.tradeable) && (
+      {item.tradeable && (
         <span className={`badge market ${item.liquidity.tone}`} title={item.liquidity.note}>
           <ShoppingCart size={12} aria-hidden="true" /> <span>{item.liquidity.label}</span>
         </span>
       )}
-      <span className={`badge confidence ${item.marketConfidence.tone}`} title={item.marketConfidence.note}>
-        {item.marketConfidence.label === 'Likely market'
-          ? <Check size={12} aria-hidden="true" />
-          : item.marketConfidence.label === 'Vendor safer'
-            ? <Store size={12} aria-hidden="true" />
-            : <AlertTriangle size={12} aria-hidden="true" />}
-        <span>{item.marketConfidence.label}</span>
-      </span>
+      {item.tradeable && (
+        <span className={`badge confidence ${item.marketConfidence.tone}`} title={item.marketConfidence.note}>
+          {item.marketConfidence.label === 'Likely market'
+            ? <Check size={12} aria-hidden="true" />
+            : item.marketConfidence.label === 'Vendor safer'
+              ? <Store size={12} aria-hidden="true" />
+              : <AlertTriangle size={12} aria-hidden="true" />}
+          <span>{item.marketConfidence.label}</span>
+        </span>
+      )}
       {item.liquidity.hasVolumeSwings && (
         <span className="badge warning" title="Sold volume has unusual bulk-sale days. This is a volume warning, not a price-stability label.">
           <AlertTriangle size={12} aria-hidden="true" /> <span>Volume swings</span>
@@ -661,7 +750,16 @@ function ItemsArchiveContent() {
       )}
       {item.merchantBuyPrice > 0 && <span className="badge vendor" title={`Merchant purchase price: ${formatGold(item.merchantBuyPrice)}`}><Store size={12} aria-hidden="true" /> <span>Merchant item</span></span>}
       {!item.tradeable && <span className="badge untradable"><LockKeyhole size={12} aria-hidden="true" /> <span>Untradable</span></span>}
-      {item.hasRecipe && <span className="badge craft"><Hammer size={12} aria-hidden="true" /> <span>Craft</span></span>}
+      {item.isLegacy && (
+        <span className="badge legacy" title="Old or retired item data. It is kept searchable, but sorted below active items by default.">
+          <Package size={12} aria-hidden="true" /> <span>Legacy</span>
+        </span>
+      )}
+      {item.hasRecipe && (
+        <span className="badge craft" title={item.hasDefaultCraft ? 'Learned by default; no recipe item required.' : 'Crafted from a recipe or production source.'}>
+          <Hammer size={12} aria-hidden="true" /> <span>{item.hasDefaultCraft ? 'Default craft' : 'Craft'}</span>
+        </span>
+      )}
       {item.isSecondaryProduction && <span className="badge produced"><Boxes size={12} aria-hidden="true" /> <span>Produced</span></span>}
       {item.hasFarmableSource && (
         <span className="badge source" title={item.gatheringActionSource?.note || 'Mapped gathered resource location.'}>
@@ -710,34 +808,27 @@ function ItemsArchiveContent() {
         </div>
       </section>
 
-      <section className="db-note" aria-label="Market and tag guidance">
+      <details className="item-help">
+        <summary>
           <ShoppingCart size={16} />
-          <span>
-          Tags describe what data exists for an item. Market confidence labels separate likely public market exits from thin, stale, or vendor-safer paths; private buyers, off-app trades, or bulk undercutting can still change the real exit.
-          </span>
-      </section>
-
-      <section className="tag-guide" aria-label="Item tag definitions">
-        <span><strong>No sales</strong> means tradeable, but no usable recent sale volume.</span>
-        <span><strong>Vendor safer</strong> means vendor value is a clearer exit than a thin or unstable market.</span>
-        <span><strong>Merchant item</strong> means bought from an NPC merchant, not player-market liquidity.</span>
-        <span><strong>Untradable</strong> means the item is not a market exit path.</span>
-      </section>
+          <span>Market labels</span>
+        </summary>
+        <div className="item-help-body" aria-label="Item tag definitions">
+          <span><strong>No sales</strong> means tradeable, but no usable recent sale volume.</span>
+          <span><strong>Vendor safer</strong> means vendor value is clearer than a thin market.</span>
+          <span><strong>Merchant item</strong> means bought from an NPC merchant.</span>
+          <span><strong>Untradable</strong> means the item is not a market exit path.</span>
+        </div>
+      </details>
 
       <section className="db-controls">
         <div className="control-group search-control">
           <label className="control-label">Search</label>
-          <div className="search-shell">
-            <Search size={15} />
-            <input
-              aria-label="Search items"
-              type="text"
-              className="control-input"
-              placeholder="Name, type, quality, effects, recipe..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <ItemSearchBox
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search items..."
+          />
         </div>
 
         <div className="control-group">
@@ -771,7 +862,7 @@ function ItemsArchiveContent() {
         </div>
 
         <div className="control-group">
-          <label className="control-label">Source Location</label>
+          <label className="control-label">Source</label>
           <ItemFilterPicker
             ariaLabel="Item source location filter"
             options={locationOptions}
@@ -800,12 +891,12 @@ function ItemsArchiveContent() {
           aria-pressed={hideNonMarket}
           onClick={() => setHideNonMarket(prev => !prev)}
         >
-          <ShoppingCart size={15} /> Market only
+          <ShoppingCart size={15} /> Market
         </button>
 
         <div className="view-toggle" aria-label="View mode">
           <button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={() => setViewMode('table')}>Table</button>
-          <button type="button" className={viewMode === 'cards' ? 'active' : ''} onClick={() => setViewMode('cards')}>Cards</button>
+          <button type="button" className={viewMode === 'cards' ? 'active' : ''} onClick={() => setViewMode('cards')}>Grid</button>
         </div>
       </section>
 
@@ -849,7 +940,8 @@ function ItemsArchiveContent() {
             <span>Sorted by {SORT_OPTIONS.find(o => o.value === sortBy)?.label}</span>
           </div>
 
-          <div className={viewMode === 'table' ? 'desktop-table-shell' : 'desktop-table-shell hidden'}>
+          {showTableLayout && (
+          <div className="desktop-table-shell">
             <table className="items-table">
               <thead>
                 <tr>
@@ -881,7 +973,7 @@ function ItemsArchiveContent() {
                   >
                     <td className="item-cell">
                       <div className="item-cell-inner">
-                        <img src={item.image} alt="" />
+                        <img src={item.image} alt="" loading="lazy" decoding="async" />
                         <div className="item-copy">
                           <strong>{item.name}</strong>
                           <small>{item.description || 'No description available'}</small>
@@ -895,8 +987,7 @@ function ItemsArchiveContent() {
                     <td className="mono">{formatGold(item.vendorPrice)}</td>
                     <td className={`mono liquidity-volume ${item.liquidity.tone}`} title={item.stableMarketVolume !== item.marketVolume || item.liquidity.hasPriceSwings ? item.liquidity.note : `Raw 3-day volume: ${item.marketVolume.toLocaleString()}`}>
                       {item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}
-                      {item.liquidity.hasVolumeSwings ? <span className="volume-warning-dot" aria-label="Volume swings">!</span> : null}
-                      {item.liquidity.hasPriceSwings ? <span className="volume-warning-dot" aria-label="Price swings">!</span> : null}
+                      {getMarketWarningLabel(item) ? <span className="volume-warning-dot" aria-label={getMarketWarningLabel(item)}>!</span> : null}
                     </td>
                     <td className="mono">{item.usageScore ? item.usageScore.toLocaleString() : '-'}</td>
                     <td className="signals-cell">{renderBadges(item)}</td>
@@ -905,12 +996,14 @@ function ItemsArchiveContent() {
               </tbody>
             </table>
           </div>
+          )}
 
-          <div className={viewMode === 'cards' ? 'item-grid forced' : 'item-grid'}>
+          {showCardLayout && (
+          <div className="item-grid forced">
             {visibleItems.map(item => (
               <button aria-label={`Open ${item.name} item details`} key={item.id} type="button" onClick={() => open(item)} className="item-card">
                 <div className="quality-strip" style={{ '--quality-color': QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD } as React.CSSProperties} />
-                <img src={item.image} alt="" />
+                <img src={item.image} alt="" loading="lazy" decoding="async" />
                 <div className="item-card-body">
                   <div className="card-topline">
                     <span className="card-item-name">{item.name}</span>
@@ -923,7 +1016,7 @@ function ItemsArchiveContent() {
                   <div className="card-stats">
                     <span><small>Market</small><strong title={item.marketConfidence.note}>{formatGold(item.marketPrice)}</strong></span>
                     <span><small>Level</small><strong title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</strong></span>
-                    <span><small>Stable Vol</small><strong className={`liquidity-volume ${item.liquidity.tone}`}>{item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}{item.liquidity.hasVolumeSwings ? <span className="volume-warning-dot" aria-label="Volume swings">!</span> : null}{item.liquidity.hasPriceSwings ? <span className="volume-warning-dot" aria-label="Price swings">!</span> : null}</strong></span>
+                    <span><small>Stable Vol</small><strong className={`liquidity-volume ${item.liquidity.tone}`}>{item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '-'}{getMarketWarningLabel(item) ? <span className="volume-warning-dot" aria-label={getMarketWarningLabel(item)}>!</span> : null}</strong></span>
                     <span><small>Usage</small><strong>{item.usageScore || '-'}</strong></span>
                   </div>
                   {item.resourceLocations.length > 0 && (
@@ -943,6 +1036,7 @@ function ItemsArchiveContent() {
               </button>
             ))}
           </div>
+          )}
 
           {visibleItems.length < filteredItems.length && (
             <button type="button" className="load-more" onClick={() => setVisibleCount(count => count + 150)}>
@@ -959,15 +1053,16 @@ function ItemsArchiveContent() {
         }
         .db-summary {
           display: grid;
-          gap: 0.75rem;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          margin-bottom: 1rem;
+          gap: 0.55rem;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          margin-bottom: 0.7rem;
         }
         .db-summary div {
           background: rgba(255,255,255,0.018);
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
-          padding: 0.9rem 1rem;
+          min-height: 70px;
+          padding: 0.68rem 0.8rem;
         }
         .summary-label {
           color: var(--text-muted);
@@ -981,45 +1076,52 @@ function ItemsArchiveContent() {
           color: #fff;
           display: block;
           font-family: var(--font-mono);
-          font-size: 1.35rem;
-          margin-top: 0.35rem;
+          font-size: 1.12rem;
+          margin-top: 0.25rem;
         }
-        .db-note {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.65rem;
-          border: 1px solid rgba(56,189,248,0.22);
-          background: rgba(56,189,248,0.07);
+        .item-help {
+          background: rgba(56,189,248,0.045);
+          border: 1px solid rgba(56,189,248,0.18);
           border-radius: 8px;
           color: var(--text-muted);
-          font-size: 0.86rem;
-          font-weight: 650;
-          line-height: 1.45;
-          margin-bottom: 1rem;
-          padding: 0.8rem 0.95rem;
+          margin: 0 0 0.7rem;
         }
-        .db-note svg {
+        .item-help summary {
+          align-items: center;
+          cursor: pointer;
+          display: flex;
+          gap: 0.5rem;
+          font-size: 0.8rem;
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          list-style: none;
+          padding: 0.58rem 0.75rem;
+          text-transform: uppercase;
+        }
+        .item-help summary::-webkit-details-marker {
+          display: none;
+        }
+        .item-help summary svg {
           color: var(--text-accent);
           flex: 0 0 auto;
-          margin-top: 0.1rem;
         }
-        .tag-guide {
+        .item-help-body {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.5rem;
-          margin: -0.35rem 0 1rem;
+          gap: 0.45rem;
+          padding: 0 0.75rem 0.7rem;
         }
-        .tag-guide span {
+        .item-help-body span {
           background: rgba(255,255,255,0.035);
           border: 1px solid var(--border-subtle);
           border-radius: 999px;
           color: var(--text-muted);
-          font-size: 0.75rem;
+          font-size: 0.72rem;
           font-weight: 700;
           line-height: 1.25;
-          padding: 0.42rem 0.65rem;
+          padding: 0.38rem 0.58rem;
         }
-        .tag-guide strong {
+        .item-help-body strong {
           color: var(--text-main);
           font-weight: 900;
         }
@@ -1028,24 +1130,40 @@ function ItemsArchiveContent() {
           background: rgba(255,255,255,0.015);
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.85rem;
+          display: grid;
+          gap: 0.65rem;
+          grid-template-columns:
+            minmax(190px, 1fr)
+            minmax(190px, 1fr)
+            minmax(150px, 0.85fr)
+            minmax(96px, 0.45fr)
+            minmax(126px, 0.55fr);
+          grid-template-areas:
+            "search search sort direction view"
+            "type quality tag source market";
           max-width: 100%;
           min-width: 0;
-          padding: 1rem;
+          padding: 0.75rem;
         }
+        .db-controls > :nth-child(1) { grid-area: search; }
+        .db-controls > :nth-child(2) { grid-area: type; }
+        .db-controls > :nth-child(3) { grid-area: quality; }
+        .db-controls > :nth-child(4) { grid-area: tag; }
+        .db-controls > :nth-child(5) { grid-area: source; }
+        .db-controls > :nth-child(6) { grid-area: sort; }
+        .db-controls > :nth-child(7) { grid-area: direction; }
+        .db-controls > :nth-child(8) { grid-area: market; }
+        .db-controls > :nth-child(9) { grid-area: view; }
         .control-group {
-          flex: 1 1 132px;
           min-width: 0;
         }
         .search-control {
-          flex: 2 1 280px;
+          min-width: 0;
         }
-        .search-shell {
+        :global(.items-db-page .search-shell) {
           position: relative;
         }
-        .search-shell :global(svg) {
+        :global(.items-db-page .search-shell svg) {
           color: var(--text-muted);
           left: 0.75rem;
           pointer-events: none;
@@ -1054,7 +1172,7 @@ function ItemsArchiveContent() {
           transform: translateY(-50%);
           z-index: 2;
         }
-        .search-shell :global(input) {
+        :global(.items-db-page .search-shell input) {
           padding-left: 2.35rem;
           width: 100%;
         }
@@ -1172,12 +1290,12 @@ function ItemsArchiveContent() {
           background: var(--bg-base);
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
+          align-self: end;
           display: flex;
-          flex: 0 1 132px;
           justify-self: end;
           min-height: 38px;
           overflow: hidden;
-          width: 100%;
+          width: max-content;
         }
         .view-toggle button {
           background: transparent;
@@ -1185,6 +1303,7 @@ function ItemsArchiveContent() {
           color: var(--text-muted);
           cursor: pointer;
           font-weight: 800;
+          min-width: 58px;
           padding: 0 0.8rem;
         }
         .view-toggle button.active {
@@ -1377,6 +1496,7 @@ function ItemsArchiveContent() {
         :global(.items-db-page .badge.gear) { color: #a78bfa; background: rgba(167,139,250,0.08); }
         :global(.items-db-page .badge.effect) { color: #f472b6; background: rgba(244,114,182,0.08); }
         :global(.items-db-page .badge.lore) { color: #f5b041; background: rgba(245,176,65,0.1); }
+        :global(.items-db-page .badge.legacy) { color: #c4b5fd; background: rgba(167,139,250,0.08); }
         .item-grid {
           display: none;
           gap: 0.85rem;
@@ -1534,26 +1654,34 @@ function ItemsArchiveContent() {
           text-align: center;
         }
         @media (max-width: 1200px) {
+          .db-summary {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .db-controls {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-areas: none;
+          }
+          .db-controls > * {
+            grid-area: auto !important;
+          }
+          .db-controls > .search-control {
+            grid-column: span 2 !important;
+          }
           .icon-toggle,
           .view-toggle {
             justify-self: stretch;
             width: 100%;
           }
-          .icon-toggle {
-            flex: 1 1 132px;
+          .view-toggle button {
+            min-width: 0;
           }
           .view-toggle button {
             flex: 1;
           }
         }
         @media (max-width: 980px) {
-          .control-group,
-          .icon-toggle,
-          .view-toggle {
-            flex-basis: calc(50% - 0.45rem);
-          }
-          .search-control {
-            flex-basis: 100%;
+          .db-controls > .search-control {
+            grid-area: auto / 1 / auto / -1 !important;
           }
         }
         @media (max-width: 820px) {
@@ -1562,7 +1690,19 @@ function ItemsArchiveContent() {
           }
           .db-controls {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-areas: none;
+          }
+          .db-controls > * {
+            grid-area: auto !important;
+          }
+          .search-control {
+            grid-column: 1 / -1;
+          }
+          .control-group,
+          .icon-toggle,
+          .market-toggle {
+            width: 100%;
           }
           :global(.items-db-page .item-select-menu) {
             min-width: 100%;
@@ -1583,7 +1723,36 @@ function ItemsArchiveContent() {
         }
         @media (max-width: 480px) {
           .db-summary {
-            grid-template-columns: 1fr;
+            display: flex;
+            gap: 0.5rem;
+            margin-left: -0.2rem;
+            margin-right: -0.2rem;
+            overflow-x: auto;
+            padding: 0 0.2rem 0.1rem;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
+          }
+          .db-summary::-webkit-scrollbar {
+            display: none;
+          }
+          .db-summary div {
+            flex: 0 0 116px;
+            min-height: auto;
+            padding: 0.58rem 0.65rem;
+            scroll-snap-align: start;
+          }
+          .summary-label {
+            font-size: 0.62rem;
+          }
+          .db-summary strong {
+            font-size: 1rem;
+          }
+          .db-controls {
+            gap: 0.55rem;
+            padding: 0.62rem;
+          }
+          .item-help summary {
+            padding: 0.55rem 0.65rem;
           }
           .item-card {
             padding: 0.85rem;
@@ -1598,7 +1767,7 @@ function ItemsArchiveContent() {
           .card-stats strong {
             font-size: 0.7rem;
           }
-          .search-shell :global(input) {
+          :global(.items-db-page .search-shell input) {
             font-size: 0.85rem;
           }
         }
@@ -1758,6 +1927,48 @@ function ItemFilterPicker<T extends string>({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function ItemSearchBox({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const lastCommittedRef = useRef(value);
+
+  useEffect(() => {
+    if (value === lastCommittedRef.current) return;
+    lastCommittedRef.current = value;
+    setLocalValue(value);
+  }, [value]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (localValue === lastCommittedRef.current) return;
+      lastCommittedRef.current = localValue;
+      onChange(localValue);
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [localValue, onChange]);
+
+  return (
+    <div className="search-shell">
+      <Search size={15} />
+      <input
+        aria-label="Search items"
+        type="text"
+        className="control-input"
+        placeholder={placeholder}
+        value={localValue}
+        onChange={(event) => setLocalValue(event.target.value)}
+      />
     </div>
   );
 }

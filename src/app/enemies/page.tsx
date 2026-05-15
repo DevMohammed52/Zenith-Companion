@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -24,6 +25,7 @@ import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
   ENEMY_WEATHER_META,
   buildEnrichedEnemies,
+  compareEnemiesByProgression,
   getWeatherPreferenceLabel,
   isFavorableWeather,
   isPenalizedWeather,
@@ -226,7 +228,7 @@ function CustomSelect<T extends string>({
   };
 
   return (
-    <div className="custom-select" ref={rootRef}>
+    <div className={`custom-select ${open ? "open" : ""}`} ref={rootRef}>
       <label>{label}</label>
       <button
         ref={triggerRef}
@@ -277,8 +279,15 @@ function EnemyDetailModal({
   onOpenItem: (name: string) => void;
 }) {
   const dialogRef = useModalA11y<HTMLDivElement>(true, onClose);
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="enemy-modal-overlay" onPointerDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
@@ -292,7 +301,7 @@ function EnemyDetailModal({
       >
         <header className="enemy-modal-header">
           <div className="modal-title-row">
-            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Skull size={38} />}
+            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={38} />}
             <div>
               <span>Enemy</span>
               <h2 id="enemy-detail-title">{enemy.name}</h2>
@@ -339,7 +348,7 @@ function EnemyDetailModal({
                   onClick={() => onOpenItem(drop.name)}
                   className="loot-button"
                 >
-                  {drop.image_url ? <img src={drop.image_url} alt="" /> : <Package size={20} />}
+                  {drop.image_url ? <img src={drop.image_url} alt="" loading="lazy" decoding="async" /> : <Package size={20} />}
                   <span>
                     <strong>{drop.name}</strong>
                     <small>{drop.chance}% drop rate{Number(drop.quantity || 1) > 1 ? ` - x${drop.quantity}` : ""}</small>
@@ -355,7 +364,8 @@ function EnemyDetailModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -411,10 +421,10 @@ function EnemiesContent() {
     rows.sort((a, b) => {
       let result = 0;
       if (sortKey === "name") result = a.name.localeCompare(b.name);
-      else if (sortKey === "location") result = a.locationName.localeCompare(b.locationName) || a.level - b.level;
+      else if (sortKey === "location") result = a.locationName.localeCompare(b.locationName) || compareEnemiesByProgression(a, b);
       else if (sortKey === "lootCount") result = a.lootCount - b.lootCount;
       else if (sortKey === "lootEv") result = a.lootEv - b.lootEv;
-      else result = a.level - b.level || a.name.localeCompare(b.name);
+      else result = compareEnemiesByProgression(a, b);
       return sortDesc ? -result : result;
     });
 
@@ -433,16 +443,21 @@ function EnemiesContent() {
       <div className="enemy-page-shell" inert={selectedEnemy ? true : undefined} aria-hidden={selectedEnemy ? true : undefined}>
         <header className="enemy-hero">
           <div>
-            <span className="eyebrow"><Swords size={15} /> Enemy Database</span>
-            <h1>Mob Weather Intel</h1>
-            <p>Search enemies by location, drops, current weather behavior, and forecast timing.</p>
+            <h1><Swords size={24} /> Enemy Database</h1>
+            <p>Search enemies by location, drops, levels, and current weather matchups.</p>
           </div>
           <div className="hero-meta">
-            <strong>{stats.enemies}</strong>
-            <span>confirmed enemies</span>
-            <small>{ENEMY_WEATHER_META.confirmed_count} weather profiles</small>
+            <span>{stats.enemies.toLocaleString()} enemies</span>
+            <small>{ENEMY_WEATHER_META.confirmed_count.toLocaleString()} weather profiles</small>
           </div>
         </header>
+
+        <section className="enemy-summary" aria-label="Enemy database summary">
+          <div><MapPin size={16} /><span>Locations</span><strong>{stats.locations}</strong></div>
+          <div><Cloud size={16} /><span>Favored now</span><strong>{stats.favored}</strong></div>
+          <div><Shield size={16} /><span>Penalized now</span><strong>{stats.penalized}</strong></div>
+          <div><Package size={16} /><span>Shown</span><strong>{filteredEnemies.length}</strong></div>
+        </section>
 
         <section className="enemy-controls" aria-label="Enemy filters">
           <label className="search-control">
@@ -469,13 +484,6 @@ function EnemiesContent() {
           </button>
         </section>
 
-        <section className="enemy-summary" aria-label="Enemy database summary">
-          <div><MapPin size={16} /><span>Locations</span><strong>{stats.locations}</strong></div>
-          <div><Cloud size={16} /><span>Favored now</span><strong>{stats.favored}</strong></div>
-          <div><Shield size={16} /><span>Penalized now</span><strong>{stats.penalized}</strong></div>
-          <div><Package size={16} /><span>Shown</span><strong>{filteredEnemies.length}</strong></div>
-        </section>
-
         {loading && enemies.length === 0 ? (
           <div className="enemy-empty">Loading enemy intelligence...</div>
         ) : (
@@ -489,7 +497,7 @@ function EnemiesContent() {
                 aria-label={`Open ${enemy.name}, level ${enemy.level}, ${enemy.locationName}`}
               >
                 <span className="enemy-card-art">
-                  {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Skull size={28} />}
+                  {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={28} />}
                 </span>
                 <span className="enemy-card-main">
                   <span className="enemy-title-row">
@@ -530,7 +538,7 @@ function EnemiesContent() {
       <style jsx>{`
         .enemy-db-page {
           min-height: calc(100vh - 40px);
-          padding: clamp(1rem, 2vw, 2rem);
+          padding: clamp(0.85rem, 1.6vw, 1.5rem);
           overflow-x: hidden;
           background:
             radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.12), transparent 28rem),
@@ -546,61 +554,64 @@ function EnemiesContent() {
           outline-offset: 2px;
         }
         .enemy-hero {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+          display: flex;
+          justify-content: space-between;
           gap: 1rem;
-          align-items: end;
-          max-width: 1480px;
-          margin: 0 auto 1rem;
-        }
-        .eyebrow {
-          display: inline-flex;
           align-items: center;
-          gap: 0.45rem;
-          color: var(--text-accent);
-          font-size: 0.72rem;
-          font-weight: 900;
-          text-transform: uppercase;
+          max-width: 1480px;
+          margin: 0 auto 0.8rem;
+          padding-bottom: 0.8rem;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .enemy-hero h1 {
-          margin-top: 0.3rem;
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
           color: #fff;
-          font-size: clamp(2rem, 5vw, 4rem);
+          font-size: clamp(1.9rem, 3vw, 2.8rem);
           line-height: 1;
         }
+        .enemy-hero h1 :global(svg) {
+          color: var(--text-accent);
+          flex: 0 0 auto;
+        }
         .enemy-hero p {
-          margin-top: 0.65rem;
+          margin-top: 0.45rem;
           color: var(--text-muted);
-          font-size: 1rem;
+          font-size: 0.95rem;
         }
         .hero-meta {
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
-          background: rgba(255,255,255,0.035);
-          padding: 1rem;
+          display: grid;
+          justify-items: end;
+          gap: 0.1rem;
+          flex: 0 0 auto;
+          border: 1px solid rgba(45, 212, 191, 0.22);
+          border-radius: 999px;
+          background: rgba(45, 212, 191, 0.08);
+          padding: 0.55rem 0.85rem;
         }
-        .hero-meta strong {
+        .hero-meta span {
+          color: var(--text-accent);
           display: block;
-          color: #fff;
-          font-size: 2rem;
+          font-family: var(--font-mono);
+          font-weight: 900;
         }
-        .hero-meta span,
         .hero-meta small {
-          display: block;
           color: var(--text-muted);
-          font-weight: 800;
+          font-size: 0.72rem;
+          font-weight: 850;
         }
         .enemy-controls {
           display: grid;
-          grid-template-columns: minmax(260px, 1.2fr) repeat(4, minmax(150px, 0.7fr)) minmax(112px, auto);
-          gap: 0.75rem;
+          grid-template-columns: minmax(240px, 1.35fr) repeat(4, minmax(126px, 0.8fr)) minmax(92px, 0.45fr);
+          gap: 0.65rem;
           align-items: end;
           max-width: 1480px;
           margin: 0 auto 0.85rem;
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 10px;
+          border-radius: 8px;
           background: rgba(10, 10, 13, 0.76);
-          padding: 0.85rem;
+          padding: 0.75rem;
         }
         .search-control,
         :global(.custom-select) {
@@ -608,6 +619,9 @@ function EnemiesContent() {
           display: grid;
           gap: 0.35rem;
           min-width: 0;
+        }
+        :global(.custom-select.open) {
+          z-index: 60;
         }
         .search-control > span,
         :global(.custom-select label) {
@@ -619,7 +633,7 @@ function EnemiesContent() {
         .search-control div {
           display: flex;
           align-items: center;
-          min-height: 46px;
+          min-height: 40px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(0,0,0,0.42);
@@ -630,7 +644,7 @@ function EnemiesContent() {
           place-items: center;
           align-self: stretch;
           flex: 0 0 auto;
-          width: 2.45rem;
+          width: 2.25rem;
           color: var(--text-muted);
           pointer-events: none;
         }
@@ -640,7 +654,7 @@ function EnemiesContent() {
         :global(.select-trigger),
         .sort-direction {
           width: 100%;
-          min-height: 46px;
+          min-height: 40px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(0,0,0,0.42);
@@ -651,13 +665,13 @@ function EnemiesContent() {
         .search-control input {
           min-width: 0;
           width: 100%;
-          min-height: 44px;
+          min-height: 38px;
           border: 0;
           background: transparent;
           color: #fff;
           font: inherit;
           font-weight: 850;
-          padding: 0 0.85rem 0 0;
+          padding: 0 0.75rem 0 0;
           outline: none;
         }
         .search-control div:focus-within {
@@ -671,7 +685,7 @@ function EnemiesContent() {
           justify-content: space-between;
           gap: 0.5rem;
           cursor: pointer;
-          padding: 0 0.75rem;
+          padding: 0 0.65rem;
         }
         :global(.select-trigger span) {
           min-width: 0;
@@ -715,9 +729,9 @@ function EnemiesContent() {
         .enemy-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 0.65rem;
+          gap: 0.55rem;
           max-width: 1480px;
-          margin: 0 auto 1rem;
+          margin: 0 auto 0.75rem;
         }
         .enemy-summary div {
           display: grid;
@@ -725,9 +739,9 @@ function EnemiesContent() {
           gap: 0.55rem;
           align-items: center;
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 8px;
+          border-radius: 7px;
           background: rgba(255,255,255,0.035);
-          padding: 0.75rem;
+          padding: 0.62rem 0.7rem;
         }
         .enemy-summary span {
           color: var(--text-muted);
@@ -739,24 +753,24 @@ function EnemiesContent() {
         }
         .enemy-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
           gap: 0.75rem;
           max-width: 1480px;
           margin: 0 auto;
         }
         .enemy-card {
           display: grid;
-          grid-template-columns: 58px minmax(0, 1fr) auto;
-          gap: 0.75rem;
+          grid-template-columns: 52px minmax(0, 1fr) auto;
+          gap: 0.65rem;
           align-items: center;
           min-width: 0;
-          min-height: 94px;
+          min-height: 82px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
           background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
           color: inherit;
           cursor: pointer;
-          padding: 0.8rem;
+          padding: 0.66rem;
           text-align: left;
         }
         .enemy-card:hover,
@@ -767,15 +781,15 @@ function EnemiesContent() {
         .enemy-card-art {
           display: grid;
           place-items: center;
-          width: 58px;
-          height: 58px;
+          width: 52px;
+          height: 52px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 9px;
           background: rgba(0,0,0,0.25);
         }
         .enemy-card-art img {
-          width: 46px;
-          height: 46px;
+          width: 42px;
+          height: 42px;
           object-fit: contain;
         }
         .enemy-card-main {
@@ -1077,12 +1091,18 @@ function EnemiesContent() {
           color: var(--text-muted);
           font-weight: 850;
         }
-        @media (max-width: 1180px) {
+        @media (max-width: 1360px) {
           .enemy-controls {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: minmax(240px, 1.35fr) repeat(4, minmax(120px, 0.8fr)) minmax(88px, 0.45fr);
           }
-          .search-control {
-            grid-column: 1 / -1;
+        }
+        @media (max-width: 900px) {
+          .enemy-controls {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .search-control,
+          .sort-direction {
+            grid-column: span 3;
           }
           .enemy-summary {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1093,11 +1113,36 @@ function EnemiesContent() {
             padding: 0.8rem;
           }
           .enemy-hero,
-          .enemy-controls,
-          .enemy-summary,
           :global(.modal-stat-grid),
           :global(.detail-links) {
             grid-template-columns: 1fr;
+          }
+          .enemy-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .enemy-summary div {
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 0.3rem 0.45rem;
+            padding: 0.55rem 0.6rem;
+          }
+          .enemy-summary strong {
+            grid-column: 1 / -1;
+          }
+          .enemy-hero {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+          .hero-meta {
+            justify-items: start;
+          }
+          .enemy-controls {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .search-control {
+            grid-column: 1 / -1;
+          }
+          .sort-direction {
+            grid-column: auto;
           }
           .enemy-controls {
             padding: 0.7rem;
@@ -1106,7 +1151,16 @@ function EnemiesContent() {
             grid-template-columns: 1fr;
           }
           .enemy-card {
-            grid-template-columns: 50px minmax(0, 1fr);
+            grid-template-columns: 48px minmax(0, 1fr);
+            min-height: 76px;
+          }
+          .enemy-card-art {
+            width: 48px;
+            height: 48px;
+          }
+          .enemy-card-art img {
+            width: 38px;
+            height: 38px;
           }
           .enemy-card-stats {
             grid-column: 1 / -1;

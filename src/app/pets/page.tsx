@@ -21,7 +21,8 @@ import {
   Zap,
 } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
-import { useProfiles } from "@/lib/profiles";
+import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
+import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 
 type Quality =
@@ -193,7 +194,7 @@ type PetDatabase = {
 };
 
 type SortKey = "name" | "quality" | "power" | "speed" | "battleProfit" | "market" | "drop";
-type SourceFilter = "ALL" | "EGG" | "BOSS" | "EXCHANGE" | "MERCHANT" | "EVENT" | "UNIQUE" | "MISSING_EGG";
+type SourceFilter = "ALL" | "OWNED" | "EGG" | "BOSS" | "EXCHANGE" | "MERCHANT" | "EVENT" | "UNIQUE" | "MISSING_EGG";
 type ViewMode = "cards" | "table";
 type BattleProfitMode = "noSleep" | "withSleep" | "healingWithSleep";
 type FoodPolicy = "standard" | "none";
@@ -274,17 +275,18 @@ const BOOSTED_STATS = new Set<StatKey>([
 ]);
 
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
-  { value: "power", label: "Total Power" },
-  { value: "speed", label: "Movement Speed" },
-  { value: "battleProfit", label: "Battle Sample EV" },
-  { value: "market", label: "Lowest Exchange Listing" },
+  { value: "power", label: "Power" },
+  { value: "speed", label: "Move Speed" },
+  { value: "battleProfit", label: "Battle Sample" },
+  { value: "market", label: "Lowest Listing" },
   { value: "drop", label: "Drop Chance" },
   { value: "quality", label: "Quality" },
   { value: "name", label: "Name" },
 ];
 
 const SOURCE_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
-  { value: "ALL", label: "All sources" },
+  { value: "ALL", label: "All" },
+  { value: "OWNED", label: "Owned by active profile" },
   { value: "EGG", label: "Has egg item" },
   { value: "BOSS", label: "World boss drop" },
   { value: "EXCHANGE", label: "Exchange listed" },
@@ -315,7 +317,7 @@ const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
 ];
 
 const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
-  { value: "ALL", label: "All qualities" },
+  { value: "ALL", label: "All" },
   { value: "STANDARD", label: "Standard" },
   { value: "REFINED", label: "Refined" },
   { value: "PREMIUM", label: "Premium" },
@@ -328,6 +330,11 @@ const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
 function formatGold(value?: number | null) {
   if (!value || value <= 0) return "-";
   return `${Math.round(value).toLocaleString()}g`;
+}
+
+function formatCompactGold(value?: number | null) {
+  if (!value || value <= 0) return "-";
+  return `${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(Math.round(value))}g`;
 }
 
 function formatNumber(value?: number | null, digits = 0) {
@@ -464,6 +471,14 @@ function petSearchText(pet: PetRecord) {
     .toLowerCase();
 }
 
+function ownedPetSearchText(pets: ProfileOwnedPet[]) {
+  return pets
+    .flatMap((pet) => [pet.nickname, pet.species, pet.quality, pet.source, pet.location?.name, pet.hashTail])
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 function getPetSourceLabel(pet: PetRecord) {
   return pet.sourceOverride?.label || pet.rarity?.worldBoss || pet.acquisition?.[0]?.location || "Source pending";
 }
@@ -588,7 +603,17 @@ function PetImage({ pet }: { pet: PetRecord }) {
   const image = pet.imageUrl || pet.egg?.imageUrl;
   return (
     <div className="pet-avatar">
-      {image ? <img src={image} alt="" className={pet.name === "Dead Wyrmshadow" ? "pet-image-upside-down" : undefined} /> : <PawPrint size={30} />}
+      {image ? (
+        <img
+          src={image}
+          alt=""
+          className={pet.name === "Dead Wyrmshadow" ? "pet-image-upside-down" : undefined}
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <PawPrint size={30} />
+      )}
     </div>
   );
 }
@@ -598,12 +623,14 @@ function PetCard({
   stats,
   totalPower,
   huntingTime,
+  ownedCount,
   onInspect,
 }: {
   pet: PetRecord;
   stats: Partial<Record<StatKey, number>>;
   totalPower: number;
   huntingTime: number;
+  ownedCount: number;
   onInspect: () => void;
 }) {
   const accent = QUALITY_COLORS[pet.quality] || QUALITY_COLORS.UNKNOWN;
@@ -622,7 +649,10 @@ function PetCard({
           <div className="pet-card-name">{pet.name}</div>
           <div className="pet-card-source">{getPetSourceLabel(pet)}</div>
         </div>
-        <span className="pet-quality-pill">{qualityLabel(pet.quality)}</span>
+        <div className="pet-card-badges">
+          {ownedCount > 0 && <span className="pet-owned-pill">Owned {ownedCount}</span>}
+          <span className="pet-quality-pill">{qualityLabel(pet.quality)}</span>
+        </div>
       </div>
       <div className="pet-card-stats">
         <span>
@@ -795,6 +825,19 @@ export default function PetsPage() {
   }, [openPetSelect]);
 
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
+  const petMatchLookup = useMemo(() => buildPetMatchLookup(database?.pets || []), [database?.pets]);
+  const ownedPetsByPetKey = useMemo(() => {
+    const map = new Map<string, ProfileOwnedPet[]>();
+    for (const ownedPet of activeProfile?.ownedPets || []) {
+      const matchedPet = findPetRecordForOwnedPet(ownedPet, petMatchLookup);
+      if (!matchedPet) continue;
+      const key = getPetRecordMatchKey(matchedPet);
+      map.set(key, [...(map.get(key) || []), ownedPet]);
+    }
+    return map;
+  }, [activeProfile?.ownedPets, petMatchLookup]);
+  const ownedSpeciesCount = ownedPetsByPetKey.size;
+  const ownedPetCount = activeProfile?.ownedPets.length || 0;
 
   const petRows = useMemo(() => {
     const pets = database?.pets || [];
@@ -805,13 +848,15 @@ export default function PetsPage() {
         const totalPower = getTotalPower(stats);
         const huntingTime = getHuntingTimeSeconds(stats);
         const battleProfit = getBestBattleProfit(pet, battleProfitMode, foodPolicy);
-        return { pet, stats, totalPower, huntingTime, battleProfit };
+        const ownedPets = ownedPetsByPetKey.get(getPetRecordMatchKey(pet)) || [];
+        return { pet, stats, totalPower, huntingTime, battleProfit, ownedPets };
       })
-      .filter(({ pet }) => {
-        const matchesSearch = !query || petSearchText(pet).includes(query);
+      .filter(({ pet, ownedPets }) => {
+        const matchesSearch = !query || petSearchText(pet).includes(query) || ownedPetSearchText(ownedPets).includes(query);
         const matchesQuality = qualityFilter === "ALL" || pet.quality === qualityFilter;
         const matchesSource =
           sourceFilter === "ALL" ||
+          (sourceFilter === "OWNED" && ownedPets.length > 0) ||
           (sourceFilter === "EGG" && Boolean(pet.egg)) ||
           (sourceFilter === "BOSS" && Boolean(pet.rarity?.worldBoss || pet.acquisition?.length)) ||
           (sourceFilter === "EXCHANGE" && Boolean(pet.exchange?.listingCount)) ||
@@ -861,6 +906,7 @@ export default function PetsPage() {
     patBonus,
     battleProfitMode,
     foodPolicy,
+    ownedPetsByPetKey,
   ]);
 
   const selectedRow = useMemo(
@@ -914,6 +960,10 @@ export default function PetsPage() {
             <span>Mastery Bonus</span>
             <strong>{masteryBonus}%</strong>
           </div>
+          <div>
+            <span>Owned Species</span>
+            <strong>{ownedSpeciesCount || "-"}</strong>
+          </div>
         </div>
       </section>
 
@@ -923,7 +973,7 @@ export default function PetsPage() {
           <input
             aria-label="Search pets"
             value={searchTerm}
-            placeholder="Search pet, boss, egg, location..."
+            placeholder="Search pets, eggs, bosses..."
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </label>
@@ -944,14 +994,16 @@ export default function PetsPage() {
         </div>
       </section>
 
-      <section className="pets-calculator">
-        <div className="calculator-title">
+      <details className="pets-calculator">
+        <summary className="calculator-title">
           <ChevronsUp size={18} />
           <div>
-            <strong>Scenario Preview</strong>
-            <span>Adjust level, mastery, evolution, sleep, food, and pet effects to preview each pet under your setup.</span>
+            <strong>Pet setup</strong>
+            <span>
+              Lv {petLevel} · Mastery {masteryLevel} · Evo {evolutionStage} · {battleProfitMode === "noSleep" ? "No sleep" : "With sleep"}
+            </span>
           </div>
-        </div>
+        </summary>
         <div className="calculator-fields">
           <PetNumberField label="Pet Level" value={petLevel} min={1} max={100} onChange={setPetLevel} />
           <PetNumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
@@ -981,11 +1033,23 @@ export default function PetsPage() {
               Use profile pet
             </button>
           ) : null}
+          {ownedPetCount > 0 ? (
+            <button
+              className={`pet-toggle ${sourceFilter === "OWNED" ? "active" : ""}`}
+              onClick={() => {
+                setSourceFilter("OWNED");
+                setSearchTerm("");
+              }}
+            >
+              <PawPrint size={16} />
+              Owned pets
+            </button>
+          ) : null}
         </div>
         <div className="pet-effect-note">
-          Exchange values come from current listing snapshots. Battle return is separate context because real output depends on character combat setup, zone fit, food, and sleep assumptions.
+          Stats update from this setup. Market values and battle notes stay separate.
         </div>
-      </section>
+      </details>
 
       {loadError && <div className="pet-state">{loadError}</div>}
       {!database && !loadError && <div className="pet-state">Loading pet database...</div>}
@@ -1000,18 +1064,23 @@ export default function PetsPage() {
             </div>
             <div>
               <Search size={18} />
-              <span>Fastest Hunter</span>
-              <strong>{bestHunter ? `${bestHunter.pet.name} - ${secondsToDuration(bestHunter.huntingTime)}` : "-"}</strong>
+              <span>Fastest</span>
+              <strong>{bestHunter ? secondsToDuration(bestHunter.huntingTime) : "-"}</strong>
             </div>
             <div>
               <BarChart3 size={18} />
-              <span>Battle Research</span>
-              <strong>{battleResearchPetCount ? `${battleResearchPetCount} pets with zone samples` : "-"}</strong>
+              <span>Battle Data</span>
+              <strong>{battleResearchPetCount || "-"}</strong>
             </div>
             <div>
               <Database size={18} />
-              <span>Highest Listed Floor</span>
-              <strong>{bestMarket ? `${bestMarket.pet.name} - ${formatGold(bestMarket.pet.exchange?.minPrice)}` : "-"}</strong>
+              <span>Top Floor</span>
+              <strong>{bestMarket ? formatCompactGold(bestMarket.pet.exchange?.minPrice) : "-"}</strong>
+            </div>
+            <div>
+              <PawPrint size={18} />
+              <span>Owned Matches</span>
+              <strong>{ownedPetCount ? `${ownedPetCount} pets / ${ownedSpeciesCount} species` : "-"}</strong>
             </div>
           </section>
 
@@ -1026,6 +1095,7 @@ export default function PetsPage() {
                       stats={row.stats}
                       totalPower={row.totalPower}
                       huntingTime={row.huntingTime}
+                      ownedCount={row.ownedPets.length}
                       onInspect={() => setSelectedPetName(row.pet.name)}
                     />
                   ))}
@@ -1041,6 +1111,7 @@ export default function PetsPage() {
                         <th>Move</th>
                         <th>Hunter</th>
                         <th>Battle Data</th>
+                        <th>Owned</th>
                         <th>Source</th>
                         <th>Exchange</th>
                       </tr>
@@ -1071,6 +1142,7 @@ export default function PetsPage() {
                           <td>{formatNumber(row.stats.movement_speed, 2)}m/s</td>
                           <td>{secondsToDuration(row.huntingTime)}</td>
                           <td>{formatBattleZoneCount(row.pet)}</td>
+                          <td>{row.ownedPets.length ? `${row.ownedPets.length} saved` : "-"}</td>
                           <td>{getPetSourceLabel(row.pet)}</td>
                           <td>{formatGold(row.pet.exchange?.minPrice)}</td>
                         </tr>

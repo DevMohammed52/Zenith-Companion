@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-  BarChart3,
   Check,
   Coins,
   Database,
@@ -15,6 +14,7 @@ import {
   Sparkles,
   Trash2,
   UserRound,
+  Wrench,
 } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
@@ -30,18 +30,6 @@ const themes: { value: ThemeName; label: string; colors: string[] }[] = [
   { value: "frost", label: "Frost", colors: ["#38bdf8", "#a7f3d0", "#f472b6"] },
 ];
 
-const connectedPages = [
-  { page: "Dashboard", global: "Membership, custom prices", profile: "Bartering level, conquest", local: "Market cache" },
-  { page: "Alchemy Profit", global: "Membership, custom prices", profile: "Playtime, bartering level", local: "Recipe and filter state" },
-  { page: "Skill Profit Finder", global: "Membership, custom prices", profile: "Class, tools, bartering, conquest", local: "Skill, essence, filters" },
-  { page: "Crafting Queue", global: "Membership, custom prices", profile: "Queue contents, bartering level", local: "Item search" },
-  { page: "Combat", global: "Membership, custom prices", profile: "Bartering level", local: "Kills per hour, search, sorting" },
-  { page: "BiS Recommender", global: "Market prices", profile: "Combat level, primary stats, combat style", local: "Expanded slots" },
-  { page: "Dungeons", global: "Membership, custom prices", profile: "Dungeoneering, dungeon stats, MF, playtime", local: "Dungeon runs, MF toggle" },
-  { page: "World Bosses", global: "Membership, custom prices", profile: "TL, movement speed, MF, bartering", local: "Route and selected bosses" },
-  { page: "Items/Pets", global: "Membership, custom prices", profile: "Owned pet where supported", local: "Search and comparison settings" },
-];
-
 function formatAge(value?: string) {
   if (!value) return "Waiting for cache";
   const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60000);
@@ -52,13 +40,68 @@ function formatAge(value?: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function ToolPicker({
+  skill,
+  value,
+  open,
+  onToggle,
+  onChange,
+}: {
+  skill: ToolSkill;
+  value: string;
+  open: boolean;
+  onToggle: () => void;
+  onChange: (value: string) => void;
+}) {
+  const selected = SKILL_TOOLS[skill].find((tool) => tool.name === value) || SKILL_TOOLS[skill][0];
+
+  return (
+    <div className="settings-tool-picker">
+      <button
+        type="button"
+        className={`settings-tool-trigger ${open ? "settings-tool-trigger-open" : ""}`}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+      >
+        <span>
+          <strong>{skill}</strong>
+          <small>{selected.name}</small>
+        </span>
+        <em>+{selected.efficiency}%</em>
+      </button>
+      {open && (
+        <div className="settings-tool-menu" role="listbox" aria-label={`${skill} fallback tool`}>
+          {SKILL_TOOLS[skill].map((tool) => (
+            <button
+              type="button"
+              role="option"
+              aria-selected={tool.name === value}
+              className={tool.name === value ? "settings-tool-option-active" : ""}
+              key={tool.name}
+              onClick={() => onChange(tool.name)}
+            >
+              <span>
+                <strong>{tool.name}</strong>
+                <small>{tool.quality} - Lv. {tool.level}</small>
+              </span>
+              <em>+{tool.efficiency}%</em>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { preferences, setPreferences } = usePreferences();
-  const { activeProfile, state } = useProfiles();
+  const { activeProfile } = useProfiles();
   const { allItemsDb, marketData, staticData } = useData();
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
   const [itemSearchOpen, setItemSearchOpen] = useState(false);
+  const [openToolPicker, setOpenToolPicker] = useState<ToolSkill | null>(null);
 
   const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
   const itemSuggestions = useMemo(() => {
@@ -81,6 +124,11 @@ export default function SettingsPage() {
   const profileConquest = getProfileConquestRank(activeProfile);
   const worldBossCount = staticData?.world_bosses?.length || staticData?.worldBosses?.length || 0;
   const entityCount = (staticData?.enemies?.length || 0) + (staticData?.dungeons?.length || 0) + worldBossCount;
+  const marketItemCount = Object.keys(marketData || {}).filter((key) => key !== "_meta").length;
+  const itemCount = Object.keys(allItemsDb || {}).length;
+  const profileLabel = activeProfile
+    ? `${activeProfile.kind === "main" ? "Main" : "Alt"} - ${activeProfile.className || "Other"}`
+    : "No active profile";
 
   const saveCustomPrice = () => {
     const name = customItemName.trim();
@@ -106,86 +154,106 @@ export default function SettingsPage() {
 
   return (
     <main className="container settings-page">
-      <div className="header">
-        <h1 className="header-title">
-          <Settings size={24} color="var(--text-accent)" /> SETTINGS
-        </h1>
+      <div className="header settings-header">
+        <div>
+          <h1 className="header-title">
+            <Settings size={24} color="var(--text-accent)" /> Settings
+          </h1>
+          <p className="settings-header-copy">App defaults, theme, cache status, and global price overrides.</p>
+        </div>
+        <Link className="settings-link-button settings-header-action" href="/profiles">
+          Manage Profiles <ExternalLink size={14} />
+        </Link>
       </div>
 
+      <section className="settings-overview" aria-label="Settings summary">
+        <div>
+          <span>Market tax</span>
+          <strong>{preferences.membership ? "12%" : "15%"}</strong>
+        </div>
+        <div>
+          <span>Active profile</span>
+          <strong>{activeProfile?.name?.trim() || "None"}</strong>
+        </div>
+        <div>
+          <span>Market cache</span>
+          <strong>{formatAge(marketMeta?.last_updated)}</strong>
+        </div>
+        <div>
+          <span>Custom prices</span>
+          <strong>{customPriceRows.length.toLocaleString()}</strong>
+        </div>
+      </section>
+
       <section className="settings-grid">
-        <div className="settings-panel settings-panel-wide">
-          <h2><UserRound size={17} /> Settings Scope</h2>
-          <p className="settings-panel-note">Settings is now for app-wide behavior. Character-specific values are read from the active profile selected in the top bar.</p>
-          <div className="settings-summary-grid">
-            <div className="settings-summary-card">
-              <span>Active Profile</span>
-              <strong>{activeProfile?.name?.trim() || "Unnamed Character"}</strong>
-              <small>{activeProfile ? `${activeProfile.className || "Other"} - ${activeProfile.kind === "main" ? "Main" : "Alt"}` : "Create a profile to power page defaults."}</small>
+        <div className="settings-primary-column">
+          <div className="settings-compact-row">
+            <div className="settings-panel">
+              <h2><Sparkles size={17} /> Account</h2>
+              <div className="settings-fields">
+                <label className="settings-field">
+                  <span><strong>Membership</strong><small>Switches market tax between 15% and 12%.</small></span>
+                  <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ membership: !preferences.membership })}>
+                    {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
+                  </button>
+                </label>
+              </div>
             </div>
-            <div className="settings-summary-card">
-              <span>Playtime</span>
-              <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
-              <small>Used by daily profit and idle-window views.</small>
-            </div>
-            <div className="settings-summary-card">
-              <span>Profiles</span>
-              <strong>{state.profiles.length}/5</strong>
-              <small>Combat stats, magic find, pets, gear, tools, and timers live there.</small>
-            </div>
-          </div>
-          <div className="settings-scope-grid">
-            <div>
-              <strong>Global here</strong>
-              <span>Membership, theme, custom prices, scraper cache, keyboard shortcuts.</span>
-            </div>
-            <div>
-              <strong>Profile-owned</strong>
-              <span>Class, bartering level, conquest, playtime, magic find, pets, gear, tools.</span>
-            </div>
-            <div>
-              <strong>Page-specific</strong>
-              <span>Potions, shrine, essence, dungeon filters, boss route choices, search filters.</span>
-            </div>
-          </div>
-          <div className="settings-actions-row">
-            <Link className="settings-link-button" href="/profiles">Manage Profiles <ExternalLink size={14} /></Link>
-            <span>Profile values are shown here for clarity, but edited from the Profiles page.</span>
-          </div>
-        </div>
 
-        <div className="settings-panel">
-          <h2><Sparkles size={17} /> Account</h2>
-          <div className="settings-fields">
-            <label className="settings-field">
-              <span><strong>Membership</strong><small>Global account setting. Uses 12% market tax where market sales are calculated.</small></span>
-              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ membership: !preferences.membership })}>
-                {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
-              </button>
-            </label>
+            <div className="settings-panel">
+              <h2><Palette size={17} /> Appearance</h2>
+              <div className="theme-grid">
+                {themes.map((theme) => (
+                  <button
+                    type="button"
+                    key={theme.value}
+                    className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
+                    onClick={() => setPreferences({ theme: theme.value })}
+                  >
+                    <span>{theme.label}</span>
+                    <div className="theme-swatch-row">
+                      {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="settings-panel">
-          <h2><Palette size={17} /> Appearance</h2>
-          <div className="theme-grid">
-            {themes.map((theme) => (
-              <button
-                type="button"
-                key={theme.value}
-                className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
-                onClick={() => setPreferences({ theme: theme.value })}
-              >
-                <span>{theme.label}</span>
-                <div className="theme-swatch-row">
-                  {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
-                </div>
-              </button>
-            ))}
+          <div className="settings-panel settings-fallback-panel">
+            <h2><Wrench size={17} /> Fallback Tools</h2>
+            <div className="settings-fields settings-compat-fields">
+              <label className="settings-field">
+                <span><strong>Skill Class Helper</strong><small>Used when no active profile class is available.</small></span>
+                <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
+                  {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class helper active" : "No helper"}
+                </button>
+              </label>
+            </div>
+            <div className="settings-tool-grid">
+              {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
+                <ToolPicker
+                  key={skill}
+                  skill={skill}
+                  value={preferences.skillTools[skill]}
+                  open={openToolPicker === skill}
+                  onToggle={() => setOpenToolPicker((current) => current === skill ? null : skill)}
+                  onChange={(value) => {
+                    setPreferences({ skillTools: { ...preferences.skillTools, [skill]: value } });
+                    setOpenToolPicker(null);
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="settings-panel">
           <h2><UserRound size={17} /> Active Profile Values</h2>
+          <div className="settings-active-profile">
+            <strong>{activeProfile?.name?.trim() || "No active profile"}</strong>
+            <span>{profileLabel}</span>
+          </div>
           <div className="profile-settings-readout">
             <div><span>Bartering Level</span><strong>{Number(activeProfile?.boosts.barteringLevel || 0).toLocaleString()}</strong><small>+{profileBarteringPercent}% vendor value</small></div>
             <div><span>Conquest</span><strong>{profileConquest === "none" ? "None" : profileConquest}</strong><small>Used by supported profit views</small></div>
@@ -193,35 +261,6 @@ export default function SettingsPage() {
             <div><span>Magic Find</span><strong>{Number(activeProfile?.magicFind.combat || 0)} / {Number(activeProfile?.magicFind.dungeon || 0)} / {Number(activeProfile?.magicFind.worldBoss || 0)}</strong><small>Combat / dungeon / world boss</small></div>
           </div>
           <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-magic">Edit Profile Values <ExternalLink size={14} /></Link>
-        </div>
-
-        <div className="settings-panel settings-panel-wide">
-          <h2><BarChart3 size={17} /> Compatibility Fallbacks</h2>
-          <p className="settings-panel-note">These are only fallback values for no-profile states. When a profile is active, calculators use the profile&apos;s class, tools, bartering level, conquest, and page-local controls instead.</p>
-          <div className="settings-fields settings-compat-fields">
-            <label className="settings-field">
-              <span><strong>Skill Class Helper</strong><small>Used only when no active profile is available.</small></span>
-              <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
-                {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class helper active" : "No helper"}
-              </button>
-            </label>
-          </div>
-          <div className="settings-fields">
-            {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => (
-              <label className="settings-field" key={skill}>
-                <span><strong>{skill} Tool</strong><small>Used only when no active profile tool is available.</small></span>
-                <select
-                  className="control-input"
-                  value={preferences.skillTools[skill]}
-                  onChange={(e) => setPreferences({ skillTools: { ...preferences.skillTools, [skill]: e.target.value } })}
-                >
-                  {SKILL_TOOLS[skill].map((tool) => (
-                    <option key={tool.name} value={tool.name}>{tool.name} (+{tool.efficiency}% eff)</option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </div>
         </div>
 
         <div className="settings-panel settings-panel-wide">
@@ -318,40 +357,19 @@ export default function SettingsPage() {
           <div className="settings-summary-grid">
             <div className="settings-summary-card">
               <span>Market Cache</span>
-              <strong>{Object.keys(marketData || {}).filter((key) => key !== "_meta").length.toLocaleString()}</strong>
+              <strong>{marketItemCount.toLocaleString()}</strong>
               <small>{formatAge(marketMeta?.last_updated)}</small>
             </div>
             <div className="settings-summary-card">
               <span>Item Database</span>
-              <strong>{Object.keys(allItemsDb || {}).length.toLocaleString()}</strong>
-              <small>Loaded from local app data.</small>
+              <strong>{itemCount.toLocaleString()}</strong>
+              <small>Local app data</small>
             </div>
             <div className="settings-summary-card">
               <span>Game Entities</span>
               <strong>{entityCount.toLocaleString()}</strong>
               <small>Enemies, dungeons, and world bosses.</small>
             </div>
-          </div>
-        </div>
-
-        <div className="settings-panel settings-panel-wide">
-          <h2><Database size={17} /> Page Connections</h2>
-          <p className="settings-panel-note">This shows where values come from so users do not have to guess whether a page is using Settings, Profiles, or its own controls.</p>
-          <div className="settings-source-table">
-            <div className="settings-source-head">
-              <span>Page</span>
-              <span>Global Settings</span>
-              <span>Active Profile</span>
-              <span>Page Controls</span>
-            </div>
-            {connectedPages.map((row) => (
-              <div className="settings-source-row" key={row.page}>
-                <strong>{row.page}</strong>
-                <span>{row.global}</span>
-                <span>{row.profile}</span>
-                <span>{row.local}</span>
-              </div>
-            ))}
           </div>
         </div>
 
