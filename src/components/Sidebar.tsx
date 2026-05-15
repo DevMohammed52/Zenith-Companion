@@ -1,91 +1,102 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, FlaskConical, Swords, Package, Loader2, Castle, Skull, X, LayoutDashboard, Settings, ShoppingCart, Shield, ChevronDown, Sparkles, BarChart3, BookOpen, Users, PawPrint, Home, Map as MapIcon, BellRing, Bug } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Activity, X, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ZenithIcon, { type ZenithIconName } from '@/components/icons/ZenithIcon';
 
 interface NavItem {
     href: string;
     label: string;
-    icon: LucideIcon;
+    icon: ZenithIconName;
     matchPrefix?: boolean;
     badge?: string;
 }
 
 interface NavGroup {
     label: string;
-    icon: LucideIcon;
+    eyebrow: string;
+    icon: ZenithIconName;
     items: NavItem[];
 }
 
 const NAV_GROUPS: NavGroup[] = [
     {
         label: 'General',
-        icon: LayoutDashboard,
+        eyebrow: 'Home base',
+        icon: 'dashboard',
         items: [
-            { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-            { href: '/profiles', label: 'Profiles', icon: Users },
-            { href: '/pets', label: 'Pet Database', icon: PawPrint },
-            { href: '/pets/compare', label: 'Pet Comparison', icon: BarChart3 },
-            { href: '/housing', label: 'Housing', icon: Home },
-            { href: '/items', label: 'Items Database', icon: Package, matchPrefix: true },
-            { href: '/market-alerts', label: 'Market Watch', icon: BellRing },
-            { href: '/map', label: 'World Map', icon: MapIcon },
-            { href: '/weather', label: 'Weather Guide', icon: Sparkles },
-            { href: '/lore', label: 'Lore Wiki', icon: BookOpen, matchPrefix: true },
-            { href: '/settings', label: 'Settings', icon: Settings },
+            { href: '/', label: 'Dashboard', icon: 'dashboard' },
+            { href: '/profiles', label: 'Profiles', icon: 'profile' },
+            { href: '/settings', label: 'Settings', icon: 'settings' },
         ]
     },
     {
-        label: 'Skills',
-        icon: FlaskConical,
+        label: 'Databases',
+        eyebrow: 'Reference',
+        icon: 'items',
         items: [
-            { href: '/alchemy', label: 'Alchemy Profit', icon: FlaskConical },
-            { href: '/skill-profit', label: 'Skill Profit Finder', icon: BarChart3 },
-            { href: '/alchemy/mythic', label: 'Mythic Lab', icon: Sparkles, badge: 'LVL 90' },
-            { href: '/crafting', label: 'Crafting Queue', icon: ShoppingCart },
+            { href: '/items', label: 'Items Database', icon: 'items', matchPrefix: true },
+            { href: '/enemies', label: 'Enemy Database', icon: 'enemy' },
+            { href: '/pets', label: 'Pet Database', icon: 'pets' },
+            { href: '/pets/owned', label: 'Owned Pets', icon: 'pets' },
+            { href: '/pets/compare', label: 'Pet Comparison', icon: 'skill' },
+            { href: '/guilds', label: 'Guild Database', icon: 'guild' },
+            { href: '/museum', label: 'Museum', icon: 'museum' },
+            { href: '/lore', label: 'Lore Wiki', icon: 'archive', matchPrefix: true },
         ]
     },
     {
-        label: 'Combat',
-        icon: Swords,
+        label: 'Planning Tools',
+        eyebrow: 'Calculators',
+        icon: 'alchemy',
         items: [
-            { href: '/combat', label: 'Combat', icon: Swords },
-            { href: '/enemies', label: 'Enemy Database', icon: Bug },
-            { href: '/dungeons', label: 'Dungeons', icon: Castle },
-            { href: '/bosses', label: 'World Bosses', icon: Skull },
-            { href: '/bis', label: 'BiS Recommender', icon: Shield },
+            { href: '/alchemy', label: 'Alchemy Profit', icon: 'alchemy' },
+            { href: '/skill-profit', label: 'Skill Profit Finder', icon: 'skill' },
+            { href: '/alchemy/mythic', label: 'Mythic Lab', icon: 'spark', badge: 'LVL 90' },
+            { href: '/crafting', label: 'Crafting Queue', icon: 'crafting' },
+            { href: '/forge', label: 'Forge Planner', icon: 'forge' },
+            { href: '/housing', label: 'Housing', icon: 'housing' },
+            { href: '/bis', label: 'BiS Recommender', icon: 'shield' },
+            { href: '/market-alerts', label: 'Market Watch', icon: 'bell' },
+        ]
+    },
+    {
+        label: 'World & Combat',
+        eyebrow: 'Live route',
+        icon: 'combat',
+        items: [
+            { href: '/map', label: 'World Map', icon: 'map' },
+            { href: '/weather', label: 'Weather Guide', icon: 'weather' },
+            { href: '/combat', label: 'Combat', icon: 'combat' },
+            { href: '/dungeons', label: 'Dungeons', icon: 'castle' },
+            { href: '/bosses', label: 'World Bosses', icon: 'boss' },
+            { href: '/conquest', label: 'Conquest', icon: 'conquest' },
         ]
     }
 ];
 
-import { useData } from '@/context/DataContext';
+const DEFAULT_EXPANDED_GROUPS: Record<string, boolean> = {
+    'General': true,
+    'Databases': true,
+    'Planning Tools': false,
+    'World & Combat': true,
+};
+const SIDEBAR_GROUP_STORAGE_KEY = 'zenith.sidebar.expandedGroups.v1';
 
 import { useSidebar } from '@/context/SidebarContext';
-import {
-    evaluateMarketWatchRule,
-    MARKET_WATCH_RULES_EVENT,
-    MARKET_WATCH_STORAGE_KEY,
-    sanitizeMarketWatchRules,
-    type MarketWatchRule,
-} from '@/lib/market-alerts';
-import type { MarketPriceDatum } from '@/lib/market-pricing';
-import { getProfileBarteringBoost } from '@/lib/profile-calculations';
-import { useProfiles } from '@/lib/profiles';
 
 export default function Sidebar() {
     const pathname = usePathname();
-    const { scraperStatus, marketData, allItemsDb } = useData();
-    const { activeProfile } = useProfiles();
     const { mobileOpen, setMobileOpen } = useSidebar();
     const previousPathname = useRef(pathname);
-    const [marketWatchRules, setMarketWatchRules] = useState<MarketWatchRule[]>([]);
-    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-        'General': true,
-        'Skills': true,
-        'Combat': true
-    });
+    const activeGroupLabel = useMemo(() => {
+        return NAV_GROUPS.find((group) => group.items.some((item) => {
+            if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + '/');
+            return pathname === item.href;
+        }))?.label;
+    }, [pathname]);
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(DEFAULT_EXPANDED_GROUPS);
 
     const toggleGroup = (label: string) => {
         setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -115,80 +126,43 @@ export default function Sidebar() {
         return pathname === item.href;
     };
 
-    // Calculate age for "Last Updated"
-    const updatedAt = scraperStatus?.timestamp ? new Date(scraperStatus.timestamp) : null;
-    const ageMs = updatedAt ? Date.now() - updatedAt.getTime() : null;
-    const ageMinutes = ageMs === null ? null : Math.max(0, Math.floor(ageMs / 60000));
-    const isStale = ageMinutes !== null && ageMinutes >= 10;
-    const freshnessText = ageMinutes === null
-        ? 'Waiting...'
-        : ageMinutes < 1
-            ? 'Just now'
-            : `${ageMinutes}m ago`;
-    const typedMarketData = marketData as Record<string, MarketPriceDatum> | null;
-    const barteringBoost = getProfileBarteringBoost(activeProfile);
+    useEffect(() => {
+        if (!activeGroupLabel) return;
+        setExpandedGroups((prev) => prev[activeGroupLabel] ? prev : { ...prev, [activeGroupLabel]: true });
+    }, [activeGroupLabel]);
 
     useEffect(() => {
-        if (typeof window === 'undefined') return;
+        try {
+            const savedGroups = window.localStorage.getItem(SIDEBAR_GROUP_STORAGE_KEY);
+            if (!savedGroups) return;
+            const parsedGroups = JSON.parse(savedGroups) as Record<string, unknown>;
+            const nextGroups = NAV_GROUPS.reduce<Record<string, boolean>>((acc, group) => {
+                acc[group.label] = typeof parsedGroups[group.label] === 'boolean'
+                    ? parsedGroups[group.label] as boolean
+                    : DEFAULT_EXPANDED_GROUPS[group.label] ?? false;
+                return acc;
+            }, {});
+            setExpandedGroups(activeGroupLabel ? { ...nextGroups, [activeGroupLabel]: true } : nextGroups);
+        } catch {
+            window.localStorage.removeItem(SIDEBAR_GROUP_STORAGE_KEY);
+        }
+    }, [activeGroupLabel]);
 
-        const loadMarketWatchRules = () => {
-            try {
-                const stored = localStorage.getItem(MARKET_WATCH_STORAGE_KEY);
-                setMarketWatchRules(sanitizeMarketWatchRules(stored ? JSON.parse(stored) : []));
-            } catch {
-                setMarketWatchRules([]);
-            }
-        };
-
-        const onStorage = (event: StorageEvent) => {
-            if (event.key && event.key !== MARKET_WATCH_STORAGE_KEY) return;
-            loadMarketWatchRules();
-        };
-
-        loadMarketWatchRules();
-        window.addEventListener('storage', onStorage);
-        window.addEventListener(MARKET_WATCH_RULES_EVENT, loadMarketWatchRules);
-
-        return () => {
-            window.removeEventListener('storage', onStorage);
-            window.removeEventListener(MARKET_WATCH_RULES_EVENT, loadMarketWatchRules);
-        };
-    }, []);
-
-    const fallbackUpdatedAt = typeof scraperStatus?.timestamp === 'string' ? scraperStatus.timestamp : undefined;
-    const marketWatchSummary = useMemo(() => {
-        const enabledRules = marketWatchRules.filter((rule) => rule.enabled);
-        const evaluations = enabledRules.map((rule) => evaluateMarketWatchRule({
-            rule,
-            market: typedMarketData?.[rule.itemName],
-            item: allItemsDb?.[rule.itemName],
-            barteringBoostPercent: barteringBoost,
-            fallbackUpdatedAt,
-        }));
-        const met = evaluations.filter((evaluation) => evaluation.conditionMet).length;
-        const waiting = evaluations.filter((evaluation) => evaluation.hasValue && !evaluation.conditionMet).length;
-        const missing = evaluations.filter((evaluation) => !evaluation.hasValue).length;
-        return {
-            total: marketWatchRules.length,
-            enabled: enabledRules.length,
-            met,
-            waiting,
-            missing,
-        };
-    }, [allItemsDb, barteringBoost, fallbackUpdatedAt, marketWatchRules, typedMarketData]);
-    const marketWatchAriaLabel = `Market Watch, ${marketWatchSummary.met} rules met, ${marketWatchSummary.enabled} enabled rules`;
+    useEffect(() => {
+        window.localStorage.setItem(SIDEBAR_GROUP_STORAGE_KEY, JSON.stringify(expandedGroups));
+    }, [expandedGroups]);
 
     return (
         <>
             {mobileOpen && <div onClick={() => setMobileOpen(false)} className="mobile-backdrop" aria-hidden="true" />}
 
             <div id="app-sidebar" className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`} aria-label="Primary navigation">
-                <div style={{ marginBottom: '1.5rem', padding: '0 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="sidebar-brand">
                     <div>
-                        <h2 style={{ fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
-                            <Activity size={18} color="var(--text-accent)" /> ZENITH
+                        <h2>
+                            <Activity size={18} /> ZENITH
                         </h2>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.1rem', letterSpacing: '0.1em' }}>COMPANION SUITE</p>
+                        <p>COMPANION SUITE</p>
                     </div>
                     <button 
                         onClick={() => setMobileOpen(false)} 
@@ -224,106 +198,55 @@ export default function Sidebar() {
                     `}</style>
                 </div>
 
-                <nav style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '0.5rem', 
-                    flex: 1, 
-                    overflowY: 'auto',
-                    paddingRight: '0.5rem', // Space for scrollbar
-                    marginRight: '-0.5rem'  // Compensation
-                }} className="custom-scrollbar">
+                <nav className="sidebar-nav custom-scrollbar">
                     {NAV_GROUPS.map(group => {
                         const isExpanded = expandedGroups[group.label];
-                        const GroupIcon = group.icon;
+                        const isActiveGroup = activeGroupLabel === group.label;
                         const groupPanelId = `sidebar-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
                         
                         return (
-                            <div key={group.label} style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div key={group.label} className={`sidebar-group ${isActiveGroup ? 'sidebar-group-active' : ''}`}>
                                 <button 
                                     onClick={() => toggleGroup(group.label)}
                                     aria-expanded={isExpanded}
                                     aria-controls={groupPanelId}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '0.6rem 0.75rem', background: 'transparent', border: 'none',
-                                        color: isExpanded ? '#fff' : 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem',
-                                        fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
-                                        transition: 'color 0.2s ease'
-                                    }}
+                                    className="sidebar-group-button"
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <GroupIcon size={14} style={{ opacity: isExpanded ? 0.8 : 0.4 }} />
-                                        {group.label}
+                                    <div className="sidebar-group-title">
+                                        <ZenithIcon name={group.icon} size={15} />
+                                        <span>
+                                            <strong>{group.label}</strong>
+                                            <small>{group.eyebrow}</small>
+                                        </span>
                                     </div>
-                                    <div style={{ transition: 'transform 0.3s ease', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
+                                    <div className="sidebar-group-chevron" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
                                         <ChevronDown size={14} />
                                     </div>
                                 </button>
 
                                 <div
                                     id={groupPanelId}
-                                    style={{
-                                    display: 'grid',
-                                    gridTemplateRows: isExpanded ? '1fr' : '0fr',
-                                    transition: 'grid-template-rows 0.3s ease-in-out',
-                                    overflow: 'hidden'
-                                }}>
-                                    <div style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '0.5rem' }}>
+                                    className="sidebar-group-panel"
+                                    data-expanded={isExpanded ? 'true' : 'false'}
+                                    style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+                                >
+                                    <div className="sidebar-group-items">
                                         {group.items.map(item => {
                                             const active = isActive(item);
-                                            const Icon = item.icon;
-                                            const watchBadge = item.href === '/market-alerts' && marketWatchSummary.enabled > 0
-                                                ? `${marketWatchSummary.met}/${marketWatchSummary.enabled}`
-                                                : item.badge;
-                                            const watchBadgeActive = item.href === '/market-alerts' && marketWatchSummary.met > 0;
                                             return (
                                                 <Link 
                                                     key={item.href} 
                                                     href={item.href} 
                                                     className={`nav-link ${active ? 'nav-link-active' : ''}`}
                                                     onClick={closeMobileMenu}
-                                                    aria-label={item.href === '/market-alerts' ? marketWatchAriaLabel : undefined}
-                                                    style={{ 
-                                                        paddingLeft: '1.25rem', 
-                                                        fontSize: '0.82rem',
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        position: 'relative'
-                                                    }}
                                                 >
-                                                    {active && (
-                                                        <div style={{ 
-                                                            position: 'absolute', left: 0, top: '20%', bottom: '20%', 
-                                                            width: '2px', background: 'var(--text-accent)', 
-                                                            boxShadow: '0 0 10px var(--text-accent)',
-                                                            borderRadius: '0 2px 2px 0'
-                                                        }} />
-                                                    )}
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                        <Icon size={15} style={{ 
-                                                            opacity: active ? 1 : 0.5,
-                                                            color: active ? 'var(--text-accent)' : 'inherit'
-                                                        }} />
+                                                    <span className="nav-link-main">
+                                                        <ZenithIcon name={item.icon} size={15} />
                                                         {item.label}
-                                                    </div>
-                                                    {watchBadge && (
-                                                        <span style={{ 
-                                                            fontFamily: 'var(--font-mono)',
-                                                            fontSize: '0.63rem',
-                                                            background: watchBadgeActive ? 'color-mix(in srgb, var(--text-warning), transparent 84%)' : 'rgba(255,255,255,0.05)',
-                                                            border: watchBadgeActive ? '1px solid color-mix(in srgb, var(--text-warning), transparent 50%)' : '1px solid transparent',
-                                                            padding: '2px 6px',
-                                                            borderRadius: '999px',
-                                                            color: watchBadgeActive ? 'var(--text-warning)' : 'var(--text-muted)',
-                                                            flex: '0 0 auto',
-                                                            maxWidth: '4.25rem',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                        }}>
-                                                            {watchBadge}
+                                                    </span>
+                                                    {item.badge && (
+                                                        <span className="nav-link-badge">
+                                                            {item.badge}
                                                         </span>
                                                     )}
                                                 </Link>
@@ -335,40 +258,6 @@ export default function Sidebar() {
                         );
                     })}
                 </nav>
-
-                <div style={{ 
-                    padding: '1rem', 
-                    background: 'rgba(255,255,255,0.02)', 
-                    borderRadius: '10px', 
-                    border: '1px solid var(--border-subtle)', 
-                    marginTop: '1.5rem',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div style={{ 
-                        position: 'absolute', top: 0, left: 0, width: '2px', height: '100%',
-                        background: isStale ? 'var(--text-danger)' : 'var(--text-success)',
-                        opacity: 0.5
-                    }} />
-                    <h3 style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '0.06em' }}>
-                        <Loader2 size={11} className={isStale ? "" : "animate-spin"} /> MARKET SYNC
-                    </h3>
-                    {scraperStatus ? (
-                        <div style={{ fontSize: '0.75rem' }}>
-                            <div style={{ color: '#fff', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
-                                {scraperStatus.currentItem}
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                <span style={{ color: 'var(--text-accent)', fontWeight: 700 }}>
-                                    {scraperStatus.currentIndex} / {scraperStatus.totalItems}
-                                </span>
-                                <span style={{ fontSize: '0.65rem', color: isStale ? 'var(--text-danger)' : 'var(--text-muted)' }}>
-                                    {freshnessText}
-                                </span>
-                            </div>
-                        </div>
-                    ) : <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Connecting...</div>}
-                </div>
             </div>
         </>
     );

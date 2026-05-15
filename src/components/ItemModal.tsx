@@ -21,6 +21,7 @@ import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
 import { GATHERED_RESOURCE_SOURCE_NOTE, getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
 import { useModalA11y } from '@/lib/use-modal-a11y';
+import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 
 interface ItemModalProps {
   id: string;
@@ -156,11 +157,20 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const qColor = item ? qualityColors[item.quality] || qualityColors.STANDARD : qualityColors.STANDARD;
   const itemName = item?.name;
+  const itemIsTradeable = item ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false : false;
   const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
-  const recipeData = useMemo(() => item?.recipe || item?.produced_from, [item]);
+
+  const relationEntry = useMemo(() => {
+    if (!usageMap || !item?.name) return null;
+    const entry = usageMap[item.name];
+    return entry && typeof entry === 'object' ? entry : null;
+  }, [item, usageMap]);
+
+  const recipeData = useMemo(() => item?.recipe || item?.produced_from || relationEntry?.produced_from, [item, relationEntry]);
   const recipeMats = useMemo(() => recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [], [recipeData]);
   const recipeSkill = recipeData?.skill || 'CRAFTING';
   const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
+  const isDefaultAlchemyCraft = recipeData?.source === 'DEFAULT_ALCHEMY';
   const recipeOutputName = item?.type === 'RECIPE' ? getRecipeOutputName(item) : item?.name || '';
   const recipeOutputItem = recipeOutputName ? (allItemsDb?.[recipeOutputName] || marketData?.[recipeOutputName]) : null;
   const craftedByRecipeName = useMemo(
@@ -192,12 +202,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     const duration = eff.length ? ` (${Math.floor(eff.length / 60000)}m)` : '';
     return `${targetStr}${attrStr}: +${valStr}${duration}`;
   };
-
-  const relationEntry = useMemo(() => {
-    if (!usageMap || !item?.name) return null;
-    const entry = usageMap[item.name];
-    return entry && typeof entry === 'object' ? entry : null;
-  }, [item, usageMap]);
 
   const acquisitionSources = useMemo(() => {
     const rawSources = [
@@ -252,18 +256,20 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const saleInsight = useMemo(() => {
     if (!item) return null;
-    const marketGross = getSafeMarketValue(item) || getSafeMarketValue(marketData?.[item.name]);
+    const tradeable = !isForcedUntradableItem(item.name) && item.is_tradeable !== false;
+    const marketGross = tradeable ? (getSafeMarketValue(item) || getSafeMarketValue(marketData?.[item.name])) : 0;
     const vendorBase = Number(item.vendor_price || 0);
     if (!marketGross && !vendorBase) return null;
 
     const taxRate = getMarketTaxRate(preferences.membership);
-    const marketNet = item.is_tradeable !== false ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
+    const marketNet = tradeable ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
     const vendorNet = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
     const bestPath = marketNet >= vendorNet ? 'Market' : 'Vendor';
     const bestRevenue = Math.max(marketNet, vendorNet);
-    const liquidity = getMarketLiquidity({ ...item, ...(marketData?.[item.name] || {}) });
+    const liquidity = getMarketLiquidity({ ...item, ...(marketData?.[item.name] || {}), is_tradeable: tradeable });
 
     return {
+      tradeable,
       bestPath,
       bestRevenue,
       marketGross,
@@ -274,17 +280,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       stableVolume: liquidity.stableVolume3d,
     };
   }, [item, marketData, preferences.membership, profileBarteringBoost]);
-  const modalMarketValue = item ? (getSafeMarketValue(marketData?.[item.name]) || getSafeMarketValue(item)) : 0;
+  const modalMarketValue = itemIsTradeable ? (getSafeMarketValue(marketData?.[item.name]) || getSafeMarketValue(item)) : 0;
   const modalMarketVolume = Number((item?.name ? marketData?.[item.name]?.vol_3 : 0) || item?.vol_3 || 0);
-  const modalMarketDatum = item?.name ? { ...item, ...(marketData?.[item.name] || {}) } : item;
+  const modalMarketDatum = item?.name ? { ...item, ...(marketData?.[item.name] || {}), is_tradeable: itemIsTradeable } : item;
   const modalLiquidity = getMarketLiquidity(modalMarketDatum);
   const modalStableVolume = modalLiquidity.stableVolume3d || modalMarketVolume;
 
   const showUtility = Object.keys(groupedUtility).length > 0;
-  const showMarket = item && item.is_tradeable;
+  const showMarket = item && itemIsTradeable;
   const showAcquisition = acquisitionSources.length > 0;
   const showGatheredLocations = gatheredLocations.length > 0;
-  const showRecipe = item && (item.recipe || item.produced_from);
+  const showRecipe = item && recipeData;
   const showYield = item && item.recipe_yield;
   const showLootTable = (item && item.loot_table && item.loot_table.length > 0) || (item && item.chest_drops && item.chest_drops.length > 0);
   const showSellAdvisor = item && saleInsight;
@@ -343,7 +349,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   {item?.name || 'Loading...'}
                 </h2>
                 <div className="badge-row">
-                  <span className="type-badge">{(item?.type || 'UNKNOWN').replace(/_/g, ' ')}</span>
+                  <span className="type-badge">{formatItemTypeLabel(item?.type || 'UNKNOWN')}</span>
                   <span className="dot">•</span>
                   <span className="quality-text" style={{ color: qColor }}>{item?.quality || 'STANDARD'}</span>
                   {item?.recipe_yield?.uses && (
@@ -363,7 +369,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       </span>
                     </>
                   )}
-                  {item && !item.is_tradeable && (
+                  {item && !itemIsTradeable && (
                     <>
                       <span className="dot">•</span>
                       <span className="untradable-badge">Untradable</span>
@@ -412,10 +418,12 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <em>{formatGold(saleInsight.bestRevenue)} net revenue</em>
                     </div>
                     <div className="sell-advisor-metrics">
-                      <div>
-                        <span>Market net {saleInsight.marketGross ? `(${Math.round(saleInsight.taxRate * 100)}% tax)` : ''}</span>
-                        <strong>{saleInsight.marketGross ? formatGold(saleInsight.marketNet) : 'No market'}</strong>
-                      </div>
+                      {saleInsight.tradeable && (
+                        <div>
+                          <span>Market net {saleInsight.marketGross ? `(${Math.round(saleInsight.taxRate * 100)}% tax)` : ''}</span>
+                          <strong>{saleInsight.marketGross ? formatGold(saleInsight.marketNet) : 'No market'}</strong>
+                        </div>
+                      )}
                       <div>
                         <span>Vendor net</span>
                         <strong>{saleInsight.vendorNet ? formatGold(saleInsight.vendorNet) : 'No vendor'}</strong>
@@ -786,7 +794,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
                 return (
                   <div className="bento-card recipe-card">
-                    <div className="card-label"><Hammer size={14} /> {item.produced_from ? 'PRODUCED FROM' : 'CRAFTING RECIPE'}</div>
+                    <div className="card-label">
+                      <Hammer size={14} /> {isDefaultAlchemyCraft ? 'DEFAULT ALCHEMY CRAFT' : item.produced_from ? 'PRODUCED FROM' : 'CRAFTING RECIPE'}
+                    </div>
                     <div className="recipe-box">
                       <div className="recipe-header-flex">
                         <div className="recipe-req">Lvl {recipeLevel} {recipeSkill}</div>
@@ -809,7 +819,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         </div>
                       </div>
 
-                      {craftedByRecipeName && (
+                      {isDefaultAlchemyCraft && (
+                        <div className="recipe-link-button recipe-link-static">
+                          <span>
+                            <span className="recipe-link-kicker">Learned by default</span>
+                            <strong>No recipe item required</strong>
+                            <em>ALCHEMY</em>
+                          </span>
+                        </div>
+                      )}
+
+                      {craftedByRecipeName && !isDefaultAlchemyCraft && (
                         <button
                           type="button"
                           className="recipe-link-button"
@@ -881,7 +901,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
         <div className="modal-footer">
           <div className="item-id">ID: {id}</div>
-          {item?.is_tradeable && (
+          {itemIsTradeable && (
             <a href={`https://web.idle-mmo.com/item/inspect/${id}`} target="_blank" rel="noopener noreferrer" className="market-link">
               View Official Listings <ExternalLink size={12} />
             </a>
@@ -1208,6 +1228,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           background: rgba(251,191,36,0.1);
           border-color: rgba(251,191,36,0.32);
           transform: translateY(-1px);
+        }
+        .recipe-link-static,
+        .recipe-link-static:hover {
+          background: rgba(139,92,246,0.08);
+          border-color: rgba(139,92,246,0.22);
+          cursor: default;
+          transform: none;
         }
         .recipe-link-button > span {
           display: flex;

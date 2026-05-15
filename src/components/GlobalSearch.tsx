@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react";
 import { ALCHEMY_ITEMS } from "@/constants";
 import { useItemModal } from "@/context/ItemModalContext";
 import { LORE_ENTRIES, LORE_THEORIES } from "@/data/lore";
+import { useProfiles } from "@/lib/profiles";
 
 type SearchResult = {
   label: string;
@@ -14,6 +15,14 @@ type SearchResult = {
   href: string;
   detail?: string;
 };
+
+function getSearchResultIdentity(result: SearchResult) {
+  return `${result.type}::${result.href}::${result.label}::${result.detail || ""}`;
+}
+
+function getSearchResultRenderKey(result: SearchResult, index: number) {
+  return `${getSearchResultIdentity(result)}::${index}`;
+}
 
 const navShortcuts: Record<string, string> = {
   "1": "/",
@@ -35,13 +44,23 @@ type GlobalSearchProps = {
   hotkeyEnabled?: boolean;
 };
 
+type GuildSearchRow = {
+  id: number | string;
+  name: string;
+  tag?: string | null;
+  level?: number | null;
+  leader_names?: string[];
+};
+
 export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps) {
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
   const { marketData, staticData, allItemsDb, worldLocations } = useData();
+  const { activeProfile, state: profileState } = useProfiles();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
+  const [guildSearchRows, setGuildSearchRows] = useState<GuildSearchRow[]>([]);
   const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -56,6 +75,23 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!open || guildSearchRows.length > 0) return;
+    let cancelled = false;
+    fetch("/guild-database.json")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !Array.isArray(payload?.guilds)) return;
+        setGuildSearchRows(payload.guilds);
+      })
+      .catch(() => {
+        if (!cancelled) setGuildSearchRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [guildSearchRows.length, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,22 +144,60 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const results = useMemo<SearchResult[]>(() => {
     const next: SearchResult[] = [
       { label: "Dashboard", type: "Page", href: "/", detail: "Overview" },
-      { label: "Alchemy Profit", type: "Page", href: "/alchemy", detail: "Profit calculator" },
-      { label: "Crafting Queue", type: "Page", href: "/crafting", detail: "Shopping list and batching" },
-      { label: "Profiles", type: "Page", href: "/profiles", detail: "Character setups" },
-      { label: "Pet Database", type: "Page", href: "/pets", detail: "Pet stats and listings" },
-      { label: "Pet Comparison", type: "Page", href: "/pets/compare", detail: "Side-by-side pet planner" },
-      { label: "Housing", type: "Page", href: "/housing", detail: "Profile housing buffs" },
+      { label: "Profiles", type: "Page", href: "/profiles", detail: "Character setups and imports" },
+      { label: "Settings", type: "Page", href: "/settings", detail: "Preferences, buffs, and theme" },
       { label: "Items Database", type: "Page", href: "/items", detail: "Market data repository" },
+      { label: "Enemy Database", type: "Page", href: "/enemies", detail: "Mobs, drops, weather behavior" },
+      { label: "Pet Database", type: "Page", href: "/pets", detail: "Pet stats and listings" },
+      { label: "Owned Pets", type: "Page", href: "/pets/owned", detail: "Imported and manual pet snapshots" },
+      { label: "Pet Comparison", type: "Page", href: "/pets/compare", detail: "Side-by-side pet planner" },
+      { label: "Guild Database", type: "Page", href: "/guilds", detail: "Guild registry and discovery" },
+      { label: "Museum", type: "Page", href: "/museum", detail: "Profile collection snapshots" },
+      { label: "Lore Wiki", type: "Page", href: "/lore", detail: "Chronicles of Valaron" },
+      { label: "Alchemy Profit", type: "Page", href: "/alchemy", detail: "Profit calculator" },
+      { label: "Skill Profit Finder", type: "Page", href: "/skill-profit", detail: "Live skill route planner" },
+      { label: "Mythic Lab", type: "Page", href: "/alchemy/mythic", detail: "High-tier alchemy batching" },
+      { label: "Crafting Queue", type: "Page", href: "/crafting", detail: "Shopping list and batching" },
+      { label: "Forge Planner", type: "Page", href: "/forge", detail: "Saved recipe material planning" },
+      { label: "Housing", type: "Page", href: "/housing", detail: "Profile housing buffs and costs" },
+      { label: "BiS Recommender", type: "Page", href: "/bis", detail: "Gear tiers and stat comparison" },
+      { label: "Market Watch", type: "Page", href: "/market-alerts", detail: "Historical threshold rules" },
       { label: "World Map", type: "Page", href: "/map", detail: "Locations, weather, and sources" },
-      { label: "Weather Guide", type: "Page", href: "/weather", detail: "Weather effects" },
+      { label: "Weather Guide", type: "Page", href: "/weather", detail: "Forecasts and enemy reactions" },
       { label: "Combat", type: "Page", href: "/combat", detail: "Enemy drops and profit" },
       { label: "Dungeons", type: "Page", href: "/dungeons", detail: "Loot tables and efficiency" },
       { label: "World Bosses", type: "Page", href: "/bosses", detail: "Rare drops and locations" },
-      { label: "BiS Recommender", type: "Page", href: "/bis", detail: "Best-in-slot gear logic" },
-      { label: "Lore Wiki", type: "Page", href: "/lore", detail: "Chronicles of Valaron" },
-      { label: "Settings", type: "Page", href: "/settings", detail: "Preferences and theme" },
+      { label: "Conquest", type: "Page", href: "/conquest", detail: "Assaults and guild standings" },
     ];
+
+    profileState.profiles.forEach((profile) => {
+      next.push({
+        label: profile.name,
+        type: "Profile",
+        href: "/profiles",
+        detail: `${profile.className || "Character"} - TL ${profile.levels.totalLevel || 0}`,
+      });
+    });
+
+    activeProfile?.ownedPets?.forEach((pet) => {
+      if (!pet.species) return;
+      next.push({
+        label: pet.nickname ? `${pet.nickname} (${pet.species})` : pet.species,
+        type: "Owned Pet",
+        href: "/pets/owned",
+        detail: `${pet.quality || "Pet"} - ${activeProfile.name}`,
+      });
+    });
+
+    activeProfile?.museum?.items?.forEach((item) => {
+      if (!item.name) return;
+      next.push({
+        label: item.name,
+        type: "Museum",
+        href: "/museum",
+        detail: `${item.category || "Collection"} - qty ${item.quantity ?? 1}`,
+      });
+    });
 
     LORE_ENTRIES.forEach(entry => {
       next.push({
@@ -165,7 +239,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     }
 
     staticData?.enemies?.forEach((enemy: any) => {
-      next.push({ label: enemy.name, type: "Enemy", href: `/combat?search=${encodeURIComponent(enemy.name)}`, detail: enemy.location?.name });
+      next.push({ label: enemy.name, type: "Enemy", href: `/enemies?search=${encodeURIComponent(enemy.name)}`, detail: enemy.location?.name });
     });
     staticData?.dungeons?.forEach((dungeon: any) => {
       next.push({ label: dungeon.name, type: "Dungeon", href: `/dungeons?search=${encodeURIComponent(dungeon.name)}`, detail: dungeon.location?.name });
@@ -184,8 +258,19 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       });
     });
 
+    guildSearchRows.forEach((guild) => {
+      if (!guild.name) return;
+      const leaders = guild.leader_names?.slice(0, 2).join(", ");
+      next.push({
+        label: guild.tag ? `${guild.name} [${guild.tag}]` : guild.name,
+        type: "Guild",
+        href: `/guilds?guild=${encodeURIComponent(String(guild.id))}`,
+        detail: `Level ${guild.level ?? "-"}${leaders ? ` - ${leaders}` : ""}`,
+      });
+    });
+
     return next;
-  }, [marketData, staticData, allItemsDb, worldLocations]);
+  }, [activeProfile, guildSearchRows, marketData, profileState.profiles, staticData, allItemsDb, worldLocations]);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -212,7 +297,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     setQuery("");
     
     // Save to recent
-    const updatedRecent = [result, ...recent.filter(r => r.label !== result.label)].slice(0, 5);
+    const resultIdentity = getSearchResultIdentity(result);
+    const updatedRecent = [result, ...recent.filter(r => getSearchResultIdentity(r) !== resultIdentity)].slice(0, 5);
     setRecent(updatedRecent);
     localStorage.setItem('zenith-recent-items', JSON.stringify(updatedRecent));
 
@@ -267,9 +353,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         </div>
         <div className="command-results">
           {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
-          {filteredResults.map(result => (
+          {filteredResults.map((result, index) => (
             <button
-              key={`${result.type}-${result.label}`}
+              key={getSearchResultRenderKey(result, index)}
               type="button"
               onClick={() => openResult(result)}
               onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
