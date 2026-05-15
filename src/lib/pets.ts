@@ -173,6 +173,17 @@ export type PetDatabase = {
   pets: PetRecord[];
 };
 
+export type OwnedPetMatchInput = {
+  petId?: number;
+  species?: string;
+  nickname?: string;
+};
+
+export type PetMatchLookup = {
+  byId: Map<number, PetRecord>;
+  byName: Map<string, PetRecord>;
+};
+
 export const QUALITY_ORDER: Record<Quality, number> = {
   UNKNOWN: 0,
   STANDARD: 1,
@@ -221,6 +232,42 @@ export const COMPARISON_STAT_KEYS: StatKey[] = [
 ];
 
 const BOOSTED_STATS = new Set<StatKey>(["agility", "accuracy", "protection", "attack_power", "movement_speed"]);
+
+export function normalizePetMatchName(value: string | null | undefined) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function getPetRecordMatchKey(pet: Pick<PetRecord, "id" | "name">) {
+  return typeof pet.id === "number" && Number.isFinite(pet.id)
+    ? `id:${pet.id}`
+    : `name:${normalizePetMatchName(pet.name)}`;
+}
+
+export function buildPetMatchLookup(pets: PetRecord[]): PetMatchLookup {
+  const byId = new Map<number, PetRecord>();
+  const byName = new Map<string, PetRecord>();
+  for (const pet of pets) {
+    if (typeof pet.id === "number" && Number.isFinite(pet.id)) byId.set(pet.id, pet);
+    const name = normalizePetMatchName(pet.name);
+    if (name) byName.set(name, pet);
+  }
+  return { byId, byName };
+}
+
+export function findPetRecordForOwnedPet(ownedPet: OwnedPetMatchInput, lookup: PetMatchLookup) {
+  if (typeof ownedPet.petId === "number" && Number.isFinite(ownedPet.petId)) {
+    const byId = lookup.byId.get(ownedPet.petId);
+    if (byId) return byId;
+  }
+  const bySpecies = lookup.byName.get(normalizePetMatchName(ownedPet.species));
+  if (bySpecies) return bySpecies;
+  return lookup.byName.get(normalizePetMatchName(ownedPet.nickname));
+}
 
 export function formatGold(value?: number | null) {
   if (!value || value <= 0) return "-";

@@ -1,0 +1,554 @@
+.page {
+  padding-bottom: 3rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.kicker,
+.secondaryAction,
+.primaryAction,
+.activePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.kicker {
+  color: var(--text-accent);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  margin: 0.3rem 0;
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+.header p {
+  max-width: 46rem;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.secondaryAction,
+.primaryAction,
+.cardActions button {
+  min-height: 2.55rem;
+  padding: 0 0.85rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #fff;
+  background: rgba(255,255,255,0.055);
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryAction {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 45%);
+  background: color-mix(in srgb, var(--text-accent), transparent 82%);
+}
+
+.summaryGrid,
+.grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.summaryGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.summaryGrid div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.55rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.035);
+}
+
+.summaryGrid span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.summaryGrid strong {
+  grid-column: 2;
+  color: #fff;
+  font-size: 1.45rem;
+}
+
+.importReadiness {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), transparent 48%),
+    rgba(255,255,255,0.025);
+}
+
+.importReadiness div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.18rem 0.55rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.16);
+}
+
+.importReadiness svg {
+  grid-row: span 2;
+  color: var(--text-accent);
+}
+
+.importReadiness span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.importReadiness strong {
+  min-width: 0;
+  color: #fff;
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.importReadiness .warningCell {
+  border-color: color-mix(in srgb, var(--text-warning), transparent 72%);
+  background: color-mix(in srgb, var(--text-warning), transparent 93%);
+}
+
+.importReadiness .warningCell svg,
+.warningMeta {
+  color: var(--text-warning);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, auto) minmax(0, auto);
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+}
+
+.searchBox {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.searchBox span,
+.resultHeader span {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.searchBox div {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 2.65rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.22);
+}
+
+.searchBox svg {
+  position: absolute;
+  left: 0.8rem;
+  color: var(--text-muted);
+}
+
+.searchBox input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.55rem;
+  padding: 0 0.8rem 0 2.4rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+}
+
+.searchBox div:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
+}
+
+.segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.segment button,
+.directionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.55rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.22);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.segment button:hover,
+.activeControl,
+.directionButton:hover {
+  border-color: var(--border-focus) !important;
+  background: color-mix(in srgb, var(--text-accent), transparent 86%) !important;
+  color: #fff !important;
+}
+
+.resultHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.025);
+}
+
+.resultHeader strong {
+  color: #fff;
+}
+
+.grid {
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.card,
+.empty {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.035);
+}
+
+.card {
+  padding: 0.9rem;
+}
+
+.activeCard {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 45%);
+}
+
+.cardTop {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.petImage {
+  display: grid;
+  width: 3.2rem;
+  height: 3.2rem;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.18);
+}
+
+.petImage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.card h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.card p {
+  margin: 0.2rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.activePill {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 55%);
+  border-radius: 999px;
+  color: var(--text-accent);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.statGrid span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.16);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.statGrid strong {
+  color: #fff;
+}
+
+.detailPanel {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.12);
+}
+
+.detailPanel summary {
+  cursor: pointer;
+  padding: 0.65rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.detailGrid > div,
+.targetRow {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.6rem;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.035);
+}
+
+.detailGrid strong,
+.targetRow strong {
+  color: #fff;
+  font-size: 0.77rem;
+}
+
+.detailGrid span,
+.targetRow span {
+  display: grid;
+  grid-template-columns: minmax(4.8rem, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: 0.55rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  min-width: 0;
+}
+
+.detailGrid b {
+  color: #fff;
+  font-weight: 850;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.fullStatGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(3.1rem, 1fr));
+  gap: 0.3rem;
+}
+
+.fullStatGrid span {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: stretch;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.16);
+  min-height: 3.1rem;
+}
+
+.fullStatGrid b {
+  text-align: left;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.targetRow {
+  margin: 0 0.75rem 0.75rem;
+}
+
+.targetRow span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.metaRow span {
+  padding: 0.28rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.metaRow .warningMeta {
+  border: 1px solid color-mix(in srgb, var(--text-warning), transparent 72%);
+  background: color-mix(in srgb, var(--text-warning), transparent 92%);
+}
+
+.notes {
+  margin-top: 0.75rem !important;
+  line-height: 1.5;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.cardActions button:last-child {
+  color: #ffb4a8;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 18rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty h2 {
+  margin: 0.65rem 0 0.3rem;
+  color: #fff;
+}
+
+.empty p {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.8rem 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 52%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-panel), #000 18%);
+  color: #fff;
+  font-weight: 850;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+}
+
+@media (max-width: 760px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .secondaryAction,
+  .primaryAction {
+    justify-content: center;
+    flex: 1;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .importReadiness {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .segment {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .resultHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
