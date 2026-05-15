@@ -90,12 +90,21 @@ async function handleScraperStatus(request, env, cors) {
     return json({ error: { code: "bad_request", message: "Invalid scraper status payload." } }, 400, cors);
   }
 
+  const previous = status === "started"
+    ? null
+    : safeParseJson(await env.ZENITH_COORDINATOR.get(coordinatorKey(source)));
+  const startedAt = cleanIso(payload.startedAt) || cleanIso(previous?.startedAt) || now.toISOString();
+  const finishedAt = status === "started"
+    ? ""
+    : cleanIso(payload.finishedAt) || now.toISOString();
+
   const record = {
     active: status === "started",
     status,
     source,
     runId,
-    startedAt: cleanIso(payload.startedAt) || now.toISOString(),
+    startedAt,
+    ...(finishedAt ? { finishedAt } : {}),
     lastSeenAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + COORDINATOR_TTL_SECONDS * 1000).toISOString(),
   };

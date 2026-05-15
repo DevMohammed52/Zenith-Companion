@@ -210,6 +210,44 @@ async function json(response) {
 
 {
   const e = env();
+  await handleRequest(new Request("https://worker.test/internal/scraper-status", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer coordinator-secret",
+    },
+    body: JSON.stringify({
+      status: "started",
+      source: "github-actions:update_data",
+      runId: "finish-test",
+      startedAt: "2026-05-15T00:00:00.000Z",
+    }),
+  }), e);
+
+  const response = await handleRequest(new Request("https://worker.test/internal/scraper-status", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer coordinator-secret",
+    },
+    body: JSON.stringify({
+      status: "finished",
+      source: "github-actions:update_data",
+      runId: "finish-test",
+      finishedAt: "2026-05-15T00:42:00.000Z",
+    }),
+  }), e);
+  assert.equal(response.status, 200);
+  assert.equal((await json(response)).state, "idle");
+
+  const record = JSON.parse(await e.ZENITH_COORDINATOR.get("idlemmo-api-job:github-actions:update_data"));
+  assert.equal(record.active, false);
+  assert.equal(record.startedAt, "2026-05-15T00:00:00.000Z");
+  assert.equal(record.finishedAt, "2026-05-15T00:42:00.000Z");
+}
+
+{
+  const e = env();
   const response = await handleRequest(new Request("https://worker.test/profile-import/start", {
     method: "POST",
     headers: {

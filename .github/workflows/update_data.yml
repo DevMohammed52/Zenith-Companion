@@ -20,6 +20,7 @@ jobs:
   update-data:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 70
     permissions:
       contents: write
     steps:
@@ -75,7 +76,7 @@ jobs:
             status="failed"
           fi
           finished_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          payload=$(printf '{"status":"%s","source":"github-actions:update_data","runId":"%s","startedAt":"%s"}' "$status" "$GITHUB_RUN_ID" "$finished_at")
+          payload=$(printf '{"status":"%s","source":"github-actions:update_data","runId":"%s","finishedAt":"%s"}' "$status" "$GITHUB_RUN_ID" "$finished_at")
           curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
             -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
