@@ -1,0 +1,136 @@
+name: Update Guild Data
+
+on:
+  schedule:
+    - cron: '50 21 * * *'
+    - cron: '35 22 * * 0'
+  workflow_dispatch:
+    inputs:
+      refresh_scope:
+        description: 'Guild refresh scope: hot, warm, cold, all'
+        required: false
+        default: 'hot'
+        type: choice
+        options:
+          - hot
+          - warm
+          - cold
+          - all
+      discover_new:
+        description: 'Scan for newly created guild IDs'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: idlemmo-api-data-main
+  cancel-in-progress: false
+
+jobs:
+  update-guilds:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve guild refresh scope
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            scope="${{ inputs.refresh_scope }}"
+            discover="${{ inputs.discover_new }}"
+          elif [ "${{ github.event.schedule }}" = "35 22 * * 0" ]; then
+            scope="warm"
+            discover="false"
+          else
+            scope="hot"
+            discover="true"
+          fi
+
+          echo "scope=${scope}" >> "$GITHUB_OUTPUT"
+          echo "discover=${discover}" >> "$GITHUB_OUTPUT"
+
+      - name: Report guild scraper start
+        env:
+          SCRAPER_COORDINATOR_URL: ${{ secrets.SCRAPER_COORDINATOR_URL }}
+          SCRAPER_COORDINATOR_SECRET: ${{ secrets.SCRAPER_COORDINATOR_SECRET }}
+        run: |
+          if [ -z "$SCRAPER_COORDINATOR_URL" ] || [ -z "$SCRAPER_COORDINATOR_SECRET" ]; then
+            echo "Scraper coordinator is not configured; skipping start report."
+            exit 0
+          fi
+          started_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          payload=$(printf '{"status":"started","source":"github-actions:update_guild_data","runId":"%s","startedAt":"%s"}' "$GITHUB_RUN_ID" "$started_at")
+          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+            -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            || echo "Scraper coordinator start report failed; continuing with conservative import fallback."
+
+      - name: Refresh guild registry
+        env:
+          IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
+        run: |
+          if [ "${{ steps.scope.outputs.scope }}" = "all" ]; then
+            node scripts/refresh-idlemmo-guild-public-data.mjs --all-guilds --rate-profile shared
+          elif [ "${{ steps.scope.outputs.discover }}" = "true" ]; then
+            node scripts/refresh-idlemmo-guild-public-data.mjs --tier "${{ steps.scope.outputs.scope }}" --discover-new --rate-profile shared
+          else
+            node scripts/refresh-idlemmo-guild-public-data.mjs --tier "${{ steps.scope.outputs.scope }}" --rate-profile shared
+          fi
+
+      - name: Report guild scraper finish
+        if: always()
+        env:
+          SCRAPER_COORDINATOR_URL: ${{ secrets.SCRAPER_COORDINATOR_URL }}
+          SCRAPER_COORDINATOR_SECRET: ${{ secrets.SCRAPER_COORDINATOR_SECRET }}
+        run: |
+          if [ -z "$SCRAPER_COORDINATOR_URL" ] || [ -z "$SCRAPER_COORDINATOR_SECRET" ]; then
+            echo "Scraper coordinator is not configured; skipping finish report."
+            exit 0
+          fi
+          status="finished"
+          if [ "${{ job.status }}" != "success" ]; then
+            status="failed"
+          fi
+          finished_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          payload=$(printf '{"status":"%s","source":"github-actions:update_guild_data","runId":"%s","startedAt":"%s"}' "$status" "$GITHUB_RUN_ID" "$finished_at")
+          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+            -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            || echo "Scraper coordinator finish report failed; coordinator TTL will expire stale state."
+
+      - name: Commit and push guild data
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git diff --cached --quiet && echo "No guild changes to commit" && exit 0
+          git stash push --include-untracked -m "generated guild data" -- public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git pull --rebase origin main
+          git stash pop || { echo "Guild data changed upstream. Resolve the generated JSON conflict before pushing."; git status --short; exit 1; }
+          git add public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git diff --cached --quiet && echo "No guild changes to commit" && exit 0
+          git commit -m "chore: auto-update guild data [skip ci]"
+          for attempt in 1 2 3; do
+            git push origin "HEAD:main" && exit 0
+            echo "Push attempt ${attempt} failed; rebasing guild data onto latest main."
+            git pull --rebase origin main
+          done
+          echo "Unable to push guild data after 3 attempts."
+          exit 1
