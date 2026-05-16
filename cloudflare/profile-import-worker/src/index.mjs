@@ -297,7 +297,7 @@ function importProgressLabel(status, budget = null) {
 
 async function importBudgetMode(env) {
   const stateList = await readCoordinatorStates(env);
-  if (!stateList.length) return { mode: "unknown", requestsPerMinute: 12, pollAfterMs: 3000 };
+  if (!stateList.length) return { mode: "unknown", requestsPerMinute: 6, pollAfterMs: 10000 };
   if (stateList.some((state) => state.active && !isExpiredIso(state.expiresAt))) {
     return { mode: "github-active", requestsPerMinute: 6, pollAfterMs: 10000 };
   }
