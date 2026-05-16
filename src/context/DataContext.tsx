@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from '@/lib/preferences';
 import type { WorldLocation } from '@/lib/locations';
 
@@ -29,6 +29,7 @@ type DataContextType = {
   scraperStatus: ScraperStatus | null;
   loading: boolean;
   refresh: () => Promise<void>;
+  ensureLoaded: () => Promise<void>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -40,6 +41,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [worldLocations, setWorldLocations] = useState<WorldLocation[] | null>(null);
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const loadPromiseRef = useRef<Promise<void> | null>(null);
 
   // Initialize and Sync Theme
   useEffect(() => {
@@ -66,52 +69,85 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const fetchData = async () => {
+  const fetchJson = useCallback(async <T,>(url: string, init?: RequestInit): Promise<T | null> => {
     try {
-      const t = Date.now();
-      const [marketRes, staticRes, statusRes, itemsRes, worldLocationsRes] = await Promise.all([
-        fetch(`/market-data.json?t=${t}`),
-        fetch(`/static-data.json?t=${t}`),
-        fetch(`/scraper-status.json?t=${t}`),
-        fetch(`/all-items-db.json?t=${t}`),
-        fetch(`/world-locations.json?t=${t}`)
-      ]);
-
-      if (marketRes.ok) setMarketData(await marketRes.json());
-      if (staticRes.ok) setStaticData(await staticRes.json());
-      if (statusRes.ok) setScraperStatus(await statusRes.json());
-      
-      if (itemsRes.ok) {
-        const data = await itemsRes.json() as ItemLookup;
-        const byName: ItemLookup = {};
-        Object.values(data).forEach((item) => {
-            if (item.name) byName[item.name] = item;
-        });
-        setAllItemsDb(byName);
-      }
-      if (worldLocationsRes.ok) {
-        const data = await worldLocationsRes.json() as { locations?: WorldLocation[] };
-        setWorldLocations(Array.isArray(data.locations) ? data.locations : []);
-      }
-    } catch (e) {
-      console.error("Failed to sync Zenith data:", e);
-    } finally {
-      setLoading(false);
+      const response = await fetch(url, init);
+      if (!response.ok) return null;
+      return await response.json() as T;
+    } catch (error) {
+      console.warn(`Failed to sync ${url}:`, error);
+      return null;
     }
-  };
+  }, []);
+
+  const refreshScraperStatus = useCallback(async () => {
+    const status = await fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" });
+    if (status) setScraperStatus(status);
+  }, [fetchJson]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const [market, staticPayload, status, items, worldLocationsPayload] = await Promise.all([
+      fetchJson<MarketData>("/market-data.json"),
+      fetchJson<StaticData>("/static-data.json"),
+      fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" }),
+      fetchJson<ItemLookup>("/all-items-db.json"),
+      fetchJson<{ locations?: WorldLocation[] }>("/world-locations.json"),
+    ]);
+
+    if (market) setMarketData(market);
+    if (staticPayload) setStaticData(staticPayload);
+    if (status) setScraperStatus(status);
+
+    if (items) {
+      const byName: ItemLookup = {};
+      Object.values(items).forEach((item) => {
+        if (item.name) byName[item.name] = item;
+      });
+      setAllItemsDb(byName);
+    }
+
+    if (worldLocationsPayload) {
+      setWorldLocations(Array.isArray(worldLocationsPayload.locations) ? worldLocationsPayload.locations : []);
+    }
+
+    setLoading(false);
+    setLoaded(true);
+  }, [fetchJson]);
+
+  const ensureLoaded = useCallback(() => {
+    if (loaded) return Promise.resolve();
+    if (!loadPromiseRef.current) {
+      loadPromiseRef.current = fetchData().finally(() => {
+        loadPromiseRef.current = null;
+      });
+    }
+    return loadPromiseRef.current;
+  }, [fetchData, loaded]);
 
   useEffect(() => {
-    fetchData();
-    // Refresh every 5 minutes
+    // Large generated JSON is CDN/browser-cacheable. Only the tiny scraper
+    // status is polled so free-tier bandwidth stays focused on live state.
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') fetchData();
+      if (document.visibilityState === 'visible') refreshScraperStatus();
     }, 300000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshScraperStatus]);
+
+  const value = useMemo(() => ({
+    marketData,
+    staticData,
+    allItemsDb,
+    worldLocations,
+    scraperStatus,
+    loading,
+    refresh: fetchData,
+    ensureLoaded,
+  }), [allItemsDb, ensureLoaded, fetchData, loading, marketData, scraperStatus, staticData, worldLocations]);
 
   return (
-    <DataContext.Provider value={{ marketData, staticData, allItemsDb, worldLocations, scraperStatus, loading, refresh: fetchData }}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
@@ -122,5 +158,8 @@ export function useData() {
   if (context === undefined) {
     throw new Error('useData must be used within a DataProvider');
   }
+  useEffect(() => {
+    context.ensureLoaded();
+  }, [context]);
   return context;
 }

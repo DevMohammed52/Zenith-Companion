@@ -224,12 +224,60 @@ async function rebuild() {
     image: item.image_url
   }));
 
+  const globalSearchIndex = [
+    ...searchIndex
+      .filter(item => item.name)
+      .map(item => ({
+        label: item.name,
+        type: 'Item',
+        href: `/items?name=${encodeURIComponent(item.name)}`,
+        detail: item.type ? String(item.type).replace(/_/g, ' ') : 'Game Item'
+      })),
+    ...(staticData.enemies || [])
+      .filter(enemy => enemy?.name)
+      .map(enemy => ({
+        label: enemy.name,
+        type: 'Enemy',
+        href: `/enemies?search=${encodeURIComponent(enemy.name)}`,
+        detail: enemy.location?.name || enemy.location_name || 'Enemy'
+      })),
+    ...(staticData.dungeons || [])
+      .filter(dungeon => dungeon?.name)
+      .map(dungeon => ({
+        label: dungeon.name,
+        type: 'Dungeon',
+        href: `/dungeons?search=${encodeURIComponent(dungeon.name)}`,
+        detail: dungeon.location?.name || dungeon.location_name || 'Dungeon'
+      })),
+    ...(staticData.world_bosses || [])
+      .filter(boss => boss?.name)
+      .map(boss => ({
+        label: boss.name,
+        type: 'Boss',
+        href: `/bosses?search=${encodeURIComponent(boss.name)}`,
+        detail: boss.location?.name || boss.location_name || 'World Boss'
+      })),
+    ...(worldLocationsPayload.locations || [])
+      .filter(location => location?.name)
+      .map(location => {
+        const key = location.key || location.name;
+        return {
+          label: location.name,
+          type: 'Location',
+          href: `/map?location=${encodeURIComponent(key)}`,
+          detail: 'World map'
+        };
+      })
+  ];
+
   fs.writeFileSync(path.join(PUBLIC_DIR, 'usage-map.json'), JSON.stringify(usageMap, null, 2));
   fs.writeFileSync(path.join(PUBLIC_DIR, 'search-index.json'), JSON.stringify(searchIndex));
+  fs.writeFileSync(path.join(PUBLIC_DIR, 'global-search-index.json'), JSON.stringify(globalSearchIndex));
   
   console.log('--- Zenith Relational Linker Finished ---');
   console.log(`Mapped ${Object.keys(usageMap).length} items.`);
   console.log(`Indexed ${searchIndex.length} items for search.`);
+  console.log(`Indexed ${globalSearchIndex.length} global search entries.`);
 }
 
 rebuild();

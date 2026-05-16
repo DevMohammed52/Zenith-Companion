@@ -38,8 +38,6 @@ const navShortcuts: Record<string, string> = {
   s: "/settings",
 };
 
-import { useData } from "@/context/DataContext";
-
 type GlobalSearchProps = {
   hotkeyEnabled?: boolean;
 };
@@ -55,14 +53,17 @@ type GuildSearchRow = {
 export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps) {
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
-  const { marketData, staticData, allItemsDb, worldLocations } = useData();
   const { activeProfile, state: profileState } = useProfiles();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
+  const [generatedSearchRows, setGeneratedSearchRows] = useState<SearchResult[]>([]);
   const [guildSearchRows, setGuildSearchRows] = useState<GuildSearchRow[]>([]);
   const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   // Load recent from storage
   useEffect(() => {
@@ -75,6 +76,27 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!open || generatedSearchRows.length > 0) return;
+    let cancelled = false;
+    fetch("/global-search-index.json")
+      .then((response) => (response.ok ? response.json() : []))
+      .then((payload) => {
+        if (cancelled || !Array.isArray(payload)) return;
+        setGeneratedSearchRows(payload.filter((row): row is SearchResult => (
+          typeof row?.label === "string"
+          && typeof row?.type === "string"
+          && typeof row?.href === "string"
+        )));
+      })
+      .catch(() => {
+        if (!cancelled) setGeneratedSearchRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [generatedSearchRows.length, open]);
 
   useEffect(() => {
     if (!open || guildSearchRows.length > 0) return;
@@ -97,6 +119,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.classList.add("command-open");
     document.body.style.overflow = "hidden";
     const focusFrame = window.requestAnimationFrame(() => {
@@ -107,6 +130,11 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       window.cancelAnimationFrame(focusFrame);
       document.body.classList.remove("command-open");
       document.body.style.overflow = previousOverflow;
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus({ preventScroll: true });
+      } else {
+        triggerRef.current?.focus({ preventScroll: true });
+      }
     };
   }, [open]);
 
@@ -221,42 +249,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
     });
 
-    // Use allItemsDb instead of just marketData to find everything
-    if (allItemsDb) {
-      Object.keys(allItemsDb).forEach(name => {
-          const item = allItemsDb[name];
-          next.push({ 
-            label: name, 
-            type: "Item", 
-            href: `/items?name=${encodeURIComponent(name)}`, 
-            detail: item.type ? item.type.replace(/_/g, ' ') : "Game Item" 
-          });
-      });
-    } else if (marketData) {
-      Object.keys(marketData)
-        .filter(name => !name.startsWith("_"))
-        .forEach(name => next.push({ label: name, type: "Item", href: `/items?name=${encodeURIComponent(name)}`, detail: "Market price" }));
-    }
-
-    staticData?.enemies?.forEach((enemy: any) => {
-      next.push({ label: enemy.name, type: "Enemy", href: `/enemies?search=${encodeURIComponent(enemy.name)}`, detail: enemy.location?.name });
-    });
-    staticData?.dungeons?.forEach((dungeon: any) => {
-      next.push({ label: dungeon.name, type: "Dungeon", href: `/dungeons?search=${encodeURIComponent(dungeon.name)}`, detail: dungeon.location?.name });
-    });
-    staticData?.world_bosses?.forEach((boss: any) => {
-      next.push({ label: boss.name, type: "Boss", href: `/bosses?search=${encodeURIComponent(boss.name)}`, detail: boss.location?.name });
-    });
-    worldLocations?.forEach((location) => {
-      if (!location.name) return;
-      const key = location.key || location.name;
-      next.push({
-        label: location.name,
-        type: "Location",
-        href: `/map?location=${encodeURIComponent(key)}`,
-        detail: "World map",
-      });
-    });
+    next.push(...generatedSearchRows);
 
     guildSearchRows.forEach((guild) => {
       if (!guild.name) return;
@@ -270,7 +263,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     });
 
     return next;
-  }, [activeProfile, guildSearchRows, marketData, profileState.profiles, staticData, allItemsDb, worldLocations]);
+  }, [activeProfile, generatedSearchRows, guildSearchRows, profileState.profiles]);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -292,8 +285,16 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       .slice(0, 15);
   }, [results, debouncedQuery, recent]);
 
-  const openResult = (result: SearchResult) => {
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [debouncedQuery, filteredResults.length]);
+
+  const closeSearch = () => {
     setOpen(false);
+  };
+
+  const openResult = (result: SearchResult) => {
+    closeSearch();
     setQuery("");
     
     // Save to recent
@@ -306,13 +307,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       // Always navigate for Alchemy recipes to see the profit calculator
       router.push(result.href);
     } else if (result.type === "Item") {
-      // Check if item exists in our item database for modal opening
-      const inDb = allItemsDb && allItemsDb[result.label];
-      if (inDb) {
-        openItemByName(result.label);
-      } else {
-        router.push(result.href);
-      }
+      openItemByName(result.label);
     } else {
       router.push(result.href);
     }
@@ -333,31 +328,111 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     );
   };
 
+  const activeResultId = filteredResults[activeIndex] ? `global-search-result-${activeIndex}` : undefined;
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeSearch();
+      return;
+    }
+
+    if (event.key === "Tab") {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter((element) => element.offsetParent !== null || element === document.activeElement);
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    }
+  };
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (filteredResults.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.min(index + 1, filteredResults.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(index - 1, 0));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(filteredResults.length - 1);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      openResult(filteredResults[activeIndex]);
+    }
+  };
+
   const palette = open ? (
-    <div className="command-overlay" onClick={() => setOpen(false)}>
-      <div className="command-palette" onClick={event => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Global search">
+    <div className="command-overlay" onClick={closeSearch}>
+      <div
+        className="command-palette"
+        onClick={event => event.stopPropagation()}
+        onKeyDown={handleDialogKeyDown}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="global-search-title"
+      >
+        <h2 id="global-search-title" className="sr-only">Global search</h2>
         <div className="command-input-wrap">
-          <Search size={16} />
+          <Search size={16} aria-hidden="true" />
           <input
             ref={inputRef}
             autoFocus
             type="search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="true"
+            aria-controls="global-search-results"
+            aria-activedescendant={activeResultId}
+            aria-label="Search tools, items, recipes, enemies, and lore"
             spellCheck={false}
             value={query}
             onChange={event => setQuery(event.target.value)}
+            onKeyDown={handleInputKeyDown}
             placeholder="Search tools, items, recipes, enemies, lore..."
           />
-          <button type="button" onClick={() => setOpen(false)} aria-label="Close search">
+          <button type="button" onClick={closeSearch} aria-label="Close search">
             <X size={16} />
           </button>
         </div>
-        <div className="command-results">
+        <div
+          className="command-results"
+          id="global-search-results"
+          role="listbox"
+          aria-label="Search results"
+        >
           {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
           {filteredResults.map((result, index) => (
             <button
+              id={`global-search-result-${index}`}
               key={getSearchResultRenderKey(result, index)}
               type="button"
+              role="option"
+              aria-selected={index === activeIndex}
+              tabIndex={-1}
+              className={index === activeIndex ? "active" : undefined}
               onClick={() => openResult(result)}
+              onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => result.type === "Item" && prefetchItem(result.label)}
             >
               <span>
@@ -367,7 +442,10 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
               <em>{result.type}</em>
             </button>
           ))}
-          {filteredResults.length === 0 && <div className="dashboard-empty" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
+          {filteredResults.length === 0 && <div className="dashboard-empty" role="status" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
+        </div>
+        <div className="sr-only" aria-live="polite">
+          {filteredResults.length} search {filteredResults.length === 1 ? "result" : "results"} available.
         </div>
       </div>
     </div>
@@ -375,8 +453,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
 
   return (
     <>
-      <button className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }} aria-haspopup="dialog" aria-expanded={open}>
-        <Search size={14} />
+      <button ref={triggerRef} className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }} aria-haspopup="dialog" aria-expanded={open}>
+        <Search size={14} aria-hidden="true" />
         <span>Search</span>
         <kbd>Ctrl K</kbd>
       </button>
