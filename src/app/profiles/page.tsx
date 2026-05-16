@@ -130,7 +130,7 @@ const PROFILE_SECTIONS = [
 ];
 
 const PROFILE_IMPORT_API_URL = (process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
-const CHARACTER_HASH_PATTERN = /^(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_-]{12,80}$/;
+const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
 
 function numberFromInput(value: string) {
   return value === "" ? "" : Number(value);

@@ -318,12 +318,16 @@ async function json(response) {
     if (path.endsWith("/information")) {
       return Response.json({
         character: {
-          name: path.includes("altHash") ? "Alt Chef" : "Root Chef",
+          name: path.includes("altHash")
+            ? "Alt Chef"
+            : path.includes("dokidexhash")
+              ? "DokiDex"
+              : "Root Chef",
           class: "CHEF",
           total_level: 1840,
           current_status: "ONLINE",
           stats: {
-            combat: { level: 100, ascension_level: path.includes("altHash") ? 2 : 8, experience: 1 },
+            combat: { level: 100, ascension_level: path.includes("altHash") ? 2 : path.includes("dokidexhash") ? 1 : 8, experience: 1 },
             strength: { level: 90, experience: 1 },
           },
           skills: {
@@ -339,7 +343,12 @@ async function json(response) {
       return Response.json({ pets: [] });
     }
     if (path.endsWith("/characters")) {
-      return Response.json({ characters: [{ hashed_id: "altHash123456", name: "Alt Chef" }] });
+      return Response.json({
+        characters: [
+          { hashed_id: "altHash123456", name: "Alt Chef" },
+          { hashed_id: "dokidexhash", name: "DokiDex" },
+        ],
+      });
     }
     if (path.endsWith("/museum")) {
       const isAlt = path.includes("altHash");
@@ -386,7 +395,7 @@ async function json(response) {
     const status = await handleRequest(new Request(`https://worker.test/profile-import/status/${jobId}`), e);
     const body = await json(status);
     assert.equal(body.status, "done");
-    assert.equal(body.result.characters.length, 2);
+    assert.equal(body.result.characters.length, 3);
     assert.equal(body.result.characters[0].draft.name, "Root Chef");
     assert.equal(body.result.characters[0].draft.levels.combat, 108);
     assert.equal(body.result.characters[0].draft.museum.items[0].name, "Root Apron");
@@ -394,6 +403,9 @@ async function json(response) {
     assert.equal(body.result.characters[1].draft.levels.combat, 102);
     assert.equal(body.result.characters[1].draft.museum.items[0].name, "Alt Familiar");
     assert.equal(body.result.characters[1].draft.importSource.importedSections.includes("museum"), true);
+    assert.equal(body.result.characters[2].draft.name, "DokiDex");
+    assert.equal(body.result.characters[2].draft.importSource.characterHashTail, "dokidexhash");
+    assert.equal(body.result.characters[2].draft.levels.combat, 101);
   } finally {
     globalThis.fetch = originalFetch;
   }

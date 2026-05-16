@@ -3,7 +3,7 @@ const JSON_HEADERS = {
   "cache-control": "no-store",
 };
 
-const HASH_PATTERN = /^(?=.*[A-Z])(?=.*\d)[A-Za-z0-9_-]{12,80}$/;
+const HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
 const JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{20,80}$/;
 const COORDINATOR_TTL_SECONDS = 90 * 60;
 const JOB_TTL_MS = 60 * 60 * 1000;
