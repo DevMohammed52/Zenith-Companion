@@ -97,6 +97,17 @@ class MemoryD1 {
         updated_at: updatedAt,
       });
     }
+    if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'waiting_for_budget'")) {
+      const [errorCode, errorMessage, updatedAt, id] = args;
+      const job = this.jobs.get(id);
+      Object.assign(job, {
+        status: "waiting_for_budget",
+        retry_count: Number(job.retry_count || 0) + 1,
+        error_code: errorCode,
+        error_message: errorMessage,
+        updated_at: updatedAt,
+      });
+    }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET request_count = ?")) {
       const [requestCount, updatedAt, id] = args;
       Object.assign(this.jobs.get(id), {
@@ -383,6 +394,60 @@ async function json(response) {
     assert.equal(body.result.characters[1].draft.levels.combat, 102);
     assert.equal(body.result.characters[1].draft.museum.items[0].name, "Alt Familiar");
     assert.equal(body.result.characters[1].draft.importSource.importedSections.includes("museum"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  const e = env();
+  const scraperStart = await handleRequest(new Request("https://worker.test/internal/scraper-status", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer coordinator-secret",
+    },
+    body: JSON.stringify({
+      status: "started",
+      source: "github-actions:update_data",
+      runId: "rate-limit-test",
+      startedAt: new Date().toISOString(),
+    }),
+  }), e);
+  assert.equal(scraperStart.status, 200);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("{}", { status: 429 });
+  try {
+    const start = await handleRequest(new Request("https://worker.test/profile-import/start", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://zenith.example",
+        "cf-connecting-ip": "203.0.113.11",
+      },
+      body: JSON.stringify({ characterHash: "VM29l7kQZZ0JbQ80q6WD" }),
+    }), e);
+    const startBody = await json(start);
+    assert.equal(startBody.budgetMode, "github-active");
+
+    const process = await handleRequest(new Request("https://worker.test/internal/process-next", {
+      method: "POST",
+      headers: { authorization: "Bearer coordinator-secret" },
+    }), e);
+    assert.equal(process.status, 200);
+    assert.equal((await json(process)).result.status, "waiting_for_budget");
+
+    const status = await handleRequest(new Request(`https://worker.test/profile-import/status/${startBody.jobId}`), e);
+    const statusBody = await json(status);
+    assert.equal(statusBody.status, "waiting_for_budget");
+    assert.equal(statusBody.progress.current, 1);
+
+    const cooldownProcess = await handleRequest(new Request("https://worker.test/internal/process-next", {
+      method: "POST",
+      headers: { authorization: "Bearer coordinator-secret" },
+    }), e);
+    assert.equal((await json(cooldownProcess)).result.status, "cooling_down");
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -299,7 +299,7 @@ async function importBudgetMode(env) {
   const stateList = await readCoordinatorStates(env);
   if (!stateList.length) return { mode: "unknown", requestsPerMinute: 12, pollAfterMs: 3000 };
   if (stateList.some((state) => state.active && !isExpiredIso(state.expiresAt))) {
-    return { mode: "github-active", requestsPerMinute: 12, pollAfterMs: 5000 };
+    return { mode: "github-active", requestsPerMinute: 6, pollAfterMs: 10000 };
   }
   return { mode: "github-idle", requestsPerMinute: 35, pollAfterMs: DEFAULT_POLL_MS };
 }
@@ -324,6 +324,14 @@ async function runScheduledWork(env) {
 async function processNextImportJob(env) {
   assertBindings(env);
   assertImportSecrets(env);
+
+  const globalCooldown = await activeCooldown(env, "global", "global", new Date());
+  if (globalCooldown) {
+    return {
+      status: "cooling_down",
+      retryAfterMs: Math.max(10000, new Date(globalCooldown.until_at).getTime() - Date.now()),
+    };
+  }
 
   const budget = await importBudgetMode(env);
   const job = await env.DB.prepare(`
@@ -363,6 +371,16 @@ async function processNextImportJob(env) {
     const message = publicImportErrorMessage(code);
     if (code === "rate_limited") {
       await setCooldown(env, "global", "global", 3 * 60 * 1000, "IdleMMO rate limit reached. Imports will continue shortly.");
+      await env.DB.prepare(`
+        UPDATE import_jobs
+        SET status = 'waiting_for_budget',
+            retry_count = retry_count + 1,
+            error_code = ?,
+            error_message = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).bind(code, message, new Date().toISOString(), job.id).run();
+      return { status: "waiting_for_budget", jobId: job.id, code };
     }
     await env.DB.prepare(`
       UPDATE import_jobs
