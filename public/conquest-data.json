@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-05-16T08:21:04.944Z",
-    "fetched_at": "2026-05-16T08:20:48.463Z",
+    "generated_at": "2026-05-16T09:11:28.915Z",
+    "fetched_at": "2026-05-16T09:11:12.453Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-05-16T08:25:49+00:00",
+    "endpoint_updates_at": "2026-05-16T09:16:13+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16481
+      "elapsed_ms": 16462
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 2,
+      "active_assaults": 4,
       "leaderboard_rows": 27,
       "contribution_rows": 211,
       "guilds_observed": 20
@@ -1423,18 +1423,30 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/WCZ3FCmF0VvI5OlivHWx9WR5dFfmYL-metac2t5cmVhY2ggcGVhay5wbmc=-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 301115,
-      "experience": 1629503,
+      "kills": 301116,
+      "experience": 1629507,
       "guilds_count": 4,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 4,
       "contribution_count": 13,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 1,
+          "experience": 4,
+          "guild": {
+            "id": 161,
+            "name": "You Unyielding",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 259931,
-          "experience": 1427920,
+          "kills": 259932,
+          "experience": 1427924,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -1512,8 +1524,8 @@
         {
           "id": 119010,
           "guild_conquest_progress_id": 118880,
-          "kills": 62134,
-          "experience": 289187,
+          "kills": 62135,
+          "experience": 289191,
           "guild": null,
           "character": {
             "hashed_id": "rz9RZnWN7exP2LKAp0Md",
@@ -1855,8 +1867,8 @@
             "id": 697,
             "name": "You Rising",
             "tag": "YUR",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/skins/backgrounds/default.jpg"
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01J30AEMNKX77DWRVD2N24MXQ6.jpg"
           }
         }
       ],
@@ -2808,10 +2820,22 @@
       "kills": 939816,
       "experience": 4385374,
       "guilds_count": 4,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 4,
       "contribution_count": 38,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 1080,
+            "name": "Buffalo Grill",
+            "tag": "BG",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJYNQJC9TGDRFCFR7T5HYW.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -3208,7 +3232,7 @@
           "character": {
             "hashed_id": "kK49j1VN9WOKzLq6B2do",
             "name": "AutumnLeaf",
-            "total_level": 1871,
+            "total_level": 1872,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
@@ -3707,8 +3731,8 @@
     {
       "id": 119010,
       "guild_conquest_progress_id": 118880,
-      "kills": 62134,
-      "experience": 289187,
+      "kills": 62135,
+      "experience": 289191,
       "guild": null,
       "character": {
         "hashed_id": "rz9RZnWN7exP2LKAp0Md",
