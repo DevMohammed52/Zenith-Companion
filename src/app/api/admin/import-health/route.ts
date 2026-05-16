@@ -5,7 +5,7 @@ const PROFILE_IMPORT_API_URL = (process.env.PROFILE_IMPORT_API_URL || process.en
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const adminSecret = process.env.ADMIN_DASHBOARD_SECRET;
+  const adminSecret = process.env.ADMIN_DASHBOARD_SECRET?.trim();
 
   if (!adminSecret) {
     return NextResponse.json(

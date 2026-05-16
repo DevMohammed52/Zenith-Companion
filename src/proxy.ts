@@ -4,7 +4,7 @@ const ADMIN_USERNAME = "zenith";
 const ADMIN_REALM = "Zenith Import Health";
 
 export function proxy(request: NextRequest) {
-  const adminSecret = process.env.ADMIN_DASHBOARD_SECRET;
+  const adminSecret = process.env.ADMIN_DASHBOARD_SECRET?.trim();
 
   if (!adminSecret) {
     return new NextResponse("Not found", {
