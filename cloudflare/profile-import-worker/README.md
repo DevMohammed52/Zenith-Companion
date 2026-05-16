@@ -11,6 +11,7 @@ Implemented:
 
 - `GET /health`
 - `POST /internal/scraper-status`
+- `GET /admin/import-health`
 - `POST /profile-import/start`
 - `GET /profile-import/status/:jobId`
 - CORS allowlist
@@ -24,6 +25,7 @@ Implemented:
 - root `information`, `metrics`, `pets`, `museum`, and `characters`
 - visible alt `information`, `metrics`, `pets`, and `museum`
 - sanitized `ImportedProfileDraft`-compatible result envelopes
+- privacy-safe admin health summary, protected by a separate bearer secret
 - local route tests
 
 Not implemented yet:
@@ -75,6 +77,7 @@ npx wrangler d1 migrations apply zenith_profile_import
 ```bash
 npx wrangler secret put IDLEMMO_API_KEY
 npx wrangler secret put SCRAPER_COORDINATOR_SECRET
+npx wrangler secret put ADMIN_DASHBOARD_SECRET
 npx wrangler secret put IMPORT_SIGNING_SECRET
 npx wrangler secret put IMPORT_ENCRYPTION_SECRET
 npx wrangler secret put TURNSTILE_SECRET_KEY
@@ -89,6 +92,29 @@ defaults to `45`, and `IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER` defaults to `8`
 so museum pagination cannot become unbounded. Do not reduce the delay or raise
 these caps in production unless the Cloudflare coordinator is already protecting
 the GitHub workflows.
+
+## Admin Dashboard
+
+The private dashboard lives at `/admin/import-health` on the Vercel app. It is
+not linked in the main navigation. The route and its same-origin API proxy are
+protected by Next.js `proxy.ts` using HTTP Basic auth.
+
+Set the same `ADMIN_DASHBOARD_SECRET` value in both places:
+
+- Cloudflare Worker secret: used by `GET /admin/import-health`
+- Vercel environment variable: used by `/admin/import-health` and
+  `/api/admin/import-health`
+
+The dashboard frontend never receives the Cloudflare bearer token. It calls the
+same-origin Vercel API route, and that server route calls the Worker with the
+secret from the environment.
+
+Use this login for the browser prompt:
+
+```text
+Username: zenith
+Password: <ADMIN_DASHBOARD_SECRET>
+```
 
 ## GitHub Workflow Coordinator
 
@@ -118,9 +144,14 @@ The tests use in-memory KV/D1 stubs and do not call IdleMMO.
 ## Security Rules
 
 - Do not expose `IDLEMMO_API_KEY` to Vercel or the browser.
+- Do not expose `ADMIN_DASHBOARD_SECRET` through `NEXT_PUBLIC_*` env vars.
+- Do not commit `ADMIN_DASHBOARD_SECRET`; keep it in Cloudflare/Vercel secrets
+  only.
 - Do not add a generic proxy endpoint.
 - Do not log full character hash IDs.
 - Do not return raw IdleMMO payloads.
 - Store import jobs/results short-term only.
 - Keep final accepted profiles in browser `localStorage`.
 - Treat stale coordinator state as conservative budget mode.
+- Keep admin health responses operational-only: no character hashes, names,
+  levels, pets, museum records, or raw import JSON.

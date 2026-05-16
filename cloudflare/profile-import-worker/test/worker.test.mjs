@@ -36,6 +36,9 @@ class Statement {
   async first() {
     return this.db.first(this.sql, this.args);
   }
+  async all() {
+    return this.db.all(this.sql, this.args);
+  }
 }
 
 class MemoryD1 {
@@ -169,6 +172,25 @@ class MemoryD1 {
     }
     return null;
   }
+  async all(sql, args) {
+    if (sql.includes("GROUP BY status")) {
+      const [createdAfter] = args;
+      const counts = new Map();
+      for (const job of this.jobs.values()) {
+        if (job.created_at < createdAfter) continue;
+        counts.set(job.status, (counts.get(job.status) || 0) + 1);
+      }
+      return { results: Array.from(counts, ([status, count]) => ({ status, count })) };
+    }
+    if (sql.includes("ORDER BY created_at DESC") && sql.includes("LIMIT 10")) {
+      return {
+        results: Array.from(this.jobs.values())
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 10),
+      };
+    }
+    return { results: [] };
+  }
 }
 
 function env(overrides = {}) {
@@ -181,6 +203,7 @@ function env(overrides = {}) {
     IMPORT_BASELINE_REQUEST_CAP: "45",
     IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER: "8",
     SCRAPER_COORDINATOR_SECRET: "coordinator-secret",
+    ADMIN_DASHBOARD_SECRET: "admin-secret",
     IMPORT_SIGNING_SECRET: "signing-secret",
     IMPORT_ENCRYPTION_SECRET: "encryption-secret",
     IDLEMMO_API_KEY: "idlemmo-secret",
@@ -197,6 +220,24 @@ async function json(response) {
   const response = await handleRequest(new Request("https://worker.test/health"), env());
   assert.equal(response.status, 200);
   assert.equal((await json(response)).ok, true);
+}
+
+{
+  const e = env();
+  const unauthorized = await handleRequest(new Request("https://worker.test/admin/import-health"), e);
+  assert.equal(unauthorized.status, 401);
+
+  const response = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(response.status, 200);
+  const body = await json(response);
+  assert.equal(body.ok, true);
+  assert.equal(body.service.worker, "zenith-profile-import");
+  assert.equal(typeof body.queue.pending, "number");
+  assert.equal(Array.isArray(body.recentJobs), true);
+  assert.equal(JSON.stringify(body).includes("target_hash"), false);
+  assert.equal(JSON.stringify(body).includes("result_json"), false);
 }
 
 {

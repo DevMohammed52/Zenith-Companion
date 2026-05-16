@@ -55,6 +55,10 @@ export async function handleRequest(request, env, _ctx = {}) {
       return json({ ok: true, result }, 200, cors);
     }
 
+    if (url.pathname === "/admin/import-health" && request.method === "GET") {
+      return handleAdminImportHealth(request, env, cors);
+    }
+
     if (url.pathname === "/profile-import/start" && request.method === "POST") {
       return handleStartImport(request, env, cors);
     }
@@ -73,6 +77,93 @@ export async function handleRequest(request, env, _ctx = {}) {
       },
     }, 500, cors);
   }
+}
+
+async function handleAdminImportHealth(request, env, cors) {
+  if (!hasBearerSecret(request, env.ADMIN_DASHBOARD_SECRET)) {
+    return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
+  }
+  assertBindings(env);
+
+  const now = new Date();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const queue = await queueCounts(env);
+  const cooldowns = await cooldownSummary(env, now);
+  const statusRows = await env.DB.prepare(`
+    SELECT status, COUNT(*) AS count
+    FROM import_jobs
+    WHERE created_at >= ?
+    GROUP BY status
+  `).bind(dayAgo).all();
+  const summary = await env.DB.prepare(`
+    SELECT
+      COUNT(*) AS total,
+      SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+      SUM(CASE WHEN status = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+      SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+      AVG(CASE WHEN status = 'complete' THEN request_count ELSE NULL END) AS avg_request_count,
+      AVG(CASE WHEN status = 'complete' THEN retry_count ELSE NULL END) AS avg_retry_count,
+      AVG(CASE WHEN status = 'complete' THEN strftime('%s', updated_at) - strftime('%s', created_at) ELSE NULL END) AS avg_duration_seconds
+    FROM import_jobs
+    WHERE created_at >= ?
+  `).bind(dayAgo).first();
+  const recentRows = await env.DB.prepare(`
+    SELECT status, request_count, retry_count, error_code, budget_mode, created_at, updated_at, expires_at
+    FROM import_jobs
+    ORDER BY created_at DESC
+    LIMIT 10
+  `).all();
+  const coordinatorStates = await readCoordinatorStates(env);
+  const budget = await importBudgetMode(env);
+
+  return json({
+    ok: true,
+    generatedAt: now.toISOString(),
+    service: {
+      worker: "zenith-profile-import",
+      budgetMode: budget.mode,
+      importRequestsPerMinute: budget.requestsPerMinute,
+      pollAfterMs: budget.pollAfterMs,
+      importDelayMs: importDelayMsForBudget(env, budget),
+      jobTtlMinutes: Math.round(JOB_TTL_MS / 60000),
+    },
+    queue,
+    cooldowns,
+    last24h: {
+      total: Number(summary?.total || 0),
+      completed: Number(summary?.completed || 0),
+      failed: Number(summary?.failed || 0),
+      waitingForBudget: Number(summary?.waiting_for_budget || 0),
+      rateLimited: Number(summary?.rate_limited || 0),
+      avgRequestCount: roundMetric(summary?.avg_request_count),
+      avgRetryCount: roundMetric(summary?.avg_retry_count),
+      avgDurationSeconds: roundMetric(summary?.avg_duration_seconds),
+      statuses: Object.fromEntries((statusRows.results || []).map((row) => [row.status, Number(row.count || 0)])),
+    },
+    coordinator: coordinatorStates.map((state) => ({
+      active: Boolean(state.active && !isExpiredIso(state.expiresAt)),
+      status: cleanString(state.status, 24),
+      source: cleanString(state.source, 80),
+      runId: cleanString(state.runId, 80),
+      startedAt: cleanIso(state.startedAt),
+      finishedAt: cleanIso(state.finishedAt),
+      lastSeenAt: cleanIso(state.lastSeenAt),
+      expiresAt: cleanIso(state.expiresAt),
+      stale: isExpiredIso(state.expiresAt),
+    })),
+    recentJobs: (recentRows.results || []).map((row) => ({
+      status: row.status,
+      requestCount: Number(row.request_count || 0),
+      retryCount: Number(row.retry_count || 0),
+      errorCode: row.error_code || "",
+      budgetMode: row.budget_mode || "unknown",
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      expiresAt: row.expires_at,
+      expired: isExpiredIso(row.expires_at),
+    })),
+  }, 200, cors);
 }
 
 async function handleScraperStatus(request, env, cors) {
@@ -665,6 +756,17 @@ async function queueCounts(env) {
   };
 }
 
+async function cooldownSummary(env, now) {
+  const row = await env.DB.prepare(`
+    SELECT COUNT(*) AS active
+    FROM cooldowns
+    WHERE until_at > ?
+  `).bind(now.toISOString()).first();
+  return {
+    active: Number(row?.active || 0),
+  };
+}
+
 async function cleanExpiredRows(env) {
   if (!env.DB) return;
   const now = new Date().toISOString();
@@ -714,7 +816,8 @@ function isAllowedOrigin(request, env) {
 
 function hasBearerSecret(request, secret) {
   const auth = request.headers.get("authorization") || "";
-  return Boolean(secret) && auth === `Bearer ${secret}`;
+  const expected = typeof secret === "string" ? secret.trim() : "";
+  return Boolean(expected) && auth === `Bearer ${expected}`;
 }
 
 async function verifyTurnstile(env, token, request) {
@@ -773,6 +876,11 @@ function readPositiveInt(value, fallback) {
 function readNonNegativeInt(value, fallback) {
   const next = Number(value);
   return Number.isFinite(next) && next >= 0 ? Math.floor(next) : fallback;
+}
+
+function roundMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 10) / 10 : 0;
 }
 
 function coordinatorKey(source) {
