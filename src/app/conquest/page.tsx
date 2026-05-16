@@ -620,9 +620,9 @@ export default function ConquestPage() {
             {detailTab === "contributors" && (
               <div className={styles.rowList} id="conquest-panel-contributors" role="tabpanel" aria-labelledby="conquest-tab-contributors">
                 {selectedZone.top_contributors.length > 0 ? (
-                  selectedZone.top_contributors.map((row) => (
+                  selectedZone.top_contributors.map((row, index) => (
                     <ContributorRow
-                      key={`${selectedZone.key}-${row.id ?? row.character?.hashed_id ?? row.character?.name}`}
+                      key={`${selectedZone.key}-${row.id ?? `${row.character?.name ?? "player"}-${index}`}`}
                       row={row}
                     />
                   ))
@@ -684,9 +684,9 @@ export default function ConquestPage() {
           </div>
           <div className={styles.panelBody}>
             <div className={styles.rowList}>
-              {data.top_contributors.slice(0, 12).map((row) => (
+              {data.top_contributors.slice(0, 12).map((row, index) => (
                 <ContributorRow
-                  key={`global-${row.zone.key}-${row.id ?? row.character?.hashed_id ?? row.character?.name}`}
+                  key={`global-${row.zone.key}-${row.id ?? `${row.character?.name ?? "player"}-${index}`}`}
                   row={row}
                   zoneName={row.zone.name}
                 />

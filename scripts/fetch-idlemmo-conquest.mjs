@@ -58,7 +58,6 @@ function compactGuild(guild) {
 function compactCharacter(character) {
   if (!character) return null;
   return {
-    hashed_id: character.hashed_id ?? null,
     name: character.name || "Unknown",
     total_level: character.total_level ?? null,
     image_url: character.image_url || null,

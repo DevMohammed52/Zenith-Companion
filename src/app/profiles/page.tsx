@@ -1727,7 +1727,7 @@ export default function ProfilesPage() {
                       setLiveImportHash(event.target.value);
                       setLiveImportError("");
                     }}
-                    placeholder="VM29l7kQZZ0JbQ80q6WD"
+                    placeholder="Your character hashed ID"
                     autoComplete="off"
                   />
                 </label>

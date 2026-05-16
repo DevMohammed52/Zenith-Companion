@@ -102,7 +102,7 @@ const pets = await import(pathToFileURL(path.join(outDir, "pets.cjs")));
 
 const importedAt = "2026-05-14T08:00:00.000Z";
 const fixture = {
-  hash: "VM29l7kQZZ0JbQ80q6WD",
+  hash: "FixtureHash0000000001",
   importedAt,
   information: {
     character: {
@@ -211,7 +211,7 @@ assert.equal(draft.metricsSnapshot.categories.combat.kills, 12);
 assert.equal(draft.museum.items.length, 2);
 assert.equal(draft.museum.pagination.failedPages[0], 2);
 assert.deepEqual(draft.importSource.importedSections, ["information", "metrics", "pets", "museum"]);
-assert.equal(draft.importSource.characterHashTail, "ZZ0JbQ80q6WD");
+assert.equal(draft.importSource.characterHashTail, "sh0000000001");
 
 const existing = profiles.sanitizeProfile({
   ...profiles.createDefaultProfile("Manual"),

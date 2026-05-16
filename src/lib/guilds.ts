@@ -1,7 +1,6 @@
 export type GuildRefreshTier = "hot" | "warm" | "cold";
 
 export type GuildMember = {
-  hashed_id: string | null;
   name: string;
   position: string | null;
   total_level: number | null;

@@ -217,7 +217,7 @@ function SortPicker({
 function MemberLink({
   member,
 }: {
-  member: { hashed_id?: string | null; name: string; position?: string | null; total_level?: number | null };
+  member: { name: string; position?: string | null; total_level?: number | null };
 }) {
   return (
     <a className={styles.memberRow} href={getIdleMmoProfileUrl(member.name)} target="_blank" rel="noreferrer">
@@ -374,8 +374,8 @@ function GuildModal({
                 </h3>
                 <div className={styles.memberList}>
                   {details?.member_summary.leaders.length ? (
-                    details.member_summary.leaders.map((member) => (
-                      <MemberLink member={member} key={`${guild.id}-leader-${member.hashed_id || member.name}`} />
+                    details.member_summary.leaders.map((member, index) => (
+                      <MemberLink member={member} key={`${guild.id}-leader-${index}-${member.name}`} />
                     ))
                   ) : (
                     <p className={styles.mutedText}>No leadership roles were returned for this guild.</p>
@@ -386,8 +386,8 @@ function GuildModal({
                   <Medal size={16} /> All Members ({formatGuildNumber(details?.members.length || guild.member_count)})
                 </h3>
                 <div className={styles.memberList}>
-                  {(details?.members || []).map((member) => (
-                    <MemberLink member={member} key={`${guild.id}-member-${member.hashed_id || member.name}`} />
+                  {(details?.members || []).map((member, index) => (
+                    <MemberLink member={member} key={`${guild.id}-member-${index}-${member.name}`} />
                   ))}
                 </div>
 

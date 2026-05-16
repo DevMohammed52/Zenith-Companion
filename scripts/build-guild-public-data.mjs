@@ -43,6 +43,18 @@ function writeJson(filePath, data) {
   fs.renameSync(tempFile, filePath);
 }
 
+function stripCharacterHashes(value) {
+  if (Array.isArray(value)) return value.map(stripCharacterHashes);
+  if (!value || typeof value !== "object") return value;
+
+  const result = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === "hashed_id") continue;
+    result[key] = stripCharacterHashes(entry);
+  }
+  return result;
+}
+
 function numberValue(value, fallback = 0) {
   const parsed = typeof value === "string" ? Number(value.replace(/,/g, "")) : Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -103,7 +115,6 @@ function positionRank(position) {
 
 function compactMemberProfile(member) {
   return {
-    hashed_id: member.hashed_id || null,
     name: member.name || "Unknown",
     position: member.position || null,
     total_level: numberValue(member.total_level, null),
@@ -167,7 +178,6 @@ function compactMember(guild, member) {
     guild_id: numberValue(guild.id),
     guild_name: guild.name || `Guild ${guild.id}`,
     guild_tag: guild.tag || null,
-    hashed_id: member.hashed_id || null,
     name: member.name || "Unknown",
     position: member.position || null,
     total_level: numberValue(member.total_level, null),
@@ -222,7 +232,7 @@ const membersDatabase = {
   members: [
     ...((shouldMergeExisting && fs.existsSync(membersOutFile) ? readJson(membersOutFile).members || [] : []).filter(
       (member) => !updatedGuildIds.has(member.guild_id),
-    )),
+    ).map(stripCharacterHashes)),
     ...guilds.flatMap((guild) => (Array.isArray(guild.members) ? guild.members.map((member) => compactMember(guild, member)) : [])),
   ],
 };
@@ -279,6 +289,12 @@ for (const detail of guildDetails) {
 }
 writeJson(membersOutFile, membersDatabase);
 writeJson(refreshPlanFile, refreshPlan);
+
+for (const fileName of fs.existsSync(detailsOutDir) ? fs.readdirSync(detailsOutDir) : []) {
+  if (!fileName.endsWith(".json")) continue;
+  const detailPath = path.join(detailsOutDir, fileName);
+  writeJson(detailPath, stripCharacterHashes(readJson(detailPath)));
+}
 
 console.log(`Wrote ${path.relative(repoRoot, outFile)} with ${compactGuilds.length} guilds.`);
 console.log(`Wrote ${path.relative(repoRoot, detailsOutFile)} and ${guildDetails.length} per-guild detail files.`);

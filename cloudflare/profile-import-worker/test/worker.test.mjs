@@ -308,7 +308,7 @@ async function json(response) {
       "cf-connecting-ip": "203.0.113.7",
     },
     body: JSON.stringify({
-      characterHash: "VM29l7kQZZ0JbQ80q6WD",
+      characterHash: "FixtureHash0000000001",
     }),
   }), e);
   const body = await json(response);
@@ -331,7 +331,7 @@ async function json(response) {
       "content-type": "application/json",
       origin: "https://evil.example",
     },
-    body: JSON.stringify({ characterHash: "VM29l7kQZZ0JbQ80q6WD" }),
+    body: JSON.stringify({ characterHash: "FixtureHash0000000001" }),
   }), env());
   assert.equal(response.status, 403);
 }
@@ -426,7 +426,7 @@ async function json(response) {
         origin: "https://zenith.example",
         "cf-connecting-ip": "203.0.113.9",
       },
-      body: JSON.stringify({ characterHash: "VM29l7kQZZ0JbQ80q6WD" }),
+      body: JSON.stringify({ characterHash: "FixtureHash0000000001" }),
     }), e);
     const startBody = await json(start);
     assert.equal(startBody.budgetMode, "github-active");
@@ -487,7 +487,7 @@ async function json(response) {
         origin: "https://zenith.example",
         "cf-connecting-ip": "203.0.113.11",
       },
-      body: JSON.stringify({ characterHash: "VM29l7kQZZ0JbQ80q6WD" }),
+      body: JSON.stringify({ characterHash: "FixtureHash0000000001" }),
     }), e);
     const startBody = await json(start);
     assert.equal(startBody.budgetMode, "github-active");

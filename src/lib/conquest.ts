@@ -7,7 +7,6 @@ export type ConquestGuild = {
 };
 
 export type ConquestCharacter = {
-  hashed_id: string | null;
   name: string;
   total_level: number | null;
   image_url: string | null;
