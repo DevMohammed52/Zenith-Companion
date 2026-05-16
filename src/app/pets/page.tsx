@@ -21,6 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
 import { useModalA11y } from "@/lib/use-modal-a11y";
@@ -932,11 +933,11 @@ export default function PetsPage() {
   const battleResearchPetCount = petRows.filter((row) => (row.pet.battle?.zones?.length || 0) > 0).length;
 
   return (
-    <div className="pets-page">
+    <main className="pets-page">
       <section className="pets-hero">
         <div>
           <div className="pets-kicker">
-            <PawPrint size={16} /> Pet Database
+            <ZenithIcon name="pets" size={16} /> Pet Database
           </div>
           <h1>Pet Database</h1>
           <p>
@@ -1525,6 +1526,6 @@ export default function PetsPage() {
           ) : null}
         </>
       )}
-    </div>
+    </main>
   );
 }

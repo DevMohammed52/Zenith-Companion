@@ -18,6 +18,7 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles } from "@/lib/profiles";
 import {
   MUSEUM_CATEGORIES,
@@ -204,7 +205,7 @@ export default function MuseumPage() {
     <main className="container museum-page">
       <section className="museum-hero">
         <div className="museum-hero-copy">
-          <span className="eyebrow"><Sparkles size={14} aria-hidden="true" /> Museum</span>
+          <span className="eyebrow"><ZenithIcon name="museum" size={14} /> Museum</span>
           <h1>Collection Vault</h1>
           <p>Browse the museum items saved from your active profile, with category counts, search, and collection quantity totals.</p>
         </div>

@@ -90,6 +90,7 @@ export default function Sidebar() {
     const pathname = usePathname();
     const { mobileOpen, setMobileOpen } = useSidebar();
     const previousPathname = useRef(pathname);
+    const closeButtonRef = useRef<HTMLButtonElement | null>(null);
     const activeGroupLabel = useMemo(() => {
         return NAV_GROUPS.find((group) => group.items.some((item) => {
             if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + '/');
@@ -97,6 +98,7 @@ export default function Sidebar() {
         }))?.label;
     }, [pathname]);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(DEFAULT_EXPANDED_GROUPS);
+    const [mobileViewport, setMobileViewport] = useState(false);
 
     const toggleGroup = (label: string) => {
         setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -115,11 +117,53 @@ export default function Sidebar() {
     useEffect(() => {
         if (!mobileOpen) return;
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setMobileOpen(false);
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setMobileOpen(false);
+                return;
+            }
+
+            if (event.key !== 'Tab') return;
+
+            const sidebar = document.getElementById('app-sidebar');
+            if (!sidebar) return;
+
+            const focusable = Array.from(sidebar.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )).filter((element) => element.offsetParent !== null || element === document.activeElement);
+
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus({ preventScroll: true });
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus({ preventScroll: true });
+            } else if (!sidebar.contains(document.activeElement)) {
+                event.preventDefault();
+                first.focus({ preventScroll: true });
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }));
+        return () => {
+            window.cancelAnimationFrame(focusFrame);
+            window.removeEventListener('keydown', handleKeyDown);
+            document.getElementById('app-mobile-menu-button')?.focus({ preventScroll: true });
+        };
     }, [mobileOpen, setMobileOpen]);
+
+    useEffect(() => {
+        const query = window.matchMedia('(max-width: 1180px)');
+        const updateViewport = () => setMobileViewport(query.matches);
+        updateViewport();
+        query.addEventListener('change', updateViewport);
+        return () => query.removeEventListener('change', updateViewport);
+    }, []);
 
     const isActive = (item: NavItem) => {
         if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + '/');
@@ -156,7 +200,13 @@ export default function Sidebar() {
         <>
             {mobileOpen && <div onClick={() => setMobileOpen(false)} className="mobile-backdrop" aria-hidden="true" />}
 
-            <div id="app-sidebar" className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`} aria-label="Primary navigation">
+            <div
+                id="app-sidebar"
+                className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}
+                aria-label="Primary navigation"
+                aria-hidden={mobileViewport && !mobileOpen ? true : undefined}
+                inert={mobileViewport && !mobileOpen ? true : undefined}
+            >
                 <div className="sidebar-brand">
                     <div>
                         <h2>
@@ -165,6 +215,7 @@ export default function Sidebar() {
                         <p>COMPANION SUITE</p>
                     </div>
                     <button 
+                        ref={closeButtonRef}
                         onClick={() => setMobileOpen(false)} 
                         className="mobile-sidebar-close"
                         aria-label="Close navigation menu"

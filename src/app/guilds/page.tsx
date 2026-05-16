@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Activity,
@@ -18,6 +18,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import styles from "./page.module.css";
 import {
   compareGuilds,
@@ -243,14 +244,41 @@ function GuildModal({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const modalRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.offsetParent !== null || element === document.activeElement);
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -258,6 +286,7 @@ function GuildModal({
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+      previousFocusRef.current?.focus();
     };
   }, [onClose]);
 
@@ -269,6 +298,7 @@ function GuildModal({
       onMouseDown={onClose}
     >
       <section
+        ref={modalRef}
         className={styles.modal}
         role="dialog"
         aria-modal="true"
@@ -283,7 +313,7 @@ function GuildModal({
               : "linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(148, 163, 184, 0.1))",
           }}
         >
-          <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close guild details">
+          <button ref={closeButtonRef} type="button" className={styles.closeButton} onClick={onClose} aria-label="Close guild details">
             <X size={18} />
           </button>
         </div>
@@ -437,7 +467,7 @@ export default function GuildsPage() {
     setVisibleLimit(INITIAL_ROWS);
   }, [search, tier, sortBy]);
 
-  const guilds = database?.guilds || [];
+  const guilds = useMemo(() => database?.guilds || [], [database?.guilds]);
   const filteredGuilds = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     return guilds
@@ -448,7 +478,7 @@ export default function GuildsPage() {
   const visibleGuilds = filteredGuilds.slice(0, visibleLimit);
   const tierCounts = database?.meta.totals.tiers || { hot: 0, warm: 0, cold: 0 };
 
-  const loadDetails = async (guild: GuildRecord) => {
+  const loadDetails = useCallback(async (guild: GuildRecord) => {
     setInspectingGuild(guild);
     if (detailsById?.has(guild.id)) return;
     setDetailsLoading(true);
@@ -464,9 +494,12 @@ export default function GuildsPage() {
     } finally {
       setDetailsLoading(false);
     }
-  };
+  }, [detailsById]);
 
   const selectedDetails = inspectingGuild ? detailsById?.get(inspectingGuild.id) || null : null;
+  const resultStatus = database
+    ? `${formatGuildNumber(filteredGuilds.length)} guild${filteredGuilds.length === 1 ? "" : "s"} match the current filters.`
+    : "Guild database is loading.";
 
   useEffect(() => {
     if (!database || initialQueryHandled.current || typeof window === "undefined") return;
@@ -483,13 +516,13 @@ export default function GuildsPage() {
       const matchingGuild = guilds.find((guild) => String(guild.id) === guildQuery.trim());
       if (matchingGuild) void loadDetails(matchingGuild);
     }
-  }, [database, guilds]);
+  }, [database, guilds, loadDetails]);
 
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
         <div>
-          <div className={styles.eyebrow}>Guild Intelligence</div>
+          <div className={styles.eyebrow}><ZenithIcon name="guild" size={15} /> Guild Intelligence</div>
           <h1 className={styles.title}>Guild Database</h1>
           <p className={styles.subtitle}>
             Search every discovered guild, compare activity signals, and open a focused inspection view for bios,
@@ -551,17 +584,19 @@ export default function GuildsPage() {
             <label className={styles.search}>
               <Search size={17} aria-hidden="true" />
               <input
+                aria-label="Search guilds"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search guild, tag, leader, top member, or ID"
               />
             </label>
 
-            <div className={styles.tierTabs} role="tablist" aria-label="Refresh tier">
+            <div className={styles.tierTabs} role="group" aria-label="Refresh tier filter">
               {TIER_FILTERS.map((option) => (
                 <button
                   key={option.id}
                   type="button"
+                  aria-pressed={tier === option.id}
                   data-active={tier === option.id}
                   onClick={() => setTier(option.id)}
                 >
@@ -572,6 +607,7 @@ export default function GuildsPage() {
 
             <SortPicker value={sortBy} onChange={setSortBy} />
           </section>
+          <p className="sr-only" role="status" aria-live="polite">{resultStatus}</p>
 
           <section className={styles.tableWrap}>
             <div className={styles.tableScroll}>

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
   ENEMY_WEATHER_META,
@@ -236,7 +237,7 @@ function CustomSelect<T extends string>({
         className="select-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-controls={`${selectId}-menu`}
+        aria-controls={open ? `${selectId}-menu` : undefined}
         onClick={() => setOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
       >
@@ -443,7 +444,7 @@ function EnemiesContent() {
       <div className="enemy-page-shell" inert={selectedEnemy ? true : undefined} aria-hidden={selectedEnemy ? true : undefined}>
         <header className="enemy-hero">
           <div>
-            <h1><Swords size={24} /> Enemy Database</h1>
+            <h1><ZenithIcon name="enemy" size={24} /> Enemy Database</h1>
             <p>Search enemies by location, drops, levels, and current weather matchups.</p>
           </div>
           <div className="hero-meta">

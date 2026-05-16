@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowDownUp, ArrowRight, BadgeCheck, Clock3, Database, PawPrint, Plus, Search, Shield, Trash2 } from "lucide-react";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { type CharacterProfile, type ProfileOwnedPet, type ProfilePetStats, useProfiles } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, type PetRecord } from "@/lib/pets";
 import styles from "./page.module.css";
@@ -145,7 +146,7 @@ export default function OwnedPetsPage() {
 
   const petMatchLookup = useMemo(() => buildPetMatchLookup(petDb), [petDb]);
 
-  const ownedPets = activeProfile?.ownedPets || [];
+  const ownedPets = useMemo(() => activeProfile?.ownedPets || [], [activeProfile?.ownedPets]);
   const activePetKey = activeProfile ? petKey(activeProfile.pet) : "";
   const importedCount = ownedPets.filter((pet) => pet.source === "imported").length;
   const manualCount = ownedPets.filter((pet) => pet.source === "manual").length;
@@ -209,7 +210,7 @@ export default function OwnedPetsPage() {
     updateOwnedPets(ownedPets.filter((pet) => pet.id !== petId), "Owned pet removed.");
   };
 
-  const useAsActivePet = (ownedPet: ProfileOwnedPet) => {
+  const handleUseAsActivePet = (ownedPet: ProfileOwnedPet) => {
     if (!activeProfile) return;
     updateProfile(
       activeProfile.id,
@@ -234,7 +235,7 @@ export default function OwnedPetsPage() {
     <main className={`container ${styles.page}`}>
       <section className={styles.header}>
         <div>
-          <span className={styles.kicker}><PawPrint size={17} /> Profile Pets</span>
+          <span className={styles.kicker}><ZenithIcon name="pets" size={17} /> Profile Pets</span>
           <h1>Owned Pets</h1>
           <p>Saved pets belong to the active local profile and stay in browser storage until imported, edited, or removed.</p>
         </div>
@@ -429,7 +430,7 @@ export default function OwnedPetsPage() {
                 </details>
                 {ownedPet.notes && <p className={styles.notes}>{ownedPet.notes}</p>}
                 <div className={styles.cardActions}>
-                  <button type="button" onClick={() => useAsActivePet(ownedPet)}>Use as active</button>
+                  <button type="button" onClick={() => handleUseAsActivePet(ownedPet)}>Use as active</button>
                   <button type="button" onClick={() => removePet(ownedPet.id)}><Trash2 size={15} /> Remove</button>
                 </div>
               </article>

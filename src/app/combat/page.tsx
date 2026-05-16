@@ -7,6 +7,7 @@ import { usePreferences } from "@/lib/preferences";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
 import { getItemTrueValue } from "@/lib/ev-logic";
@@ -261,7 +262,7 @@ function CombatContent() {
         <main className="container combat-page">
             <div className="header">
                 <h1 className="header-title">
-                    <Swords size={24} color="var(--text-accent)" /> ZENITH COMBAT
+                    <ZenithIcon name="combat" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH COMBAT
                 </h1>
                 <div className="header-status">
                     <div className="status-dot"></div>

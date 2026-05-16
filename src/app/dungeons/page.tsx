@@ -23,6 +23,7 @@ import {
   Zap,
 } from "lucide-react";
 import { getItemTrueValueBreakdown } from "@/lib/ev-logic";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
@@ -812,7 +813,7 @@ function DungeonsContent() {
     <main className="container dungeons-page">
       <div className="header">
         <h1 className="header-title">
-          <Castle size={24} color="var(--text-accent)" /> ZENITH DUNGEONS
+          <ZenithIcon name="castle" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH DUNGEONS
         </h1>
         <div className="header-status">
           <div className="status-dot"></div>
@@ -920,72 +921,74 @@ function DungeonsContent() {
         </button>
       </section>
 
-      <section className="dungeon-modifier-panel" aria-label="Dungeon item modifiers">
-        <div className="dungeon-modifier-copy">
-          <span className="control-label">Confirmed Item Modifiers</span>
-          <strong>
-            {itemEfficiencyBonus > 0 || itemMagicFindBonus > 0 || equippedDungeonSpecialMagicFind > 0
-              ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} / ${itemMagicFindBonus + equippedDungeonSpecialMagicFind > 0 ? `+${itemMagicFindBonus + equippedDungeonSpecialMagicFind}% MF` : "No MF"}`
-              : "No item effect"}
-          </strong>
-          <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
-        </div>
-        <div className="dungeon-modifier-pickers">
-          <DungeonItemEffectPicker
-            ariaLabel="Active dungeon efficiency item"
-            emptyLabel="No speed item"
-            label="Efficiency Item"
-            onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, efficiencyItem: value }))}
-            options={dungeonEfficiencyItemOptions}
-            value={dungeonItemModifierSelections.efficiencyItem}
-          />
-          <DungeonItemEffectPicker
-            ariaLabel="Active dungeon magic find item"
-            emptyLabel="No magic-find item"
-            label="Magic-Find Item"
-            onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, magicFindItem: value }))}
-            options={dungeonMagicFindItemOptions}
-            value={dungeonItemModifierSelections.magicFindItem}
-          />
-        </div>
-      </section>
-
-      <section className="dungeon-valuation-panel" aria-label="Dungeon drop valuation">
-        <div className="dungeon-valuation-copy">
-          <span className="control-label">Gear & Mythic Potion Value</span>
-          <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
-          <small>Uses safe market prices plus modeled chest/recipe paths for high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
-        </div>
-        <div className="dungeon-valuation-controls">
-          <div className="dungeon-segmented dungeon-valuation-segmented" role="group" aria-label="Sensitive drop valuation mode">
-            {DROP_VALUATION_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={dropValuationMode === option.value ? "active" : ""}
-                aria-pressed={dropValuationMode === option.value}
-                onClick={() => setDropValuationMode(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
+      <div className="dungeon-advanced-row">
+        <section className="dungeon-modifier-panel" aria-label="Dungeon item modifiers">
+          <div className="dungeon-modifier-copy">
+            <span className="control-label">Confirmed Item Modifiers</span>
+            <strong>
+              {itemEfficiencyBonus > 0 || itemMagicFindBonus > 0 || equippedDungeonSpecialMagicFind > 0
+                ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} / ${itemMagicFindBonus + equippedDungeonSpecialMagicFind > 0 ? `+${itemMagicFindBonus + equippedDungeonSpecialMagicFind}% MF` : "No MF"}`
+                : "No item effect"}
+            </strong>
+            <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
           </div>
-          {dropValuationMode === "manual" && (
-            <label className="dungeon-manual-value-field">
-              <span className="control-label">Manual Value / Drop</span>
-              <input
-                aria-label="Manual value for sensitive dungeon drops"
-                className="control-input"
-                type="number"
-                min="0"
-                value={manualSensitiveDropValue}
-                placeholder="0"
-                onChange={(event) => setManualSensitiveDropValue(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))}
-              />
-            </label>
-          )}
-        </div>
-      </section>
+          <div className="dungeon-modifier-pickers">
+            <DungeonItemEffectPicker
+              ariaLabel="Active dungeon efficiency item"
+              emptyLabel="No speed item"
+              label="Efficiency Item"
+              onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, efficiencyItem: value }))}
+              options={dungeonEfficiencyItemOptions}
+              value={dungeonItemModifierSelections.efficiencyItem}
+            />
+            <DungeonItemEffectPicker
+              ariaLabel="Active dungeon magic find item"
+              emptyLabel="No magic-find item"
+              label="Magic-Find Item"
+              onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, magicFindItem: value }))}
+              options={dungeonMagicFindItemOptions}
+              value={dungeonItemModifierSelections.magicFindItem}
+            />
+          </div>
+        </section>
+
+        <section className="dungeon-valuation-panel" aria-label="Dungeon drop valuation">
+          <div className="dungeon-valuation-copy">
+            <span className="control-label">Gear & Mythic Potion Value</span>
+            <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
+            <small>Uses safe market prices plus modeled chest/recipe paths for high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
+          </div>
+          <div className="dungeon-valuation-controls">
+            <div className="dungeon-segmented dungeon-valuation-segmented" role="group" aria-label="Sensitive drop valuation mode">
+              {DROP_VALUATION_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={dropValuationMode === option.value ? "active" : ""}
+                  aria-pressed={dropValuationMode === option.value}
+                  onClick={() => setDropValuationMode(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {dropValuationMode === "manual" && (
+              <label className="dungeon-manual-value-field">
+                <span className="control-label">Manual Value / Drop</span>
+                <input
+                  aria-label="Manual value for sensitive dungeon drops"
+                  className="control-input"
+                  type="number"
+                  min="0"
+                  value={manualSensitiveDropValue}
+                  placeholder="0"
+                  onChange={(event) => setManualSensitiveDropValue(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))}
+                />
+              </label>
+            )}
+          </div>
+        </section>
+      </div>
 
       <section className="dungeon-insights">
         <button type="button" className="dungeon-insight" onClick={() => summary.bestProfit && setSelectedDungeonKey(getDungeonKey(summary.bestProfit))}>
@@ -1035,23 +1038,22 @@ function DungeonsContent() {
                     key={row.id || row.name}
                     className="clickable-row"
                     onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedDungeonKey(getDungeonKey(row));
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
                   >
                     <td className="item-name left-align">
-                      <div className="dungeon-name-cell">
+                      <button
+                        type="button"
+                        className="dungeon-name-cell dungeon-open-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedDungeonKey(getDungeonKey(row));
+                        }}
+                      >
                         {row.image_url && <img src={row.image_url} alt="" />}
                         <div>
                           <span>{row.name}</span>
                           <small>Lv {row.level_required || 0} - {row.durationMins}m - {row.dropsCount} drops</small>
                         </div>
-                      </div>
+                      </button>
                     </td>
                     <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
                     <td><span className={`dungeon-readiness ${row.profileReady ? "ready" : activeProfile ? "blocked" : "neutral"}`}>{getReadinessText(row, Boolean(activeProfile))}</span></td>
@@ -1119,25 +1121,24 @@ function DungeonsContent() {
               <div
                 aria-label={`Open ${row.name} dungeon details`}
                 key={row.id || row.name}
-                role="button"
-                tabIndex={0}
                 className="dungeon-card"
                 onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSelectedDungeonKey(getDungeonKey(row));
-                  }
-                }}
               >
                 <div className="dungeon-card-top">
-                  <div className="dungeon-name-cell">
+                  <button
+                    type="button"
+                    className="dungeon-name-cell dungeon-open-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedDungeonKey(getDungeonKey(row));
+                    }}
+                  >
                     {row.image_url && <img src={row.image_url} alt="" />}
                     <div>
                       <strong>{row.name}</strong>
                           <small>{row.location?.name || "Unknown"} - {Math.round(row.effectiveDurationMins)}m</small>
                     </div>
-                  </div>
+                  </button>
                   <span className={`dungeon-readiness ${row.profileReady ? "ready" : activeProfile ? "blocked" : "neutral"}`}>
                     {getReadinessText(row, Boolean(activeProfile))}
                   </span>
@@ -1426,12 +1427,12 @@ function DungeonsContent() {
         }
         .dungeon-planner {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: minmax(16rem, 1.6fr) repeat(4, minmax(0, 1fr));
           grid-template-areas:
             "search action playtime profit efficiency"
             "mf completion event filter toggle";
-          gap: 0.75rem;
-          padding: 1rem;
+          gap: 0.65rem;
+          padding: 0.9rem;
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: var(--bg-panel);
@@ -1466,7 +1467,7 @@ function DungeonsContent() {
         }
         .dungeon-readonly-field {
           justify-content: center;
-          min-height: 4.4rem;
+          min-height: 4.1rem;
           padding: 0.55rem 0.7rem;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
@@ -1487,7 +1488,7 @@ function DungeonsContent() {
           grid-template-columns: 1.8rem minmax(0, 1fr);
           align-items: center;
           gap: 0.65rem;
-          min-height: 4.4rem;
+          min-height: 4.1rem;
           padding: 0.65rem 0.75rem;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
@@ -1595,12 +1596,20 @@ function DungeonsContent() {
           background: var(--text-accent);
           color: #000;
         }
+        .dungeon-advanced-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 0.85rem;
+          margin-bottom: 1rem;
+          align-items: stretch;
+        }
         .dungeon-modifier-panel {
           display: grid;
           grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1.35fr);
           align-items: stretch;
           gap: 0.75rem;
-          margin-bottom: 1rem;
+          min-width: 0;
+          margin-bottom: 0;
           padding: 0.9rem 1rem;
           border: 1px solid color-mix(in srgb, #a78bfa, transparent 78%);
           border-radius: 8px;
@@ -1691,10 +1700,14 @@ function DungeonsContent() {
           background: #07080d;
           box-shadow: 0 18px 50px rgba(0,0,0,0.48);
         }
+        :global(.dungeon-effect-picker.drop-up .dungeon-effect-menu) {
+          top: auto;
+          bottom: calc(100% + 0.35rem);
+        }
         :global(.dungeon-effect-option) {
           min-height: 42px;
           display: grid;
-          grid-template-columns: auto minmax(0, 1fr) minmax(5rem, auto) auto;
+          grid-template-columns: auto minmax(0, 1fr) auto;
           align-items: center;
           gap: 0.6rem;
           border: 1px solid transparent;
@@ -1736,12 +1749,16 @@ function DungeonsContent() {
           font-style: normal;
           line-height: 1.25;
         }
+        :global(.dungeon-effect-option em) {
+          grid-column: 2 / -1;
+        }
         .dungeon-valuation-panel {
           display: grid;
           grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
           align-items: stretch;
           gap: 0.75rem;
-          margin-bottom: 1rem;
+          min-width: 0;
+          margin-bottom: 0;
           padding: 0.9rem 1rem;
           border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
           border-radius: 8px;
@@ -1887,6 +1904,22 @@ function DungeonsContent() {
           align-items: center;
           gap: 0.75rem;
           min-width: 0;
+        }
+        .dungeon-open-button {
+          width: 100%;
+          min-height: 44px;
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          text-align: left;
+          cursor: pointer;
+          padding: 0;
+        }
+        .dungeon-open-button:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 4px;
+          border-radius: 8px;
         }
         .dungeon-name-cell img {
           width: 32px;
@@ -2288,20 +2321,28 @@ function DungeonsContent() {
           .dungeon-valuation-controls {
             grid-template-columns: 1fr;
           }
+          .dungeon-advanced-row {
+            grid-template-columns: 1fr;
+          }
         }
         @media (min-width: 1101px) and (max-width: 1500px) {
           .dungeon-planner {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: minmax(16rem, 1.6fr) repeat(4, minmax(0, 1fr));
             grid-template-areas:
-              "search search action playtime"
-              "profit efficiency mf completion"
-              "event filter filter toggle";
+              "search action playtime profit efficiency"
+              "mf completion event filter toggle";
+          }
+          .dungeon-modifier-pickers {
+            grid-template-columns: 1fr;
           }
         }
         @media (max-width: 720px) {
           .dungeon-command,
           .dungeon-planner {
-            padding: 1rem;
+            padding: 0.85rem;
+          }
+          .dungeon-planner {
+            gap: 0.6rem;
           }
           .dungeon-command-stats {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2323,10 +2364,10 @@ function DungeonsContent() {
             grid-template-columns: 1fr;
           }
           .dungeon-valuation-panel {
-            padding: 0.85rem;
+            padding: 0.8rem;
           }
           .dungeon-modifier-panel {
-            padding: 0.85rem;
+            padding: 0.8rem;
           }
           .dungeon-valuation-segmented {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2393,6 +2434,7 @@ function DungeonItemEffectPicker({
   value: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -2450,6 +2492,12 @@ function DungeonItemEffectPicker({
 
   useEffect(() => {
     if (!open) return;
+    const triggerRect = triggerRef.current?.getBoundingClientRect();
+    if (triggerRect) {
+      const spaceBelow = window.innerHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+      setMenuPlacement(spaceBelow < 280 && spaceAbove > spaceBelow ? "up" : "down");
+    }
     const handlePointer = (event: MouseEvent) => {
       if (pickerRef.current?.contains(event.target as Node)) return;
       setOpen(false);
@@ -2466,7 +2514,7 @@ function DungeonItemEffectPicker({
   }, [open]);
 
   return (
-    <div className={`dungeon-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
+    <div className={`dungeon-effect-picker ${open ? "open" : ""} ${menuPlacement === "up" ? "drop-up" : ""}`} ref={pickerRef}>
       <button
         type="button"
         ref={triggerRef}

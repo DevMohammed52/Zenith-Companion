@@ -7,7 +7,8 @@ export default function MobileMenuBtn() {
     const { mobileOpen, toggleMobile } = useSidebar();
 
     return (
-        <button 
+        <button
+            id="app-mobile-menu-button"
             onClick={toggleMobile} 
             className="mobile-menu-btn" 
             aria-label="Toggle menu"

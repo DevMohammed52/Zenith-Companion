@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES } from "../../constants/events";
 import { getItemTrueValue } from "@/lib/ev-logic";
@@ -828,7 +829,7 @@ function BossesContent() {
         <main className="container bosses-page">
             <div className="header">
                 <h1 className="header-title">
-                    <Skull size={24} color="var(--text-accent)" /> ZENITH WORLD BOSSES
+                    <ZenithIcon name="boss" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH WORLD BOSSES
                 </h1>
                 <div className="header-status" aria-live="polite">
                     <div className="status-dot"></div>

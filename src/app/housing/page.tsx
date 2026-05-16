@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
   calculateEssenceSession,
   formatEssenceBuff,
@@ -399,7 +400,7 @@ export default function HousingPage() {
     () => calculateHousingBuffs(housing, { profileClassName: activeProfile?.className }),
     [activeProfile?.className, housing],
   );
-  const selected = new Set(housing.selectedComponents);
+  const selected = useMemo(() => new Set(housing.selectedComponents), [housing.selectedComponents]);
   const ownerSlotsAvailable = housing.foundationBuilt ? 1 + housing.extraSlots : 0;
   const repairDecayDays = REPAIR_DECAY_DAYS;
   const componentConditions = housing.componentConditions;
@@ -482,7 +483,7 @@ export default function HousingPage() {
       });
     }
     return cards;
-  }, [housing.extraSlots, selectedComponentDetails, slotComponent]);
+  }, [selectedComponentDetails]);
 
   const slotOverage = Math.max(0, summary.activeComponentCount - summary.slotCapacity);
 
@@ -525,7 +526,7 @@ export default function HousingPage() {
       }
     }
     return groups;
-  }, [category, draftTiers, housing.selectedComponents, search]);
+  }, [category, draftTiers, search, selected]);
 
   const idleRoomFamilies = useMemo(() => {
     const families = new Map<string, { value: string; label: string; hint: string }>();
@@ -960,7 +961,7 @@ export default function HousingPage() {
     <main className="container housing-page">
       <section className="page-title-row">
         <div>
-          <p className="eyebrow"><Home size={16} /> Housing Manager</p>
+          <p className="eyebrow"><ZenithIcon name="housing" size={16} /> Housing Manager</p>
           <h1>House Planner</h1>
           <p className="muted">
             Profile-scoped construction planner for idle-time bonuses, guest buffs, and build cost estimates.

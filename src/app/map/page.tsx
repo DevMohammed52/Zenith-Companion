@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import {
   GATHERED_RESOURCE_SOURCE_NOTE,
@@ -570,7 +571,7 @@ function MapPageContent() {
         <div className="atlas-panel">
           <div className="atlas-topbar">
             <div className="atlas-title">
-              <span><MapIcon size={16} /> Zenith Atlas</span>
+              <span><ZenithIcon name="map" size={16} /> Zenith Atlas</span>
               <h1>Valaron Map</h1>
             </div>
             <div className="atlas-search">

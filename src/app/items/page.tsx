@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
+import ZenithIcon from '@/components/icons/ZenithIcon';
 import { getLoreForItem } from '@/data/lore';
 import { formatItemTypeLabel, isForcedUntradableItem, isLegacyItem } from '@/lib/item-display';
 import {
@@ -777,7 +778,7 @@ function ItemsArchiveContent() {
     <main className="container items-db-page">
       <div className="header">
         <h1 className="header-title">
-          <Database size={24} color="var(--text-accent)" /> Item Database
+          <ZenithIcon name="items" size={24} style={{ color: "var(--text-accent)" }} /> Item Database
         </h1>
         <div className="header-status">
           <div className="status-dot"></div>
@@ -785,7 +786,7 @@ function ItemsArchiveContent() {
         </div>
       </div>
 
-      <section className="db-summary">
+      <section aria-label="Item database summary" className="db-summary" tabIndex={0}>
         <div>
           <span className="summary-label">Market listed</span>
           <strong>{stats.marketListed.toLocaleString()}</strong>

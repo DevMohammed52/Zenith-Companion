@@ -6638,7 +6638,7 @@ kbd {
   display: flex;
   font-size: 0.81rem;
   justify-content: space-between;
-  min-height: 40px;
+  min-height: 44px;
   overflow: hidden;
   padding: 0.56rem 0.62rem;
   position: relative;
@@ -6960,6 +6960,115 @@ kbd {
   border-color: var(--border-focus);
   color: #fff;
 }
+}
+
+/* Accessibility consolidation overrides. Keep at the end so duplicated legacy sections cannot override them. */
+.main-content :is(button, input, select, textarea, [role="button"], [role="tab"], [role="option"]) {
+  min-height: 44px !important;
+}
+
+.main-content :is(button, [role="button"], [role="tab"], [role="option"]) {
+  min-width: 44px;
+  height: auto !important;
+}
+
+.main-content :is(input, select, button.control-input) {
+  height: 44px !important;
+}
+
+.main-content textarea.control-input {
+  height: auto !important;
+  min-height: 5rem !important;
+}
+
+.main-content :is(
+  .command-module-links a,
+  .settings-link-button,
+  .enemy-pref-more,
+  .inline-link-button,
+  .museum-profile-links a,
+  .museum-empty a,
+  [class*="secondaryAction"],
+  [class*="primaryAction"]
+) {
+  min-height: 44px !important;
+}
+
+.profiles-page .profile-inline-actions button,
+.profiles-page .profile-section-nav a,
+.profiles-page .profile-list-item,
+.profiles-page .profile-segmented button,
+.profiles-page .profile-loadout-options button,
+.profiles-page .profile-housing-mode-grid button,
+.profiles-page .profile-picker-button,
+.profiles-page .profile-picker-option,
+.profiles-page .profile-picker-menu-head button,
+.profiles-page .profile-action,
+.profiles-page .profile-secondary-link {
+  min-height: 2.75rem;
+}
+
+.profiles-page .profile-inline-actions button {
+  min-width: 2.75rem;
+}
+
+.profiles-page .profile-source-chip {
+  min-height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.control-input,
+.alchemy-toggle,
+.alchemy-filter-chip,
+.alchemy-recipe-link,
+.command-module-links a,
+.mobile-menu-btn,
+.mobile-sort-direction,
+.mobile-sort-chip {
+  min-height: 44px;
+}
+
+.mobile-menu-btn {
+  min-width: 44px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.global-search-trigger {
+  min-height: 44px;
+}
+
+.command-results button {
+  min-height: 44px;
+}
+
+.command-results button.active,
+.command-results button[aria-selected="true"] {
+  background: rgba(245, 176, 65, 0.08);
+  border-color: var(--border-focus);
+}
+
+@media (pointer: coarse) {
+  :is(button, a[href], input, select, textarea, [role="button"], [role="tab"], [role="option"]) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  :is(button, input, select, textarea, [role="button"], [role="tab"], [role="option"]) {
+    min-height: 44px;
+  }
 }
 
 /* Pet Database final layout overrides */

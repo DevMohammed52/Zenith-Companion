@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
@@ -240,7 +241,7 @@ export default function ForgePage() {
     <main className="forge-page">
       <header className="forge-hero">
         <div>
-          <p className="eyebrow"><Hammer size={16} /> Forge Planner</p>
+          <p className="eyebrow"><ZenithIcon name="forge" size={16} /> Forge Planner</p>
           <h1>Forging Planner</h1>
           <p className="hero-copy">
             Plan saved legendary and mythic recipe sessions, count owned recipe copies, and see the exact missing materials before a bulk forge push.
@@ -278,7 +279,7 @@ export default function ForgePage() {
                 role="combobox"
                 aria-label="Forge recipe"
                 aria-expanded={pickerOpen}
-                aria-controls="forge-recipe-options"
+                aria-controls={pickerOpen ? "forge-recipe-options" : undefined}
                 aria-activedescendant={pickerOpen && visibleRecipeOptions[activeOptionIndex] ? `forge-recipe-option-${activeOptionIndex}` : undefined}
                 autoComplete="off"
                 value={recipeSearch}

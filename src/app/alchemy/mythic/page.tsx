@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DollarSign, Hammer, Plus, Search, Sparkles, TrendingUp, X } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
@@ -428,7 +429,6 @@ export default function MythicAlchemyPage() {
     mythicCraftTimeSeconds,
     profileBarteringBoost,
     preferences.membership,
-    preferences.assaultRank,
     recipeByResult,
     recipeCostMode,
     usesLeft,
@@ -513,7 +513,7 @@ export default function MythicAlchemyPage() {
       <div className="header">
         <div>
           <h1 className="header-title">
-            <Sparkles size={24} color="var(--text-accent)" /> MYTHIC WORKBENCH
+            <ZenithIcon name="spark" size={24} style={{ color: "var(--text-accent)" }} /> MYTHIC WORKBENCH
           </h1>
           <p className="header-subtitle">Level 90 alchemy recipe projects powered by the live item database.</p>
         </div>

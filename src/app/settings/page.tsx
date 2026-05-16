@@ -17,6 +17,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
@@ -157,7 +158,7 @@ export default function SettingsPage() {
       <div className="header settings-header">
         <div>
           <h1 className="header-title">
-            <Settings size={24} color="var(--text-accent)" /> Settings
+            <ZenithIcon name="settings" size={24} style={{ color: "var(--text-accent)" }} /> Settings
           </h1>
           <p className="settings-header-copy">App defaults, theme, cache status, and global price overrides.</p>
         </div>

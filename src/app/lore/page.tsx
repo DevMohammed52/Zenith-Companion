@@ -25,6 +25,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
   LORE_ENTRIES,
   LORE_ENTRY_BY_ID,
@@ -295,7 +296,7 @@ function LoreContent() {
       <div className="lore-shade" aria-hidden="true" />
 
       <section className="lore-hero">
-        <span className="lore-eyebrow"><ScrollText size={16} /> IdleMMO Lore Wiki</span>
+        <span className="lore-eyebrow"><ZenithIcon name="archive" size={16} /> IdleMMO Lore Wiki</span>
         <h1>Chronicles of Valaron</h1>
         <p>
           Edric&apos;s archive, rebuilt as a living atlas of civilizations, artifacts, gods, creatures,
@@ -311,13 +312,15 @@ function LoreContent() {
       <section className="lore-toolbar" aria-label="Lore controls">
         <div className="lore-search">
           <Search size={17} />
+          <span id="lore-search-label" className="sr-only">Search lore records</span>
           <input
+            aria-labelledby="lore-search-label"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search names, factions, places, artifacts..."
           />
         </div>
-        <div className="lore-view-tabs" role="tablist" aria-label="Lore views">
+        <div className="lore-view-tabs" role="group" aria-label="Lore view filter">
           {VIEW_OPTIONS.map((view) => (
             <button
               key={view.id}
@@ -1734,11 +1737,18 @@ function LoreEntryModal({
 
   return (
     <div className="lore-modal-shell" onClick={onClose}>
-      <article className="lore-modal" onClick={(event) => event.stopPropagation()} style={{ "--tone": meta.tone } as CSSProperties}>
+      <article
+        aria-labelledby="lore-modal-title"
+        aria-modal="true"
+        className="lore-modal"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        style={{ "--tone": meta.tone } as CSSProperties}
+      >
         <header>
           <div>
             <span>{meta.icon} {meta.label}</span>
-            <h2>{entry.title}</h2>
+            <h2 id="lore-modal-title">{entry.title}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close lore entry"><X size={20} /></button>
         </header>

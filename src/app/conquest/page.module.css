@@ -15,8 +15,11 @@
 }
 
 .eyebrow {
+  align-items: center;
   color: var(--text-accent);
+  display: inline-flex;
   font-size: 0.72rem;
+  gap: 0.45rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -302,8 +305,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.7rem;
-  height: 1.7rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 7px;
   color: var(--text-primary);
@@ -523,7 +526,7 @@
 .detailMapLink {
   flex: 0 0 auto;
   gap: 0.45rem;
-  min-height: 2.4rem;
+  min-height: 2.75rem;
   padding: 0 0.65rem;
   font-size: 0.78rem;
   font-weight: 850;
@@ -647,6 +650,7 @@
   display: grid;
   gap: 0.65rem;
   align-items: center;
+  min-height: 2.75rem;
   padding: 0.62rem;
   border: 1px solid transparent;
   border-radius: 8px;

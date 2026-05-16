@@ -2,6 +2,7 @@
 import type { CSSProperties } from 'react';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import ZenithIcon from '@/components/icons/ZenithIcon';
 import { WEATHER_DATA, WeatherData } from '@/constants/weatherData';
 import { useData } from '@/context/DataContext';
 import {
@@ -382,7 +383,7 @@ export default function WeatherPage() {
       <div className="content-wrapper">
         <header className="page-header">
           <div className="header-text">
-            <span className="eyebrow">IdleMMO Weather Index</span>
+            <span className="eyebrow"><ZenithIcon name="weather" size={15} /> IdleMMO Weather Index</span>
             <h1>Weather Encyclopedia</h1>
             <p>Master the elements and optimize your activities based on the atmospheric conditions of IdleMMO.</p>
           </div>
@@ -639,6 +640,7 @@ export default function WeatherPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          gap: 0.45rem;
           color: var(--accent);
           font-size: 0.72rem;
           font-weight: 900;

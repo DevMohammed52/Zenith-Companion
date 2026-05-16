@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { formatGold } from "@/lib/format";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { barteringBuffPercent, getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
@@ -601,7 +602,7 @@ export default function SkillProfitPage() {
         <div className={styles.heroCopy}>
           <div className={styles.eyebrow}>Skill Profit Finder</div>
           <h1 className={styles.title}>
-            Live Skill Profit <BarChart3 size={22} />
+            Live Skill Profit <ZenithIcon name="skill" size={22} />
           </h1>
         </div>
         <div className={styles.heroStats}>
@@ -907,13 +908,6 @@ export default function SkillProfitPage() {
                   aria-label={`Open ${row.name} skill strategy`}
                   key={`${row.skill}-${row.name}`}
                   onClick={() => setSelectedRow(row)}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
-                    setSelectedRow(row);
-                  }}
-                  role="button"
-                  tabIndex={0}
                 >
                   <td className="left-align">
                     <div className={styles.nameCell}>
@@ -1070,7 +1064,7 @@ function OptionPicker<T extends string>({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   return (
     <div className={`${styles.compactPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
@@ -1153,7 +1147,7 @@ function ToolPicker({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   return (
     <div className={`${styles.toolPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>
@@ -1256,7 +1250,7 @@ function EssencePicker({
       window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   return (
     <div className={`${styles.toolPicker} ${open ? styles.toolPickerOpen : ""}`} ref={pickerRef}>

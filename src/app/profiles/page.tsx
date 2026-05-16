@@ -31,6 +31,7 @@ import {
   type ProfileUpdateOptions,
   useProfiles,
 } from "@/lib/profiles";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
   mergeImportedProfileDraft,
   type ImportedProfileDraft,
@@ -312,8 +313,9 @@ function FieldSourceChip({ source }: { source?: ProfileFieldSource }) {
     ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
     : "";
   const label = formatFieldSourceLabel(source.source);
+  const accessibleLabel = dateLabel ? `${label}. Last updated ${dateLabel}` : label;
   return (
-    <em className={`profile-source-chip source-${source.source}`} title={dateLabel ? `${label} - ${dateLabel}` : label}>
+    <em className={`profile-source-chip source-${source.source}`} aria-label={accessibleLabel}>
       {label}
     </em>
   );
@@ -443,6 +445,10 @@ function ProfilePicker<T>({
       <button
         type="button"
         className="profile-picker-button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={open ? `profile-picker-menu-${id}` : undefined}
+        aria-label={`${label}: ${selected?.title || placeholder}`}
         onClick={() => {
           if (disabled) return;
           setQuery("");
@@ -461,7 +467,7 @@ function ProfilePicker<T>({
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className="profile-picker-menu">
+        <div className="profile-picker-menu" id={`profile-picker-menu-${id}`} role="dialog" aria-label={`${label} picker`}>
           <div className="profile-picker-menu-head">
             <span>Choose {label}</span>
             <button
@@ -477,7 +483,7 @@ function ProfilePicker<T>({
           </div>
           <label className="profile-picker-search">
             <Search size={16} />
-            <input value={query} placeholder={`Search ${label.toLowerCase()}...`} onChange={(event) => setQuery(event.target.value)} autoFocus />
+            <input value={query} placeholder={`Search ${label.toLowerCase()}...`} aria-label={`Search ${label.toLowerCase()}`} onChange={(event) => setQuery(event.target.value)} autoFocus />
           </label>
           <div className="profile-picker-options custom-scrollbar">
             {visible.map((option) => (
@@ -804,7 +810,7 @@ export default function ProfilesPage() {
     setToast(result.ok ? "Profiles imported into this browser." : result.error || "Import failed.");
   };
 
-  const buildProfileImportReview = (importedDraft: ImportedProfileDraft): ProfileImportReview | null => {
+  const buildProfileImportReview = useCallback((importedDraft: ImportedProfileDraft): ProfileImportReview | null => {
     if (!profile) return null;
     const result = mergeImportedProfileDraft(profile, importedDraft);
     return {
@@ -813,14 +819,14 @@ export default function ProfilesPage() {
       importedSections: importedDraft.importSource?.importedSections || [],
       missingOrPrivate: importedDraft.importSource?.missingOrPrivate || [],
     };
-  };
+  }, [profile]);
 
-  const prepareProfileImportReview = (importedDraft: ImportedProfileDraft, source = "Imported character ready to save.") => {
+  const prepareProfileImportReview = useCallback((importedDraft: ImportedProfileDraft, source = "Imported character ready to save.") => {
     const nextReview = buildProfileImportReview(importedDraft);
     if (!nextReview) return;
     setImportReview(nextReview);
     if (source) setToast(source);
-  };
+  }, [buildProfileImportReview]);
 
   const scheduleLiveImportPoll = (jobId: string, delayMs = 3500) => {
     if (liveImportPollRef.current !== null) {
@@ -932,7 +938,7 @@ export default function ProfilesPage() {
     if (!importedDraft) return;
     const nextReview = buildProfileImportReview(importedDraft);
     if (nextReview) setImportReview(nextReview);
-  }, [profile, liveImportResult, liveImportSelectedIndex, liveImportStatus]);
+  }, [buildProfileImportReview, liveImportResult, liveImportSelectedIndex, liveImportStatus]);
 
   const handleApplyProfileImport = () => {
     if (!profile || !importReview) return;
@@ -1113,7 +1119,7 @@ export default function ProfilesPage() {
     return (
       <main className="container">
         <div className="header">
-          <h1 className="header-title"><Users size={24} color="var(--text-accent)" /> PROFILES</h1>
+          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> PROFILES</h1>
         </div>
       </main>
     );
@@ -1182,7 +1188,7 @@ export default function ProfilesPage() {
       <Toast message={toast} onClose={() => setToast("")} />
       <div className="header profile-header">
         <div>
-          <h1 className="header-title"><Users size={24} color="var(--text-accent)" /> PROFILES</h1>
+          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> PROFILES</h1>
           <p className="profile-subtitle">Local character setups for calculators. Global prices, membership, custom prices, and theme stay in Settings.</p>
         </div>
         <div className="profile-header-actions">
@@ -1218,6 +1224,8 @@ export default function ProfilesPage() {
                   key={item.id}
                   type="button"
                   className={`profile-list-item ${item.imageUrl || item.backgroundUrl ? "has-art" : ""} ${active ? "active" : ""}`}
+                  aria-pressed={active}
+                  aria-label={`${active ? "Active profile" : "Switch to profile"}: ${item.name || "Unnamed Character"}`}
                   onClick={() => setActiveProfile(item.id)}
                 >
                   {item.backgroundUrl && <span className="profile-list-item-bg" style={{ backgroundImage: `url("${item.backgroundUrl}")` }} aria-hidden="true" />}
@@ -1246,10 +1254,10 @@ export default function ProfilesPage() {
                 <button type="button" onClick={() => {
                   const created = duplicateProfile(profile.id);
                   if (created) setToast("Profile duplicated.");
-                }} disabled={state.profiles.length >= MAX_PROFILES} title="Duplicate profile">
+                }} disabled={state.profiles.length >= MAX_PROFILES} aria-label="Duplicate active profile">
                   <Copy size={15} />
                 </button>
-                <button type="button" onClick={handleDeleteProfile} title="Delete profile">
+                <button type="button" onClick={handleDeleteProfile} aria-label="Delete active profile">
                   <Trash2 size={15} />
                 </button>
               </div>
@@ -1418,19 +1426,29 @@ export default function ProfilesPage() {
               <ProfileNumberField label="Hunting Efficiency" value={profile.efficiency.hunting} min={0} onChange={(value) => updateNested("efficiency", "hunting", value)} source={fieldSource("efficiency.hunting")} />
               <ProfileNumberField label="Dungeon Efficiency" value={profile.efficiency.dungeon} min={0} onChange={(value) => updateNested("efficiency", "dungeon", value)} source={fieldSource("efficiency.dungeon")} />
               <ProfileNumberField label="Playtime (hours/day)" value={profile.timers.activeHours} min={0} max={24} onChange={(value) => updateNested("timers", "activeHours", value)} source={fieldSource("timers.activeHours")} />
-              <label className="profile-field">
-                <span className="profile-field-labelrow">
-                  <span>Conquest Buff</span>
-                  <FieldSourceChip source={fieldSource("boosts.conquestRank")} />
-                </span>
-                <select
-                  className="control-input"
-                  value={profile.boosts.conquestRank}
-                  onChange={(event) => updateNested("boosts", "conquestRank", event.target.value as AssaultRank)}
-                >
-                  {ASSAULT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </label>
+              <ProfilePicker<AssaultRank>
+                id="conquest-buff"
+                label="Conquest Buff"
+                placeholder="Select conquest buff"
+                selected={{
+                  id: profile.boosts.conquestRank,
+                  title: ASSAULT_OPTIONS.find((option) => option.value === profile.boosts.conquestRank)?.label || "No conquest buff",
+                  subtitle: "Alchemy efficiency and tax effects",
+                  searchText: profile.boosts.conquestRank,
+                  value: profile.boosts.conquestRank,
+                }}
+                options={ASSAULT_OPTIONS.map((option) => ({
+                  id: option.value,
+                  title: option.label,
+                  subtitle: "Conquest buff",
+                  searchText: `${option.value} ${option.label}`,
+                  value: option.value as AssaultRank,
+                }))}
+                openId={openPicker}
+                setOpenId={setOpenPicker}
+                onSelect={(value) => updateNested("boosts", "conquestRank", value || "none")}
+                source={fieldSource("boosts.conquestRank")}
+              />
               <ProfileNumberField
                 label="Bartering Level"
                 value={profile.boosts.barteringLevel}
@@ -1819,7 +1837,7 @@ export default function ProfilesPage() {
             <div className="profile-import-handoff">
               <div>
                 <strong>Hidden alt or separate character?</strong>
-                <span>Create a local alt profile now, then paste that character's hashed ID above and import it when you switch to that profile.</span>
+                <span>Create a local alt profile now, then paste that character&apos;s hashed ID above and import it when you switch to that profile.</span>
               </div>
               <label>
                 <span>Character hash</span>
@@ -1848,6 +1866,7 @@ export default function ProfilesPage() {
                 <button type="button" onClick={handleImport}><Upload size={15} /> Restore from JSON</button>
               </div>
               <textarea
+                aria-label="Profile backup JSON"
                 className="control-input profile-transfer"
                 value={transferText}
                 placeholder="Paste a Zenith profile backup JSON here..."

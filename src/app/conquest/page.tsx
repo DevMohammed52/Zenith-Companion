@@ -11,6 +11,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   formatConquestAge,
@@ -259,6 +260,9 @@ export default function ConquestPage() {
     if (!data?.zones.length) return null;
     return data.zones.find((zone) => zone.key === selectedZoneKey) ?? filteredZones[0] ?? data.zones[0];
   }, [data, filteredZones, selectedZoneKey]);
+  const zoneStatus = data
+    ? `${formatConquestNumber(filteredZones.length)} conquest zone${filteredZones.length === 1 ? "" : "s"} shown. ${selectedZone?.name ?? "No zone"} selected.`
+    : "Conquest data is loading.";
 
   const seasonLeaders = useMemo(() => {
     return (data?.zones ?? [])
@@ -314,7 +318,7 @@ export default function ConquestPage() {
     <main className={styles.page}>
       <section className={styles.hero}>
         <div>
-          <div className={styles.eyebrow}>Guild Conquest</div>
+          <div className={styles.eyebrow}><ZenithIcon name="conquest" size={15} /> Guild Conquest</div>
           <h1 className={styles.title}>Conquest</h1>
           <p className={styles.subtitle}>
             See who controls each zone, where fights are active, and which players are carrying the season.
@@ -396,6 +400,7 @@ export default function ConquestPage() {
           </button>
         ))}
       </section>
+      <p className="sr-only" role="status" aria-live="polite">{zoneStatus}</p>
 
       <section className={styles.layout}>
         <div className={styles.zoneGrid} aria-label="Conquest zones">
@@ -414,7 +419,7 @@ export default function ConquestPage() {
                   href={`/map?location=${encodeURIComponent(zone.key)}`}
                   aria-label={`Open ${zone.name} on the world map`}
                 >
-                  <MapPinned size={14} />
+                  <MapPinned size={16} />
                 </a>
                 <button
                   type="button"
@@ -496,7 +501,7 @@ export default function ConquestPage() {
                   <h2>{selectedZone.name}</h2>
                   <p>{getPressureLabel(selectedZone)}</p>
                 </div>
-                <a className={styles.detailMapLink} href={`/map?location=${encodeURIComponent(selectedZone.key)}`}>
+                <a className={styles.detailMapLink} href={`/map?location=${encodeURIComponent(selectedZone.key)}`} aria-label={`Open ${selectedZone.name} on the world map`}>
                   <MapPinned size={16} />
                   Open Map
                 </a>
@@ -569,11 +574,31 @@ export default function ConquestPage() {
                   type="button"
                   role="tab"
                   id={`conquest-tab-${item.key}`}
-                  aria-controls={`conquest-panel-${item.key}`}
+                  aria-controls={detailTab === item.key ? `conquest-panel-${item.key}` : undefined}
                   aria-selected={detailTab === item.key}
                   data-active={detailTab === item.key}
                   tabIndex={detailTab === item.key ? 0 : -1}
                   onClick={() => setDetailTab(item.key)}
+                  onKeyDown={(event) => {
+                    const currentIndex = DETAIL_TABS.findIndex((tab) => tab.key === item.key);
+                    const activateTab = (nextTab: DetailTab) => {
+                      setDetailTab(nextTab);
+                      window.requestAnimationFrame(() => document.getElementById(`conquest-tab-${nextTab}`)?.focus());
+                    };
+                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                      activateTab(DETAIL_TABS[(currentIndex + 1) % DETAIL_TABS.length].key);
+                    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      activateTab(DETAIL_TABS[(currentIndex - 1 + DETAIL_TABS.length) % DETAIL_TABS.length].key);
+                    } else if (event.key === "Home") {
+                      event.preventDefault();
+                      activateTab(DETAIL_TABS[0].key);
+                    } else if (event.key === "End") {
+                      event.preventDefault();
+                      activateTab(DETAIL_TABS[DETAIL_TABS.length - 1].key);
+                    }
+                  }}
                 >
                   {item.label}
                 </button>

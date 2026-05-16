@@ -21,6 +21,7 @@ import {
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { useItemModal } from "@/context/ItemModalContext";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketValue, type MarketPriceDatum } from "@/lib/market-pricing";
 import { calculateGearStats, formatStatName } from "@/lib/profile-calculations";
@@ -481,7 +482,7 @@ export default function BisPage() {
   useEffect(() => {
     if (!selected) return;
     setCandidateTier((value) => clampTier(value, selectedMaxTier) || 1);
-  }, [selected?.item.hashed_id, selectedMaxTier]);
+  }, [selected, selectedMaxTier]);
 
   useEffect(() => {
     setCompareTier(clampTier(savedProfileTier, currentMaxTier) || 1);
@@ -491,7 +492,7 @@ export default function BisPage() {
     <main className="container bis-page">
       <div className="header">
         <div>
-          <div className="eyebrow"><Shield size={15} /> Gear Recommender</div>
+          <div className="eyebrow"><ZenithIcon name="shield" size={15} /> Gear Recommender</div>
           <h1 className="header-title">Gear Recommender</h1>
           <p className="hero-copy">Profile-aware combat gear list with tier-by-tier stat comparison across every item stat.</p>
         </div>
@@ -616,12 +617,11 @@ export default function BisPage() {
 
           {mobileSelectionHint && <div className="selection-hint" role="status">{mobileSelectionHint}</div>}
 
-          <div className="gear-list" role="list" aria-label="Combat gear list">
+          <div className="gear-list" aria-label="Combat gear list">
             {filteredGear.map((view) => (
               <button
                 key={view.item.hashed_id}
                 type="button"
-                role="listitem"
                 className={selected?.item.hashed_id === view.item.hashed_id ? "gear-row is-selected" : "gear-row"}
                 onClick={() => selectGear(view)}
                 onMouseEnter={() => prefetchGearItem(view.item.name)}

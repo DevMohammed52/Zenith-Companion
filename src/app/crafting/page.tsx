@@ -21,6 +21,7 @@ import { useCrafting } from "@/context/CraftingContext";
 import { usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import {
     calculateCraftingQueuePlan,
@@ -159,7 +160,7 @@ export default function CraftingPage() {
         <main className="container">
             <div className="header">
                 <h1 className="header-title">
-                    <FlaskConical size={24} color="var(--text-accent)" /> CRAFTING QUEUE
+                    <ZenithIcon name="crafting" size={24} style={{ color: "var(--text-accent)" }} /> CRAFTING QUEUE
                 </h1>
                 <div className="header-status">
                     <div className="status-dot"></div>
@@ -170,9 +171,9 @@ export default function CraftingPage() {
             <div className="main-craft-layout">
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                     <div className="table-container craft-add-panel" style={{ padding: "1.25rem" }}>
-                        <h3 style={{ marginBottom: "1rem", fontSize: "0.85rem", color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+                        <h2 style={{ marginBottom: "1rem", fontSize: "0.85rem", color: "var(--text-muted)", letterSpacing: "0.06em" }}>
                             ADD RECIPE
-                        </h3>
+                        </h2>
                         <div className="craft-picker">
                             <div className="recipe-combobox" ref={pickerRef}>
                                 <div className={`recipe-combobox-shell ${pickerOpen ? "open" : ""}`}>
@@ -182,7 +183,7 @@ export default function CraftingPage() {
                                         role="combobox"
                                         aria-label="Recipe to add"
                                         aria-expanded={pickerOpen}
-                                        aria-controls="craft-recipe-options"
+                                        aria-controls={pickerOpen ? "craft-recipe-options" : undefined}
                                         aria-activedescendant={pickerOpen && filteredRecipeOptions[activeRecipeIndex] ? `craft-recipe-option-${activeRecipeIndex}` : undefined}
                                         autoComplete="off"
                                         value={recipeSearch}

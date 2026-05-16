@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { useProfiles, type ProfileOwnedPet, type ProfilePetStats } from "@/lib/profiles";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
   BattleProfitMode,
   COMPARISON_STAT_KEYS,
@@ -502,6 +503,7 @@ export default function PetComparisonPage() {
   }, [database]);
 
   const petMatchLookup = useMemo(() => buildPetMatchLookup(pets), [pets]);
+  const activeProfilePetSpecies = activeProfile?.pet?.species;
   const unmatchedOwnedPetCount = useMemo(
     () => (activeProfile?.ownedPets || []).filter((ownedPet) => !findPetRecordForOwnedPet(ownedPet, petMatchLookup)).length,
     [activeProfile?.ownedPets, petMatchLookup],
@@ -565,12 +567,12 @@ export default function PetComparisonPage() {
     }
   }, [battleZone, battleZoneOptions]);
 
-  const getBattleSample = (pet: PetRecord) => {
+  const getBattleSample = useCallback((pet: PetRecord) => {
     if (battleZone === BEST_BATTLE_ZONE) return getBestBattleProfit(pet, battleMode, foodPolicy);
     const zone = pet.battle?.zones?.find((entry) => entry.zone === battleZone);
     if (!zone) return { value: 0, zone: null as string | null, mode: null as BattleProfitMode | null };
     return { value: getZoneProfitValue(zone, battleMode, foodPolicy), zone: zone.zone, mode: battleMode };
-  };
+  }, [battleMode, battleZone, foodPolicy]);
 
   const rows = useMemo<ComparedPet[]>(() => {
     return selectedIds
@@ -593,16 +595,16 @@ export default function PetComparisonPage() {
           battle: getBattleSample(option.pet),
         };
       });
-  }, [battleMode, battleZone, compareOptions, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, selectedIds]);
+  }, [compareOptions, evolutionStage, evolutionStat, getBattleSample, masteryBonus, patBonus, petLevel, selectedIds]);
 
   const profilePetOption = useMemo(() => {
     const activeOwnedPet = compareOptions.find((option) => option.kind === "owned" && option.ownedPet && (option.ownedPet.active || option.ownedPet.equipped));
     if (activeOwnedPet) return activeOwnedPet;
-    if (!activeProfile?.pet?.species) return null;
-    const profilePet = findPetRecordForOwnedPet({ species: activeProfile.pet.species }, petMatchLookup);
+    if (!activeProfilePetSpecies) return null;
+    const profilePet = findPetRecordForOwnedPet({ species: activeProfilePetSpecies }, petMatchLookup);
     if (!profilePet) return null;
     return compareOptions.find((option) => option.kind === "database" && getPetRecordMatchKey(option.pet) === getPetRecordMatchKey(profilePet)) || null;
-  }, [activeProfile?.pet?.species, compareOptions, petMatchLookup]);
+  }, [activeProfilePetSpecies, compareOptions, petMatchLookup]);
 
   const topPicks = useMemo(() => {
     const compared = pets.map((pet) => {
@@ -621,7 +623,7 @@ export default function PetComparisonPage() {
     [...compared].filter((row) => row.battle > 0).sort((a, b) => b.battle - a.battle).slice(0, 1).forEach((row) => unique.set("Highest recorded EV", row.pet));
     [...compared].filter((row) => row.market > 0).sort((a, b) => b.market - a.market).slice(0, 1).forEach((row) => unique.set("Highest sale value", row.pet));
     return Array.from(unique.entries());
-  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryBonus, patBonus, petLevel, pets]);
+  }, [evolutionStage, evolutionStat, getBattleSample, masteryBonus, patBonus, petLevel, pets]);
 
   const battleCoverage = useMemo(() => {
     const petsWithBattle = pets.filter((pet) => (pet.battle?.zones || []).some((zone) => zone.zone));
@@ -671,7 +673,7 @@ export default function PetComparisonPage() {
       <section className={styles.hero}>
         <div>
           <span className={styles.kicker}>
-            <PawPrint size={17} /> Pet Comparison
+            <ZenithIcon name="pets" size={17} /> Pet Comparison
           </span>
           <h1>Compare Pets</h1>
           <p>Pick pets, adjust the shared stat setup, and compare hunting speed, recorded battle EV, sources, and sale listings.</p>

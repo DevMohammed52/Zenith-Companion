@@ -26,6 +26,7 @@ import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useSearchParams } from "next/navigation";
 import MobileSortControls from "@/components/MobileSortControls";
+import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { getMarketLiquidity, getSafeMarketValue } from "@/lib/market-pricing";
 import { useModalA11y } from "@/lib/use-modal-a11y";
@@ -569,8 +570,6 @@ function AlchemyContent() {
     parsedActiveHours,
     parsedBartering,
     preferences.customPrices,
-    preferences.membership,
-    preferences.assaultRank,
     marketTaxMultiplier,
     marketTaxRate,
   ]);
@@ -670,7 +669,7 @@ function AlchemyContent() {
     <>
       <div className="header alchemy-header">
         <h1 className="header-title">
-          <Activity size={24} color="var(--text-accent)" /> ALCHEMY PROFIT FINDER
+          <ZenithIcon name="alchemy" size={24} style={{ color: "var(--text-accent)" }} /> ALCHEMY PROFIT FINDER
         </h1>
         <div className="header-status">
           <div className="status-dot"></div>

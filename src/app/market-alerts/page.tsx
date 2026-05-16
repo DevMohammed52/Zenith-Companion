@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useItemModal } from '@/context/ItemModalContext';
+import ZenithIcon from '@/components/icons/ZenithIcon';
 import {
   buildVendorCandidates,
   comparatorLabel,
@@ -541,7 +542,7 @@ export default function MarketAlertsPage() {
     <main className="container market-watch-page">
       <section className="market-hero">
         <div>
-          <span className="eyebrow"><BellRing size={15} /> Market Watch</span>
+          <span className="eyebrow"><ZenithIcon name="bell" size={15} /> Market Watch</span>
           <h1>Local market alerts</h1>
           <p>
             Watch generated market-history snapshots for price thresholds, sold-price moves, stable volume changes, and vendor-margin candidates.
