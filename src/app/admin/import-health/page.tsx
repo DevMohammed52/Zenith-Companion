@@ -157,15 +157,21 @@ export default function ImportHealthPage() {
 
       {health ? (
         <>
-          <section className="metric-grid">
-            <Metric icon={Activity} label="Budget mode" value={health.service.budgetMode} detail={`${health.service.importRequestsPerMinute}/min target`} />
-            <Metric icon={Clock} label="Import delay" value={`${health.service.importDelayMs}ms`} detail={`Poll every ${Math.round(health.service.pollAfterMs / 1000)}s`} />
-            <Metric icon={Database} label="Queue" value={`${health.queue.running} running`} detail={`${health.queue.pending} waiting`} />
-            <Metric icon={ShieldCheck} label="Cooldowns" value={String(health.cooldowns.active)} detail="Active protection locks" />
-            <Metric icon={CheckCircle2} label="Completed" value={String(health.last24h.completed)} detail="Last 24 hours" />
-            <Metric icon={AlertTriangle} label="Failed" value={String(health.last24h.failed)} detail={`${health.last24h.rateLimited} rate limited`} />
-            <Metric icon={RefreshCw} label="Avg requests" value={String(health.last24h.avgRequestCount)} detail={`${health.last24h.avgRetryCount} retries avg`} />
-            <Metric icon={Clock} label="Avg duration" value={formatDuration(health.last24h.avgDurationSeconds)} detail="Completed jobs" />
+          <section className="health-section">
+            <div className="section-heading">
+              <span className="panel-title"><Activity size={17} /> Live Service</span>
+              <span>{health.service.worker}</span>
+            </div>
+            <div className="metric-grid">
+              <Metric icon={Activity} label="Budget mode" value={health.service.budgetMode} detail={`${health.service.importRequestsPerMinute}/min target`} />
+              <Metric icon={Clock} label="Import delay" value={`${health.service.importDelayMs}ms`} detail={`Poll every ${Math.round(health.service.pollAfterMs / 1000)}s`} />
+              <Metric icon={Database} label="Queue" value={`${health.queue.running} running`} detail={`${health.queue.pending} waiting`} />
+              <Metric icon={ShieldCheck} label="Cooldowns" value={String(health.cooldowns.active)} detail="Active protection locks" />
+              <Metric icon={CheckCircle2} label="Completed" value={String(health.last24h.completed)} detail="Last 24 hours" />
+              <Metric icon={AlertTriangle} label="Failed" value={String(health.last24h.failed)} detail={`${health.last24h.rateLimited} rate limited`} />
+              <Metric icon={RefreshCw} label="Avg requests" value={String(health.last24h.avgRequestCount)} detail={`${health.last24h.avgRetryCount} retries avg`} />
+              <Metric icon={Clock} label="Avg duration" value={formatDuration(health.last24h.avgDurationSeconds)} detail="Completed jobs" />
+            </div>
           </section>
 
           <section className="dashboard-grid">
@@ -208,7 +214,7 @@ export default function ImportHealthPage() {
         </>
       ) : null}
 
-      <style jsx>{`
+      <style jsx global>{`
         .admin-health-page {
           display: flex;
           flex-direction: column;
@@ -218,18 +224,22 @@ export default function ImportHealthPage() {
         }
         .admin-health-hero,
         .access-panel,
+        .health-section,
         .metric-card,
         .dashboard-panel {
           border: 1px solid rgba(148, 163, 184, 0.16);
-          background: linear-gradient(145deg, rgba(15, 23, 42, 0.78), rgba(6, 8, 12, 0.96));
+          background:
+            radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28rem),
+            linear-gradient(145deg, rgba(15, 23, 42, 0.82), rgba(6, 8, 12, 0.97));
           border-radius: 8px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
         .admin-health-hero {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
           gap: 1rem;
-          padding: 1.4rem;
+          padding: 1.6rem;
         }
         .eyebrow,
         .metric-label,
@@ -250,7 +260,7 @@ export default function ImportHealthPage() {
         }
         h1 {
           margin-top: 0.6rem;
-          font-size: clamp(2.2rem, 5vw, 4.2rem);
+          font-size: clamp(2.6rem, 5vw, 5.2rem);
           line-height: 0.95;
         }
         .admin-health-hero p,
@@ -264,7 +274,7 @@ export default function ImportHealthPage() {
         .admin-health-hero p {
           max-width: 52rem;
           margin-top: 0.65rem;
-          font-size: 1rem;
+          font-size: 1.05rem;
         }
         .service-pill,
         .status-chip {
@@ -289,10 +299,10 @@ export default function ImportHealthPage() {
         .neutral { color: #cbd5e1; }
         .access-panel {
           display: grid;
-          grid-template-columns: minmax(16rem, 1fr) minmax(24rem, 1.25fr);
+          grid-template-columns: minmax(16rem, 1fr) auto;
           gap: 1rem;
           align-items: center;
-          padding: 1rem;
+          padding: 1.15rem 1.25rem;
         }
         .access-copy {
           display: flex;
@@ -324,6 +334,10 @@ export default function ImportHealthPage() {
           border-color: rgba(56, 189, 248, 0.42);
           background: rgba(14, 116, 144, 0.22);
         }
+        .admin-button.primary:hover {
+          border-color: rgba(56, 189, 248, 0.72);
+          background: rgba(14, 116, 144, 0.36);
+        }
         .admin-button:disabled {
           cursor: wait;
           opacity: 0.7;
@@ -340,18 +354,39 @@ export default function ImportHealthPage() {
           padding: 0.75rem 1rem;
           font-weight: 800;
         }
+        .health-section {
+          padding: 1rem;
+        }
+        .section-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 0.85rem;
+          color: #94a3b8;
+          font-size: 0.9rem;
+        }
         .metric-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 0.8rem;
         }
         .metric-card {
+          min-height: 8.25rem;
           padding: 1rem;
+          background:
+            linear-gradient(180deg, rgba(15, 23, 42, 0.68), rgba(2, 6, 23, 0.72));
         }
         .metric-value {
           margin-top: 0.55rem;
-          font-size: 1.65rem;
+          font-size: clamp(1.35rem, 1.6vw, 1.85rem);
           font-weight: 900;
+          line-height: 1.05;
+          overflow-wrap: anywhere;
+        }
+        .metric-detail {
+          margin-top: 0.45rem;
+          font-size: 0.9rem;
         }
         .dashboard-grid {
           display: grid;
@@ -359,6 +394,7 @@ export default function ImportHealthPage() {
           gap: 1rem;
         }
         .dashboard-panel {
+          min-height: 11rem;
           padding: 1rem;
         }
         .panel-title {
@@ -369,8 +405,8 @@ export default function ImportHealthPage() {
           align-items: center;
           justify-content: space-between;
           gap: 1rem;
-          border-top: 1px solid rgba(148, 163, 184, 0.12);
-          padding: 0.85rem 0;
+          border-top: 1px solid rgba(148, 163, 184, 0.1);
+          padding: 0.9rem 0;
         }
         .state-row:first-of-type {
           border-top: 0;
@@ -397,11 +433,16 @@ export default function ImportHealthPage() {
         }
         .empty-state {
           color: #94a3b8;
-          border: 1px dashed rgba(148, 163, 184, 0.2);
+          border: 1px dashed rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.42);
           border-radius: 8px;
           padding: 1rem;
         }
         .admin-footnote {
+          border: 1px solid rgba(148, 163, 184, 0.12);
+          border-radius: 8px;
+          background: rgba(2, 6, 23, 0.55);
+          padding: 0.9rem 1rem;
           font-size: 0.9rem;
         }
         .spin {
@@ -426,10 +467,19 @@ export default function ImportHealthPage() {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .access-controls {
-            grid-template-columns: 1fr;
+            justify-content: stretch;
+          }
+          .admin-button {
+            width: 100%;
           }
         }
         @media (max-width: 560px) {
+          .admin-health-page {
+            padding: 0.8rem;
+          }
+          h1 {
+            font-size: 2.5rem;
+          }
           .metric-grid {
             grid-template-columns: 1fr;
           }
