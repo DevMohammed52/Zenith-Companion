@@ -101,11 +101,11 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     if (!open || guildSearchRows.length > 0) return;
     let cancelled = false;
-    fetch("/guild-database.json")
+    fetch("/guild-search-index.json")
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (cancelled || !Array.isArray(payload?.guilds)) return;
-        setGuildSearchRows(payload.guilds);
+        if (cancelled || !Array.isArray(payload)) return;
+        setGuildSearchRows(payload);
       })
       .catch(() => {
         if (!cancelled) setGuildSearchRows([]);

@@ -120,12 +120,12 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git add public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
           git diff --cached --quiet && echo "No guild changes to commit" && exit 0
-          git stash push --include-untracked -m "generated guild data" -- public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git stash push --include-untracked -m "generated guild data" -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
           git pull --rebase origin main
           git stash pop || { echo "Guild data changed upstream. Resolve the generated JSON conflict before pushing."; git status --short; exit 1; }
-          git add public/guild-database.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git add public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
           git diff --cached --quiet && echo "No guild changes to commit" && exit 0
           git commit -m "chore: auto-update guild data [skip ci]"
           for attempt in 1 2 3; do

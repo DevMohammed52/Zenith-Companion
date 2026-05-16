@@ -13,14 +13,14 @@ export type GuildRecord = {
   name: string;
   tag: string | null;
   level: number | null;
-  experience: number | null;
+  experience?: number | null;
   marks: number | null;
   season_position: number | null;
   member_count: number;
   icon_url: string | null;
   background_url: string | null;
-  discovered_from: string[];
-  zones: Array<{
+  discovered_from?: string[];
+  zones?: Array<{
     key?: string;
     id?: number | null;
     name?: string;
@@ -30,10 +30,10 @@ export type GuildRecord = {
   }>;
   refresh_tier: GuildRefreshTier;
   activity_score: number;
-  last_info_fetch_at: string;
-  last_members_fetch_at: string;
+  last_info_fetch_at?: string;
+  last_members_fetch_at?: string;
   average_total_level: number | null;
-  highest_total_level: number | null;
+  highest_total_level?: number | null;
   leader_names: string[];
   top_member_names: string[];
 };
@@ -50,7 +50,7 @@ export type GuildDetails = {
     top_members: GuildMember[];
   };
   members: GuildMember[];
-  zones: GuildRecord["zones"];
+  zones: NonNullable<GuildRecord["zones"]>;
 };
 
 export type GuildDatabase = {

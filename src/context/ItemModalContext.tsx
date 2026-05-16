@@ -53,25 +53,45 @@ function findSearchIndexItem(searchIndex: SearchIndexItem[], name: string) {
 
 export function ItemModalProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [searchIndex, setSearchIndex] = useState<SearchIndexItem[]>([]);
+  const [searchIndex, setSearchIndex] = useState<SearchIndexItem[] | null>(null);
   const [pendingItemName, setPendingItemName] = useState<string | null>(null);
   const [itemCache] = useState<Map<string, CachedItem>>(new Map());
+  const searchIndexPromiseRef = React.useRef<Promise<SearchIndexItem[]> | null>(null);
+
+  const loadSearchIndex = React.useCallback(() => {
+    if (searchIndex) return Promise.resolve(searchIndex);
+    if (!searchIndexPromiseRef.current) {
+      searchIndexPromiseRef.current = fetch('/search-index.json')
+        .then(r => r.ok ? r.json() : [])
+        .then((payload) => {
+          const rows = Array.isArray(payload) ? payload : [];
+          setSearchIndex(rows);
+          return rows;
+        })
+        .catch(() => {
+          setSearchIndex([]);
+          return [];
+        })
+        .finally(() => {
+          searchIndexPromiseRef.current = null;
+        });
+    }
+    return searchIndexPromiseRef.current;
+  }, [searchIndex]);
 
   useEffect(() => {
-    fetch('/search-index.json')
-      .then(r => r.ok ? r.json() : [])
-      .then(setSearchIndex)
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!pendingItemName || searchIndex.length === 0) return;
+    if (!pendingItemName) return;
+    if (!searchIndex) {
+      void loadSearchIndex();
+      return;
+    }
+    if (searchIndex.length === 0) return;
     const found = findSearchIndexItem(searchIndex, pendingItemName);
     if (found) {
       setActiveId(found.id);
       setPendingItemName(null);
     }
-  }, [pendingItemName, searchIndex]);
+  }, [loadSearchIndex, pendingItemName, searchIndex]);
 
   const getCachedItem = React.useCallback((id: string) => itemCache.get(id), [itemCache]);
   const setCachedItem = React.useCallback((id: string, data: CachedItem) => itemCache.set(id, data), [itemCache]);
@@ -79,7 +99,8 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
   const prefetchItem = React.useCallback(async (idOrName: string) => {
     let id = idOrName;
     if (!idOrName.includes('-') && idOrName.length < 50) {
-        const found = findSearchIndexItem(searchIndex, idOrName);
+        const index = await loadSearchIndex();
+        const found = findSearchIndexItem(index, idOrName);
         if (found) id = found.id;
     }
 
@@ -92,21 +113,25 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
             itemCache.set(id, data);
         }
     } catch {}
-  }, [searchIndex, itemCache]);
+  }, [loadSearchIndex, itemCache]);
 
   const openItem = React.useCallback((id: string) => {
     setActiveId(id);
   }, []);
   
   const openItemByName = React.useCallback((name: string) => {
+    if (!searchIndex) {
+      setPendingItemName(name);
+      void loadSearchIndex();
+      return;
+    }
+
     const found = findSearchIndexItem(searchIndex, name);
     if (found) {
       setActiveId(found.id);
       setPendingItemName(null);
-    } else if (searchIndex.length === 0) {
-      setPendingItemName(name);
     }
-  }, [searchIndex]);
+  }, [loadSearchIndex, searchIndex]);
 
   const closeItem = React.useCallback(() => {
     setActiveId(null);

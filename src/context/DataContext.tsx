@@ -25,6 +25,7 @@ type DataContextType = {
   marketData: MarketData | null;
   staticData: StaticData | null;
   allItemsDb: ItemLookup | null;
+  itemRegistry: ItemLookup | null;
   worldLocations: WorldLocation[] | null;
   scraperStatus: ScraperStatus | null;
   loading: boolean;
@@ -38,6 +39,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [marketData, setMarketData] = useState<MarketData | null>(null);
   const [staticData, setStaticData] = useState<StaticData | null>(null);
   const [allItemsDb, setAllItemsDb] = useState<ItemLookup | null>(null);
+  const [itemRegistry, setItemRegistry] = useState<ItemLookup | null>(null);
   const [worldLocations, setWorldLocations] = useState<WorldLocation[] | null>(null);
   const [scraperStatus, setScraperStatus] = useState<ScraperStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,6 +102,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (status) setScraperStatus(status);
 
     if (items) {
+      setItemRegistry(items);
       const byName: ItemLookup = {};
       Object.values(items).forEach((item) => {
         if (item.name) byName[item.name] = item;
@@ -139,12 +142,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     marketData,
     staticData,
     allItemsDb,
+    itemRegistry,
     worldLocations,
     scraperStatus,
     loading,
     refresh: fetchData,
     ensureLoaded,
-  }), [allItemsDb, ensureLoaded, fetchData, loading, marketData, scraperStatus, staticData, worldLocations]);
+  }), [allItemsDb, ensureLoaded, fetchData, itemRegistry, loading, marketData, scraperStatus, staticData, worldLocations]);
 
   return (
     <DataContext.Provider value={value}>

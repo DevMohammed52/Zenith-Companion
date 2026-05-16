@@ -123,7 +123,7 @@ const CONQUEST_PICKER_OPTIONS: Array<{ value: AssaultRank; label: string; hint: 
 ];
 
 export default function SkillProfitPage() {
-  const { marketData, allItemsDb } = useData();
+  const { marketData, allItemsDb, itemRegistry } = useData();
   const { openItemByName, prefetchItem } = useItemModal();
   const { preferences, setPreferences, loaded: preferencesLoaded } = usePreferences();
   const { activeProfile, updateProfile, loaded: profilesLoaded } = useProfiles();
@@ -139,7 +139,6 @@ export default function SkillProfitPage() {
   const [essenceOpen, setEssenceOpen] = useState(DEFAULT_STATE.essenceOpen);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
   const [gearData, setGearData] = useState<GearData | null>(null);
-  const [itemRegistry, setItemRegistry] = useState<ItemRegistry | null>(null);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
   const [activeDropdownLayer, setActiveDropdownLayer] = useState<DropdownLayer | null>(null);
   const loadedStorageKeyRef = useRef<string | null>(null);
@@ -287,15 +286,10 @@ export default function SkillProfitPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then(setGearData)
       .catch(() => {});
-
-    fetch("/all-items-db.json")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setItemRegistry)
-      .catch(() => {});
   }, []);
 
   const forgeRecipes = useMemo(
-    () => buildForgeRecipes(gearData, itemRegistry),
+    () => buildForgeRecipes(gearData, itemRegistry as ItemRegistry | null),
     [gearData, itemRegistry],
   );
   const housingSummary = useMemo(

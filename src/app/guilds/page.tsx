@@ -38,6 +38,7 @@ type TierFilter = "all" | GuildRefreshTier;
 
 const INITIAL_ROWS = 90;
 const ROW_INCREMENT = 90;
+const GUILD_LIST_URL = "/guild-list.json?v=2026-05-16-bg";
 
 const SORT_OPTIONS: Array<{ id: GuildSortKey; label: string }> = [
   { id: "activity", label: "Activity" },
@@ -353,7 +354,7 @@ function GuildModal({
             </div>
             <div>
               <span>Highest TL</span>
-              <strong>{formatGuildNumber(guild.highest_total_level)}</strong>
+              <strong>{formatGuildNumber(details?.member_summary.highest_total_level ?? guild.highest_total_level)}</strong>
             </div>
           </div>
 
@@ -446,7 +447,7 @@ export default function GuildsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/guild-database.json")
+    fetch(GUILD_LIST_URL)
       .then((response) => {
         if (!response.ok) throw new Error(`Unable to load guild database (${response.status})`);
         return response.json() as Promise<GuildDatabase>;

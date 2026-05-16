@@ -9,6 +9,8 @@ const repoRoot = path.resolve(__dirname, "..");
 const args = parseArgs();
 const sourceDir = path.resolve(String(args.source || "local_data/guild_intelligence_all/derived"));
 const outFile = path.resolve(String(args.out || "public/guild-database.json"));
+const listOutFile = path.resolve(String(args["list-out"] || "public/guild-list.json"));
+const guildSearchOutFile = path.resolve(String(args["guild-search-out"] || "public/guild-search-index.json"));
 const detailsOutFile = path.resolve(String(args["details-out"] || "public/guild-details.json"));
 const detailsOutDir = path.resolve(String(args["details-dir"] || "public/guild-details"));
 const membersOutFile = path.resolve(String(args["members-out"] || "public/guild-members.json"));
@@ -222,6 +224,38 @@ const database = {
   guilds: compactGuilds,
 };
 
+const guildListDatabase = {
+  ...database,
+  meta: {
+    ...database.meta,
+    strategy: "Trimmed registry for the guild table, search, and sort UI. Per-guild details are loaded from guild-details/{guild_id}.json on demand.",
+  },
+  guilds: compactGuilds.map((guild) => ({
+    id: guild.id,
+    name: guild.name,
+    tag: guild.tag,
+    level: guild.level,
+    marks: guild.marks,
+    season_position: guild.season_position,
+    member_count: guild.member_count,
+    icon_url: guild.icon_url,
+    background_url: guild.background_url,
+    refresh_tier: guild.refresh_tier,
+    activity_score: guild.activity_score,
+    average_total_level: guild.average_total_level,
+    leader_names: guild.leader_names,
+    top_member_names: guild.top_member_names,
+  })),
+};
+
+const guildSearchIndex = compactGuilds.map((guild) => ({
+  id: guild.id,
+  name: guild.name,
+  tag: guild.tag,
+  level: guild.level,
+  leader_names: guild.leader_names,
+}));
+
 const membersDatabase = {
   meta: {
     generated_at: database.meta.generated_at,
@@ -283,6 +317,8 @@ const refreshPlan = {
 };
 
 writeJson(outFile, database);
+writeJson(listOutFile, guildListDatabase);
+writeJson(guildSearchOutFile, guildSearchIndex);
 writeJson(detailsOutFile, detailsDatabase);
 for (const detail of guildDetails) {
   writeJson(path.join(detailsOutDir, `${detail.id}.json`), detail);
@@ -297,6 +333,8 @@ for (const fileName of fs.existsSync(detailsOutDir) ? fs.readdirSync(detailsOutD
 }
 
 console.log(`Wrote ${path.relative(repoRoot, outFile)} with ${compactGuilds.length} guilds.`);
+console.log(`Wrote ${path.relative(repoRoot, listOutFile)} with ${guildListDatabase.guilds.length} trimmed guild rows.`);
+console.log(`Wrote ${path.relative(repoRoot, guildSearchOutFile)} with ${guildSearchIndex.length} guild search rows.`);
 console.log(`Wrote ${path.relative(repoRoot, detailsOutFile)} and ${guildDetails.length} per-guild detail files.`);
 console.log(`Wrote ${path.relative(repoRoot, membersOutFile)} with ${membersDatabase.members.length} members.`);
 console.log(`Wrote ${path.relative(repoRoot, refreshPlanFile)}.`);

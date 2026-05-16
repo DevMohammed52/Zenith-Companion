@@ -2,7 +2,47 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  devIndicators: false
+  devIndicators: false,
+  async headers() {
+    return [
+      {
+        source: "/:path((?:global-search-index|guild-search-index|guild-list|usage-map|search-index|all-items-db|static-data|world-locations|gear-data|guild-database)\\.json)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/guild-details/:path*.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/market-data.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/scraper-status.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
