@@ -1,12 +1,76 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
 
 export const metadata: Metadata = {
-  title: "Zenith Companion",
-  description: "Helpful Tools for Idle MMO",
+  metadataBase: new URL("https://zenith-companion.vercel.app"),
+  applicationName: "Zenith Companion",
+  title: {
+    default: "Zenith Companion",
+    template: "%s | Zenith Companion",
+  },
+  description:
+    "Tools for IdleMMO players to check prices, plan profiles, compare pets, track guilds, and find useful routes.",
+  keywords: [
+    "IdleMMO",
+    "Idle MMO",
+    "Zenith Companion",
+    "IdleMMO tools",
+    "IdleMMO market",
+    "IdleMMO profile import",
+    "IdleMMO guilds",
+    "IdleMMO pets",
+    "IdleMMO crafting",
+  ],
+  authors: [{ name: "Zenith Companion" }],
+  creator: "Zenith Companion",
+  publisher: "Zenith Companion",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://zenith-companion.vercel.app",
+    siteName: "Zenith Companion",
+    title: "Zenith Companion",
+    description:
+      "IdleMMO tools for prices, profiles, pets, guilds, crafting, and routes.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Zenith Companion",
+    description:
+      "Useful IdleMMO tools for prices, profiles, pets, guilds, crafting, and routes.",
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#05070d",
+  colorScheme: "dark",
 };
 
 import { ItemModalProvider } from "@/context/ItemModalContext";
@@ -23,9 +87,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
       <body>
         <DataProvider>
           <ProfileProvider>
@@ -46,6 +107,7 @@ export default function RootLayout({
                           <ProfileSwitcher />
                         </div>
                         {children}
+                        <div id="zenith-live-region" className="sr-only" aria-live="polite" aria-atomic="true" />
                       </div>
                     </div>
                   </div>
