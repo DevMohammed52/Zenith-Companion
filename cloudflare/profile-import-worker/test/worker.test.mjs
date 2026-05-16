@@ -327,11 +327,17 @@ async function json(response) {
           total_level: 1840,
           current_status: "ONLINE",
           stats: {
-            combat: { level: 100, ascension_level: path.includes("altHash") ? 2 : path.includes("dokidexhash") ? 1 : 8, experience: 1 },
+            combat: path.includes("altHash")
+              ? { level: 100, ascension_level: 2, experience: 1 }
+              : path.includes("dokidexhash")
+                ? { level: 100, ascension_level: 1, experience: 1 }
+                : { level: 100, experience: 23_878_925 },
             strength: { level: 90, experience: 1 },
+            speed: { level: 100, experience: 23_878_925 },
           },
           skills: {
             cooking: { level: 95, experience: 10 },
+            smelting: { level: 100, experience: 105_006_542 },
           },
         },
       });
@@ -398,6 +404,8 @@ async function json(response) {
     assert.equal(body.result.characters.length, 3);
     assert.equal(body.result.characters[0].draft.name, "Root Chef");
     assert.equal(body.result.characters[0].draft.levels.combat, 108);
+    assert.equal(body.result.characters[0].draft.levels.speed, 100);
+    assert.equal(body.result.characters[0].draft.skills.smelting.level, 189);
     assert.equal(body.result.characters[0].draft.museum.items[0].name, "Root Apron");
     assert.equal(body.result.characters[1].draft.importSource.characterHashTail, "ltHash123456");
     assert.equal(body.result.characters[1].draft.levels.combat, 102);

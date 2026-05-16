@@ -130,6 +130,22 @@ const API_CLASS_TO_PROFILE_CLASS: Record<string, string> = {
   CURSED: "Cursed",
 };
 
+const LEVEL_100_EXPERIENCE = 15_878_925;
+const ASCENSION_EXPERIENCE_STEP = 1_000_000;
+const ASCENSION_SKILL_KEYS = new Set([
+  "woodcutting",
+  "mining",
+  "fishing",
+  "alchemy",
+  "smelting",
+  "cooking",
+  "forge",
+  "construction",
+  "hunting-mastery",
+  "combat",
+  "dungeoneering",
+]);
+
 function mapApiPetStats(input: unknown): ProfilePetStats {
   const stats: ProfilePetStats = {
     agility: "",
@@ -172,13 +188,13 @@ function apiSkillLevel(skillMap: Record<string, unknown>, key: string) {
   if (!isPlainObject(record)) return "";
   const baseLevel = cleanNumber(record.level);
   if (typeof baseLevel !== "number") return baseLevel;
-  const ascensionLevel = apiAscensionLevel(record);
+  const ascensionLevel = apiAscensionLevel(record, key);
   return baseLevel === 100 && ascensionLevel > 0
     ? baseLevel + ascensionLevel
     : baseLevel;
 }
 
-function apiAscensionLevel(record: Record<string, unknown>) {
+function apiAscensionLevel(record: Record<string, unknown>, skillKey: string) {
   const direct = [
     record.ascension_level,
     record.ascensionLevel,
@@ -191,14 +207,21 @@ function apiAscensionLevel(record: Record<string, unknown>) {
   if (typeof direct === "number") return direct;
 
   const ascension = record.ascension;
-  if (!isPlainObject(ascension)) return 0;
-  const nested = [
-    ascension.level,
-    ascension.current_level,
-    ascension.currentLevel,
-    ascension.value,
-  ].map(cleanNumber).find((value): value is number => typeof value === "number" && value > 0);
-  return typeof nested === "number" ? nested : 0;
+  if (isPlainObject(ascension)) {
+    const nested = [
+      ascension.level,
+      ascension.current_level,
+      ascension.currentLevel,
+      ascension.value,
+    ].map(cleanNumber).find((value): value is number => typeof value === "number" && value > 0);
+    if (typeof nested === "number") return nested;
+  }
+
+  if (!ASCENSION_SKILL_KEYS.has(skillKey)) return 0;
+  const experience = cleanNumber(record.experience);
+  return typeof experience === "number" && experience >= LEVEL_100_EXPERIENCE + ASCENSION_EXPERIENCE_STEP
+    ? Math.floor((experience - LEVEL_100_EXPERIENCE) / ASCENSION_EXPERIENCE_STEP)
+    : 0;
 }
 
 function mapApiMetrics(input: unknown, importedAt: string, endpointUpdatedAt?: string) {
