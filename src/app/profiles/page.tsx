@@ -133,7 +133,7 @@ const PROFILE_SECTIONS = [
 type ProfileSectionId = typeof PROFILE_SECTIONS[number][0];
 const PROFILE_SECTION_IDS = new Set<ProfileSectionId>(PROFILE_SECTIONS.map(([id]) => id));
 
-const PROFILE_IMPORT_API_URL = (process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
+const PROFILE_IMPORT_API_URL = "/api";
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
 
 function numberFromInput(value: string) {
