@@ -135,6 +135,30 @@ const PROFILE_SECTION_IDS = new Set<ProfileSectionId>(PROFILE_SECTIONS.map(([id]
 
 const PROFILE_IMPORT_API_URL = "/api";
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
+const TURNSTILE_SCRIPT_ID = "cloudflare-turnstile-script";
+const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+type TurnstileApi = {
+  render: (
+    container: HTMLElement,
+    options: {
+      sitekey: string;
+      theme?: "light" | "dark" | "auto";
+      callback?: (token: string) => void;
+      "expired-callback"?: () => void;
+      "error-callback"?: () => void;
+    },
+  ) => string;
+  reset: (widgetId?: string) => void;
+  remove: (widgetId?: string) => void;
+};
+
+declare global {
+  interface Window {
+    turnstile?: TurnstileApi;
+  }
+}
 
 function numberFromInput(value: string) {
   return value === "" ? "" : Number(value);
@@ -564,6 +588,9 @@ export default function ProfilesPage() {
   const [liveImportError, setLiveImportError] = useState("");
   const [liveImportRetryAfterMs, setLiveImportRetryAfterMs] = useState<number | null>(null);
   const [liveImportEstimatedMs, setLiveImportEstimatedMs] = useState<number | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReady, setTurnstileReady] = useState(!TURNSTILE_SITE_KEY);
+  const [turnstileError, setTurnstileError] = useState("");
   const [toast, setToast] = useState("");
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"restore" | "delete" | null>(null);
@@ -571,6 +598,8 @@ export default function ProfilesPage() {
   const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[]; mastery?: { levels?: PetMasteryLevelRecord[] } } | null>(null);
   const liveImportPollRef = useRef<number | null>(null);
   const liveImportAbortRef = useRef<AbortController | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+  const turnstileWidgetRef = useRef<string | null>(null);
   const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
   const lastAutoStatKey = useRef("");
   const lastPetStatKey = useRef("");
@@ -629,6 +658,69 @@ export default function ProfilesPage() {
       window.clearTimeout(liveImportPollRef.current);
     }
     liveImportAbortRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) {
+      setTurnstileReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const renderTurnstile = () => {
+      if (cancelled || !turnstileContainerRef.current || !window.turnstile || turnstileWidgetRef.current) return;
+      turnstileWidgetRef.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: "dark",
+        callback: (token) => {
+          setTurnstileToken(token);
+          setTurnstileReady(true);
+          setTurnstileError("");
+        },
+        "expired-callback": () => {
+          setTurnstileToken("");
+          setTurnstileError("Quick check expired. Run it again before importing.");
+        },
+        "error-callback": () => {
+          setTurnstileToken("");
+          setTurnstileReady(true);
+          setTurnstileError("Quick check could not load. Try refreshing this page.");
+        },
+      });
+      setTurnstileReady(true);
+    };
+
+    const existingScript = document.getElementById(TURNSTILE_SCRIPT_ID) as HTMLScriptElement | null;
+    if (window.turnstile) {
+      renderTurnstile();
+    } else if (existingScript) {
+      existingScript.addEventListener("load", renderTurnstile, { once: true });
+      existingScript.addEventListener("error", () => {
+        setTurnstileReady(true);
+        setTurnstileError("Quick check could not load. Try refreshing this page.");
+      }, { once: true });
+    } else {
+      const script = document.createElement("script");
+      script.id = TURNSTILE_SCRIPT_ID;
+      script.src = TURNSTILE_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      script.addEventListener("load", renderTurnstile, { once: true });
+      script.addEventListener("error", () => {
+        setTurnstileReady(true);
+        setTurnstileError("Quick check could not load. Try refreshing this page.");
+      }, { once: true });
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+      if (turnstileWidgetRef.current && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetRef.current);
+      }
+      turnstileWidgetRef.current = null;
+    };
   }, []);
 
   const itemOptionsByType = useMemo(() => {
@@ -934,6 +1026,10 @@ export default function ProfilesPage() {
       setLiveImportError("Paste only the character hashed ID, not a full profile URL.");
       return;
     }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setLiveImportError("Complete the quick check before starting the import.");
+      return;
+    }
 
     if (liveImportPollRef.current !== null) {
       window.clearTimeout(liveImportPollRef.current);
@@ -954,7 +1050,12 @@ export default function ProfilesPage() {
       const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ characterHash, includeVisibleAlts: true, includeMuseum: true }),
+        body: JSON.stringify({
+          characterHash,
+          includeVisibleAlts: true,
+          includeMuseum: true,
+          turnstileToken: TURNSTILE_SITE_KEY ? turnstileToken : undefined,
+        }),
         signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
@@ -974,6 +1075,11 @@ export default function ProfilesPage() {
       setLiveImportStatus("error");
       setLiveImportJobId("");
       setLiveImportError(`${error instanceof Error ? error.message : "Could not start the import."} Your local profile was not changed.`);
+    } finally {
+      if (TURNSTILE_SITE_KEY) {
+        setTurnstileToken("");
+        if (turnstileWidgetRef.current) window.turnstile?.reset(turnstileWidgetRef.current);
+      }
     }
   };
 
@@ -1843,7 +1949,7 @@ export default function ProfilesPage() {
                   <span>Never paste an IdleMMO API key here.</span>
                 </div>
               </div>
-              <div className="profile-live-import-form">
+              <div className={`profile-live-import-form ${TURNSTILE_SITE_KEY ? "has-turnstile" : ""}`}>
                 <label>
                   <span>Character hashed ID</span>
                   <input
@@ -1857,11 +1963,18 @@ export default function ProfilesPage() {
                     autoComplete="off"
                   />
                 </label>
+                {TURNSTILE_SITE_KEY ? (
+                  <div className="profile-turnstile" aria-label="Import safety check">
+                    <div ref={turnstileContainerRef} />
+                    {!turnstileReady && <span>Loading quick check...</span>}
+                    {turnstileError && <span className="profile-turnstile-error">{turnstileError}</span>}
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   className="profile-action primary"
                   onClick={handleStartLiveProfileImport}
-                  disabled={liveImportBusy || liveImportHasUnsavedResult}
+                  disabled={liveImportBusy || liveImportHasUnsavedResult || (Boolean(TURNSTILE_SITE_KEY) && (!turnstileReady || !turnstileToken))}
                 >
                   {liveImportBusy ? <Loader2 size={15} className="spin" /> : <FileUp size={15} />}
                   {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}

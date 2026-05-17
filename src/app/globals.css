@@ -14800,6 +14800,10 @@ kbd {
   align-items: end;
 }
 
+.profile-live-import-form.has-turnstile {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, auto) auto;
+}
+
 .profile-live-import-form label {
   display: grid;
   gap: 0.35rem;
@@ -14811,6 +14815,30 @@ kbd {
   font-size: 0.75rem;
   font-weight: 850;
   text-transform: uppercase;
+}
+
+.profile-turnstile {
+  display: grid;
+  align-content: end;
+  justify-items: end;
+  min-width: 0;
+  min-height: 4.1rem;
+}
+
+.profile-turnstile > div {
+  max-width: 100%;
+}
+
+.profile-turnstile span {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.profile-turnstile .profile-turnstile-error {
+  color: #ffb4c0;
 }
 
 .profile-action.primary {

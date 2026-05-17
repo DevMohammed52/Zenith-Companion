@@ -337,6 +337,56 @@ async function json(response) {
 }
 
 {
+  const e = env({ TURNSTILE_SECRET_KEY: "turnstile-secret" });
+  const response = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.37",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000001",
+    }),
+  }), e);
+  const body = await json(response);
+  assert.equal(response.status, 403);
+  assert.equal(body.error.code, "turnstile_failed");
+  assert.equal(e.DB.jobs.size, 0);
+}
+
+{
+  const e = env({ TURNSTILE_SECRET_KEY: "turnstile-secret" });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")) {
+      return Response.json({ success: true });
+    }
+    return new Response("{}", { status: 404 });
+  };
+  try {
+    const response = await handleRequest(new Request("https://worker.test/profile-import/start", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://zenith.example",
+        "cf-connecting-ip": "203.0.113.38",
+      },
+      body: JSON.stringify({
+        characterHash: "FixtureHash0000000001",
+        turnstileToken: "valid-turnstile-token",
+      }),
+    }), e);
+    const body = await json(response);
+    assert.equal(response.status, 202);
+    assert.match(body.jobId, /^imp_/);
+    assert.equal(body.status, "queued");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
   const e = env();
   const first = await handleRequest(new Request("https://worker.test/profile-import/start", {
     method: "POST",

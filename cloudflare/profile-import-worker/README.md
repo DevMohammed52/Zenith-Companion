@@ -21,6 +21,7 @@ Implemented:
 - queue caps
 - KV-backed GitHub scraper/guild active-state detection
 - encrypted short-lived target hash storage
+- optional Cloudflare Turnstile verification before job creation
 - scheduled/manual processing for baseline imports
 - root `information`, `metrics`, `pets`, `museum`, and `characters`
 - visible alt `information`, `metrics`, `pets`, and `museum`
@@ -30,13 +31,12 @@ Implemented:
 
 Not implemented yet:
 
-- Turnstile frontend wiring
 - effects/current-action imports
 
-Before public release, enable Turnstile or an equivalent challenge in the
-frontend. The Worker has cooldowns, queue caps, and a shared IdleMMO request
-budget, but automated browser traffic should still be challenged before it can
-create import jobs.
+Before public release, set Turnstile in both environments. The frontend needs
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and this Worker needs `TURNSTILE_SECRET_KEY`.
+Set or remove both together: if only the Worker secret is set, job creation will
+reject requests because the browser cannot send a token.
 
 ## Setup
 
@@ -84,7 +84,9 @@ npx wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
 `TURNSTILE_SECRET_KEY` is optional for local development, but should be set for
-production once the frontend sends Turnstile tokens.
+production. Add the matching public site key to Vercel as
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Never expose the Worker secret through a
+`NEXT_PUBLIC_*` variable.
 
 `IDLEMMO_IMPORT_DELAY_MS` defaults to `1800`, which keeps a single baseline job
 near the intended idle-mode request budget. `IMPORT_BASELINE_REQUEST_CAP`
