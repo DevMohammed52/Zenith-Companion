@@ -429,6 +429,22 @@ async function processNextImportJob(env) {
   }
 
   const budget = await importBudgetMode(env);
+  const runningJob = await env.DB.prepare(`
+    SELECT id
+    FROM import_jobs
+    WHERE status = 'running' AND expires_at > ?
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `).bind(new Date().toISOString()).first();
+
+  if (runningJob) {
+    return {
+      status: "busy",
+      activeJobId: runningJob.id,
+      pollAfterMs: budget.pollAfterMs,
+    };
+  }
+
   const job = await env.DB.prepare(`
     SELECT id, target_hash_encrypted, requested_options_json, request_count
     FROM import_jobs

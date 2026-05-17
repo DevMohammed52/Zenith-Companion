@@ -167,6 +167,12 @@ class MemoryD1 {
         .filter((job) => job.status === "queued" && job.expires_at > now)
         .sort((a, b) => a.created_at.localeCompare(b.created_at))[0] || null;
     }
+    if (sql.includes("WHERE status = 'running'")) {
+      const [now] = args;
+      return Array.from(this.jobs.values())
+        .filter((job) => job.status === "running" && job.expires_at > now)
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] || null;
+    }
     if (sql.includes("SELECT id, target_hash_encrypted")) {
       const [now] = args;
       return Array.from(this.jobs.values())
@@ -328,6 +334,46 @@ async function json(response) {
   }), e);
   assert.equal(status.status, 200);
   assert.equal((await json(status)).status, "queued");
+}
+
+{
+  const e = env();
+  const first = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.27",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000001",
+    }),
+  }), e);
+  const firstBody = await json(first);
+
+  const second = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.28",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000002",
+    }),
+  }), e);
+  const secondBody = await json(second);
+  assert.equal(second.status, 202);
+  e.DB.jobs.get(firstBody.jobId).status = "running";
+
+  const process = await handleRequest(new Request("https://worker.test/internal/process-next", {
+    method: "POST",
+    headers: { authorization: "Bearer coordinator-secret" },
+  }), e);
+  const body = await json(process);
+  assert.equal(body.result.status, "busy");
+  assert.equal(body.result.activeJobId, firstBody.jobId);
+  assert.equal(e.DB.jobs.get(secondBody.jobId).status, "queued");
 }
 
 {
