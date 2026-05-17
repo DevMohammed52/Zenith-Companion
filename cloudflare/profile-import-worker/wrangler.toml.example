@@ -8,12 +8,13 @@ preview_urls = false
 crons = ["* * * * *"]
 
 [vars]
-ALLOWED_ORIGINS = "https://your-vercel-domain.vercel.app,http://localhost:3000"
+ALLOWED_ORIGINS = "https://your-vercel-domain.vercel.app,https://www.your-custom-domain.com,http://localhost:3000"
 IMPORT_MAX_PENDING = "25"
 IMPORT_MAX_CONCURRENT = "1"
 IMPORT_BASELINE_REQUEST_CAP = "45"
 IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER = "8"
 IDLEMMO_IMPORT_DELAY_MS = "1800"
+IMPORT_COORDINATOR_SOURCES = "github-actions:update_data,github-actions:update_guild_data"
 
 [[d1_databases]]
 binding = "DB"

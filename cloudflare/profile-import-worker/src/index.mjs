@@ -10,6 +10,10 @@ const JOB_TTL_MS = 60 * 60 * 1000;
 const DEFAULT_POLL_MS = 2000;
 const DEFAULT_BASELINE_REQUEST_CAP = 45;
 const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
+const DEFAULT_COORDINATOR_SOURCES = [
+  "github-actions:update_data",
+  "github-actions:update_guild_data",
+];
 const BASE_URL = "https://api.idle-mmo.com/v1";
 const USER_AGENT = "Zenith-Companion/1.0 profile-import";
 const MUSEUM_CATEGORIES = new Set([
@@ -44,7 +48,7 @@ export async function handleRequest(request, env, _ctx = {}) {
     }
 
     if (url.pathname === "/internal/scraper-status" && request.method === "POST") {
-      return handleScraperStatus(request, env, cors);
+      return await handleScraperStatus(request, env, cors);
     }
 
     if (url.pathname === "/internal/process-next" && request.method === "POST") {
@@ -56,16 +60,16 @@ export async function handleRequest(request, env, _ctx = {}) {
     }
 
     if (url.pathname === "/admin/import-health" && request.method === "GET") {
-      return handleAdminImportHealth(request, env, cors);
+      return await handleAdminImportHealth(request, env, cors);
     }
 
     if (url.pathname === "/profile-import/start" && request.method === "POST") {
-      return handleStartImport(request, env, cors);
+      return await handleStartImport(request, env, cors);
     }
 
     const statusMatch = url.pathname.match(/^\/profile-import\/status\/([^/]+)$/);
     if (statusMatch && request.method === "GET") {
-      return handleImportStatus(statusMatch[1], env, cors);
+      return await handleImportStatus(statusMatch[1], env, cors);
     }
 
     return json({ error: { code: "not_found", message: "Not found." } }, 404, cors);
@@ -723,14 +727,21 @@ async function setCooldown(env, scope, key, durationMs, reason) {
 }
 
 async function readCoordinatorStates(env) {
-  const keys = await env.ZENITH_COORDINATOR.list({ prefix: "idlemmo-api-job:" });
   const states = [];
-  for (const key of keys.keys || []) {
-    const raw = await env.ZENITH_COORDINATOR.get(key.name);
+  for (const source of coordinatorSources(env)) {
+    const raw = await env.ZENITH_COORDINATOR.get(coordinatorKey(source)).catch(() => null);
     const parsed = safeParseJson(raw);
     if (parsed) states.push(parsed);
   }
   return states;
+}
+
+function coordinatorSources(env) {
+  const configured = String(env.IMPORT_COORDINATOR_SOURCES || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return Array.from(new Set([...DEFAULT_COORDINATOR_SOURCES, ...configured]));
 }
 
 async function activeCooldown(env, scope, key, now) {

@@ -20,6 +20,12 @@ class MemoryKV {
   }
 }
 
+class ListLimitedKV extends MemoryKV {
+  async list() {
+    throw new Error("KV list() limit exceeded for the day.");
+  }
+}
+
 class Statement {
   constructor(db, sql) {
     this.db = db;
@@ -322,6 +328,24 @@ async function json(response) {
   }), e);
   assert.equal(status.status, 200);
   assert.equal((await json(status)).status, "queued");
+}
+
+{
+  const e = env({ ZENITH_COORDINATOR: new ListLimitedKV() });
+  const response = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.17",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000001",
+    }),
+  }), e);
+  const body = await json(response);
+  assert.equal(response.status, 202);
+  assert.equal(body.budgetMode, "unknown");
 }
 
 {

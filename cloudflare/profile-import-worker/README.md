@@ -89,9 +89,12 @@ production once the frontend sends Turnstile tokens.
 `IDLEMMO_IMPORT_DELAY_MS` defaults to `1800`, which keeps a single baseline job
 near the intended idle-mode request budget. `IMPORT_BASELINE_REQUEST_CAP`
 defaults to `45`, and `IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER` defaults to `8`
-so museum pagination cannot become unbounded. Do not reduce the delay or raise
-these caps in production unless the Cloudflare coordinator is already protecting
-the GitHub workflows.
+so museum pagination cannot become unbounded. `IMPORT_COORDINATOR_SOURCES`
+should list the GitHub workflow sources that report scraper status. The Worker
+reads those known KV keys directly instead of using KV `list()`, which keeps the
+public import path inside Cloudflare free-plan limits. Do not reduce the delay
+or raise these caps in production unless the Cloudflare coordinator is already
+protecting the GitHub workflows.
 
 ## Admin Dashboard
 
