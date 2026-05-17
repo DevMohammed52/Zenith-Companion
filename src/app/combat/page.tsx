@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink } from "lucide-react";
+import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, Clock, Utensils, Calculator, Target } from "lucide-react";
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePreferences } from "@/lib/preferences";
@@ -18,7 +18,74 @@ import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 
 const COMBAT_CONTROLS_STORAGE_KEY = "zenith_combat_controls_v1";
+const COMBAT_SESSION_STORAGE_KEY = "zenith_combat_session_v1";
 const DEFAULT_KILLS_PER_HOUR = 360;
+
+type CombatView = "ev" | "session";
+
+type EnemySessionEntry = {
+    found: number | "";
+    killed: number | "";
+    timePerEnemy: number | "";
+};
+
+type CombatSessionState = {
+    location: string;
+    huntHours: number | "";
+    huntMinutes: number | "";
+    overheadMinutes: number | "";
+    scaleLevel: number | "";
+    magicFind: number | "";
+    foodName: string;
+    foodUsed: number | "";
+    extraCosts: number | "";
+    actualDropValue: number | "";
+    enemies: Record<string, EnemySessionEntry>;
+};
+
+const DEFAULT_COMBAT_SESSION: CombatSessionState = {
+    location: "",
+    huntHours: "",
+    huntMinutes: "",
+    overheadMinutes: "",
+    scaleLevel: "",
+    magicFind: "",
+    foodName: "",
+    foodUsed: "",
+    extraCosts: "",
+    actualDropValue: "",
+    enemies: {},
+};
+
+function safeNumber(value: number | "") {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatGold(value: number, digits = 0) {
+    return `${value.toLocaleString(undefined, { maximumFractionDigits: digits })}g`;
+}
+
+function formatDuration(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "0m";
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    if (hours && minutes) return `${hours}h ${minutes}m`;
+    if (hours) return `${hours}h`;
+    return `${minutes}m`;
+}
+
+function cleanSessionInput(input: unknown): CombatSessionState {
+    if (!input || typeof input !== "object") return DEFAULT_COMBAT_SESSION;
+    const raw = input as Partial<CombatSessionState>;
+    return {
+        ...DEFAULT_COMBAT_SESSION,
+        ...raw,
+        foodName: typeof raw.foodName === "string" ? raw.foodName : "",
+        location: typeof raw.location === "string" ? raw.location : "",
+        enemies: raw.enemies && typeof raw.enemies === "object" ? raw.enemies : {},
+    };
+}
 
 function CombatContent() {
     const router = useRouter();
@@ -32,12 +99,19 @@ function CombatContent() {
         () => getProfileStorageKey(COMBAT_CONTROLS_STORAGE_KEY, activeProfile?.id),
         [activeProfile?.id],
     );
+    const combatSessionStorageKey = useMemo(
+        () => getProfileStorageKey(COMBAT_SESSION_STORAGE_KEY, activeProfile?.id),
+        [activeProfile?.id],
+    );
+    const [activeView, setActiveView] = useState<CombatView>("ev");
     const [selectedEnemy, setSelectedEnemy] = useState<any>(null);
     const [sortCol, setSortCol] = useState<string>("ev");
     const [sortDesc, setSortDesc] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedArea, setSelectedArea] = useState<string | null>(null);
     const [killsPerHour, setKillsPerHour] = useState<number | "">(DEFAULT_KILLS_PER_HOUR);
+    const [session, setSession] = useState<CombatSessionState>(DEFAULT_COMBAT_SESSION);
+    const [sessionHydratedKey, setSessionHydratedKey] = useState("");
     const selectedEnemyDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedEnemy), () => setSelectedEnemy(null));
 
     useEffect(() => {
@@ -58,6 +132,24 @@ function CombatContent() {
         }, 200);
         return () => window.clearTimeout(timeout);
     }, [combatControlsStorageKey, killsPerHour]);
+
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(combatSessionStorageKey);
+            setSession(stored ? cleanSessionInput(JSON.parse(stored)) : DEFAULT_COMBAT_SESSION);
+        } catch {
+            setSession(DEFAULT_COMBAT_SESSION);
+        }
+        setSessionHydratedKey(combatSessionStorageKey);
+    }, [combatSessionStorageKey]);
+
+    useEffect(() => {
+        if (sessionHydratedKey !== combatSessionStorageKey) return;
+        const timeout = window.setTimeout(() => {
+            localStorage.setItem(combatSessionStorageKey, JSON.stringify(session));
+        }, 250);
+        return () => window.clearTimeout(timeout);
+    }, [combatSessionStorageKey, session, sessionHydratedKey]);
 
     useEffect(() => {
         const search = searchParams.get("search");
@@ -173,6 +265,79 @@ function CombatContent() {
         return areaSummaries.find(summary => summary.area === selectedArea) || null;
     }, [areaSummaries, selectedArea]);
 
+    const sessionEnemies = useMemo(() => {
+        const location = session.location || selectedArea || areaSummaries[0]?.area || "";
+        return combatRows.filter((enemy) => (enemy.location?.name || "Unknown") === location);
+    }, [areaSummaries, combatRows, selectedArea, session.location]);
+
+    const sessionLocation = session.location || selectedArea || areaSummaries[0]?.area || "";
+
+    const itemNameLookup = useMemo(() => {
+        const lookup = new Map<string, string>();
+        for (const source of [allItemsDb, marketData]) {
+            for (const name of Object.keys(source || {})) lookup.set(name.toLowerCase(), name);
+        }
+        return lookup;
+    }, [allItemsDb, marketData]);
+
+    const sessionFoodPrice = useMemo(() => {
+        const name = session.foodName.trim();
+        if (!name || !marketData || !allItemsDb) return 0;
+        const canonicalName = itemNameLookup.get(name.toLowerCase()) || name;
+        return getItemTrueValue(canonicalName, marketData, allItemsDb, 0, {
+            customPrices: preferences.customPrices,
+            marketTaxMultiplier: preferences.membership ? 0.88 : 0.85,
+            barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
+        });
+    }, [
+        activeProfile,
+        allItemsDb,
+        itemNameLookup,
+        marketData,
+        preferences.customPrices,
+        preferences.membership,
+        session.foodName,
+    ]);
+
+    const sessionSummary = useMemo(() => {
+        const huntSeconds = safeNumber(session.huntHours) * 3600 + safeNumber(session.huntMinutes) * 60;
+        const overheadSeconds = safeNumber(session.overheadMinutes) * 60;
+        const battleSeconds = sessionEnemies.reduce((sum, enemy) => {
+            const entry = session.enemies[enemy.name];
+            return sum + safeNumber(entry?.killed || "") * safeNumber(entry?.timePerEnemy || "");
+        }, 0);
+        const expectedGross = sessionEnemies.reduce((sum, enemy) => {
+            const entry = session.enemies[enemy.name];
+            return sum + safeNumber(entry?.killed || "") * Number(enemy.ev || 0);
+        }, 0);
+        const killedTotal = sessionEnemies.reduce((sum, enemy) => sum + safeNumber(session.enemies[enemy.name]?.killed || ""), 0);
+        const foundTotal = sessionEnemies.reduce((sum, enemy) => sum + safeNumber(session.enemies[enemy.name]?.found || ""), 0);
+        const foodCost = safeNumber(session.foodUsed) * sessionFoodPrice;
+        const extraCosts = safeNumber(session.extraCosts);
+        const actualGross = safeNumber(session.actualDropValue);
+        const expectedNet = expectedGross - foodCost - extraCosts;
+        const actualNet = actualGross ? actualGross - foodCost - extraCosts : 0;
+        const totalSeconds = huntSeconds + battleSeconds + overheadSeconds;
+        const hourlyDivisor = totalSeconds > 0 ? totalSeconds / 3600 : 0;
+
+        return {
+            huntSeconds,
+            battleSeconds,
+            overheadSeconds,
+            totalSeconds,
+            expectedGross,
+            expectedNet,
+            actualGross,
+            actualNet,
+            foodCost,
+            extraCosts,
+            killedTotal,
+            foundTotal,
+            expectedPerHour: hourlyDivisor ? expectedNet / hourlyDivisor : 0,
+            actualPerHour: hourlyDivisor && actualGross ? actualNet / hourlyDivisor : 0,
+        };
+    }, [session, sessionEnemies, sessionFoodPrice]);
+
     useEffect(() => {
         if (selectedArea && areaSummaries.length && !areaSummaries.some(summary => summary.area === selectedArea)) {
             setSelectedArea(null);
@@ -215,6 +380,7 @@ function CombatContent() {
 
         return filtered;
     }, [combatRows, selectedArea, sortCol, sortDesc, debouncedSearch]);
+    const resultCountText = `${rows.length} ${rows.length === 1 ? "enemy" : "enemies"} shown${selectedArea ? ` in ${selectedArea}` : " across all zones"}${debouncedSearch ? ` for "${debouncedSearch}"` : ""}`;
 
     const autoOpenedRef = useRef<string | null>(null);
 
@@ -237,6 +403,34 @@ function CombatContent() {
     const handleSort = (col: string) => {
         if (sortCol === col) setSortDesc(!sortDesc);
         else { setSortCol(col); setSortDesc(true); }
+    };
+
+    const updateSession = (patch: Partial<CombatSessionState>) => {
+        setSession((current) => ({ ...current, ...patch }));
+    };
+
+    const updateSessionNumber = (key: keyof CombatSessionState, value: string) => {
+        updateSession({ [key]: value === "" ? "" : Math.max(0, Number(value) || 0) } as Partial<CombatSessionState>);
+    };
+
+    const updateEnemySession = (enemyName: string, key: keyof EnemySessionEntry, value: string) => {
+        setSession((current) => ({
+            ...current,
+            enemies: {
+                ...current.enemies,
+                [enemyName]: {
+                    ...(current.enemies[enemyName] || { found: "", killed: "", timePerEnemy: "" }),
+                    [key]: value === "" ? "" : Math.max(0, Number(value) || 0),
+                },
+            },
+        }));
+    };
+
+    const resetCombatSession = () => {
+        setSession({
+            ...DEFAULT_COMBAT_SESSION,
+            location: sessionLocation,
+        });
     };
 
     const selectedEnemyLore = useMemo(() => {
@@ -280,6 +474,29 @@ function CombatContent() {
                 </div>
             </section>
 
+            <div className="combat-view-tabs" role="tablist" aria-label="Combat views">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeView === "ev"}
+                    className={activeView === "ev" ? "active" : ""}
+                    onClick={() => setActiveView("ev")}
+                >
+                    Enemy EV
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeView === "session"}
+                    className={activeView === "session" ? "active" : ""}
+                    onClick={() => setActiveView("session")}
+                >
+                    Combat Session
+                </button>
+            </div>
+
+            {activeView === "ev" && (
+                <>
             <div className="controls">
                 <div className="control-group">
                     <label className="control-label">Kills Per Hour</label>
@@ -311,6 +528,7 @@ function CombatContent() {
                             onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <span className="combat-result-count" aria-live="polite">{resultCountText}</span>
                 </div>
             </div>
 
@@ -459,7 +677,7 @@ function CombatContent() {
                                         <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>EV / Kill {renderSortIcon('ev')}</div>
                                     </th>
                                     <th className="sortable" onClick={() => handleSort('profitPerHour')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Gold / Hour {renderSortIcon('profitPerHour')}</div>
+                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Loot EV / Hr {renderSortIcon('profitPerHour')}</div>
                                     </th>
                                 </tr>
                             </thead>
@@ -510,7 +728,7 @@ function CombatContent() {
                         onSort={handleSort}
                         onToggleDirection={() => setSortDesc((prev) => !prev)}
                         options={[
-                            { value: "profitPerHour", label: "Gold / Hour" },
+                            { value: "profitPerHour", label: "Loot EV / Hr" },
                             { value: "ev", label: "EV / Kill" },
                             { value: "level", label: "Level" },
                             { value: "dropsCount", label: "Drops" },
@@ -550,7 +768,7 @@ function CombatContent() {
                                         <span className="m-val pos">~{row.ev.toLocaleString(undefined, {maximumFractionDigits:1})}g</span>
                                     </div>
                                     <div className="m-stat">
-                                        <span className="m-label">GOLD / HOUR</span>
+                                        <span className="m-label">LOOT EV / HR</span>
                                         <span className="m-val pos font-bold">
                                             {row.profitPerHour.toLocaleString(undefined, {maximumFractionDigits:0})}g
                                         </span>
@@ -561,6 +779,171 @@ function CombatContent() {
                     </div>
                 </div>
             </section>
+                </>
+            )}
+
+            {activeView === "session" && (
+                <section className="combat-session-panel" aria-label="Combat session planner">
+                    <div className="session-hero">
+                        <div>
+                            <span className="combat-dev-pill mono">Manual Session</span>
+                            <h2>Combat Session</h2>
+                            <p>Record one hunt and battle run. Zenith handles prices, food cost, expected loot value, and combined gold per hour.</p>
+                        </div>
+                        <button type="button" className="zone-clear-button" onClick={resetCombatSession}>
+                            Reset
+                        </button>
+                    </div>
+
+                    <div className="session-location-wrap">
+                        <p className="session-location-hint">Swipe locations</p>
+                        <div className="session-location-strip" aria-label="Session location">
+                            {areaSummaries.map((summary) => (
+                                <button
+                                    key={summary.area}
+                                    type="button"
+                                    className={sessionLocation === summary.area ? "active" : ""}
+                                    onClick={() => updateSession({ location: summary.area })}
+                                    aria-label={`${summary.area}, ${summary.enemyCount} enemies, levels ${summary.minLevel} to ${summary.maxLevel}`}
+                                    aria-pressed={sessionLocation === summary.area}
+                                >
+                                    <strong>{summary.area}</strong>
+                                    <span>{summary.enemyCount} enemies</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="session-summary-grid">
+                        <article className="session-metric-card highlight">
+                            <span><Calculator size={15} /> Expected net</span>
+                            <strong className={sessionSummary.expectedNet < 0 ? "profit-negative" : "profit-positive"}>{formatGold(sessionSummary.expectedNet)}</strong>
+                            <small>{formatGold(sessionSummary.expectedPerHour)}/h combined</small>
+                        </article>
+                        <article className="session-metric-card">
+                            <span><Target size={15} /> Enemies</span>
+                            <strong>{sessionSummary.killedTotal.toLocaleString()} killed</strong>
+                            <small>{sessionSummary.foundTotal ? `${sessionSummary.foundTotal.toLocaleString()} found` : "Found count optional"}</small>
+                        </article>
+                        <article className="session-metric-card">
+                            <span><Clock size={15} /> Total time</span>
+                            <strong>{formatDuration(sessionSummary.totalSeconds)}</strong>
+                            <small>Hunt + battle + overhead</small>
+                        </article>
+                        <article className="session-metric-card">
+                            <span><Utensils size={15} /> Food cost</span>
+                            <strong>{formatGold(sessionSummary.foodCost)}</strong>
+                            <small>{sessionFoodPrice ? `${formatGold(sessionFoodPrice)} each` : "Enter exact food name"}</small>
+                        </article>
+                    </div>
+
+                    <div className="session-form-grid">
+                        <section className="session-card">
+                            <h3>Run Setup</h3>
+                            <div className="session-fields two-col">
+                                <label>
+                                    <span>Hunt hours</span>
+                                    <input aria-label="Hunt hours" className="control-input" type="number" min="0" value={session.huntHours} onChange={(event) => updateSessionNumber("huntHours", event.target.value)} />
+                                </label>
+                                <label>
+                                    <span>Hunt minutes</span>
+                                    <input aria-label="Hunt minutes" className="control-input" type="number" min="0" value={session.huntMinutes} onChange={(event) => updateSessionNumber("huntMinutes", event.target.value)} />
+                                </label>
+                                <label>
+                                    <span>Scale level</span>
+                                    <input aria-label="Scale level" className="control-input" type="number" min="0" value={session.scaleLevel} onChange={(event) => updateSessionNumber("scaleLevel", event.target.value)} />
+                                </label>
+                                <label>
+                                    <span>Magic Find shown</span>
+                                    <input aria-label="Magic Find shown" className="control-input" type="number" min="0" value={session.magicFind} onChange={(event) => updateSessionNumber("magicFind", event.target.value)} />
+                                </label>
+                            </div>
+                            <p className="session-note">Magic Find is saved with the run but not applied to EV yet. Current evidence says it affects the inner loot table, and the exact trimming order still needs validation.</p>
+                        </section>
+
+                        <section className="session-card">
+                            <h3>Costs & Actual Drops</h3>
+                            <div className="session-fields">
+                                <label>
+                                    <span>Food item</span>
+                                    <input aria-label="Food item" className="control-input" type="text" value={session.foodName} placeholder="Cooked Lantern Fish" onChange={(event) => updateSession({ foodName: event.target.value })} />
+                                </label>
+                                <div className="session-fields two-col">
+                                    <label>
+                                        <span>Food used</span>
+                                        <input aria-label="Food used" className="control-input" type="number" min="0" value={session.foodUsed} onChange={(event) => updateSessionNumber("foodUsed", event.target.value)} />
+                                    </label>
+                                    <label>
+                                        <span>Extra costs</span>
+                                        <input aria-label="Extra costs" className="control-input" type="number" min="0" value={session.extraCosts} onChange={(event) => updateSessionNumber("extraCosts", event.target.value)} />
+                                    </label>
+                                </div>
+                                <label>
+                                    <span>Actual drops value</span>
+                                    <input aria-label="Actual drops value" className="control-input" type="number" min="0" value={session.actualDropValue} onChange={(event) => updateSessionNumber("actualDropValue", event.target.value)} />
+                                </label>
+                            </div>
+                            <div className="actual-result">
+                                <span>Actual net</span>
+                                <strong className={sessionSummary.actualNet < 0 ? "profit-negative" : "profit-positive"}>
+                                    {sessionSummary.actualGross ? `${formatGold(sessionSummary.actualNet)} (${formatGold(sessionSummary.actualPerHour)}/h)` : "Add drop value"}
+                                </strong>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section className="session-card session-enemies-card">
+                        <div className="session-card-header">
+                            <div>
+                                <h3>{sessionLocation || "Choose a location"}</h3>
+                                <p>Use the enemy stacks and preview time shown by IdleMMO. If you only know killed count, leave found blank.</p>
+                            </div>
+                            <span className="zone-count-pill mono">{sessionEnemies.length} enemies</span>
+                        </div>
+                        <div className="session-enemy-grid">
+                            {sessionEnemies.map((enemy) => {
+                                const entry = session.enemies[enemy.name] || { found: "", killed: "", timePerEnemy: "" };
+                                const killed = safeNumber(entry.killed);
+                                const expected = killed * Number(enemy.ev || 0);
+                                return (
+                                    <article key={`${sessionLocation}-${enemy.name}`} className="session-enemy-row">
+                                        <div className="session-enemy-title">
+                                            {enemy.image_url && <img src={enemy.image_url} alt="" />}
+                                            <div>
+                                                <strong>{enemy.name}</strong>
+                                                <span>L{enemy.level} - {formatGold(enemy.ev, 1)} EV/kill</span>
+                                            </div>
+                                        </div>
+                                        <label>
+                                            <span>Found</span>
+                                            <input aria-label={`${enemy.name} found`} className="control-input" type="number" min="0" value={entry.found} onChange={(event) => updateEnemySession(enemy.name, "found", event.target.value)} />
+                                        </label>
+                                        <label>
+                                            <span>Killed</span>
+                                            <input aria-label={`${enemy.name} killed`} className="control-input" type="number" min="0" value={entry.killed} onChange={(event) => updateEnemySession(enemy.name, "killed", event.target.value)} />
+                                        </label>
+                                        <label>
+                                            <span>Sec / kill</span>
+                                            <input aria-label={`${enemy.name} seconds per kill`} className="control-input" type="number" min="0" step="0.01" value={entry.timePerEnemy} onChange={(event) => updateEnemySession(enemy.name, "timePerEnemy", event.target.value)} />
+                                        </label>
+                                        <div className="session-row-result">
+                                            <span>Expected</span>
+                                            <strong>{formatGold(expected)}</strong>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <section className="session-confidence">
+                        <strong>What this can trust</strong>
+                        <span>Loot EV, market/custom prices, food cost, and combined time math.</span>
+                        <strong>What stays manual</strong>
+                        <span>Damage, food use, Magic Find adjustment, weather mix, and battle preview timing.</span>
+                    </section>
+                </section>
+            )}
 
             {selectedEnemy && (
                 <div className="modal-overlay" onClick={() => setSelectedEnemy(null)}>
@@ -612,7 +995,7 @@ function CombatContent() {
                                     <div className="stat-value">{selectedEnemy.experience}</div>
                                 </div>
                                 <div className="stat-card highlight">
-                                    <div className="stat-label">Expected Profit</div>
+                                    <div className="stat-label">Loot EV Estimate</div>
                                     <div className="stat-value profit-positive">~{selectedEnemy.ev.toLocaleString(undefined, {maximumFractionDigits:1})}/kill</div>
                                 </div>
                             </div>
@@ -693,6 +1076,293 @@ function CombatContent() {
                     letter-spacing: 0.04em;
                     padding: 0.34rem 0.72rem;
                     text-transform: uppercase;
+                }
+                .combat-view-tabs {
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    display: inline-grid;
+                    gap: 0.25rem;
+                    grid-template-columns: repeat(2, minmax(9rem, 1fr));
+                    margin-bottom: 1rem;
+                    padding: 0.25rem;
+                }
+                .combat-view-tabs button {
+                    background: transparent;
+                    border: 0;
+                    border-radius: 6px;
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    font-family: var(--font-sans);
+                    font-weight: 900;
+                    min-height: 2.55rem;
+                    padding: 0.6rem 1rem;
+                }
+                .combat-view-tabs button:hover,
+                .combat-view-tabs button:focus-visible {
+                    color: #fff;
+                    outline: 1px solid var(--border-focus);
+                    outline-offset: 0;
+                }
+                .combat-view-tabs button.active {
+                    background: color-mix(in srgb, var(--text-accent), transparent 76%);
+                    color: #fff;
+                }
+                .combat-result-count {
+                    color: var(--text-muted);
+                    display: block;
+                    font-size: 0.76rem;
+                    font-weight: 800;
+                    letter-spacing: 0.04em;
+                    margin-top: 0.45rem;
+                    text-transform: uppercase;
+                }
+                .combat-session-panel {
+                    display: grid;
+                    gap: 1rem;
+                }
+                .session-hero,
+                .session-card,
+                .session-confidence {
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                }
+                .session-hero {
+                    align-items: center;
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: space-between;
+                    padding: 1.2rem;
+                }
+                .session-hero h2 {
+                    color: #fff;
+                    font-size: clamp(1.6rem, 3vw, 2.4rem);
+                    margin: 0.5rem 0 0.3rem;
+                }
+                .session-hero p,
+                .session-card p,
+                .session-card-header p,
+                .session-note {
+                    color: var(--text-muted);
+                    line-height: 1.45;
+                    margin: 0;
+                }
+                .session-location-wrap {
+                    position: relative;
+                }
+                .session-location-wrap::after {
+                    background: linear-gradient(90deg, rgba(10,13,20,0), rgba(10,13,20,0.62));
+                    bottom: 0.2rem;
+                    content: "";
+                    pointer-events: none;
+                    position: absolute;
+                    right: 0;
+                    top: 1.4rem;
+                    width: 2rem;
+                }
+                .session-location-hint {
+                    color: var(--text-muted);
+                    display: none;
+                    font-size: 0.7rem;
+                    font-weight: 900;
+                    letter-spacing: 0.06em;
+                    margin: 0 0 0.45rem;
+                    text-transform: uppercase;
+                }
+                .session-location-strip {
+                    display: grid;
+                    gap: 0.6rem;
+                    grid-auto-columns: minmax(12rem, 1fr);
+                    grid-auto-flow: column;
+                    overflow-x: auto;
+                    padding-bottom: 0.2rem;
+                }
+                .session-location-strip button {
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    display: grid;
+                    gap: 0.25rem;
+                    min-height: 4rem;
+                    padding: 0.75rem 0.9rem;
+                    text-align: left;
+                }
+                .session-location-strip button:hover,
+                .session-location-strip button.active {
+                    background: color-mix(in srgb, var(--text-accent), transparent 94%);
+                    border-color: var(--border-focus);
+                    color: #fff;
+                }
+                .session-location-strip span {
+                    font-size: 0.76rem;
+                }
+                .session-summary-grid {
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+                .session-metric-card {
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    min-width: 0;
+                    padding: 0.95rem 1rem;
+                }
+                .session-metric-card.highlight {
+                    border-color: color-mix(in srgb, var(--text-success), transparent 58%);
+                    background: color-mix(in srgb, var(--text-success), transparent 94%);
+                }
+                .session-metric-card span,
+                .session-row-result span,
+                .actual-result span {
+                    align-items: center;
+                    color: var(--text-muted);
+                    display: flex;
+                    font-size: 0.76rem;
+                    font-weight: 900;
+                    gap: 0.4rem;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                }
+                .session-metric-card strong {
+                    color: #fff;
+                    display: block;
+                    font-size: 1.35rem;
+                    margin-top: 0.45rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .session-metric-card small {
+                    color: var(--text-muted);
+                    display: block;
+                    margin-top: 0.25rem;
+                }
+                .session-form-grid {
+                    display: grid;
+                    gap: 1rem;
+                    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                }
+                .session-card {
+                    padding: 1rem;
+                }
+                .session-card h3 {
+                    color: #fff;
+                    font-size: 1rem;
+                    margin: 0 0 0.85rem;
+                }
+                .session-card-header {
+                    align-items: center;
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: space-between;
+                    margin-bottom: 1rem;
+                }
+                .session-fields {
+                    display: grid;
+                    gap: 0.75rem;
+                }
+                .session-fields.two-col {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .session-fields label,
+                .session-enemy-row label {
+                    display: grid;
+                    gap: 0.35rem;
+                    min-width: 0;
+                }
+                .session-fields label span,
+                .session-enemy-row label span {
+                    color: var(--text-muted);
+                    font-size: 0.73rem;
+                    font-weight: 900;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                }
+                .session-note {
+                    border-top: 1px solid var(--border-subtle);
+                    font-size: 0.8rem;
+                    margin-top: 0.9rem;
+                    padding-top: 0.85rem;
+                }
+                .actual-result {
+                    align-items: center;
+                    background: rgba(0,0,0,0.22);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 7px;
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: space-between;
+                    margin-top: 0.9rem;
+                    padding: 0.75rem;
+                }
+                .actual-result strong {
+                    color: #fff;
+                    text-align: right;
+                }
+                .session-enemy-grid {
+                    display: grid;
+                    gap: 0.65rem;
+                }
+                .session-enemy-row {
+                    align-items: center;
+                    background: rgba(0,0,0,0.18);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: minmax(14rem, 1.2fr) repeat(3, minmax(6.5rem, 0.55fr)) minmax(7rem, 0.55fr);
+                    padding: 0.75rem;
+                }
+                .session-enemy-title {
+                    align-items: center;
+                    display: flex;
+                    gap: 0.7rem;
+                    min-width: 0;
+                }
+                .session-enemy-title img {
+                    border-radius: 6px;
+                    height: 38px;
+                    width: 38px;
+                }
+                .session-enemy-title strong,
+                .session-enemy-title span {
+                    display: block;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .session-enemy-title strong {
+                    color: #fff;
+                }
+                .session-enemy-title span {
+                    color: var(--text-muted);
+                    font-size: 0.78rem;
+                    margin-top: 0.15rem;
+                }
+                .session-row-result {
+                    text-align: right;
+                }
+                .session-row-result strong {
+                    color: var(--text-success);
+                    display: block;
+                    margin-top: 0.3rem;
+                    white-space: nowrap;
+                }
+                .session-confidence {
+                    display: grid;
+                    gap: 0.45rem 1rem;
+                    grid-template-columns: auto minmax(0, 1fr);
+                    padding: 0.9rem 1rem;
+                }
+                .session-confidence strong {
+                    color: #fff;
+                }
+                .session-confidence span {
+                    color: var(--text-muted);
                 }
                 .combat-zone-panel {
                     background: rgba(255,255,255,0.015);
@@ -859,7 +1529,38 @@ function CombatContent() {
                     padding: 1rem;
                 }
                 @media (max-width: 768px) {
+                    .combat-view-tabs {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        width: 100%;
+                    }
                     .combat-dev-notice {
+                        align-items: flex-start;
+                        flex-direction: column;
+                    }
+                    .session-hero,
+                    .session-card-header {
+                        align-items: flex-start;
+                        flex-direction: column;
+                    }
+                    .session-summary-grid,
+                    .session-form-grid,
+                    .session-fields.two-col,
+                    .session-confidence {
+                        grid-template-columns: 1fr;
+                    }
+                    .session-enemy-row {
+                        align-items: stretch;
+                        grid-template-columns: 1fr;
+                    }
+                    .session-location-hint {
+                        display: block;
+                    }
+                    .session-row-result,
+                    .actual-result strong {
+                        text-align: left;
+                    }
+                    .actual-result {
                         align-items: flex-start;
                         flex-direction: column;
                     }

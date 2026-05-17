@@ -128,7 +128,10 @@ const PROFILE_SECTIONS = [
   ["gear", "Gear"],
   ["housing", "Housing"],
   ["transfer", "Import"],
-];
+] as const;
+
+type ProfileSectionId = typeof PROFILE_SECTIONS[number][0];
+const PROFILE_SECTION_IDS = new Set<ProfileSectionId>(PROFILE_SECTIONS.map(([id]) => id));
 
 const PROFILE_IMPORT_API_URL = (process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
@@ -429,12 +432,27 @@ function ProfilePicker<T>({
 }) {
   const [query, setQuery] = useState("");
   const open = openId === id;
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const selectedImageClass = selected?.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined;
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return options.slice(0, 90);
     return options.filter((option) => option.searchText.toLowerCase().includes(needle)).slice(0, 90);
   }, [options, query]);
+  const capped = visible.length < options.length;
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpenId(null);
+      setQuery("");
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, setOpenId]);
 
   return (
     <div className={`profile-picker ${open ? "open" : ""}`}>
@@ -444,6 +462,7 @@ function ProfilePicker<T>({
       </span>
       <button
         type="button"
+        ref={triggerRef}
         className="profile-picker-button"
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -486,6 +505,11 @@ function ProfilePicker<T>({
             <input value={query} placeholder={`Search ${label.toLowerCase()}...`} aria-label={`Search ${label.toLowerCase()}`} onChange={(event) => setQuery(event.target.value)} autoFocus />
           </label>
           <div className="profile-picker-options custom-scrollbar">
+            {capped && (
+              <div className="profile-picker-limit-note" role="note">
+                Showing first {visible.length.toLocaleString()} of {options.length.toLocaleString()}. Search to narrow.
+              </div>
+            )}
             {visible.map((option) => (
               <button
                 key={option.id}
@@ -528,7 +552,6 @@ export default function ProfilesPage() {
     exportProfiles,
     importProfiles,
   } = useProfiles();
-  const { allItemsDb } = useData();
   const [transferText, setTransferText] = useState("");
   const [profileHashDraft, setProfileHashDraft] = useState("");
   const [importReview, setImportReview] = useState<ProfileImportReview | null>(null);
@@ -543,13 +566,19 @@ export default function ProfilesPage() {
   const [liveImportEstimatedMs, setLiveImportEstimatedMs] = useState<number | null>(null);
   const [toast, setToast] = useState("");
   const [openPicker, setOpenPicker] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"restore" | "delete" | null>(null);
+  const [activeProfileSection, setActiveProfileSection] = useState<ProfileSectionId>("identity");
   const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[]; mastery?: { levels?: PetMasteryLevelRecord[] } } | null>(null);
   const liveImportPollRef = useRef<number | null>(null);
   const liveImportAbortRef = useRef<AbortController | null>(null);
+  const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
   const lastAutoStatKey = useRef("");
   const lastPetStatKey = useRef("");
 
   const profile = activeProfile;
+  const needsItemData = activeProfileSection === "gear";
+  const needsPetData = activeProfileSection === "pet" || activeProfileSection === "levels";
+  const { allItemsDb } = useData({ autoLoad: needsItemData });
   const housingSummary = useMemo(
     () => calculateHousingBuffs(profile?.housing, { profileClassName: profile?.className }),
     [profile?.className, profile?.housing],
@@ -557,6 +586,7 @@ export default function ProfilesPage() {
   const canUseGuestHousing = canUseHousingGuestAccess(profile?.className);
 
   useEffect(() => {
+    if (!needsPetData || petDb) return;
     let cancelled = false;
     fetch("/pet-database.json")
       .then((response) => response.ok ? response.json() : null)
@@ -567,13 +597,32 @@ export default function ProfilesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [needsPetData, petDb]);
 
   useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(""), 3500);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    const syncSectionFromHash = () => {
+      const section = window.location.hash.replace(/^#profile-/, "") as ProfileSectionId;
+      if (PROFILE_SECTION_IDS.has(section)) setActiveProfileSection(section);
+    };
+    syncSectionFromHash();
+    window.addEventListener("hashchange", syncSectionFromHash);
+    return () => window.removeEventListener("hashchange", syncSectionFromHash);
+  }, []);
+
+  const openProfileSection = (section: ProfileSectionId) => {
+    setActiveProfileSection(section);
+    setOpenPicker(null);
+    const nextHash = `#profile-${section}`;
+    if (window.location.hash !== nextHash) {
+      window.history.pushState(null, "", nextHash);
+    }
+  };
 
   useEffect(() => () => {
     if (liveImportPollRef.current !== null) {
@@ -804,9 +853,12 @@ export default function ProfilesPage() {
       setToast("Paste a profile export before importing.");
       return;
     }
-    const confirmed = window.confirm("Importing profiles will replace the current local profile list in this browser. Continue?");
-    if (!confirmed) return;
+    setConfirmAction("restore");
+  };
+
+  const confirmImportProfiles = () => {
     const result = importProfiles(transferText);
+    setConfirmAction(null);
     setToast(result.ok ? "Profiles imported into this browser." : result.error || "Import failed.");
   };
 
@@ -864,14 +916,14 @@ export default function ProfilesPage() {
       }
 
       if (nextStatus === "error" || nextStatus === "expired") {
-        setLiveImportError(getLiveImportErrorMessage(payload, "This import could not finish."));
+        setLiveImportError(`${getLiveImportErrorMessage(payload, "This import could not finish.")} Your local profile was not changed.`);
         return;
       }
 
       scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3500);
     } catch (error) {
       setLiveImportStatus("error");
-      setLiveImportError(error instanceof Error ? error.message : "Could not read import status.");
+      setLiveImportError(`${error instanceof Error ? error.message : "Could not read import status."} Your local profile was not changed.`);
     }
   };
 
@@ -921,7 +973,7 @@ export default function ProfilesPage() {
       if (controller.signal.aborted) return;
       setLiveImportStatus("error");
       setLiveImportJobId("");
-      setLiveImportError(error instanceof Error ? error.message : "Could not start the import.");
+      setLiveImportError(`${error instanceof Error ? error.message : "Could not start the import."} Your local profile was not changed.`);
     }
   };
 
@@ -1002,11 +1054,41 @@ export default function ProfilesPage() {
 
   const handleDeleteProfile = () => {
     if (!profile) return;
-    const confirmed = window.confirm(`Delete the local profile "${profile.name || "Unnamed"}" from this browser?`);
-    if (!confirmed) return;
+    setConfirmAction("delete");
+  };
+
+  const confirmDeleteProfile = () => {
+    if (!profile) return;
     deleteProfile(profile.id);
+    setConfirmAction(null);
     setToast("Profile deleted.");
   };
+
+  const confirmDetails = confirmAction === "restore"
+    ? {
+        title: "Restore Profile Backup",
+        body: `Replace the current ${state.profiles.length.toLocaleString()} local profile${state.profiles.length === 1 ? "" : "s"} in this browser with the pasted backup JSON? This does not affect IdleMMO or cloud data.`,
+        action: "Restore profiles",
+        onConfirm: confirmImportProfiles,
+      }
+    : confirmAction === "delete"
+      ? {
+          title: "Delete Profile",
+          body: `Delete "${profile?.name || "Unnamed"}" from this browser? Profile-scoped local planner data for this character may no longer be reachable.`,
+          action: "Delete profile",
+          onConfirm: confirmDeleteProfile,
+        }
+      : null;
+
+  useEffect(() => {
+    if (!confirmAction) return;
+    window.requestAnimationFrame(() => confirmCancelRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setConfirmAction(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmAction]);
 
   const liveImportWaitText = formatWaitTime(liveImportProgress?.estimatedRemainingMs || liveImportEstimatedMs || undefined);
   const liveImportRetryText = formatWaitTime(liveImportRetryAfterMs || undefined);
@@ -1206,15 +1288,44 @@ export default function ProfilesPage() {
 
       <nav className="profile-section-nav" aria-label="Profile sections">
         {PROFILE_SECTIONS.map(([id, label]) => (
-          <a key={id} href={`#profile-${id}`}>{label}</a>
+          <a
+            key={id}
+            href={`#profile-${id}`}
+            aria-current={activeProfileSection === id ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              openProfileSection(id);
+            }}
+          >
+            {label}
+          </a>
         ))}
       </nav>
 
-      <section className="profile-layout">
-        <aside className="profile-list-panel">
+      <a
+        className="profile-import-jump-card"
+        href="#profile-transfer"
+        onClick={(event) => {
+          event.preventDefault();
+          openProfileSection("transfer");
+        }}
+      >
+        <span>
+          <FileUp size={17} />
+          <strong>Import from IdleMMO</strong>
+        </span>
+        <em>
+          {profile.importSource.importedAt || profile.importSource.refreshedAt
+            ? `Last import: ${formatProfileSourceDate(profile.importSource.importedAt || profile.importSource.refreshedAt)}`
+            : "Fill visible character details without scrolling through manual setup."}
+        </em>
+      </a>
+
+      <section className="profile-layout" aria-label="Profile manager">
+        <section className="profile-list-panel" aria-labelledby="profile-list-heading">
           <div className="profile-count">
             <span>{state.profiles.length} / {MAX_PROFILES}</span>
-            <strong>Local Profiles</strong>
+            <strong id="profile-list-heading">Local Profiles</strong>
           </div>
           <div className="profile-list">
             {state.profiles.map((item) => {
@@ -1241,9 +1352,10 @@ export default function ProfilesPage() {
               );
             })}
           </div>
-        </aside>
+        </section>
 
         <div className="profile-editor">
+          {activeProfileSection === "identity" && (
           <section id="profile-identity" className="profile-panel profile-identity-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1345,7 +1457,9 @@ export default function ProfilesPage() {
               <textarea className="control-input" value={profile.notes} onChange={(event) => patchActive({ notes: event.target.value })} />
             </label>
           </section>
+          )}
 
+          {activeProfileSection === "levels" && (
           <section id="profile-levels" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1371,7 +1485,9 @@ export default function ProfilesPage() {
               })}
             </div>
           </section>
+          )}
 
+          {activeProfileSection === "combat" && (
           <section id="profile-combat" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1402,7 +1518,9 @@ export default function ProfilesPage() {
               ))}
             </div>
           </section>
+          )}
 
+          {activeProfileSection === "magic" && (
           <section id="profile-magic" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1460,7 +1578,9 @@ export default function ProfilesPage() {
               />
             </div>
           </section>
+          )}
 
+          {activeProfileSection === "pet" && (
           <section id="profile-pet" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1527,7 +1647,9 @@ export default function ProfilesPage() {
               <textarea className="control-input" value={profile.pet.notes} placeholder="Optional notes from screenshots or manual checks..." onChange={(event) => updateNested("pet", "notes", event.target.value)} />
             </label>
           </section>
+          )}
 
+          {activeProfileSection === "gear" && (
           <section id="profile-gear" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1619,7 +1741,9 @@ export default function ProfilesPage() {
               </div>
             </div>
           </section>
+          )}
 
+          {activeProfileSection === "housing" && (
           <section id="profile-housing" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1680,7 +1804,9 @@ export default function ProfilesPage() {
               </label>
             </div>
           </section>
+          )}
 
+          {activeProfileSection === "transfer" && (
           <section id="profile-transfer" className="profile-panel">
             <div className="profile-panel-heading">
               <div>
@@ -1874,8 +2000,35 @@ export default function ProfilesPage() {
               />
             </details>
           </section>
+          )}
         </div>
       </section>
+
+      {confirmDetails && (
+        <div className="modal-overlay profile-confirm-overlay" role="presentation" onClick={() => setConfirmAction(null)}>
+          <div
+            className="modal-content profile-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-confirm-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="profile-confirm-title">{confirmDetails.title}</h2>
+              <button className="close-btn" type="button" aria-label="Close confirmation" onClick={() => setConfirmAction(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="profile-confirm-copy">{confirmDetails.body}</p>
+              <div className="profile-confirm-actions">
+                <button type="button" ref={confirmCancelRef} className="profile-action" onClick={() => setConfirmAction(null)} autoFocus>Cancel</button>
+                <button type="button" className="profile-action danger" onClick={confirmDetails.onConfirm}>{confirmDetails.action}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

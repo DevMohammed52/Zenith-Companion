@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   BookOpen,
@@ -10,7 +10,6 @@ import {
   Clock,
   Compass,
   ExternalLink,
-  Eye,
   Filter,
   GitBranch,
   Landmark,
@@ -33,6 +32,7 @@ import {
   LORE_RELATIONS,
   LORE_THEORIES,
   LORE_TIMELINE,
+  getDescriptionLoreForEntry,
   type LoreEntry,
   type LoreRelation,
 } from "@/data/lore";
@@ -127,7 +127,9 @@ function LoreContent() {
   const [relationFilter, setRelationFilter] = useState<RelationFilter>("all");
   const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [boardPickerSearch, setBoardPickerSearch] = useState("");
+  const [boardPickerCategory, setBoardPickerCategory] = useState<LoreFilter>("all");
   const boardPickerRef = useRef<HTMLDivElement | null>(null);
+  const boardPickerListId = useId();
 
   useEffect(() => {
     const thread = searchParams.get("thread");
@@ -265,9 +267,11 @@ function LoreContent() {
   const boardOptions = useMemo(() => entries.filter((entry) => entry.category !== "Index"), []);
   const filteredBoardOptions = useMemo(() => {
     const q = boardPickerSearch.trim().toLowerCase();
-    if (!q) return boardOptions;
+    const categoryMatches = (entry: LoreEntry) => boardPickerCategory === "all" || entry.category === boardPickerCategory;
+    if (!q) return boardOptions.filter(categoryMatches);
 
     return boardOptions.filter((entry) => {
+      if (!categoryMatches(entry)) return false;
       const haystack = [
         entry.title,
         entry.category,
@@ -277,7 +281,7 @@ function LoreContent() {
       ].join(" ").toLowerCase();
       return haystack.includes(q);
     });
-  }, [boardOptions, boardPickerSearch]);
+  }, [boardOptions, boardPickerCategory, boardPickerSearch]);
 
   const openEntry = (entry: LoreEntry) => {
     setSelectedEntry(entry);
@@ -337,7 +341,7 @@ function LoreContent() {
       </section>
 
       <section className="category-rail" aria-label="Lore categories">
-        <button className={activeCategory === "all" ? "active" : ""} onClick={() => setActiveCategory("all")} type="button">
+        <button className={activeCategory === "all" ? "active" : ""} aria-pressed={activeCategory === "all"} onClick={() => setActiveCategory("all")} type="button">
           <Filter size={15} /> All <span>{entries.length}</span>
         </button>
         {(Object.keys(CATEGORY_META) as LoreEntry["category"][]).map((category) => (
@@ -346,6 +350,7 @@ function LoreContent() {
             type="button"
             style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
             className={activeCategory === category ? "active" : ""}
+            aria-pressed={activeCategory === category}
             onClick={() => setActiveCategory(category)}
           >
             {CATEGORY_META[category].icon}
@@ -402,49 +407,62 @@ function LoreContent() {
       {activeView === "characters" && (
         <section className="lore-section">
           <SectionHeading label="Character Index" detail="Witnesses, rulers, exiles, spirits, and names Edric thought worth preserving." />
-          <div className="npc-network-panel">
-            <div className="npc-network-header">
-              <span><GitBranch size={15} /> NPC Relationship Map</span>
-              <p>Characters grouped by their strongest official place, faction, or concept thread. Click any name to open the dossier.</p>
-            </div>
-            <div className="npc-network-grid">
-              {npcNetworkGroups.map((group) => (
-                <article key={group.id} className="npc-region-card" style={{ "--tone": group.tone } as CSSProperties}>
-                  <div className="npc-region-head">
-                    <span>{group.category}</span>
-                    <h3>{group.title}</h3>
-                    <small>{group.characters.length} linked {group.characters.length === 1 ? "character" : "characters"}</small>
-                  </div>
-                  <div className="npc-chip-grid">
-                    {group.characters.map((entry) => (
-                      <button key={`${group.id}-${entry.id}`} type="button" onClick={() => openEntry(entry)}>
-                        <strong>{entry.title}</strong>
-                        <em>{entry.relatedIds.length} threads</em>
-                      </button>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-          <div className="compact-grid">
-            {characterEntries.map((entry) => <LoreCompactCard key={entry.id} entry={entry} onOpen={openEntry} />)}
-          </div>
+          {characterEntries.length > 0 ? (
+            <>
+              <div className="npc-network-panel">
+                <div className="npc-network-header">
+                  <span><GitBranch size={15} /> NPC Relationship Map</span>
+                  <p>Characters grouped by their strongest official place, faction, or concept thread. Click any name to open the dossier.</p>
+                </div>
+                <div className="npc-network-grid">
+                  {npcNetworkGroups.map((group) => (
+                    <article key={group.id} className="npc-region-card" style={{ "--tone": group.tone } as CSSProperties}>
+                      <div className="npc-region-head">
+                        <span>{group.category}</span>
+                        <h3>{group.title}</h3>
+                        <small>{group.characters.length} linked {group.characters.length === 1 ? "character" : "characters"}</small>
+                      </div>
+                      <div className="npc-chip-grid">
+                        {group.characters.map((entry) => (
+                          <button key={`${group.id}-${entry.id}`} type="button" onClick={() => openEntry(entry)}>
+                            <strong>{entry.title}</strong>
+                            <em>{entry.relatedIds.length} threads</em>
+                          </button>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div className="compact-grid">
+                {characterEntries.map((entry) => <LoreCompactCard key={entry.id} entry={entry} onOpen={openEntry} />)}
+              </div>
+            </>
+          ) : (
+            <div className="empty-thread">No character records match this search or category filter.</div>
+          )}
         </section>
       )}
 
       {activeView === "artifacts" && (
         <section className="lore-section">
           <SectionHeading label="Artifacts & Bestiary" detail="Objects of power, monsters, gods, cults, and other things that refuse to stay neatly categorized." />
-          <div className="atlas-grid tight">
-            {artifactsAndBeasts.map((entry) => <LoreCard key={entry.id} entry={entry} onOpen={openEntry} />)}
-          </div>
+          {artifactsAndBeasts.length > 0 ? (
+            <div className="atlas-grid tight">
+              {artifactsAndBeasts.map((entry) => <LoreCard key={entry.id} entry={entry} onOpen={openEntry} />)}
+            </div>
+          ) : (
+            <div className="empty-thread">No artifact, bestiary, or concept records match this search or category filter.</div>
+          )}
         </section>
       )}
 
       {activeView === "board" && (
         <section className="lore-section">
           <SectionHeading label="Mystery Board" detail="Official links first. The red-string energy is optional, but encouraged." />
+          {search.trim() && (
+            <p className="board-search-note">Page search filters Atlas, Characters, and Artifacts views. Use the thread search inside this board to change the selected mystery thread.</p>
+          )}
           <div className="board-controls">
             <div className="board-picker" ref={boardPickerRef}>
               <button
@@ -452,6 +470,8 @@ function LoreContent() {
                 className="board-picker-trigger"
                 onClick={() => setBoardPickerOpen((open) => !open)}
                 aria-expanded={boardPickerOpen}
+                aria-controls={boardPickerListId}
+                aria-haspopup="listbox"
               >
                 <span className="board-picker-mark" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
                   {CATEGORY_META[boardEntry.category].icon}
@@ -474,7 +494,29 @@ function LoreContent() {
                       autoFocus
                     />
                   </label>
-                  <div className="board-option-list custom-scrollbar">
+                  <div className="board-picker-categories" role="group" aria-label="Board thread categories">
+                    <button
+                      type="button"
+                      className={boardPickerCategory === "all" ? "active" : ""}
+                      aria-pressed={boardPickerCategory === "all"}
+                      onClick={() => setBoardPickerCategory("all")}
+                    >
+                      All
+                    </button>
+                    {(Object.keys(CATEGORY_META) as LoreEntry["category"][]).map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        className={boardPickerCategory === category ? "active" : ""}
+                        aria-pressed={boardPickerCategory === category}
+                        onClick={() => setBoardPickerCategory(category)}
+                        style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
+                      >
+                        {CATEGORY_META[category].label}
+                      </button>
+                    ))}
+                  </div>
+                  <div id={boardPickerListId} className="board-option-list custom-scrollbar" role="listbox" aria-label="Lore board threads">
                     {filteredBoardOptions.length > 0 ? filteredBoardOptions.map((entry) => {
                       const meta = CATEGORY_META[entry.category];
                       return (
@@ -482,6 +524,8 @@ function LoreContent() {
                           key={entry.id}
                           type="button"
                           className={entry.id === boardEntry.id ? "active" : ""}
+                          role="option"
+                          aria-selected={entry.id === boardEntry.id}
                           onClick={() => selectBoardEntry(entry.id)}
                           style={{ "--tone": meta.tone } as CSSProperties}
                         >
@@ -499,7 +543,13 @@ function LoreContent() {
             </div>
             <div className="confidence-tabs">
               {(["all", "canon", "inferred", "theory"] as RelationFilter[]).map((filter) => (
-                <button key={filter} className={relationFilter === filter ? "active" : ""} onClick={() => setRelationFilter(filter)} type="button">
+                <button
+                  key={filter}
+                  className={relationFilter === filter ? "active" : ""}
+                  aria-pressed={relationFilter === filter}
+                  onClick={() => setRelationFilter(filter)}
+                  type="button"
+                >
                   {filter}
                 </button>
               ))}
@@ -584,14 +634,6 @@ function LoreContent() {
               </article>
             ))}
           </div>
-        </section>
-      )}
-
-      {filteredEntries.length === 0 && (
-        <section className="lore-empty">
-          <Eye size={26} />
-          <h2>No thread found</h2>
-          <p>Try a broader search or switch back to all categories.</p>
         </section>
       )}
 
@@ -1211,6 +1253,16 @@ function LoreContent() {
           top: 100%;
         }
 
+        .board-search-note {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          color: rgba(255,255,255,0.62);
+          line-height: 1.45;
+          margin: 0 0 1rem;
+          padding: 0.75rem 0.85rem;
+        }
+
         .board-picker-search {
           align-items: center;
           background: rgba(255,255,255,0.04);
@@ -1220,6 +1272,32 @@ function LoreContent() {
           display: flex;
           gap: 0.5rem;
           padding: 0.6rem 0.75rem;
+        }
+
+        .board-picker-categories {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.35rem;
+        }
+
+        .board-picker-categories button {
+          background: rgba(255,255,255,0.035);
+          border: 1px solid color-mix(in srgb, var(--tone, #f5b041), transparent 82%);
+          border-radius: 999px;
+          color: rgba(255,255,255,0.66);
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.68rem;
+          font-weight: 900;
+          min-height: 2rem;
+          padding: 0.25rem 0.6rem;
+        }
+
+        .board-picker-categories button:hover,
+        .board-picker-categories button.active {
+          background: color-mix(in srgb, var(--tone, #f5b041), transparent 88%);
+          border-color: color-mix(in srgb, var(--tone, #f5b041), transparent 50%);
+          color: #fff;
         }
 
         .board-picker-search input {
@@ -1726,31 +1804,76 @@ function LoreEntryModal({
   const meta = CATEGORY_META[entry.category];
   const related = entry.relatedIds.map((id) => LORE_ENTRY_BY_ID[id]).filter(Boolean).slice(0, 10);
   const itemLinks = LORE_ITEM_LINKS.filter((link) => (link.entryIds as readonly string[]).includes(entry.id)).slice(0, 8);
+  const descriptionItemLinks = getDescriptionLoreForEntry(entry.id, 10);
+  const modalRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const pointerStartedOnBackdrop = useRef(false);
 
   useEffect(() => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusable = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.offsetParent !== null || element === document.activeElement);
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
+      previousFocusRef.current?.focus();
+    };
   }, [onClose]);
 
   return (
-    <div className="lore-modal-shell" onClick={onClose}>
+    <div
+      className="lore-modal-shell"
+      onPointerDown={(event) => {
+        pointerStartedOnBackdrop.current = event.target === event.currentTarget;
+      }}
+      onPointerUp={(event) => {
+        if (pointerStartedOnBackdrop.current && event.target === event.currentTarget) onClose();
+        pointerStartedOnBackdrop.current = false;
+      }}
+    >
       <article
+        ref={modalRef}
         aria-labelledby="lore-modal-title"
         aria-modal="true"
         className="lore-modal"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         style={{ "--tone": meta.tone } as CSSProperties}
+        tabIndex={-1}
       >
         <header>
           <div>
             <span>{meta.icon} {meta.label}</span>
             <h2 id="lore-modal-title">{entry.title}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close lore entry"><X size={20} /></button>
+          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Close lore entry"><X size={20} /></button>
         </header>
 
         <div className="modal-grid">
@@ -1781,7 +1904,7 @@ function LoreEntryModal({
           </section>
 
           <section className="modal-panel span-two">
-            <h3>Source Sections</h3>
+            <h3>Source Section Index</h3>
             <div className="section-notes">
               {entry.sections.length > 0 ? entry.sections.map((section) => (
                 <div key={section.title}>
@@ -1805,17 +1928,33 @@ function LoreEntryModal({
               </div>
             </section>
           )}
+
+          {descriptionItemLinks.length > 0 && (
+            <section className="modal-panel span-two">
+              <h3>Item Description Signals</h3>
+              <div className="item-link-grid">
+                {descriptionItemLinks.map((link) => (
+                  <span key={`${entry.id}-${link.itemName}-description`}>
+                    <strong>{link.itemName}</strong>
+                    <em>{link.confidence}: {link.reason}</em>
+                    <em>&quot;{link.evidence}&quot;</em>
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </article>
 
       <style jsx>{`
         .lore-modal-shell {
-          align-items: center;
+          align-items: flex-start;
           background: rgba(0,0,0,0.78);
           backdrop-filter: blur(14px);
           display: flex;
           inset: 0;
           justify-content: center;
+          overflow-y: auto;
           padding: 1.25rem;
           position: fixed;
           z-index: 9999;
@@ -1975,6 +2114,7 @@ function LoreEntryModal({
         @media (max-width: 720px) {
           .lore-modal-shell {
             align-items: stretch;
+            overflow-y: hidden;
             padding: 0;
           }
 
@@ -2020,6 +2160,7 @@ function LoreCanvas() {
     let height = window.innerHeight;
     let animationFrame = 0;
     let particles: LoreParticle[] = [];
+    let paused = document.hidden;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const resize = () => {
@@ -2031,7 +2172,7 @@ function LoreCanvas() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      particles = Array.from({ length: reducedMotion ? 28 : width < 700 ? 42 : 90 }, () => ({
+      particles = Array.from({ length: reducedMotion ? 20 : width < 700 ? 28 : 64 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.18,
@@ -2043,9 +2184,11 @@ function LoreCanvas() {
     };
 
     const draw = () => {
+      if (paused) return;
       ctx.clearRect(0, 0, width, height);
       ctx.strokeStyle = "rgba(245,176,65,0.08)";
       ctx.lineWidth = 1;
+      const linkDistance = width < 700 ? 0 : 110;
 
       for (let i = 0; i < particles.length; i += 1) {
         const p = particles[i];
@@ -2062,13 +2205,13 @@ function LoreCanvas() {
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
 
-        for (let j = i + 1; j < particles.length; j += 1) {
+        for (let j = i + 1; linkDistance > 0 && j < particles.length; j += 1) {
           const other = particles[j];
           const dx = p.x - other.x;
           const dy = p.y - other.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 120) {
-            ctx.globalAlpha = (1 - distance / 120) * 0.45;
+          if (distance < linkDistance) {
+            ctx.globalAlpha = (1 - distance / linkDistance) * 0.42;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(other.x, other.y);
@@ -2081,12 +2224,24 @@ function LoreCanvas() {
       if (!reducedMotion) animationFrame = requestAnimationFrame(draw);
     };
 
+    const handleVisibilityChange = () => {
+      paused = document.hidden;
+      if (paused) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      } else if (!reducedMotion && !animationFrame) {
+        animationFrame = requestAnimationFrame(draw);
+      }
+    };
+
     resize();
     draw();
     window.addEventListener("resize", resize);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       cancelAnimationFrame(animationFrame);
     };
   }, []);

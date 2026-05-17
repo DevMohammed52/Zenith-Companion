@@ -109,6 +109,44 @@
   padding: 0.75rem;
 }
 
+.utilityNotes {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.utilityNotes p,
+.tierLegend {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.tierLegend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.tierLegend div {
+  min-width: 0;
+}
+
+.tierLegend dt {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.tierLegend dd {
+  margin: 0.12rem 0 0;
+}
+
 .search {
   display: flex;
   align-items: center;
@@ -227,10 +265,22 @@
   overflow: hidden;
 }
 
+.tableHint {
+  display: none;
+  margin: 0;
+  padding: 0.65rem 0.85rem 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
 .tableScroll {
   overflow: auto;
   max-height: calc(100vh - 390px);
   min-height: 430px;
+}
+
+.mobileGuildList {
+  display: none;
 }
 
 .table {
@@ -343,6 +393,74 @@
 }
 
 .inspectButton:hover {
+  border-color: rgba(139, 92, 246, 0.55);
+  background: rgba(139, 92, 246, 0.16);
+}
+
+.guildCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.guildCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.guildCardHeader .guildName {
+  flex: 1 1 auto;
+}
+
+.guildCardStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.guildCardStats div {
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.guildCardStats dt {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.guildCardStats dd {
+  margin: 0.15rem 0 0;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.cardInspectButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cardInspectButton:hover {
   border-color: rgba(139, 92, 246, 0.55);
   background: rgba(139, 92, 246, 0.16);
 }
@@ -541,6 +659,56 @@
   gap: 0.45rem;
 }
 
+.memberSummaryChips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.memberSummaryChips span {
+  min-width: 0;
+  padding: 0.5rem 0.58rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.memberDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.memberDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  list-style: none;
+}
+
+.memberDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.memberDetails[open] summary {
+  margin-bottom: 0.55rem;
+}
+
+.memberDetails[open] summary svg:last-child {
+  transform: rotate(180deg);
+}
+
 .memberRow,
 .zoneRow {
   display: grid;
@@ -603,7 +771,8 @@
 @media (max-width: 1180px) {
   .hero,
   .toolbar,
-  .modalGrid {
+  .modalGrid,
+  .utilityNotes {
     grid-template-columns: 1fr;
   }
 
@@ -637,11 +806,38 @@
 
   .statsGrid,
   .modalStats,
-  .refreshGrid {
+  .refreshGrid,
+  .memberSummaryChips {
     grid-template-columns: 1fr;
   }
 
+  .hero {
+    gap: 0.75rem;
+    padding-top: 0.65rem;
+  }
+
+  .subtitle {
+    line-height: 1.45;
+  }
+
+  .freshness {
+    min-width: 0;
+  }
+
+  .tierLegend {
+    grid-template-columns: 1fr;
+  }
+
+  .tableHint {
+    display: block;
+  }
+
   .tableScroll {
-    min-height: 360px;
+    display: none;
+  }
+
+  .mobileGuildList {
+    display: flex;
+    flex-direction: column;
   }
 }

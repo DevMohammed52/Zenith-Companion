@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowDownUp,
@@ -278,7 +278,7 @@ const BOOSTED_STATS = new Set<StatKey>([
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "power", label: "Power" },
   { value: "speed", label: "Move Speed" },
-  { value: "battleProfit", label: "Battle Sample" },
+  { value: "battleProfit", label: "Battle Samples" },
   { value: "market", label: "Lowest Listing" },
   { value: "drop", label: "Drop Chance" },
   { value: "quality", label: "Quality" },
@@ -294,7 +294,7 @@ const SOURCE_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
   { value: "MERCHANT", label: "Merchant" },
   { value: "EVENT", label: "Event / legacy" },
   { value: "UNIQUE", label: "Unique" },
-  { value: "MISSING_EGG", label: "Missing egg data" },
+  { value: "MISSING_EGG", label: "No linked egg item" },
 ];
 
 const EVOLUTION_STAT_OPTIONS: Array<{ value: StatKey | "all"; label: string }> = [
@@ -497,6 +497,13 @@ function formatBattleZoneCount(pet: PetRecord) {
   return `${count} zone${count === 1 ? "" : "s"}`;
 }
 
+function getBestBattleZone(pet: PetRecord, mode: BattleProfitMode, foodPolicy: FoodPolicy) {
+  return (pet.battle?.zones || []).reduce<BattleZone | null>((best, zone) => {
+    if (!best) return zone;
+    return getZoneProfitValue(zone, mode, foodPolicy) > getZoneProfitValue(best, mode, foodPolicy) ? zone : best;
+  }, null);
+}
+
 function PetSelect<T extends string>({
   label,
   value,
@@ -513,36 +520,106 @@ function PetSelect<T extends string>({
   onOpenChange: (open: boolean) => void;
 }) {
   const selected = options.find((option) => option.value === value) || options[0];
-  const menuId = `pet-select-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  const reactId = useId();
+  const menuId = `pet-select-${reactId}`;
+  const labelId = `${menuId}-label`;
+  const valueId = `${menuId}-value`;
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+
+  useEffect(() => {
+    if (!open) return;
+    setActiveIndex(selectedIndex);
+    window.requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+  }, [open, selectedIndex]);
+
+  const closeMenu = (returnFocus = true) => {
+    onOpenChange(false);
+    if (returnFocus) window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const chooseOption = (index: number) => {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    closeMenu();
+  };
+
+  const moveToOption = (index: number) => {
+    const nextIndex = Math.min(options.length - 1, Math.max(0, index));
+    setActiveIndex(nextIndex);
+    window.requestAnimationFrame(() => optionRefs.current[nextIndex]?.focus());
+  };
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement | HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!open) {
+        onOpenChange(true);
+        return;
+      }
+      moveToOption(activeIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) {
+        onOpenChange(true);
+        return;
+      }
+      moveToOption(activeIndex - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      if (open) moveToOption(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      if (open) moveToOption(options.length - 1);
+    } else if ((event.key === "Enter" || event.key === " ") && open) {
+      event.preventDefault();
+      chooseOption(activeIndex);
+    }
+  };
 
   return (
     <div className={`pet-field pet-dropdown ${open ? "open" : ""}`}>
-      <span>{label}</span>
+      <span id={labelId}>{label}</span>
       <button
+        ref={triggerRef}
         type="button"
         className="pet-select-button"
         aria-controls={open ? menuId : undefined}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={`${label}: ${selected?.label || "Select"}`}
+        aria-labelledby={`${labelId} ${valueId}`}
+        onKeyDown={handleKeyDown}
         onClick={() => onOpenChange(!open)}
       >
-        <span>{selected?.label}</span>
+        <span id={valueId}>{selected?.label}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className="pet-select-menu" id={menuId} role="listbox" aria-label={label}>
-          {options.map((option) => (
+        <div className="pet-select-menu" id={menuId} role="listbox" aria-labelledby={labelId} onKeyDown={handleKeyDown}>
+          {options.map((option, index) => (
             <button
+              ref={(node) => {
+                optionRefs.current[index] = node;
+              }}
               type="button"
               key={option.value}
               className={option.value === value ? "selected" : ""}
               role="option"
               aria-selected={option.value === value}
+              tabIndex={index === activeIndex ? 0 : -1}
               onClick={() => {
                 onChange(option.value);
-                onOpenChange(false);
+                closeMenu();
               }}
+              onFocus={() => setActiveIndex(index)}
             >
               {option.label}
             </button>
@@ -672,7 +749,7 @@ function PetCard({
       </div>
       <div className="pet-card-market pet-card-market-secondary">
         <span>{battleZoneCount ? `Battle research (${battleZoneCount} zone${battleZoneCount === 1 ? "" : "s"})` : "Battle research"}</span>
-        <strong>{battleZoneCount ? "Details only" : "No sample"}</strong>
+        <strong>{battleZoneCount ? "Open samples" : "No sample"}</strong>
       </div>
     </button>
   );
@@ -700,6 +777,7 @@ export default function PetsPage() {
   const [selectedBattle, setSelectedBattle] = useState<BattleSelection | null>(null);
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const [modalRootReady, setModalRootReady] = useState(false);
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const { openItem, openItemByName } = useItemModal();
   const { activeProfile } = useProfiles();
 
@@ -842,7 +920,7 @@ export default function PetsPage() {
 
   const petRows = useMemo(() => {
     const pets = database?.pets || [];
-    const query = searchTerm.trim().toLowerCase();
+    const query = deferredSearchTerm.trim().toLowerCase();
     return pets
       .map((pet) => {
         const stats = calculateStats(pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
@@ -850,10 +928,11 @@ export default function PetsPage() {
         const huntingTime = getHuntingTimeSeconds(stats);
         const battleProfit = getBestBattleProfit(pet, battleProfitMode, foodPolicy);
         const ownedPets = ownedPetsByPetKey.get(getPetRecordMatchKey(pet)) || [];
-        return { pet, stats, totalPower, huntingTime, battleProfit, ownedPets };
+        const searchText = `${petSearchText(pet)} ${ownedPetSearchText(ownedPets)}`;
+        return { pet, stats, totalPower, huntingTime, battleProfit, ownedPets, searchText };
       })
-      .filter(({ pet, ownedPets }) => {
-        const matchesSearch = !query || petSearchText(pet).includes(query) || ownedPetSearchText(ownedPets).includes(query);
+      .filter(({ pet, ownedPets, searchText }) => {
+        const matchesSearch = !query || searchText.includes(query);
         const matchesQuality = qualityFilter === "ALL" || pet.quality === qualityFilter;
         const matchesSource =
           sourceFilter === "ALL" ||
@@ -895,7 +974,7 @@ export default function PetsPage() {
       });
   }, [
     database,
-    searchTerm,
+    deferredSearchTerm,
     qualityFilter,
     sourceFilter,
     sortBy,
@@ -931,6 +1010,25 @@ export default function PetsPage() {
     null,
   );
   const battleResearchPetCount = petRows.filter((row) => (row.pet.battle?.zones?.length || 0) > 0).length;
+  const hasActiveFilters = searchTerm.trim() !== "" || qualityFilter !== "ALL" || sourceFilter !== "ALL";
+  const scenarioIsModified =
+    petLevel !== 100 ||
+    masteryLevel !== 100 ||
+    evolutionStage !== 0 ||
+    evolutionStat !== "all" ||
+    patBonus ||
+    battleProfitMode !== "withSleep" ||
+    foodPolicy !== "standard" ||
+    beastmaster;
+  const scenarioLabel = `Scenario: Lv ${petLevel} / Mastery ${masteryLevel} / Evo ${evolutionStage}`;
+  const resultAnnouncement = petRows.length
+    ? `${petRows.length} pet${petRows.length === 1 ? "" : "s"} shown.`
+    : "No pets match the current filters.";
+  const clearPetFilters = () => {
+    setSearchTerm("");
+    setQualityFilter("ALL");
+    setSourceFilter("ALL");
+  };
 
   return (
     <main className="pets-page">
@@ -974,7 +1072,7 @@ export default function PetsPage() {
           <input
             aria-label="Search pets"
             value={searchTerm}
-            placeholder="Search pets, eggs, bosses..."
+            placeholder="Search pets, eggs, bosses, sources..."
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </label>
@@ -1001,7 +1099,7 @@ export default function PetsPage() {
           <div>
             <strong>Pet setup</strong>
             <span>
-              Lv {petLevel} · Mastery {masteryLevel} · Evo {evolutionStage} · {battleProfitMode === "noSleep" ? "No sleep" : "With sleep"}
+              Lv {petLevel} / Mastery {masteryLevel} / Evo {evolutionStage} / {battleProfitMode === "noSleep" ? "No sleep" : "With sleep"}
             </span>
           </div>
         </summary>
@@ -1012,11 +1110,21 @@ export default function PetsPage() {
           <PetSelect label="Evolution stat" value={evolutionStat} options={EVOLUTION_STAT_OPTIONS} onChange={setEvolutionStat} open={openPetSelect === "evolution"} onOpenChange={(open) => setOpenPetSelect(open ? "evolution" : null)} />
           <PetSelect label="Battle sample mode" value={battleProfitMode} options={BATTLE_PROFIT_OPTIONS} onChange={setBattleProfitMode} open={openPetSelect === "profit"} onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)} />
           <PetSelect label="Food" value={foodPolicy} options={FOOD_OPTIONS} onChange={setFoodPolicy} open={openPetSelect === "food"} onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)} />
-          <button className={`pet-toggle ${patBonus ? "active" : ""}`} onClick={() => setPatBonus((value) => !value)}>
+          <button
+            className={`pet-toggle ${patBonus ? "active" : ""}`}
+            aria-label="Toggle pet pat bonus"
+            aria-pressed={patBonus}
+            onClick={() => setPatBonus((value) => !value)}
+          >
             <HeartPulse size={16} />
             Pat +5%
           </button>
-          <button className={`pet-toggle ${beastmaster ? "active" : ""}`} onClick={() => setBeastmaster((value) => !value)}>
+          <button
+            className={`pet-toggle ${beastmaster ? "active" : ""}`}
+            aria-label="Toggle Beastmaster context"
+            aria-pressed={beastmaster}
+            onClick={() => setBeastmaster((value) => !value)}
+          >
             <PawPrint size={16} />
             Beastmaster
           </button>
@@ -1037,6 +1145,8 @@ export default function PetsPage() {
           {ownedPetCount > 0 ? (
             <button
               className={`pet-toggle ${sourceFilter === "OWNED" ? "active" : ""}`}
+              aria-label="Show owned pets from the active profile"
+              aria-pressed={sourceFilter === "OWNED"}
               onClick={() => {
                 setSourceFilter("OWNED");
                 setSearchTerm("");
@@ -1070,12 +1180,12 @@ export default function PetsPage() {
             </div>
             <div>
               <BarChart3 size={18} />
-              <span>Battle Data</span>
+              <span>Battle Samples</span>
               <strong>{battleResearchPetCount || "-"}</strong>
             </div>
             <div>
               <Database size={18} />
-              <span>Top Floor</span>
+              <span>Highest Listing</span>
               <strong>{bestMarket ? formatCompactGold(bestMarket.pet.exchange?.minPrice) : "-"}</strong>
             </div>
             <div>
@@ -1084,10 +1194,31 @@ export default function PetsPage() {
               <strong>{ownedPetCount ? `${ownedPetCount} pets / ${ownedSpeciesCount} species` : "-"}</strong>
             </div>
           </section>
+          <div className="pet-result-status" aria-live="polite" aria-atomic="true">
+            <span>{resultAnnouncement}</span>
+            <strong className={scenarioIsModified ? "modified" : undefined}>
+              {scenarioLabel}{scenarioIsModified ? " / Modified" : ""}
+            </strong>
+          </div>
 
           <div className="pets-content">
             <section className="pets-list" aria-label="Pet results">
-              {viewMode === "cards" ? (
+              {petRows.length === 0 ? (
+                <div className="pet-empty-state">
+                  <Search size={22} />
+                  <div>
+                    <strong>No pets found</strong>
+                    <span>
+                      {hasActiveFilters
+                        ? `Search "${searchTerm || "any"}" with ${qualityFilter === "ALL" ? "all qualities" : qualityLabel(qualityFilter)} and ${SOURCE_OPTIONS.find((option) => option.value === sourceFilter)?.label || "all sources"}.`
+                        : "The pet database loaded, but no rows matched the current view."}
+                    </span>
+                  </div>
+                  <button type="button" onClick={clearPetFilters} disabled={!hasActiveFilters}>
+                    Clear filters
+                  </button>
+                </div>
+              ) : viewMode === "cards" ? (
                 <div className="pets-card-grid">
                   {petRows.map((row) => (
                     <PetCard
@@ -1111,7 +1242,7 @@ export default function PetsPage() {
                         <th>Power</th>
                         <th>Move</th>
                         <th>Hunter</th>
-                        <th>Battle Data</th>
+                        <th>Battle Samples</th>
                         <th>Owned</th>
                         <th>Source</th>
                         <th>Exchange</th>
@@ -1119,23 +1250,18 @@ export default function PetsPage() {
                     </thead>
                     <tbody>
                       {petRows.map((row) => (
-                        <tr
-                          aria-label={`Open ${row.pet.name} pet details`}
-                          key={row.pet.name}
-                          onClick={() => setSelectedPetName(row.pet.name)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              setSelectedPetName(row.pet.name);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                        >
+                        <tr key={row.pet.name}>
                           <td>
                             <span className="table-pet-cell">
                               <PetImage pet={row.pet} />
-                              {row.pet.name}
+                              <span>{row.pet.name}</span>
+                              <button
+                                type="button"
+                                aria-label={`Open details for ${row.pet.name}`}
+                                onClick={() => setSelectedPetName(row.pet.name)}
+                              >
+                                Open details
+                              </button>
                             </span>
                           </td>
                           <td>{qualityLabel(row.pet.quality)}</td>
@@ -1308,30 +1434,58 @@ export default function PetsPage() {
                     Zone rows are deeper research data, not standalone pet ROI. They are useful for comparing pet fit, but actual profit depends more on the character doing combat than on the pet alone.
                   </p>
                   {selectedRow.pet.battle?.zones?.length ? (
-                    <details className="pet-battle-details">
-                      <summary>
-                        <span>{selectedRow.pet.battle.zones.length} zone{selectedRow.pet.battle.zones.length === 1 ? "" : "s"} with battle data</span>
-                        <strong>Open zone details</strong>
-                      </summary>
-                      <div className="pet-zone-list">
-                        {selectedRow.pet.battle.zones.map((zone) => (
-                          <button
-                            type="button"
-                            className="pet-zone-button"
-                            key={zone.zone}
-                            onClick={() => {
-                              setSelectedPetName(null);
-                              setSelectedBattle({ pet: selectedRow.pet, zone });
-                            }}
-                          >
-                            <span>{zone.zone}</span>
-                            <strong>
-                              {secondsToDuration(zone.battleTimeSeconds)} - {zone.enemiesBattled || "-"} enemies
-                            </strong>
-                          </button>
-                        ))}
-                      </div>
-                    </details>
+                    (() => {
+                      const bestZone = getBestBattleZone(selectedRow.pet, battleProfitMode, foodPolicy);
+                      return (
+                        <>
+                          <div className="pet-battle-preview">
+                            <div>
+                              <span>Best sample zone</span>
+                              <strong>{bestZone?.zone || "Sample pending"}</strong>
+                            </div>
+                            <div>
+                              <span>Selected mode</span>
+                              <strong>{BATTLE_PROFIT_OPTIONS.find((option) => option.value === battleProfitMode)?.label}</strong>
+                            </div>
+                            {bestZone ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPetName(null);
+                                  setSelectedBattle({ pet: selectedRow.pet, zone: bestZone });
+                                }}
+                              >
+                                Open best zone
+                              </button>
+                            ) : null}
+                          </div>
+                          <details className="pet-battle-details">
+                            <summary>
+                              <span>{selectedRow.pet.battle.zones.length} zone{selectedRow.pet.battle.zones.length === 1 ? "" : "s"} with battle samples</span>
+                              <strong>View all zones</strong>
+                            </summary>
+                            <div className="pet-zone-list">
+                              {selectedRow.pet.battle.zones.map((zone) => (
+                                <button
+                                  type="button"
+                                  className="pet-zone-button"
+                                  key={zone.zone}
+                                  onClick={() => {
+                                    setSelectedPetName(null);
+                                    setSelectedBattle({ pet: selectedRow.pet, zone });
+                                  }}
+                                >
+                                  <span>{zone.zone}</span>
+                                  <strong>
+                                    {secondsToDuration(zone.battleTimeSeconds)} - {zone.enemiesBattled || "-"} enemies
+                                  </strong>
+                                </button>
+                              ))}
+                            </div>
+                          </details>
+                        </>
+                      );
+                    })()
                   ) : (
                     <p className="pet-muted">No battle data is available for this pet yet.</p>
                   )}
@@ -1359,7 +1513,7 @@ export default function PetsPage() {
                   <PetImage pet={selectedBattle.pet} />
                   <div>
                     <span className="pet-quality-line" style={{ color: QUALITY_COLORS[selectedBattle.pet.quality] }}>
-                      Battle Data
+                      Battle Samples
                     </span>
                     <h2 id="pet-battle-title">{selectedBattle.pet.name}</h2>
                     <p>{selectedBattle.zone.zone}</p>

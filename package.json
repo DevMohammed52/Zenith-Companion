@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "dev:full": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
-    "build": "node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && next build",
+    "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
-    "rebuild": "node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs",
+    "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
     "scrape:priority": "node --env-file=.env scraper.mjs --priority --once",
     "scrape:pets": "node --env-file=.env scraper.mjs --pets-only --once",

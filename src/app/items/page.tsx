@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense, useDeferredValue } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowDownUp,
+  ArrowUp,
   BookOpen,
   Boxes,
   Check,
@@ -23,7 +25,7 @@ import {
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
 import ZenithIcon from '@/components/icons/ZenithIcon';
-import { getLoreForItem } from '@/data/lore';
+import { getAllLoreForItem } from '@/data/lore';
 import { formatItemTypeLabel, isForcedUntradableItem, isLegacyItem } from '@/lib/item-display';
 import {
   buildDropLocationOptions,
@@ -34,6 +36,7 @@ import {
 } from '@/lib/locations';
 import { getMarketLiquidity, getSafeMarketValue, type MarketLiquidityInfo } from '@/lib/market-pricing';
 import { getMerchantBuyPrice } from '@/constants';
+import { loadUsageMap } from '@/lib/usage-map';
 
 interface SearchIndexItem {
   id: string;
@@ -395,6 +398,8 @@ const formatGold = (value: number) => {
 
 const formatLabel = formatItemTypeLabel;
 const ITEM_DB_VIEW_STORAGE_KEY = 'zenith_items_view_mode';
+const DESKTOP_ITEM_BATCH_SIZE = 150;
+const MOBILE_ITEM_BATCH_SIZE = 80;
 
 function ItemsArchiveContent() {
   const searchParams = useSearchParams();
@@ -410,10 +415,12 @@ function ItemsArchiveContent() {
   const [sortDesc, setSortDesc] = useState(true);
   const [viewMode, setViewModeState] = useState<ViewMode>('table');
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(150);
+  const [visibleCount, setVisibleCount] = useState(DESKTOP_ITEM_BATCH_SIZE);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { openItem } = useItemModal();
   const { marketData, allItemsDb, loading } = useData();
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const itemBatchSize = isCompactViewport ? MOBILE_ITEM_BATCH_SIZE : DESKTOP_ITEM_BATCH_SIZE;
 
   useEffect(() => {
     try {
@@ -441,7 +448,7 @@ function ItemsArchiveContent() {
     let cancelled = false;
     Promise.all([
       fetch('/search-index.json').then(r => r.ok ? r.json() : Promise.reject(new Error('Search index unavailable'))),
-      fetch('/usage-map.json').then(r => r.ok ? r.json() : {}),
+      loadUsageMap<Record<string, UsageEntry>>(),
     ])
       .then(([indexData, usageData]) => {
         if (cancelled) return;
@@ -470,8 +477,8 @@ function ItemsArchiveContent() {
   }, [searchParams, openItem]);
 
   useEffect(() => {
-    setVisibleCount(150);
-  }, [searchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc, hideNonMarket]);
+    setVisibleCount(itemBatchSize);
+  }, [itemBatchSize, searchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, sortBy, sortDesc, hideNonMarket]);
 
   const enrichedItems = useMemo<EnrichedItem[]>(() => {
     return index.map(item => {
@@ -517,7 +524,7 @@ function ItemsArchiveContent() {
         liquidity,
         tradeable,
       });
-      const loreCount = getLoreForItem(item.name).length;
+      const loreCount = getAllLoreForItem(item.name).length;
       const requiredLevel = getRequiredLevel(full);
       const isSecondaryProduction = SECONDARY_PRODUCTION_TYPES.has(item.type)
         || (item.type === 'CONSTRUCTION_MATERIAL' && CONSTRUCTION_OUTPUT_PATTERN.test(item.name));
@@ -601,7 +608,7 @@ function ItemsArchiveContent() {
   }, [locationOptions, selectedLocation]);
 
   const filteredItems = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
+    const q = deferredSearchTerm.trim().toLowerCase();
     const tokens = q.split(/\s+/).filter(Boolean);
 
     const filtered = enrichedItems.filter(item => {
@@ -683,18 +690,23 @@ function ItemsArchiveContent() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [enrichedItems, searchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
+  }, [enrichedItems, deferredSearchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
 
   const visibleItems = filteredItems.slice(0, visibleCount);
   const showCardLayout = isCompactViewport || viewMode === 'cards';
   const showTableLayout = !isCompactViewport && viewMode === 'table';
 
   const stats = useMemo(() => {
-    const marketListed = enrichedItems.filter(i => i.hasMarket).length;
-    const craftable = enrichedItems.filter(i => i.hasRecipe).length;
-    const used = enrichedItems.filter(i => i.usedInCount > 0).length;
-    const loreLinked = enrichedItems.filter(i => i.hasLore).length;
-    return { marketListed, craftable, used, loreLinked };
+    return enrichedItems.reduce(
+      (counts, item) => {
+        if (item.hasMarket) counts.marketListed += 1;
+        if (item.hasRecipe) counts.craftable += 1;
+        if (item.usedInCount > 0) counts.used += 1;
+        if (item.hasLore) counts.loreLinked += 1;
+        return counts;
+      },
+      { marketListed: 0, craftable: 0, used: 0, loreLinked: 0 },
+    );
   }, [enrichedItems]);
 
   const handleSort = (key: SortKey) => {
@@ -721,6 +733,25 @@ function ItemsArchiveContent() {
   };
 
   const open = (item: EnrichedItem) => openItem(item.id);
+
+  const renderSortHeader = (key: SortKey, label: string, align: 'left' | 'right' = 'right') => {
+    const active = sortBy === key;
+    return (
+      <th className={align === 'left' ? 'left' : undefined} aria-sort={active ? (sortDesc ? 'descending' : 'ascending') : 'none'}>
+        <button
+          type="button"
+          className={`sort-header-button ${active ? 'active' : ''}`}
+          aria-label={`Sort by ${label}${active ? `, currently ${sortDesc ? 'descending' : 'ascending'}` : ''}`}
+          onClick={() => handleSort(key)}
+        >
+          <span>{label}</span>
+          <span aria-hidden="true" className="sort-indicator">
+            {active ? (sortDesc ? <ArrowDown size={13} /> : <ArrowUp size={13} />) : <ArrowDownUp size={13} />}
+          </span>
+        </button>
+      </th>
+    );
+  };
 
   const renderBadges = (item: EnrichedItem) => (
     <div className="item-badges">
@@ -786,7 +817,7 @@ function ItemsArchiveContent() {
         </div>
       </div>
 
-      <section aria-label="Item database summary" className="db-summary" tabIndex={0}>
+      <section aria-label="Item database summary" className="db-summary">
         <div>
           <span className="summary-label">Market listed</span>
           <strong>{stats.marketListed.toLocaleString()}</strong>
@@ -947,13 +978,13 @@ function ItemsArchiveContent() {
               <thead>
                 <tr>
                   <th className="left">Item</th>
-                  <th onClick={() => handleSort('type')}>Type</th>
-                  <th onClick={() => handleSort('quality')}>Quality</th>
-                  <th onClick={() => handleSort('requiredLevel')}>Level</th>
-                  <th onClick={() => handleSort('price')}>Market</th>
-                  <th onClick={() => handleSort('vendor')}>Vendor</th>
-                  <th onClick={() => handleSort('volume')}>Stable Vol</th>
-                  <th onClick={() => handleSort('usage')}>Usage</th>
+                  {renderSortHeader('type', 'Type')}
+                  {renderSortHeader('quality', 'Quality')}
+                  {renderSortHeader('requiredLevel', 'Level')}
+                  {renderSortHeader('price', 'Market')}
+                  {renderSortHeader('vendor', 'Vendor')}
+                  {renderSortHeader('volume', 'Stable Vol')}
+                  {renderSortHeader('usage', 'Usage')}
                   <th className="left">Tags</th>
                 </tr>
               </thead>
@@ -1040,8 +1071,8 @@ function ItemsArchiveContent() {
           )}
 
           {visibleItems.length < filteredItems.length && (
-            <button type="button" className="load-more" onClick={() => setVisibleCount(count => count + 150)}>
-              Load 150 more
+            <button type="button" className="load-more" onClick={() => setVisibleCount(count => count + itemBatchSize)}>
+              Load {itemBatchSize} more
             </button>
           )}
         </>
@@ -1241,6 +1272,12 @@ function ItemsArchiveContent() {
           right: auto;
           top: 100%;
         }
+        :global(.items-db-page .item-select.open-up .item-select-menu) {
+          bottom: 100%;
+          margin-bottom: 0.35rem;
+          margin-top: 0;
+          top: auto;
+        }
         :global(.items-db-page .item-select-option) {
           align-items: center;
           background: transparent;
@@ -1335,7 +1372,6 @@ function ItemsArchiveContent() {
         .items-table th {
           background: #050505;
           color: var(--text-muted);
-          cursor: pointer;
           font-size: 0.7rem;
           letter-spacing: 0.06em;
           padding: 0.85rem;
@@ -1345,6 +1381,46 @@ function ItemsArchiveContent() {
         }
         .items-table th.left {
           text-align: left;
+        }
+        .sort-header-button,
+        :global(.items-db-page .sort-header-button) {
+          align-items: center;
+          background: transparent;
+          border: 0;
+          color: inherit;
+          cursor: pointer;
+          display: inline-flex;
+          font: inherit;
+          font-weight: 900;
+          gap: 0.35rem;
+          justify-content: flex-end;
+          letter-spacing: inherit;
+          padding: 0;
+          text-align: inherit;
+          text-transform: inherit;
+          width: 100%;
+        }
+        .sort-header-button.active,
+        :global(.items-db-page .sort-header-button.active) {
+          color: var(--text-accent);
+        }
+        .sort-header-button:focus-visible,
+        :global(.items-db-page .sort-header-button:focus-visible) {
+          border-radius: 4px;
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.16);
+          outline: none;
+        }
+        .sort-indicator,
+        :global(.items-db-page .sort-indicator) {
+          align-items: center;
+          color: currentColor;
+          display: inline-flex;
+          flex: 0 0 auto;
+          height: 16px;
+          justify-content: center;
+          line-height: 1;
+          opacity: 0.75;
+          width: 16px;
         }
         .items-table td {
           background: rgba(255,255,255,0.012);
@@ -1791,6 +1867,7 @@ function ItemFilterPicker<T extends string>({
   const [open, setOpen] = useState(false);
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
+  const [placement, setPlacement] = useState<'down' | 'up'>('down');
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -1819,6 +1896,15 @@ function ItemFilterPicker<T extends string>({
   useEffect(() => {
     if (!open) return;
 
+    const updatePlacement = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setPlacement(spaceBelow < 340 && spaceAbove > spaceBelow ? 'up' : 'down');
+    };
+    updatePlacement();
+
     const handlePointerDown = (event: PointerEvent) => {
       if (pickerRef.current?.contains(event.target as Node)) return;
       setOpen(false);
@@ -1829,9 +1915,13 @@ function ItemFilterPicker<T extends string>({
 
     window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', updatePlacement);
+    window.addEventListener('scroll', updatePlacement, true);
     return () => {
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', updatePlacement);
+      window.removeEventListener('scroll', updatePlacement, true);
     };
   }, [open]);
 
@@ -1889,7 +1979,7 @@ function ItemFilterPicker<T extends string>({
   };
 
   return (
-    <div className={`item-select ${open ? 'open' : ''}`} ref={pickerRef}>
+    <div className={`item-select ${open ? 'open' : ''} ${open && placement === 'up' ? 'open-up' : ''}`} ref={pickerRef}>
       <button
         type="button"
         className="item-select-trigger"

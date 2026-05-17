@@ -62,6 +62,7 @@ export type EnrichedEnemy = {
   nextWeather: ForecastWeather | null;
   currentWeatherMatch: WeatherPreferenceKind;
   nextFavorableWeather: ForecastWeather | null;
+  searchText: string;
 };
 
 export type EnrichedResource = GatheredResourceSource & {
@@ -117,8 +118,7 @@ export function getWeatherTimeline(location: { forecast?: ForecastDay[] }) {
     .sort((a, b) => new Date(a.starts_at || 0).getTime() - new Date(b.starts_at || 0).getTime());
 }
 
-export function getCurrentWeather(location: { forecast?: ForecastDay[] }) {
-  const now = Date.now();
+export function getCurrentWeather(location: { forecast?: ForecastDay[] }, now = Date.now()) {
   const timeline = getWeatherTimeline(location);
   const current = timeline.find((weather) => {
     const start = safeDate(weather.starts_at)?.getTime() ?? 0;
@@ -218,9 +218,8 @@ function getLootEv(enemy: any, marketData: Record<string, any> | null | undefine
   }, 0);
 }
 
-function getNextFavorableWeather(preference: EnemyWeatherPreference | null, timeline: ForecastWeather[]) {
+function getNextFavorableWeather(preference: EnemyWeatherPreference | null, timeline: ForecastWeather[], now = Date.now()) {
   if (!preference) return null;
-  const now = Date.now();
   return timeline.find((weather) => {
     const start = safeDate(weather.starts_at)?.getTime() ?? 0;
     return start > now && isFavorableWeather(getWeatherPreferenceKind(preference, weather.name || weather.key));
@@ -231,10 +230,12 @@ export function buildEnrichedEnemies({
   staticData,
   worldLocations,
   marketData,
+  now = Date.now(),
 }: {
   staticData: Record<string, any> | null | undefined;
   worldLocations: WorldLocation[] | null | undefined;
   marketData?: Record<string, any> | null;
+  now?: number;
 }) {
   const preferenceLookup = buildPreferenceLookup();
   const locationLookup = buildLocationLookup(worldLocations);
@@ -243,14 +244,15 @@ export function buildEnrichedEnemies({
     const locationName = String(enemy.location?.name || "Unknown");
     const locationKey = normalizeLocationKey(enemy.location?.key || enemy.location?.name || enemy.location?.id);
     const location = locationLookup.get(locationKey) || locationLookup.get(`id:${enemy.location?.id}`) || null;
-    const { current, next, timeline } = location ? getCurrentWeather({ forecast: location.forecast as ForecastDay[] | undefined }) : { current: null, next: null, timeline: [] };
+    const { current, next, timeline } = location ? getCurrentWeather({ forecast: location.forecast as ForecastDay[] | undefined }, now) : { current: null, next: null, timeline: [] };
     const enemyId = Number.isFinite(Number(enemy.id)) ? Number(enemy.id) : null;
     const weatherPreference = (enemyId !== null ? preferenceLookup.get(`id:${enemyId}`) : null)
       || preferenceLookup.get(preferenceKey(enemy.name, locationName))
       || null;
     const currentWeatherMatch = getWeatherPreferenceKind(weatherPreference, current?.name || current?.key);
 
-    return {
+    const loot = Array.isArray(enemy.loot) ? enemy.loot : [];
+    const enriched = {
       id: enemyId,
       name: String(enemy.name || "Unknown"),
       key: normalizeLocationKey(enemy.name),
@@ -261,15 +263,31 @@ export function buildEnrichedEnemies({
       chanceOfLoot: Number(enemy.chance_of_loot || 0),
       locationName,
       locationKey,
-      loot: Array.isArray(enemy.loot) ? enemy.loot : [],
-      lootCount: Array.isArray(enemy.loot) ? enemy.loot.length : 0,
+      loot,
+      lootCount: loot.length,
       lootEv: getLootEv(enemy, marketData),
       weatherPreference,
       currentWeather: current,
       nextWeather: next,
       currentWeatherMatch,
-      nextFavorableWeather: getNextFavorableWeather(weatherPreference, timeline),
+      nextFavorableWeather: getNextFavorableWeather(weatherPreference, timeline, now),
+      searchText: "",
     } satisfies EnrichedEnemy;
+
+    enriched.searchText = [
+      enriched.name,
+      enriched.locationName,
+      enriched.currentWeather?.name || "",
+      enriched.nextWeather?.name || "",
+      ...(weatherPreference?.loves || []),
+      ...(weatherPreference?.likes || []),
+      ...(weatherPreference?.neutral || []),
+      ...(weatherPreference?.dislikes || []),
+      ...(weatherPreference?.hates || []),
+      ...loot.map((drop: any) => drop.name),
+    ].join(" ").toLowerCase();
+
+    return enriched;
   }).sort(compareEnemiesByProgression);
 }
 

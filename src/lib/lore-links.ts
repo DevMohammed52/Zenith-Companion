@@ -1,5 +1,6 @@
 import {
   LORE_ENTRIES,
+  LORE_ENTRY_BY_ID,
   type LoreEntry,
   type LoreItemLink,
   getLoreForItem,
@@ -103,7 +104,7 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
 
     for (const itemLink of getLoreForItem(input.name)) {
       for (const entryId of itemLink.entryIds) {
-        const entry = LORE_ENTRIES.find((candidate) => candidate.id === entryId);
+        const entry = LORE_ENTRY_BY_ID[entryId];
         if (!entry) continue;
         addHint(hints, {
           id: entry.id,
@@ -118,7 +119,7 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
 
     for (const alias of aliasLinks) {
       if (!normalizedName.includes(alias.needle)) continue;
-      const entry = LORE_ENTRIES.find((candidate) => candidate.id === alias.entryId);
+      const entry = LORE_ENTRY_BY_ID[alias.entryId];
       if (!entry) continue;
       addHint(hints, {
         id: entry.id,

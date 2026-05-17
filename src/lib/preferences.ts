@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { AssaultRank, DEFAULT_TOOL_SELECTIONS, ToolSelections } from "@/lib/skill-profit";
 
 export type ThemeName = "ember" | "forest" | "arcane" | "frost";
+export type MobileNavigationStyle = "standard" | "command";
+export type MobileCommandTriggerSide = "left" | "right";
 
 export type Preferences = {
   membership: boolean;
@@ -21,6 +23,8 @@ export type Preferences = {
   dexStat: number | "";
   defStat: number | "";
   combatStyle: string;
+  mobileNavigationStyle: MobileNavigationStyle;
+  mobileCommandTriggerSide: MobileCommandTriggerSide;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -39,6 +43,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   dexStat: 80,
   defStat: 80,
   combatStyle: "sword_shield",
+  mobileNavigationStyle: "standard",
+  mobileCommandTriggerSide: "left",
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";

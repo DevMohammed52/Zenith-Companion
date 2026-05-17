@@ -192,10 +192,17 @@
 }
 
 .toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 28rem);
+  gap: 0.5rem;
+  padding: 0.65rem;
+}
+
+.filterButtons {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.65rem;
+  min-width: 0;
 }
 
 .toolbar button {
@@ -211,6 +218,68 @@
   cursor: pointer;
 }
 
+.searchBox {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.searchBox > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.searchBox svg {
+  color: var(--text-muted);
+}
+
+.searchBox input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--text-primary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.searchBox input::placeholder {
+  color: var(--text-muted);
+}
+
+.searchBox:focus-within {
+  border-color: rgba(139, 92, 246, 0.42);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.12);
+}
+
+.searchBox button {
+  min-height: 2rem;
+  padding: 0 0.55rem;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.72rem;
+}
+
+.filterHelp {
+  grid-column: 1 / -1;
+  margin: 0.15rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
 .toolbar button[data-active="true"] {
   border-color: rgba(139, 92, 246, 0.42);
   color: var(--text-primary);
@@ -224,13 +293,15 @@
 .leaderRow:focus-visible,
 .contributorRow:focus-visible,
 .detailMapLink:focus-visible,
+.searchBox button:focus-visible,
 .toolbar button:focus,
 .zoneSelectButton:focus,
 .zoneMapLink:focus,
 .tabs button:focus,
 .leaderRow:focus,
 .contributorRow:focus,
-.detailMapLink:focus {
+.detailMapLink:focus,
+.searchBox button:focus {
   outline: 2px solid var(--text-accent);
   outline-offset: 3px;
 }
@@ -312,6 +383,12 @@
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.35);
   text-decoration: none;
+}
+
+.zoneMapLink:hover,
+.zoneMapLink:focus-visible {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .zoneBody {
@@ -644,6 +721,10 @@
   gap: 0.45rem;
 }
 
+.rowList[hidden] {
+  display: none;
+}
+
 .leaderRow,
 .contributorRow,
 .assaultRow {
@@ -711,6 +792,44 @@
   text-align: center;
 }
 
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 14rem;
+  padding: 1.25rem;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.emptyState strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.emptyState span {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.emptyState button {
+  align-self: center;
+  min-height: 2.35rem;
+  margin-top: 0.85rem;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(139, 92, 246, 0.42);
+  border-radius: 7px;
+  color: var(--text-primary);
+  background: rgba(139, 92, 246, 0.14);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
 @media (max-width: 1280px) {
   .layout,
   .globalGrid,
@@ -721,6 +840,7 @@
 
 @media (max-width: 900px) {
   .hero,
+  .toolbar,
   .statsGrid,
   .zoneGrid,
   .detailGrid,
@@ -743,6 +863,29 @@
 @media (max-width: 640px) {
   .page {
     padding-inline: 0.75rem;
+  }
+
+  .toolbar {
+    padding: 0.55rem;
+  }
+
+  .filterButtons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar button {
+    padding-inline: 0.5rem;
+  }
+
+  .zoneMapLink {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .globalGrid .panelBody {
+    max-height: 24rem;
+    overflow-y: auto;
   }
 
   .leaderRow,

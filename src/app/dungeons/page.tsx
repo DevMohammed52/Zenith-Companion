@@ -331,6 +331,15 @@ function getDungeonItemModifierSummary(option: DungeonItemModifier) {
   return parts.join(" - ");
 }
 
+function getDungeonRowLabel(row: any, hasProfile: boolean) {
+  const locationName = row.location?.name || "Unknown location";
+  const readiness = getReadinessText(row, hasProfile);
+  const duration = Math.round(Number(row.effectiveDurationMins || row.durationMins || 0));
+  const profit = formatGold(Number(row.netProfitPerRun || 0));
+  const shardValue = row.shardValue > 0 ? formatPlainGold(row.shardValue) : "no shard value";
+  return `${row.name}, level ${row.level_required || 0}, ${duration} minutes, ${row.dropsCount || 0} drops, ${locationName}, ${readiness}, ${profit} EV per run, ${shardValue} per shard. Open dungeon details.`;
+}
+
 function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any) {
   if (!profile) return 0;
   const dungeonLocation = String(dungeon?.location?.name || dungeon?.location || "").trim();
@@ -744,7 +753,9 @@ function DungeonsContent() {
     const bestProfit = rows.reduce((best, row) => row.netProfitPerRun > (best?.netProfitPerRun ?? -Infinity) ? row : best, null as any);
     const bestReady = readyRows.reduce((best, row) => row.netProfitPerRun > (best?.netProfitPerRun ?? -Infinity) ? row : best, null as any);
     const cheapest = rows.reduce((best, row) => row.entryCost < (best?.entryCost ?? Infinity) ? row : best, null as any);
-    return { readyRows, bestProfit, bestReady, cheapest };
+    const sensitiveRows = rows.filter((row) => Number(row.marketSensitiveDropCount || 0) > 0);
+    const sensitiveDropCount = sensitiveRows.reduce((total, row) => total + Number(row.marketSensitiveDropCount || 0), 0);
+    return { readyRows, bestProfit, bestReady, cheapest, sensitiveRows, sensitiveDropCount };
   }, [rows]);
 
   const actionLimitSummary = useMemo(() => {
@@ -828,6 +839,11 @@ function DungeonsContent() {
           <p>
             Compare entry readiness, expected value, run costs, speed-style dungeon efficiency, gold per shard from cost and payout, and magic-find adjusted EV.
           </p>
+          {summary.sensitiveDropCount > 0 && (
+            <p className="dungeon-risk-note">
+              Modeled market EV includes {summary.sensitiveDropCount} gear or mythic-style drop{summary.sensitiveDropCount === 1 ? "" : "s"} with thin-market risk. Use Vendor, Manual, or Exclude before treating these as fast-sale profit.
+            </p>
+          )}
         </div>
         <div className="dungeon-command-stats">
           <div><span>Ready</span><strong>{activeProfile ? `${summary.readyRows.length}/${rows.length}` : "No profile"}</strong></div>
@@ -915,7 +931,7 @@ function DungeonsContent() {
         >
           <span className="dungeon-check-box">{includeMagicFindEv && <Check size={13} />}</span>
           <span>
-            <strong>Apply dungeon MF</strong>
+            <strong>Apply MF</strong>
             <small>Adjust loot EV with profile and completion magic find.</small>
           </span>
         </button>
@@ -931,6 +947,9 @@ function DungeonsContent() {
                 : "No item effect"}
             </strong>
             <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
+            {dungeonMagicFindItemOptions.length === 0 && (
+              <small className="dungeon-empty-menu-hint">No tradeable temporary MF item is known in the current data. Select special gear from Profiles.</small>
+            )}
           </div>
           <div className="dungeon-modifier-pickers">
             <DungeonItemEffectPicker
@@ -1017,6 +1036,7 @@ function DungeonsContent() {
 
       <section className="table-wrapper dungeon-table-wrapper">
         <div className="desktop-only">
+          <p className="dungeon-scroll-hint">Scroll table horizontally for completion and drop columns.</p>
           <div className="table-container dungeon-table">
             <table>
               <thead>
@@ -1034,7 +1054,7 @@ function DungeonsContent() {
               <tbody>
                 {rows.map((row) => (
                   <tr
-                    aria-label={`Open ${row.name} dungeon details`}
+                    aria-label={getDungeonRowLabel(row, Boolean(activeProfile))}
                     key={row.id || row.name}
                     className="clickable-row"
                     onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
@@ -1119,10 +1139,18 @@ function DungeonsContent() {
             )}
             {rows.map((row) => (
               <div
-                aria-label={`Open ${row.name} dungeon details`}
+                aria-label={getDungeonRowLabel(row, Boolean(activeProfile))}
                 key={row.id || row.name}
                 className="dungeon-card"
                 onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedDungeonKey(getDungeonKey(row));
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="dungeon-card-top">
                   <button
@@ -1241,6 +1269,7 @@ function DungeonsContent() {
                   <div className="dungeon-detail-row"><span>Dungeoneering EXP</span><strong>{formatNumber(selectedDungeon.dungeoneeringExp)}</strong></div>
                   <div className="dungeon-detail-row"><span>Shards</span><strong>{formatNumber(selectedDungeon.shardCount)}</strong></div>
                   <div className="dungeon-detail-row"><span>Gold / shard</span><strong>{selectedDungeon.shardValue > 0 ? `${formatPlainGold(selectedDungeon.shardValue)} each` : "-"}</strong></div>
+                  <p className="dungeon-model-note">Gold per shard = entry cost / shards from dungeon data.</p>
                   <div className="dungeon-detail-row"><span>Completion requirement</span><strong>{selectedDungeon.completedRuns || 0} / {selectedDungeon.completionRequirement || 0}</strong></div>
                   <div className="dungeon-detail-row"><span>This dungeon MF</span><strong>{selectedDungeon.completionMagicFindActive ? "+1% active" : "Not active"}</strong></div>
                   <div className="dungeon-detail-row"><span>Total completion MF</span><strong>+{selectedDungeon.completedDungeonBonus}%</strong></div>
@@ -1252,6 +1281,9 @@ function DungeonsContent() {
                 <section className="dungeon-modal-panel">
                   <h3><Coins size={15} /> Cost Model</h3>
                   <p className="dungeon-model-note">Craft paths are modeled value and may require your own skill/materials or a trusted service.</p>
+                  {selectedDungeon.marketSensitiveDropCount > 0 && (
+                    <p className="dungeon-model-note risk">This EV includes {selectedDungeon.marketSensitiveDropCount} sensitive drop{selectedDungeon.marketSensitiveDropCount === 1 ? "" : "s"}; modeled market value may not sell quickly.</p>
+                  )}
                   <div className="dungeon-detail-row"><span>Queued action entry cost</span><strong>{formatPlainGold(selectedDungeon.idleActionCost)}</strong></div>
                   <div className="dungeon-detail-row"><span>Drop value mode</span><strong>{DROP_VALUATION_LABELS[selectedDungeon.dropValuationMode as DungeonDropValuationMode]}</strong></div>
                   <div className="dungeon-detail-row"><span>Sensitive drops</span><strong>{selectedDungeon.marketSensitiveDropCount > 0 ? `${selectedDungeon.marketSensitiveDropCount} checked` : "None"}</strong></div>
@@ -1395,6 +1427,15 @@ function DungeonsContent() {
           color: var(--text-muted);
           max-width: 620px;
           line-height: 1.5;
+        }
+        .dungeon-risk-note {
+          border: 1px solid color-mix(in srgb, #f6c85f, transparent 65%);
+          border-radius: 7px;
+          background: color-mix(in srgb, #f6c85f, transparent 92%);
+          color: #f8d983 !important;
+          font-size: 0.82rem;
+          font-weight: 750;
+          padding: 0.6rem 0.7rem;
         }
         .dungeon-command-stats,
         .dungeon-insights {
@@ -1636,6 +1677,10 @@ function DungeonsContent() {
           color: var(--text-muted);
           line-height: 1.35;
         }
+        .dungeon-empty-menu-hint {
+          border-top: 1px solid rgba(255,255,255,0.08);
+          padding-top: 0.45rem;
+        }
         .dungeon-modifier-pickers {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1843,10 +1888,30 @@ function DungeonsContent() {
           transform: none;
         }
         .dungeon-table-wrapper {
+          position: relative;
           margin-top: 1rem;
           max-width: 100%;
           min-width: 0;
           overflow: hidden;
+        }
+        .dungeon-scroll-hint {
+          margin: 0 0 0.45rem;
+          color: var(--text-muted);
+          font-size: 0.72rem;
+          font-weight: 850;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+        .dungeon-table-wrapper::after {
+          content: "";
+          position: absolute;
+          top: 1.9rem;
+          right: 0;
+          bottom: 0;
+          z-index: 2;
+          width: 1.6rem;
+          pointer-events: none;
+          background: linear-gradient(90deg, rgba(8,11,18,0), rgba(8,11,18,0.58));
         }
         .dungeon-table {
           max-width: 100%;
@@ -2128,6 +2193,13 @@ function DungeonsContent() {
           font-weight: 650;
           line-height: 1.45;
           margin: -0.25rem 0 0.55rem;
+        }
+        .dungeon-model-note.risk {
+          color: #f8d983;
+          border: 1px solid color-mix(in srgb, #f6c85f, transparent 70%);
+          border-radius: 6px;
+          background: color-mix(in srgb, #f6c85f, transparent 93%);
+          padding: 0.55rem 0.65rem;
         }
         .dungeon-detail-row {
           display: flex;

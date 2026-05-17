@@ -17,6 +17,7 @@ import {
   Shield,
   Sparkles,
   UserRound,
+  X,
 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles } from "@/lib/profiles";
@@ -67,6 +68,19 @@ function formatPageList(pages?: number[]) {
   const sorted = Array.from(new Set(pages)).sort((a, b) => a - b);
   if (sorted.length <= 6) return sorted.join(", ");
   return `${sorted.slice(0, 5).join(", ")} +${sorted.length - 5}`;
+}
+
+function formatWarningKey(value: string) {
+  const normalized = value.trim();
+  const museumPage = normalized.match(/^museum\.page\.(\d+)$/i);
+  if (museumPage) return `Museum page ${museumPage[1]} was skipped`;
+  if (/^metrics\.private$/i.test(normalized)) return "Metrics were private";
+  if (/^museum\.private$/i.test(normalized)) return "Museum was private";
+  return normalized
+    .replace(/^museum\./i, "Museum ")
+    .replace(/^metrics\./i, "Metrics ")
+    .replace(/[._-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function categoryTone(category: MuseumCategory) {
@@ -145,7 +159,7 @@ function MuseumItemCard({ item }: { item: MuseumItem }) {
   return (
     <article className={`museum-item tone-${categoryTone(item.category)}`}>
       <div className="museum-item-art">
-        {item.imageUrl ? <img src={item.imageUrl} alt={item.name} loading="lazy" /> : <Icon size={28} aria-hidden="true" />}
+        {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <Icon size={28} aria-hidden="true" />}
       </div>
       <div className="museum-item-body">
         <div>
@@ -193,6 +207,7 @@ export default function MuseumPage() {
     ...(importSource?.missingOrPrivate || []),
   ];
   const uniqueWarnings = Array.from(new Set(statusWarnings));
+  const readableWarnings = uniqueWarnings.map(formatWarningKey);
   const expectedItemCount = museum?.itemCount || museum?.pagination?.total || 0;
   const hasCountMismatch = Boolean(expectedItemCount && items.length && expectedItemCount !== items.length);
   const coverageText = museum?.pagination
@@ -200,13 +215,17 @@ export default function MuseumPage() {
     : museum?.pageCount
       ? `${formatNumber(museum.pageCount)} pages`
       : "No page data";
+  const hasActiveFilters = Boolean(query.trim()) || category !== "ALL";
+  const noMatchTitle = category === "ALL"
+    ? `No museum items match "${query.trim()}"`
+    : `No ${museumCategoryLabel(category)} match "${query.trim()}"`;
 
   return (
     <main className="container museum-page">
       <section className="museum-hero">
         <div className="museum-hero-copy">
           <span className="eyebrow"><ZenithIcon name="museum" size={14} /> Museum</span>
-          <h1>Collection Vault</h1>
+          <h1>Museum Collection</h1>
           <p>Browse the museum items saved from your active profile, with category counts, search, and collection quantity totals.</p>
         </div>
         <div className="museum-profile-card" aria-label="Active profile museum source">
@@ -215,58 +234,12 @@ export default function MuseumPage() {
           <small>{activeProfile?.className || "Create or import a profile first"}</small>
           <div className="museum-profile-links">
             <Link href="/profiles#profile-transfer">Import source</Link>
-            <Link href="/pets/owned">Owned pets</Link>
+            {summaries.some((summary) => summary.category === "PETS" && summary.itemCount > 0) && (
+              <Link href="/pets/owned">Owned pets</Link>
+            )}
           </div>
         </div>
       </section>
-
-      <section className="museum-source-strip" aria-label="Museum import state">
-        <div>
-          <Clock3 size={16} aria-hidden="true" />
-          <span>Imported</span>
-          <strong>{formatDateTime(museum?.importedAt)}</strong>
-        </div>
-        <div>
-          <Database size={16} aria-hidden="true" />
-          <span>Game refresh</span>
-          <strong>{formatDateTime(museum?.endpointUpdatedAt)}</strong>
-        </div>
-        <div>
-          <UserRound size={16} aria-hidden="true" />
-          <span>Character</span>
-          <strong>{sourceTail ? `...${sourceTail}` : "Waiting for profile import"}</strong>
-        </div>
-        <div className={`museum-status status-${museum?.status || "none"}`}>
-          <CheckCircle2 size={16} aria-hidden="true" />
-          <span>Status</span>
-          <strong>{museumStatusLabel(museum?.status)}</strong>
-        </div>
-        <div>
-          <BookOpen size={16} aria-hidden="true" />
-          <span>Pages saved</span>
-          <strong>{coverageText}</strong>
-        </div>
-        <div className={museum?.pagination?.failedPages?.length ? "museum-status status-partial" : ""}>
-          <AlertTriangle size={16} aria-hidden="true" />
-          <span>Pages skipped</span>
-          <strong>{formatPageList(museum?.pagination?.failedPages)}</strong>
-        </div>
-      </section>
-
-      {(museum?.errorMessage || uniqueWarnings.length > 0 || hasCountMismatch) && (
-        <section className="museum-warning-strip" aria-label="Museum import notes">
-          <AlertTriangle size={17} aria-hidden="true" />
-          <div>
-            {museum?.errorMessage && <strong>{museum.errorMessage}</strong>}
-            {hasCountMismatch && (
-              <strong>{formatNumber(items.length)} saved items, {formatNumber(expectedItemCount)} expected from import metadata.</strong>
-            )}
-            {uniqueWarnings.length > 0 && (
-              <p>{uniqueWarnings.join(" / ")}</p>
-            )}
-          </div>
-        </section>
-      )}
 
       {!loaded ? (
         <section className="museum-empty" role="status">
@@ -279,34 +252,10 @@ export default function MuseumPage() {
           <EmptyIcon size={30} aria-hidden="true" />
           <h2>{emptyState.title}</h2>
           <p>{emptyState.body}</p>
-          <Link href="/profiles">Open Profiles</Link>
+          <Link href="/profiles#profile-transfer">Import or refresh profile</Link>
         </section>
       ) : (
         <>
-          <section className="museum-summary" aria-label="Museum summary">
-            <div className="museum-summary-main">
-              <span>Total collected</span>
-              <strong>{formatNumber(items.length)}</strong>
-              <small>{formatNumber(totalQuantity)} total quantity{expectedItemCount ? ` / ${formatNumber(expectedItemCount)} expected` : ""}</small>
-            </div>
-            {summaries.map((summary) => {
-              const Icon = CATEGORY_ICONS[summary.category];
-              return (
-                <button
-                  key={summary.category}
-                  type="button"
-                  className={`museum-summary-card ${category === summary.category ? "active" : ""}`}
-                  onClick={() => setCategory(summary.category)}
-                >
-                  <Icon size={16} aria-hidden="true" />
-                  <span>{summary.label}</span>
-                  <strong>{formatNumber(summary.itemCount)}</strong>
-                  <small>{formatNumber(summary.totalQuantity)} qty</small>
-                </button>
-              );
-            })}
-          </section>
-
           <section className="museum-controls" aria-label="Museum filters">
             <div className="museum-search">
               <label htmlFor="museum-search-input">Search</label>
@@ -319,16 +268,34 @@ export default function MuseumPage() {
                   placeholder="Name, category, or ID..."
                   autoComplete="off"
                 />
+                {query && (
+                  <button
+                    type="button"
+                    className="museum-search-clear"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear museum search"
+                  >
+                    <X size={15} aria-hidden="true" />
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="museum-segment" aria-label="Category filter">
-              <button type="button" className={category === "ALL" ? "active" : ""} onClick={() => setCategory("ALL")}>All</button>
+            <div className="museum-segment" role="group" aria-label="Category filter">
+              <button
+                type="button"
+                className={category === "ALL" ? "active" : ""}
+                aria-pressed={category === "ALL"}
+                onClick={() => setCategory("ALL")}
+              >
+                All
+              </button>
               {MUSEUM_CATEGORIES.map((option) => (
                 <button
                   key={option}
                   type="button"
                   className={category === option ? "active" : ""}
+                  aria-pressed={category === option}
                   onClick={() => setCategory(option)}
                 >
                   {museumCategoryLabel(option)}
@@ -336,12 +303,13 @@ export default function MuseumPage() {
               ))}
             </div>
 
-            <div className="museum-sort" aria-label="Sort controls">
+            <div className="museum-sort" role="group" aria-label="Sort controls">
               {SORT_OPTIONS.map((option) => (
                 <button
                   key={option.key}
                   type="button"
                   className={sortKey === option.key ? "active" : ""}
+                  aria-pressed={sortKey === option.key}
                   onClick={() => setSortKey(option.key)}
                 >
                   {option.label}
@@ -352,11 +320,101 @@ export default function MuseumPage() {
                 className="museum-sort-direction"
                 onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}
                 aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                aria-pressed={sortDirection === "desc"}
               >
                 <ArrowDownUp size={15} aria-hidden="true" />
                 {sortDirection === "asc" ? "Asc" : "Desc"}
               </button>
             </div>
+          </section>
+
+          {hasActiveFilters && (
+            <section className="museum-filter-chips" aria-label="Active museum filters">
+              {query.trim() && <span>Search: {query.trim()}</span>}
+              {category !== "ALL" && <span>Category: {museumCategoryLabel(category)}</span>}
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setCategory("ALL");
+                }}
+              >
+                Clear all
+              </button>
+            </section>
+          )}
+
+          <section className="museum-source-strip" aria-label="Museum import state">
+            <div className={`museum-status status-${museum?.status || "none"}`}>
+              <CheckCircle2 size={16} aria-hidden="true" />
+              <span>Status</span>
+              <strong>{museumStatusLabel(museum?.status)}</strong>
+            </div>
+            <div>
+              <Clock3 size={16} aria-hidden="true" />
+              <span>Imported</span>
+              <strong>{formatDateTime(museum?.importedAt)}</strong>
+            </div>
+            <details className="museum-import-details">
+              <summary>Import details</summary>
+              <div>
+                <span>Game refresh</span>
+                <strong>{formatDateTime(museum?.endpointUpdatedAt)}</strong>
+              </div>
+              <div>
+                <span>Character</span>
+                <strong>{sourceTail ? `...${sourceTail}` : "Waiting for profile import"}</strong>
+              </div>
+              <div>
+                <span>Pages saved</span>
+                <strong>{coverageText}</strong>
+              </div>
+              <div className={museum?.pagination?.failedPages?.length ? "museum-status status-partial" : ""}>
+                <span>Pages skipped</span>
+                <strong>{formatPageList(museum?.pagination?.failedPages)}</strong>
+              </div>
+            </details>
+          </section>
+
+          {(museum?.errorMessage || uniqueWarnings.length > 0 || hasCountMismatch) && (
+            <section className="museum-warning-strip" aria-label="Museum import notes">
+              <AlertTriangle size={17} aria-hidden="true" />
+              <div>
+                {museum?.errorMessage && <strong>{museum.errorMessage}</strong>}
+                {hasCountMismatch && (
+                  <strong>{formatNumber(items.length)} saved items, {formatNumber(expectedItemCount)} expected from import metadata.</strong>
+                )}
+                {readableWarnings.length > 0 && <p>{readableWarnings.slice(0, 2).join(" / ")}</p>}
+                {uniqueWarnings.length > 0 && (
+                  <details className="museum-technical-details">
+                    <summary>Technical details</summary>
+                    <p>{uniqueWarnings.join(" / ")}</p>
+                  </details>
+                )}
+              </div>
+            </section>
+          )}
+
+          <section className="museum-summary" aria-label="Museum summary">
+            <div className="museum-summary-main">
+              <span>Total collected</span>
+              <strong>{formatNumber(items.length)}</strong>
+              <small>{formatNumber(totalQuantity)} total quantity{expectedItemCount ? ` / ${formatNumber(expectedItemCount)} expected` : ""}</small>
+            </div>
+            {summaries.map((summary) => {
+              const Icon = CATEGORY_ICONS[summary.category];
+              return (
+                <article
+                  key={summary.category}
+                  className="museum-summary-card"
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  <span>{summary.label}</span>
+                  <strong>{formatNumber(summary.itemCount)}</strong>
+                  <small>{formatNumber(summary.totalQuantity)} qty</small>
+                </article>
+              );
+            })}
           </section>
 
           <section className="museum-results-header" aria-live="polite">
@@ -379,7 +437,7 @@ export default function MuseumPage() {
           ) : (
             <section className="museum-empty compact" role="status">
               <Search size={24} aria-hidden="true" />
-              <h2>No matching museum items</h2>
+              <h2>{query.trim() ? noMatchTitle : "No matching museum items"}</h2>
               <p>Adjust the search text or category filter.</p>
             </section>
           )}
@@ -417,6 +475,7 @@ export default function MuseumPage() {
         .museum-summary-main,
         .museum-summary-card,
         .museum-controls,
+        .museum-filter-chips,
         .museum-results-header,
         .museum-item {
           border: 1px solid var(--border-subtle);
@@ -517,11 +576,12 @@ export default function MuseumPage() {
         .museum-source-strip {
           display: grid;
           gap: 0.7rem;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: minmax(180px, 0.65fr) minmax(220px, 0.85fr) minmax(260px, 1.5fr);
           padding: 0.8rem;
         }
 
-        .museum-source-strip > div {
+        .museum-source-strip > div,
+        .museum-import-details {
           align-items: center;
           background: rgba(0,0,0,0.18);
           border: 1px solid rgba(255,255,255,0.055);
@@ -530,6 +590,29 @@ export default function MuseumPage() {
           gap: 0.2rem 0.55rem;
           grid-template-columns: auto minmax(0, 1fr);
           padding: 0.75rem;
+        }
+
+        .museum-import-details {
+          align-items: stretch;
+          grid-template-columns: 1fr;
+        }
+
+        .museum-import-details summary,
+        .museum-technical-details summary {
+          color: #fff;
+          cursor: pointer;
+          font-weight: 800;
+          list-style-position: inside;
+        }
+
+        .museum-import-details[open] {
+          gap: 0.65rem;
+        }
+
+        .museum-import-details div {
+          display: grid;
+          gap: 0.2rem;
+          min-width: 0;
         }
 
         .museum-source-strip svg {
@@ -569,6 +652,15 @@ export default function MuseumPage() {
 
         .museum-warning-strip p {
           max-width: none;
+        }
+
+        .museum-technical-details {
+          margin-top: 0.45rem;
+        }
+
+        .museum-technical-details p {
+          margin-top: 0.35rem;
+          overflow-wrap: anywhere;
         }
 
         .museum-empty {
@@ -623,15 +715,7 @@ export default function MuseumPage() {
         }
 
         .museum-summary-card {
-          color: inherit;
-          cursor: pointer;
           min-height: 112px;
-        }
-
-        .museum-summary-card:hover,
-        .museum-summary-card.active {
-          border-color: var(--border-focus);
-          background: color-mix(in srgb, var(--text-accent), transparent 90%);
         }
 
         .museum-summary-main strong,
@@ -685,8 +769,30 @@ export default function MuseumPage() {
           min-height: 44px;
           min-width: 0;
           outline: none;
-          padding: 0 0.85rem 0 2.45rem;
+          padding: 0 2.55rem 0 2.45rem;
           width: 100%;
+        }
+
+        .museum-search-clear {
+          align-items: center;
+          background: transparent;
+          border: 0;
+          border-radius: 7px;
+          color: var(--text-muted);
+          cursor: pointer;
+          display: inline-flex;
+          height: 2rem;
+          justify-content: center;
+          position: absolute;
+          right: 0.45rem;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 2rem;
+        }
+
+        .museum-search-clear:hover {
+          background: rgba(255,255,255,0.08);
+          color: #fff;
         }
 
         .museum-search > div:focus-within {
@@ -728,6 +834,39 @@ export default function MuseumPage() {
 
         .museum-sort-direction {
           color: #fff !important;
+        }
+
+        .museum-filter-chips {
+          align-items: center;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          padding: 0.65rem 0.75rem;
+        }
+
+        .museum-filter-chips span,
+        .museum-filter-chips button {
+          align-items: center;
+          background: rgba(0,0,0,0.24);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          color: var(--text-muted);
+          display: inline-flex;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 800;
+          min-height: 2rem;
+          padding: 0 0.7rem;
+        }
+
+        .museum-filter-chips button {
+          color: #fff;
+          cursor: pointer;
+        }
+
+        .museum-filter-chips button:hover {
+          border-color: var(--border-focus);
+          background: color-mix(in srgb, var(--text-accent), transparent 86%);
         }
 
         .museum-results-header {

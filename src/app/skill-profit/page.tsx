@@ -2,6 +2,9 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowDown,
+  ArrowDownUp,
+  ArrowUp,
   BarChart3,
   Check,
   ChevronDown,
@@ -97,6 +100,8 @@ const DEFAULT_STATE: PersistedState = {
   essenceOpen: false,
 };
 
+const MOBILE_RESULT_BATCH_SIZE = 80;
+
 const SORT_LABELS: Record<SkillProfitSortKey, string> = {
   name: "Item",
   skill: "Skill",
@@ -137,6 +142,10 @@ export default function SkillProfitPage() {
   const [minVolumeDraft, setMinVolumeDraft] = useState(String(DEFAULT_STATE.minVolume));
   const [ascensionOpen, setAscensionOpen] = useState(DEFAULT_STATE.ascensionOpen);
   const [essenceOpen, setEssenceOpen] = useState(DEFAULT_STATE.essenceOpen);
+  const [mobileSetupOpen, setMobileSetupOpen] = useState(false);
+  const [compactResults, setCompactResults] = useState(false);
+  const [visibleRowLimit, setVisibleRowLimit] = useState(MOBILE_RESULT_BATCH_SIZE);
+  const [includeForgeInfoRows, setIncludeForgeInfoRows] = useState(false);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
   const [gearData, setGearData] = useState<GearData | null>(null);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
@@ -187,6 +196,14 @@ export default function SkillProfitPage() {
   useEffect(() => {
     setMinVolumeDraft(String(minVolume));
   }, [minVolume]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 860px)");
+    const syncCompactResults = () => setCompactResults(media.matches);
+    syncCompactResults();
+    media.addEventListener("change", syncCompactResults);
+    return () => media.removeEventListener("change", syncCompactResults);
+  }, []);
 
   useEffect(() => {
     if (!preferencesLoaded || !profilesLoaded || !loadedStoredState) return;
@@ -389,6 +406,7 @@ export default function SkillProfitPage() {
 
   const rowModel = useMemo(() => {
     const normalizedSearch = deferredSearchTerm.trim().toLowerCase();
+    const searchTokens = getSearchTokens(normalizedSearch);
     const topBySkill = new Map<SkillName, SkillProfitRow>();
     let topOverall: SkillProfitRow | null = null;
 
@@ -406,7 +424,8 @@ export default function SkillProfitPage() {
 
     const filtered = rows
       .filter((row) => activeSkill === "All" || row.skill === activeSkill)
-      .filter((row) => !normalizedSearch || row.name.toLowerCase().includes(normalizedSearch))
+      .filter((row) => row.skill !== "Forge" || activeSkill === "Forge" || includeForgeInfoRows)
+      .filter((row) => rowMatchesSearch(row, searchTokens))
       .sort((a, b) => {
         if (activeSkill === "All" && a.skill !== b.skill) {
           if (a.skill === "Forge") return 1;
@@ -424,7 +443,16 @@ export default function SkillProfitPage() {
     for (const row of rows) counts.set(row.skill, (counts.get(row.skill) || 0) + 1);
 
     return { filtered, topBySkill, topOverall, counts };
-  }, [activeSkill, deferredSearchTerm, minVolume, rows, sortDesc, sortKey]);
+  }, [activeSkill, deferredSearchTerm, includeForgeInfoRows, minVolume, rows, sortDesc, sortKey]);
+
+  useEffect(() => {
+    setVisibleRowLimit(MOBILE_RESULT_BATCH_SIZE);
+  }, [activeSkill, deferredSearchTerm, minVolume, sortDesc, sortKey]);
+
+  const visibleRows = compactResults
+    ? rowModel.filtered.slice(0, visibleRowLimit)
+    : rowModel.filtered;
+  const hiddenRowCount = Math.max(0, rowModel.filtered.length - visibleRows.length);
 
   const buffTotals = useMemo(
     () => getBuffTotals(effectiveSettings, activeSkill !== "Construction", activeSkill),
@@ -591,7 +619,7 @@ export default function SkillProfitPage() {
   };
 
   return (
-    <main className={`container ${styles.shell}`}>
+    <main className={`container ${styles.shell} ${mobileSetupOpen ? styles.mobileSetupOpen : styles.mobileSetupCollapsed}`}>
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <div className={styles.eyebrow}>Skill Profit Finder</div>
@@ -613,6 +641,27 @@ export default function SkillProfitPage() {
               : housingWindowSub}
           />
         </div>
+      </section>
+
+      <section className={styles.mobileSetupSummary} aria-label="Profile and buff setup summary">
+        <div>
+          <strong>Profile and buffs</strong>
+          <span>
+            {activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}
+            {" - "}
+            {activeEssenceCount > 0 ? `${activeEssenceCount} essence${activeEssenceCount === 1 ? "" : "s"}` : "No essences"}
+            {" - "}
+            {selectedBuffs.length}/5 ascension
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-expanded={mobileSetupOpen}
+          onClick={() => setMobileSetupOpen((open) => !open)}
+        >
+          {mobileSetupOpen ? "Hide setup" : "Edit setup"}
+          <ChevronDown size={16} className={mobileSetupOpen ? styles.chevronOpen : ""} />
+        </button>
       </section>
 
       <section className={`${styles.toolPanel} ${activeDropdownLayer === "tools" ? styles.dropdownLayerActive : ""}`}>
@@ -692,7 +741,7 @@ export default function SkillProfitPage() {
             aria-label="Search skill profit items"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search item"
+            placeholder="Search item or material"
           />
         </div>
         <div className={styles.numberField}>
@@ -712,6 +761,7 @@ export default function SkillProfitPage() {
             min={0}
             max={15}
             value={poolExpDraft}
+            placeholder="0"
             onChange={(event) => {
               const rawValue = event.target.value;
               setPoolExpDraft(rawValue);
@@ -719,7 +769,10 @@ export default function SkillProfitPage() {
               patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(rawValue) || 0)) });
             }}
             onBlur={() => {
-              if (poolExpDraft === "") setPoolExpDraft(String(settings.energizingPoolExp));
+              if (poolExpDraft === "") {
+                patchSettings({ energizingPoolExp: 0 });
+                setPoolExpDraft("0");
+              }
             }}
           />
         </label>
@@ -749,6 +802,7 @@ export default function SkillProfitPage() {
             type="number"
             min={0}
             value={minVolumeDraft}
+            placeholder="0"
             onChange={(event) => {
               const rawValue = event.target.value;
               setMinVolumeDraft(rawValue);
@@ -756,7 +810,10 @@ export default function SkillProfitPage() {
               setMinVolume(Math.max(0, Number(rawValue) || 0));
             }}
             onBlur={() => {
-              if (minVolumeDraft === "") setMinVolumeDraft(String(minVolume));
+              if (minVolumeDraft === "") {
+                setMinVolume(0);
+                setMinVolumeDraft("0");
+              }
             }}
           />
         </label>
@@ -781,6 +838,15 @@ export default function SkillProfitPage() {
         <div className={`${styles.taxPill} ${settings.membership ? styles.taxMember : ""}`}>
           {settings.membership ? "12% tax" : "15% tax"}
         </div>
+        <button
+          aria-pressed={includeForgeInfoRows}
+          className={`${styles.toggle} ${includeForgeInfoRows ? styles.toggleActive : ""}`}
+          onClick={() => setIncludeForgeInfoRows((current) => !current)}
+          title="Show Forge informational recipes in the All results table. The Forge tab always stays available."
+          type="button"
+        >
+          {includeForgeInfoRows && <Check size={14} />} Forge rows
+        </button>
       </section>
 
       <section className={styles.ascensionPanel}>
@@ -861,6 +927,10 @@ export default function SkillProfitPage() {
           );
         })}
       </section>
+      <div className={styles.forgeHandoff}>
+        <span>Forge recipes are informational here and hidden from All results by default.</span>
+        <a href="/forge">Open Forge Planner</a>
+      </div>
 
       <section className={styles.tableHeader}>
         <div className={styles.tabRow}>
@@ -896,7 +966,8 @@ export default function SkillProfitPage() {
             </tr>
           </thead>
           <tbody>
-            {rowModel.filtered.map((row) => {
+            {visibleRows.map((row) => {
+              const matchedIngredient = getMatchedIngredient(row, deferredSearchTerm);
               return (
                 <tr
                   aria-label={`Open ${row.name} skill strategy`}
@@ -920,6 +991,9 @@ export default function SkillProfitPage() {
                       <span className={styles.itemMeta}>
                         {row.note || `Return ${formatGold(row.netRevenue)}g - cost ${formatGold(row.inputCost)}g`}
                       </span>
+                      {matchedIngredient && (
+                        <span className={styles.materialMatchHint}>Uses {matchedIngredient}</span>
+                      )}
                     </div>
                   </td>
                   <td>{row.skill}</td>
@@ -969,6 +1043,44 @@ export default function SkillProfitPage() {
                 </tr>
               );
             })}
+            {hiddenRowCount > 0 && (
+              <tr>
+                <td colSpan={9}>
+                  <div className={styles.resultBatchMore} role="status">
+                    <span>
+                      Showing {visibleRows.length.toLocaleString()} of {rowModel.filtered.length.toLocaleString()} routes on mobile.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleRowLimit((limit) => limit + MOBILE_RESULT_BATCH_SIZE)}
+                    >
+                      Show {Math.min(MOBILE_RESULT_BATCH_SIZE, hiddenRowCount).toLocaleString()} more
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+            {rowModel.filtered.length === 0 && (
+              <tr>
+                <td colSpan={9}>
+                  <div className={styles.emptyRoutes} role="status">
+                    <strong>No routes match this search</strong>
+                    <span>Try an item name, skill, material, essence, sale source, or liquidity label.</span>
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setActiveSkill("All");
+                        setMinVolume(0);
+                        setMinVolumeDraft("0");
+                      }}
+                      type="button"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </section>
@@ -1003,11 +1115,23 @@ function SortableTh({
   align?: "left" | "right";
 }) {
   const active = sortKey === activeKey;
+  const directionLabel = active ? (sortDesc ? "descending" : "ascending") : "not sorted";
   return (
-    <th className={align === "left" ? styles.sortHeaderLeft : undefined}>
-      <button className={styles.sortButton} onClick={() => onSort(sortKey)} type="button">
+    <th
+      aria-sort={active ? (sortDesc ? "descending" : "ascending") : "none"}
+      className={align === "left" ? styles.sortHeaderLeft : undefined}
+    >
+      <button
+        aria-label={`Sort by ${SORT_LABELS[sortKey]}, currently ${directionLabel}`}
+        className={styles.sortButton}
+        onClick={() => onSort(sortKey)}
+        type="button"
+      >
         {SORT_LABELS[sortKey]}
-        {active && <span>{sortDesc ? "v" : "^"}</span>}
+        <span aria-hidden="true" className={styles.sortIndicator}>
+          {active ? (sortDesc ? <ArrowDown size={13} /> : <ArrowUp size={13} />) : <ArrowDownUp size={13} />}
+        </span>
+        <span className={styles.srOnly}>{directionLabel}</span>
       </button>
     </th>
   );
@@ -1864,6 +1988,37 @@ function isLiquid(row: SkillProfitRow, minVolume: number) {
 
 function isExcludedFromTop(row: SkillProfitRow, minVolume: number) {
   return row.skill === "Forge" || !isLiquid(row, minVolume);
+}
+
+function getSearchTokens(search: string) {
+  return search.split(/\s+/).map((token) => token.trim()).filter(Boolean);
+}
+
+function rowMatchesSearch(row: SkillProfitRow, tokens: string[]) {
+  if (tokens.length === 0) return true;
+  const parts = [
+    row.name,
+    row.skill,
+    row.note || "",
+    row.bestSaleSource,
+    row.saleSource,
+    row.liquidityLabel,
+    row.liquidityNote,
+    row.essenceName,
+    ...row.inputMissing,
+    ...row.ingredients.map((ingredient) => ingredient.name),
+  ].map((part) => part.toLowerCase());
+
+  return tokens.every((token) => parts.some((part) => part.includes(token)));
+}
+
+function getMatchedIngredient(row: SkillProfitRow, search: string) {
+  const tokens = getSearchTokens(search.trim().toLowerCase());
+  if (tokens.length === 0) return "";
+  return row.ingredients.find((ingredient) => {
+    const ingredientName = ingredient.name.toLowerCase();
+    return tokens.every((token) => ingredientName.includes(token));
+  })?.name || "";
 }
 
 function getSortValue(row: SkillProfitRow, key: SkillProfitSortKey) {

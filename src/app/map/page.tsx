@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -415,6 +415,7 @@ function MapPageContent() {
   const searchParams = useSearchParams();
   const { staticData, marketData, allItemsDb, worldLocations, loading } = useData();
   const { openItemByName } = useItemModal();
+  const mobileRailRef = useRef<HTMLDivElement | null>(null);
   const [selectedKey, setSelectedKey] = useState("");
   const [query, setQuery] = useState("");
   const [activeForecastKey, setActiveForecastKey] = useState<string | null>(null);
@@ -556,6 +557,16 @@ function MapPageContent() {
     const matchingDrops = selectedLocation.drops.filter((drop) => drop.name.toLowerCase().includes(normalizedQuery));
     return (matchingDrops.length > 0 ? matchingDrops : selectedLocation.drops).slice(0, 12);
   }, [query, selectedLocation]);
+  const selectedWeatherTimeline = useMemo(
+    () => selectedLocation ? getWeatherTimeline(selectedLocation) : [],
+    [selectedLocation],
+  );
+
+  useEffect(() => {
+    const activeChip = mobileRailRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    activeChip?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", inline: "center", block: "nearest" });
+  }, [selectedLocation?.key, filteredLocations.length]);
 
   if (!selectedLocation && loading) {
     return (
@@ -626,10 +637,11 @@ function MapPageContent() {
             })}
 
             {filteredLocations.length === 0 && (
-              <div className="map-empty-state" role="status">
+              <div className="map-empty-state" role="status" aria-label="No matching locations. Adjust the search query.">
                 <Search size={18} />
-                <strong>No matching locations</strong>
-                <span>Adjust the search query.</span>
+                <strong>No matching locations.</strong>
+                {" "}
+                <span>Try adjusting the search query.</span>
               </div>
             )}
 
@@ -639,7 +651,7 @@ function MapPageContent() {
             </div>
           </div>
 
-          <div className="mobile-location-rail" aria-label="Map locations">
+          <div className="mobile-location-rail" ref={mobileRailRef} aria-label="Map locations">
             {filteredLocations.map((location) => {
               const active = selectedLocation?.key === location.key;
               const weatherKey = String(location.currentWeather?.key || location.nextWeather?.key || "OVERCAST").toUpperCase();
@@ -647,6 +659,8 @@ function MapPageContent() {
                 <button
                   type="button"
                   key={`rail-${location.key}`}
+                  data-location-key={location.key}
+                  data-active={active ? "true" : undefined}
                   className={active ? "active" : ""}
                   aria-pressed={active}
                   onClick={() => setSelectedKey(location.key)}
@@ -828,13 +842,14 @@ function MapPageContent() {
           <div className="intel-section forecast-board">
             <header>
               <span><CalendarDays size={15} /> Forecast Windows</span>
-              <strong>{formatCount(getWeatherTimeline(selectedLocation).length, "window")}</strong>
+              <strong>{formatCount(selectedWeatherTimeline.length, "window")}</strong>
             </header>
+            <p className="forecast-hint">Open a window to compare favored, penalized, and neutral enemy reactions.</p>
             <div className="forecast-list">
-              {getWeatherTimeline(selectedLocation).length === 0 && (
+              {selectedWeatherTimeline.length === 0 && (
                 <p className="muted-empty">No forecast windows mapped for this location yet.</p>
               )}
-              {getWeatherTimeline(selectedLocation).slice(0, 10).map((weather, index) => {
+              {selectedWeatherTimeline.slice(0, 10).map((weather, index) => {
                 const key = String(weather.key || "").toUpperCase();
                 const forecastKey = `${weather.starts_at || "window"}-${index}`;
                 const crosscheck = getForecastEnemyCrosscheck(weather, selectedLocation.enemies);
@@ -1670,6 +1685,12 @@ function MapPageContent() {
           display: grid;
           gap: 0.45rem;
         }
+        .forecast-hint {
+          margin: -0.2rem 0 0.7rem;
+          color: var(--text-muted);
+          font-size: 0.78rem;
+          line-height: 1.45;
+        }
         .forecast-item {
           display: grid;
           border: 1px solid color-mix(in srgb, var(--weather-accent), transparent 78%);
@@ -1998,14 +2019,17 @@ function MapPageContent() {
             display: none;
           }
           .mobile-location-rail {
+            position: relative;
             display: flex;
             gap: 0.45rem;
             width: 100%;
             margin: 0.65rem 0 0;
             overflow-x: auto;
             overscroll-behavior-x: contain;
-            padding: 0 0.05rem 0.35rem;
+            padding: 0 1rem 0.35rem 0.05rem;
             scrollbar-width: thin;
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1.5rem), transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1.5rem), transparent 100%);
           }
           .mobile-location-rail button {
             display: grid;
@@ -2089,12 +2113,18 @@ function SourceColumn({
   rows: any[];
   hrefBase: "/combat" | "/enemies" | "/dungeons" | "/bosses";
 }) {
+  const sourceKind = getSourceKind(title);
   return (
     <div className="source-column">
       <h3>{icon} {title}</h3>
       <div className="source-stack">
         {rows.slice(0, 8).map((row) => (
-          <Link key={`${title}-${row.id || row.name}`} href={`${hrefBase}?search=${encodeURIComponent(row.name)}`} className="source-card">
+          <Link
+            key={`${title}-${row.id || row.name}`}
+            href={`${hrefBase}?search=${encodeURIComponent(row.name)}`}
+            className="source-card"
+            aria-label={`${row.name}, ${row.level ? `level ${row.level}` : row.difficulty ? `difficulty ${row.difficulty}` : row.status || "source"} ${sourceKind}`}
+          >
             <span>
               <strong>{row.name}</strong>
               <small>{row.level ? `Level ${row.level}` : row.difficulty ? `Difficulty ${row.difficulty}` : row.status || "Source"}</small>
@@ -2106,6 +2136,13 @@ function SourceColumn({
       </div>
     </div>
   );
+}
+
+function getSourceKind(title: string) {
+  if (title === "Enemies") return "enemy";
+  if (title === "Dungeons") return "dungeon";
+  if (title === "Bosses") return "boss";
+  return "source";
 }
 
 export default function MapPage() {

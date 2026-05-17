@@ -15,13 +15,14 @@ import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
-import { getLoreEntry, getLoreForItem } from '@/data/lore';
+import { getDescriptionLoreForItem, getLoreEntry, getLoreForItem } from '@/data/lore';
 import { getMarketLiquidity, getSafeMarketValue } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
 import { GATHERED_RESOURCE_SOURCE_NOTE, getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
 import { useModalA11y } from '@/lib/use-modal-a11y';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
+import { loadUsageMap } from '@/lib/usage-map';
 
 interface ItemModalProps {
   id: string;
@@ -82,7 +83,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const modalDialogRef = useModalA11y<HTMLDivElement>(true, onClose);
 
   useEffect(() => {
-    fetch('/usage-map.json').then(r => r.json()).then(setUsageMap).catch(() => {});
+    let cancelled = false;
+    loadUsageMap().then((payload) => {
+      if (!cancelled) setUsageMap(payload);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -159,6 +166,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const itemName = item?.name;
   const itemIsTradeable = item ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false : false;
   const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
+  const descriptionLoreLinks = useMemo(() => itemName ? getDescriptionLoreForItem(itemName) : [], [itemName]);
 
   const relationEntry = useMemo(() => {
     if (!usageMap || !item?.name) return null;
@@ -459,6 +467,37 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           <span className={`lore-confidence ${link.confidence}`}>{link.confidence}</span>
                           <strong>{primary.title}</strong>
                           <small>{link.reason}</small>
+                          <em>{linkedEntries.map((entry) => entry.title).join(' / ')}</em>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {descriptionLoreLinks.length > 0 && (
+                <div className="bento-card lore-thread-card description-lore-card full-width">
+                  <div className="card-label"><BookOpen size={14} /> Description Lore Signals</div>
+                  <div className="lore-thread-list">
+                    {descriptionLoreLinks.map((link) => {
+                      const primary = getLoreEntry(link.entryIds[0]);
+                      const linkedEntries = link.entryIds.map((entryId) => getLoreEntry(entryId)).filter(Boolean);
+                      if (!primary) return null;
+
+                      return (
+                        <button
+                          key={`${link.itemName}-${primary.id}-description`}
+                          type="button"
+                          className="lore-thread-row"
+                          onClick={() => {
+                            onClose();
+                            router.push(`/lore?thread=${primary.id}`);
+                          }}
+                        >
+                          <span className={`lore-confidence ${link.confidence}`}>{link.confidence}</span>
+                          <strong>{primary.title}</strong>
+                          <small>{link.reason}</small>
+                          <em>&quot;{link.evidence}&quot;</em>
                           <em>{linkedEntries.map((entry) => entry.title).join(' / ')}</em>
                         </button>
                       );
@@ -1071,6 +1110,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             linear-gradient(135deg, rgba(245,176,65,0.11), transparent),
             rgba(255,255,255,0.03);
           border-color: rgba(245,176,65,0.2);
+        }
+
+        .description-lore-card {
+          background:
+            linear-gradient(135deg, rgba(56,189,248,0.09), transparent),
+            rgba(255,255,255,0.025);
+          border-color: rgba(56,189,248,0.18);
         }
 
         .lore-thread-list {

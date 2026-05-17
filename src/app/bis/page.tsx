@@ -135,6 +135,15 @@ const PRIORITIES: Array<{ id: Priority; label: string }> = [
   { id: "speed", label: "Speed" },
 ];
 
+const SEARCH_ALIASES: Record<string, string[]> = {
+  chest: ["chestplate"],
+  gloves: ["gauntlets"],
+  hat: ["helmet"],
+  helm: ["helmet"],
+  legs: ["greaves"],
+  shoes: ["boots"],
+};
+
 const QUALITY_ORDER = ["REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"];
 const QUALITY_COLOR: Record<string, string> = {
   REFINED: "#22c55e",
@@ -143,6 +152,7 @@ const QUALITY_COLOR: Record<string, string> = {
   LEGENDARY: "#f59e0b",
   MYTHIC: "#ef4444",
 };
+const INITIAL_VISIBLE_GEAR_ROWS = 120;
 
 const WEIGHTS: Record<Priority, Record<string, number>> = {
   balanced: {
@@ -295,6 +305,7 @@ export default function BisPage() {
   const { activeProfile, updateProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
   const comparePanelRef = useRef<HTMLElement | null>(null);
+  const slotButtonRefs = useRef<Partial<Record<"ALL" | GearType, HTMLButtonElement | null>>>({});
 
   const [gearData, setGearData] = useState<GearItem[]>([]);
   const [search, setSearch] = useState("");
@@ -306,7 +317,9 @@ export default function BisPage() {
   const [selectedId, setSelectedId] = useState<string>("");
   const [candidateTier, setCandidateTier] = useState<number | "">(1);
   const [compareTier, setCompareTier] = useState<number | "">(1);
+  const [visibleGearCount, setVisibleGearCount] = useState(INITIAL_VISIBLE_GEAR_ROWS);
   const [mobileSelectionHint, setMobileSelectionHint] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   const profileCombatLevel = activeProfile ? activeProfile.levels.combat : preferences.combatLevel;
   const profileStrength = activeProfile ? activeProfile.levels.strength : preferences.strStat;
@@ -380,6 +393,7 @@ export default function BisPage() {
 
   const filteredGear = useMemo(() => {
     const term = search.trim().toLowerCase();
+    const searchTerms = term ? [term, ...(SEARCH_ALIASES[term] || [])] : [];
     const rows = gearViews.filter((view) => {
       if (slotFilter !== "ALL" && view.item.type !== slotFilter) return false;
       if (usableOnly && !view.eligible) return false;
@@ -391,10 +405,10 @@ export default function BisPage() {
         ...Object.keys(view.stats),
         ...Object.keys(view.item.requirements || {}),
       ].join(" ").toLowerCase();
-      return haystack.includes(term);
+      return searchTerms.some((value) => haystack.includes(value));
     });
 
-    return rows.sort((a, b) => {
+    return [...rows].sort((a, b) => {
       let delta = 0;
       if (sortKey === "level") delta = a.requirementLevel - b.requirementLevel;
       if (sortKey === "stats") delta = a.weightedStats - b.weightedStats;
@@ -406,15 +420,28 @@ export default function BisPage() {
     });
   }, [gearViews, search, slotFilter, usableOnly, sortKey, direction]);
 
+  const visibleGear = useMemo(
+    () => filteredGear.slice(0, visibleGearCount),
+    [filteredGear, visibleGearCount],
+  );
+
   useEffect(() => {
     if (filteredGear.length === 0) {
       setSelectedId("");
       return;
     }
     if (!selectedId || !filteredGear.some((view) => view.item.hashed_id === selectedId)) {
-      setSelectedId(filteredGear[0].item.hashed_id);
+      setSelectedId((filteredGear.find((view) => view.eligible) || filteredGear[0]).item.hashed_id);
     }
   }, [filteredGear, selectedId]);
+
+  useEffect(() => {
+    setVisibleGearCount(INITIAL_VISIBLE_GEAR_ROWS);
+  }, [search, slotFilter, usableOnly, sortKey, direction, priority]);
+
+  useEffect(() => {
+    slotButtonRefs.current[slotFilter]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [slotFilter]);
 
   const selected = filteredGear.find((view) => view.item.hashed_id === selectedId) || filteredGear[0] || null;
   const selectedType = selected?.item.type as GearType | undefined;
@@ -452,10 +479,16 @@ export default function BisPage() {
     else setPreferences({ combatStyle: style });
   };
 
+  const changeSlotFilter = (slot: "ALL" | GearType) => {
+    setSlotFilter(slot);
+    setStatusMessage(`${slot === "ALL" ? "All gear" : slotLabel(slot)} filter selected.`);
+  };
+
   const selectGear = (view: GearView) => {
     setSelectedId(view.item.hashed_id);
     setCandidateTier(1);
     setMobileSelectionHint(`${view.item.name} comparison opened`);
+    setStatusMessage(`${view.item.name} comparison opened.`);
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches) {
       window.setTimeout(() => {
         comparePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -490,6 +523,7 @@ export default function BisPage() {
 
   return (
     <main className="container bis-page">
+      <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
       <div className="header">
         <div>
           <div className="eyebrow"><ZenithIcon name="shield" size={15} /> Gear Recommender</div>
@@ -507,7 +541,7 @@ export default function BisPage() {
           <span>Search</span>
           <div className="search-wrap">
             <Search size={17} aria-hidden="true" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Gear, stat, rarity..." />
+            <input aria-label="Search gear" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Gear, stat, rarity..." />
           </div>
         </label>
 
@@ -547,11 +581,12 @@ export default function BisPage() {
         ))}
       </section>
 
-      <section className="recommendation-panel" aria-label="Recommended active set">
+      <section className="recommendation-panel" aria-label="Current style picks">
         <div className="panel-title">
-          <span><Sparkles size={16} /> Active Style Picks</span>
+          <span><Sparkles size={16} /> Current Style Picks</span>
           <strong>{formatGold(totalRecommendedCost)}</strong>
         </div>
+        <p className="ranking-note">Based on current levels, style, ranking priority, and base-tier stats. Compare tiers before saving.</p>
         <div className="recommendation-grid">
           {activeStyleSlots(activeCombatStyle).map((type) => {
             const view = recommendations[type];
@@ -561,6 +596,7 @@ export default function BisPage() {
                 key={type}
                 type="button"
                 className="pick-card"
+                aria-label={view ? `Compare ${view.item.name} for ${slotLabel(type)}` : `No eligible ${slotLabel(type)} pick`}
                 onClick={() => view && selectGear(view)}
                 disabled={!view}
               >
@@ -582,12 +618,23 @@ export default function BisPage() {
       <section className="bis-layout">
         <div className="gear-list-panel">
           <div className="filter-row" aria-label="Gear filters">
-            <div className="chip-scroll">
+            <div className="chip-scroll-shell">
+            <div className="chip-scroll" aria-label="Slot filters">
               {SLOT_FILTERS.map((option) => (
-                <button key={option.id} type="button" className={slotFilter === option.id ? "is-active" : ""} onClick={() => setSlotFilter(option.id)}>
+                <button
+                  key={option.id}
+                  type="button"
+                  ref={(element) => {
+                    slotButtonRefs.current[option.id] = element;
+                  }}
+                  className={slotFilter === option.id ? "is-active" : ""}
+                  aria-pressed={slotFilter === option.id}
+                  onClick={() => changeSlotFilter(option.id)}
+                >
                   {option.label}
                 </button>
               ))}
+            </div>
             </div>
             <button type="button" className={usableOnly ? "toggle is-active" : "toggle"} onClick={() => setUsableOnly((value) => !value)}>
               <Check size={15} /> Usable
@@ -617,12 +664,21 @@ export default function BisPage() {
 
           {mobileSelectionHint && <div className="selection-hint" role="status">{mobileSelectionHint}</div>}
 
+          <p className="ranking-note list-note">List sorting uses base-tier stats. Use the comparison panel for candidate and saved tier differences.</p>
+
           <div className="gear-list" aria-label="Combat gear list">
-            {filteredGear.map((view) => (
+            {visibleGear.map((view, index) => {
+              const isSelected = selected?.item.hashed_id === view.item.hashed_id;
+              return (
               <button
                 key={view.item.hashed_id}
                 type="button"
-                className={selected?.item.hashed_id === view.item.hashed_id ? "gear-row is-selected" : "gear-row"}
+                className={isSelected ? "gear-row is-selected" : "gear-row"}
+                aria-label={`Compare ${view.item.name}, ${slotLabel(view.item.type)}, level ${view.requirementLevel}, ${view.eligible ? "usable" : "locked"}`}
+                aria-pressed={isSelected}
+                aria-current={isSelected ? "true" : undefined}
+                aria-posinset={index + 1}
+                aria-setsize={filteredGear.length}
                 onClick={() => selectGear(view)}
                 onMouseEnter={() => prefetchGearItem(view.item.name)}
               >
@@ -639,9 +695,22 @@ export default function BisPage() {
                 </span>
                 <span className={view.eligible ? "status ok" : "status locked"}>{view.eligible ? "Usable" : "Locked"}</span>
               </button>
-            ))}
-            {filteredGear.length === 0 && <div className="empty-state">No gear matches these filters.</div>}
+            );})}
+            {filteredGear.length === 0 && (
+              <div className="empty-state">
+                <strong>No gear matches these filters.</strong>
+                <span>Try slot names like Helmet, rarity names, stat names, or aliases like hat, chest, gloves, and boots.</span>
+              </div>
+            )}
           </div>
+          {visibleGear.length < filteredGear.length && (
+            <div className="gear-list-more">
+              <span>Showing {visibleGear.length.toLocaleString()} of {filteredGear.length.toLocaleString()} matching items.</span>
+              <button type="button" onClick={() => setVisibleGearCount((count) => Math.min(filteredGear.length, count + INITIAL_VISIBLE_GEAR_ROWS))}>
+                Show more gear
+              </button>
+            </div>
+          )}
         </div>
 
         <aside ref={comparePanelRef} className="compare-panel" aria-label="Selected gear comparison">
@@ -670,13 +739,20 @@ export default function BisPage() {
                   max={selectedMaxTier}
                   onChange={setCandidateTier}
                 />
-                <TierStepper
-                  label={currentProfileItem ? "Saved gear tier" : "Compare tier"}
-                  value={compareTier}
-                  max={currentMaxTier}
-                  disabled={!currentProfileItem}
-                  onChange={setCompareTier}
-                />
+                {currentProfileItem ? (
+                  <TierStepper
+                    label="Saved gear tier"
+                    value={compareTier}
+                    max={currentMaxTier}
+                    onChange={setCompareTier}
+                  />
+                ) : (
+                  <div className="compare-empty-chip" role="note">
+                    <span>Saved gear tier</span>
+                    <strong>No saved item</strong>
+                    <small>Save gear in this slot to compare tiers.</small>
+                  </div>
+                )}
               </div>
 
               {!selected.eligible && (
@@ -847,6 +923,9 @@ export default function BisPage() {
           display: grid;
           gap: 0.45rem;
         }
+        .control-group > div {
+          min-width: 0;
+        }
         .control-group div,
         .tier-control div,
         .tier-stepper div,
@@ -884,7 +963,8 @@ export default function BisPage() {
           white-space: nowrap;
         }
         .control-group button {
-          flex: 1;
+          flex: 1 0 max-content;
+          min-width: max-content;
         }
         .bis-page button.is-active,
         .toggle.is-active {
@@ -942,6 +1022,16 @@ export default function BisPage() {
           font-size: 0.8rem;
           letter-spacing: 0.08em;
         }
+        .ranking-note {
+          color: var(--text-muted);
+          font-size: 0.82rem;
+          font-weight: 700;
+          line-height: 1.45;
+          margin: -0.25rem 0 0.85rem;
+        }
+        .list-note {
+          margin: 0 0 0.75rem;
+        }
         .recommendation-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -985,11 +1075,40 @@ export default function BisPage() {
           align-items: center;
           margin-bottom: 0.75rem;
         }
+        .chip-scroll-shell {
+          flex: 1;
+          min-width: 0;
+          position: relative;
+        }
+        .chip-scroll-shell:before,
+        .chip-scroll-shell:after {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0.15rem;
+          width: 1.6rem;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .chip-scroll-shell:before {
+          left: 0;
+          background: linear-gradient(90deg, rgba(15, 15, 18, 0.94), transparent);
+        }
+        .chip-scroll-shell:after {
+          right: 0;
+          background: linear-gradient(270deg, rgba(15, 15, 18, 0.94), transparent);
+        }
         .chip-scroll {
+          align-items: center;
           overflow-x: auto;
           scrollbar-width: thin;
-          flex: 1;
-          padding-bottom: 0.15rem;
+          padding: 0 1.9rem 0.15rem 0.15rem;
+          min-width: 0;
+          scroll-padding-inline: 1.8rem;
+        }
+        .chip-scroll button {
+          flex: 0 0 auto;
+          min-width: max-content;
         }
         .toggle,
         .direction {
@@ -1018,6 +1137,27 @@ export default function BisPage() {
           max-height: 860px;
           overflow: auto;
           padding-right: 0.2rem;
+        }
+        .gear-list-more {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-top: 0.8rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          padding: 0.72rem 0.85rem;
+          background: rgba(255, 255, 255, 0.035);
+          color: var(--text-muted);
+          font-size: 0.86rem;
+          font-weight: 800;
+        }
+        .gear-list-more span {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+        .gear-list-more button {
+          flex: 0 0 auto;
         }
         .gear-row {
           display: grid;
@@ -1126,6 +1266,30 @@ export default function BisPage() {
           gap: 0.65rem;
           margin-bottom: 1rem;
         }
+        .compare-empty-chip {
+          display: grid;
+          gap: 0.3rem;
+          min-width: 0;
+          border: 1px dashed var(--border-subtle);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.025);
+          padding: 0.75rem;
+        }
+        .compare-empty-chip span {
+          color: var(--text-muted);
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .compare-empty-chip strong {
+          color: var(--text-primary);
+        }
+        .compare-empty-chip small {
+          color: var(--text-muted);
+          font-size: 0.75rem;
+          line-height: 1.35;
+        }
         .metric,
         .current-box,
         .notice,
@@ -1198,16 +1362,18 @@ export default function BisPage() {
           display: grid;
           gap: 0.35rem;
           margin-bottom: 1rem;
+          min-width: 0;
         }
         .stat-compare-table > div {
           display: grid;
-          grid-template-columns: minmax(110px, 1fr) 74px 74px 74px;
+          grid-template-columns: minmax(0, 1fr) minmax(56px, 74px) minmax(56px, 74px) minmax(56px, 74px);
           gap: 0.55rem;
           align-items: center;
           padding: 0.58rem 0.65rem;
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: rgba(255, 255, 255, 0.035);
+          min-width: 0;
         }
         .stat-compare-table .stat-compare-head {
           background: rgba(255, 255, 255, 0.02);
@@ -1223,6 +1389,12 @@ export default function BisPage() {
         }
         .stat-compare-table span {
           color: var(--text-muted);
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
+        .stat-compare-table strong {
+          min-width: 0;
+          overflow-wrap: anywhere;
         }
         .positive {
           color: #34d399;
@@ -1262,6 +1434,17 @@ export default function BisPage() {
           border: 1px dashed var(--border-subtle);
           border-radius: 8px;
           text-align: center;
+        }
+        .empty-state strong,
+        .empty-state span {
+          display: block;
+        }
+        .empty-state strong {
+          color: var(--text-primary);
+          margin-bottom: 0.3rem;
+        }
+        .empty-state span {
+          line-height: 1.45;
         }
         @media (max-width: 1500px) {
           .bis-toolbar {
@@ -1306,8 +1489,18 @@ export default function BisPage() {
             align-items: stretch;
             flex-direction: column;
           }
+          .chip-scroll-shell {
+            width: 100%;
+          }
           .gear-row {
             grid-template-columns: 46px minmax(0, 1fr) auto;
+          }
+          .gear-list-more {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .gear-list-more button {
+            width: 100%;
           }
           .gear-row img {
             width: 42px;
@@ -1330,7 +1523,7 @@ export default function BisPage() {
             grid-template-columns: 1fr;
           }
           .stat-compare-table > div {
-            grid-template-columns: minmax(92px, 1fr) 58px 58px 58px;
+            grid-template-columns: minmax(0, 1fr) minmax(48px, 58px) minmax(48px, 58px) minmax(48px, 58px);
             gap: 0.4rem;
             font-size: 0.8rem;
           }

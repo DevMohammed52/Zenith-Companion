@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { Suspense, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -87,6 +87,19 @@ function formatWindow(enemy: EnrichedEnemy) {
   return `${weather.name || "Favorable"} ${start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
 }
 
+function getEnemyCardLabel(enemy: EnrichedEnemy) {
+  const weatherName = enemy.currentWeather?.name || "unknown weather";
+  const weatherMatch = getWeatherPreferenceLabel(enemy.currentWeatherMatch).toLowerCase();
+  return [
+    `Open ${enemy.name}`,
+    `level ${enemy.level}`,
+    enemy.locationName,
+    `${weatherName}: ${weatherMatch}`,
+    `${enemy.lootCount} drops`,
+    `loot EV ${formatGold(enemy.lootEv)}`,
+  ].join(", ");
+}
+
 function matchTone(kind: WeatherPreferenceKind) {
   if (kind === "loves" || kind === "likes") return "good";
   if (kind === "dislikes" || kind === "hates") return "bad";
@@ -144,10 +157,12 @@ function CustomSelect<T extends string>({
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [placement, setPlacement] = useState<"down" | "up">("down");
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const selectId = useId();
+  const labelId = `${selectId}-label`;
   const selected = options.find((option) => option.value === value) || options[0];
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === selected.value));
 
@@ -158,9 +173,18 @@ function CustomSelect<T extends string>({
   };
 
   const openMenu = (focusIndex = selectedIndex) => {
+    updatePlacement();
     setActiveIndex(focusIndex);
     setOpen(true);
     window.setTimeout(() => focusOption(focusIndex), 0);
+  };
+
+  const updatePlacement = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setPlacement(spaceBelow < 280 && spaceAbove > spaceBelow ? "up" : "down");
   };
 
   useEffect(() => {
@@ -177,6 +201,17 @@ function CustomSelect<T extends string>({
       window.removeEventListener("keydown", handleKey);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+    return () => {
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [open]);
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (open && (event.key === "Enter" || event.key === " ")) {
@@ -229,19 +264,26 @@ function CustomSelect<T extends string>({
   };
 
   return (
-    <div className={`custom-select ${open ? "open" : ""}`} ref={rootRef}>
-      <label>{label}</label>
+    <div className={`custom-select ${open ? "open" : ""} ${open && placement === "up" ? "open-up" : ""}`} ref={rootRef}>
+      <label id={labelId}>{label}</label>
       <button
         ref={triggerRef}
         type="button"
         className="select-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-labelledby={`${labelId} ${selectId}-value`}
         aria-controls={open ? `${selectId}-menu` : undefined}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          if (open) {
+            setOpen(false);
+          } else {
+            openMenu(selectedIndex);
+          }
+        }}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span>{selected.label}</span>
+        <span id={`${selectId}-value`}>{selected.label}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
@@ -375,14 +417,21 @@ function EnemiesContent() {
   const { staticData, worldLocations, marketData, loading } = useData();
   const { openItemByName } = useItemModal();
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [matchFilter, setMatchFilter] = useState<MatchFilter>("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("level");
   const [sortDesc, setSortDesc] = useState(false);
   const [selectedEnemy, setSelectedEnemy] = useState<EnrichedEnemy | null>(null);
+  const [weatherNow, setWeatherNow] = useState(() => Date.now());
 
-  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData }), [marketData, staticData, worldLocations]);
+  useEffect(() => {
+    const interval = window.setInterval(() => setWeatherNow(Date.now()), 60000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData, now: weatherNow }), [marketData, staticData, weatherNow, worldLocations]);
 
   useEffect(() => {
     setQuery(searchParams.get("search") ?? "");
@@ -397,26 +446,13 @@ function EnemiesContent() {
   }, [enemies]);
 
   const filteredEnemies = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
     const rows = enemies.filter((enemy) => {
       if (selectedLocation !== "all" && enemy.locationKey !== selectedLocation) return false;
       if (!enemyMatchesFilter(enemy, matchFilter)) return false;
       if (!levelMatches(enemy, levelFilter)) return false;
       if (!normalizedQuery) return true;
-      const preference = enemy.weatherPreference;
-      const haystack = [
-        enemy.name,
-        enemy.locationName,
-        enemy.currentWeather?.name || "",
-        enemy.nextWeather?.name || "",
-        ...(preference?.loves || []),
-        ...(preference?.likes || []),
-        ...(preference?.neutral || []),
-        ...(preference?.dislikes || []),
-        ...(preference?.hates || []),
-        ...enemy.loot.map((drop: any) => drop.name),
-      ].join(" ").toLowerCase();
-      return haystack.includes(normalizedQuery);
+      return enemy.searchText.includes(normalizedQuery);
     });
 
     rows.sort((a, b) => {
@@ -430,7 +466,7 @@ function EnemiesContent() {
     });
 
     return rows;
-  }, [enemies, levelFilter, matchFilter, query, selectedLocation, sortDesc, sortKey]);
+  }, [deferredQuery, enemies, levelFilter, matchFilter, selectedLocation, sortDesc, sortKey]);
 
   const stats = useMemo(() => ({
     enemies: enemies.length,
@@ -460,6 +496,12 @@ function EnemiesContent() {
           <div><Package size={16} /><span>Shown</span><strong>{filteredEnemies.length}</strong></div>
         </section>
 
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {filteredEnemies.length === 0
+            ? "No enemies match the current filters."
+            : `${filteredEnemies.length} enemy${filteredEnemies.length === 1 ? "" : "ies"} shown.`}
+        </div>
+
         <section className="enemy-controls" aria-label="Enemy filters">
           <label className="search-control">
             <span>Search</span>
@@ -479,7 +521,12 @@ function EnemiesContent() {
           <CustomSelect label="Weather" value={matchFilter} options={MATCH_OPTIONS} onChange={setMatchFilter} />
           <CustomSelect label="Level" value={levelFilter} options={LEVEL_OPTIONS} onChange={setLevelFilter} />
           <CustomSelect label="Sort" value={sortKey} options={SORT_OPTIONS} onChange={setSortKey} />
-          <button type="button" className="sort-direction" aria-label={`Sort ${sortDesc ? "descending" : "ascending"}`} onClick={() => setSortDesc((prev) => !prev)}>
+          <button
+            type="button"
+            className="sort-direction"
+            aria-label={`Change sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
+            onClick={() => setSortDesc((prev) => !prev)}
+          >
             <ArrowDownUp size={16} />
             {sortDesc ? "Desc" : "Asc"}
           </button>
@@ -495,7 +542,7 @@ function EnemiesContent() {
                 type="button"
                 className="enemy-card"
                 onClick={() => setSelectedEnemy(enemy)}
-                aria-label={`Open ${enemy.name}, level ${enemy.level}, ${enemy.locationName}`}
+                aria-label={getEnemyCardLabel(enemy)}
               >
                 <span className="enemy-card-art">
                   {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={28} />}
@@ -709,6 +756,10 @@ function EnemiesContent() {
           box-shadow: 0 18px 46px rgba(0,0,0,0.5);
           padding: 0.3rem;
         }
+        :global(.custom-select.open-up .select-menu) {
+          bottom: calc(100% + 0.35rem);
+          top: auto;
+        }
         :global(.select-menu button) {
           min-height: 40px;
           border: 0;
@@ -806,11 +857,14 @@ function EnemiesContent() {
         }
         .enemy-title-row strong {
           min-width: 0;
-          overflow: hidden;
           color: #fff;
+          display: -webkit-box;
           font-size: 1rem;
+          line-height: 1.18;
+          overflow: hidden;
           text-overflow: ellipsis;
-          white-space: nowrap;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
         .enemy-title-row em {
           flex: 0 0 auto;
@@ -870,6 +924,17 @@ function EnemiesContent() {
           font-weight: 850;
           padding: 1.5rem;
           text-align: center;
+        }
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
         :global(.enemy-modal-overlay) {
           position: fixed;

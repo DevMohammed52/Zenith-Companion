@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DollarSign, Hammer, Plus, Search, Sparkles, TrendingUp, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ChevronDown, DollarSign, Hammer, Plus, Search, TrendingUp, X } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
@@ -9,90 +9,24 @@ import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
-import { getMerchantBuyPrice } from "@/constants";
-import { getSafeMarketPrice } from "@/lib/market-pricing";
 import { getAssaultBuff } from "@/lib/skill-profit";
-
-type PriceSource = "custom" | "settings" | "guarded" | "3d" | "7d" | "14d" | "30d" | "merchant" | "vendor" | "none";
-type RecipeCostMode = "full" | "remaining" | "owned";
-type BestPath = "MARKET" | "VENDOR" | "CUSTOM";
-
-type MarketItem = {
-  avg_3?: number;
-  avg_7?: number;
-  avg_14?: number;
-  avg_30?: number;
-  price?: number;
-  safe_price?: number;
-  raw_price?: number;
-  raw_avg_3?: number;
-  raw_avg_7?: number;
-  raw_avg_14?: number;
-  raw_avg_30?: number;
-  price_adjusted?: boolean;
-  vol_3?: number;
-  vendor_price?: number;
-};
-
-type DbRecipeMaterial = {
-  item_name?: string;
-  name?: string;
-  quantity?: number;
-  qty?: number;
-};
-
-type DbRecipe = {
-  skill?: string;
-  level_required?: number;
-  max_uses?: number;
-  experience?: number;
-  materials?: DbRecipeMaterial[];
-  result?: {
-    item_name?: string;
-  };
-};
-
-type DbItem = {
-  name?: string;
-  type?: string;
-  quality?: string;
-  image_url?: string;
-  vendor_price?: number;
-  is_tradeable?: boolean;
-  recipe?: DbRecipe | null;
-};
-
-type MythicRecipe = {
-  resultName: string;
-  recipeName: string;
-  level: number;
-  maxUses: number;
-  experience: number;
-  recipeQuality: string;
-  resultQuality: string;
-  recipeTradeable: boolean;
-  imageUrl?: string;
-  materials: { name: string; qty: number }[];
-};
-
-const STORAGE_KEYS = {
-  active: "zenith_mythic_active_recipes",
-  recipePrices: "zenith_mythic_recipe_prices",
-  uses: "zenith_mythic_uses",
-  materialPrices: "zenith_mythic_mat_prices",
-  sellPrices: "zenith_mythic_sell_prices",
-  costMode: "zenith_mythic_recipe_cost_mode",
-};
-
-export const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = STORAGE_KEYS.active;
-
-const MYTHIC_CRAFT_TIME_SECONDS = 1363.6;
-
-const isFinitePositive = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value) && value > 0;
-
-const isNonNegativeNumber = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value) && value >= 0;
+import {
+  MYTHIC_ACTIVE_RECIPES_STORAGE_KEY,
+  MYTHIC_CRAFT_TIME_SECONDS,
+  MYTHIC_STORAGE_KEYS,
+  buildMythicAlchemyRecipes,
+  buildRecommendedMythicRecipes,
+  calculateMythicProjectRows,
+  clampMythicUses,
+  isMythicRecipeCostMode,
+  isNonNegativeNumber,
+  parseOptionalMythicPrice,
+  type MythicDbItem,
+  type MythicMarketItem,
+  type MythicPriceSource,
+  type MythicRecipe,
+  type MythicRecipeCostMode,
+} from "@/lib/mythic-alchemy";
 
 const formatGold = (value: number, _digits = 0) =>
   Math.round(value).toLocaleString();
@@ -100,7 +34,7 @@ const formatGold = (value: number, _digits = 0) =>
 const formatSignedGold = (value: number, digits = 0) =>
   `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
 
-const formatSource = (source: PriceSource) => {
+const formatSource = (source: MythicPriceSource) => {
   if (source === "custom") return "Card custom";
   if (source === "settings") return "Settings custom";
   if (source === "merchant") return "Merchant buy cost";
@@ -108,6 +42,12 @@ const formatSource = (source: PriceSource) => {
   if (source === "guarded") return "Guarded market value";
   if (source === "none") return "No price data";
   return `${source.toUpperCase()} market avg`;
+};
+
+const RECIPE_COST_MODE_HELP: Record<MythicRecipeCostMode, string> = {
+  full: "Full recipe spreads the recipe buy price over every listed use.",
+  remaining: "Remaining uses spreads the recipe buy price over the uses left on your copy.",
+  owned: "Owned ignores recipe purchase cost and only counts materials.",
 };
 
 function readJson<T>(key: string, fallback: T, validate: (value: unknown) => value is T): T {
@@ -136,40 +76,26 @@ const isNestedNumberRecord = (value: unknown): value is Record<string, Record<st
   !Array.isArray(value) &&
   Object.values(value as Record<string, unknown>).every(isNumberRecord);
 
-const isRecipeCostMode = (value: unknown): value is RecipeCostMode =>
-  value === "full" || value === "remaining" || value === "owned";
-
-const parseOptionalPrice = (raw: string): number | null => {
-  if (raw.trim() === "") return null;
-  const value = Number(raw);
-  if (!Number.isFinite(value)) return null;
-  return Math.max(0, value);
-};
-
-const clampUses = (value: string | number, maxUses: number) => {
-  const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed)) return 1;
-  return Math.min(Math.max(1, Math.floor(parsed)), Math.max(1, maxUses));
-};
-
 export default function MythicAlchemyPage() {
   const { marketData: data, allItemsDb } = useData();
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
   const { openItemByName } = useItemModal();
+  const searchDropdownId = useId();
   const [activeRecipeNames, setActiveRecipeNames] = useState<string[]>([]);
   const [customRecipePrices, setCustomRecipePrices] = useState<Record<string, number>>({});
   const [usesLeft, setUsesLeft] = useState<Record<string, number>>({});
   const [customMaterialPrices, setCustomMaterialPrices] = useState<Record<string, Record<string, number>>>({});
   const [customSellPrices, setCustomSellPrices] = useState<Record<string, number>>({});
-  const [recipeCostMode, setRecipeCostMode] = useState<RecipeCostMode>("full");
+  const [recipeCostMode, setRecipeCostMode] = useState<MythicRecipeCostMode>("full");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [expandedProjectNames, setExpandedProjectNames] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const marketData = useMemo(() => (data || {}) as Record<string, MarketItem>, [data]);
-  const itemsByName = useMemo(() => (allItemsDb || {}) as Record<string, DbItem>, [allItemsDb]);
+  const marketData = useMemo(() => (data || {}) as Record<string, MythicMarketItem>, [data]);
+  const itemsByName = useMemo(() => (allItemsDb || {}) as Record<string, MythicDbItem>, [allItemsDb]);
   const settingsPrices = useMemo(() => preferences.customPrices || {}, [preferences.customPrices]);
   const activeProfileId = activeProfile?.id || null;
   const profileBarteringBoost = Number(activeProfile ? getProfileBarteringBoost(activeProfile) : 0) || 0;
@@ -178,59 +104,15 @@ export default function MythicAlchemyPage() {
   const alchemyEfficiencyBonus = (preferences.membership ? 10 : 0) + conquestBuff.efficiency;
   const mythicCraftTimeSeconds = MYTHIC_CRAFT_TIME_SECONDS / Math.max(0.01, (100 + alchemyEfficiencyBonus) / 100);
   const profileStorageKeys = useMemo(() => ({
-    active: getProfileStorageKey(STORAGE_KEYS.active, activeProfile?.id),
-    recipePrices: getProfileStorageKey(STORAGE_KEYS.recipePrices, activeProfile?.id),
-    uses: getProfileStorageKey(STORAGE_KEYS.uses, activeProfile?.id),
-    materialPrices: getProfileStorageKey(STORAGE_KEYS.materialPrices, activeProfile?.id),
-    sellPrices: getProfileStorageKey(STORAGE_KEYS.sellPrices, activeProfile?.id),
-    costMode: getProfileStorageKey(STORAGE_KEYS.costMode, activeProfile?.id),
+    active: getProfileStorageKey(MYTHIC_STORAGE_KEYS.active, activeProfile?.id),
+    recipePrices: getProfileStorageKey(MYTHIC_STORAGE_KEYS.recipePrices, activeProfile?.id),
+    uses: getProfileStorageKey(MYTHIC_STORAGE_KEYS.uses, activeProfile?.id),
+    materialPrices: getProfileStorageKey(MYTHIC_STORAGE_KEYS.materialPrices, activeProfile?.id),
+    sellPrices: getProfileStorageKey(MYTHIC_STORAGE_KEYS.sellPrices, activeProfile?.id),
+    costMode: getProfileStorageKey(MYTHIC_STORAGE_KEYS.costMode, activeProfile?.id),
   }), [activeProfile?.id]);
 
-  const mythicRecipes = useMemo(() => {
-    const grouped = new Map<string, MythicRecipe>();
-
-    for (const item of Object.values(itemsByName)) {
-      const recipe = item.recipe;
-      const resultName = recipe?.result?.item_name;
-      const level = Number(recipe?.level_required) || 0;
-      const maxUses = Number(recipe?.max_uses) || 0;
-      const skill = String(recipe?.skill || "").toLowerCase();
-
-      if (!item.name || item.type !== "RECIPE" || skill !== "alchemy" || !resultName || level < 90 || maxUses <= 0) {
-        continue;
-      }
-
-      const materials = (recipe?.materials || [])
-        .map((material) => ({
-          name: material.item_name || material.name || "",
-          qty: Number(material.quantity ?? material.qty ?? 0),
-        }))
-        .filter((material) => material.name && material.qty > 0);
-
-      if (materials.length === 0) continue;
-
-      const resultItem = itemsByName[resultName];
-      const candidate: MythicRecipe = {
-        resultName,
-        recipeName: item.name,
-        level,
-        maxUses,
-        experience: Number(recipe?.experience) || 0,
-        recipeQuality: item.quality || "MYTHIC",
-        resultQuality: resultItem?.quality || "MYTHIC",
-        recipeTradeable: item.is_tradeable !== false && !/\(Untradable\)$/i.test(item.name),
-        imageUrl: resultItem?.image_url || item.image_url,
-        materials,
-      };
-
-      const existing = grouped.get(resultName);
-      if (!existing || (!existing.recipeTradeable && candidate.recipeTradeable)) {
-        grouped.set(resultName, candidate);
-      }
-    }
-
-    return Array.from(grouped.values()).sort((a, b) => a.resultName.localeCompare(b.resultName));
-  }, [itemsByName]);
+  const mythicRecipes = useMemo(() => buildMythicAlchemyRecipes(itemsByName), [itemsByName]);
 
   const recipeByResult = useMemo(() => {
     const map = new Map<string, MythicRecipe>();
@@ -240,11 +122,11 @@ export default function MythicAlchemyPage() {
 
   useEffect(() => {
     setLoaded(false);
-    const legacyActive = activeProfileId ? [] : readJson(STORAGE_KEYS.active, [], isStringArray);
-    const legacyRecipePrices = activeProfileId ? {} : readJson(STORAGE_KEYS.recipePrices, {}, isNumberRecord);
-    const legacyUses = activeProfileId ? {} : readJson(STORAGE_KEYS.uses, {}, isNumberRecord);
-    const legacyMaterialPrices = activeProfileId ? {} : readJson(STORAGE_KEYS.materialPrices, {}, isNestedNumberRecord);
-    const legacySellPrices = activeProfileId ? {} : readJson(STORAGE_KEYS.sellPrices, {}, isNumberRecord);
+    const legacyActive = activeProfileId ? [] : readJson(MYTHIC_STORAGE_KEYS.active, [], isStringArray);
+    const legacyRecipePrices = activeProfileId ? {} : readJson(MYTHIC_STORAGE_KEYS.recipePrices, {}, isNumberRecord);
+    const legacyUses = activeProfileId ? {} : readJson(MYTHIC_STORAGE_KEYS.uses, {}, isNumberRecord);
+    const legacyMaterialPrices = activeProfileId ? {} : readJson(MYTHIC_STORAGE_KEYS.materialPrices, {}, isNestedNumberRecord);
+    const legacySellPrices = activeProfileId ? {} : readJson(MYTHIC_STORAGE_KEYS.sellPrices, {}, isNumberRecord);
 
     setActiveRecipeNames(readJson(profileStorageKeys.active, legacyActive, isStringArray));
     setCustomRecipePrices(readJson(profileStorageKeys.recipePrices, legacyRecipePrices, isNumberRecord));
@@ -252,8 +134,8 @@ export default function MythicAlchemyPage() {
     setCustomMaterialPrices(readJson(profileStorageKeys.materialPrices, legacyMaterialPrices, isNestedNumberRecord));
     setCustomSellPrices(readJson(profileStorageKeys.sellPrices, legacySellPrices, isNumberRecord));
 
-    const storedCostMode = localStorage.getItem(profileStorageKeys.costMode) ?? (activeProfileId ? null : localStorage.getItem(STORAGE_KEYS.costMode));
-    if (isRecipeCostMode(storedCostMode)) setRecipeCostMode(storedCostMode);
+    const storedCostMode = localStorage.getItem(profileStorageKeys.costMode) ?? (activeProfileId ? null : localStorage.getItem(MYTHIC_STORAGE_KEYS.costMode));
+    if (isMythicRecipeCostMode(storedCostMode)) setRecipeCostMode(storedCostMode);
     else setRecipeCostMode("full");
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -261,10 +143,17 @@ export default function MythicAlchemyPage() {
         setIsSearchOpen(false);
       }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsSearchOpen(false);
+    };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     setLoaded(true);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [activeProfileId, profileStorageKeys]);
 
   useEffect(() => {
@@ -282,155 +171,52 @@ export default function MythicAlchemyPage() {
     setActiveRecipeNames((current) => current.filter((name) => recipeByResult.has(name)));
   }, [loaded, mythicRecipes.length, recipeByResult]);
 
-  const getMarketAverage = useCallback((itemName: string): { price: number; source: PriceSource } => {
-    const item = marketData[itemName];
-    if (!item) return { price: 0, source: "none" };
-    const guarded = getSafeMarketPrice(item);
-    if (guarded.value > 0 && guarded.adjusted) return { price: guarded.value, source: "guarded" };
-    if (guarded.value > 0 && isFinitePositive(item.price)) return { price: guarded.value, source: "3d" };
-    if (isFinitePositive(item.avg_3)) return { price: item.avg_3, source: "3d" };
-    if (isFinitePositive(item.avg_7)) return { price: item.avg_7, source: "7d" };
-    if (isFinitePositive(item.avg_14)) return { price: item.avg_14, source: "14d" };
-    if (isFinitePositive(item.avg_30)) return { price: item.avg_30, source: "30d" };
-    return { price: 0, source: "none" };
-  }, [marketData]);
-
-  const getVendorPrice = useCallback((itemName: string) => {
-    const marketVendor = marketData[itemName]?.vendor_price;
-    if (isFinitePositive(marketVendor)) return marketVendor;
-    const dbVendor = itemsByName[itemName]?.vendor_price;
-    return isFinitePositive(dbVendor) ? dbVendor : 0;
-  }, [itemsByName, marketData]);
-
-  const getInputFallbackPrice = useCallback((itemName: string): { price: number; source: PriceSource } => {
-    const merchantBuyPrice = getMerchantBuyPrice(itemName);
-    if (merchantBuyPrice > 0) return { price: merchantBuyPrice, source: "merchant" };
-
-    const vendorSellPrice = getVendorPrice(itemName);
-    if (vendorSellPrice > 0) return { price: vendorSellPrice, source: "vendor" };
-
-    return { price: 0, source: "none" };
-  }, [getVendorPrice]);
-
-  const getPricedItem = useCallback((
-    itemName: string,
-    localOverride: number | null,
-    allowVendorFallback: boolean,
-  ): { price: number; source: PriceSource; settingsPrice: number } => {
-    if (localOverride !== null) return { price: localOverride, source: "custom", settingsPrice: 0 };
-
-    const settingsPrice = settingsPrices[itemName];
-    if (isFinitePositive(settingsPrice)) return { price: settingsPrice, source: "settings", settingsPrice };
-
-    const market = getMarketAverage(itemName);
-    if (market.price > 0) return { ...market, settingsPrice: 0 };
-
-    if (allowVendorFallback) {
-      const fallback = getInputFallbackPrice(itemName);
-      if (fallback.price > 0) return { ...fallback, settingsPrice: 0 };
-    }
-
-    return { price: 0, source: "none", settingsPrice: 0 };
-  }, [getInputFallbackPrice, getMarketAverage, settingsPrices]);
-
   const availableMythics = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return mythicRecipes.filter((recipe) => {
       if (activeRecipeNames.includes(recipe.resultName)) return false;
       if (!query) return true;
-      return (
-        recipe.resultName.toLowerCase().includes(query) ||
-        recipe.recipeName.toLowerCase().includes(query) ||
-        recipe.materials.some((material) => material.name.toLowerCase().includes(query))
-      );
+      return recipe.searchText.includes(query);
     });
   }, [activeRecipeNames, mythicRecipes, searchTerm]);
 
-  const activeRows = useMemo(() => {
-    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
-
-    return activeRecipeNames
-      .map((name) => recipeByResult.get(name))
-      .filter((recipe): recipe is MythicRecipe => Boolean(recipe))
-      .map((recipe) => {
-        const maxUses = Math.max(1, recipe.maxUses);
-        const currentUses = clampUses(usesLeft[recipe.resultName] || maxUses, maxUses);
-        const localRecipePrice = customRecipePrices[recipe.resultName] ?? null;
-        const recipePrice = getPricedItem(recipe.recipeName, localRecipePrice, false);
-        const recipeCostDivisor = recipeCostMode === "remaining" ? currentUses : maxUses;
-        const recipeCostPerCraft = recipeCostMode === "owned" ? 0 : recipePrice.price / recipeCostDivisor;
-
-        const materialBreakdown = recipe.materials.map((material) => {
-          const localPrice = customMaterialPrices[recipe.resultName]?.[material.name] ?? null;
-          const price = getPricedItem(material.name, localPrice, true);
-          return {
-            name: material.name,
-            qty: material.qty,
-            unitPrice: price.price,
-            priceSource: price.source,
-            localPrice,
-            settingsPrice: price.settingsPrice,
-            total: price.price * material.qty,
-          };
-        });
-
-        const materialCost = materialBreakdown.reduce((sum, material) => sum + material.total, 0);
-        const localSellPrice = customSellPrices[recipe.resultName] ?? null;
-        const salePrice = getPricedItem(recipe.resultName, localSellPrice, false);
-        const marketGross = salePrice.price;
-        const revenue = marketGross * marketTaxMultiplier;
-        const vendorRevenue = getVendorPrice(recipe.resultName) * (1 + profileBarteringBoost / 100);
-        const bestRevenue = Math.max(revenue, vendorRevenue);
-        const bestPath: BestPath =
-          vendorRevenue > revenue ? "VENDOR" : salePrice.source === "custom" || salePrice.source === "settings" ? "CUSTOM" : "MARKET";
-        const totalCostPerCraft = materialCost + recipeCostPerCraft;
-        const profit = bestRevenue - totalCostPerCraft;
-        const craftsPerHour = 3600 / mythicCraftTimeSeconds;
-        const profitPerHour = profit * craftsPerHour;
-        const roi = totalCostPerCraft > 0 ? (profit / totalCostPerCraft) * 100 : 0;
-        const totalRemainingProfit = profit * currentUses;
-
-        return {
-          recipe,
-          materialCost,
-          recipePrice: recipePrice.price,
-          recipePriceSource: recipePrice.source,
-          localRecipePrice,
-          recipeCostPerCraft,
-          totalCostPerCraft,
-          revenue,
-          marketGross,
-          marketPriceSource: salePrice.source,
-          localSellPrice,
-          vendorRevenue,
-          bestRevenue,
-          profit,
-          profitPerHour,
-          roi,
-          totalRemainingProfit,
-          craftTimeSeconds: mythicCraftTimeSeconds,
-          efficiencyBonus: alchemyEfficiencyBonus,
-          vol_3: marketData[recipe.resultName]?.vol_3 || 0,
-          bestPath,
-          usesLeft: currentUses,
-          materialBreakdown,
-        };
-      })
-      .sort((a, b) => b.profitPerHour - a.profitPerHour);
-  }, [
+  const recommendedRecipes = useMemo(() => buildRecommendedMythicRecipes({
+    mythicRecipes,
     activeRecipeNames,
+    settingsPrices,
+    marketData,
+    itemsByName,
+  }), [activeRecipeNames, itemsByName, marketData, mythicRecipes, settingsPrices]);
+
+  const activeRows = useMemo(() => calculateMythicProjectRows({
+    activeRecipeNames,
+    recipeByResult,
+    usesLeft,
+    customRecipePrices,
+    customMaterialPrices,
+    customSellPrices,
+    settingsPrices,
+    marketData,
+    itemsByName,
+    recipeCostMode,
+    membership: preferences.membership,
+    profileBarteringBoost,
+    mythicCraftTimeSeconds,
+    alchemyEfficiencyBonus,
+  }), [
+    activeRecipeNames,
+    alchemyEfficiencyBonus,
     customMaterialPrices,
     customRecipePrices,
     customSellPrices,
-    getPricedItem,
-    getVendorPrice,
+    itemsByName,
     marketData,
-    alchemyEfficiencyBonus,
     mythicCraftTimeSeconds,
-    profileBarteringBoost,
     preferences.membership,
+    profileBarteringBoost,
     recipeByResult,
     recipeCostMode,
+    settingsPrices,
     usesLeft,
   ]);
 
@@ -469,10 +255,19 @@ export default function MythicAlchemyPage() {
       delete next[resultName];
       return next;
     });
+    setExpandedProjectNames((current) => current.filter((name) => name !== resultName));
+  };
+
+  const toggleProjectDetails = (resultName: string) => {
+    setExpandedProjectNames((current) => (
+      current.includes(resultName)
+        ? current.filter((name) => name !== resultName)
+        : [...current, resultName]
+    ));
   };
 
   const updateRecipePrice = (resultName: string, raw: string) => {
-    const parsed = parseOptionalPrice(raw);
+    const parsed = parseOptionalMythicPrice(raw);
     setCustomRecipePrices((current) => {
       const next = { ...current };
       if (parsed === null) delete next[resultName];
@@ -482,7 +277,7 @@ export default function MythicAlchemyPage() {
   };
 
   const updateMaterialPrice = (resultName: string, materialName: string, raw: string) => {
-    const parsed = parseOptionalPrice(raw);
+    const parsed = parseOptionalMythicPrice(raw);
     setCustomMaterialPrices((current) => {
       const recipePrices = { ...(current[resultName] || {}) };
       if (parsed === null) delete recipePrices[materialName];
@@ -492,7 +287,7 @@ export default function MythicAlchemyPage() {
   };
 
   const updateSellPrice = (resultName: string, raw: string) => {
-    const parsed = parseOptionalPrice(raw);
+    const parsed = parseOptionalMythicPrice(raw);
     setCustomSellPrices((current) => {
       const next = { ...current };
       if (parsed === null) delete next[resultName];
@@ -502,7 +297,7 @@ export default function MythicAlchemyPage() {
   };
 
   const setRecipeUses = (recipe: MythicRecipe, raw: string) => {
-    setUsesLeft((current) => ({ ...current, [recipe.resultName]: clampUses(raw, recipe.maxUses) }));
+    setUsesLeft((current) => ({ ...current, [recipe.resultName]: clampMythicUses(raw, recipe.maxUses) }));
   };
 
   const taxRate = getMarketTaxRate(preferences.membership);
@@ -513,21 +308,28 @@ export default function MythicAlchemyPage() {
       <div className="header">
         <div>
           <h1 className="header-title">
-            <ZenithIcon name="spark" size={24} style={{ color: "var(--text-accent)" }} /> MYTHIC WORKBENCH
+            <ZenithIcon name="spark" size={24} style={{ color: "var(--text-accent)" }} /> Mythic Lab
           </h1>
-          <p className="header-subtitle">Level 90 alchemy recipe projects powered by the live item database.</p>
+          <p className="header-subtitle">Workbench for level 90 alchemy recipe projects powered by the live item database.</p>
         </div>
 
         <div className="workbench-actions" ref={searchRef}>
-          <button type="button" className="search-trigger" onClick={() => setIsSearchOpen((open) => !open)}>
+          <button
+            type="button"
+            className="search-trigger"
+            aria-expanded={isSearchOpen}
+            aria-controls={searchDropdownId}
+            onClick={() => setIsSearchOpen((open) => !open)}
+          >
             <Plus size={16} /> Add Project
           </button>
           {isSearchOpen && (
-            <div className="search-dropdown custom-scrollbar">
+            <div className="search-dropdown custom-scrollbar" id={searchDropdownId} role="dialog" aria-label="Add mythic recipe project">
               <label className="dropdown-input">
                 <Search size={14} />
                 <input
                   autoFocus
+                  aria-label="Search mythic recipe, result, or material"
                   placeholder="Search recipe, result, material..."
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -536,9 +338,15 @@ export default function MythicAlchemyPage() {
               <div className="dropdown-results">
                 {availableMythics.length > 0 ? (
                   availableMythics.map((recipe) => (
-                    <button key={recipe.resultName} type="button" className="result-item" onClick={() => addToLab(recipe)}>
+                    <button
+                      key={recipe.resultName}
+                      type="button"
+                      className="result-item"
+                      aria-label={`Add ${recipe.resultName}. Level ${recipe.level}, ${recipe.maxUses} uses. Recipe: ${recipe.recipeName}`}
+                      onClick={() => addToLab(recipe)}
+                    >
                       <span>{recipe.resultName}</span>
-                      <small>{recipe.recipeName}</small>
+                      <small>{recipe.recipeName} - Lvl {recipe.level} - {recipe.maxUses} uses</small>
                     </button>
                   ))
                 ) : (
@@ -578,6 +386,7 @@ export default function MythicAlchemyPage() {
               Owned
             </button>
           </div>
+          <p className="mode-helper">{RECIPE_COST_MODE_HELP[recipeCostMode]}</p>
         </div>
       </div>
 
@@ -592,15 +401,41 @@ export default function MythicAlchemyPage() {
             <button type="button" className="empty-add-btn" onClick={() => setIsSearchOpen(true)}>
               <Plus size={18} /> Add Your First Recipe
             </button>
+            {recommendedRecipes.length > 0 && (
+              <div className="recipe-index" aria-label="Recommended mythic recipes to review">
+                <span className="recipe-index-label">Recommended to review</span>
+                {recommendedRecipes.map(({ recipe, outputPrice, recipePrice, missingInputs, liquidity, complete }) => (
+                  <button
+                    key={recipe.resultName}
+                    type="button"
+                    className="recipe-index-row"
+                    onClick={() => addToLab(recipe)}
+                    aria-label={`Pin ${recipe.resultName}. ${complete ? "Prices complete" : `${missingInputs} missing input prices`}. ${liquidity.label}.`}
+                  >
+                    {recipe.imageUrl ? <img src={recipe.imageUrl} alt="" /> : <span className="recipe-index-fallback" />}
+                    <span>
+                      <strong>{recipe.resultName}</strong>
+                      <small>Lvl {recipe.level} - {recipe.maxUses} uses - {liquidity.label}</small>
+                    </span>
+                    <em>{complete ? "Ready" : outputPrice.price <= 0 || recipePrice.price <= 0 ? "Needs prices" : `${missingInputs} missing`}</em>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
-          activeRows.map((row) => (
-            <article key={row.recipe.resultName} className="mythic-card">
-              <button className="remove-btn" onClick={() => removeFromLab(row.recipe.resultName)} title="Remove project" type="button">
+          activeRows.map((row) => {
+            const isProjectExpanded = expandedProjectNames.includes(row.recipe.resultName);
+            const detailsId = `mythic-project-${row.recipe.resultName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-details`;
+
+            return (
+            <article key={row.recipe.resultName} className={`mythic-card ${isProjectExpanded ? "project-expanded" : ""}`}>
+              <button className="remove-btn" onClick={() => removeFromLab(row.recipe.resultName)} aria-label={`Remove ${row.recipe.resultName} project`} type="button">
                 <X size={18} />
               </button>
 
               <div className="card-header">
+                {row.recipe.imageUrl && <img className="result-art" src={row.recipe.imageUrl} alt="" />}
                 <div className="title-area">
                   <button type="button" className="title-button" onClick={() => openItemByName(row.recipe.resultName)}>
                     {row.recipe.resultName}
@@ -613,6 +448,7 @@ export default function MythicAlchemyPage() {
                     <span>{row.recipe.resultQuality}</span>
                     <span>{row.recipe.maxUses} uses</span>
                     <span>{row.vol_3.toLocaleString()} 3d vol</span>
+                    <span>{row.outputLiquidity.label}</span>
                   </div>
                 </div>
                 <div className={`profit-badge ${row.profitPerHour >= 0 ? "pos" : "neg"}`}>
@@ -621,7 +457,33 @@ export default function MythicAlchemyPage() {
                 </div>
               </div>
 
-              <div className="card-grid">
+              <div className="mobile-card-summary" aria-label={`${row.recipe.resultName} project summary`}>
+                <div>
+                  <span>Remaining</span>
+                  <strong className={row.totalRemainingProfit >= 0 ? "text-success" : "text-danger"}>{formatSignedGold(row.totalRemainingProfit)}</strong>
+                </div>
+                <div>
+                  <span>Best path</span>
+                  <strong className={`path-${row.bestPath.toLowerCase()}`}>{row.bestPath}</strong>
+                </div>
+                <div>
+                  <span>Warnings</span>
+                  <strong>{row.marketWarnings.length}</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mobile-details-toggle"
+                aria-expanded={isProjectExpanded}
+                aria-controls={detailsId}
+                onClick={() => toggleProjectDetails(row.recipe.resultName)}
+              >
+                <span>{isProjectExpanded ? "Hide details" : "Show details"}</span>
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
+
+              <div className="card-grid" id={detailsId}>
                 <section className="card-left">
                   <div className="card-section">
                     <div className="section-label">
@@ -634,6 +496,7 @@ export default function MythicAlchemyPage() {
                           <input
                             type="number"
                             min="0"
+                            aria-label={`Recipe acquisition price for ${row.recipe.recipeName}`}
                             placeholder={row.recipePrice > 0 ? row.recipePrice.toLocaleString() : "No market data"}
                             value={row.localRecipePrice ?? ""}
                             onChange={(event) => updateRecipePrice(row.recipe.resultName, event.target.value)}
@@ -651,6 +514,7 @@ export default function MythicAlchemyPage() {
                           type="number"
                           min="1"
                           max={row.recipe.maxUses}
+                          aria-label={`Uses remaining for ${row.recipe.resultName}`}
                           value={row.usesLeft}
                           onChange={(event) => setRecipeUses(row.recipe, event.target.value)}
                         />
@@ -677,6 +541,7 @@ export default function MythicAlchemyPage() {
                             <input
                               type="number"
                               min="0"
+                              aria-label={`Custom unit price for ${material.name}`}
                               placeholder={material.unitPrice > 0 ? material.unitPrice.toLocaleString() : "Missing"}
                               value={material.localPrice ?? ""}
                               onChange={(event) => updateMaterialPrice(row.recipe.resultName, material.name, event.target.value)}
@@ -694,6 +559,15 @@ export default function MythicAlchemyPage() {
                     <div className="section-label">
                       <DollarSign size={12} /> Revenue Strategy
                     </div>
+                    {row.marketWarnings.length > 0 && (
+                      <div className={`market-warning-row ${row.outputLiquidity.tone}`}>
+                        <AlertTriangle size={14} aria-hidden="true" />
+                        <div className="market-warning-copy">
+                          <span>{row.marketWarnings.join(" - ")}</span>
+                          <small>{row.outputLiquidity.note}</small>
+                        </div>
+                      </div>
+                    )}
                     <div className="revenue-manager">
                       <label className="market-revenue-box">
                         <span>Gross Sell Price</span>
@@ -701,6 +575,7 @@ export default function MythicAlchemyPage() {
                           <input
                             type="number"
                             min="0"
+                            aria-label={`Gross sell price for ${row.recipe.resultName}`}
                             placeholder={row.marketGross > 0 ? row.marketGross.toLocaleString() : "No market data"}
                             value={row.localSellPrice ?? ""}
                             onChange={(event) => updateSellPrice(row.recipe.resultName, event.target.value)}
@@ -744,7 +619,8 @@ export default function MythicAlchemyPage() {
                 </section>
               </div>
             </article>
-          ))
+          );
+          })
         )}
       </div>
 
@@ -790,6 +666,7 @@ export default function MythicAlchemyPage() {
         .mode-toggle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.85rem; }
         .mode-toggle button { border: 1px solid var(--border-subtle); border-radius: 10px; background: rgba(0,0,0,0.25); color: var(--text-muted); padding: 0.65rem 0.5rem; font-weight: 800; cursor: pointer; }
         .mode-toggle button.active { background: var(--text-accent); border-color: var(--text-accent); color: #000; }
+        .mode-helper { color: var(--text-muted); font-size: 0.78rem; font-weight: 750; line-height: 1.45; margin: 0.75rem 0 0; }
 
         .lab-grid { display: flex; flex-direction: column; gap: 1.5rem; }
         .empty-bench {
@@ -799,6 +676,18 @@ export default function MythicAlchemyPage() {
         .empty-icon { margin-bottom: 1.25rem; opacity: 0.25; }
         .empty-bench h2 { color: #fff; font-size: 1.75rem; margin-bottom: 0.75rem; }
         .empty-bench p { font-size: 0.95rem; margin-bottom: 2rem; max-width: 520px; color: var(--text-muted); }
+        .recipe-index { display: grid; gap: 0.55rem; margin-top: 2rem; max-width: 760px; width: 100%; }
+        .recipe-index-label { color: var(--text-accent); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+        .recipe-index-row {
+          align-items: center; background: rgba(255,255,255,0.022); border: 1px solid var(--border-subtle); border-radius: 12px;
+          color: inherit; cursor: pointer; display: grid; gap: 0.65rem; grid-template-columns: 38px minmax(0, 1fr) auto;
+          min-height: 54px; padding: 0.55rem 0.7rem; text-align: left; width: 100%;
+        }
+        .recipe-index-row:hover, .recipe-index-row:focus-visible { background: rgba(255,255,255,0.05); border-color: var(--text-accent); outline: none; }
+        .recipe-index-row img, .recipe-index-fallback { background: rgba(255,255,255,0.05); border-radius: 8px; display: block; height: 38px; width: 38px; }
+        .recipe-index-row strong { color: #fff; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .recipe-index-row small { color: var(--text-muted); display: block; font-size: 0.72rem; line-height: 1.35; margin-top: 0.12rem; }
+        .recipe-index-row em { color: var(--text-accent); font-size: 0.72rem; font-style: normal; font-weight: 900; white-space: nowrap; }
 
         .mythic-card {
           background: #080808; border: 1px solid rgba(255,255,255,0.07); border-radius: 26px; padding: 2rem; position: relative;
@@ -814,7 +703,8 @@ export default function MythicAlchemyPage() {
         .remove-btn:hover { transform: scale(1.08); filter: brightness(1.08); }
 
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem; }
-        .title-area { min-width: 0; }
+        .result-art { background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: 14px; flex: 0 0 auto; height: 64px; object-fit: cover; width: 64px; }
+        .title-area { flex: 1 1 auto; min-width: 0; }
         .title-button { display: block; border: none; background: transparent; padding: 0; color: #fff; font-size: 1.85rem; font-weight: 900; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
         .title-button:hover { color: var(--text-accent); }
         .recipe-link { border: none; background: transparent; padding: 0.25rem 0 0; color: var(--text-muted); font-size: 0.82rem; cursor: pointer; text-align: left; }
@@ -828,6 +718,7 @@ export default function MythicAlchemyPage() {
         .profit-badge span { font-size: 0.75rem; opacity: 0.75; }
         .profit-badge.pos { background: rgba(34,197,94,0.1); color: #8ff0bf; border: 1px solid rgba(34,197,94,0.2); }
         .profit-badge.neg { background: rgba(239,68,68,0.1); color: #ff9d9d; border: 1px solid rgba(239,68,68,0.2); }
+        .mobile-card-summary, .mobile-details-toggle { display: none; }
 
         .card-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr); gap: 2rem; }
         .card-section { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
@@ -865,6 +756,17 @@ export default function MythicAlchemyPage() {
         .ledger-total { text-align: right; font-size: 0.84rem; font-weight: 800; color: rgba(255,255,255,0.48); font-family: var(--font-mono); }
 
         .revenue-manager { display: flex; flex-direction: column; gap: 1rem; }
+        .market-warning-row {
+          align-items: flex-start; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.22);
+          border-radius: 12px; color: #f8e7bd; display: flex; gap: 0.65rem;
+          padding: 0.75rem 0.85rem;
+        }
+        .market-warning-row svg { color: #fbbf24; flex: 0 0 auto; margin-top: 0.1rem; }
+        .market-warning-copy { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.35rem; min-width: 0; text-align: left; }
+        .market-warning-copy span { color: #fff; display: block; font-size: 0.76rem; font-weight: 900; line-height: 1.35; text-transform: uppercase; white-space: normal; }
+        .market-warning-copy small { color: var(--text-muted); display: block; line-height: 1.4; }
+        .market-warning-row.active, .market-warning-row.steady { background: rgba(56,189,248,0.06); border-color: rgba(56,189,248,0.2); color: var(--text-main); }
+        .market-warning-row.active svg, .market-warning-row.steady svg { color: var(--text-accent); }
         .market-revenue-box { background: rgba(255,255,255,0.018); border: 1px solid var(--border-subtle); border-radius: 18px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem; }
         .vendor-revenue-box { background: rgba(255,255,255,0.012); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; opacity: 0.65; transition: opacity 0.25s, border-color 0.25s; }
         .vendor-revenue-box.highlight { background: color-mix(in srgb, var(--text-accent), transparent 96%); border-color: color-mix(in srgb, var(--text-accent), transparent 76%); opacity: 1; }
@@ -893,10 +795,36 @@ export default function MythicAlchemyPage() {
           .dropdown-results { max-height: calc(100vh - 12rem); }
           .lab-summary { grid-template-columns: 1fr; }
           .summary-content, .card-header { flex-direction: column; align-items: stretch; }
+          .result-art { height: 56px; width: 56px; }
           .summary-value { font-size: 1.55rem; }
           .mode-toggle { grid-template-columns: 1fr; }
+          .recipe-index-row { grid-template-columns: 34px minmax(0, 1fr); }
+          .recipe-index-row em { grid-column: 2; }
           .mythic-card { border-radius: 20px; padding: 1.1rem; }
+          .mythic-card:not(.project-expanded) .card-grid { display: none; }
           .profit-badge { min-width: 0; align-items: flex-start; }
+          .mobile-card-summary {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 1rem 0 0;
+          }
+          .mobile-card-summary div {
+            background: rgba(255,255,255,0.018); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
+            min-width: 0; padding: 0.7rem 0.55rem;
+          }
+          .mobile-card-summary span {
+            color: var(--text-muted); display: block; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.08em;
+            margin-bottom: 0.35rem; text-transform: uppercase;
+          }
+          .mobile-card-summary strong {
+            display: block; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 900; overflow-wrap: anywhere;
+          }
+          .mobile-details-toggle {
+            align-items: center; background: rgba(255,255,255,0.028); border: 1px solid var(--border-subtle);
+            border-radius: 12px; color: #fff; cursor: pointer; display: flex; font-weight: 900; gap: 0.5rem;
+            justify-content: center; margin-top: 0.85rem; min-height: 44px; padding: 0.75rem 1rem; width: 100%;
+          }
+          .mobile-details-toggle:focus-visible, .mobile-details-toggle:hover { border-color: var(--text-accent); outline: none; }
+          .mobile-details-toggle svg { transition: transform 0.2s; }
+          .project-expanded .mobile-details-toggle svg { transform: rotate(180deg); }
           .investment-input-group { grid-template-columns: 1fr; }
           .ledger-row { align-items: stretch; flex-direction: column; }
           .ledger-input { grid-template-columns: 1fr 110px; }

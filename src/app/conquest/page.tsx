@@ -7,6 +7,7 @@ import {
   Flag,
   Flame,
   MapPinned,
+  Search,
   Shield,
   Trophy,
   Users,
@@ -54,6 +55,26 @@ function zoneMatchesFilter(zone: ConquestZone, filter: ZoneFilter) {
   if (filter === "contested") return zone.status === "CONTESTED";
   if (filter === "dominated") return zone.status === "DOMINATED";
   return true;
+}
+
+function getFilterEmptyLabel(filter: ZoneFilter) {
+  if (filter === "active") return "No active assaults in the latest snapshot.";
+  if (filter === "contested") return "No contested zones in the latest snapshot.";
+  if (filter === "dominated") return "No dominated zones in the latest snapshot.";
+  return "No conquest zones matched the current search.";
+}
+
+function zoneMatchesSearch(zone: ConquestZone, query: string) {
+  if (!query) return true;
+  const haystack = [
+    zone.name,
+    zone.key,
+    getStatusLabel(zone.status),
+    ...zone.guild_leaderboard.flatMap((row) => [row.guild?.name, row.guild?.tag]),
+    ...zone.top_contributors.flatMap((row) => [row.character?.name, row.guild?.name, row.guild?.tag]),
+    ...zone.active_assaults.flatMap((assault) => [assault.guild?.name, assault.guild?.tag]),
+  ];
+  return haystack.some((value) => String(value || "").toLowerCase().includes(query));
 }
 
 function getZoneStyle(zone: ConquestZone): CSSProperties {
@@ -171,7 +192,14 @@ function ContributorRow({ row, zoneName }: { row: ConquestContributorRow; zoneNa
   if (!href) return <div className={styles.contributorRow}>{body}</div>;
 
   return (
-    <a className={styles.contributorRow} href={href} target="_blank" rel="noreferrer">
+    <a
+      className={styles.contributorRow}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Open ${name} on IdleMMO in a new tab`}
+      title={`Open ${name} on IdleMMO in a new tab`}
+    >
       {body}
     </a>
   );
@@ -219,11 +247,12 @@ export default function ConquestPage() {
   const [selectedZoneKey, setSelectedZoneKey] = useState<string | null>(null);
   const [filter, setFilter] = useState<ZoneFilter>("all");
   const [detailTab, setDetailTab] = useState<DetailTab>("guilds");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     let cancelled = false;
 
-    fetch("/conquest-data.json", { cache: "no-store" })
+    fetch("/conquest-data.json", { cache: "force-cache" })
       .then((response) => {
         if (!response.ok) throw new Error(`Conquest data returned ${response.status}`);
         return response.json() as Promise<ConquestData>;
@@ -248,20 +277,30 @@ export default function ConquestPage() {
   }, []);
 
   const filteredZones = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
     return [...(data?.zones ?? [])]
       .filter((zone) => zoneMatchesFilter(zone, filter))
+      .filter((zone) => zoneMatchesSearch(zone, query))
       .sort((a, b) => {
         if (b.active_assaults_count !== a.active_assaults_count) return b.active_assaults_count - a.active_assaults_count;
         return getZoneIntensity(b) - getZoneIntensity(a);
       });
-  }, [data, filter]);
+  }, [data, filter, searchTerm]);
+
+  useEffect(() => {
+    if (!data?.zones.length || filteredZones.length === 0) return;
+    if (!selectedZoneKey || !filteredZones.some((zone) => zone.key === selectedZoneKey)) {
+      setSelectedZoneKey(filteredZones[0].key);
+    }
+  }, [data, filteredZones, selectedZoneKey]);
 
   const selectedZone = useMemo(() => {
     if (!data?.zones.length) return null;
     return data.zones.find((zone) => zone.key === selectedZoneKey) ?? filteredZones[0] ?? data.zones[0];
   }, [data, filteredZones, selectedZoneKey]);
+  const searchActive = searchTerm.trim().length > 0;
   const zoneStatus = data
-    ? `${formatConquestNumber(filteredZones.length)} conquest zone${filteredZones.length === 1 ? "" : "s"} shown. ${selectedZone?.name ?? "No zone"} selected.`
+    ? `${formatConquestNumber(filteredZones.length)} of ${formatConquestNumber(data.zones.length)} conquest zone${filteredZones.length === 1 ? "" : "s"} shown${searchActive ? ` for ${searchTerm.trim()}` : ""}. ${filteredZones.length > 0 ? `${selectedZone?.name ?? "No zone"} selected.` : "No zone selected."}`
     : "Conquest data is loading.";
 
   const seasonLeaders = useMemo(() => {
@@ -388,17 +427,38 @@ export default function ConquestPage() {
       </section>
 
       <section className={styles.toolbar} aria-label="Zone filters">
-        {FILTERS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            aria-pressed={filter === item.key}
-            data-active={filter === item.key}
-            onClick={() => setFilter(item.key)}
-          >
-            {item.label}
-          </button>
-        ))}
+        <div className={styles.filterButtons}>
+          {FILTERS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              aria-pressed={filter === item.key}
+              data-active={filter === item.key}
+              onClick={() => setFilter(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <label className={styles.searchBox}>
+          <span>Search zones, guilds, players</span>
+          <Search size={15} aria-hidden="true" />
+          <input
+            aria-label="Search conquest zones, guilds, and players"
+            value={searchTerm}
+            onChange={(event) => {
+              setSearchTerm(event.target.value);
+              if (event.target.value.trim()) setFilter("all");
+            }}
+            placeholder="Search conquest..."
+          />
+          {searchActive && (
+            <button type="button" onClick={() => setSearchTerm("")}>
+              Clear
+            </button>
+          )}
+        </label>
+        <p className={styles.filterHelp}>Dominated is the snapshot status. Controlled means one guild owns at least 95% of the visible XP.</p>
       </section>
       <p className="sr-only" role="status" aria-live="polite">{zoneStatus}</p>
 
@@ -482,8 +542,26 @@ export default function ConquestPage() {
               </article>
             );
           })}
+          {filteredZones.length === 0 && (
+            <div className={styles.emptyState}>
+              <strong>{getFilterEmptyLabel(filter)}</strong>
+              <span>{searchActive ? `No zone, guild, or player matched "${searchTerm.trim()}".` : "Try another conquest filter."}</span>
+              {(searchActive || filter !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilter("all");
+                  }}
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
+        {filteredZones.length > 0 && (
         <aside className={styles.panel} aria-label={`${selectedZone.name} details`}>
           <div className={styles.panelHeader}>
             <h2>
@@ -574,7 +652,7 @@ export default function ConquestPage() {
                   type="button"
                   role="tab"
                   id={`conquest-tab-${item.key}`}
-                  aria-controls={detailTab === item.key ? `conquest-panel-${item.key}` : undefined}
+                  aria-controls={`conquest-panel-${item.key}`}
                   aria-selected={detailTab === item.key}
                   data-active={detailTab === item.key}
                   tabIndex={detailTab === item.key ? 0 : -1}
@@ -605,46 +683,59 @@ export default function ConquestPage() {
               ))}
             </div>
 
-            {detailTab === "guilds" && (
-              <div className={styles.rowList} id="conquest-panel-guilds" role="tabpanel" aria-labelledby="conquest-tab-guilds">
-                {selectedZone.guild_leaderboard.length > 0 ? (
-                  selectedZone.guild_leaderboard.map((row) => (
-                    <GuildRow key={`${selectedZone.key}-${row.position}-${row.guild?.id ?? row.guild?.name}`} row={row} />
-                  ))
-                ) : (
-                  <div className={styles.empty}>No guilds are shown for this zone.</div>
-                )}
-              </div>
-            )}
+            <div
+              className={styles.rowList}
+              id="conquest-panel-guilds"
+              role="tabpanel"
+              aria-labelledby="conquest-tab-guilds"
+              hidden={detailTab !== "guilds"}
+            >
+              {selectedZone.guild_leaderboard.length > 0 ? (
+                selectedZone.guild_leaderboard.map((row) => (
+                  <GuildRow key={`${selectedZone.key}-${row.position}-${row.guild?.id ?? row.guild?.name}`} row={row} />
+                ))
+              ) : (
+                <div className={styles.empty}>No guilds are shown for this zone.</div>
+              )}
+            </div>
 
-            {detailTab === "contributors" && (
-              <div className={styles.rowList} id="conquest-panel-contributors" role="tabpanel" aria-labelledby="conquest-tab-contributors">
-                {selectedZone.top_contributors.length > 0 ? (
-                  selectedZone.top_contributors.map((row, index) => (
-                    <ContributorRow
-                      key={`${selectedZone.key}-${row.id ?? `${row.character?.name ?? "player"}-${index}`}`}
-                      row={row}
-                    />
-                  ))
-                ) : (
-                  <div className={styles.empty}>No players are shown for this zone.</div>
-                )}
-              </div>
-            )}
+            <div
+              className={styles.rowList}
+              id="conquest-panel-contributors"
+              role="tabpanel"
+              aria-labelledby="conquest-tab-contributors"
+              hidden={detailTab !== "contributors"}
+            >
+              {selectedZone.top_contributors.length > 0 ? (
+                selectedZone.top_contributors.map((row, index) => (
+                  <ContributorRow
+                    key={`${selectedZone.key}-${row.id ?? `${row.character?.name ?? "player"}-${index}`}`}
+                    row={row}
+                  />
+                ))
+              ) : (
+                <div className={styles.empty}>No players are shown for this zone.</div>
+              )}
+            </div>
 
-            {detailTab === "assaults" && (
-              <div className={styles.rowList} id="conquest-panel-assaults" role="tabpanel" aria-labelledby="conquest-tab-assaults">
-                {selectedZone.active_assaults.length > 0 ? (
-                  selectedZone.active_assaults.map((assault, index) => (
-                    <AssaultRow key={`${selectedZone.key}-assault-${assault.guild?.id ?? index}`} assault={assault} index={index} />
-                  ))
-                ) : (
-                  <div className={styles.empty}>No active fight in this zone right now.</div>
-                )}
-              </div>
-            )}
+            <div
+              className={styles.rowList}
+              id="conquest-panel-assaults"
+              role="tabpanel"
+              aria-labelledby="conquest-tab-assaults"
+              hidden={detailTab !== "assaults"}
+            >
+              {selectedZone.active_assaults.length > 0 ? (
+                selectedZone.active_assaults.map((assault, index) => (
+                  <AssaultRow key={`${selectedZone.key}-assault-${assault.guild?.id ?? index}`} assault={assault} index={index} />
+                ))
+              ) : (
+                <div className={styles.empty}>No active fight in this zone right now.</div>
+              )}
+            </div>
           </div>
         </aside>
+        )}
       </section>
 
       <section className={styles.globalGrid}>

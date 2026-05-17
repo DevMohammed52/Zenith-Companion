@@ -4,9 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
-import { ALCHEMY_ITEMS } from "@/constants";
 import { useItemModal } from "@/context/ItemModalContext";
-import { LORE_ENTRIES, LORE_THEORIES } from "@/data/lore";
 import { useProfiles } from "@/lib/profiles";
 
 type SearchResult = {
@@ -57,6 +55,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
+  const [staticSearchRows, setStaticSearchRows] = useState<SearchResult[]>([]);
   const [generatedSearchRows, setGeneratedSearchRows] = useState<SearchResult[]>([]);
   const [guildSearchRows, setGuildSearchRows] = useState<GuildSearchRow[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -97,6 +96,47 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       cancelled = true;
     };
   }, [generatedSearchRows.length, open]);
+
+  useEffect(() => {
+    if (!open || staticSearchRows.length > 0) return;
+    let cancelled = false;
+    Promise.all([
+      import("@/constants"),
+      import("@/data/lore"),
+    ]).then(([constantsModule, loreModule]) => {
+      if (cancelled) return;
+      const rows: SearchResult[] = [];
+
+      loreModule.LORE_ENTRIES.forEach(entry => {
+        rows.push({
+          label: entry.title,
+          type: "Lore",
+          href: `/lore?thread=${encodeURIComponent(entry.id)}`,
+          detail: `${entry.category} - ${entry.tags.slice(0, 2).join(", ") || "Valaron archive"}`,
+        });
+      });
+
+      loreModule.LORE_THEORIES.forEach(theory => {
+        rows.push({
+          label: theory.title,
+          type: "Theory",
+          href: `/lore?view=theories&q=${encodeURIComponent(theory.title)}`,
+          detail: `${theory.speculationLevel} speculation`,
+        });
+      });
+
+      Object.keys(constantsModule.ALCHEMY_ITEMS).forEach(name => {
+        rows.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
+      });
+
+      setStaticSearchRows(rows);
+    }).catch(() => {
+      if (!cancelled) setStaticSearchRows([]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, staticSearchRows.length]);
 
   useEffect(() => {
     if (!open || guildSearchRows.length > 0) return;
@@ -227,28 +267,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       });
     });
 
-    LORE_ENTRIES.forEach(entry => {
-      next.push({
-        label: entry.title,
-        type: "Lore",
-        href: `/lore?thread=${encodeURIComponent(entry.id)}`,
-        detail: `${entry.category} · ${entry.tags.slice(0, 2).join(", ") || "Valaron archive"}`,
-      });
-    });
-
-    LORE_THEORIES.forEach(theory => {
-      next.push({
-        label: theory.title,
-        type: "Theory",
-        href: `/lore?view=theories&q=${encodeURIComponent(theory.title)}`,
-        detail: `${theory.speculationLevel} speculation`,
-      });
-    });
-
-    Object.keys(ALCHEMY_ITEMS).forEach(name => {
-      next.push({ label: name, type: "Recipe", href: `/alchemy?recipe=${encodeURIComponent(name)}`, detail: "Alchemy" });
-    });
-
+    next.push(...staticSearchRows);
     next.push(...generatedSearchRows);
 
     guildSearchRows.forEach((guild) => {
@@ -263,7 +282,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     });
 
     return next;
-  }, [activeProfile, generatedSearchRows, guildSearchRows, profileState.profiles]);
+  }, [activeProfile, generatedSearchRows, guildSearchRows, profileState.profiles, staticSearchRows]);
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -428,6 +447,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
               key={getSearchResultRenderKey(result, index)}
               type="button"
               role="option"
+              aria-label={`${result.label}. ${result.detail || result.href}. ${result.type}.`}
               aria-selected={index === activeIndex}
               tabIndex={-1}
               className={index === activeIndex ? "active" : undefined}
@@ -437,8 +457,10 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             >
               <span>
                 <strong>{highlightText(result.label, query)}</strong>
+                {" "}
                 <small>{result.detail || result.href}</small>
               </span>
+              {" "}
               <em>{result.type}</em>
             </button>
           ))}

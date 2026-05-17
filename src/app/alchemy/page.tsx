@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ALCHEMY_ITEMS, VIAL_COSTS } from "../../constants";
 import {
   Activity,
@@ -68,6 +68,9 @@ type AlchemyRow = {
   status: RowStatus;
   name: string;
   level: number;
+  vialName: string;
+  materialNames: string[];
+  searchText: string;
   baseTime: number;
   time: number;
   efficiencyBonus: number;
@@ -105,6 +108,26 @@ type AlchemyRow = {
   outputSource: "custom" | "market" | "missing";
   inputMissing: string[];
   ingredientCosts: IngredientCost[];
+};
+
+type DbRecipeMaterial = {
+  item_name?: string;
+  name?: string;
+};
+
+type DbItem = {
+  name?: string;
+  type?: string;
+  recipe?: {
+    skill?: string;
+    level_required?: number;
+    max_uses?: number;
+    materials?: DbRecipeMaterial[];
+    result?: {
+      item_name?: string;
+      name?: string;
+    };
+  } | null;
 };
 
 type AlchemySortKey =
@@ -238,6 +261,33 @@ const getVisibleAlchemyWarnings = (row: AlchemyRow) => {
   return row.warnings.filter((warning) => !repeatedBySignal.has(warning));
 };
 
+const getActionLabel = (action: ActionPath) => {
+  if (action === "MARKET") return "Market";
+  if (action === "VENDOR") return "Vendor";
+  return "Sell inputs";
+};
+
+const makeSearchText = (...parts: Array<string | string[] | undefined>) =>
+  parts
+    .flatMap((part) => Array.isArray(part) ? part : [part])
+    .filter((part): part is string => Boolean(part))
+    .join(" ")
+    .toLowerCase();
+
+const getAlchemyMatchHint = (row: AlchemyRow, query: string) => {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized || row.name.toLowerCase().includes(normalized)) return "";
+  const material = row.ingredientCosts.find((ingredient) => ingredient.name.toLowerCase().includes(normalized));
+  if (material) return `Uses ${material.name}`;
+  if (row.vialName.toLowerCase().includes(normalized)) return `Uses ${row.vialName}`;
+  if (`recipe: ${row.name}`.toLowerCase().includes(normalized)) return `Recipe scroll: Recipe: ${row.name}`;
+  if (getActionLabel(row.action).toLowerCase().includes(normalized)) return `Best path: ${getActionLabel(row.action)}`;
+  if (row.signal.toLowerCase().includes(normalized)) return `Liquidity: ${row.signal}`;
+  const warning = row.warnings.find((item) => item.toLowerCase().includes(normalized));
+  if (warning) return warning;
+  return "";
+};
+
 const getSellThroughNote = (
   action: ActionPath,
   profit: number,
@@ -305,13 +355,14 @@ function readAlchemySettings(): Partial<PersistedAlchemySettings> {
 }
 
 function AlchemyContent() {
-  const { marketData: data, scraperStatus } = useData();
+  const { marketData: data, scraperStatus, allItemsDb } = useData();
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
   const searchParams = useSearchParams();
 
   const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [minLevel, setMinLevel] = useState<number | "">(0);
   const [maxLevel, setMaxLevel] = useState<number | "">(89);
   const [minProfit, setMinProfit] = useState<number | "">("");
@@ -398,6 +449,7 @@ function AlchemyContent() {
   };
 
   const marketData = useMemo(() => (data || {}) as Record<string, MarketData>, [data]);
+  const itemDatabase = useMemo(() => (allItemsDb || {}) as Record<string, DbItem>, [allItemsDb]);
   const parsedActiveHours = Number(activeProfile?.timers.activeHours || 0) || 0;
   const activeProfileName = activeProfile?.name?.trim() || "Active profile";
   const activeHoursSource = activeProfile ? `${activeProfileName} playtime` : "No active profile";
@@ -408,6 +460,29 @@ function AlchemyContent() {
   const conquestBuff = getAssaultBuff(conquestRank);
   const alchemyEfficiencyBonus = (preferences.membership ? 10 : 0) + conquestBuff.efficiency;
   const alchemyDurationMultiplier = Math.max(0.01, (100 + alchemyEfficiencyBonus) / 100);
+
+  const mythicSearchMatches = useMemo(() => {
+    const query = deferredSearchTerm.trim().toLowerCase();
+    if (!query) return [];
+    return Object.values(itemDatabase)
+      .filter((item) => {
+        const recipe = item.recipe;
+        const level = Number(recipe?.level_required) || 0;
+        const skill = String(recipe?.skill || "").toLowerCase();
+        const resultName = recipe?.result?.item_name || recipe?.result?.name || "";
+        if (!item.name || item.type !== "RECIPE" || skill !== "alchemy" || level < 90 || !resultName) return false;
+        const searchText = makeSearchText(
+          item.name,
+          resultName,
+          (recipe?.materials || []).map((material) => material.item_name || material.name || ""),
+          "mythic level 90",
+        );
+        return searchText.includes(query);
+      })
+      .slice(0, 3)
+      .map((item) => item.recipe?.result?.item_name || item.recipe?.result?.name || item.name || "")
+      .filter(Boolean);
+  }, [deferredSearchTerm, itemDatabase]);
 
   const allRows = useMemo(() => {
     const rows: AlchemyRow[] = [];
@@ -514,11 +589,27 @@ function AlchemyContent() {
           : action === "VENDOR"
             ? `Vendor wins by ${formatGold(vendorNet - Math.max(marketNet, liquidationNet))}g over the next best path.`
             : `Selling the ingredients beats crafting by ${formatGold(liquidationNet - Math.max(marketNet, vendorNet))}g.`;
+      const materialNames = ingredientCosts.map((ingredient) => ingredient.name);
+      const searchText = makeSearchText(
+        name,
+        `Recipe: ${name}`,
+        recipe.vial,
+        materialNames,
+        getActionLabel(action),
+        action,
+        signal,
+        warnings,
+        reason,
+        liquidity.note,
+      );
 
       rows.push({
         status: missing ? "missing" : "ok",
         name,
         level: recipe.level,
+        vialName: recipe.vial,
+        materialNames,
+        searchText,
         baseTime: recipe.time,
         time: effectiveTime,
         efficiencyBonus: alchemyEfficiencyBonus,
@@ -575,12 +666,12 @@ function AlchemyContent() {
   ]);
 
   const rows = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
+    const query = deferredSearchTerm.trim().toLowerCase();
     const profitLimit = minProfit === "" ? -Infinity : Number(minProfit);
     const volumeLimit = minVolume === "" ? 0 : Number(minVolume);
 
     const filtered = allRows.filter((row) => {
-      if (query && !row.name.toLowerCase().includes(query)) return false;
+      if (query && !row.searchText.includes(query)) return false;
       if (minLevel !== "" && row.level < Number(minLevel)) return false;
       if (maxLevel !== "" && row.level > Number(maxLevel)) return false;
       if (hideMissing && row.status === "missing") return false;
@@ -605,17 +696,27 @@ function AlchemyContent() {
     });
 
     return filtered;
-  }, [allRows, hideMissing, liquidityFilter, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, searchTerm, sortCol, sortDesc]);
+  }, [allRows, deferredSearchTerm, hideMissing, liquidityFilter, maxLevel, minLevel, minProfit, minVolume, onlyProfitable, sortCol, sortDesc]);
 
   const summary = useMemo(() => {
-    const valid = allRows.filter((row) => row.status === "ok");
-    const byProfit = [...valid].sort((a, b) => b.profit - a.profit);
-    const hourly = [...valid].sort((a, b) => b.profitPerHour - a.profitPerHour)[0];
-    const market = valid.filter((row) => row.action === "MARKET").sort((a, b) => b.profit - a.profit)[0];
-    const vendor = valid.filter((row) => row.action === "VENDOR").sort((a, b) => b.profit - a.profit)[0];
-    const volume = [...valid].sort((a, b) => b.stableVol_3 - a.stableVol_3)[0];
-    const risky = byProfit.find((row) => row.profit > 0 && (row.liquidityRisk || row.sellThroughRisk || (row.stableVol_3 > 0 && row.stableVol_3 < 40)));
-    return { market, vendor, hourly, volume, risky, best: byProfit[0] };
+    return allRows.reduce<{
+      market?: AlchemyRow;
+      vendor?: AlchemyRow;
+      hourly?: AlchemyRow;
+      volume?: AlchemyRow;
+      risky?: AlchemyRow;
+      best?: AlchemyRow;
+    }>((acc, row) => {
+      if (row.status !== "ok") return acc;
+      if (!acc.best || row.profit > acc.best.profit) acc.best = row;
+      if (!acc.hourly || row.profitPerHour > acc.hourly.profitPerHour) acc.hourly = row;
+      if (row.action === "MARKET" && (!acc.market || row.profit > acc.market.profit)) acc.market = row;
+      if (row.action === "VENDOR" && (!acc.vendor || row.profit > acc.vendor.profit)) acc.vendor = row;
+      if (!acc.volume || row.stableVol_3 > acc.volume.stableVol_3) acc.volume = row;
+      const isRiskyProfit = row.profit > 0 && (row.liquidityRisk || row.sellThroughRisk || (row.stableVol_3 > 0 && row.stableVol_3 < 40));
+      if (isRiskyProfit && (!acc.risky || row.profit > acc.risky.profit)) acc.risky = row;
+      return acc;
+    }, {});
   }, [allRows]);
 
   useEffect(() => {
@@ -706,7 +807,7 @@ function AlchemyContent() {
               aria-label="Search alchemy recipes"
               type="text"
               className="control-input"
-              placeholder="Filter by name..."
+              placeholder="Recipe, input, vial, path..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -719,6 +820,7 @@ function AlchemyContent() {
             <input aria-label="Minimum alchemy level" type="number" className="control-input" placeholder="Min" value={minLevel} onChange={(e) => setMinLevel(e.target.value === "" ? "" : Number(e.target.value))} />
             <input aria-label="Maximum alchemy level" type="number" className="control-input" placeholder="Max" value={maxLevel} onChange={(e) => setMaxLevel(e.target.value === "" ? "" : Number(e.target.value))} />
           </div>
+          <a className="alchemy-helper-link" href="/alchemy/mythic">Mythic Lab handles level 90 recipes</a>
         </div>
 
         <div className="control-group">
@@ -731,8 +833,9 @@ function AlchemyContent() {
 
         <div className="control-group">
           <label className="control-label">Profile Bartering</label>
-          <div className="control-input" aria-label="Active profile bartering bonus">
-            +{parsedBartering}% {activeProfile ? `from ${activeProfileName}` : "No active profile"}
+          <div className="alchemy-readonly-pill" aria-label="Active profile bartering bonus">
+            <strong>+{parsedBartering}%</strong>
+            <span>{activeProfile ? `${activeProfileName} profile bonus` : "No active profile"}</span>
           </div>
         </div>
 
@@ -791,17 +894,9 @@ function AlchemyContent() {
                 {rows.map((row) => (
                   <tr
                     aria-disabled={row.status !== "ok"}
-                    aria-label={`Open ${row.name} alchemy strategy`}
                     key={row.name}
                     onClick={() => row.status === "ok" && setSelectedRow(row)}
-                    onKeyDown={(event) => {
-                      if (row.status !== "ok" || (event.key !== "Enter" && event.key !== " ")) return;
-                      event.preventDefault();
-                      setSelectedRow(row);
-                    }}
                     className={`clickable-row ${row.status === "missing" ? "row-muted" : ""}`}
-                    role="button"
-                    tabIndex={row.status === "ok" ? 0 : -1}
                   >
                     <td className="item-name left-align">
                       <button
@@ -813,8 +908,11 @@ function AlchemyContent() {
                         onMouseEnter={() => prefetchItem(row.name)}
                         className="alchemy-recipe-link"
                       >
-                        {highlightMatch(row.name, searchTerm)}
+                        {highlightMatch(row.name, deferredSearchTerm)}
                       </button>
+                      {getAlchemyMatchHint(row, deferredSearchTerm) && (
+                        <span className="alchemy-match-hint">{getAlchemyMatchHint(row, deferredSearchTerm)}</span>
+                      )}
                       <small>{row.status === "missing" ? row.warnings[0] : row.reason}</small>
                     </td>
                     <td className="mono text-muted">{row.level}</td>
@@ -834,6 +932,19 @@ function AlchemyContent() {
                       <div className="alchemy-signal-stack">
                         <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
                         {getVisibleAlchemyWarnings(row).slice(0, 2).map((warning) => <span key={warning} className="alchemy-warning-chip">{warning}</span>)}
+                        {row.status === "ok" && (
+                          <button
+                            aria-label={`Open ${row.name} alchemy strategy`}
+                            className="alchemy-open-strategy"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedRow(row);
+                            }}
+                            type="button"
+                          >
+                            Open strategy
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -879,11 +990,14 @@ function AlchemyContent() {
               >
                 <div className="m-card-header">
                   <div className="m-card-title">
-                    <span className="m-name">{highlightMatch(row.name, searchTerm)}</span>
+                    <span className="m-name">{highlightMatch(row.name, deferredSearchTerm)}</span>
                     <span className="m-lvl">LVL {row.level}</span>
                   </div>
                   {row.status === "ok" && <div className={`m-profit-rate ${row.profitPerHour > 0 ? "pos" : "neg"}`}>{formatSignedGold(row.profitPerHour)}/hr</div>}
                 </div>
+                {getAlchemyMatchHint(row, deferredSearchTerm) && (
+                  <div className="alchemy-match-hint mobile">{getAlchemyMatchHint(row, deferredSearchTerm)}</div>
+                )}
                 {row.status === "missing" ? (
                   <p className="alchemy-card-note">{row.warnings[0] || "Missing market data"}</p>
                 ) : (
@@ -918,7 +1032,14 @@ function AlchemyContent() {
           <div className="alchemy-empty-state">
             <Search size={28} />
             <h3>No alchemy strategies match those filters</h3>
-            <p>Relax the profit, volume, liquidity, level, or search filters to bring recipes back.</p>
+            {mythicSearchMatches.length > 0 ? (
+              <>
+                <p>{mythicSearchMatches.slice(0, 2).join(", ")} matches level 90 mythic alchemy instead.</p>
+                <a className="alchemy-empty-link" href="/alchemy/mythic">Open Mythic Lab</a>
+              </>
+            ) : (
+              <p>Relax the profit, volume, liquidity, level, or search filters to bring recipes back.</p>
+            )}
           </div>
         )}
       </section>
@@ -966,9 +1087,9 @@ function Badge({ label, tone }: { label: string; tone: "good" | "warn" | "bad" }
 }
 
 function PathBadge({ action }: { action: ActionPath }) {
-  if (action === "MARKET") return <Badge label="MARKET" tone="good" />;
-  if (action === "VENDOR") return <Badge label="VENDOR" tone="warn" />;
-  return <Badge label="LIQUIDATE" tone="bad" />;
+  if (action === "MARKET") return <Badge label="Market" tone="good" />;
+  if (action === "VENDOR") return <Badge label="Vendor" tone="warn" />;
+  return <Badge label="Sell inputs" tone="bad" />;
 }
 
 function AlchemyStrategyModal({

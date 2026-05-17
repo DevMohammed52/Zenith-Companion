@@ -1,3 +1,10 @@
+import {
+  ITEM_LORE_DESCRIPTION_SIGNALS,
+  type ItemLoreDescriptionSignal,
+} from './item-lore-signals';
+
+export type { ItemLoreDescriptionSignal };
+
 export type LoreCategory = 'Index' | 'Overview' | 'Civilization' | 'World' | 'Concept' | 'Artifact' | 'Bestiary' | 'NPC';
 
 export type LoreSection = { title: string; body: string };
@@ -5436,8 +5443,35 @@ export const LORE_ITEM_LINKS = [
 
 export const LORE_ENTRY_BY_ID = Object.fromEntries(LORE_ENTRIES.map((entry) => [entry.id, entry])) as Record<string, LoreEntry>;
 
+const normalizeLoreItemName = (itemName: string) => itemName.trim().toLowerCase();
+
 export function getLoreForItem(itemName: string) {
-  return LORE_ITEM_LINKS.filter((link) => link.itemName.toLowerCase() === itemName.toLowerCase());
+  const normalizedName = normalizeLoreItemName(itemName);
+  return LORE_ITEM_LINKS.filter((link) => normalizeLoreItemName(link.itemName) === normalizedName);
+}
+
+export function getDescriptionLoreForItem(itemName: string) {
+  const normalizedName = normalizeLoreItemName(itemName);
+  return ITEM_LORE_DESCRIPTION_SIGNALS.filter((link) => normalizeLoreItemName(link.itemName) === normalizedName);
+}
+
+export function getAllLoreForItem(itemName: string) {
+  const explicitLinks = getLoreForItem(itemName);
+  const explicitEntryIds = new Set<string>(explicitLinks.flatMap((link) => [...link.entryIds]));
+  const descriptionLinks = getDescriptionLoreForItem(itemName)
+    .map((link) => ({
+      ...link,
+      entryIds: link.entryIds.filter((entryId) => !explicitEntryIds.has(entryId)),
+    }))
+    .filter((link) => link.entryIds.length > 0);
+
+  return [...explicitLinks, ...descriptionLinks];
+}
+
+export function getDescriptionLoreForEntry(entryId: string, limit = 12) {
+  return ITEM_LORE_DESCRIPTION_SIGNALS
+    .filter((link) => (link.entryIds as readonly string[]).includes(entryId))
+    .slice(0, limit);
 }
 
 export function getLoreEntry(id: string) {

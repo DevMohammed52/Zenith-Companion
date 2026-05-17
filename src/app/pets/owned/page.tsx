@@ -37,6 +37,18 @@ const SORT_OPTIONS = [
 type SourceFilter = typeof SOURCE_FILTERS[number]["id"];
 type SortKey = typeof SORT_OPTIONS[number]["id"];
 type SortDirection = "asc" | "desc";
+type PendingRemoval = {
+  pet: ProfileOwnedPet;
+  index: number;
+};
+
+const FRIENDLY_SECTION_LABELS: Record<string, string> = {
+  museum_private: "Museum private",
+  pets_private: "Pets private",
+  pet_private: "Pets private",
+  pets_missing: "No imported pet section",
+  pet_missing: "No imported pet section",
+};
 
 function makeOwnedPetId() {
   return `owned_pet_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -102,10 +114,19 @@ function formatSourceMode(value?: string) {
   return "Manual";
 }
 
+function formatSectionLabel(value: string) {
+  const normalized = normalizeText(value).replace(/[\s-]+/g, "_");
+  if (FRIENDLY_SECTION_LABELS[normalized]) return FRIENDLY_SECTION_LABELS[normalized];
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function formatSectionList(values?: string[]) {
   if (!values?.length) return "None";
-  if (values.length <= 3) return values.join(", ");
-  return `${values.slice(0, 3).join(", ")} +${values.length - 3}`;
+  const labels = values.map(formatSectionLabel);
+  if (labels.length <= 3) return labels.join(", ");
+  return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
 }
 
 function normalizeText(value: string) {
@@ -120,12 +141,18 @@ export default function OwnedPetsPage() {
   const { activeProfile, updateProfile } = useProfiles();
   const [petDb, setPetDb] = useState<PetRecord[]>([]);
   const [toast, setToast] = useState("");
+  const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval | null>(null);
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("level");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const ownedPets = useMemo(() => activeProfile?.ownedPets || [], [activeProfile?.ownedPets]);
 
   useEffect(() => {
+    if (!ownedPets.length) {
+      setPetDb([]);
+      return;
+    }
     let cancelled = false;
     fetch("/pet-database.json")
       .then((response) => response.ok ? response.json() : null)
@@ -136,17 +163,19 @@ export default function OwnedPetsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ownedPets.length]);
 
   useEffect(() => {
     if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(""), 3200);
+    const timeout = window.setTimeout(() => {
+      setToast("");
+      setPendingRemoval(null);
+    }, 5200);
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
   const petMatchLookup = useMemo(() => buildPetMatchLookup(petDb), [petDb]);
 
-  const ownedPets = useMemo(() => activeProfile?.ownedPets || [], [activeProfile?.ownedPets]);
   const activePetKey = activeProfile ? petKey(activeProfile.pet) : "";
   const importedCount = ownedPets.filter((pet) => pet.source === "imported").length;
   const manualCount = ownedPets.filter((pet) => pet.source === "manual").length;
@@ -206,8 +235,20 @@ export default function OwnedPetsPage() {
     updateOwnedPets([...ownedPets, ownedPet], "Current profile pet saved.");
   };
 
-  const removePet = (petId: string) => {
-    updateOwnedPets(ownedPets.filter((pet) => pet.id !== petId), "Owned pet removed.");
+  const removePet = (ownedPet: ProfileOwnedPet) => {
+    const index = ownedPets.findIndex((pet) => pet.id === ownedPet.id);
+    if (index < 0) return;
+    setPendingRemoval({ pet: ownedPet, index });
+    updateOwnedPets(ownedPets.filter((pet) => pet.id !== ownedPet.id), `${ownedPet.nickname || ownedPet.species} removed.`);
+  };
+
+  const undoRemovePet = () => {
+    if (!activeProfile || !pendingRemoval) return;
+    const nextPets = [...ownedPets];
+    nextPets.splice(Math.min(pendingRemoval.index, nextPets.length), 0, pendingRemoval.pet);
+    updateProfile(activeProfile.id, { ownedPets: nextPets }, { source: "manual", fieldPaths: ["ownedPets"] });
+    setToast(`${pendingRemoval.pet.nickname || pendingRemoval.pet.species} restored.`);
+    setPendingRemoval(null);
   };
 
   const handleUseAsActivePet = (ownedPet: ProfileOwnedPet) => {
@@ -228,7 +269,7 @@ export default function OwnedPetsPage() {
       },
       { source: "manual", fieldPaths: ["pet", "ownedPets"] },
     );
-    setToast(`${ownedPet.nickname || ownedPet.species} is now the active profile pet.`);
+    setToast(`${ownedPet.nickname || ownedPet.species} is now the active pet for ${activeProfile.name}.`);
   };
 
   return (
@@ -237,7 +278,7 @@ export default function OwnedPetsPage() {
         <div>
           <span className={styles.kicker}><ZenithIcon name="pets" size={17} /> Profile Pets</span>
           <h1>Owned Pets</h1>
-          <p>Saved pets belong to the active local profile and stay in browser storage until imported, edited, or removed.</p>
+          <p>Saved pets belong to the active local profile and stay in browser storage until imported, added, used, or removed.</p>
         </div>
         <div className={styles.actions}>
           <Link href="/profiles#profile-pet" className={styles.secondaryAction}>Profile pet <ArrowRight size={16} /></Link>
@@ -278,8 +319,8 @@ export default function OwnedPetsPage() {
           </div>
           <div className={unmatchedSpeciesCount ? styles.warningCell : ""}>
             <PawPrint size={16} />
-            <span>Species matches</span>
-            <strong>{unmatchedSpeciesCount ? `${unmatchedSpeciesCount} unmatched` : "All matched"}</strong>
+            <span>Database links</span>
+            <strong>{unmatchedSpeciesCount ? `${unmatchedSpeciesCount} not linked yet` : "All linked"}</strong>
           </div>
         </section>
       )}
@@ -306,6 +347,7 @@ export default function OwnedPetsPage() {
                 key={option.id}
                 type="button"
                 className={sourceFilter === option.id ? styles.activeControl : ""}
+                aria-pressed={sourceFilter === option.id}
                 onClick={() => setSourceFilter(option.id)}
               >
                 {option.label}
@@ -319,6 +361,7 @@ export default function OwnedPetsPage() {
                 key={option.id}
                 type="button"
                 className={sortKey === option.id ? styles.activeControl : ""}
+                aria-pressed={sortKey === option.id}
                 onClick={() => setSortKey(option.id)}
               >
                 {option.label}
@@ -327,6 +370,7 @@ export default function OwnedPetsPage() {
             <button
               type="button"
               className={styles.directionButton}
+              aria-label={`Change sort direction, currently ${sortDirection === "asc" ? "ascending" : "descending"}`}
               onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}
             >
               <ArrowDownUp size={15} /> {sortDirection === "asc" ? "Asc" : "Desc"}
@@ -364,6 +408,7 @@ export default function OwnedPetsPage() {
             const databasePet = findPetRecordForOwnedPet(ownedPet, petMatchLookup);
             const isActive = petKey(ownedPet) === activePetKey || ownedPet.active || ownedPet.equipped;
             const missingStats = missingStatCount(ownedPet.stats);
+            const displayName = ownedPet.nickname || ownedPet.species;
             return (
               <article key={ownedPet.id} className={`${styles.card} ${isActive ? styles.activeCard : ""}`}>
                 <div className={styles.cardTop}>
@@ -371,7 +416,7 @@ export default function OwnedPetsPage() {
                     {ownedPet.imageUrl || databasePet?.imageUrl ? <img src={ownedPet.imageUrl || databasePet?.imageUrl || ""} alt="" /> : <PawPrint size={24} />}
                   </div>
                   <div>
-                    <h2>{ownedPet.nickname || ownedPet.species}</h2>
+                    <h2>{displayName}</h2>
                     <p>{ownedPet.quality || databasePet?.quality || "Unknown quality"} - Lv. {ownedPet.level || 1} - Evo {ownedPet.evolution || 0}</p>
                   </div>
                   {isActive && <span className={styles.activePill}>Active</span>}
@@ -382,14 +427,14 @@ export default function OwnedPetsPage() {
                   ))}
                 </div>
                 <div className={styles.metaRow}>
-                  <span>{ownedPet.source === "imported" ? "Imported" : "Manual"}</span>
+                  <span className={ownedPet.source === "imported" ? styles.importedMeta : styles.manualMeta}>{formatSourceMode(ownedPet.source)}</span>
                   <span>{ownedPet.location?.name || databasePet?.acquisition?.[0]?.boss || "Source unknown"}</span>
                   {!databasePet && <span className={styles.warningMeta}>No database match</span>}
                   {missingStats > 0 && <span className={styles.warningMeta}>{missingStats} missing stats</span>}
                   {ownedPet.totalExperience !== "" && <span>{Number(ownedPet.totalExperience).toLocaleString()} pet XP</span>}
                 </div>
                 <details className={styles.detailPanel}>
-                  <summary>Details</summary>
+                  <summary aria-label={`View details for ${displayName}`}>Details for {displayName}</summary>
                   <div className={styles.detailGrid}>
                     <div>
                       <strong>All Stats</strong>
@@ -408,7 +453,7 @@ export default function OwnedPetsPage() {
                     </div>
                     <div>
                       <strong>Import Source</strong>
-                      <span>Source <b>{ownedPet.source}</b></span>
+                      <span>Source <b>{formatSourceMode(ownedPet.source)}</b></span>
                       <span>Imported <b>{formatDateTime(ownedPet.importedAt)}</b></span>
                       <span>Hash <b>{ownedPet.hashTail ? `...${ownedPet.hashTail}` : "None"}</b></span>
                       <span>API ID <b>{ownedPet.apiId ? String(ownedPet.apiId) : "None"}</b></span>
@@ -430,8 +475,8 @@ export default function OwnedPetsPage() {
                 </details>
                 {ownedPet.notes && <p className={styles.notes}>{ownedPet.notes}</p>}
                 <div className={styles.cardActions}>
-                  <button type="button" onClick={() => handleUseAsActivePet(ownedPet)}>Use as active</button>
-                  <button type="button" onClick={() => removePet(ownedPet.id)}><Trash2 size={15} /> Remove</button>
+                  <button type="button" aria-label={`Set ${displayName} as active pet`} onClick={() => handleUseAsActivePet(ownedPet)}>Set active pet</button>
+                  <button type="button" aria-label={`Remove ${displayName} from owned pets`} onClick={() => removePet(ownedPet)}><Trash2 size={15} /> Remove</button>
                 </div>
               </article>
             );
@@ -447,7 +492,16 @@ export default function OwnedPetsPage() {
         </section>
       )}
 
-      {toast && <div className={styles.toast}>{toast}</div>}
+      {toast && (
+        <div className={styles.toast} role="status" aria-live="polite">
+          <span>{toast}</span>
+          {pendingRemoval ? (
+            <button type="button" onClick={undoRemovePet}>
+              Undo
+            </button>
+          ) : null}
+        </div>
+      )}
     </main>
   );
 }

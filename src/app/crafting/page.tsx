@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
     AlertTriangle,
     Check,
@@ -31,6 +31,11 @@ import {
     type QueueSaleSource,
 } from "@/lib/crafting-queue";
 
+type CraftingItemRecord = {
+    image?: string;
+    image_url?: string;
+};
+
 export default function CraftingPage() {
     const { openItemByName, prefetchItem } = useItemModal();
     const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
@@ -39,10 +44,14 @@ export default function CraftingPage() {
     const { marketData, allItemsDb } = useData();
     const [adding, setAdding] = useState("");
     const [recipeSearch, setRecipeSearch] = useState("");
+    const deferredRecipeSearch = useDeferredValue(recipeSearch);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
+    const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({});
+    const [clearedQueue, setClearedQueue] = useState<Record<string, number> | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const recipeOptions = useMemo(
         () => Object.entries(ALCHEMY_ITEMS)
@@ -61,12 +70,12 @@ export default function CraftingPage() {
     );
 
     const filteredRecipeOptions = useMemo(() => {
-        const q = recipeSearch.trim().toLowerCase();
+        const q = deferredRecipeSearch.trim().toLowerCase();
         const matches = q
             ? recipeOptions.filter((option) => option.searchText.includes(q))
             : recipeOptions;
         return matches;
-    }, [recipeOptions, recipeSearch]);
+    }, [deferredRecipeSearch, recipeOptions]);
 
     const selectedRecipe = useMemo(
         () => recipeOptions.find((option) => option.name === adding) || null,
@@ -81,6 +90,11 @@ export default function CraftingPage() {
         [activeProfile, allItemsDb, marketData, preferences, queue],
     );
 
+    const recipeTypeCount = plan.entries.length;
+    const missingItemCount = plan.missingItems.length;
+    const itemImages = useMemo(() => (allItemsDb || {}) as Record<string, CraftingItemRecord>, [allItemsDb]);
+    const getItemImage = (name: string) => itemImages[name]?.image_url || itemImages[name]?.image || "";
+
     useEffect(() => {
         const handlePointerDown = (event: PointerEvent) => {
             if (!pickerRef.current?.contains(event.target as Node)) {
@@ -94,7 +108,13 @@ export default function CraftingPage() {
 
     useEffect(() => {
         setActiveRecipeIndex(0);
-    }, [recipeSearch]);
+    }, [deferredRecipeSearch]);
+
+    useEffect(() => {
+        return () => {
+            if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        };
+    }, []);
 
     const chooseRecipe = (name: string) => {
         if (!isCraftingQueueRecipe(name)) return;
@@ -134,12 +154,18 @@ export default function CraftingPage() {
 
         if (event.key === "Enter") {
             event.preventDefault();
-            const activeOption = pickerOpen ? filteredRecipeOptions[activeRecipeIndex] : selectedRecipe;
-            if (activeOption) {
+            const activeOption = filteredRecipeOptions[activeRecipeIndex];
+            if (pickerOpen && activeOption && activeOption.name !== adding) {
                 chooseRecipe(activeOption.name);
                 return;
             }
-            addRecipe(adding);
+            if (adding) {
+                addRecipe(adding);
+                return;
+            }
+            if (filteredRecipeOptions.length === 1) {
+                addRecipe(filteredRecipeOptions[0].name);
+            }
             return;
         }
 
@@ -154,10 +180,46 @@ export default function CraftingPage() {
         setAdding("");
         setRecipeSearch("");
         setPickerOpen(false);
+        setClearedQueue(null);
+    };
+
+    const updateQuantityDraft = (name: string, value: string) => {
+        if (!/^\d*$/.test(value)) return;
+        setQtyDrafts((current) => ({ ...current, [name]: value }));
+    };
+
+    const commitQuantityDraft = (name: string, fallback: number) => {
+        const draft = qtyDrafts[name];
+        setQtyDrafts((current) => {
+            const next = { ...current };
+            delete next[name];
+            return next;
+        });
+        if (draft === undefined || draft.trim() === "") return;
+        const parsed = Number(draft);
+        setQueueQty(name, Number.isFinite(parsed) ? parsed : fallback);
+    };
+
+    const handleClearQueue = () => {
+        const previousQueue = { ...queue };
+        if (Object.keys(previousQueue).length === 0) return;
+        clearQueue();
+        setQtyDrafts({});
+        setClearedQueue(previousQueue);
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+        undoTimerRef.current = setTimeout(() => setClearedQueue(null), 9000);
+    };
+
+    const undoClearQueue = () => {
+        if (!clearedQueue) return;
+        clearQueue();
+        Object.entries(clearedQueue).forEach(([name, qty]) => addToQueue(name, qty));
+        setClearedQueue(null);
+        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };
 
     return (
-        <main className="container">
+        <main className="container crafting-page-shell">
             <div className="header">
                 <h1 className="header-title">
                     <ZenithIcon name="crafting" size={24} style={{ color: "var(--text-accent)" }} /> CRAFTING QUEUE
@@ -166,6 +228,11 @@ export default function CraftingPage() {
                     <div className="status-dot"></div>
                     <span className="mono">{plan.totalCrafts.toLocaleString()} CRAFTS QUEUED</span>
                 </div>
+            </div>
+            <div className="craft-summary-strip" aria-label="Crafting queue summary">
+                <span><strong>{recipeTypeCount.toLocaleString()}</strong> recipe types</span>
+                <span><strong>{missingItemCount.toLocaleString()}</strong> missing prices</span>
+                <span><strong>{formatGold(plan.totalCost)}g</strong> total cost</span>
             </div>
 
             <div className="main-craft-layout">
@@ -250,11 +317,19 @@ export default function CraftingPage() {
                                 type="button"
                                 onClick={() => addRecipe(adding)}
                                 disabled={!adding}
+                                aria-label={selectedRecipe ? `Add ${selectedRecipe.name} to crafting queue` : "Add selected recipe to crafting queue"}
                                 className="craft-add-button"
                             >
-                                <Plus size={16} /> Add
+                                <Plus size={16} /> {selectedRecipe ? `Add ${selectedRecipe.name}` : "Add"}
                             </button>
                         </div>
+                        {selectedRecipe && (
+                            <div className="craft-selected-recipe" role="status">
+                                <span>Selected</span>
+                                <strong>{selectedRecipe.name}</strong>
+                                <em>Press Enter or use the add button to queue it.</em>
+                            </div>
+                        )}
                     </div>
 
                     <div className="table-container" style={{ padding: "1.25rem" }}>
@@ -275,6 +350,13 @@ export default function CraftingPage() {
                                             onMouseEnter={() => prefetchItem(entry.name)}
                                             className="craft-row-main group"
                                         >
+                                            {getItemImage(entry.name) ? (
+                                                <img className="craft-row-image" src={getItemImage(entry.name)} alt="" loading="lazy" decoding="async" />
+                                            ) : (
+                                                <span className="craft-row-image craft-row-image-fallback" aria-hidden="true">
+                                                    <FlaskConical size={17} />
+                                                </span>
+                                            )}
                                             <div className="craft-row-title group-hover:text-accent">{entry.name}</div>
                                             <div className="craft-row-meta">
                                                 <span className={`craft-row-profit ${entry.totalProfit >= 0 ? "profit-positive" : "profit-negative"}`}>{formatSignedGold(entry.totalProfit)} total</span>
@@ -293,10 +375,26 @@ export default function CraftingPage() {
                                             </button>
                                             <input
                                                 aria-label={`${entry.name} quantity`}
-                                                type="number"
-                                                value={entry.quantity}
+                                                inputMode="numeric"
+                                                type="text"
+                                                value={qtyDrafts[entry.name] ?? String(entry.quantity)}
                                                 min={1}
-                                                onChange={e => setQueueQty(entry.name, Math.max(1, parseInt(e.target.value) || 1))}
+                                                onFocus={() => setQtyDrafts((current) => ({ ...current, [entry.name]: String(entry.quantity) }))}
+                                                onChange={event => updateQuantityDraft(entry.name, event.target.value)}
+                                                onBlur={() => commitQuantityDraft(entry.name, entry.quantity)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === "Enter") {
+                                                        event.currentTarget.blur();
+                                                    }
+                                                    if (event.key === "Escape") {
+                                                        setQtyDrafts((current) => {
+                                                            const next = { ...current };
+                                                            delete next[entry.name];
+                                                            return next;
+                                                        });
+                                                        event.currentTarget.blur();
+                                                    }
+                                                }}
                                                 className="queue-qty-input"
                                             />
                                             <button
@@ -320,11 +418,18 @@ export default function CraftingPage() {
                                 ))}
                                 <button
                                     type="button"
-                                    onClick={() => clearQueue()}
-                                    style={{ marginTop: "0.5rem", padding: "0.5rem", background: "transparent", border: "1px solid var(--border-subtle)", borderRadius: "6px", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}
+                                    aria-label="Clear all recipes from crafting queue"
+                                    onClick={handleClearQueue}
+                                    className="craft-clear-button"
                                 >
                                     <Trash2 size={13} /> Clear All
                                 </button>
+                            </div>
+                        )}
+                        {clearedQueue && (
+                            <div className="craft-undo-toast" role="status" aria-live="polite">
+                                <span>Crafting queue cleared.</span>
+                                <button type="button" onClick={undoClearQueue}>Undo</button>
                             </div>
                         )}
                     </div>
@@ -351,12 +456,18 @@ export default function CraftingPage() {
                     </div>
 
                     {plan.missingItems.length > 0 && (
-                        <div className="table-container" style={{ padding: "1rem", borderColor: "rgba(245,158,11,0.35)" }}>
+                        <div className="table-container craft-missing-panel" style={{ padding: "1rem", borderColor: "rgba(245,158,11,0.35)" }}>
                             <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", color: "var(--text-muted)" }}>
                                 <AlertTriangle size={16} color="var(--text-warning)" style={{ marginTop: "0.1rem", flex: "0 0 auto" }} />
                                 <div>
                                     <strong style={{ color: "var(--text-main)" }}>Missing price data</strong>
-                                    <div style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>{plan.missingItems.join(", ")}</div>
+                                    <div className="craft-missing-chip-list" aria-label="Items missing price data">
+                                        {plan.missingItems.map((item) => (
+                                            <button key={item} type="button" onClick={() => openItemByName(item)} onMouseEnter={() => prefetchItem(item)}>
+                                                {item}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -368,6 +479,7 @@ export default function CraftingPage() {
                             icon={<ReceiptText size={14} />}
                             rows={plan.recipeList}
                             renderSubline={(row) => `${row.maxUses} uses each - covers ${row.craftQuantity.toLocaleString()} crafts`}
+                            getItemImage={getItemImage}
                             openItemByName={openItemByName}
                             prefetchItem={prefetchItem}
                         />
@@ -378,6 +490,7 @@ export default function CraftingPage() {
                             title="VIALS NEEDED"
                             icon={<Package size={14} />}
                             rows={plan.vialList}
+                            getItemImage={getItemImage}
                             openItemByName={openItemByName}
                             prefetchItem={prefetchItem}
                         />
@@ -389,6 +502,7 @@ export default function CraftingPage() {
                         rows={plan.shoppingList}
                         emptyText="Your shopping list will appear here once you add recipes."
                         footerLabel="Materials Total"
+                        getItemImage={getItemImage}
                         openItemByName={openItemByName}
                         prefetchItem={prefetchItem}
                     />
@@ -405,6 +519,7 @@ function NeedPanel({
     emptyText,
     footerLabel,
     renderSubline,
+    getItemImage,
     openItemByName,
     prefetchItem,
 }: {
@@ -414,6 +529,7 @@ function NeedPanel({
     emptyText?: string;
     footerLabel?: string;
     renderSubline?: (row: QueueRecipeNeedRow) => string;
+    getItemImage: (name: string) => string;
     openItemByName: (name: string) => void;
     prefetchItem: (name: string) => void;
 }) {
@@ -438,8 +554,14 @@ function NeedPanel({
                             onMouseEnter={() => prefetchItem(row.name)}
                             className="source-row group"
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
-                                <Package size={13} color="var(--text-muted)" style={{ flex: "0 0 auto" }} />
+                            <div className="craft-need-main">
+                                {getItemImage(row.name) ? (
+                                    <img className="craft-need-image" src={getItemImage(row.name)} alt="" loading="lazy" decoding="async" />
+                                ) : (
+                                    <span className="craft-need-image craft-need-image-fallback" aria-hidden="true">
+                                        <Package size={13} />
+                                    </span>
+                                )}
                                 <span className="group-hover:text-accent transition-colors" style={{ color: "#fff", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
                                     <span className="text-muted">{row.quantity.toLocaleString()}x</span> {row.name}
                                 </span>

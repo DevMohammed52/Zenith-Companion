@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
+  Compass,
   Coins,
   Database,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   Trash2,
   UserRound,
   Wrench,
+  X,
 } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import ZenithIcon from "@/components/icons/ZenithIcon";
@@ -55,15 +57,30 @@ function ToolPicker({
   onChange: (value: string) => void;
 }) {
   const selected = SKILL_TOOLS[skill].find((tool) => tool.name === value) || SKILL_TOOLS[skill][0];
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onToggle();
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onToggle, open]);
 
   return (
     <div className="settings-tool-picker">
       <button
         type="button"
+        ref={triggerRef}
         className={`settings-tool-trigger ${open ? "settings-tool-trigger-open" : ""}`}
         onClick={onToggle}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={`settings-tool-menu-${skill.toLowerCase()}`}
       >
         <span>
           <strong>{skill}</strong>
@@ -72,7 +89,7 @@ function ToolPicker({
         <em>+{selected.efficiency}%</em>
       </button>
       {open && (
-        <div className="settings-tool-menu" role="listbox" aria-label={`${skill} fallback tool`}>
+        <div className="settings-tool-menu" id={`settings-tool-menu-${skill.toLowerCase()}`} role="listbox" aria-label={`${skill} fallback tool`}>
           {SKILL_TOOLS[skill].map((tool) => (
             <button
               type="button"
@@ -103,6 +120,8 @@ export default function SettingsPage() {
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
   const [itemSearchOpen, setItemSearchOpen] = useState(false);
   const [openToolPicker, setOpenToolPicker] = useState<ToolSkill | null>(null);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
 
   const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
   const itemSuggestions = useMemo(() => {
@@ -147,10 +166,24 @@ export default function SettingsPage() {
     setPreferences({ customPrices: next });
   };
 
+  useEffect(() => {
+    if (!confirmClearOpen) return;
+    window.requestAnimationFrame(() => confirmCancelRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setConfirmClearOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmClearOpen]);
+
   const clearCustomPrices = () => {
     if (customPriceRows.length === 0) return;
-    if (!window.confirm(`Remove all ${customPriceRows.length} custom price overrides?`)) return;
+    setConfirmClearOpen(true);
+  };
+
+  const confirmClearCustomPrices = () => {
     setPreferences({ customPrices: {} });
+    setConfirmClearOpen(false);
   };
 
   return (
@@ -194,7 +227,12 @@ export default function SettingsPage() {
               <div className="settings-fields">
                 <label className="settings-field">
                   <span><strong>Membership</strong><small>Switches market tax between 15% and 12%.</small></span>
-                  <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ membership: !preferences.membership })}>
+                  <button
+                    type="button"
+                    className="control-input settings-toggle-button"
+                    aria-pressed={preferences.membership}
+                    onClick={() => setPreferences({ membership: !preferences.membership })}
+                  >
                     {preferences.membership && <Check size={14} />} {preferences.membership ? "Member active" : "Free account"}
                   </button>
                 </label>
@@ -218,6 +256,50 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+              <div className="settings-nav-style" aria-label="Mobile navigation style">
+                <span><Compass size={15} /> Mobile navigation</span>
+                <div>
+                  <button
+                    type="button"
+                    className={preferences.mobileNavigationStyle !== "command" ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.mobileNavigationStyle !== "command"}
+                    onClick={() => setPreferences({ mobileNavigationStyle: "standard" })}
+                  >
+                    Standard
+                  </button>
+                  <button
+                    type="button"
+                    className={preferences.mobileNavigationStyle === "command" ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.mobileNavigationStyle === "command"}
+                    onClick={() => setPreferences({ mobileNavigationStyle: "command" })}
+                  >
+                    Radial menu
+                  </button>
+                </div>
+              </div>
+              {preferences.mobileNavigationStyle === "command" && (
+                <div className="settings-nav-style" aria-label="Radial menu thumb side">
+                  <span><Compass size={15} /> Radial reach</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={(preferences.mobileCommandTriggerSide ?? "left") === "left" ? "settings-nav-style-active" : ""}
+                      aria-pressed={(preferences.mobileCommandTriggerSide ?? "left") === "left"}
+                      onClick={() => setPreferences({ mobileCommandTriggerSide: "left" })}
+                    >
+                      Left thumb
+                    </button>
+                    <button
+                      type="button"
+                      className={preferences.mobileCommandTriggerSide === "right" ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.mobileCommandTriggerSide === "right"}
+                      onClick={() => setPreferences({ mobileCommandTriggerSide: "right" })}
+                    >
+                      Right thumb
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -226,7 +308,12 @@ export default function SettingsPage() {
             <div className="settings-fields settings-compat-fields">
               <label className="settings-field">
                 <span><strong>Skill Class Helper</strong><small>Used when no active profile class is available.</small></span>
-                <button type="button" className="control-input settings-toggle-button" onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}>
+                <button
+                  type="button"
+                  className="control-input settings-toggle-button"
+                  aria-pressed={preferences.skillClassBonus}
+                  onClick={() => setPreferences({ skillClassBonus: !preferences.skillClassBonus })}
+                >
                   {preferences.skillClassBonus && <Check size={14} />} {preferences.skillClassBonus ? "Class helper active" : "No helper"}
                 </button>
               </label>
@@ -251,6 +338,7 @@ export default function SettingsPage() {
 
         <div className="settings-panel">
           <h2><UserRound size={17} /> Active Profile Values</h2>
+          <p className="settings-panel-note">Read-only values from the active profile. Edit character-owned stats from Profiles.</p>
           <div className="settings-active-profile">
             <strong>{activeProfile?.name?.trim() || "No active profile"}</strong>
             <span>{profileLabel}</span>
@@ -290,6 +378,7 @@ export default function SettingsPage() {
                         <button
                           key={name}
                           type="button"
+                          aria-label={`${name}, ${item?.type ? String(item.type).replace(/_/g, " ") : "Item"}`}
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => {
                             setCustomItemName(name);
@@ -381,7 +470,7 @@ export default function SettingsPage() {
             <div><kbd>Alt</kbd><kbd>1</kbd><span>Dashboard</span></div>
             <div><kbd>Alt</kbd><kbd>2</kbd><span>Alchemy Profit</span></div>
             <div><kbd>Alt</kbd><kbd>3</kbd><span>Items Database</span></div>
-            <div><kbd>Alt</kbd><kbd>4</kbd><span>Combat Simulation</span></div>
+            <div><kbd>Alt</kbd><kbd>4</kbd><span>Combat Planner</span></div>
             <div><kbd>Alt</kbd><kbd>5</kbd><span>Dungeons</span></div>
             <div><kbd>Alt</kbd><kbd>6</kbd><span>World Bosses</span></div>
             <div><kbd>Alt</kbd><kbd>7</kbd><span>BiS Recommender</span></div>
@@ -391,6 +480,35 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {confirmClearOpen && (
+        <div className="modal-overlay settings-confirm-overlay" role="presentation" onClick={() => setConfirmClearOpen(false)}>
+          <div
+            className="modal-content settings-confirm-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-clear-prices-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 id="settings-clear-prices-title">Clear Custom Prices</h2>
+              <button className="close-btn" type="button" aria-label="Close confirmation" onClick={() => setConfirmClearOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="settings-panel-note">
+                Remove all {customPriceRows.length.toLocaleString()} custom price override{customPriceRows.length === 1 ? "" : "s"}?
+                Calculators will immediately return to safe market, recipe, or vendor values.
+              </p>
+              <div className="settings-confirm-actions">
+                <button type="button" ref={confirmCancelRef} className="settings-link-button" onClick={() => setConfirmClearOpen(false)} autoFocus>Cancel</button>
+                <button type="button" className="settings-link-button settings-danger-link" onClick={confirmClearCustomPrices}>Clear overrides</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

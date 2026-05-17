@@ -459,6 +459,18 @@
   background: color-mix(in srgb, var(--text-warning), transparent 92%);
 }
 
+.metaRow .importedMeta {
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 68%);
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  color: #fff;
+}
+
+.metaRow .manualMeta {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.055);
+  color: #fff;
+}
+
 .notes {
   margin-top: 0.75rem !important;
   line-height: 1.5;
@@ -505,8 +517,29 @@
   border-radius: 8px;
   background: color-mix(in srgb, var(--bg-panel), #000 18%);
   color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
   font-weight: 850;
   box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+}
+
+.toast button {
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 45%);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--text-accent), transparent 82%);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.toast button:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 78%);
 }
 
 @media (max-width: 760px) {

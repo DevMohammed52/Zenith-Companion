@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -14,7 +14,6 @@ import {
   HeartPulse,
   MapPinned,
   PawPrint,
-  Plus,
   Search,
   Shield,
   Sparkles,
@@ -23,6 +22,7 @@ import {
   Utensils,
   X,
 } from "lucide-react";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useProfiles, type ProfileOwnedPet, type ProfilePetStats } from "@/lib/profiles";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
@@ -259,24 +259,106 @@ function OptionMenu<T extends string>({
   onChange: (value: T) => void;
 }) {
   const selected = options.find((option) => option.value === value) || options[0];
+  const reactId = useId();
+  const menuId = `pet-compare-menu-${reactId}`;
+  const labelId = `${menuId}-label`;
+  const valueId = `${menuId}-value`;
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+
+  useEffect(() => {
+    if (!open) return;
+    setActiveIndex(selectedIndex);
+    window.requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+  }, [open, selectedIndex]);
+
+  const closeMenu = (returnFocus = true) => {
+    onOpen(false);
+    if (returnFocus) window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const moveToOption = (index: number) => {
+    const nextIndex = Math.min(options.length - 1, Math.max(0, index));
+    setActiveIndex(nextIndex);
+    window.requestAnimationFrame(() => optionRefs.current[nextIndex]?.focus());
+  };
+
+  const chooseOption = (index: number) => {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    closeMenu();
+  };
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement | HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu();
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!open) {
+        onOpen(true);
+        return;
+      }
+      moveToOption(activeIndex + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) {
+        onOpen(true);
+        return;
+      }
+      moveToOption(activeIndex - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      if (open) moveToOption(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      if (open) moveToOption(options.length - 1);
+    } else if ((event.key === "Enter" || event.key === " ") && open) {
+      event.preventDefault();
+      chooseOption(activeIndex);
+    }
+  };
+
   return (
     <div className={`${styles.field} ${styles.menuField}`} data-menu-root>
-      <span>{label}</span>
-      <button type="button" className={styles.menuTrigger} aria-expanded={open} onClick={() => onOpen(!open)}>
-        <span>{selected.label}</span>
+      <span id={labelId}>{label}</span>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={styles.menuTrigger}
+        aria-controls={open ? menuId : undefined}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-labelledby={`${labelId} ${valueId}`}
+        onKeyDown={handleKeyDown}
+        onClick={() => onOpen(!open)}
+      >
+        <span id={valueId}>{selected.label}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className={styles.menuPanel}>
-          {options.map((option) => (
+        <div className={styles.menuPanel} id={menuId} role="listbox" aria-labelledby={labelId} onKeyDown={handleKeyDown}>
+          {options.map((option, index) => (
             <button
+              ref={(node) => {
+                optionRefs.current[index] = node;
+              }}
               type="button"
               key={option.value}
               className={option.value === value ? styles.selectedOption : ""}
+              role="option"
+              aria-selected={option.value === value}
+              tabIndex={index === activeIndex ? 0 : -1}
               onClick={() => {
                 onChange(option.value);
-                onOpen(false);
+                closeMenu();
               }}
+              onFocus={() => setActiveIndex(index)}
             >
               {option.label}
             </button>
@@ -305,6 +387,8 @@ function PetPicker({
   onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const selected = options.find((option) => option.id === value) || null;
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -313,37 +397,47 @@ function PetPicker({
       .slice(0, 32);
   }, [options, query]);
 
+  const closePicker = () => {
+    setQuery("");
+    onOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    window.requestAnimationFrame(() => searchRef.current?.focus());
+  }, [open]);
+
   return (
     <div className={styles.picker} data-menu-root>
       <button
+        ref={triggerRef}
         type="button"
         className={styles.pickerTrigger}
         style={selected ? ({ "--accent": QUALITY_COLORS[selected.pet.quality] } as CSSProperties) : undefined}
         aria-expanded={open}
+        aria-haspopup="dialog"
         onClick={() => onOpen(!open)}
       >
         {selected ? <PetImage pet={selected.pet} /> : <div className={styles.emptyAvatar}>{slotIndex + 1}</div>}
         <span>
           <strong>{selected?.title || `Choose pet ${slotIndex + 1}`}</strong>
-          <small>{selected ? selected.subtitle : "Search pet database or owned snapshots"}</small>
+          <small>{selected ? `${selected.subtitle}${selected.kind === "owned" ? " / Snapshot stats" : ""}` : "Search pet database or owned snapshots"}</small>
         </span>
         <ChevronDown size={17} />
       </button>
       {selected && (
-        <button type="button" className={styles.clearSlot} onClick={onClear} title="Clear pet slot">
+        <button type="button" className={styles.clearSlot} onClick={onClear} aria-label={`Clear ${selected.title} from comparison`} title="Clear pet slot">
           <X size={15} />
         </button>
       )}
       {open && (
-        <div className={styles.pickerPanel}>
+        <div className={styles.pickerPanel} role="dialog" aria-label={`Choose pet for comparison slot ${slotIndex + 1}`}>
           <div className={styles.pickerPanelHeader}>
             <span>Choose pet</span>
             <button
               type="button"
-              onClick={() => {
-                setQuery("");
-                onOpen(false);
-              }}
+              onClick={closePicker}
               aria-label="Close pet picker"
             >
               <X size={16} />
@@ -351,7 +445,13 @@ function PetPicker({
           </div>
           <label className={styles.searchBox}>
             <Search size={16} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search pet, boss, source..." autoFocus />
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search pet, boss, source..."
+              aria-label={`Search pets for comparison slot ${slotIndex + 1}`}
+            />
           </label>
           <div className={styles.petOptions}>
             {filtered.map((option) => (
@@ -361,8 +461,7 @@ function PetPicker({
                 className={option.id === value ? styles.petOptionSelected : ""}
                 onClick={() => {
                   onSelect(option.id);
-                  setQuery("");
-                  onOpen(false);
+                  closePicker();
                 }}
               >
                 <PetImage pet={option.pet} />
@@ -431,11 +530,24 @@ export default function PetComparisonPage() {
   const [battleZone, setBattleZone] = useState(BEST_BATTLE_ZONE);
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const loadedStorage = useRef(false);
+  const loadedStorageKeyRef = useRef<string | null>(null);
+  const activeProfileId = activeProfile?.id || null;
+  const storageKey = useMemo(() => getProfileStorageKey(STORAGE_KEY, activeProfileId), [activeProfileId]);
 
   useEffect(() => {
+    loadedStorageKeyRef.current = null;
+    setSelectedIds([]);
+    setPetLevel(100);
+    setMasteryLevel(100);
+    setEvolutionStage(0);
+    setEvolutionStat("all");
+    setPatBonus(false);
+    setBattleMode("withSleep");
+    setBattleZone(BEST_BATTLE_ZONE);
+    setFoodPolicy("standard");
+
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey) ?? (activeProfileId ? null : localStorage.getItem(STORAGE_KEY));
       if (raw) {
         const stored = JSON.parse(raw) as CompareState;
         if (Array.isArray(stored.selectedIds)) {
@@ -453,14 +565,14 @@ export default function PetComparisonPage() {
         if (stored.foodPolicy) setFoodPolicy(stored.foodPolicy);
       }
     } catch {}
-    loadedStorage.current = true;
-  }, []);
+    loadedStorageKeyRef.current = storageKey;
+  }, [activeProfileId, storageKey]);
 
   useEffect(() => {
-    if (!loadedStorage.current) return;
+    if (loadedStorageKeyRef.current !== storageKey) return;
     const payload: CompareState = { selectedIds, petLevel, masteryLevel, evolutionStage, evolutionStat, patBonus, battleMode, battleZone, foodPolicy };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedIds]);
+    localStorage.setItem(storageKey, JSON.stringify(payload));
+  }, [battleMode, battleZone, evolutionStage, evolutionStat, foodPolicy, masteryLevel, patBonus, petLevel, selectedIds, storageKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -506,6 +618,14 @@ export default function PetComparisonPage() {
   const activeProfilePetSpecies = activeProfile?.pet?.species;
   const unmatchedOwnedPetCount = useMemo(
     () => (activeProfile?.ownedPets || []).filter((ownedPet) => !findPetRecordForOwnedPet(ownedPet, petMatchLookup)).length,
+    [activeProfile?.ownedPets, petMatchLookup],
+  );
+  const unmatchedOwnedPetNames = useMemo(
+    () =>
+      (activeProfile?.ownedPets || [])
+        .filter((ownedPet) => !findPetRecordForOwnedPet(ownedPet, petMatchLookup))
+        .map((ownedPet) => ownedPet.nickname?.trim() || ownedPet.species)
+        .filter(Boolean),
     [activeProfile?.ownedPets, petMatchLookup],
   );
 
@@ -597,6 +717,11 @@ export default function PetComparisonPage() {
       });
   }, [compareOptions, evolutionStage, evolutionStat, getBattleSample, masteryBonus, patBonus, petLevel, selectedIds]);
 
+  const unavailableSelectedIds = useMemo(
+    () => selectedIds.filter((id) => !compareOptions.some((option) => option.id === id)),
+    [compareOptions, selectedIds],
+  );
+
   const profilePetOption = useMemo(() => {
     const activeOwnedPet = compareOptions.find((option) => option.kind === "owned" && option.ownedPet && (option.ownedPet.active || option.ownedPet.equipped));
     if (activeOwnedPet) return activeOwnedPet;
@@ -607,22 +732,29 @@ export default function PetComparisonPage() {
   }, [activeProfilePetSpecies, compareOptions, petMatchLookup]);
 
   const topPicks = useMemo(() => {
-    const compared = pets.map((pet) => {
+    const winners = new Map<string, PetRecord>();
+    let highestPower: { pet: PetRecord; value: number } | null = null;
+    let fastestHunt: { pet: PetRecord; value: number } | null = null;
+    let highestBattle: { pet: PetRecord; value: number } | null = null;
+    let highestMarket: { pet: PetRecord; value: number } | null = null;
+
+    for (const pet of pets) {
       const stats = calculatePetStats(pet, petLevel, masteryBonus, evolutionStage, evolutionStat, patBonus);
-      return {
-        pet,
-        power: getTotalPower(stats),
-        hunt: getHuntingTimeSeconds(stats),
-        battle: getBattleSample(pet).value,
-        market: pet.exchange?.minPrice || 0,
-      };
-    });
-    const unique = new Map<string, PetRecord>();
-    [...compared].sort((a, b) => b.power - a.power).slice(0, 1).forEach((row) => unique.set("Highest power", row.pet));
-    [...compared].sort((a, b) => a.hunt - b.hunt).slice(0, 1).forEach((row) => unique.set("Lowest formula hunt time", row.pet));
-    [...compared].filter((row) => row.battle > 0).sort((a, b) => b.battle - a.battle).slice(0, 1).forEach((row) => unique.set("Highest recorded EV", row.pet));
-    [...compared].filter((row) => row.market > 0).sort((a, b) => b.market - a.market).slice(0, 1).forEach((row) => unique.set("Highest sale value", row.pet));
-    return Array.from(unique.entries());
+      const power = getTotalPower(stats);
+      const hunt = getHuntingTimeSeconds(stats);
+      const battle = getBattleSample(pet).value;
+      const market = pet.exchange?.minPrice || 0;
+      if (!highestPower || power > highestPower.value) highestPower = { pet, value: power };
+      if (!fastestHunt || hunt < fastestHunt.value) fastestHunt = { pet, value: hunt };
+      if (battle > 0 && (!highestBattle || battle > highestBattle.value)) highestBattle = { pet, value: battle };
+      if (market > 0 && (!highestMarket || market > highestMarket.value)) highestMarket = { pet, value: market };
+    }
+
+    if (highestPower) winners.set("Highest power", highestPower.pet);
+    if (fastestHunt) winners.set("Lowest formula hunt time", fastestHunt.pet);
+    if (highestBattle) winners.set("Highest recorded EV", highestBattle.pet);
+    if (highestMarket) winners.set("Highest sale value", highestMarket.pet);
+    return Array.from(winners.entries());
   }, [evolutionStage, evolutionStat, getBattleSample, masteryBonus, patBonus, petLevel, pets]);
 
   const battleCoverage = useMemo(() => {
@@ -683,7 +815,7 @@ export default function PetComparisonPage() {
             Pet Database <ArrowRight size={16} />
           </Link>
           <button type="button" className={styles.secondaryLink} onClick={() => setSelectedIds([])}>
-            <Trash2 size={16} /> Clear
+            <Trash2 size={16} /> Clear comparison
           </button>
         </div>
       </section>
@@ -714,10 +846,16 @@ export default function PetComparisonPage() {
               <OptionMenu label="Battle sample" value={battleMode} options={BATTLE_OPTIONS} open={openMenu === "battle"} onOpen={(open) => setOpenMenu(open ? "battle" : null)} onChange={setBattleMode} />
               <OptionMenu label="Battle zone" value={battleZone} options={battleZoneOptions} open={openMenu === "battle-zone"} onOpen={(open) => setOpenMenu(open ? "battle-zone" : null)} onChange={setBattleZone} />
               <OptionMenu label="Food" value={foodPolicy} options={FOOD_OPTIONS} open={openMenu === "food"} onOpen={(open) => setOpenMenu(open ? "food" : null)} onChange={setFoodPolicy} />
-              <button type="button" className={`${styles.toggle} ${patBonus ? styles.activeToggle : ""}`} onClick={() => setPatBonus((value) => !value)}>
+              <button
+                type="button"
+                className={`${styles.toggle} ${patBonus ? styles.activeToggle : ""}`}
+                aria-pressed={patBonus}
+                onClick={() => setPatBonus((value) => !value)}
+              >
                 <HeartPulse size={16} /> Pat +5%
               </button>
             </div>
+            <p className={styles.snapshotHint}>Shared setup affects database pets only; owned snapshots use saved stats.</p>
             <p className={styles.scenarioNote}>
               Level, mastery, evolution, and pat affect database species previews. Owned snapshots keep imported/manual stat values. Battle EV uses recorded
               research data only; it does not import live pet state, route movement, active map position, or future combat scaling.
@@ -788,15 +926,23 @@ export default function PetComparisonPage() {
                   onClear={() => clearSlot(index)}
                 />
               ))}
-              {selectedIds.length < MAX_COMPARE && (
-                <button type="button" className={styles.addSlot} onClick={() => setOpenMenu(`pet-${selectedIds.length}`)}>
-                  <Plus size={18} /> Add pet
-                </button>
-              )}
             </div>
+            {unavailableSelectedIds.length > 0 && (
+              <div className={styles.warningNotice} role="status">
+                <span>{unavailableSelectedIds.length} saved comparison slot{unavailableSelectedIds.length === 1 ? "" : "s"} could not be restored for this profile or database version.</span>
+                <button type="button" onClick={() => setSelectedIds((current) => current.filter((id) => !unavailableSelectedIds.includes(id)))}>
+                  Remove unavailable
+                </button>
+              </div>
+            )}
             {unmatchedOwnedPetCount > 0 && (
               <p className={styles.quickPickNote}>
-                {unmatchedOwnedPetCount} owned snapshot{unmatchedOwnedPetCount === 1 ? "" : "s"} cannot be compared yet because the species does not match the pet database.
+                {unmatchedOwnedPetCount} owned snapshot{unmatchedOwnedPetCount === 1 ? "" : "s"} cannot be compared yet because the species does not match the pet database:
+                {" "}
+                {unmatchedOwnedPetNames.slice(0, 3).join(", ")}
+                {unmatchedOwnedPetNames.length > 3 ? ` +${unmatchedOwnedPetNames.length - 3}` : ""}.
+                {" "}
+                <Link href="/pets/owned">Review owned pets</Link>
               </p>
             )}
             <div className={styles.quickPicks}>
@@ -813,7 +959,7 @@ export default function PetComparisonPage() {
           {rows.length === 0 ? (
             <section className={styles.emptyState}>
               <PawPrint size={38} />
-              <h2>Select two pets to begin.</h2>
+              <h2>Select a pet to preview, add another to compare.</h2>
               <p>Use the quick picks or search by pet, boss, source, rarity, or exchange listing.</p>
             </section>
           ) : (
@@ -830,7 +976,7 @@ export default function PetComparisonPage() {
                           <h3>{row.label}</h3>
                           <p>{row.subtitle}</p>
                         </div>
-                        <span>{row.source === "owned" ? "Owned" : qualityLabel(row.pet.quality)}</span>
+                        <span>{row.source === "owned" ? "Snapshot stats" : qualityLabel(row.pet.quality)}</span>
                       </div>
                       <div className={styles.cardStats}>
                         <div>
@@ -876,6 +1022,7 @@ export default function PetComparisonPage() {
                   </div>
                 </div>
                 <div className={styles.tableWrap}>
+                  <div className={styles.tableScrollHint}>Swipe sideways for metrics</div>
                   <table className={styles.compareTable} style={{ "--compare-cols": rows.length } as CSSProperties}>
                     <thead>
                       <tr>

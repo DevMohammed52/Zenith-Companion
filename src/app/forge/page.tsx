@@ -64,9 +64,13 @@ export default function ForgePage() {
   const [qualityFilter, setQualityFilter] = useState<(typeof QUALITY_OPTIONS)[number]>("ALL");
   const [sortBy, setSortBy] = useState<(typeof SORT_OPTIONS)[number]["id"]>("value");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [openFilterPicker, setOpenFilterPicker] = useState<"quality" | "sort" | "">("");
   const [activeOptionIndex, setActiveOptionIndex] = useState(0);
   const [selectedRecipeName, setSelectedRecipeName] = useState("");
   const [focusedEntryKey, setFocusedEntryKey] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [clearedDraft, setClearedDraft] = useState<PlannerDraft | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recipes = useMemo(() => buildForgeRecipeOptions(allItemsDb), [allItemsDb]);
   const recipesByName = useMemo(() => new Map(recipes.map((recipe) => [recipe.recipeName, recipe])), [recipes]);
@@ -136,6 +140,32 @@ export default function ForgePage() {
     setActiveOptionIndex(0);
   }, [qualityFilter, recipeSearch, sortBy]);
 
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!openFilterPicker) return undefined;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenFilterPicker("");
+    };
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!(event.target as Element | null)?.closest(".filter-picker")) {
+        setOpenFilterPicker("");
+      }
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("pointerdown", closeOnOutsidePointer, true);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("pointerdown", closeOnOutsidePointer, true);
+    };
+  }, [openFilterPicker]);
+
   const chooseRecipe = (recipe: ForgeRecipeOption) => {
     setSelectedRecipeName(recipe.recipeName);
     setRecipeSearch(recipe.resultName);
@@ -145,6 +175,7 @@ export default function ForgePage() {
   const addRecipe = (recipeName = selectedRecipeName) => {
     const recipe = recipesByName.get(recipeName);
     if (!recipe) return;
+    const wasEmpty = draft.lines.length === 0;
     setDraft((current) => {
       const index = current.lines.findIndex((line) => line.recipeName === recipe.recipeName);
       if (index >= 0) {
@@ -160,9 +191,13 @@ export default function ForgePage() {
     setFocusedEntryKey(recipe.recipeName);
     setSelectedRecipeName("");
     setRecipeSearch("");
-    window.setTimeout(() => {
-      document.getElementById("forge-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
+    setClearedDraft(null);
+    setStatusMessage(`Added ${recipe.resultName} to the forge plan.`);
+    if (wasEmpty) {
+      window.setTimeout(() => {
+        document.getElementById("forge-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
   };
 
   const updateLine = (recipeName: string, field: QtyField, value: string) => {
@@ -176,11 +211,13 @@ export default function ForgePage() {
   };
 
   const removeLine = (recipeName: string) => {
+    const recipe = recipesByName.get(recipeName);
     setDraft((current) => ({
       ...current,
       lines: current.lines.filter((line) => line.recipeName !== recipeName),
     }));
     if (focusedEntryKey === recipeName) setFocusedEntryKey("");
+    setStatusMessage(`Removed ${recipe?.resultName || recipeName} from the forge plan.`);
   };
 
   const setOwnedMaterial = (name: string, value: string) => {
@@ -194,8 +231,26 @@ export default function ForgePage() {
   };
 
   const clearPlan = () => {
+    const previousDraft = {
+      lines: sanitizeForgePlannerLines(draft.lines),
+      ownedMaterials: sanitizeForgeOwnedMaterials(draft.ownedMaterials),
+    };
+    if (previousDraft.lines.length === 0 && Object.keys(previousDraft.ownedMaterials).length === 0) return;
     setDraft({ lines: [], ownedMaterials: {} });
     setFocusedEntryKey("");
+    setClearedDraft(previousDraft);
+    setStatusMessage("Forge plan cleared.");
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setClearedDraft(null), 9000);
+  };
+
+  const undoClearPlan = () => {
+    if (!clearedDraft) return;
+    setDraft(clearedDraft);
+    setFocusedEntryKey(clearedDraft.lines[0]?.recipeName || "");
+    setStatusMessage("Forge plan restored.");
+    setClearedDraft(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
   const handlePickerKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -226,6 +281,7 @@ export default function ForgePage() {
   const updateRecipeSearch = (value: string) => {
     setRecipeSearch(value);
     setPickerOpen(true);
+    setOpenFilterPicker("");
     const exact = recipes.find((recipe) => (
       recipe.recipeName.toLowerCase() === value.trim().toLowerCase()
       || recipe.resultName.toLowerCase() === value.trim().toLowerCase()
@@ -239,6 +295,7 @@ export default function ForgePage() {
 
   return (
     <main className="forge-page">
+      <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
       <header className="forge-hero">
         <div>
           <p className="eyebrow"><ZenithIcon name="forge" size={16} /> Forge Planner</p>
@@ -262,11 +319,17 @@ export default function ForgePage() {
             <h2>Session setup</h2>
           </div>
           {draft.lines.length > 0 && (
-            <button type="button" className="ghost-button danger" onClick={clearPlan}>
+            <button type="button" className="ghost-button danger" aria-label="Clear all recipes from forge plan" onClick={clearPlan}>
               <Trash2 size={15} /> Clear plan
             </button>
           )}
         </div>
+        {clearedDraft && (
+          <div className="forge-undo-toast" role="status" aria-live="polite">
+            <span>Forge plan cleared.</span>
+            <button type="button" onClick={undoClearPlan}>Undo</button>
+          </div>
+        )}
 
         <div className={`builder-grid ${pickerOpen ? "picker-open" : ""}`}>
           <div className="recipe-combobox" ref={pickerRef}>
@@ -284,7 +347,10 @@ export default function ForgePage() {
                 autoComplete="off"
                 value={recipeSearch}
                 onChange={(event) => updateRecipeSearch(event.target.value)}
-                onFocus={() => setPickerOpen(true)}
+                onFocus={() => {
+                  setPickerOpen(true);
+                  setOpenFilterPicker("");
+                }}
                 onKeyDown={handlePickerKeyDown}
                 placeholder={loading ? "Loading forge recipes..." : "Search result, recipe, material..."}
               />
@@ -338,6 +404,9 @@ export default function ForgePage() {
             options={QUALITY_OPTIONS.map((quality) => ({ id: quality, label: quality === "ALL" ? "All" : titleCase(quality) }))}
             value={qualityFilter}
             onChange={(value) => setQualityFilter(value as typeof qualityFilter)}
+            pickerKey="quality"
+            openPicker={openFilterPicker}
+            setOpenPicker={setOpenFilterPicker}
             onPointerToggle={() => setPickerOpen(false)}
           />
           <CustomPicker
@@ -345,6 +414,9 @@ export default function ForgePage() {
             options={SORT_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
             value={sortBy}
             onChange={(value) => setSortBy(value as typeof sortBy)}
+            pickerKey="sort"
+            openPicker={openFilterPicker}
+            setOpenPicker={setOpenFilterPicker}
             onPointerToggle={() => setPickerOpen(false)}
           />
           <button type="button" className="primary-button" disabled={!selectedRecipe} onClick={() => addRecipe()}>
@@ -387,7 +459,10 @@ export default function ForgePage() {
                     </div>
                   )}
 
-                  <button type="button" className="entry-title" onClick={() => setFocusedEntryKey(entry.recipe.recipeName)}>
+                  <button type="button" className="entry-title" onClick={() => {
+                    setFocusedEntryKey(entry.recipe.recipeName);
+                    setStatusMessage(`${entry.recipe.resultName} details updated below.`);
+                  }}>
                     <img src={entry.recipe.resultImageUrl || entry.recipe.imageUrl || "/favicon.ico"} alt="" />
                     <span>
                       <strong>{entry.recipe.resultName}</strong>
@@ -418,13 +493,13 @@ export default function ForgePage() {
                   </div>
 
                   <div className="entry-actions">
-                    <button type="button" onClick={() => openItemByName(entry.recipe.resultName)}>
+                    <button type="button" aria-label={`Open result item details for ${entry.recipe.resultName}`} onClick={() => openItemByName(entry.recipe.resultName)}>
                       <Package size={15} /> Result
                     </button>
-                    <button type="button" onClick={() => openItemByName(entry.recipe.recipeName)}>
+                    <button type="button" aria-label={`Open recipe item details for ${entry.recipe.recipeName}`} onClick={() => openItemByName(entry.recipe.recipeName)}>
                       <ReceiptText size={15} /> Recipe
                     </button>
-                    <button type="button" className="danger" onClick={() => removeLine(entry.recipe.recipeName)}>
+                    <button type="button" className="danger" aria-label={`Remove ${entry.recipe.resultName} from forge plan`} onClick={() => removeLine(entry.recipe.recipeName)}>
                       <Trash2 size={15} /> Remove
                     </button>
                   </div>
@@ -1809,6 +1884,76 @@ export default function ForgePage() {
           display: inline-block;
           margin-left: 0.45rem;
         }
+        .forge-page {
+          width: 100%;
+          max-width: min(1680px, 100%);
+          overflow-x: clip;
+        }
+        .forge-page .forge-hero,
+        .forge-page .forge-builder,
+        .forge-page .plan-shell,
+        .forge-page .plan-main,
+        .forge-page .plan-side,
+        .forge-page .entry-list,
+        .forge-page .builder-grid,
+        .forge-page .hero-metrics,
+        .forge-page .shopping-layout,
+        .forge-page .shopping-layout > section {
+          min-width: 0;
+          max-width: 100%;
+        }
+        .forge-page .hero-metrics {
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+        }
+        .forge-page .plan-shell {
+          grid-template-columns: minmax(0, 1fr) minmax(280px, min(32%, 360px));
+          scroll-margin-top: 5.75rem;
+        }
+        .forge-page .need-row {
+          grid-template-columns:
+            minmax(0, 1fr)
+            minmax(80px, 0.22fr)
+            minmax(96px, 0.24fr)
+            minmax(86px, 0.22fr)
+            minmax(110px, 0.26fr);
+        }
+        .forge-page .forge-undo-toast {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          border: 1px solid rgba(34, 211, 238, 0.22);
+          border-radius: 8px;
+          background: rgba(15, 23, 42, 0.72);
+          color: #e5e7eb;
+          padding: 0.75rem 0.85rem;
+        }
+        .forge-page .forge-undo-toast button {
+          border: 1px solid rgba(34, 211, 238, 0.36);
+          border-radius: 8px;
+          background: rgba(34, 211, 238, 0.1);
+          color: #67e8f9;
+          cursor: pointer;
+          font-weight: 800;
+          min-height: 2.35rem;
+          padding: 0 0.85rem;
+        }
+        .forge-page .forge-undo-toast button:hover,
+        .forge-page .forge-undo-toast button:focus-visible {
+          background: rgba(34, 211, 238, 0.18);
+          outline: none;
+        }
+        @media (max-width: 1380px) {
+          .forge-page .forge-hero {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .forge-page .plan-shell {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .forge-page .plan-side {
+            position: static;
+          }
+        }
         @media (max-width: 1320px) {
           .forge-page .builder-grid {
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1830,6 +1975,23 @@ export default function ForgePage() {
         @media (max-width: 620px) {
           .forge-page {
             padding: 0 0.85rem 1.5rem;
+          }
+          .forge-page .need-list,
+          .forge-page .need-row,
+          .forge-page .need-name,
+          .forge-page .need-name span {
+            min-width: 0;
+            max-width: 100%;
+          }
+          .forge-page .need-row {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .forge-page .need-name {
+            width: 100%;
+          }
+          .forge-page .forge-undo-toast {
+            align-items: stretch;
+            flex-direction: column;
           }
         }
       `}</style>
@@ -1887,16 +2049,22 @@ function CustomPicker({
   options,
   value,
   onChange,
+  pickerKey,
+  openPicker,
+  setOpenPicker,
   onPointerToggle,
 }: {
   label: string;
   options: Array<{ id: string; label: string }>;
   value: string;
   onChange: (value: string) => void;
+  pickerKey: "quality" | "sort";
+  openPicker: "quality" | "sort" | "";
+  setOpenPicker: (value: "quality" | "sort" | "") => void;
   onPointerToggle?: () => void;
 }) {
   const pickerId = useId();
-  const [open, setOpen] = useState(false);
+  const open = openPicker === pickerKey;
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((option) => option.id === value)));
   const selected = options.find((option) => option.id === value) || options[0] || { id: "", label: "Choose" };
 
@@ -1906,7 +2074,7 @@ function CustomPicker({
 
   const choose = (option: { id: string; label: string }) => {
     onChange(option.id);
-    setOpen(false);
+    setOpenPicker("");
   };
 
   return (
@@ -1914,7 +2082,7 @@ function CustomPicker({
       className="filter-picker"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          setOpen(false);
+          setOpenPicker("");
         }
       }}
     >
@@ -1927,22 +2095,18 @@ function CustomPicker({
         aria-expanded={open}
         aria-labelledby={`${pickerId}-label ${pickerId}-button`}
         onPointerDown={(event) => {
-          if (!onPointerToggle) return;
           event.preventDefault();
-          onPointerToggle();
-          setOpen((current) => !current);
-        }}
-        onClick={() => {
-          if (!onPointerToggle) setOpen((current) => !current);
+          onPointerToggle?.();
+          setOpenPicker(open ? "" : pickerKey);
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
-            setOpen(false);
+            setOpenPicker("");
             return;
           }
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
-            setOpen(true);
+            setOpenPicker(pickerKey);
             setActiveIndex((current) => {
               const delta = event.key === "ArrowDown" ? 1 : -1;
               return (current + delta + options.length) % options.length;
@@ -2017,7 +2181,7 @@ function NeedTable({
       <div className="need-list">
         {rows.map((row) => (
           <div className="need-row" key={row.name}>
-            <button type="button" className="need-name" onClick={() => onOpenItem(row.name)}>
+            <button type="button" className="need-name" aria-label={`Open item details for ${row.name}`} onClick={() => onOpenItem(row.name)}>
               <img src={row.imageUrl || "/favicon.ico"} alt="" />
               <span>
                 <strong>{row.name}</strong>
@@ -2070,7 +2234,7 @@ function RecipeNeedTable({
       <div className="need-list">
         {rows.map((row) => (
           <div className="need-row" key={row.recipeName}>
-            <button type="button" className="need-name" onClick={() => onOpenItem(row.recipeName)}>
+            <button type="button" className="need-name" aria-label={`Open item details for ${row.recipeName}`} onClick={() => onOpenItem(row.recipeName)}>
               <img src={row.imageUrl || "/favicon.ico"} alt="" />
               <span>
                 <strong>{row.recipeName}</strong>

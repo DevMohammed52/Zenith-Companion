@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   Bell,
   BellRing,
@@ -21,8 +21,8 @@ import { useData } from '@/context/DataContext';
 import { useItemModal } from '@/context/ItemModalContext';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import {
-  buildVendorCandidates,
   comparatorLabel,
+  collectMarketWatchVendorCandidates,
   createMarketWatchRule,
   evaluateMarketWatchRule,
   formatMarketWatchValue,
@@ -31,7 +31,6 @@ import {
   MARKET_WATCH_STORAGE_KEY,
   metricOption,
   sanitizeMarketWatchRules,
-  summarizeVendorCandidates,
   type MarketWatchComparator,
   type MarketWatchMetric,
   type MarketWatchRule,
@@ -52,15 +51,24 @@ type ItemOption = {
   type: string;
   quality: string;
   id: string;
+  searchText: string;
 };
 
 type NotificationState = NotificationPermission | 'unsupported';
+type WatchFilter = 'all' | 'triggered' | 'enabled' | 'paused';
 
 const metricOptions: FilterOption<MarketWatchMetric>[] = MARKET_WATCH_METRIC_OPTIONS.map((option) => ({
   value: option.value,
   label: option.label,
   detail: option.detail,
 }));
+
+const watchFilterOptions: Array<{ value: WatchFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'triggered', label: 'Triggered' },
+  { value: 'enabled', label: 'Enabled' },
+  { value: 'paused', label: 'Paused' },
+];
 
 const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
 
@@ -76,6 +84,10 @@ const formatAge = (value?: string | number | null) => {
   if (hours < 48) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 };
+
+const getItemSearchText = (item: Pick<ItemOption, 'name' | 'type' | 'quality'>) => (
+  `${item.name} ${item.type} ${item.quality}`.toLowerCase()
+);
 
 const getMarketUpdatedAt = (marketData: Record<string, any> | null, scraperStatus: Record<string, unknown> | null) => {
   const metaUpdated = typeof marketData?._meta?.last_updated === 'string' ? marketData._meta.last_updated : null;
@@ -113,11 +125,13 @@ function currentMetricValue({
 
 function MarketPicker<T extends string>({
   ariaLabel,
+  labelledBy,
   options,
   value,
   onChange,
 }: {
   ariaLabel: string;
+  labelledBy?: string;
   options: FilterOption<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -222,7 +236,8 @@ function MarketPicker<T extends string>({
         type="button"
         className="market-select-trigger"
         ref={triggerRef}
-        aria-label={ariaLabel}
+        aria-label={labelledBy ? undefined : ariaLabel}
+        aria-labelledby={labelledBy}
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((current) => !current)}
@@ -238,7 +253,7 @@ function MarketPicker<T extends string>({
         <ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (
-        <div className="market-select-menu" role="listbox" aria-label={ariaLabel} onKeyDown={handleListKeyDown}>
+        <div className="market-select-menu" role="listbox" aria-label={labelledBy ? undefined : ariaLabel} aria-labelledby={labelledBy} onKeyDown={handleListKeyDown}>
           {options.map((option, index) => {
             const active = option.value === value;
             return (
@@ -271,6 +286,7 @@ export default function MarketAlertsPage() {
   const { marketData, allItemsDb, scraperStatus, loading, refresh } = useData();
   const { activeProfile } = useProfiles();
   const { openItem, openItemByName } = useItemModal();
+  const searchListboxId = useId();
   const [rules, setRules] = useState<MarketWatchRule[]>([]);
   const [rulesLoaded, setRulesLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -281,6 +297,9 @@ export default function MarketAlertsPage() {
   const [notifyByDefault, setNotifyByDefault] = useState(false);
   const [notificationState, setNotificationState] = useState<NotificationState>('unsupported');
   const [manualMessage, setManualMessage] = useState('');
+  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
+  const [watchFilter, setWatchFilter] = useState<WatchFilter>('all');
+  const [watchSearch, setWatchSearch] = useState('');
   const [visibleVendorCount, setVisibleVendorCount] = useState(24);
   const marketUpdatedAt = getMarketUpdatedAt(marketData, scraperStatus);
   const typedMarketData = marketData as Record<string, MarketPriceDatum> | null;
@@ -323,6 +342,11 @@ export default function MarketAlertsPage() {
         type: item.type || '',
         quality: item.quality || '',
         id: item.hashed_id || item.id || item.name,
+        searchText: getItemSearchText({
+          name: item.name,
+          type: item.type || '',
+          quality: item.quality || '',
+        }),
       });
     });
     Object.entries(marketData || {}).forEach(([name, market]: [string, any]) => {
@@ -334,17 +358,15 @@ export default function MarketAlertsPage() {
         type: '',
         quality: '',
         id: market?.hashed_id || name,
+        searchText: getItemSearchText({
+          name,
+          type: '',
+          quality: '',
+        }),
       });
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [allItemsDb, marketData]);
-
-  useEffect(() => {
-    if (selectedItemName || itemOptions.length === 0) return;
-    const firstMarketItem = itemOptions.find((item) => typedMarketData?.[item.name]) || itemOptions[0];
-    setSelectedItemName(firstMarketItem.name);
-    setSearchTerm(firstMarketItem.name);
-  }, [itemOptions, selectedItemName, typedMarketData]);
 
   const selectedMarket = selectedItemName ? typedMarketData?.[selectedItemName] || null : null;
   const selectedItemRecord = selectedItemName ? allItemsDb?.[selectedItemName] || null : null;
@@ -366,24 +388,26 @@ export default function MarketAlertsPage() {
     }
   }, [metric, selectedItemName, typedMarketData, allItemsDb, barteringBoost]);
 
-  const filteredItems = useMemo(() => {
+  const matchedItems = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return itemOptions.slice(0, 10);
+    if (!query) return itemOptions;
     const tokens = query.split(/\s+/).filter(Boolean);
     return itemOptions
-      .filter((item) => {
-        const haystack = `${item.name} ${item.type} ${item.quality}`.toLowerCase();
-        return tokens.every((token) => haystack.includes(token));
-      })
-      .slice(0, 10);
+      .filter((item) => tokens.every((token) => item.searchText.includes(token)));
   }, [itemOptions, searchTerm]);
+  const filteredItems = useMemo(() => matchedItems.slice(0, 10), [matchedItems]);
+  const hiddenResultCount = Math.max(0, matchedItems.length - filteredItems.length);
 
   const selectedItemMatchesSearch = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!selectedItemName) return false;
     return selectedItemName.toLowerCase() === query;
   }, [searchTerm, selectedItemName]);
-  const showItemResults = filteredItems.length > 0 && !selectedItemMatchesSearch;
+  const hasSearchQuery = searchTerm.trim().length > 0;
+  const showItemResults = hasSearchQuery && filteredItems.length > 0 && !selectedItemMatchesSearch;
+  const activeSearchOptionId = showItemResults && filteredItems[activeSearchIndex]
+    ? `${searchListboxId}-option-${activeSearchIndex}`
+    : undefined;
 
   const evaluations = useMemo(() => rules.map((rule) => evaluateMarketWatchRule({
     rule,
@@ -444,27 +468,47 @@ export default function MarketAlertsPage() {
   }, [evaluations, notificationState, rules, rulesLoaded, typedMarketData]);
 
   const activeAlerts = evaluations.filter((evaluation) => evaluation.conditionMet);
+  const filteredEvaluations = useMemo(() => {
+    const query = watchSearch.trim().toLowerCase();
+    return evaluations.filter((evaluation) => {
+      if (watchFilter === 'triggered' && !evaluation.conditionMet) return false;
+      if (watchFilter === 'enabled' && !evaluation.rule.enabled) return false;
+      if (watchFilter === 'paused' && evaluation.rule.enabled) return false;
+      if (!query) return true;
+      return [
+        evaluation.rule.itemName,
+        evaluation.metricLabel,
+        evaluation.valueLabel,
+        evaluation.thresholdLabel,
+      ].join(' ').toLowerCase().includes(query);
+    });
+  }, [evaluations, watchFilter, watchSearch]);
   const enabledRules = rules.filter((rule) => rule.enabled).length;
   const notificationRules = rules.filter((rule) => rule.notify).length;
-  const vendorCandidates = useMemo(() => buildVendorCandidates({
+  const vendorCandidateCollection = useMemo(() => collectMarketWatchVendorCandidates({
     marketData: typedMarketData,
     allItemsDb,
     barteringBoostPercent: barteringBoost,
     minimumMargin: 1,
     includeNearVendor: true,
-    limit: 250,
   }), [typedMarketData, allItemsDb, barteringBoost]);
-  const vendorSummary = useMemo(() => summarizeVendorCandidates({
-    marketData: typedMarketData,
-    allItemsDb,
-    barteringBoostPercent: barteringBoost,
-    minimumMargin: 1,
-  }), [typedMarketData, allItemsDb, barteringBoost]);
+  const vendorCandidates = useMemo(() => vendorCandidateCollection.candidates.slice(0, 250), [vendorCandidateCollection]);
+  const vendorSummary = vendorCandidateCollection.summary;
   const visibleVendorCandidates = vendorCandidates.slice(0, visibleVendorCount);
 
   useEffect(() => {
     setVisibleVendorCount(24);
   }, [barteringBoost, typedMarketData]);
+
+  useEffect(() => {
+    setActiveSearchIndex(0);
+  }, [searchTerm, filteredItems.length]);
+
+  const selectSearchItem = (item: ItemOption) => {
+    setSelectedItemName(item.name);
+    setSearchTerm(item.name);
+    setActiveSearchIndex(0);
+  };
 
   const createRule = () => {
     const thresholdValue = Number(threshold);
@@ -580,7 +624,7 @@ export default function MarketAlertsPage() {
         </div>
         <div>
           <Bell size={17} />
-          <span>Browser alerts</span>
+          <span>Notify while open</span>
           <strong>{notificationState === 'granted' ? `${notificationRules} rules` : notificationState === 'unsupported' ? 'Unsupported' : notificationState}</strong>
         </div>
       </section>
@@ -599,39 +643,61 @@ export default function MarketAlertsPage() {
               <span className="eyebrow">Rule builder</span>
               <h2>Add a watch</h2>
             </div>
-            <button type="button" className="soft-icon-button" onClick={() => refresh()} aria-label="Refresh market data">
+            <button type="button" className="soft-icon-button" onClick={() => refresh()} aria-label="Refresh market data" aria-busy={loading} disabled={loading}>
               <RefreshCcw size={16} />
             </button>
           </div>
 
           <div className="watch-field">
             <label htmlFor="market-watch-search">Item</label>
-            <div className="watch-search">
+            <div className="watch-search" role="combobox" aria-expanded={showItemResults} aria-controls={showItemResults ? searchListboxId : undefined} aria-haspopup="listbox">
               <Search size={16} aria-hidden="true" />
               <input
                 id="market-watch-search"
                 type="text"
                 aria-label="Search item history"
+                aria-activedescendant={activeSearchOptionId}
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setSelectedItemName('');
+                }}
+                onKeyDown={(event) => {
+                  if (!showItemResults) return;
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setActiveSearchIndex((index) => Math.min(filteredItems.length - 1, index + 1));
+                  } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setActiveSearchIndex((index) => Math.max(0, index - 1));
+                  } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const item = filteredItems[activeSearchIndex];
+                    if (item) selectSearchItem(item);
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    setSearchTerm(selectedItemName);
+                  }
+                }}
                 placeholder="Search item history..."
                 autoComplete="off"
               />
             </div>
             {showItemResults ? (
-              <div className="item-pick-list" aria-label="Matching items">
-                {filteredItems.map((item) => {
+              <div className="item-pick-list" id={searchListboxId} role="listbox" aria-label="Matching items">
+                {filteredItems.map((item, index) => {
                   const active = item.name === selectedItemName;
                   const market = typedMarketData?.[item.name];
                   return (
                     <button
                       type="button"
                       key={item.name}
-                      className={active ? 'active' : ''}
-                      onClick={() => {
-                        setSelectedItemName(item.name);
-                        setSearchTerm(item.name);
-                      }}
+                      id={`${searchListboxId}-option-${index}`}
+                      className={active || index === activeSearchIndex ? 'active' : ''}
+                      role="option"
+                      aria-selected={active || index === activeSearchIndex}
+                      onMouseEnter={() => setActiveSearchIndex(index)}
+                      onClick={() => selectSearchItem(item)}
                     >
                       {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="item-pick-fallback" />}
                       <span>
@@ -642,9 +708,19 @@ export default function MarketAlertsPage() {
                     </button>
                   );
                 })}
+                {hiddenResultCount > 0 && (
+                  <div className="item-result-hint" role="status">
+                    Showing first 10 matches. Type more of the item name to narrow {hiddenResultCount.toLocaleString()} more.
+                  </div>
+                )}
               </div>
-            ) : filteredItems.length === 0 ? (
+            ) : hasSearchQuery && filteredItems.length === 0 ? (
               <div className="inline-status search-empty">No matching item history. Pick an item from the list before adding a watch.</div>
+            ) : !selectedItemName ? (
+              <div className="selected-item-hint muted">
+                <Search size={14} aria-hidden="true" />
+                <span>Choose an item from search results before adding a watch.</span>
+              </div>
             ) : (
               <div className="selected-item-hint">
                 <Check size={14} aria-hidden="true" />
@@ -658,6 +734,7 @@ export default function MarketAlertsPage() {
               <label id="market-watch-metric-label">Metric</label>
               <MarketPicker
                 ariaLabel="Market watch metric"
+                labelledBy="market-watch-metric-label"
                 options={metricOptions}
                 value={metric}
                 onChange={setMetric}
@@ -707,6 +784,7 @@ export default function MarketAlertsPage() {
                 Current snapshot is {selectedEvaluation.comparatorLabel} {selectedEvaluation.thresholdLabel}
                 {selectedEvaluation.conditionMet ? '.' : ' only if it crosses your threshold.'}
               </small>
+              <small>If the current snapshot already matches, it appears in Snapshot matches immediately.</small>
               {!selectedItemMatchesSearch && (
                 <small className="warn-copy">Select a matching item result before creating a new watch.</small>
               )}
@@ -721,14 +799,17 @@ export default function MarketAlertsPage() {
               onClick={() => setNotifyByDefault((current) => !current)}
               disabled={notificationState !== 'granted'}
             >
-              <Bell size={15} /> Browser notification
+              <Bell size={15} /> Notify while open
             </button>
             {notificationState !== 'granted' && (
               <button type="button" className="secondary-action" onClick={requestNotifications}>
-                Enable alerts
+                Enable browser permission
               </button>
             )}
           </div>
+          <p className="notify-helper">
+            Runs locally while this browser has Zenith open. Your browser will ask for permission before notifications are enabled.
+          </p>
 
           <button
             type="button"
@@ -782,14 +863,46 @@ export default function MarketAlertsPage() {
           </div>
           <span className="panel-count">{rules.length}</span>
         </div>
+        {rules.length > 0 && (
+          <div className="watchlist-controls" aria-label="Watchlist filters">
+            <div className="watchlist-filter-row">
+              {watchFilterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={watchFilter === option.value ? 'active' : ''}
+                  aria-pressed={watchFilter === option.value}
+                  onClick={() => setWatchFilter(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <label className="watchlist-search">
+              <Search size={15} aria-hidden="true" />
+              <input
+                type="text"
+                aria-label="Search saved watch rules"
+                value={watchSearch}
+                onChange={(event) => setWatchSearch(event.target.value)}
+                placeholder="Search saved rules..."
+              />
+            </label>
+          </div>
+        )}
         {rules.length === 0 ? (
           <div className="empty-state wide">
             <Eye size={30} />
             <p>No saved watch rules yet. Add a rule above to track market-history thresholds on this browser.</p>
           </div>
+        ) : filteredEvaluations.length === 0 ? (
+          <div className="empty-state wide">
+            <Eye size={30} />
+            <p>No saved rules match the current watchlist filter.</p>
+          </div>
         ) : (
           <div className="watch-rule-grid">
-            {evaluations.map((evaluation) => (
+            {filteredEvaluations.map((evaluation) => (
               <article key={evaluation.rule.id} className={`watch-rule-card ${evaluation.conditionMet ? 'triggered' : ''}`}>
                 <div className="rule-topline">
                   <div>
@@ -863,7 +976,7 @@ export default function MarketAlertsPage() {
             <CircleDollarSign size={30} />
             <p>
               No market-history averages are near your current profile-adjusted vendor value.
-              Higher bartering profiles can reveal more rows to watch.
+              Vendor checks compare market average against your active profile&apos;s vendor value; higher bartering profiles can reveal more rows to watch.
             </p>
           </div>
         ) : (
@@ -1171,6 +1284,19 @@ export default function MarketAlertsPage() {
           font-style: normal;
           font-weight: 900;
         }
+        .item-result-hint,
+        .notify-helper {
+          color: var(--text-muted);
+          font-size: 0.78rem;
+          font-weight: 750;
+          line-height: 1.45;
+        }
+        .item-result-hint {
+          background: rgba(255,255,255,0.022);
+          border: 1px solid var(--border-subtle);
+          border-radius: 7px;
+          padding: 0.55rem 0.65rem;
+        }
         .search-empty {
           margin-top: 0.55rem;
         }
@@ -1187,6 +1313,9 @@ export default function MarketAlertsPage() {
         .selected-item-hint svg {
           color: var(--text-success);
           flex: 0 0 auto;
+        }
+        .selected-item-hint.muted svg {
+          color: var(--text-muted);
         }
         .selected-item-hint span {
           overflow: hidden;
@@ -1342,6 +1471,9 @@ export default function MarketAlertsPage() {
           gap: 0.6rem;
           margin-top: 0.85rem;
         }
+        .notify-helper {
+          margin: 0.45rem 0 0;
+        }
         .toggle-pill,
         .secondary-action,
         .primary-action,
@@ -1381,7 +1513,8 @@ export default function MarketAlertsPage() {
         }
         .toggle-pill:disabled,
         .mini-toggle:disabled,
-        .primary-action:disabled {
+        .primary-action:disabled,
+        .soft-icon-button:disabled {
           cursor: not-allowed;
           opacity: 0.45;
         }
@@ -1483,6 +1616,61 @@ export default function MarketAlertsPage() {
         .watch-rules-section,
         .vendor-section {
           margin-top: 1rem;
+        }
+        .watchlist-controls {
+          align-items: center;
+          display: grid;
+          gap: 0.75rem;
+          grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+          margin: -0.25rem 0 1rem;
+        }
+        .watchlist-filter-row {
+          display: flex;
+          gap: 0.45rem;
+          min-width: 0;
+          overflow-x: auto;
+          padding-bottom: 0.1rem;
+          scrollbar-width: thin;
+        }
+        .watchlist-filter-row button {
+          flex: 0 0 auto;
+          min-height: 40px;
+          min-width: max-content;
+          padding: 0 0.75rem;
+        }
+        .watchlist-filter-row button.active {
+          background: rgba(56,189,248,0.16);
+          border-color: rgba(56,189,248,0.42);
+          color: #fff;
+        }
+        .watchlist-search {
+          align-items: center;
+          background: rgba(0,0,0,0.26);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          display: flex;
+          gap: 0.55rem;
+          min-width: 0;
+          padding: 0 0.75rem;
+        }
+        .watchlist-search svg {
+          color: var(--text-muted);
+          flex: 0 0 auto;
+        }
+        .watchlist-search input {
+          background: transparent;
+          border: 0;
+          color: var(--text-main);
+          font: inherit;
+          font-weight: 750;
+          min-height: 42px;
+          min-width: 0;
+          outline: 0;
+          width: 100%;
+        }
+        .watchlist-search:focus-within {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
         }
         .watch-rule-grid {
           grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
@@ -1630,10 +1818,48 @@ export default function MarketAlertsPage() {
           }
         }
         @media (max-width: 760px) {
+          .market-watch-page {
+            padding-bottom: 2.5rem;
+          }
+          .market-hero {
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+          }
           .market-hero h1 {
-            font-size: 2.25rem;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+          }
+          .market-hero p {
+            font-size: 0.86rem;
+            line-height: 1.45;
+          }
+          .market-hero-card,
+          .market-status-grid > div,
+          .watch-builder,
+          .alert-panel,
+          .watch-rules-section,
+          .vendor-section {
+            padding: 0.85rem;
+          }
+          .market-status-grid {
+            gap: 0.55rem;
+            margin-bottom: 0.75rem;
+          }
+          .market-status-grid > div {
+            padding: 0.7rem;
+          }
+          .market-status-grid strong {
+            font-size: 1rem;
+          }
+          .market-watch-note {
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            padding: 0.68rem 0.75rem;
           }
           .watch-form-grid {
+            grid-template-columns: 1fr;
+          }
+          .watchlist-controls {
             grid-template-columns: 1fr;
           }
           .rule-metrics,

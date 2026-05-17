@@ -251,7 +251,7 @@ function metricValue(
   return 0;
 }
 
-function collectVendorCandidates({
+export function collectMarketWatchVendorCandidates({
   marketData,
   allItemsDb,
   barteringBoostPercent = 0,
@@ -405,7 +405,7 @@ export function buildVendorCandidates({
   includeNearVendor?: boolean;
   limit?: number;
 }): VendorCandidate[] {
-  return collectVendorCandidates({
+  return collectMarketWatchVendorCandidates({
     marketData,
     allItemsDb,
     barteringBoostPercent,
@@ -425,7 +425,7 @@ export function summarizeVendorCandidates({
   barteringBoostPercent?: number;
   minimumMargin?: number;
 }): VendorCandidateSummary {
-  return collectVendorCandidates({
+  return collectMarketWatchVendorCandidates({
     marketData,
     allItemsDb,
     barteringBoostPercent,

@@ -54,6 +54,7 @@ import {
   type HousingCostEntry,
   type HousingActivity,
   type HousingMode,
+  type ProfileHousing,
 } from "@/lib/housing";
 import {
   DEFAULT_TOOL_SELECTIONS,
@@ -78,6 +79,12 @@ const BUFF_ACTIVITIES: HousingActivity[] = [
   "dungeon",
   "hunting",
   "construction",
+];
+
+const GUEST_BUFF_GROUPS: Array<{ title: string; activities: HousingActivity[] }> = [
+  { title: "Gathering and Crafting", activities: ["woodcutting", "mining", "fishing", "alchemy", "smelting", "cooking", "forge"] },
+  { title: "Progression", activities: ["meditation", "eventMastery", "construction"] },
+  { title: "Combat and Exploration", activities: ["combat", "dungeon", "hunting"] },
 ];
 
 const GUEST_BUFF_OPTIONS = [
@@ -387,6 +394,9 @@ export default function HousingPage() {
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [draftTiers, setDraftTiers] = useState<Record<string, string>>({});
   const [conditionDrafts, setConditionDrafts] = useState<Record<string, string>>({});
+  const [conditionSliderDrafts, setConditionSliderDrafts] = useState<Record<string, number>>({});
+  const [undoHousing, setUndoHousing] = useState<{ label: string; housing: ProfileHousing } | null>(null);
+  const tabButtonRefs = useRef<Partial<Record<HousingTab, HTMLButtonElement | null>>>({});
   const [profitPlannerFamily, setProfitPlannerFamily] = useState("Lumber Store");
   const [profitPlannerRoute, setProfitPlannerRoute] = useState("");
   const [profitPlannerEssence, setProfitPlannerEssence] = useState("");
@@ -409,6 +419,7 @@ export default function HousingPage() {
     () => Array.from(new Set([...ROOM_PROFIT_BASE_HORIZONS, repairDecayDays])).sort((a, b) => a - b),
     [repairDecayDays],
   );
+  const profitDataActive = activeHousingTab === "profit" && housing.mode === "owner";
 
   const materialPrices = useMemo(() => {
     const prices: Record<string, number> = {};
@@ -421,16 +432,25 @@ export default function HousingPage() {
   }, [allItemsDb, marketData, preferences.customPrices]);
 
   useEffect(() => {
+    if (!profitDataActive || (gearData && itemRegistry)) return undefined;
+    let cancelled = false;
     fetch("/gear-data.json")
       .then((res) => (res.ok ? res.json() : null))
-      .then(setGearData)
+      .then((data) => {
+        if (!cancelled) setGearData(data);
+      })
       .catch(() => {});
 
     fetch("/all-items-db.json")
       .then((res) => (res.ok ? res.json() : null))
-      .then(setItemRegistry)
+      .then((data) => {
+        if (!cancelled) setItemRegistry(data);
+      })
       .catch(() => {});
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [gearData, itemRegistry, profitDataActive]);
 
   const foundationComponent = HOUSING_COMPONENTS.find((component) => component.id === "foundation");
   const slotComponent = HOUSING_COMPONENTS.find((component) => component.id === "slot");
@@ -549,6 +569,16 @@ export default function HousingPage() {
     }
   }, [idleRoomFamilies, profitPlannerFamily]);
 
+  useEffect(() => {
+    tabButtonRefs.current[activeHousingTab]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeHousingTab]);
+
+  useEffect(() => {
+    if (!undoHousing) return undefined;
+    const timeout = setTimeout(() => setUndoHousing(null), 9000);
+    return () => clearTimeout(timeout);
+  }, [undoHousing]);
+
   const plannerRoomVariants = useMemo(() => (
     HOUSING_COMPONENTS
       .filter((component) => component.category === "idle" && component.family === profitPlannerFamily)
@@ -561,8 +591,8 @@ export default function HousingPage() {
   const plannerOfflineHours = Math.max(0, 24 - plannerPlaytimeHours);
 
   const forgeRecipes = useMemo(
-    () => buildForgeRecipes(gearData, itemRegistry),
-    [gearData, itemRegistry],
+    () => (profitDataActive ? buildForgeRecipes(gearData, itemRegistry) : []),
+    [gearData, itemRegistry, profitDataActive],
   );
 
   const selectedEssenceSession = useMemo(() => calculateEssenceSession({
@@ -627,8 +657,8 @@ export default function HousingPage() {
   ]);
 
   const skillProfitRows = useMemo(
-    () => calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, forgeRecipes, 0),
-    [allItemsDb, forgeRecipes, marketData, skillProfitSettings],
+    () => (profitDataActive ? calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, forgeRecipes, 0) : []),
+    [allItemsDb, forgeRecipes, marketData, profitDataActive, skillProfitSettings],
   );
 
   const routeRows = useMemo(() => {
@@ -787,6 +817,31 @@ export default function HousingPage() {
     });
   };
 
+  const queueHousingUndo = (label: string) => {
+    setUndoHousing({ label, housing });
+  };
+
+  const restoreHousingUndo = () => {
+    if (!activeProfile || !undoHousing) return;
+    updateProfile(activeProfile.id, { housing: undoHousing.housing });
+    setUndoHousing(null);
+  };
+
+  const toggleFoundation = () => {
+    const disablingFoundation = housing.foundationBuilt;
+    if (disablingFoundation && (housing.selectedComponents.length > 0 || housing.extraSlots > 0)) {
+      queueHousingUndo("Foundation removed.");
+    }
+    saveHousing({
+      foundationBuilt: !housing.foundationBuilt,
+      extraSlots: !housing.foundationBuilt ? housing.extraSlots : 0,
+      selectedComponents: !housing.foundationBuilt ? housing.selectedComponents : [],
+      componentConditions: !housing.foundationBuilt ? housing.componentConditions : {},
+      componentDecayDays: !housing.foundationBuilt ? housing.componentDecayDays : {},
+      componentRepairGold: !housing.foundationBuilt ? housing.componentRepairGold : {},
+    });
+  };
+
   const setExtraSlots = (extraSlots: number) => {
     const clampedSlots = Math.min(15, Math.max(0, Math.round(Number(extraSlots) || 0)));
     const nextConditions = { ...housing.componentConditions };
@@ -812,6 +867,7 @@ export default function HousingPage() {
     const nextDecayDays = { ...housing.componentDecayDays };
     const nextRepairGold = { ...housing.componentRepairGold };
     if (next.has(componentId)) {
+      queueHousingUndo(`${component.family} removed.`);
       next.delete(componentId);
       delete nextConditions[componentId];
       delete nextDecayDays[componentId];
@@ -823,6 +879,7 @@ export default function HousingPage() {
         for (const selectedId of Array.from(next)) {
           const existing = HOUSING_COMPONENTS.find((candidate) => candidate.id === selectedId);
           if (existing?.family === component.family) {
+            queueHousingUndo(`${existing.family} replaced.`);
             inheritedCondition = nextConditions[selectedId] ?? inheritedCondition;
             next.delete(selectedId);
             delete nextConditions[selectedId];
@@ -846,6 +903,8 @@ export default function HousingPage() {
   };
 
   const removeComponent = (componentId: string) => {
+    const component = HOUSING_COMPONENTS.find((candidate) => candidate.id === componentId);
+    if (component) queueHousingUndo(`${component.family} removed.`);
     const nextConditions = { ...housing.componentConditions };
     const nextDecayDays = { ...housing.componentDecayDays };
     const nextRepairGold = { ...housing.componentRepairGold };
@@ -898,6 +957,11 @@ export default function HousingPage() {
 
   const updateComponentCondition = (componentId: string, condition: number) => {
     if (!Number.isFinite(condition)) return;
+    setConditionSliderDrafts((current) => {
+      const nextDrafts = { ...current };
+      delete nextDrafts[componentId];
+      return nextDrafts;
+    });
     setConditionDrafts((current) => {
       const nextDrafts = { ...current };
       delete nextDrafts[componentId];
@@ -920,6 +984,17 @@ export default function HousingPage() {
       return;
     }
     updateComponentCondition(componentId, Number(rawValue));
+  };
+
+  const updateComponentConditionSliderDraft = (componentId: string, condition: number) => {
+    if (!Number.isFinite(condition)) return;
+    setConditionSliderDrafts((current) => ({ ...current, [componentId]: normalizeHousingCondition(condition, 100) }));
+  };
+
+  const commitComponentConditionSliderDraft = (componentId: string, directCondition?: number) => {
+    const draft = directCondition ?? conditionSliderDrafts[componentId];
+    if (draft === undefined) return;
+    updateComponentCondition(componentId, draft);
   };
 
   const resetComponentConditionInput = (componentId: string) => {
@@ -986,6 +1061,9 @@ export default function HousingPage() {
             {HOUSING_TABS.map((tab) => (
               <button
                 key={tab.id}
+                ref={(element) => {
+                  tabButtonRefs.current[tab.id] = element;
+                }}
                 type="button"
                 className={activeHousingTab === tab.id ? "active" : ""}
                 aria-current={activeHousingTab === tab.id ? "page" : undefined}
@@ -996,6 +1074,13 @@ export default function HousingPage() {
               </button>
             ))}
           </nav>
+
+          {undoHousing && (
+            <div className="housing-undo-toast" role="status" aria-live="polite">
+              <span>{undoHousing.label}</span>
+              <button type="button" onClick={restoreHousingUndo}>Undo</button>
+            </div>
+          )}
 
           {activeHousingTab === "overview" && (
             <section className="housing-overview-grid" aria-label="Housing overview">
@@ -1146,14 +1231,7 @@ export default function HousingPage() {
                     type="button"
                     className={`foundation-toggle ${housing.foundationBuilt ? "active" : ""}`}
                     aria-pressed={housing.foundationBuilt}
-                    onClick={() => saveHousing({
-                      foundationBuilt: !housing.foundationBuilt,
-                      extraSlots: !housing.foundationBuilt ? housing.extraSlots : 0,
-                      selectedComponents: !housing.foundationBuilt ? housing.selectedComponents : [],
-                      componentConditions: !housing.foundationBuilt ? housing.componentConditions : {},
-                      componentDecayDays: !housing.foundationBuilt ? housing.componentDecayDays : {},
-                      componentRepairGold: !housing.foundationBuilt ? housing.componentRepairGold : {},
-                    })}
+                    onClick={toggleFoundation}
                   >
                     <strong>Foundation</strong>
                     <span>{housing.foundationBuilt ? "Built - 1 free slot unlocked" : "Build first to unlock slots"}</span>
@@ -1359,9 +1437,16 @@ export default function HousingPage() {
                             min="0"
                             max="100"
                             step="0.1"
-                            value={condition}
+                            value={conditionSliderDrafts[component.id] ?? condition}
                             aria-label={`${component.family} condition`}
-                            onChange={(event) => updateComponentCondition(component.id, event.currentTarget.valueAsNumber)}
+                            onChange={(event) => updateComponentConditionSliderDraft(component.id, event.currentTarget.valueAsNumber)}
+                            onBlur={(event) => commitComponentConditionSliderDraft(component.id, event.currentTarget.valueAsNumber)}
+                            onPointerUp={(event) => commitComponentConditionSliderDraft(component.id, event.currentTarget.valueAsNumber)}
+                            onKeyUp={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                commitComponentConditionSliderDraft(component.id, event.currentTarget.valueAsNumber);
+                              }
+                            }}
                           />
                         </label>
                         <label className="condition-number">
@@ -1392,52 +1477,58 @@ export default function HousingPage() {
                           />
                         </label>
                       </div>
-                      <div className="selected-material-breakdown">
-                        <span><Coins size={13} /> Fixed gold {formatGold(cost.goldCost)}</span>
-                        {cost.materials.length ? cost.materials.map((material) => (
-                          <span key={`${component.id}-${material.name}`} className={material.missingPrice ? "needs-data" : ""}>
-                            {material.quantity.toLocaleString()} {material.name}
-                            <strong>{formatMaterialPrice(material.unitPrice, material.quantity)}</strong>
+                      <details className="component-ledger-details">
+                        <summary>
+                          <span>Build and upkeep details</span>
+                          <strong>{repairCost.missingMaterials.length ? "Needs price/data" : `Repair ${formatGold(repairCost.totalCost)}`}</strong>
+                        </summary>
+                        <div className="selected-material-breakdown">
+                          <span><Coins size={13} /> Fixed gold {formatGold(cost.goldCost)}</span>
+                          {cost.materials.length ? cost.materials.map((material) => (
+                            <span key={`${component.id}-${material.name}`} className={material.missingPrice ? "needs-data" : ""}>
+                              {material.quantity.toLocaleString()} {material.name}
+                              <strong>{formatMaterialPrice(material.unitPrice, material.quantity)}</strong>
+                            </span>
+                          )) : <span>No construction materials recorded.</span>}
+                          <span className={`repair-cost-placeholder ${repairCost.missingMaterials.length ? "needs-data" : ""}`}>
+                            Repair now
+                            <strong className={repairCost.missingMaterials.length ? "needs-data-text" : ""}>
+                              {formatKnownCost(repairCost.totalCost, repairCost.missingMaterials)}
+                            </strong>
+                            <em>{formatGold(repairCost.goldCost)} gold + {repairCost.missingMaterials.length ? "material prices needed" : `${formatGold(repairCost.materialCost)} materials`}</em>
                           </span>
-                        )) : <span>No construction materials recorded.</span>}
-                        <span className={`repair-cost-placeholder ${repairCost.missingMaterials.length ? "needs-data" : ""}`}>
-                          Repair now
-                          <strong className={repairCost.missingMaterials.length ? "needs-data-text" : ""}>
-                            {formatKnownCost(repairCost.totalCost, repairCost.missingMaterials)}
-                          </strong>
-                          <em>{formatGold(repairCost.goldCost)} gold + {repairCost.missingMaterials.length ? "material prices needed" : `${formatGold(repairCost.materialCost)} materials`}</em>
-                        </span>
-                      </div>
-                      <div className="selected-material-breakdown repair-requirement-breakdown">
-                        <span><ShieldCheck size={13} /> Repair materials <strong>{repairCost.materials.length ? `${repairCost.materials.length} types` : "None"}</strong></span>
-                        {repairCost.materials.map((material) => (
-                          <span key={`${component.id}-repair-${material.name}`} className={material.missingPrice ? "needs-data" : ""}>
-                            {material.quantity.toLocaleString()} {material.name}
-                            <strong>{formatMaterialPrice(material.unitPrice, material.quantity)}</strong>
+                        </div>
+                        <div className="selected-material-breakdown repair-requirement-breakdown">
+                          <span><ShieldCheck size={13} /> Repair materials <strong>{repairCost.materials.length ? `${repairCost.materials.length} types` : "None"}</strong></span>
+                          {repairCost.materials.map((material) => (
+                            <span key={`${component.id}-repair-${material.name}`} className={material.missingPrice ? "needs-data" : ""}>
+                              {material.quantity.toLocaleString()} {material.name}
+                              <strong>{formatMaterialPrice(material.unitPrice, material.quantity)}</strong>
+                            </span>
+                          ))}
+                          <span className={repairCost.missingMaterials.length ? "needs-data" : ""}>
+                            Material market value
+                            <strong>{repairCost.missingMaterials.length ? "Needs price/data" : formatGold(repairCost.materialCost)}</strong>
                           </span>
-                        ))}
-                        <span className={repairCost.missingMaterials.length ? "needs-data" : ""}>
-                          Material market value
-                          <strong>{repairCost.missingMaterials.length ? "Needs price/data" : formatGold(repairCost.materialCost)}</strong>
-                        </span>
-                      </div>
-                      <div className="selected-material-breakdown repair-cycle-breakdown">
-                        <span className={cost.missingMaterials.length ? "needs-data" : ""}>
-                          Full 90d upkeep value
-                          <strong>{formatKnownCost(cost.totalCost, cost.missingMaterials)}</strong>
-                          <em>{decayDays}d from 100% to 0%</em>
-                        </span>
-                        <span className={cost.missingMaterials.length ? "needs-data" : ""}>
-                          Average full-cycle upkeep
-                          <strong>{formatKnownCost(cycleMonthlyCost, cost.missingMaterials)} / month</strong>
-                          <em>{cost.missingMaterials.length ? "Material prices needed" : `${formatGold(cycleDailyCost)} / day`}</em>
-                        </span>
-                        <span className={repairCost.missingMaterials.length ? "needs-data" : ""}>
-                          Current missing condition
-                          <strong>{formatCondition(repairCost.repairPercent)}%</strong>
-                          <em>Immediate repair uses the current condition only.</em>
-                        </span>
-                      </div>
+                        </div>
+                        <div className="selected-material-breakdown repair-cycle-breakdown">
+                          <span className={cost.missingMaterials.length ? "needs-data" : ""}>
+                            Full 90d upkeep value
+                            <strong>{formatKnownCost(cost.totalCost, cost.missingMaterials)}</strong>
+                            <em>{decayDays}d from 100% to 0%</em>
+                          </span>
+                          <span className={cost.missingMaterials.length ? "needs-data" : ""}>
+                            Average full-cycle upkeep
+                            <strong>{formatKnownCost(cycleMonthlyCost, cost.missingMaterials)} / month</strong>
+                            <em>{cost.missingMaterials.length ? "Material prices needed" : `${formatGold(cycleDailyCost)} / day`}</em>
+                          </span>
+                          <span className={repairCost.missingMaterials.length ? "needs-data" : ""}>
+                            Current missing condition
+                            <strong>{formatCondition(repairCost.repairPercent)}%</strong>
+                            <em>Immediate repair uses the current condition only.</em>
+                          </span>
+                        </div>
+                      </details>
                     </article>
                   );
                 }) : (
@@ -1771,6 +1862,7 @@ export default function HousingPage() {
                 <label className="housing-field guest-host-field">
                   <span>Host / Source</span>
                   <input
+                    aria-label="Guest host or source"
                     value={housing.guestHostName}
                     onChange={(event) => saveHousing({ guestHostName: event.target.value })}
                     placeholder="Host character, alt, guild house, or note"
@@ -1801,32 +1893,42 @@ export default function HousingPage() {
                   <span>This guest view assumes the host has enough Guest Quarters for your profile.</span>
                 </div>
               </div>
-              <div className="guest-buff-grid">
-                {BUFF_ACTIVITIES.map((activity) => {
-                  const currentHours = Number(housing.guestBuffs[activity] || 0);
-                  return (
-                    <div key={activity} className={`guest-buff-card ${currentHours > 0 ? "active" : ""}`}>
-                      <div>
-                        <span>{getHousingActivityLabel(activity)}</span>
-                        <strong>{currentHours > 0 ? `+${formatHours(currentHours)}` : "No buff"}</strong>
-                      </div>
-                      <div className="guest-tier-row" role="group" aria-label={`${getHousingActivityLabel(activity)} guest buff tier`}>
-                        {GUEST_BUFF_OPTIONS.map((option) => (
-                          <button
-                            key={`${activity}-${option.label}`}
-                            type="button"
-                            className={currentHours === option.hours ? "active" : ""}
-                            aria-pressed={currentHours === option.hours}
-                            onClick={() => updateGuestBuff(activity, option.hours)}
-                            title={option.hours > 0 ? `${option.label}: +${formatHours(option.hours)}` : "No received buff"}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
+              <div className="guest-buff-groups">
+                {GUEST_BUFF_GROUPS.map((group) => (
+                  <section key={group.title} className="guest-buff-group" aria-labelledby={`guest-${group.title.toLowerCase().replaceAll(" ", "-")}`}>
+                    <div className="guest-buff-group-head">
+                      <h3 id={`guest-${group.title.toLowerCase().replaceAll(" ", "-")}`}>{group.title}</h3>
+                      <span>{group.activities.filter((activity) => Number(housing.guestBuffs[activity] || 0) > 0).length} active</span>
                     </div>
-                  );
-                })}
+                    <div className="guest-buff-grid">
+                      {group.activities.map((activity) => {
+                        const currentHours = Number(housing.guestBuffs[activity] || 0);
+                        return (
+                          <div key={activity} className={`guest-buff-card ${currentHours > 0 ? "active" : ""}`}>
+                            <div>
+                              <span>{getHousingActivityLabel(activity)}</span>
+                              <strong>{currentHours > 0 ? `+${formatHours(currentHours)}` : "No buff"}</strong>
+                            </div>
+                            <div className="guest-tier-row" role="group" aria-label={`${getHousingActivityLabel(activity)} guest buff tier`}>
+                              {GUEST_BUFF_OPTIONS.map((option) => (
+                                <button
+                                  key={`${activity}-${option.label}`}
+                                  type="button"
+                                  className={currentHours === option.hours ? "active" : ""}
+                                  aria-pressed={currentHours === option.hours}
+                                  onClick={() => updateGuestBuff(activity, option.hours)}
+                                  title={option.hours > 0 ? `${option.label}: +${formatHours(option.hours)}` : "No received buff"}
+                                >
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
               </div>
               <div className="guest-specials">
                 <button
@@ -1883,7 +1985,7 @@ export default function HousingPage() {
               <div className="planner-controls">
                 <label className="search-box">
                   <Search size={17} />
-                  <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search component, buff, material..." />
+                  <input aria-label="Search housing components" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search component, buff, material..." />
                 </label>
                 <ChoicePicker
                   value={category}
@@ -1997,6 +2099,7 @@ export default function HousingPage() {
             <label className="housing-field">
               <span>Notes</span>
               <textarea
+                aria-label="Housing notes"
                 value={housing.notes}
                 onChange={(event) => saveHousing({ notes: event.target.value })}
                 placeholder="Private notes about this profile's house, guest host, or planned upgrades."
@@ -2082,6 +2185,25 @@ export default function HousingPage() {
           backdrop-filter: blur(18px);
           box-shadow: 0 18px 55px rgba(0,0,0,0.18);
         }
+        .housing-tabs:before,
+        .housing-tabs:after {
+          content: "";
+          display: none;
+          position: sticky;
+          top: 0;
+          bottom: 0;
+          width: 1.65rem;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .housing-tabs:before {
+          left: 0;
+          background: linear-gradient(90deg, rgba(5, 10, 13, 0.96), transparent);
+        }
+        .housing-tabs:after {
+          right: 0;
+          background: linear-gradient(270deg, rgba(5, 10, 13, 0.96), transparent);
+        }
         .housing-tabs button {
           min-width: 0;
           border: 1px solid transparent;
@@ -2122,6 +2244,36 @@ export default function HousingPage() {
         }
         .tab-hidden {
           display: none !important;
+        }
+        .housing-undo-toast {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          border: 1px solid rgba(34, 211, 238, 0.24);
+          border-radius: 8px;
+          background: rgba(8, 13, 20, 0.86);
+          color: var(--text-primary);
+          margin: -0.25rem 0 1rem;
+          padding: 0.75rem 0.85rem;
+        }
+        .housing-undo-toast span {
+          font-weight: 800;
+        }
+        .housing-undo-toast button {
+          border: 1px solid rgba(34, 211, 238, 0.38);
+          border-radius: 8px;
+          background: rgba(34, 211, 238, 0.1);
+          color: #67e8f9;
+          cursor: pointer;
+          font-weight: 900;
+          min-height: 2.35rem;
+          padding: 0 0.85rem;
+        }
+        .housing-undo-toast button:hover,
+        .housing-undo-toast button:focus-visible {
+          background: rgba(34, 211, 238, 0.18);
+          outline: none;
         }
         .housing-overview-grid {
           display: grid;
@@ -2875,6 +3027,44 @@ export default function HousingPage() {
           border-radius: 8px;
           padding: 0.7rem;
         }
+        .component-ledger-details {
+          grid-column: 1 / -1;
+          min-width: 0;
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          background: rgba(0,0,0,0.18);
+        }
+        .component-ledger-details summary {
+          min-height: 44px;
+          padding: 0.72rem 0.8rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.85rem;
+          color: #fff;
+          cursor: pointer;
+          font-weight: 900;
+          list-style-position: inside;
+        }
+        .component-ledger-details summary span,
+        .component-ledger-details summary strong {
+          min-width: 0;
+        }
+        .component-ledger-details summary strong {
+          color: var(--text-accent);
+          font-size: 0.84rem;
+          text-align: right;
+          overflow-wrap: anywhere;
+        }
+        .component-ledger-details[open] summary {
+          border-bottom: 1px solid var(--border-subtle);
+        }
+        .component-ledger-details .selected-material-breakdown {
+          margin: 0.72rem;
+        }
+        .component-ledger-details .selected-material-breakdown + .selected-material-breakdown {
+          margin-top: 0;
+        }
         @media (max-width: 980px) {
           .component-condition-panel {
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
@@ -3091,6 +3281,41 @@ export default function HousingPage() {
         }
         .guest-buff-grid {
           grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+        }
+        .guest-buff-groups {
+          display: grid;
+          gap: 1rem;
+        }
+        .guest-buff-group {
+          min-width: 0;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 8px;
+          background: rgba(255,255,255,0.025);
+          padding: 0.85rem;
+        }
+        .guest-buff-group-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+        }
+        .guest-buff-group-head h3 {
+          margin: 0;
+          color: #fff;
+          font-size: 0.95rem;
+        }
+        .guest-buff-group-head span {
+          flex: 0 0 auto;
+          color: var(--text-accent);
+          border: 1px solid rgba(56, 189, 248, 0.22);
+          background: rgba(56, 189, 248, 0.08);
+          border-radius: 999px;
+          padding: 0.28rem 0.55rem;
+          font-size: 0.72rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
         .guest-buff-card {
           border: 1px solid var(--border-subtle);
@@ -3659,6 +3884,12 @@ export default function HousingPage() {
             display: flex;
             overflow-x: auto;
             scrollbar-width: thin;
+            scroll-padding-inline: 1.7rem;
+          }
+          .housing-tabs:before,
+          .housing-tabs:after {
+            display: block;
+            flex: 0 0 1.65rem;
           }
           .housing-tabs button {
             flex: 0 0 min(42vw, 10.5rem);
@@ -3751,9 +3982,20 @@ export default function HousingPage() {
             width: 100%;
             justify-content: center;
           }
+          .housing-undo-toast {
+            align-items: stretch;
+            flex-direction: column;
+          }
           .component-condition-panel {
             grid-template-columns: 1fr;
             align-items: stretch;
+          }
+          .component-ledger-details summary {
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .component-ledger-details summary strong {
+            text-align: left;
           }
           .horizon-row {
             grid-template-columns: 1fr;

@@ -125,6 +125,14 @@ function formatForecastTime(weather: ForecastWeather | null | undefined) {
   return `${startText} - ${endText}`;
 }
 
+function formatForecastAriaLabel(weatherName: string, mode: string, location: EnrichedLocation, weather: ForecastWeather | null | undefined) {
+  return `${weatherName} ${mode.toLowerCase()} in ${location.name}, ${formatForecastTime(weather)}`;
+}
+
+function getEnemyWeatherLabel(enemy: EnrichedEnemy, context: string) {
+  return `${enemy.name}, level ${enemy.level}, ${enemy.locationName}, ${context}`;
+}
+
 function EnemyPreferenceGroup({
   title,
   tone,
@@ -149,6 +157,7 @@ function EnemyPreferenceGroup({
             key={`${title}-${enemy.locationKey}-${enemy.name}`}
             href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
             className="enemy-pref-link"
+            aria-label={getEnemyWeatherLabel(enemy, `${title.toLowerCase()}s ${weatherName}`)}
           >
             {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={20} />}
             <span>
@@ -181,7 +190,11 @@ function ForecastLocationCard({
 }) {
   const weather = mode === "current" ? location.currentWeather : location.nextWeather;
   return (
-    <Link href={`/map?location=${encodeURIComponent(location.key)}`} className="forecast-location-card">
+    <Link
+      href={`/map?location=${encodeURIComponent(location.key)}`}
+      className="forecast-location-card"
+      aria-label={formatForecastAriaLabel(weather?.name || "Weather", mode === "current" ? "now" : "next", location, weather)}
+    >
       <div>
         <strong>{location.name}</strong>
         <small>{formatForecastTime(weather)}</small>
@@ -213,11 +226,12 @@ function ForecastTimelineStrip({
   ].slice(0, 7);
 
   return (
-    <div className="forecast-strip" aria-label={`${activeWeather.name} forecast timeline`}>
+    <div className={`forecast-strip ${windows.length > 1 ? "scrollable" : ""}`} aria-label={`${activeWeather.name} forecast timeline`}>
       <div className="forecast-strip-label">
         <Clock size={15} />
         <span>{activeWeather.name} windows</span>
       </div>
+      {windows.length > 1 && <p className="forecast-strip-hint">Swipe windows</p>}
       <div className="forecast-strip-track">
         {windows.length > 0 ? (
           windows.map(({ location, mode, weather }) => (
@@ -225,6 +239,7 @@ function ForecastTimelineStrip({
               key={`${mode}-${location.key}`}
               href={`/map?location=${encodeURIComponent(location.key)}`}
               className={`forecast-pill ${mode === "Now" ? "now" : "next"}`}
+              aria-label={formatForecastAriaLabel(activeWeather.name, mode, location, weather)}
             >
               <span className="forecast-pill-mode">{mode}</span>
               <strong>{location.name}</strong>
@@ -234,8 +249,8 @@ function ForecastTimelineStrip({
         ) : (
           <div className="forecast-pill empty">
             <span className="forecast-pill-mode">Quiet</span>
-            <strong>No active windows</strong>
-            <small>No matching current or next location forecast.</small>
+            <strong>No current or next {activeWeather.name} window</strong>
+            <small>No matching location forecast in the cached snapshot.</small>
           </div>
         )}
       </div>
@@ -301,7 +316,12 @@ function CurrentEnemyContext({
   penalizedEnemies: EnrichedEnemy[];
 }) {
   const renderEnemy = (enemy: EnrichedEnemy, tone: "favored" | "penalized") => (
-    <Link key={`${tone}-${enemy.locationKey}-${enemy.name}`} href={`/enemies?search=${encodeURIComponent(enemy.name)}`} className={`current-enemy-link ${tone}`}>
+    <Link
+      key={`${tone}-${enemy.locationKey}-${enemy.name}`}
+      href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
+      className={`current-enemy-link ${tone}`}
+      aria-label={getEnemyWeatherLabel(enemy, `${tone} by current ${activeWeather.name}`)}
+    >
       {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={18} />}
       <span>
         <strong>{enemy.name}</strong>
@@ -346,10 +366,15 @@ function CurrentEnemyContext({
 export default function WeatherPage() {
   const { staticData, worldLocations, marketData, allItemsDb } = useData();
   const [activeWeather, setActiveWeather] = useState<WeatherData>(WEATHER_DATA[0]);
-  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData }), [marketData, staticData, worldLocations]);
+  const [weatherRefreshTick, setWeatherRefreshTick] = useState(0);
+  useEffect(() => {
+    const interval = window.setInterval(() => setWeatherRefreshTick((tick) => tick + 1), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData }), [marketData, staticData, worldLocations, weatherRefreshTick]);
   const locations = useMemo(
     () => buildEnrichedLocations({ staticData, worldLocations, marketData, allItemsDb }),
-    [allItemsDb, marketData, staticData, worldLocations],
+    [allItemsDb, marketData, staticData, worldLocations, weatherRefreshTick],
   );
   const weatherPreferenceIndex = useMemo(() => buildWeatherPreferenceIndex(enemies), [enemies]);
   const currentWeatherEnemyIndex = useMemo(() => buildCurrentWeatherEnemyIndex(enemies), [enemies]);
@@ -384,11 +409,11 @@ export default function WeatherPage() {
         <header className="page-header">
           <div className="header-text">
             <span className="eyebrow"><ZenithIcon name="weather" size={15} /> IdleMMO Weather Index</span>
-            <h1>Weather Encyclopedia</h1>
-            <p>Master the elements and optimize your activities based on the atmospheric conditions of IdleMMO.</p>
+            <h1>Weather Guide</h1>
+            <p>Track forecast windows, skill modifiers, and enemy reactions across IdleMMO regions.</p>
           </div>
           <div className="weather-selector-shell">
-            <div className="weather-selector" aria-label="Weather types">
+            <div className="weather-selector" role="group" aria-label="Weather types">
               {WEATHER_DATA.map((w) => (
                 <button
                   key={w.id}
@@ -808,6 +833,7 @@ export default function WeatherPage() {
           padding: 2rem;
         }
         :global(.forecast-strip) {
+          position: relative;
           margin-top: 2rem;
           border: 1px solid color-mix(in srgb, var(--accent), transparent 76%);
           border-radius: 22px;
@@ -816,6 +842,24 @@ export default function WeatherPage() {
             rgba(0,0,0,0.18);
           padding: 1rem;
           overflow: hidden;
+        }
+        :global(.forecast-strip.scrollable::before),
+        :global(.forecast-strip.scrollable::after) {
+          content: "";
+          position: absolute;
+          z-index: 1;
+          top: 3.85rem;
+          bottom: 1.35rem;
+          width: 1.25rem;
+          pointer-events: none;
+        }
+        :global(.forecast-strip.scrollable::before) {
+          left: 1rem;
+          background: linear-gradient(90deg, rgba(18,18,22,0.46), rgba(18,18,22,0));
+        }
+        :global(.forecast-strip.scrollable::after) {
+          right: 1rem;
+          background: linear-gradient(90deg, rgba(18,18,22,0), rgba(18,18,22,0.58));
         }
         :global(.forecast-strip-label) {
           display: flex;
@@ -831,7 +875,17 @@ export default function WeatherPage() {
         :global(.forecast-strip-label svg) {
           color: var(--accent);
         }
+        :global(.forecast-strip-hint) {
+          display: none;
+          margin: -0.25rem 0 0.65rem;
+          color: rgba(255,255,255,0.48);
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
         :global(.forecast-strip-track) {
+          position: relative;
           display: flex;
           gap: 0.7rem;
           overflow-x: auto;
@@ -1467,6 +1521,17 @@ export default function WeatherPage() {
           :global(.forecast-strip) {
             margin-inline: -0.35rem;
             padding: 0.85rem;
+          }
+          :global(.forecast-strip.scrollable::before) {
+            left: 0.85rem;
+            width: 0.8rem;
+          }
+          :global(.forecast-strip.scrollable::after) {
+            right: 0.85rem;
+            width: 1.15rem;
+          }
+          :global(.forecast-strip-hint) {
+            display: block;
           }
           :global(.forecast-pill) {
             flex-basis: 12rem;

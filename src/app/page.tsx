@@ -16,6 +16,7 @@ import {
   DEFAULT_TOOL_SELECTIONS,
   SKILLS,
   type SkillName,
+  type SkillProfitRow,
   type SkillProfitSettings,
 } from "@/lib/skill-profit";
 import { calculateCraftingQueuePlan } from "@/lib/crafting-queue";
@@ -24,8 +25,7 @@ import {
   calculateHousingBuffs,
   getHousingIdleHoursForActivity,
 } from "@/lib/housing";
-
-const MYTHIC_ACTIVE_RECIPES_STORAGE_KEY = "zenith_mythic_active_recipes";
+import { MYTHIC_ACTIVE_RECIPES_STORAGE_KEY } from "@/lib/mythic-alchemy";
 
 type ModuleLink = {
   href: string;
@@ -102,10 +102,10 @@ function formatAge(minutes: number | null) {
 }
 
 export default function DashboardPage() {
-  const { marketData, allItemsDb } = useData();
   const { preferences } = usePreferences();
   const { activeProfile, state: profileState } = useProfiles();
   const { queue } = useCrafting();
+  const { marketData, allItemsDb } = useData();
 
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
   const activeMythicStorageKey = useMemo(
@@ -162,9 +162,13 @@ export default function DashboardPage() {
 
   const bestSkillRoute = useMemo(() => {
     if (!marketData) return null;
-    return calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, [], 60)
-      .filter((row) => !row.excludedFromTop && row.profitPerHour > 0)
-      .sort((a, b) => b.profitPerHour - a.profitPerHour)[0] ?? null;
+    const rows = calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, [], 60);
+    let best: SkillProfitRow | null = null;
+    for (const row of rows) {
+      if (row.excludedFromTop || row.profitPerHour <= 0) continue;
+      if (!best || row.profitPerHour > best.profitPerHour) best = row;
+    }
+    return best;
   }, [allItemsDb, marketData, skillProfitSettings]);
 
   const queuePlan = useMemo(
@@ -181,6 +185,7 @@ export default function DashboardPage() {
   const marketFreshness = timeSince === null ? "Waiting for cache" : timeSince < 90 ? "Fresh enough" : "Needs refresh";
   const activeProfileLabel = activeProfile?.name?.trim() || "No profile";
   const profileDetail = activeProfile ? `${activeProfile.className || "Character"} profile active` : `${profileState.profiles.length}/5 saved profiles`;
+  const queuedItemCount = Object.keys(queue).length;
   const housingLabel = housingSummary.mode === "none"
     ? "Not configured"
     : housingSummary.mode === "guest"
@@ -207,8 +212,8 @@ export default function DashboardPage() {
           </div>
           <div className="command-status-card">
             <span>Profile</span>
-            <strong>{activeProfileLabel}</strong>
-            <em>{profileDetail}</em>
+            <strong title={activeProfileLabel}>{activeProfileLabel}</strong>
+            <em title={profileDetail}>{profileDetail}</em>
           </div>
         </div>
       </section>

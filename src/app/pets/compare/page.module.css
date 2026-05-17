@@ -136,6 +136,21 @@
   line-height: 1.5;
 }
 
+.snapshotHint {
+  margin: 0.75rem 0 0;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .auditGrid {
   margin-top: 0.85rem;
   display: grid;
@@ -308,9 +323,14 @@
 }
 
 .menuPanel button:hover,
+.menuPanel button:focus-visible,
 .selectedOption {
   background: rgba(56, 189, 248, 0.12) !important;
   color: var(--text-accent) !important;
+}
+
+.menuPanel button:focus-visible {
+  outline: 1px solid rgba(56, 189, 248, 0.65);
 }
 
 .toggle {
@@ -576,6 +596,42 @@
   font-size: 0.78rem;
 }
 
+.quickPickNote a {
+  color: var(--text-accent);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.quickPickNote a:hover {
+  text-decoration: underline;
+}
+
+.warningNotice {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--text-warning), transparent 65%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-warning), transparent 93%);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.warningNotice button {
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, var(--text-warning), transparent 55%);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+  padding: 0 0.75rem;
+}
+
 .emptyState {
   min-height: 220px;
   display: grid;
@@ -700,11 +756,22 @@
 }
 
 .tableWrap {
+  position: relative;
   max-width: 100%;
   overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
   -webkit-overflow-scrolling: touch;
+}
+
+.tableScrollHint {
+  display: none;
+  position: sticky;
+  left: 0;
+  padding: 0.55rem 0.7rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 850;
 }
 
 .compareTable {
@@ -840,7 +907,25 @@
   }
 
   .petOptions em {
-    display: none;
+    display: block;
+    justify-self: start;
+    grid-column: 2;
+    white-space: normal;
   }
 
+  .tableScrollHint {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondaryLink,
+  .profilePetButton,
+  .toggle,
+  .addSlot,
+  .petImageLoaded,
+  .compareCard {
+    animation: none;
+    transition: none;
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   Activity,
@@ -35,10 +35,11 @@ import {
 } from "@/lib/guilds";
 
 type TierFilter = "all" | GuildRefreshTier;
+type SearchableGuildRecord = GuildRecord & { searchText: string };
 
 const INITIAL_ROWS = 90;
 const ROW_INCREMENT = 90;
-const GUILD_LIST_URL = "/guild-list.json?v=2026-05-16-bg";
+const GUILD_LIST_URL = "/guild-list.json";
 
 const SORT_OPTIONS: Array<{ id: GuildSortKey; label: string }> = [
   { id: "activity", label: "Activity" },
@@ -169,41 +170,112 @@ function SortPicker({
   onChange: (value: GuildSortKey) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listboxId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selected = SORT_OPTIONS.find((option) => option.id === value) || SORT_OPTIONS[0];
+  const selectedIndex = Math.max(0, SORT_OPTIONS.findIndex((option) => option.id === value));
+
+  const closeMenu = useCallback((returnFocus = false) => {
+    setOpen(false);
+    if (returnFocus) {
+      window.requestAnimationFrame(() => triggerRef.current?.focus());
+    }
+  }, []);
+
+  const chooseOption = useCallback((index: number) => {
+    const option = SORT_OPTIONS[index];
+    if (!option) return;
+    onChange(option.id);
+    closeMenu(true);
+  }, [closeMenu, onChange]);
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) closeMenu();
     };
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, []);
+  }, [closeMenu]);
+
+  useEffect(() => {
+    if (!open) return;
+    setActiveIndex(selectedIndex);
+    window.requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+  }, [open, selectedIndex]);
+
+  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setActiveIndex(event.key === "ArrowUp" ? SORT_OPTIONS.length - 1 : selectedIndex);
+      setOpen(true);
+    }
+  };
+
+  const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu(true);
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? SORT_OPTIONS.length - 1
+            : event.key === "ArrowDown"
+              ? (index + 1) % SORT_OPTIONS.length
+              : (index - 1 + SORT_OPTIONS.length) % SORT_OPTIONS.length;
+      setActiveIndex(nextIndex);
+      optionRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      chooseOption(index);
+    }
+  };
 
   return (
     <div className={styles.sortPicker} ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         className={styles.sortButton}
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
+        aria-controls={listboxId}
+        onClick={() => {
+          setActiveIndex(selectedIndex);
+          setOpen((current) => !current);
+        }}
+        onKeyDown={handleTriggerKeyDown}
       >
         <span>Sort: {selected.label}</span>
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       {open && (
-        <div className={styles.sortMenu} role="listbox" aria-label="Sort guilds">
-          {SORT_OPTIONS.map((option) => (
+        <div id={listboxId} className={styles.sortMenu} role="listbox" aria-label="Sort guilds">
+          {SORT_OPTIONS.map((option, index) => (
             <button
               key={option.id}
+              ref={(element) => {
+                optionRefs.current[index] = element;
+              }}
               type="button"
               role="option"
               aria-selected={value === option.id}
+              tabIndex={activeIndex === index ? 0 : -1}
               onClick={() => {
-                onChange(option.id);
-                setOpen(false);
+                chooseOption(index);
               }}
+              onKeyDown={(event) => handleOptionKeyDown(event, index)}
             >
               <span>{option.label}</span>
               {value === option.id && <Check size={15} aria-hidden="true" />}
@@ -221,7 +293,14 @@ function MemberLink({
   member: { name: string; position?: string | null; total_level?: number | null };
 }) {
   return (
-    <a className={styles.memberRow} href={getIdleMmoProfileUrl(member.name)} target="_blank" rel="noreferrer">
+    <a
+      className={styles.memberRow}
+      href={getIdleMmoProfileUrl(member.name)}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={`Open ${member.name} profile on IdleMMO`}
+      title={`Open ${member.name} profile on IdleMMO`}
+    >
       <div>
         <strong>{member.name}</strong>
         <span>{formatGuildPosition(member.position)}</span>
@@ -230,6 +309,62 @@ function MemberLink({
         {formatGuildNumber(member.total_level)} TL <ExternalLink size={13} aria-hidden="true" />
       </span>
     </a>
+  );
+}
+
+function GuildMobileCard({
+  guild,
+  onInspect,
+}: {
+  guild: GuildRecord;
+  onInspect: (guild: GuildRecord) => void;
+}) {
+  return (
+    <article className={styles.guildCard}>
+      <div className={styles.guildCardHeader}>
+        <div className={styles.guildName}>
+          {guild.icon_url ? <img className={styles.guildIcon} src={guild.icon_url} alt="" loading="lazy" /> : <span className={styles.guildIcon} />}
+          <div className={styles.nameBlock}>
+            <strong>{guild.name}</strong>
+            <span>
+              #{guild.id}
+              {guild.tag ? ` - ${guild.tag}` : ""}
+            </span>
+          </div>
+        </div>
+        <span className={styles.pill} data-tier={guild.refresh_tier}>
+          {GUILD_TIER_LABELS[guild.refresh_tier]}
+        </span>
+      </div>
+
+      <dl className={styles.guildCardStats}>
+        <div>
+          <dt>Season</dt>
+          <dd>{guild.season_position ? `#${guild.season_position}` : "-"}</dd>
+        </div>
+        <div>
+          <dt>Level</dt>
+          <dd>{formatGuildNumber(guild.level)}</dd>
+        </div>
+        <div>
+          <dt>Members</dt>
+          <dd>{formatGuildNumber(guild.member_count)}</dd>
+        </div>
+        <div>
+          <dt>Activity signal</dt>
+          <dd>{formatGuildNumber(guild.activity_score)}</dd>
+        </div>
+      </dl>
+
+      <button
+        type="button"
+        className={styles.cardInspectButton}
+        onClick={() => onInspect(guild)}
+        aria-label={`View ${guild.name} guild details`}
+      >
+        <Eye size={15} aria-hidden="true" /> View guild
+      </button>
+    </article>
   );
 }
 
@@ -383,14 +518,26 @@ function GuildModal({
                   )}
                 </div>
 
-                <h3 className={styles.sectionTitle}>
-                  <Medal size={16} /> All Members ({formatGuildNumber(details?.members.length || guild.member_count)})
-                </h3>
-                <div className={styles.memberList}>
-                  {(details?.members || []).map((member, index) => (
-                    <MemberLink member={member} key={`${guild.id}-member-${index}-${member.name}`} />
-                  ))}
+                <div className={styles.memberSummaryChips} aria-label="Member roster summary">
+                  <span>{formatGuildNumber(details?.member_summary.leaders.length || 0)} leaders</span>
+                  <span>Avg TL {formatGuildNumber(details?.member_summary.average_total_level ?? guild.average_total_level)}</span>
+                  <span>Highest TL {formatGuildNumber(details?.member_summary.highest_total_level ?? guild.highest_total_level)}</span>
+                  <span>Members refreshed {formatGuildAge(details?.last_members_fetch_at || guild.last_members_fetch_at)}</span>
                 </div>
+
+                <details className={styles.memberDetails}>
+                  <summary>
+                    <span className={styles.sectionTitle}>
+                      <Medal size={16} /> Members ({formatGuildNumber(details?.members.length || guild.member_count)})
+                    </span>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </summary>
+                  <div className={styles.memberList}>
+                    {(details?.members || []).map((member, index) => (
+                      <MemberLink member={member} key={`${guild.id}-member-${index}-${member.name}`} />
+                    ))}
+                  </div>
+                </details>
 
                 <h3 className={styles.sectionTitle}>
                   <Activity size={16} /> Last Refreshed
@@ -444,6 +591,7 @@ export default function GuildsPage() {
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_ROWS);
   const [inspectingGuild, setInspectingGuild] = useState<GuildRecord | null>(null);
   const initialQueryHandled = useRef(false);
+  const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     let cancelled = false;
@@ -468,14 +616,17 @@ export default function GuildsPage() {
     setVisibleLimit(INITIAL_ROWS);
   }, [search, tier, sortBy]);
 
-  const guilds = useMemo(() => database?.guilds || [], [database?.guilds]);
+  const guilds = useMemo<SearchableGuildRecord[]>(
+    () => (database?.guilds || []).map((guild) => ({ ...guild, searchText: getSearchText(guild) })),
+    [database?.guilds],
+  );
   const filteredGuilds = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return guilds
+    const normalizedSearch = deferredSearch.trim().toLowerCase();
+    const filtered = guilds
       .filter((guild) => tier === "all" || guild.refresh_tier === tier)
-      .filter((guild) => !normalizedSearch || getSearchText(guild).includes(normalizedSearch))
-      .sort((a, b) => compareGuilds(a, b, sortBy));
-  }, [guilds, search, sortBy, tier]);
+      .filter((guild) => !normalizedSearch || guild.searchText.includes(normalizedSearch));
+    return [...filtered].sort((a, b) => compareGuilds(a, b, sortBy));
+  }, [deferredSearch, guilds, sortBy, tier]);
   const visibleGuilds = filteredGuilds.slice(0, visibleLimit);
   const tierCounts = database?.meta.totals.tiers || { hot: 0, warm: 0, cold: 0 };
 
@@ -608,11 +759,30 @@ export default function GuildsPage() {
 
             <SortPicker value={sortBy} onChange={setSortBy} />
           </section>
+          <div className={styles.utilityNotes} aria-label="Guild database help">
+            <p>Searches guild names, tags, leaders, top members, and IDs.</p>
+            <dl className={styles.tierLegend}>
+              <div>
+                <dt>Active</dt>
+                <dd>refreshed most often</dd>
+              </div>
+              <div>
+                <dt>Tracked</dt>
+                <dd>known guild with periodic refresh</dd>
+              </div>
+              <div>
+                <dt>Archive</dt>
+                <dd>lower-priority stored record</dd>
+              </div>
+            </dl>
+          </div>
           <p className="sr-only" role="status" aria-live="polite">{resultStatus}</p>
 
           <section className={styles.tableWrap}>
+            <p className={styles.tableHint}>Mobile view shows key fields as cards; open a guild for full details.</p>
             <div className={styles.tableScroll}>
               <table className={styles.table}>
+                <caption className="sr-only">Guild database results</caption>
                 <thead>
                   <tr>
                     <th>Guild</th>
@@ -622,7 +792,7 @@ export default function GuildsPage() {
                     <th>Members</th>
                     <th>Marks</th>
                     <th>Avg TL</th>
-                    <th>Score</th>
+                    <th title="Refresh-priority and activity heuristic">Activity signal</th>
                     <th>Inspect</th>
                   </tr>
                 </thead>
@@ -653,14 +823,25 @@ export default function GuildsPage() {
                       <td>{formatGuildNumber(guild.average_total_level)}</td>
                       <td>{formatGuildNumber(guild.activity_score)}</td>
                       <td>
-                        <button type="button" className={styles.inspectButton} onClick={() => loadDetails(guild)}>
-                          <Eye size={15} /> View
+                        <button
+                          type="button"
+                          className={styles.inspectButton}
+                          onClick={() => loadDetails(guild)}
+                          aria-label={`View ${guild.name} guild details`}
+                        >
+                          <Eye size={15} aria-hidden="true" /> View
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {filteredGuilds.length === 0 && <div className={styles.empty}>No guilds match the current filters.</div>}
+            </div>
+            <div className={styles.mobileGuildList} aria-label="Guild results">
+              {visibleGuilds.map((guild) => (
+                <GuildMobileCard guild={guild} key={`mobile-${guild.id}`} onInspect={loadDetails} />
+              ))}
               {filteredGuilds.length === 0 && <div className={styles.empty}>No guilds match the current filters.</div>}
             </div>
             {visibleGuilds.length < filteredGuilds.length && (

@@ -157,13 +157,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useData() {
+export function useData(options?: { autoLoad?: boolean }) {
   const context = useContext(DataContext);
   if (context === undefined) {
     throw new Error('useData must be used within a DataProvider');
   }
+  const autoLoad = options?.autoLoad !== false;
   useEffect(() => {
+    if (!autoLoad) return;
     context.ensureLoaded();
-  }, [context]);
+  }, [autoLoad, context]);
   return context;
 }

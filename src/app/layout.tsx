@@ -79,6 +79,7 @@ import { CraftingProvider } from "@/context/CraftingContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { ProfileProvider } from "@/lib/profiles";
 import MobileMenuBtn from "@/components/MobileMenuBtn";
+import MobileCommandWheelHost from "@/components/MobileCommandWheelHost";
 
 export default function RootLayout({
   children,
@@ -95,6 +96,7 @@ export default function RootLayout({
                 <SidebarProvider>
                   <div className="layout-root">
                     <Sidebar />
+                    <MobileCommandWheelHost />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />
