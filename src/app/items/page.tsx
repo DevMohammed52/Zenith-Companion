@@ -398,8 +398,9 @@ const formatGold = (value: number) => {
 
 const formatLabel = formatItemTypeLabel;
 const ITEM_DB_VIEW_STORAGE_KEY = 'zenith_items_view_mode';
-const DESKTOP_ITEM_BATCH_SIZE = 150;
-const MOBILE_ITEM_BATCH_SIZE = 80;
+const DESKTOP_ITEM_BATCH_SIZE = 80;
+const MOBILE_ITEM_BATCH_SIZE = 48;
+const COMPACT_BADGE_LIMIT = 4;
 
 function ItemsArchiveContent() {
   const searchParams = useSearchParams();
@@ -692,7 +693,10 @@ function ItemsArchiveContent() {
     });
   }, [enrichedItems, deferredSearchTerm, selectedType, selectedQuality, selectedSignal, selectedLocation, hideNonMarket, sortBy, sortDesc]);
 
-  const visibleItems = filteredItems.slice(0, visibleCount);
+  const visibleItems = useMemo(
+    () => filteredItems.slice(0, visibleCount),
+    [filteredItems, visibleCount],
+  );
   const showCardLayout = isCompactViewport || viewMode === 'cards';
   const showTableLayout = !isCompactViewport && viewMode === 'table';
 
@@ -804,6 +808,57 @@ function ItemsArchiveContent() {
       {item.hasLore && <span className="badge lore"><BookOpen size={12} aria-hidden="true" /> <span>Lore</span></span>}
     </div>
   );
+
+  const renderCompactBadges = (item: EnrichedItem) => {
+    const badges: { key: string; label: string; className: string; title?: string }[] = [];
+    if (item.tradeable) {
+      badges.push({
+        key: 'confidence',
+        label: item.marketConfidence.label,
+        className: `confidence ${item.marketConfidence.tone}`,
+        title: item.marketConfidence.note,
+      });
+    }
+    if (item.merchantBuyPrice > 0) {
+      badges.push({ key: 'vendor', label: 'Merchant', className: 'vendor', title: `Merchant purchase price: ${formatGold(item.merchantBuyPrice)}` });
+    }
+    if (!item.tradeable) {
+      badges.push({ key: 'untradable', label: 'Untradable', className: 'untradable' });
+    }
+    if (item.hasRecipe) {
+      badges.push({ key: 'craft', label: item.hasDefaultCraft ? 'Default craft' : 'Craft', className: 'craft' });
+    }
+    if (item.hasFarmableSource) {
+      badges.push({ key: 'source', label: 'Farmable', className: 'source', title: item.gatheringActionSource?.note || 'Mapped gathered resource location.' });
+    }
+    if (item.liquidity.hasPriceSwings || item.liquidity.hasVolumeSwings) {
+      badges.push({ key: 'warning', label: getMarketWarningLabel(item), className: 'warning', title: item.liquidity.note });
+    }
+    if (item.hasLore) {
+      badges.push({ key: 'lore', label: `Lore${item.loreCount > 1 ? ` ${item.loreCount}` : ''}`, className: 'lore' });
+    }
+    if (item.isLegacy) {
+      badges.push({ key: 'legacy', label: 'Legacy', className: 'legacy' });
+    }
+
+    const visibleBadges = badges.slice(0, COMPACT_BADGE_LIMIT);
+    const hiddenCount = badges.length - visibleBadges.length;
+
+    return (
+      <div className="item-badges compact">
+        {visibleBadges.map((badge) => (
+          <span key={badge.key} className={`badge ${badge.className}`} title={badge.title}>
+            <span>{badge.label}</span>
+          </span>
+        ))}
+        {hiddenCount > 0 && (
+          <span className="badge muted" title={badges.slice(COMPACT_BADGE_LIMIT).map((badge) => badge.label).join(', ')}>
+            <span>+{hiddenCount}</span>
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <main className="container items-db-page">
@@ -1022,7 +1077,7 @@ function ItemsArchiveContent() {
                       {getMarketWarningLabel(item) ? <span className="volume-warning-dot" aria-label={getMarketWarningLabel(item)}>!</span> : null}
                     </td>
                     <td className="mono">{item.usageScore ? item.usageScore.toLocaleString() : '-'}</td>
-                    <td className="signals-cell">{renderBadges(item)}</td>
+                    <td className="signals-cell">{renderCompactBadges(item)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1358,6 +1413,8 @@ function ItemsArchiveContent() {
         .desktop-table-shell {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
+          contain: layout paint;
+          min-height: 640px;
           overflow: auto;
         }
         .desktop-table-shell.hidden {
@@ -1451,6 +1508,8 @@ function ItemsArchiveContent() {
         .items-table td:nth-child(9) { width: 11%; }
         .items-table tr {
           cursor: pointer;
+          content-visibility: auto;
+          contain-intrinsic-size: auto 76px;
           transition: background 0.16s ease;
         }
         .items-table tr:hover td,
@@ -1530,6 +1589,12 @@ function ItemsArchiveContent() {
           justify-content: flex-start;
           min-width: 0;
         }
+        :global(.items-db-page .item-badges.compact) {
+          align-content: flex-start;
+          gap: 0.28rem;
+          max-height: 54px;
+          overflow: hidden;
+        }
         :global(.items-db-page .badge) {
           align-items: center;
           border: 1px solid rgba(255,255,255,0.08);
@@ -1574,6 +1639,7 @@ function ItemsArchiveContent() {
         :global(.items-db-page .badge.effect) { color: #f472b6; background: rgba(244,114,182,0.08); }
         :global(.items-db-page .badge.lore) { color: #f5b041; background: rgba(245,176,65,0.1); }
         :global(.items-db-page .badge.legacy) { color: #c4b5fd; background: rgba(167,139,250,0.08); }
+        :global(.items-db-page .badge.muted) { color: var(--text-muted); background: rgba(255,255,255,0.045); }
         .item-grid {
           display: none;
           gap: 0.85rem;
