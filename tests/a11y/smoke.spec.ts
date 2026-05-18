@@ -11,10 +11,33 @@ const routes = [
 const impactOrder = ["minor", "moderate", "serious", "critical"] as const;
 const failImpact = process.env.A11Y_FAIL_IMPACT || "critical";
 const failIndex = impactOrder.indexOf(failImpact as typeof impactOrder[number]);
+const turnstileScriptPattern = /https:\/\/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js.*/;
 
 test.describe("accessibility smoke audit", () => {
   for (const route of routes) {
     test(`${route.name} has no ${failImpact}+ axe violations`, async ({ page }, testInfo) => {
+      await page.route(turnstileScriptPattern, async (turnstileRoute) => {
+        await turnstileRoute.fulfill({
+          contentType: "application/javascript",
+          body: `
+            window.turnstile = {
+              render: function(container, options) {
+                var node = document.createElement("div");
+                node.setAttribute("data-testid", "mock-turnstile");
+                node.textContent = "Test safety check";
+                container.appendChild(node);
+                setTimeout(function() {
+                  if (options && typeof options.callback === "function") options.callback("test-token");
+                }, 0);
+                return "test-widget";
+              },
+              reset: function() {},
+              remove: function() {}
+            };
+          `,
+        });
+      });
+
       await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle").catch(() => {});
 

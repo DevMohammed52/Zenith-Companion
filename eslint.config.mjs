@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "public/**",
     "game_info/**",
     "local_data/**",
+    "test-artifacts/**",
+    "test-results/**",
     "scratch/**",
     "maintenance_scripts/**",
     "scripts/**",

@@ -8140,8 +8140,11 @@ kbd {
 
   html[data-desktop-navigation="dock"] .main-content {
     margin-left: 0 !important;
-    padding-bottom: 6.5rem;
     width: 100% !important;
+  }
+
+  html[data-desktop-navigation="dock"] .main-content {
+    padding-bottom: 6.5rem;
   }
 
   html[data-desktop-navigation="dock"] .content-wrapper {
@@ -8289,30 +8292,34 @@ kbd {
     linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.026)),
     rgba(8, 11, 18, 0.88);
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 82%);
-  border-radius: 22px;
+  border-radius: 20px;
   box-shadow: 0 18px 55px rgba(0,0,0,0.36);
-  max-width: min(72vw, 760px);
-  min-width: 420px;
-  padding: 0.72rem;
+  max-width: min(72vw, 430px);
+  min-width: min(78vw, 330px);
+  padding: 0.62rem;
   backdrop-filter: blur(20px) saturate(1.18);
+}
+
+.desktop-dock-shelf-dense {
+  max-width: min(76vw, 475px);
 }
 
 .desktop-dock-shelf-heading {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.54rem;
-  padding: 0 0.18rem;
+  gap: 0.75rem;
+  margin-bottom: 0.48rem;
+  padding: 0 0.12rem;
 }
 
 .desktop-dock-shelf-heading span {
   align-items: center;
   color: #fff;
   display: flex;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 900;
-  gap: 0.42rem;
+  gap: 0.38rem;
 }
 
 .desktop-dock-shelf-heading svg {
@@ -8321,31 +8328,48 @@ kbd {
 
 .desktop-dock-shelf-heading small {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
 }
 
 .desktop-dock-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  display: grid;
+  gap: 0.34rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.desktop-dock-shelf:not(.desktop-dock-shelf-dense) .desktop-dock-links {
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+}
+
+.desktop-dock-link-span {
+  grid-column: 1 / -1;
 }
 
 .desktop-dock-link {
   align-items: center;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.075);
-  border-radius: 12px;
+  border-radius: 11px;
   color: var(--text-muted);
-  display: inline-flex;
-  font-size: 0.74rem;
+  display: flex;
+  font-size: 0.68rem;
   font-weight: 850;
-  gap: 0.42rem;
-  min-height: 2.28rem;
-  padding: 0.46rem 0.62rem;
+  gap: 0.34rem;
+  line-height: 1.05;
+  min-height: 2.04rem;
+  min-width: 0;
+  padding: 0.38rem 0.5rem;
   position: relative;
   text-decoration: none;
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.desktop-dock-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .desktop-dock-link:hover,
@@ -8359,12 +8383,12 @@ kbd {
 }
 
 .desktop-dock-link-active {
-  padding-right: 1.25rem;
+  padding-right: 1.05rem;
 }
 
 .desktop-dock-link em {
   color: var(--text-accent);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-style: normal;
   font-weight: 900;
   letter-spacing: 0.05em;
@@ -8375,12 +8399,12 @@ kbd {
   border-radius: 999px;
   box-shadow: 0 0 10px color-mix(in srgb, var(--text-accent), transparent 38%);
   content: "";
-  height: 0.32rem;
+  height: 0.26rem;
   position: absolute;
-  right: 0.54rem;
+  right: 0.45rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 0.32rem;
+  width: 0.26rem;
 }
 
 @media (max-width: 1180px) {
@@ -8461,8 +8485,8 @@ kbd {
   .desktop-dock-position-left .desktop-dock-shelf,
   .desktop-dock-position-right .desktop-dock-shelf {
     max-height: min(72vh, 520px);
-    max-width: 280px;
-    min-width: 248px;
+    max-width: 250px;
+    min-width: 218px;
     overflow: hidden auto;
   }
 
@@ -8486,6 +8510,11 @@ kbd {
   .desktop-dock-position-right .desktop-dock-links {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .desktop-dock-position-left .desktop-dock-link,
+  .desktop-dock-position-right .desktop-dock-link {
+    min-height: 2rem;
   }
 }
 
@@ -9253,7 +9282,7 @@ kbd {
 .settings-nav-style > div {
   display: grid;
   gap: 0.45rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
 }
 
 .settings-nav-style-three > div {

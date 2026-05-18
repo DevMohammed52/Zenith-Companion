@@ -28,14 +28,17 @@ export default function DesktopDock() {
   const dockPosition = preferences.desktopDockPosition ?? "bottom";
   const verticalDock = dockPosition === "left" || dockPosition === "right";
   const openGroup = NAV_GROUPS.find((group) => group.label === (openGroupLabel ?? activeGroup.label)) ?? activeGroup;
+  const denseShelf = openGroup.items.length > 5;
+  const hasOddShelfTail = !verticalDock && openGroup.items.length % 2 === 1;
 
   useEffect(() => {
+    if (!loaded || preferences.desktopNavigationStyle !== "dock") return;
     const root = document.documentElement;
-    root.dataset.desktopNavigation = dockEnabled ? "dock" : "sidebar";
+    root.dataset.desktopNavigation = "dock";
     return () => {
-      root.dataset.desktopNavigation = "sidebar";
+      if (root.dataset.desktopNavigation === "dock") root.dataset.desktopNavigation = "sidebar";
     };
-  }, [dockEnabled]);
+  }, [loaded, preferences.desktopNavigationStyle]);
 
   useEffect(() => {
     if (!dockEnabled) return;
@@ -168,7 +171,10 @@ export default function DesktopDock() {
         closeDock();
       }}
     >
-      <div className="desktop-dock-shelf" aria-label={`${openGroup.label} destinations`}>
+      <div
+        className={`desktop-dock-shelf ${denseShelf ? "desktop-dock-shelf-dense" : ""}`}
+        aria-label={`${openGroup.label} destinations`}
+      >
         <div className="desktop-dock-shelf-heading">
           <span>
             <ZenithIcon name={openGroup.icon} size={16} />
@@ -177,13 +183,14 @@ export default function DesktopDock() {
           <small>{openGroup.items.length} links</small>
         </div>
         <div className="desktop-dock-links">
-          {openGroup.items.map((item) => {
+          {openGroup.items.map((item, itemIndex) => {
             const active = isNavItemActive(pathname, item);
+            const stretchTail = hasOddShelfTail && itemIndex === openGroup.items.length - 1;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`desktop-dock-link ${active ? "desktop-dock-link-active" : ""}`}
+                className={`desktop-dock-link ${active ? "desktop-dock-link-active" : ""} ${stretchTail ? "desktop-dock-link-span" : ""}`}
                 aria-current={active ? "page" : undefined}
                 onClick={(event) => {
                   closeDockNow();

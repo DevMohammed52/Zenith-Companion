@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const PROFILE_IMPORT_API_URL = (process.env.PROFILE_IMPORT_API_URL || process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
+import { fetchProfileImportJson } from "@/lib/profile-import-proxy";
 
 export const dynamic = "force-dynamic";
 
@@ -14,18 +13,15 @@ export async function GET() {
     );
   }
 
-  const response = await fetch(`${PROFILE_IMPORT_API_URL}/admin/import-health`, {
-    cache: "no-store",
+  const result = await fetchProfileImportJson("/admin/import-health", {
+    method: "GET",
     headers: {
       authorization: `Bearer ${adminSecret}`,
     },
-  });
-  const body = await response.json().catch(() => ({
-    error: { code: "bad_gateway", message: "Cloudflare returned an unreadable response." },
-  }));
+  }, "Cloudflare returned an unreadable response.");
 
-  return NextResponse.json(body, {
-    status: response.status,
+  return NextResponse.json(result.payload, {
+    status: result.status,
     headers: { "cache-control": "no-store" },
   });
 }

@@ -4,13 +4,23 @@ import path from 'path';
 import { getMerchantBuyPrice } from '@/constants';
 import { getSafeMarketValue } from '@/lib/market-pricing';
 
+type JsonObject = Record<string, any>;
+type CacheEntry = {
+  data: any;
+  mtime: number;
+};
+type ItemNameCacheEntry = CacheEntry & {
+  sourceKey: string;
+};
+
 // Singleton caches with timestamps
-const caches: Record<string, { data: any, mtime: number }> = {
+const caches: Record<string, CacheEntry> = {
   itemsMap: { data: null, mtime: 0 },
   allItems: { data: null, mtime: 0 },
   market: { data: null, mtime: 0 },
   usage: { data: null, mtime: 0 }
 };
+const itemNameCache: ItemNameCacheEntry = { data: null, mtime: 0, sourceKey: "" };
 
 function getCachedData(filePath: string, cacheKey: keyof typeof caches) {
   if (!fs.existsSync(filePath)) return null;
@@ -22,6 +32,22 @@ function getCachedData(filePath: string, cacheKey: keyof typeof caches) {
     };
   }
   return caches[cacheKey].data;
+}
+
+function getItemsByName(allItems: JsonObject | null, itemsMap: JsonObject | null) {
+  const sourceKey = `${caches.allItems.mtime}:${caches.itemsMap.mtime}`;
+  if (!itemNameCache.data || itemNameCache.sourceKey !== sourceKey) {
+    const byName: JsonObject = {};
+    for (const source of [allItems, itemsMap]) {
+      Object.values(source || {}).forEach((item: any) => {
+        if (item?.name && !byName[item.name]) byName[item.name] = item;
+      });
+    }
+    itemNameCache.data = byName;
+    itemNameCache.mtime = Math.max(caches.allItems.mtime, caches.itemsMap.mtime);
+    itemNameCache.sourceKey = sourceKey;
+  }
+  return itemNameCache.data as JsonObject;
 }
 
 export async function GET(
@@ -37,6 +63,7 @@ export async function GET(
     const allItems = getCachedData(path.join(dataDir, 'all-items-db.json'), 'allItems');
     const marketData = getCachedData(path.join(dataDir, 'market-data.json'), 'market');
     const usageMap = getCachedData(path.join(dataDir, 'usage-map.json'), 'usage');
+    const itemsByName = getItemsByName(allItems, itemsMap);
 
     // 3. Lookup Item (clone to prevent cache mutation)
     const rawItem = itemsMap?.[id] || allItems?.[id] || null;
@@ -110,9 +137,7 @@ export async function GET(
           const recipeMarket = marketData[rName] || {};
           item.produced_from.recipe_price = getSafeMarketValue(recipeMarket) || 0;
           
-          // To find the recipe's quality, we search by NAME since rName is a string
-          const recipeObj = Object.values(allItems || {}).find((it: any) => it.name === rName) || 
-                            Object.values(itemsMap || {}).find((it: any) => it.name === rName);
+          const recipeObj = itemsByName[rName];
           if (recipeObj) {
             item.produced_from.recipe_quality = (recipeObj as any).quality;
           }

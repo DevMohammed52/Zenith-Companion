@@ -61,8 +61,11 @@ const readPreferences = (): Preferences => {
   try {
     const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
     if (stored) Object.assign(next, JSON.parse(stored));
+    const shouldNormalizeStoredPreferences = next.desktopNavigationStyle !== "sidebar" && next.desktopNavigationStyle !== "dock";
+    if (shouldNormalizeStoredPreferences) next.desktopNavigationStyle = "sidebar";
     next.skillTools = { ...DEFAULT_TOOL_SELECTIONS, ...next.skillTools };
     next.customPrices = { ...next.customPrices };
+    if (shouldNormalizeStoredPreferences) localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(next));
   } catch {}
   return next;
 };

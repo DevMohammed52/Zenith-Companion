@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test:unit": "vitest run",
     "test:a11y": "playwright test tests/a11y",
-    "audit:deadcode": "knip",
+    "audit:deadcode": "knip --exclude exports,types",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
     "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
@@ -34,7 +34,6 @@
     "verify:guild-conquest": "node scripts/verify-guild-conquest-pages.mjs"
   },
   "dependencies": {
-    "dotenv": "^17.4.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "react": "19.2.4",

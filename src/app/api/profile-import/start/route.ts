@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
-
-const PROFILE_IMPORT_API_URL = (process.env.PROFILE_IMPORT_API_URL || process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
+import { fetchProfileImportJson, readProfileImportStartBody } from "@/lib/profile-import-proxy";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const body = await request.text();
+  const parsed = await readProfileImportStartBody(request);
+  if (!parsed.ok) {
+    return NextResponse.json(parsed.payload, {
+      status: parsed.status,
+      headers: { "cache-control": "no-store" },
+    });
+  }
 
-  const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/start`, {
+  const result = await fetchProfileImportJson("/profile-import/start", {
     method: "POST",
-    cache: "no-store",
-    headers: { "content-type": "application/json" },
-    body,
-  });
-  const payload = await response.json().catch(() => ({
-    error: { code: "bad_gateway", message: "Profile import service returned an unreadable response." },
-  }));
+    headers: { "content-type": "application/json", ...parsed.originHeaders },
+    body: parsed.body,
+  }, "Profile import service returned an unreadable response.");
 
-  return NextResponse.json(payload, {
-    status: response.status,
+  return NextResponse.json(result.payload, {
+    status: result.status,
     headers: { "cache-control": "no-store" },
   });
 }

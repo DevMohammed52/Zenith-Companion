@@ -259,22 +259,20 @@ export default function SettingsPage() {
               <div className="settings-nav-style" aria-label="Desktop navigation style">
                 <span><Compass size={15} /> Desktop navigation</span>
                 <div>
-                  <button
-                    type="button"
-                    className={preferences.desktopNavigationStyle !== "dock" ? "settings-nav-style-active" : ""}
-                    aria-pressed={preferences.desktopNavigationStyle !== "dock"}
-                    onClick={() => setPreferences({ desktopNavigationStyle: "sidebar" })}
-                  >
-                    Sidebar
-                  </button>
-                  <button
-                    type="button"
-                    className={preferences.desktopNavigationStyle === "dock" ? "settings-nav-style-active" : ""}
-                    aria-pressed={preferences.desktopNavigationStyle === "dock"}
-                    onClick={() => setPreferences({ desktopNavigationStyle: "dock" })}
-                  >
-                    Zenith Dock
-                  </button>
+                  {([
+                    ["sidebar", "Sidebar"],
+                    ["dock", "Zenith Dock"],
+                  ] as const).map(([style, label]) => (
+                    <button
+                      type="button"
+                      key={style}
+                      className={preferences.desktopNavigationStyle === style ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.desktopNavigationStyle === style}
+                      onClick={() => setPreferences({ desktopNavigationStyle: style })}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
               {preferences.desktopNavigationStyle === "dock" && (

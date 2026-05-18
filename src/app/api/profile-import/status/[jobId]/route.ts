@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { fetchProfileImportJson } from "@/lib/profile-import-proxy";
 
-const PROFILE_IMPORT_API_URL = (process.env.PROFILE_IMPORT_API_URL || process.env.NEXT_PUBLIC_PROFILE_IMPORT_API_URL || "https://zenith-profile-import.devmohammed52.workers.dev").replace(/\/$/, "");
 const JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{20,80}$/;
 
 export const dynamic = "force-dynamic";
@@ -15,15 +15,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     );
   }
 
-  const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/status/${encodeURIComponent(jobId)}`, {
-    cache: "no-store",
-  });
-  const payload = await response.json().catch(() => ({
-    error: { code: "bad_gateway", message: "Profile import service returned an unreadable response." },
-  }));
+  const result = await fetchProfileImportJson(
+    `/profile-import/status/${encodeURIComponent(jobId)}`,
+    { method: "GET" },
+    "Profile import service returned an unreadable response.",
+  );
 
-  return NextResponse.json(payload, {
-    status: response.status,
+  return NextResponse.json(result.payload, {
+    status: result.status,
     headers: { "cache-control": "no-store" },
   });
 }

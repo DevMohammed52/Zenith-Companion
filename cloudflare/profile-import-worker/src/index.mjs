@@ -833,7 +833,7 @@ function buildCorsHeaders(request, env) {
 
 function isAllowedOrigin(request, env) {
   const origin = request.headers.get("origin");
-  if (!origin) return true;
+  if (!origin) return String(env.ALLOW_ORIGINLESS_IMPORTS || "").trim() === "1";
   const allowed = String(env.ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
