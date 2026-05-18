@@ -744,9 +744,16 @@ export default function ProfilesPage() {
     }
 
     let cancelled = false;
+    let fallbackTimeout: number | null = null;
+    setTurnstileReady(false);
+    setTurnstileError("");
 
     const renderTurnstile = () => {
       if (cancelled || !turnstileContainerRef.current || !window.turnstile || turnstileWidgetRef.current) return;
+      if (fallbackTimeout !== null) {
+        window.clearTimeout(fallbackTimeout);
+        fallbackTimeout = null;
+      }
       turnstileWidgetRef.current = window.turnstile.render(turnstileContainerRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         theme: "dark",
@@ -768,15 +775,18 @@ export default function ProfilesPage() {
       setTurnstileReady(true);
     };
 
+    const handleTurnstileLoadError = () => {
+      if (cancelled) return;
+      setTurnstileReady(true);
+      setTurnstileError("Quick check could not load. Refresh this page or disable blockers for this site.");
+    };
+
     const existingScript = document.getElementById(TURNSTILE_SCRIPT_ID) as HTMLScriptElement | null;
     if (window.turnstile) {
       renderTurnstile();
     } else if (existingScript) {
       existingScript.addEventListener("load", renderTurnstile, { once: true });
-      existingScript.addEventListener("error", () => {
-        setTurnstileReady(true);
-        setTurnstileError("Quick check could not load. Try refreshing this page.");
-      }, { once: true });
+      existingScript.addEventListener("error", handleTurnstileLoadError, { once: true });
     } else {
       const script = document.createElement("script");
       script.id = TURNSTILE_SCRIPT_ID;
@@ -784,21 +794,29 @@ export default function ProfilesPage() {
       script.async = true;
       script.defer = true;
       script.addEventListener("load", renderTurnstile, { once: true });
-      script.addEventListener("error", () => {
-        setTurnstileReady(true);
-        setTurnstileError("Quick check could not load. Try refreshing this page.");
-      }, { once: true });
+      script.addEventListener("error", handleTurnstileLoadError, { once: true });
       document.head.appendChild(script);
     }
 
+    fallbackTimeout = window.setTimeout(() => {
+      if (!window.turnstile) {
+        handleTurnstileLoadError();
+        return;
+      }
+      renderTurnstile();
+    }, 8000);
+
     return () => {
       cancelled = true;
+      if (fallbackTimeout !== null) {
+        window.clearTimeout(fallbackTimeout);
+      }
       if (turnstileWidgetRef.current && window.turnstile) {
         window.turnstile.remove(turnstileWidgetRef.current);
       }
       turnstileWidgetRef.current = null;
     };
-  }, []);
+  }, [activeProfileSection]);
 
   const itemOptionsByType = useMemo(() => {
     const grouped: Record<string, ProfileItemRecord[]> = {};
