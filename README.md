@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img src="public/readme/dashboard-desktop.jpg" alt="Zenith Companion dashboard with populated profile data, market cache status, route shortcuts, and navigation groups" width="100%" />
+  <img src="public/readme/zenith-demo.gif" alt="Animated walkthrough of Zenith Companion showing the dashboard, profiles, settings, skill profit, item database, and world boss planner" width="100%" />
 </p>
 
 ## Overview
