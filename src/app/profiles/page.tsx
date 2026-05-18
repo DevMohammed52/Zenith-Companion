@@ -135,6 +135,10 @@ const PROFILE_SECTION_IDS = new Set<ProfileSectionId>(PROFILE_SECTIONS.map(([id]
 
 const PROFILE_IMPORT_API_URL = "/api";
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
+const LIVE_IMPORT_STORAGE_KEY = "zenith.profileImport.active.v1";
+const LIVE_IMPORT_CHANNEL = "zenith-profile-import";
+const LIVE_IMPORT_LEASE_KEY = "zenith.profileImport.pollLease.v1";
+const LIVE_IMPORT_LEASE_MS = 18000;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
 const TURNSTILE_SCRIPT_ID = "cloudflare-turnstile-script";
 const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -251,6 +255,27 @@ type LiveProfileImportProgress = {
   estimatedRemainingMs?: number;
 };
 
+type LiveProfileImportSnapshot = {
+  version: 1;
+  jobId: string;
+  characterHash?: string;
+  characterHashTail?: string;
+  status: LiveProfileImportStatus;
+  progress?: LiveProfileImportProgress | null;
+  result?: LiveProfileImportResult | null;
+  selectedIndex?: number;
+  error?: string;
+  retryAfterMs?: number | null;
+  estimatedMs?: number | null;
+  startedAt: number;
+  updatedAt: number;
+};
+
+type LiveProfileImportLease = {
+  tabId?: string;
+  until?: number;
+};
+
 function formatWaitTime(ms?: number) {
   if (!ms || !Number.isFinite(ms) || ms <= 0) return "";
   const seconds = Math.ceil(ms / 1000);
@@ -267,6 +292,52 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function isLiveImportTerminal(status: LiveProfileImportStatus) {
+  return status === "done" || status === "error" || status === "expired";
+}
+
+function parseLiveImportSnapshot(value: string | null): LiveProfileImportSnapshot | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (!isRecord(parsed) || parsed.version !== 1 || typeof parsed.jobId !== "string" || !parsed.jobId) return null;
+    const status = typeof parsed.status === "string" ? parsed.status as LiveProfileImportStatus : "idle";
+    if (!["queued", "running", "waiting_for_budget", "done", "error", "expired"].includes(status)) return null;
+    const startedAt = typeof parsed.startedAt === "number" ? parsed.startedAt : Date.now();
+    const updatedAt = typeof parsed.updatedAt === "number" ? parsed.updatedAt : startedAt;
+    return {
+      version: 1,
+      jobId: parsed.jobId,
+      characterHash: typeof parsed.characterHash === "string" ? parsed.characterHash : undefined,
+      characterHashTail: typeof parsed.characterHashTail === "string" ? parsed.characterHashTail : undefined,
+      status,
+      progress: isRecord(parsed.progress) ? parsed.progress : null,
+      result: isRecord(parsed.result) ? parsed.result as LiveProfileImportResult : null,
+      selectedIndex: typeof parsed.selectedIndex === "number" ? parsed.selectedIndex : 0,
+      error: typeof parsed.error === "string" ? parsed.error : "",
+      retryAfterMs: typeof parsed.retryAfterMs === "number" ? parsed.retryAfterMs : null,
+      estimatedMs: typeof parsed.estimatedMs === "number" ? parsed.estimatedMs : null,
+      startedAt,
+      updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseLiveImportLease(value: string | null): LiveProfileImportLease | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return isRecord(parsed) ? {
+      tabId: typeof parsed.tabId === "string" ? parsed.tabId : undefined,
+      until: typeof parsed.until === "number" ? parsed.until : undefined,
+    } : null;
+  } catch {
+    return null;
+  }
+}
+
 function liveProfileImportStatusLabel(status: LiveProfileImportStatus) {
   if (status === "queued") return "Queued";
   if (status === "running") return "Importing";
@@ -278,8 +349,8 @@ function liveProfileImportStatusLabel(status: LiveProfileImportStatus) {
 }
 
 function liveProfileImportStatusCopy(status: LiveProfileImportStatus) {
-  if (status === "queued") return "Your import is queued. Keep this page open while Zenith prepares the saved profile preview.";
-  if (status === "running") return "Zenith is fetching visible character details. Please be patient and keep this page open.";
+  if (status === "queued") return "Your import is queued. Zenith will restore it if you leave this page and come back.";
+  if (status === "running") return "Zenith is fetching visible character details. You can leave this page and return later.";
   if (status === "waiting_for_budget") return "Another scraper or import is using the shared budget, so this job is waiting briefly.";
   if (status === "done") return "Choose the character you want, check the summary, then save it to the active profile.";
   if (status === "error") return "The import could not finish. Check the message below and try again later.";
@@ -598,6 +669,8 @@ export default function ProfilesPage() {
   const [petDb, setPetDb] = useState<{ pets: PetDatabaseRecord[]; mastery?: { levels?: PetMasteryLevelRecord[] } } | null>(null);
   const liveImportPollRef = useRef<number | null>(null);
   const liveImportAbortRef = useRef<AbortController | null>(null);
+  const liveImportChannelRef = useRef<BroadcastChannel | null>(null);
+  const liveImportTabIdRef = useRef(`profile-import-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
   const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const turnstileWidgetRef = useRef<string | null>(null);
   const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
@@ -658,6 +731,10 @@ export default function ProfilesPage() {
       window.clearTimeout(liveImportPollRef.current);
     }
     liveImportAbortRef.current?.abort();
+    const lease = parseLiveImportLease(window.localStorage.getItem(LIVE_IMPORT_LEASE_KEY));
+    if (lease?.tabId === liveImportTabIdRef.current) {
+      window.localStorage.removeItem(LIVE_IMPORT_LEASE_KEY);
+    }
   }, []);
 
   useEffect(() => {
@@ -972,17 +1049,118 @@ export default function ProfilesPage() {
     if (source) setToast(source);
   }, [buildProfileImportReview]);
 
-  const scheduleLiveImportPoll = (jobId: string, delayMs = 3500) => {
+  const saveLiveImportSnapshot = useCallback((patch: Partial<LiveProfileImportSnapshot> & { jobId: string; status: LiveProfileImportStatus }) => {
+    const previous = typeof window !== "undefined" ? parseLiveImportSnapshot(window.localStorage.getItem(LIVE_IMPORT_STORAGE_KEY)) : null;
+    const now = Date.now();
+    const snapshot: LiveProfileImportSnapshot = {
+      version: 1,
+      jobId: patch.jobId,
+      characterHash: patch.characterHash ?? previous?.characterHash,
+      characterHashTail: patch.characterHashTail ?? previous?.characterHashTail,
+      status: patch.status,
+      progress: patch.progress !== undefined ? patch.progress : previous?.progress ?? null,
+      result: patch.result !== undefined ? patch.result : previous?.result ?? null,
+      selectedIndex: patch.selectedIndex !== undefined ? patch.selectedIndex : previous?.selectedIndex ?? 0,
+      error: patch.error !== undefined ? patch.error : previous?.error ?? "",
+      retryAfterMs: patch.retryAfterMs !== undefined ? patch.retryAfterMs : previous?.retryAfterMs ?? null,
+      estimatedMs: patch.estimatedMs !== undefined ? patch.estimatedMs : previous?.estimatedMs ?? null,
+      startedAt: patch.startedAt || previous?.startedAt || now,
+      updatedAt: now,
+    };
+
+    window.localStorage.setItem(LIVE_IMPORT_STORAGE_KEY, JSON.stringify(snapshot));
+    liveImportChannelRef.current?.postMessage({ type: "snapshot", snapshot });
+    return snapshot;
+  }, []);
+
+  const clearLiveImportSnapshot = useCallback(() => {
+    window.localStorage.removeItem(LIVE_IMPORT_STORAGE_KEY);
+    const lease = parseLiveImportLease(window.localStorage.getItem(LIVE_IMPORT_LEASE_KEY));
+    if (lease?.tabId === liveImportTabIdRef.current) {
+      window.localStorage.removeItem(LIVE_IMPORT_LEASE_KEY);
+    }
+    liveImportChannelRef.current?.postMessage({ type: "clear" });
+  }, []);
+
+  const applyLiveImportSnapshot = useCallback((snapshot: LiveProfileImportSnapshot, source: "local" | "remote" = "remote") => {
+    setLiveImportJobId(snapshot.jobId);
+    if (snapshot.characterHash) setLiveImportHash(snapshot.characterHash);
+    setLiveImportStatus(snapshot.status);
+    setLiveImportProgress(snapshot.progress || null);
+    setLiveImportRetryAfterMs(snapshot.retryAfterMs ?? null);
+    setLiveImportEstimatedMs(snapshot.estimatedMs ?? null);
+    setLiveImportSelectedIndex(snapshot.selectedIndex || 0);
+    setLiveImportError(snapshot.error || "");
+
+    const result = snapshot.result ? {
+      ...snapshot.result,
+      characters: Array.isArray(snapshot.result.characters)
+        ? snapshot.result.characters.filter((entry) => isRecord(entry?.draft))
+        : [],
+    } : null;
+    setLiveImportResult(result);
+
+    const selectedDraft = result?.characters?.[snapshot.selectedIndex || 0]?.draft;
+    if (snapshot.status === "done" && selectedDraft) {
+      prepareProfileImportReview(selectedDraft, source === "local" ? "" : "Imported character ready to save.");
+    } else if (snapshot.status !== "done") {
+      setImportReview(null);
+    }
+
+    if (!isLiveImportTerminal(snapshot.status)) {
+      scheduleLiveImportPoll(snapshot.jobId, document.visibilityState === "hidden" ? 15000 : 3500);
+    }
+  }, [prepareProfileImportReview]);
+
+  const acquireLiveImportPollingLease = useCallback(() => {
+    const now = Date.now();
+    const current = parseLiveImportLease(window.localStorage.getItem(LIVE_IMPORT_LEASE_KEY));
+    if (current?.tabId && current.tabId !== liveImportTabIdRef.current && Number(current.until || 0) > now) {
+      return false;
+    }
+    window.localStorage.setItem(LIVE_IMPORT_LEASE_KEY, JSON.stringify({
+      tabId: liveImportTabIdRef.current,
+      until: now + LIVE_IMPORT_LEASE_MS,
+    }));
+    return true;
+  }, []);
+
+  const resetLiveImportState = useCallback((broadcast = true) => {
+    if (liveImportPollRef.current !== null) {
+      window.clearTimeout(liveImportPollRef.current);
+      liveImportPollRef.current = null;
+    }
+    setLiveImportJobId("");
+    setLiveImportStatus("idle");
+    setLiveImportProgress(null);
+    setLiveImportResult(null);
+    setLiveImportSelectedIndex(0);
+    setLiveImportError("");
+    setLiveImportRetryAfterMs(null);
+    setLiveImportEstimatedMs(null);
+    setImportReview(null);
+    if (broadcast) {
+      clearLiveImportSnapshot();
+    }
+  }, [clearLiveImportSnapshot]);
+
+  function scheduleLiveImportPoll(jobId: string, delayMs = 3500) {
     if (liveImportPollRef.current !== null) {
       window.clearTimeout(liveImportPollRef.current);
     }
-    const safeDelay = Math.max(2000, Math.min(Number(delayMs) || 3500, 15000));
+    const fallbackDelay = document.visibilityState === "hidden" ? 15000 : 3500;
+    const safeDelay = Math.max(2000, Math.min(Number(delayMs) || fallbackDelay, document.visibilityState === "hidden" ? 30000 : 15000));
     liveImportPollRef.current = window.setTimeout(() => {
       void pollLiveImportJob(jobId);
     }, safeDelay);
-  };
+  }
 
-  const pollLiveImportJob = async (jobId: string) => {
+  async function pollLiveImportJob(jobId: string) {
+    if (!acquireLiveImportPollingLease()) {
+      scheduleLiveImportPoll(jobId, document.visibilityState === "hidden" ? 15000 : 5000);
+      return;
+    }
+
     try {
       const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/status/${encodeURIComponent(jobId)}`);
       const payload = await response.json().catch(() => ({}));
@@ -998,9 +1176,19 @@ export default function ProfilesPage() {
       if (nextStatus === "done") {
         const result = isRecord(payload) && isRecord(payload.result) ? payload.result as LiveProfileImportResult : null;
         const characters = Array.isArray(result?.characters) ? result.characters.filter((entry) => isRecord(entry?.draft)) : [];
+        const nextResult = result ? { ...result, characters } : { characters: [] };
         setLiveImportResult(result ? { ...result, characters } : { characters: [] });
         setLiveImportSelectedIndex(0);
         setLiveImportError(characters.length ? "" : "The import finished, but no visible character profile was returned.");
+        saveLiveImportSnapshot({
+          jobId,
+          status: nextStatus,
+          progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
+          result: nextResult,
+          selectedIndex: 0,
+          error: characters.length ? "" : "The import finished, but no visible character profile was returned.",
+          retryAfterMs: null,
+        });
         if (characters[0]?.draft) {
           prepareProfileImportReview(characters[0].draft, "Imported character ready to save.");
         }
@@ -1008,16 +1196,33 @@ export default function ProfilesPage() {
       }
 
       if (nextStatus === "error" || nextStatus === "expired") {
-        setLiveImportError(`${getLiveImportErrorMessage(payload, "This import could not finish.")} Your local profile was not changed.`);
+        const errorMessage = `${getLiveImportErrorMessage(payload, "This import could not finish.")} Your local profile was not changed.`;
+        setLiveImportError(errorMessage);
+        saveLiveImportSnapshot({
+          jobId,
+          status: nextStatus,
+          progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
+          error: errorMessage,
+          retryAfterMs: isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null,
+        });
         return;
       }
 
+      saveLiveImportSnapshot({
+        jobId,
+        status: nextStatus,
+        progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
+        error: "",
+        retryAfterMs: isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null,
+      });
       scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3500);
     } catch (error) {
+      const errorMessage = `${error instanceof Error ? error.message : "Could not read import status."} Your local profile was not changed.`;
       setLiveImportStatus("error");
-      setLiveImportError(`${error instanceof Error ? error.message : "Could not read import status."} Your local profile was not changed.`);
+      setLiveImportError(errorMessage);
+      saveLiveImportSnapshot({ jobId, status: "error", error: errorMessage });
     }
-  };
+  }
 
   const handleStartLiveProfileImport = async () => {
     if (!profile) return;
@@ -1065,11 +1270,25 @@ export default function ProfilesPage() {
       }
       const jobId = isRecord(payload) && typeof payload.jobId === "string" ? payload.jobId : "";
       if (!jobId) throw new Error("Import started without a job reference. Try again.");
+      const estimatedMs = isRecord(payload) && typeof payload.estimatedDurationMs === "number" ? payload.estimatedDurationMs : null;
       setLiveImportJobId(jobId);
-      setLiveImportEstimatedMs(isRecord(payload) && typeof payload.estimatedDurationMs === "number" ? payload.estimatedDurationMs : null);
+      setLiveImportEstimatedMs(estimatedMs);
       setLiveImportStatus("queued");
+      saveLiveImportSnapshot({
+        jobId,
+        characterHash,
+        characterHashTail: characterHash.slice(-12),
+        status: "queued",
+        progress: null,
+        result: null,
+        selectedIndex: 0,
+        error: "",
+        retryAfterMs: null,
+        estimatedMs,
+        startedAt: Date.now(),
+      });
       scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3000);
-      setToast("Import started. Keep this page open while Zenith prepares the saved profile preview.");
+      setToast("Import started. You can leave this page and come back while Zenith prepares the saved profile preview.");
     } catch (error) {
       if (controller.signal.aborted) return;
       setLiveImportStatus("error");
@@ -1088,7 +1307,70 @@ export default function ProfilesPage() {
     if (!character?.draft) return;
     setLiveImportSelectedIndex(index);
     prepareProfileImportReview(character.draft, "Selected character ready to save.");
+    if (liveImportJobId) {
+      saveLiveImportSnapshot({
+        jobId: liveImportJobId,
+        status: liveImportStatus,
+        selectedIndex: index,
+      });
+    }
   };
+
+  useEffect(() => {
+    const restoreSavedImport = () => {
+      const snapshot = parseLiveImportSnapshot(window.localStorage.getItem(LIVE_IMPORT_STORAGE_KEY));
+      if (snapshot) applyLiveImportSnapshot(snapshot, "local");
+    };
+
+    restoreSavedImport();
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== LIVE_IMPORT_STORAGE_KEY) return;
+      if (!event.newValue) {
+        resetLiveImportState(false);
+        return;
+      }
+      const snapshot = parseLiveImportSnapshot(event.newValue);
+      if (snapshot) applyLiveImportSnapshot(snapshot, "remote");
+    };
+
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(LIVE_IMPORT_CHANNEL) : null;
+    liveImportChannelRef.current = channel;
+    if (channel) {
+      channel.onmessage = (event: MessageEvent) => {
+        const message = event.data;
+        if (!isRecord(message)) return;
+        if (message.type === "clear") {
+          resetLiveImportState(false);
+          return;
+        }
+        if (message.type === "snapshot") {
+          const snapshot = parseLiveImportSnapshot(JSON.stringify(message.snapshot));
+          if (snapshot) applyLiveImportSnapshot(snapshot, "remote");
+        }
+      };
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      if (channel) {
+        channel.close();
+        if (liveImportChannelRef.current === channel) liveImportChannelRef.current = null;
+      }
+    };
+  }, [applyLiveImportSnapshot, resetLiveImportState]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const snapshot = parseLiveImportSnapshot(window.localStorage.getItem(LIVE_IMPORT_STORAGE_KEY));
+      if (!snapshot || isLiveImportTerminal(snapshot.status)) return;
+      scheduleLiveImportPoll(snapshot.jobId, document.visibilityState === "hidden" ? 15000 : 1500);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     if (liveImportStatus !== "done") return;
@@ -1103,6 +1385,7 @@ export default function ProfilesPage() {
     updateProfile(profile.id, importReview.profile, { markFields: false });
     setTransferText("");
     setToast(`Saved ${importReview.draftName || "imported details"} to ${profile.name || "the active profile"}. The other fetched characters are still available below.`);
+    clearLiveImportSnapshot();
   };
 
   const handleCreateProfileFromSelectedImport = () => {
@@ -1126,6 +1409,7 @@ export default function ProfilesPage() {
       profiles: [...state.profiles, created],
     });
     setToast(`Created ${created.name || "a new profile"} from the selected import. The fetched batch is still available.`);
+    clearLiveImportSnapshot();
   };
 
   const handleCreateProfileFromHash = () => {
@@ -1945,7 +2229,7 @@ export default function ProfilesPage() {
                 </div>
                 <div className="profile-live-import-notes" aria-label="Import privacy notes">
                   <span>Usually takes about {liveImportWaitText || "1-2 min"}.</span>
-                  <span>Keep this page open while it runs.</span>
+                  <span>You can leave this page and come back.</span>
                   <span>Never paste an IdleMMO API key here.</span>
                 </div>
               </div>
@@ -1999,6 +2283,22 @@ export default function ProfilesPage() {
                 </div>
               </div>
               {liveImportError && <p className="profile-transfer-message error">{liveImportError}</p>}
+              {liveImportJobId && (
+                <div className="profile-import-savebar" aria-label="Import recovery controls">
+                  <div>
+                    <strong>Import recovery is active</strong>
+                    <span>This browser will restore the current job after reloads and sync status across open tabs.</span>
+                  </div>
+                  {!isLiveImportTerminal(liveImportStatus) && (
+                    <button type="button" className="profile-action" onClick={() => void pollLiveImportJob(liveImportJobId)}>
+                      <Loader2 size={15} /> Check status
+                    </button>
+                  )}
+                  <button type="button" className="profile-action" onClick={() => resetLiveImportState()}>
+                    <X size={15} /> Clear saved import
+                  </button>
+                </div>
+              )}
               {liveImportResult?.characters?.length ? (
                 <div className="profile-live-import-results" aria-label="Imported characters ready to save">
                   <div className="profile-live-import-result-heading">
