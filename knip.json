@@ -1,0 +1,33 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "next.config.ts",
+    "src/app/**/{page,layout,route,template,loading,not-found,global-error,error}.tsx",
+    "src/app/**/{route,proxy}.ts",
+    "src/middleware.ts",
+    "scripts/**/*.mjs",
+    "cloudflare/profile-import-worker/src/**/*.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.mjs",
+    "cloudflare/profile-import-worker/src/**/*.mjs",
+    "cloudflare/profile-import-worker/test/**/*.mjs",
+    "tests/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    ".next/**",
+    "local_data/**",
+    "game_info/**",
+    "test-artifacts/**",
+    "qa-artifacts/**",
+    "src/data/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "@types/node",
+    "@types/react",
+    "@types/react-dom",
+    "eslint-config-next",
+    "postcss"
+  ]
+}

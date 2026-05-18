@@ -8,6 +8,11 @@
     "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit --incremental false",
+    "test:unit": "vitest run",
+    "test:a11y": "playwright test tests/a11y",
+    "audit:deadcode": "knip",
+    "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
     "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
     "scrape:priority": "node --env-file=.env scraper.mjs --priority --once",
@@ -31,7 +36,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "lucide-react": "^1.14.0",
-    "next": "16.2.4",
+    "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -39,14 +44,19 @@
     "postcss": "8.5.13"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.60.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
-    "playwright": "^1.59.1",
+    "knip": "^6.14.1",
+    "lighthouse": "^13.3.0",
+    "playwright": "^1.60.0",
     "postcss": "8.5.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.6"
   }
 }

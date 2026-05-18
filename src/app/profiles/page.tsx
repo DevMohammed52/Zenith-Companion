@@ -139,7 +139,9 @@ const LIVE_IMPORT_STORAGE_KEY = "zenith.profileImport.active.v1";
 const LIVE_IMPORT_CHANNEL = "zenith-profile-import";
 const LIVE_IMPORT_LEASE_KEY = "zenith.profileImport.pollLease.v1";
 const LIVE_IMPORT_LEASE_MS = 18000;
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === "1"
+  ? ""
+  : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
 const TURNSTILE_SCRIPT_ID = "cloudflare-turnstile-script";
 const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
