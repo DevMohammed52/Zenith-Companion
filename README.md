@@ -41,6 +41,22 @@ The project started as an alchemy profit finder and grew into a full companion s
 - **Responsive product UI:** desktop has dense planning surfaces; mobile has compact navigation and a radial command option.
 - **Free-tier minded:** the deployed app favors cached data, static assets, preprocessing, and minimal runtime work.
 
+## Try These Workflows
+
+| Goal | Where to start | What Zenith helps check |
+| --- | --- | --- |
+| Find a profitable skilling route | Skill Profit Finder | Active profile, class bonus, tools, market price, vendor floor, essence cost, and missing-price warnings. |
+| Decide whether a boss route is worth it | World Bosses | Spawn timing, route order, travel cost, boss value, and magic-find assumptions. |
+| Inspect an item before buying in bulk | Item Database | Market confidence, volume, source mapping, recipe usage, vendor value, and relationship links. |
+| Plan a high-value craft | Mythic Lab or Alchemy Profit | Material ledger, custom prices, owned inputs, sell strategy, ROI, and thin-market risk. |
+| Compare character assumptions | Profiles and Settings | Bartering, timers, tools, housing buffs, pets, magic find, and profile-scoped preferences. |
+
+## Privacy And Local Data
+
+Zenith Companion is designed so player-specific data stays local by default. Profiles, settings, custom prices, active navigation preferences, and imported visible character snapshots live in browser storage unless the user exports or clears them.
+
+The public app does not ask users to paste an IdleMMO API key into the browser. Import flows are built around visible character information and keep the final save step under user control.
+
 ## Product Surfaces
 
 | Area | What it does |

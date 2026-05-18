@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s | Zenith Companion",
   },
   description:
-    "Tools for IdleMMO players to check prices, plan profiles, compare pets, track guilds, and find useful routes.",
+    "Profile-aware IdleMMO tools for market checks, skilling routes, item intelligence, combat planning, and world boss decisions.",
   keywords: [
     "IdleMMO",
     "Idle MMO",
@@ -36,13 +36,22 @@ export const metadata: Metadata = {
     siteName: "Zenith Companion",
     title: "Zenith Companion",
     description:
-      "IdleMMO tools for prices, profiles, pets, guilds, crafting, and routes.",
+      "Profile-aware IdleMMO tools for market checks, skilling routes, item intelligence, combat planning, and world boss decisions.",
+    images: [
+      {
+        url: "/readme/social-preview.png",
+        width: 1280,
+        height: 640,
+        alt: "Zenith Companion product preview with dashboard and skill profit screenshots.",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Zenith Companion",
     description:
-      "Useful IdleMMO tools for prices, profiles, pets, guilds, crafting, and routes.",
+      "Profile-aware IdleMMO tools for market checks, skilling routes, item intelligence, combat planning, and world boss decisions.",
+    images: ["/readme/social-preview.png"],
   },
   icons: {
     icon: [
