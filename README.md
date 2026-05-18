@@ -7,7 +7,7 @@
 <h1 align="center">Zenith Companion</h1>
 
 <p align="center">
-  <strong>An unofficial IdleMMO companion suite for market intelligence, profile-aware planning, combat routing, and searchable game data.</strong>
+  <strong>An unofficial IdleMMO companion suite for market intelligence, profile-aware planning, combat routing, world data, and searchable game knowledge.</strong>
 </p>
 
 <p align="center">
@@ -18,53 +18,74 @@
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs" />
   <img alt="React" src="https://img.shields.io/badge/React-19-149ECA?style=for-the-badge&logo=react&logoColor=white" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img alt="Vercel" src="https://img.shields.io/badge/Deployed_on-Vercel-black?style=for-the-badge&logo=vercel" />
+  <img alt="Vercel" src="https://img.shields.io/badge/Vercel-optimized-black?style=for-the-badge&logo=vercel" />
+  <img alt="IdleMMO fan project" src="https://img.shields.io/badge/IdleMMO-unofficial-f5b041?style=for-the-badge" />
 </p>
 
 <p align="center">
-  <img src="public/readme/dashboard-desktop.jpg" alt="Zenith Companion desktop dashboard with navigation, profile summary, and quick-access planning panels" width="100%" />
+  <img src="public/readme/dashboard-desktop.jpg" alt="Zenith Companion dashboard with populated profile data, market cache status, route shortcuts, and navigation groups" width="100%" />
 </p>
 
-## What It Is
+## Overview
 
-Zenith Companion is a focused companion app for IdleMMO players who want faster answers than a spreadsheet can usually give. It combines cached market data, item metadata, recipes, drops, pets, guilds, world bosses, weather windows, and local player profiles into one responsive interface.
+Zenith Companion is a fan-made decision layer for IdleMMO. It brings together market snapshots, item metadata, recipes, enemies, drops, dungeons, world bosses, pets, guild data, weather windows, museum progress, and local character profiles into one fast interface.
 
-The goal is practical decision support: what to craft, what to farm, which route is worth checking, which item is connected to a recipe or drop source, and what a profile needs next.
+The project started as an alchemy profit finder and grew into a full companion suite: part calculator, part database, part route planner, part character workspace.
 
-## Feature Tour
+## What Makes It Different
 
-### Command Center
+- **Profile-aware tools:** calculators read from the active local profile, including class, levels, bartering, conquest rank, tools, pets, housing, timers, magic find, and imported public character data.
+- **Generated-data architecture:** expensive relationships are prebuilt into static JSON instead of recalculated on every page load.
+- **Market caution built in:** thin markets, unknown prices, vendor fallbacks, stale snapshots, custom prices, and missing data are surfaced instead of hidden.
+- **Connected reference pages:** items link to recipes, sources, drops, lore signals, bosses, dungeons, market labels, and usage maps.
+- **Responsive product UI:** desktop has dense planning surfaces; mobile has compact navigation and a radial command option.
+- **Free-tier minded:** the deployed app favors cached data, static assets, preprocessing, and minimal runtime work.
 
-- A compact dashboard for jumping into active tools, profile status, market signals, and the most-used references.
-- Global search across items, pages, tools, lore signals, recipes, enemies, bosses, pets, guild data, and generated indexes.
-- Desktop sidebar, profile controls, and a mobile-first command experience designed for fast navigation instead of deep menu hunting.
+## Product Surfaces
 
-### Economy And Profit Planning
+| Area | What it does |
+| --- | --- |
+| Dashboard | Active profile summary, market cache status, quick access to economy, combat, world, guild, and archive tools. |
+| Profiles | Local character workspaces for levels, combat stats, pets, gear, tools, housing, imports, and profile backups. |
+| Settings | App-wide preferences, theme, navigation style, fallback tools, market tax mode, active profile values, and custom prices. |
+| Item Database | Searchable item index with market labels, source links, vendor values, recipes, usage relationships, and lore connections. |
+| Skill Profit Finder | Profile-aware skilling route estimates with tool, class, market, essence, vendor, and missing-price safeguards. |
+| Alchemy Profit | Recipe cost, revenue, ROI, market confidence, volume, vendor fallback, and owned-material planning. |
+| Mythic Lab | High-level recipe project planning with material ledger, uses remaining, price overrides, and thin-market warnings. |
+| Crafting Queue | Batch planning for materials, profit, and queued craft sessions. |
+| Forge Planner | Forge route and material planning tied to market and profile assumptions. |
+| Housing | Home and guest-buff planning that feeds other profile-aware tools. |
+| Market Watch | Vendor-value and near-vendor watchlists based on current profile assumptions. |
+| Combat | Enemy EV and session planning without pretending uncertain combat formulas are exact. |
+| Dungeons | Expected value, entry cost, rare-result expectations, and profile-sensitive dungeon planning. |
+| World Bosses | Spawn schedule, boss value, route planning, travel cost, and magic-find assumptions. |
+| Weather Guide | Weather windows and location/event timing in a mobile-friendly layout. |
+| Pets | Pet database, owned-pet snapshots, comparison tools, battle stats, and collection context. |
+| Guilds, Museum, Lore | Guild reference data, collection tracking, and lore/item relationship exploration. |
 
-- **Alchemy Profit** compares recipe cost, sell revenue, vendor revenue, net return, usage count, recent volume, and market confidence.
-- **Mythic Lab** gives high-level recipes a project-style workspace with acquisition cost, material ledger, revenue strategy, thin-market warnings, and profit per craft.
-- **Skill Profit Finder** evaluates tool, gear, essence, material, vendor, and market assumptions while keeping unknown prices visible instead of treating them as free profit.
-- **Crafting Queue**, **Forge Planner**, **Housing**, **BiS Recommender**, and **Market Watch** keep longer planning flows tied to profile-specific assumptions.
+## Profile And Settings
 
-### Databases And Item Intelligence
+Zenith is built around the idea that a calculator is only useful when it understands the character behind the calculation. Profiles are local, browser-scoped workspaces. They can hold manual values, imported visible IdleMMO data, and calculated fields side by side.
 
-- **Item Database** indexes every known item with type, quality, level, market labels, vendor values, stable volume, recipe use, source links, and lore connections.
-- **Enemy Database**, **Dungeon Database**, **Pet Database**, **Owned Pets**, **Pet Comparison**, **Guild Database**, **Museum**, and **Lore Wiki** connect reference data back into planning tools.
-- Item detail views focus on relationships: where an item comes from, where it is used, whether it appears in recipes, and whether its market signal is reliable enough to act on.
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/readme/profiles-showcase.jpg" alt="Profile page showing multiple local profiles, character art, class, total level, location, guild, and profile notes" />
+    </td>
+    <td width="50%">
+      <img src="public/readme/settings-showcase.jpg" alt="Settings page showing app preferences, theme selection, radial mobile navigation, fallback tools, active profile values, and custom prices" />
+    </td>
+  </tr>
+</table>
 
-### Profile-Aware Planning
+Profile values can influence:
 
-- Local profiles keep character assumptions separate, including levels, gear, tools, pets, housing, imports, preferences, and page-specific planning state.
-- The IdleMMO import flow uses visible public profile data and local confirmation, so nothing replaces a saved profile until the user accepts the result.
-- Multi-tab import state is designed to be recoverable: a user can leave the profile page, return later, or open another tab without losing the current job state.
-
-### World And Combat
-
-- **World Map** and **Weather Guide** help users understand route, area, and event timing without manually checking every location.
-- **Combat** keeps enemy EV and session planning separate so estimates stay transparent instead of pretending to be an exact simulator.
-- **Dungeons** compare expected value, entry cost, profit per run, and expected runs per rare result.
-- **World Bosses** combine boss schedule data with route planning and teleport-cost logic so users can compare travel decisions before the spawn window.
-- **Conquest** tracks live-route style data in the same navigation family as the rest of the world and combat tools.
+- alchemy and mythic vendor value through bartering
+- skill-profit routes through class, tools, timers, and conquest rank
+- combat and dungeon assumptions through levels, stats, pet, magic find, and efficiency
+- housing bonuses and guest buffs
+- market-watch thresholds and custom item prices
+- world boss planning through magic find and route assumptions
 
 ## Interface Preview
 
@@ -74,7 +95,7 @@ The goal is practical decision support: what to craft, what to farm, which route
       <img src="public/readme/items-database.jpg" alt="Item Database table with market labels, sorting, filters, and item tags" />
     </td>
     <td width="50%">
-      <img src="public/readme/skill-profit.jpg" alt="Skill Profit Finder with route assumptions, market data, and profile-aware controls" />
+      <img src="public/readme/skill-profit.jpg" alt="Skill Profit Finder with route assumptions, profile-aware controls, and generated route data" />
     </td>
   </tr>
   <tr>
@@ -82,59 +103,76 @@ The goal is practical decision support: what to craft, what to farm, which route
       <img src="public/readme/world-bosses.jpg" alt="World Bosses page with spawn schedule, boss value, and route planning tools" />
     </td>
     <td width="50%">
-      <img src="public/readme/mobile-dashboard.jpg" alt="Mobile dashboard layout for Zenith Companion with compact navigation and profile summary" />
+      <img src="public/readme/mobile-dashboard.jpg" alt="Mobile dashboard layout with compact cards and radial navigation trigger" />
     </td>
   </tr>
 </table>
 
 ## Data Snapshot
 
-Zenith Companion is built around generated, cached data rather than heavy runtime fetching. The current public snapshot includes:
+Zenith Companion is driven by generated and cached data. Current public coverage includes:
 
-| Area | Current indexed coverage |
+| Dataset | Current indexed coverage |
 | --- | ---: |
 | Items | 1,353 |
 | Market-tracked items | 833 |
+| Search entries | 1,439 |
 | Enemies | 47 |
 | Dungeons | 18 |
 | World bosses | 11 |
 | Pets | 46 |
-| Global search entries | 1,439 |
 
-The exact numbers move as the data pipeline discovers, refreshes, or normalizes more IdleMMO information.
+These numbers change as the data pipeline discovers, normalizes, and refreshes more game data.
 
-## Architecture Snapshot
+## Architecture
 
-- **Frontend:** Next.js App Router, React, TypeScript, and hand-tuned CSS for dense dashboard-style workflows.
-- **Generated data:** public JSON snapshots power item search, usage maps, lore signals, market data, pets, guilds, conquest, world bosses, and combat references.
-- **Preprocessing-first design:** expensive linking, indexing, and normalization work happens before the app serves the page whenever possible.
-- **Profile state:** player-specific assumptions stay local to the browser profile unless the user explicitly imports or exports data.
-- **Automation:** GitHub Actions and scheduled refresh jobs keep generated data current without forcing the deployed app to refresh live data on every visit.
-- **Deployment:** Vercel-hosted frontend with careful attention to static assets, bundle size, cached JSON, and free-tier friendly runtime usage.
+```mermaid
+flowchart LR
+  A["IdleMMO public/API data"] --> B["Refresh and normalization scripts"]
+  B --> C["Generated JSON snapshots"]
+  B --> D["Search, usage, lore, weather, and route indexes"]
+  C --> E["Next.js App Router"]
+  D --> E
+  F["Local browser profiles"] --> E
+  G["Settings and custom prices"] --> E
+  E --> H["Static, responsive companion UI"]
+```
 
-## Quality Focus
+The app is intentionally preprocessing-first:
 
-Zenith Companion is treated as a real product rather than a quick calculator page. Ongoing checks include:
+- route, search, usage, lore, weather, and relationship data are prepared before the user opens the page
+- public JSON snapshots keep runtime API usage low
+- profile state stays in the browser unless the user exports it
+- custom prices and assumptions are explicit
+- heavy pages are designed around filtering and memoized derived views rather than repeated work
 
-- TypeScript and lint checks for broken imports, runtime risks, and mismatched data contracts.
-- Unit tests for shared calculation logic where formulas need regression protection.
-- Playwright browser checks for page behavior, responsive layout, and key user flows.
-- Accessibility reviews for keyboard navigation, focus management, labeling, contrast, target sizing, and mobile usability.
-- Performance audits for hydration cost, client/server boundaries, generated-data size, render paths, caching, and bundle composition.
+## Engineering Focus
 
-## Limits And Accuracy
+Zenith Companion is maintained like a product, not a one-off calculator.
 
-Zenith Companion is unofficial and not affiliated with IdleMMO. It uses cached and generated data, so values can lag behind the live game or reflect incomplete public information. Profit, EV, route, and market recommendations should be treated as decision-support estimates, not guaranteed outcomes.
+- **Type safety:** TypeScript models for profiles, preferences, imports, market rows, items, pets, and planning logic.
+- **Validation:** profile imports are normalized before they touch local state.
+- **Performance:** generated data, route-level tuning, browser benchmarks, and bundle checks guide changes.
+- **Accessibility:** keyboard navigation, focus management, labeling, modal behavior, and mobile usability are reviewed as features evolve.
+- **Testing:** static checks, unit tests, Playwright flows, accessibility checks, and page-by-page review notes are used during development.
+- **Cost discipline:** the app is designed for public-repo automation, Vercel free-tier pressure, cached data, and minimal backend runtime.
 
-The app intentionally avoids asking users for an IdleMMO API key in the browser. Public profile import only uses visible profile information and keeps the final save step under user control.
+## Boundaries
+
+Zenith Companion is unofficial and not affiliated with IdleMMO.
+
+It uses cached/generated data, so prices, routes, EV, and market labels can lag behind the live game or reflect incomplete public information. Profit and EV outputs are decision-support estimates, not guaranteed outcomes.
+
+The app does not ask users to paste an IdleMMO API key into the browser. Profile import is built around visible public character information and a user-controlled save step.
 
 ## Roadmap
 
-- Better first-run guidance using real screenshots and page-specific examples instead of generic text blocks.
-- More resilient profile-import recovery, progress visibility, and mobile-safe background handling.
-- Deeper combat confidence labeling as more formula evidence is verified.
-- More preprocessing around item relationships, lore signals, and generated indexes to keep runtime costs low.
-- Continued mobile navigation and accessibility polish without degrading the desktop planning workflow.
+- Screenshot-based onboarding that explains the real UI instead of adding generic text noise.
+- Stronger profile-import recovery and progress visibility for mobile users.
+- More combat confidence labeling as formulas are verified.
+- More generated indexes for lore, item descriptions, and source relationships.
+- Continued mobile navigation polish without weakening desktop planning density.
+- More route-level performance budgets as data volume grows.
 
 ## Credits
 
