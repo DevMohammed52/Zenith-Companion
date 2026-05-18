@@ -80,6 +80,7 @@ import { SidebarProvider } from "@/context/SidebarContext";
 import { ProfileProvider } from "@/lib/profiles";
 import MobileMenuBtn from "@/components/MobileMenuBtn";
 import MobileCommandWheelHost from "@/components/MobileCommandWheelHost";
+import DesktopDock from "@/components/DesktopDock";
 
 export default function RootLayout({
   children,
@@ -97,6 +98,7 @@ export default function RootLayout({
                   <div className="layout-root">
                     <Sidebar />
                     <MobileCommandWheelHost />
+                    <DesktopDock />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />

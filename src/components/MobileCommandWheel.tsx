@@ -26,6 +26,7 @@ export default function MobileCommandWheel({
 
   const selectedGroup = NAV_GROUPS.find((group) => group.label === selectedGroupLabel) ?? activeGroup;
   const selectedIndex = NAV_GROUPS.findIndex((group) => group.label === selectedGroup.label);
+  const selectedGroupHasActiveItem = selectedGroup.items.some((candidate) => isNavItemActive(pathname, candidate));
   const visible = open || closing;
 
   useEffect(() => {
@@ -178,11 +179,13 @@ export default function MobileCommandWheel({
           <div className="command-wheel-links">
             {selectedGroup.items.map((item, index) => {
               const active = isNavItemActive(pathname, item);
+              const highlighted = active || (!selectedGroupHasActiveItem && index === 0);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`command-wheel-link ${active ? "command-wheel-link-active" : ""}`}
+                  className={`command-wheel-link ${highlighted ? "command-wheel-link-active" : ""}`}
+                  aria-current={active ? "page" : undefined}
                   style={{ ["--link-index" as string]: index }}
                   onClick={onClose}
                 >

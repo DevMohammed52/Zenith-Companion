@@ -256,6 +256,45 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
+              <div className="settings-nav-style" aria-label="Desktop navigation style">
+                <span><Compass size={15} /> Desktop navigation</span>
+                <div>
+                  <button
+                    type="button"
+                    className={preferences.desktopNavigationStyle !== "dock" ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.desktopNavigationStyle !== "dock"}
+                    onClick={() => setPreferences({ desktopNavigationStyle: "sidebar" })}
+                  >
+                    Sidebar
+                  </button>
+                  <button
+                    type="button"
+                    className={preferences.desktopNavigationStyle === "dock" ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.desktopNavigationStyle === "dock"}
+                    onClick={() => setPreferences({ desktopNavigationStyle: "dock" })}
+                  >
+                    Zenith Dock
+                  </button>
+                </div>
+              </div>
+              {preferences.desktopNavigationStyle === "dock" && (
+                <div className="settings-nav-style settings-nav-style-three" aria-label="Desktop dock position">
+                  <span><Compass size={15} /> Dock position</span>
+                  <div>
+                    {(["bottom", "left", "right"] as const).map((position) => (
+                      <button
+                        key={position}
+                        type="button"
+                        className={(preferences.desktopDockPosition ?? "bottom") === position ? "settings-nav-style-active" : ""}
+                        aria-pressed={(preferences.desktopDockPosition ?? "bottom") === position}
+                        onClick={() => setPreferences({ desktopDockPosition: position })}
+                      >
+                        {position[0].toUpperCase() + position.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="settings-nav-style" aria-label="Mobile navigation style">
                 <span><Compass size={15} /> Mobile navigation</span>
                 <div>
