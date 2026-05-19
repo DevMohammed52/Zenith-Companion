@@ -370,7 +370,7 @@ export default function SettingsPage() {
                   <span><Volume2 size={15} /> Sound</span>
                   <button
                     type="button"
-                    onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open")}
+                    onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open", { force: true })}
                     disabled={!preferences.soundEffects && !preferences.notificationSounds}
                   >
                     Preview
@@ -386,7 +386,7 @@ export default function SettingsPage() {
                       onClick={() => {
                         const next = !preferences.soundEffects;
                         setPreferences({ soundEffects: next });
-                        if (next) window.setTimeout(() => playZenithSound("open"), 0);
+                        if (next) playZenithSound("open", { force: true });
                       }}
                     >
                       SFX
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                       onClick={() => {
                         const next = !preferences.notificationSounds;
                         setPreferences({ notificationSounds: next });
-                        if (next) window.setTimeout(() => playZenithSound("notify"), 0);
+                        if (next) playZenithSound("notify", { force: true });
                       }}
                     >
                       Notices

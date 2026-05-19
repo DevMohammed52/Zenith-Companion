@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ZENITH_SOUND_EVENT, ZenithSoundCue } from "@/lib/audio";
+import { ZENITH_SOUND_EVENT, ZenithSoundCue, ZenithSoundRequest } from "@/lib/audio";
 import { usePreferences } from "@/lib/preferences";
 
 declare global {
@@ -33,12 +33,14 @@ export default function ZenithAudio() {
   const lofiRef = useRef<LofiLoopNodes | null>(null);
   const lastCueRef = useRef<Record<string, number>>({});
   const prefsRef = useRef(preferences);
+  const activeRef = useRef(true);
 
   useEffect(() => {
     prefsRef.current = preferences;
   }, [preferences]);
 
   const ensureContext = () => {
+    if (!activeRef.current) return null;
     const ExistingAudioContext = window.AudioContext || window.webkitAudioContext;
     if (!ExistingAudioContext) return null;
     if (!ctxRef.current) ctxRef.current = new ExistingAudioContext();
@@ -72,10 +74,11 @@ export default function ZenithAudio() {
     oscillator.stop(now + duration + 0.04);
   };
 
-  const playCue = (cue: ZenithSoundCue) => {
+  const playCue = (cue: ZenithSoundCue, options: { force?: boolean } = {}) => {
+    if (!activeRef.current) return;
     const notificationCue = cue === "notify" || cue === "success" || cue === "warning" || cue === "contact";
-    if (notificationCue && !prefsRef.current.notificationSounds) return;
-    if (!notificationCue && !prefsRef.current.soundEffects) return;
+    if (!options.force && notificationCue && !prefsRef.current.notificationSounds) return;
+    if (!options.force && !notificationCue && !prefsRef.current.soundEffects) return;
 
     const now = performance.now();
     const throttle = cue === "ui" ? 80 : 180;
@@ -83,42 +86,42 @@ export default function ZenithAudio() {
     lastCueRef.current[cue] = now;
 
     if (cue === "ui") {
-      tone(620, 0.05, { gain: 0.018, type: "triangle", slideTo: 760 });
+      tone(620, 0.055, { gain: 0.035, type: "triangle", slideTo: 760 });
       return;
     }
 
     if (cue === "open") {
-      tone(392, 0.075, { gain: 0.025, type: "triangle" });
-      tone(587, 0.09, { gain: 0.022, type: "sine", delay: 0.045 });
+      tone(392, 0.085, { gain: 0.048, type: "triangle" });
+      tone(587, 0.11, { gain: 0.042, type: "sine", delay: 0.045 });
       return;
     }
 
     if (cue === "close") {
-      tone(520, 0.08, { gain: 0.02, type: "triangle", slideTo: 330 });
+      tone(520, 0.09, { gain: 0.038, type: "triangle", slideTo: 330 });
       return;
     }
 
     if (cue === "success") {
-      tone(523.25, 0.09, { gain: 0.032, type: "sine" });
-      tone(659.25, 0.11, { gain: 0.03, type: "sine", delay: 0.06 });
-      tone(783.99, 0.14, { gain: 0.024, type: "sine", delay: 0.13 });
+      tone(523.25, 0.1, { gain: 0.06, type: "sine" });
+      tone(659.25, 0.13, { gain: 0.055, type: "sine", delay: 0.06 });
+      tone(783.99, 0.16, { gain: 0.045, type: "sine", delay: 0.13 });
       return;
     }
 
     if (cue === "warning") {
-      tone(246.94, 0.08, { gain: 0.032, type: "sawtooth" });
-      tone(196, 0.1, { gain: 0.028, type: "sawtooth", delay: 0.11 });
+      tone(246.94, 0.09, { gain: 0.05, type: "sawtooth" });
+      tone(196, 0.12, { gain: 0.045, type: "sawtooth", delay: 0.11 });
       return;
     }
 
     if (cue === "contact") {
-      tone(349.23, 0.08, { gain: 0.026, type: "triangle" });
-      tone(523.25, 0.13, { gain: 0.024, type: "sine", delay: 0.07 });
+      tone(349.23, 0.09, { gain: 0.048, type: "triangle" });
+      tone(523.25, 0.15, { gain: 0.045, type: "sine", delay: 0.07 });
       return;
     }
 
-    tone(440, 0.08, { gain: 0.022, type: "triangle" });
-    tone(659.25, 0.13, { gain: 0.026, type: "sine", delay: 0.08 });
+    tone(440, 0.09, { gain: 0.045, type: "triangle" });
+    tone(659.25, 0.14, { gain: 0.05, type: "sine", delay: 0.08 });
   };
 
   const scheduleKick = (ctx: AudioContext, destination: AudioNode, time: number) => {
@@ -196,6 +199,7 @@ export default function ZenithAudio() {
   };
 
   const startAmbient = () => {
+    if (!activeRef.current) return;
     if (lofiRef.current) return;
     const ctx = ensureContext();
     if (!ctx) return;
@@ -254,7 +258,7 @@ export default function ZenithAudio() {
 
   useEffect(() => {
     if (!loaded) return;
-    if (preferences.ambientMusic) startAmbient();
+    if (preferences.ambientMusic && activeRef.current) startAmbient();
     else stopAmbient();
 
     const nodes = lofiRef.current;
@@ -266,8 +270,9 @@ export default function ZenithAudio() {
 
   useEffect(() => {
     const handleSound = (event: Event) => {
-      const cue = (event as CustomEvent<ZenithSoundCue>).detail || "ui";
-      playCue(cue);
+      const detail = (event as CustomEvent<ZenithSoundRequest | ZenithSoundCue>).detail || "ui";
+      const request = typeof detail === "string" ? { cue: detail } : detail;
+      playCue(request.cue, { force: request.force });
     };
     const handlePointerDown = (event: PointerEvent) => {
       if (!prefsRef.current.soundEffects) return;
@@ -275,10 +280,27 @@ export default function ZenithAudio() {
       if (!target?.closest(interactiveSelector)) return;
       playCue("ui");
     };
+    const refreshActiveState = () => {
+      const active = !document.hidden && document.hasFocus();
+      activeRef.current = active;
+      if (!active) {
+        stopAmbient();
+        void ctxRef.current?.suspend();
+        return;
+      }
+      if (prefsRef.current.ambientMusic) startAmbient();
+    };
     window.addEventListener(ZENITH_SOUND_EVENT, handleSound);
+    window.addEventListener("focus", refreshActiveState);
+    window.addEventListener("blur", refreshActiveState);
+    document.addEventListener("visibilitychange", refreshActiveState);
     document.addEventListener("pointerdown", handlePointerDown, true);
+    refreshActiveState();
     return () => {
       window.removeEventListener(ZENITH_SOUND_EVENT, handleSound);
+      window.removeEventListener("focus", refreshActiveState);
+      window.removeEventListener("blur", refreshActiveState);
+      document.removeEventListener("visibilitychange", refreshActiveState);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       stopAmbient();
       void ctxRef.current?.close();
