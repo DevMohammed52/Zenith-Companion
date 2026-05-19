@@ -5,6 +5,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
 import SiteFooter from "@/components/SiteFooter";
 import RotatingTips from "@/components/RotatingTips";
+import ZenithAudio from "@/components/ZenithAudio";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -111,6 +112,7 @@ export default function RootLayout({
                     <MobileCommandWheelHost />
                     <DesktopDock />
                     <RotatingTips />
+                    <ZenithAudio />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />

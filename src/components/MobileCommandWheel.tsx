@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { playZenithSound } from "@/lib/audio";
 import { getActiveNavGroup, isNavItemActive, NAV_GROUPS } from "@/lib/navigation";
 
 export default function MobileCommandWheel({
@@ -77,6 +78,7 @@ export default function MobileCommandWheel({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        playZenithSound("close");
         onClose();
         return;
       }
@@ -108,7 +110,15 @@ export default function MobileCommandWheel({
 
   return (
     <div className={`command-wheel-layer ${closing ? "command-wheel-layer-closing" : ""}`} role="presentation">
-      <button className="command-wheel-backdrop" type="button" aria-label="Close command wheel" onClick={onClose} />
+      <button
+        className="command-wheel-backdrop"
+        type="button"
+        aria-label="Close command wheel"
+        onClick={() => {
+          playZenithSound("close");
+          onClose();
+        }}
+      />
       <section
         className={`command-wheel command-wheel-side-${side} ${closing ? "command-wheel-closing" : ""}`}
         id="app-command-wheel"

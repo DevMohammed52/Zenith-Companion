@@ -16,10 +16,12 @@ import {
   Sparkles,
   Trash2,
   UserRound,
+  Volume2,
   Wrench,
   X,
 } from "lucide-react";
 import { ThemeName, usePreferences } from "@/lib/preferences";
+import { playZenithSound } from "@/lib/audio";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
@@ -159,6 +161,10 @@ export default function SettingsPage() {
     setCustomItemName("");
     setCustomItemPrice("");
     setItemSearchOpen(false);
+  };
+
+  const setAudioVolume = (value: number) => {
+    setPreferences({ audioVolume: Math.max(0, Math.min(100, Math.round(value))) });
   };
 
   const removeCustomPrice = (name: string) => {
@@ -358,6 +364,66 @@ export default function SettingsPage() {
                     Disabled
                   </button>
                 </div>
+              </div>
+              <div className="settings-audio-panel" aria-label="Sound settings">
+                <div className="settings-audio-heading">
+                  <span><Volume2 size={15} /> Sound</span>
+                  <button
+                    type="button"
+                    onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open")}
+                    disabled={!preferences.soundEffects && !preferences.notificationSounds}
+                  >
+                    Preview
+                  </button>
+                </div>
+                <div className="settings-nav-style settings-nav-style-three" aria-label="Sound toggles">
+                  <span>Audio modes</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={preferences.soundEffects ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.soundEffects}
+                      onClick={() => {
+                        const next = !preferences.soundEffects;
+                        setPreferences({ soundEffects: next });
+                        if (next) window.setTimeout(() => playZenithSound("open"), 0);
+                      }}
+                    >
+                      SFX
+                    </button>
+                    <button
+                      type="button"
+                      className={preferences.notificationSounds ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.notificationSounds}
+                      onClick={() => {
+                        const next = !preferences.notificationSounds;
+                        setPreferences({ notificationSounds: next });
+                        if (next) window.setTimeout(() => playZenithSound("notify"), 0);
+                      }}
+                    >
+                      Notices
+                    </button>
+                    <button
+                      type="button"
+                      className={preferences.ambientMusic ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.ambientMusic}
+                      onClick={() => setPreferences({ ambientMusic: !preferences.ambientMusic })}
+                    >
+                      Ambient
+                    </button>
+                  </div>
+                </div>
+                <label className="settings-audio-volume">
+                  <span>Volume <strong>{preferences.audioVolume ?? 35}%</strong></span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={preferences.audioVolume ?? 35}
+                    onChange={(event) => setAudioVolume(Number(event.target.value))}
+                  />
+                </label>
               </div>
             </div>
           </div>

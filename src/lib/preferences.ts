@@ -30,6 +30,10 @@ export type Preferences = {
   mobileNavigationStyle: MobileNavigationStyle;
   mobileCommandTriggerSide: MobileCommandTriggerSide;
   inAppNotifications: boolean;
+  soundEffects: boolean;
+  notificationSounds: boolean;
+  ambientMusic: boolean;
+  audioVolume: number;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -53,6 +57,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   mobileNavigationStyle: "standard",
   mobileCommandTriggerSide: "left",
   inAppNotifications: true,
+  soundEffects: false,
+  notificationSounds: false,
+  ambientMusic: false,
+  audioVolume: 35,
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";
@@ -65,6 +73,7 @@ const readPreferences = (): Preferences => {
     if (stored) Object.assign(next, JSON.parse(stored));
     const shouldNormalizeStoredPreferences = next.desktopNavigationStyle !== "sidebar" && next.desktopNavigationStyle !== "dock";
     if (shouldNormalizeStoredPreferences) next.desktopNavigationStyle = "sidebar";
+    next.audioVolume = Math.max(0, Math.min(100, Number(next.audioVolume) || 0));
     next.skillTools = { ...DEFAULT_TOOL_SELECTIONS, ...next.skillTools };
     next.customPrices = { ...next.customPrices };
     if (shouldNormalizeStoredPreferences) localStorage.setItem(PREFERENCE_STORAGE_KEY, JSON.stringify(next));

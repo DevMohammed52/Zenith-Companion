@@ -4,6 +4,7 @@ import { Compass, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import MobileCommandWheel from "@/components/MobileCommandWheel";
 import { useSidebar } from "@/context/SidebarContext";
+import { playZenithSound } from "@/lib/audio";
 import { usePreferences } from "@/lib/preferences";
 
 export default function MobileCommandWheelHost() {
@@ -34,7 +35,10 @@ export default function MobileCommandWheelHost() {
         aria-label={mobileOpen ? "Close command wheel" : "Open command wheel"}
         aria-controls="app-command-wheel"
         aria-expanded={mobileOpen}
-        onClick={() => setMobileOpen(!mobileOpen)}
+        onClick={() => {
+          playZenithSound(mobileOpen ? "close" : "open");
+          setMobileOpen(!mobileOpen);
+        }}
       >
         {mobileOpen ? <X size={22} /> : <Compass size={22} />}
         <span>Menu</span>

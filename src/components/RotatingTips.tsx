@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BadgeCheck, Bell, Lightbulb, MessageCircle, TriangleAlert, X } from "lucide-react";
+import { playZenithSound } from "@/lib/audio";
 import { ZENITH_NOTIFY_EVENT, ZenithNotification } from "@/lib/notifications";
 import { usePreferences } from "@/lib/preferences";
 
@@ -214,6 +215,7 @@ export default function RotatingTips() {
     window.clearTimeout(hideTimerRef.current);
     setCurrent(notification);
     setVisible(true);
+    playZenithSound(notification.tone && notification.tone !== "tip" ? notification.tone : "notify");
     hideTimerRef.current = window.setTimeout(() => setVisible(false), TIP_VISIBLE_MS);
   };
 
