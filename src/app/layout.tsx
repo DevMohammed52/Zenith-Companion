@@ -3,6 +3,7 @@ import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -120,6 +121,7 @@ export default function RootLayout({
                           <ProfileSwitcher />
                         </div>
                         {children}
+                        <SiteFooter />
                         <div id="zenith-live-region" className="sr-only" aria-live="polite" aria-atomic="true" />
                       </div>
                     </div>
@@ -156,6 +158,60 @@ export default function RootLayout({
             min-width: 0;
             overflow-x: clip;
           }
+          .site-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 1.5rem clamp(1rem, 2vw, 2rem) 1.25rem;
+            padding: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 8px;
+            background: rgba(8, 12, 22, 0.72);
+            color: var(--text-muted);
+          }
+          .site-footer-copy {
+            display: grid;
+            gap: 0.25rem;
+            min-width: 0;
+            font-size: 0.82rem;
+            line-height: 1.45;
+          }
+          .site-footer-copy strong {
+            color: var(--text-primary);
+            font-size: 0.86rem;
+          }
+          .site-footer-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex: 0 0 auto;
+          }
+          .site-footer-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            min-height: 34px;
+            padding: 0.45rem 0.65rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.035);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+          }
+          a.site-footer-pill:hover {
+            border-color: rgba(59, 130, 246, 0.44);
+            color: var(--text-primary);
+            background: rgba(59, 130, 246, 0.1);
+          }
+          .site-footer-pill-muted {
+            color: rgba(148, 163, 184, 0.66);
+          }
           .top-navigation {
             display: none;
           }
@@ -190,6 +246,14 @@ export default function RootLayout({
             }
             .top-navigation .profile-switcher {
               flex: 0 0 auto;
+            }
+            .site-footer {
+              align-items: stretch;
+              flex-direction: column;
+              margin: 1rem;
+            }
+            .site-footer-actions {
+              justify-content: flex-start;
             }
           }
         `}</style>
