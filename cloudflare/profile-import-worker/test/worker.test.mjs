@@ -51,6 +51,7 @@ class MemoryD1 {
   constructor() {
     this.jobs = new Map();
     this.cooldowns = new Map();
+    this.usageEvents = new Map();
   }
   prepare(sql) {
     return new Statement(this, sql);
@@ -71,6 +72,22 @@ class MemoryD1 {
         expires_at: expiresAt,
         request_count: 0,
         retry_count: 0,
+      });
+    }
+    if (sql.includes("INSERT INTO usage_events")) {
+      const [id, visitorFingerprint, sessionFingerprint, eventType, path, referrerHost, deviceType, timezone, country, userAgentFamily, createdAt] = args;
+      this.usageEvents.set(id, {
+        id,
+        visitor_fingerprint: visitorFingerprint,
+        session_fingerprint: sessionFingerprint,
+        event_type: eventType,
+        path,
+        referrer_host: referrerHost,
+        device_type: deviceType,
+        timezone,
+        country,
+        user_agent_family: userAgentFamily,
+        created_at: createdAt,
       });
     }
     if (sql.includes("DELETE FROM import_jobs")) {
@@ -166,6 +183,21 @@ class MemoryD1 {
         unique_characters_all_time: distinctCount(jobs, "target_hash_fingerprint"),
       };
     }
+    if (sql.includes("unique_users_all_time")) {
+      const [eventsDayAgo, pageviewsDayAgo, fifteenAgo, hourAgo, usersDayAgo, usersWeekAgo, sessionsDayAgo, sessionsWeekAgo] = args;
+      const events = Array.from(this.usageEvents.values());
+      return {
+        events_24h: events.filter((event) => event.created_at >= eventsDayAgo).length,
+        pageviews_24h: events.filter((event) => event.event_type === "pageview" && event.created_at >= pageviewsDayAgo).length,
+        active_users_15m: distinctCount(events.filter((event) => event.created_at >= fifteenAgo), "visitor_fingerprint"),
+        active_users_1h: distinctCount(events.filter((event) => event.created_at >= hourAgo), "visitor_fingerprint"),
+        unique_users_24h: distinctCount(events.filter((event) => event.created_at >= usersDayAgo), "visitor_fingerprint"),
+        unique_users_7d: distinctCount(events.filter((event) => event.created_at >= usersWeekAgo), "visitor_fingerprint"),
+        unique_users_all_time: distinctCount(events, "visitor_fingerprint"),
+        sessions_24h: distinctCount(events.filter((event) => event.created_at >= sessionsDayAgo), "session_fingerprint"),
+        sessions_7d: distinctCount(events.filter((event) => event.created_at >= sessionsWeekAgo), "session_fingerprint"),
+      };
+    }
     if (sql.includes("SELECT COUNT(*) AS count") && sql.includes("FROM import_jobs")) {
       const [createdAfter] = args;
       return { count: Array.from(this.jobs.values()).filter((job) => job.created_at >= createdAfter).length };
@@ -236,6 +268,49 @@ class MemoryD1 {
     return null;
   }
   async all(sql, args) {
+    if (sql.includes("FROM usage_events") && sql.includes("GROUP BY path")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.usageEvents.values()) {
+        if (event.event_type !== "pageview" || event.created_at < createdAfter) continue;
+        const row = grouped.get(event.path) || { path: event.path, views: 0, visitors: new Set() };
+        row.views += 1;
+        row.visitors.add(event.visitor_fingerprint);
+        grouped.set(event.path, row);
+      }
+      return {
+        results: Array.from(grouped.values())
+          .map((row) => ({ path: row.path, views: row.views, users: row.visitors.size }))
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 8),
+      };
+    }
+    if (sql.includes("FROM usage_events") && sql.includes("GROUP BY device_type")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.usageEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        const row = grouped.get(event.device_type) || new Set();
+        row.add(event.visitor_fingerprint);
+        grouped.set(event.device_type, row);
+      }
+      return {
+        results: Array.from(grouped, ([device_type, users]) => ({ device_type, users: users.size })),
+      };
+    }
+    if (sql.includes("FROM usage_events") && sql.includes("GROUP BY referrer_host")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.usageEvents.values()) {
+        if (event.created_at < createdAfter || !event.referrer_host) continue;
+        const row = grouped.get(event.referrer_host) || new Set();
+        row.add(event.visitor_fingerprint);
+        grouped.set(event.referrer_host, row);
+      }
+      return {
+        results: Array.from(grouped, ([referrer_host, users]) => ({ referrer_host, users: users.size })),
+      };
+    }
     if (sql.includes("GROUP BY status")) {
       const [createdAfter] = args;
       const counts = new Map();
@@ -334,10 +409,45 @@ async function json(response) {
   assert.equal(body.demand.activeImportUsers15m, 2);
   assert.equal(body.demand.uniqueCharacters24h, 2);
   assert.equal(body.last24h.completionRate, 50);
+  assert.equal(typeof body.usage.activeUsers15m, "number");
   assert.equal(typeof body.pressure.oldestQueuedSeconds, "number");
   assert.equal(Array.isArray(body.recentJobs), true);
   assert.equal(JSON.stringify(body).includes("target_hash"), false);
   assert.equal(JSON.stringify(body).includes("result_json"), false);
+}
+
+{
+  const e = env();
+  const response = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "user-agent": "Mozilla/5.0 Chrome/126.0",
+      "cf-ipcountry": "IN",
+    },
+    body: JSON.stringify({
+      visitorId: "visitor-fixture",
+      sessionId: "session-fixture",
+      eventType: "pageview",
+      path: "/profiles?tab=import",
+      referrer: "https://discord.com/channels/1/2",
+      deviceType: "mobile",
+      timezone: "Asia/Calcutta",
+    }),
+  }), e);
+  assert.equal(response.status, 202);
+  assert.equal((await json(response)).ok, true);
+  assert.equal(e.DB.usageEvents.size, 1);
+
+  const health = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  const body = await json(health);
+  assert.equal(body.usage.activeUsers15m, 1);
+  assert.equal(body.usage.pageviews24h, 1);
+  assert.equal(body.usage.topPages[0].path, "/profiles");
+  assert.equal(body.usage.devices[0].type, "mobile");
 }
 
 {

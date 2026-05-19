@@ -63,6 +63,10 @@ export async function handleRequest(request, env, _ctx = {}) {
       return await handleAdminImportHealth(request, env, cors);
     }
 
+    if (url.pathname === "/usage/ping" && request.method === "POST") {
+      return await handleUsagePing(request, env, cors);
+    }
+
     if (url.pathname === "/profile-import/start" && request.method === "POST") {
       return await handleStartImport(request, env, cors);
     }
@@ -96,6 +100,7 @@ async function handleAdminImportHealth(request, env, cors) {
   const cooldowns = await cooldownSummary(env, now);
   const demand = await importDemandSummary(env, now);
   const pressure = await queuePressure(env, now);
+  const usage = await usageSummary(env, now);
   const statusRows = await env.DB.prepare(`
     SELECT status, COUNT(*) AS count
     FROM import_jobs
@@ -155,6 +160,7 @@ async function handleAdminImportHealth(request, env, cors) {
       jobsLastHour: await countJobsSince(env, hourAgo),
     },
     pressure,
+    usage,
     coordinator: coordinatorStates.map((state) => ({
       active: Boolean(state.active && !isExpiredIso(state.expiresAt)),
       status: cleanString(state.status, 24),
@@ -178,6 +184,47 @@ async function handleAdminImportHealth(request, env, cors) {
       expired: isExpiredIso(row.expires_at),
     })),
   }, 200, cors);
+}
+
+async function handleUsagePing(request, env, cors) {
+  if (!isAllowedOrigin(request, env)) {
+    return json({ error: { code: "origin_not_allowed", message: "Usage ping is not available from this origin." } }, 403, cors);
+  }
+  assertBindings(env);
+
+  const payload = await readJson(request);
+  const visitorId = cleanString(payload.visitorId, 128);
+  const sessionId = cleanString(payload.sessionId, 128);
+  const path = normalizeUsagePath(payload.path);
+  if (!visitorId || !sessionId || !path) {
+    return json({ error: { code: "bad_request", message: "Invalid usage ping." } }, 400, cors);
+  }
+
+  const eventType = ["pageview", "heartbeat"].includes(payload.eventType) ? payload.eventType : "pageview";
+  const now = new Date().toISOString();
+  const visitorFingerprint = await fingerprint(visitorId, env.IMPORT_SIGNING_SECRET);
+  const sessionFingerprint = await fingerprint(`${visitorId}:${sessionId}`, env.IMPORT_SIGNING_SECRET);
+
+  await env.DB.prepare(`
+    INSERT INTO usage_events (
+      id, visitor_fingerprint, session_fingerprint, event_type, path,
+      referrer_host, device_type, timezone, country, user_agent_family, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    `use_${cryptoRandomId(24)}`,
+    visitorFingerprint,
+    sessionFingerprint,
+    eventType,
+    path,
+    normalizeReferrerHost(payload.referrer),
+    normalizeDeviceType(payload.deviceType),
+    cleanString(payload.timezone, 64),
+    cleanString(request.headers.get("cf-ipcountry"), 8),
+    userAgentFamilyFrom(request.headers.get("user-agent") || ""),
+    now,
+  ).run();
+
+  return json({ ok: true }, 202, cors);
 }
 
 async function importDemandSummary(env, now) {
@@ -211,6 +258,81 @@ async function importDemandSummary(env, now) {
     uniqueCharacters24h: Number(row?.unique_characters_24h || 0),
     uniqueCharacters7d: Number(row?.unique_characters_7d || 0),
     uniqueCharactersAllTime: Number(row?.unique_characters_all_time || 0),
+  };
+}
+
+async function usageSummary(env, now) {
+  const fifteenAgo = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const overview = await env.DB.prepare(`
+    SELECT
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
+      COUNT(CASE WHEN event_type = 'pageview' AND created_at >= ? THEN 1 ELSE NULL END) AS pageviews_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_15m,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_1h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_7d,
+      COUNT(DISTINCT visitor_fingerprint) AS unique_users_all_time,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d
+    FROM usage_events
+  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo).first().catch(() => null);
+
+  const topPages = await env.DB.prepare(`
+    SELECT path, COUNT(*) AS views, COUNT(DISTINCT visitor_fingerprint) AS users
+    FROM usage_events
+    WHERE event_type = 'pageview' AND created_at >= ?
+    GROUP BY path
+    ORDER BY views DESC
+    LIMIT 8
+  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+
+  const deviceRows = await env.DB.prepare(`
+    SELECT device_type, COUNT(DISTINCT visitor_fingerprint) AS users
+    FROM usage_events
+    WHERE created_at >= ?
+    GROUP BY device_type
+    ORDER BY users DESC
+  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+
+  const referrerRows = await env.DB.prepare(`
+    SELECT referrer_host, COUNT(DISTINCT visitor_fingerprint) AS users
+    FROM usage_events
+    WHERE created_at >= ? AND referrer_host != ''
+    GROUP BY referrer_host
+    ORDER BY users DESC
+    LIMIT 6
+  `).bind(weekAgo).all().catch(() => ({ results: [] }));
+
+  const pageviews24h = Number(overview?.pageviews_24h || 0);
+  const sessions24h = Number(overview?.sessions_24h || 0);
+  return {
+    activeUsers15m: Number(overview?.active_users_15m || 0),
+    activeUsers1h: Number(overview?.active_users_1h || 0),
+    uniqueUsers24h: Number(overview?.unique_users_24h || 0),
+    uniqueUsers7d: Number(overview?.unique_users_7d || 0),
+    uniqueUsersAllTime: Number(overview?.unique_users_all_time || 0),
+    sessions24h,
+    sessions7d: Number(overview?.sessions_7d || 0),
+    events24h: Number(overview?.events_24h || 0),
+    pageviews24h,
+    pageviewsPerSession24h: sessions24h ? roundMetric(pageviews24h / sessions24h) : 0,
+    topPages: (topPages.results || []).map((row) => ({
+      path: cleanString(row.path, 120),
+      views: Number(row.views || 0),
+      users: Number(row.users || 0),
+    })),
+    devices: (deviceRows.results || []).map((row) => ({
+      type: cleanString(row.device_type || "unknown", 24),
+      users: Number(row.users || 0),
+    })),
+    referrers: (referrerRows.results || []).map((row) => ({
+      host: cleanString(row.referrer_host, 120),
+      users: Number(row.users || 0),
+    })),
   };
 }
 
@@ -952,6 +1074,37 @@ async function readJson(request) {
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) return {};
   return request.json();
+}
+
+function normalizeUsagePath(value) {
+  const text = cleanString(value, 160);
+  if (!text.startsWith("/")) return "";
+  return text.split(/[?#]/)[0].slice(0, 120) || "/";
+}
+
+function normalizeReferrerHost(value) {
+  const text = cleanString(value, 260);
+  if (!text) return "";
+  try {
+    const parsed = new URL(text);
+    return cleanString(parsed.hostname.replace(/^www\./, ""), 120);
+  } catch {
+    return "";
+  }
+}
+
+function normalizeDeviceType(value) {
+  const text = cleanString(value, 24).toLowerCase();
+  return ["mobile", "tablet", "desktop"].includes(text) ? text : "unknown";
+}
+
+function userAgentFamilyFrom(userAgent) {
+  const ua = String(userAgent || "").toLowerCase();
+  if (ua.includes("edg/")) return "edge";
+  if (ua.includes("chrome/") || ua.includes("crios/")) return "chrome";
+  if (ua.includes("firefox/") || ua.includes("fxios/")) return "firefox";
+  if (ua.includes("safari/")) return "safari";
+  return ua ? "other" : "unknown";
 }
 
 function json(payload, status = 200, headers = JSON_HEADERS) {

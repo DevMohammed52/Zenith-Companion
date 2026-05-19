@@ -64,6 +64,21 @@ type ImportHealth = {
     oldestQueuedSeconds: number;
     oldestRunningSeconds: number;
   };
+  usage: {
+    activeUsers15m: number;
+    activeUsers1h: number;
+    uniqueUsers24h: number;
+    uniqueUsers7d: number;
+    uniqueUsersAllTime: number;
+    sessions24h: number;
+    sessions7d: number;
+    events24h: number;
+    pageviews24h: number;
+    pageviewsPerSession24h: number;
+    topPages: Array<{ path: string; views: number; users: number }>;
+    devices: Array<{ type: string; users: number }>;
+    referrers: Array<{ host: string; users: number }>;
+  };
   coordinator: Array<{
     active: boolean;
     status: string;
@@ -261,6 +276,51 @@ export default function ImportHealthPage() {
             </div>
           </section>
 
+          <section className="health-section">
+            <div className="section-heading">
+              <span className="panel-title"><Users size={17} /> Site Usage</span>
+              <span>Anonymous browser activity</span>
+            </div>
+            <div className="metric-grid">
+              <Metric
+                icon={Users}
+                label="Active users"
+                value={formatNumber(health.usage.activeUsers15m)}
+                detail={`${formatNumber(health.usage.activeUsers1h)} in the last hour`}
+              />
+              <Metric
+                icon={TrendingUp}
+                label="Unique users"
+                value={formatNumber(health.usage.uniqueUsers24h)}
+                detail={`${formatNumber(health.usage.uniqueUsers7d)} in 7d - ${formatNumber(health.usage.uniqueUsersAllTime)} total`}
+              />
+              <Metric
+                icon={Activity}
+                label="Pageviews"
+                value={formatNumber(health.usage.pageviews24h)}
+                detail={`${formatNumber(health.usage.events24h)} total events in 24h`}
+              />
+              <Metric
+                icon={Database}
+                label="Sessions"
+                value={formatNumber(health.usage.sessions24h)}
+                detail={`${formatNumber(health.usage.sessions7d)} in 7d`}
+              />
+              <Metric
+                icon={Gauge}
+                label="Views / session"
+                value={formatNumber(health.usage.pageviewsPerSession24h)}
+                detail="Last 24 hours"
+              />
+              <Metric
+                icon={ShieldCheck}
+                label="Tracking mode"
+                value="Local IDs"
+                detail="No profile names or raw hashes"
+              />
+            </div>
+          </section>
+
           <section className="dashboard-grid">
             <Panel title="Scraper Coordinator" icon={Activity}>
               {health.coordinator.length ? health.coordinator.map((state) => (
@@ -313,12 +373,54 @@ export default function ImportHealthPage() {
             <Panel title="Metric Boundaries" icon={ShieldCheck}>
               <div className="boundary-note">
                 <strong>What the counts mean</strong>
-                <p>Users here means anonymous profile-import requesters. It does not count every site visitor yet because normal browsing stays local and private in the browser.</p>
+                <p>Site users are counted from anonymous browser IDs. Import users are counted separately from profile-import requesters.</p>
               </div>
               <div className="boundary-note">
                 <strong>What is still private</strong>
-                <p>The dashboard never returns character hashes, names, imported profile payloads, pets, museum rows, or raw IdleMMO API responses.</p>
+                <p>The dashboard never returns character hashes, names, imported profile payloads, pets, museum rows, raw IdleMMO API responses, or raw IP addresses.</p>
               </div>
+            </Panel>
+
+            <Panel title="Top Pages" icon={Activity}>
+              {health.usage.topPages.length ? health.usage.topPages.map((page) => (
+                <div className="state-row" key={page.path}>
+                  <div>
+                    <strong>{page.path}</strong>
+                    <span>{formatNumber(page.users)} user{page.users === 1 ? "" : "s"}</span>
+                  </div>
+                  <div className="state-meta">
+                    <span className="status-chip neutral">{formatNumber(page.views)} views</span>
+                  </div>
+                </div>
+              )) : <EmptyState text="No pageview data has been collected yet." />}
+            </Panel>
+
+            <Panel title="Device Split" icon={Gauge}>
+              {health.usage.devices.length ? health.usage.devices.map((device) => (
+                <div className="state-row compact" key={device.type}>
+                  <div>
+                    <strong>{device.type}</strong>
+                    <span>Last 24 hours</span>
+                  </div>
+                  <div className="state-meta">
+                    <span className="status-chip neutral">{formatNumber(device.users)} users</span>
+                  </div>
+                </div>
+              )) : <EmptyState text="No device data has been collected yet." />}
+            </Panel>
+
+            <Panel title="Referrers" icon={TrendingUp}>
+              {health.usage.referrers.length ? health.usage.referrers.map((referrer) => (
+                <div className="state-row compact" key={referrer.host}>
+                  <div>
+                    <strong>{referrer.host}</strong>
+                    <span>Last 7 days</span>
+                  </div>
+                  <div className="state-meta">
+                    <span className="status-chip neutral">{formatNumber(referrer.users)} users</span>
+                  </div>
+                </div>
+              )) : <EmptyState text="No external referrers have been recorded yet." />}
             </Panel>
           </section>
 
@@ -667,6 +769,21 @@ function normalizeHealth(value: Partial<ImportHealth>): ImportHealth {
     pressure: value.pressure || {
       oldestQueuedSeconds: 0,
       oldestRunningSeconds: 0,
+    },
+    usage: value.usage || {
+      activeUsers15m: 0,
+      activeUsers1h: 0,
+      uniqueUsers24h: 0,
+      uniqueUsers7d: 0,
+      uniqueUsersAllTime: 0,
+      sessions24h: 0,
+      sessions7d: 0,
+      events24h: 0,
+      pageviews24h: 0,
+      pageviewsPerSession24h: 0,
+      topPages: [],
+      devices: [],
+      referrers: [],
     },
   };
 }
