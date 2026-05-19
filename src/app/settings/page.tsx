@@ -244,6 +244,70 @@ export default function SettingsPage() {
                   </button>
                 </label>
               </div>
+              <div className="settings-audio-panel" aria-label="Sound settings">
+                <div className="settings-audio-heading">
+                  <span><Volume2 size={15} /> Sound</span>
+                  <button
+                    type="button"
+                    onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open", { force: true })}
+                    disabled={!preferences.soundEffects && !preferences.notificationSounds}
+                  >
+                    Preview
+                  </button>
+                </div>
+                <div className="settings-nav-style settings-nav-style-three" aria-label="Sound toggles">
+                  <span>Audio modes</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={preferences.soundEffects ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.soundEffects}
+                      onClick={() => {
+                        const next = !preferences.soundEffects;
+                        setPreferences({ soundEffects: next });
+                        if (next) playZenithSound("open", { force: true });
+                      }}
+                    >
+                      SFX
+                    </button>
+                    <button
+                      type="button"
+                      className={preferences.notificationSounds ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.notificationSounds}
+                      onClick={() => {
+                        const next = !preferences.notificationSounds;
+                        setPreferences({ notificationSounds: next });
+                        if (next) playZenithSound("notify", { force: true });
+                      }}
+                    >
+                      Notices
+                    </button>
+                    <button
+                      type="button"
+                      className={preferences.ambientMusic ? "settings-nav-style-active" : ""}
+                      aria-pressed={preferences.ambientMusic}
+                      onClick={() => {
+                        const next = !preferences.ambientMusic;
+                        setPreferences({ ambientMusic: next });
+                        if (next) playZenithSound("lofi", { force: true });
+                      }}
+                    >
+                      Lo-fi
+                    </button>
+                  </div>
+                </div>
+                <label className="settings-audio-volume">
+                  <span>Volume <strong>{preferences.audioVolume ?? 35}%</strong></span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={preferences.audioVolume ?? 35}
+                    onChange={(event) => setAudioVolume(Number(event.target.value))}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="settings-panel">
@@ -364,70 +428,6 @@ export default function SettingsPage() {
                     Disabled
                   </button>
                 </div>
-              </div>
-              <div className="settings-audio-panel" aria-label="Sound settings">
-                <div className="settings-audio-heading">
-                  <span><Volume2 size={15} /> Sound</span>
-                  <button
-                    type="button"
-                    onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open", { force: true })}
-                    disabled={!preferences.soundEffects && !preferences.notificationSounds}
-                  >
-                    Preview
-                  </button>
-                </div>
-                <div className="settings-nav-style settings-nav-style-three" aria-label="Sound toggles">
-                  <span>Audio modes</span>
-                  <div>
-                    <button
-                      type="button"
-                      className={preferences.soundEffects ? "settings-nav-style-active" : ""}
-                      aria-pressed={preferences.soundEffects}
-                      onClick={() => {
-                        const next = !preferences.soundEffects;
-                        setPreferences({ soundEffects: next });
-                        if (next) playZenithSound("open", { force: true });
-                      }}
-                    >
-                      SFX
-                    </button>
-                    <button
-                      type="button"
-                      className={preferences.notificationSounds ? "settings-nav-style-active" : ""}
-                      aria-pressed={preferences.notificationSounds}
-                      onClick={() => {
-                        const next = !preferences.notificationSounds;
-                        setPreferences({ notificationSounds: next });
-                        if (next) playZenithSound("notify", { force: true });
-                      }}
-                    >
-                      Notices
-                    </button>
-                    <button
-                      type="button"
-                      className={preferences.ambientMusic ? "settings-nav-style-active" : ""}
-                      aria-pressed={preferences.ambientMusic}
-                      onClick={() => {
-                        const next = !preferences.ambientMusic;
-                        setPreferences({ ambientMusic: next });
-                        if (next) playZenithSound("lofi", { force: true });
-                      }}
-                    >
-                      Lo-fi
-                    </button>
-                  </div>
-                </div>
-                <label className="settings-audio-volume">
-                  <span>Volume <strong>{preferences.audioVolume ?? 35}%</strong></span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={preferences.audioVolume ?? 35}
-                    onChange={(event) => setAudioVolume(Number(event.target.value))}
-                  />
-                </label>
               </div>
             </div>
           </div>

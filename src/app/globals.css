@@ -9191,7 +9191,7 @@ kbd {
 .settings-compact-row {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(24rem, 1.25fr);
   min-width: 0;
 }
 
@@ -9318,7 +9318,7 @@ kbd {
     rgba(255,255,255,0.018);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  margin-top: 0.78rem;
+  margin-top: 1rem;
   padding: 0.72rem;
 }
 
@@ -9547,6 +9547,10 @@ kbd {
 @media (max-width: 1320px) {
   .settings-page .settings-panel {
     grid-column: span 6;
+  }
+
+  .settings-compact-row .settings-panel {
+    grid-column: auto;
   }
 
   .settings-primary-column {
