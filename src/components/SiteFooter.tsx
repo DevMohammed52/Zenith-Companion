@@ -1,7 +1,7 @@
 import { Coffee, ExternalLink, MessageCircle, ShieldCheck } from "lucide-react";
 
 const idleMmoProfileUrl = "https://web.idle-mmo.com/@D3vxGh0st";
-const discordHandle = "D3vxGh0st";
+const discordHandle = "d3v_gh0st";
 
 export default function SiteFooter() {
   return (
