@@ -2317,6 +2317,15 @@ export default function ProfilesPage() {
                   <span>Never paste an IdleMMO API key here.</span>
                 </div>
               </div>
+              <details className="profile-import-help">
+                <summary>How do I find my hashed character ID?</summary>
+                <ol>
+                  <li>Open IdleMMO, go to Settings, then find the Account section.</li>
+                  <li>Enable <strong>Show Hashed Identifiers</strong>.</li>
+                  <li>Open the character profile you want to import.</li>
+                  <li>Scroll to the Information box and copy the character&apos;s Hashed ID below Birth Date.</li>
+                </ol>
+              </details>
               <div className={`profile-live-import-form ${TURNSTILE_SITE_KEY ? "has-turnstile" : ""}`}>
                 <label>
                   <span>Character hashed ID</span>
