@@ -34,6 +34,7 @@ export type Preferences = {
   notificationSounds: boolean;
   ambientMusic: boolean;
   audioVolume: number;
+  mobileHaptics: boolean;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -61,6 +62,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   notificationSounds: false,
   ambientMusic: false,
   audioVolume: 35,
+  mobileHaptics: true,
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";

@@ -409,6 +409,27 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+              <div className="settings-nav-style settings-mobile-only" aria-label="Mobile haptic feedback">
+                <span><Compass size={15} /> Touch feedback</span>
+                <div>
+                  <button
+                    type="button"
+                    className={preferences.mobileHaptics ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.mobileHaptics}
+                    onClick={() => setPreferences({ mobileHaptics: true })}
+                  >
+                    Subtle
+                  </button>
+                  <button
+                    type="button"
+                    className={!preferences.mobileHaptics ? "settings-nav-style-active" : ""}
+                    aria-pressed={!preferences.mobileHaptics}
+                    onClick={() => setPreferences({ mobileHaptics: false })}
+                  >
+                    Off
+                  </button>
+                </div>
+              </div>
               <div className="settings-nav-style" aria-label="In-app notification tips">
                 <span><Bell size={15} /> Tips and notices</span>
                 <div>

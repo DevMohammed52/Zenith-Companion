@@ -57,6 +57,12 @@ import {
 } from "@/lib/profile-calculations";
 import { ASSAULT_OPTIONS, type AssaultRank } from "@/lib/skill-profit";
 import { calculateHousingBuffs, canUseHousingGuestAccess, formatHours, getHousingActivityLabel } from "@/lib/housing";
+import {
+  formatProfileBackupAge,
+  getLastProfileBackupAt,
+  markProfileBackupCopied,
+  PROFILE_BACKUP_DUE_MS,
+} from "@/lib/local-backup";
 
 const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
   ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
@@ -399,6 +405,17 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   );
 }
 
+function buildProfileCopySummary(profile: CharacterProfile) {
+  return [
+    `${profile.name || "Unnamed Character"} (${profile.kind === "main" ? "main" : "alt"})`,
+    `Class: ${profile.className || "Unknown"}`,
+    `Total Level: ${Number(profile.levels.totalLevel || 0).toLocaleString()}`,
+    `Combat: ${Number(profile.levels.combat || 0).toLocaleString()}`,
+    `Location: ${profile.location?.name || "Not imported"}`,
+    profile.guild?.tag ? `Guild: ${profile.guild.tag}` : "",
+  ].filter(Boolean).join("\n");
+}
+
 function formatFieldSourceLabel(source: ProfileFieldSource["source"]) {
   if (source === "imported") return "Imported";
   if (source === "calculated") return "Calculated";
@@ -665,6 +682,7 @@ export default function ProfilesPage() {
   const [turnstileReady, setTurnstileReady] = useState(!TURNSTILE_SITE_KEY);
   const [turnstileError, setTurnstileError] = useState("");
   const [toast, setToast] = useState("");
+  const [lastBackupAt, setLastBackupAt] = useState(0);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"restore" | "delete" | null>(null);
   const [activeProfileSection, setActiveProfileSection] = useState<ProfileSectionId>("identity");
@@ -680,6 +698,7 @@ export default function ProfilesPage() {
   const lastPetStatKey = useRef("");
 
   const profile = activeProfile;
+  const backupDue = state.profiles.length > 0 && (!lastBackupAt || Date.now() - lastBackupAt > PROFILE_BACKUP_DUE_MS);
   const needsItemData = activeProfileSection === "gear";
   const needsPetData = activeProfileSection === "pet" || activeProfileSection === "levels";
   const { allItemsDb } = useData({ autoLoad: needsItemData });
@@ -708,6 +727,10 @@ export default function ProfilesPage() {
     const timeout = window.setTimeout(() => setToast(""), 3500);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    setLastBackupAt(getLastProfileBackupAt());
+  }, []);
 
   useEffect(() => {
     const syncSectionFromHash = () => {
@@ -1029,11 +1052,27 @@ export default function ProfilesPage() {
   const handleExport = async () => {
     const payload = exportProfiles();
     setTransferText(payload);
+    markProfileBackupCopied();
+    setLastBackupAt(getLastProfileBackupAt());
     try {
       await navigator.clipboard?.writeText(payload);
       setToast("Profile export copied to clipboard.");
     } catch {
       setToast("Profile export generated below.");
+    }
+  };
+
+  const handleCopyValue = async (label: string, value: string) => {
+    const text = value.trim();
+    if (!text) {
+      setToast(`${label} is empty.`);
+      return;
+    }
+    try {
+      await navigator.clipboard?.writeText(text);
+      setToast(`${label} copied.`);
+    } catch {
+      setToast(`${label}: ${text}`);
     }
   };
 
@@ -1731,6 +1770,18 @@ export default function ProfilesPage() {
         </em>
       </a>
 
+      <div className={`profile-backup-reminder ${backupDue ? "profile-backup-reminder-due" : ""}`}>
+        <div>
+          <strong>Local browser data</strong>
+          <span>
+            Profiles are saved only in this browser. {formatProfileBackupAge(lastBackupAt)}
+          </span>
+        </div>
+        <button type="button" className="profile-action" onClick={handleExport}>
+          <Download size={15} /> Copy backup
+        </button>
+      </div>
+
       <section className="profile-layout" aria-label="Profile manager">
         <section className="profile-list-panel" aria-labelledby="profile-list-heading">
           <div className="profile-count">
@@ -1801,6 +1852,19 @@ export default function ProfilesPage() {
                   <span>Total Lv. {profile.levels.totalLevel || 0}</span>
                   <span>{profile.location?.name || "No location imported"}</span>
                   {profile.guild?.tag && <span>Guild {profile.guild.tag}</span>}
+                </div>
+                <div className="profile-copy-row" aria-label="Copy profile values">
+                  <button type="button" onClick={() => handleCopyValue("Profile summary", buildProfileCopySummary(profile))}>
+                    <Copy size={14} /> Summary
+                  </button>
+                  <button type="button" onClick={() => handleCopyValue("Profile name", profile.name || "")}>
+                    <Copy size={14} /> Name
+                  </button>
+                  {profile.importSource.characterHashTail && (
+                    <button type="button" onClick={() => handleCopyValue("Character hash tail", profile.importSource.characterHashTail || "")}>
+                      <Copy size={14} /> Hash tail
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isProfileBackupDue } from "@/lib/local-backup";
 import { notifyZenith } from "@/lib/notifications";
 import { useProfiles } from "@/lib/profiles";
 
@@ -12,6 +13,7 @@ export default function LocalBackupReminder() {
 
   useEffect(() => {
     if (!loaded || state.profiles.length === 0) return;
+    if (!isProfileBackupDue(state.profiles.length)) return;
     const stored = window.localStorage.getItem(BACKUP_REMINDER_KEY);
     const lastShown = stored ? Number(stored) : 0;
     if (Number.isFinite(lastShown) && Date.now() - lastShown < BACKUP_REMINDER_INTERVAL_MS) return;
