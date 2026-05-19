@@ -16359,9 +16359,27 @@ kbd {
 
   .profile-live-import-copy,
   .profile-live-import-form,
+  .profile-live-import-form.has-turnstile,
   .profile-live-import-status,
   .profile-live-import-character {
     grid-template-columns: 1fr;
+  }
+
+  .profile-turnstile {
+    justify-items: start;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+  }
+
+  .profile-turnstile span {
+    text-align: left;
+  }
+
+  .profile-live-import-form .profile-action {
+    justify-content: center;
+    min-height: 3rem;
+    width: 100%;
   }
 
   .profile-live-import-result-heading {
@@ -16377,6 +16395,19 @@ kbd {
     grid-template-columns: 1fr;
   }
 
+}
+
+@media (max-width: 360px) {
+  .profile-turnstile > div {
+    transform: scale(0.9);
+    transform-origin: left top;
+  }
+}
+
+@media (max-width: 330px) {
+  .profile-turnstile > div {
+    transform: scale(0.82);
+  }
 }
 
 .profile-toast {
