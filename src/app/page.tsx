@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Settings, Upload, UserRound } from "lucide-react";
 import ZenithIcon, { type ZenithIconName } from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { useCrafting } from "@/context/CraftingContext";
 import { formatGold } from "@/lib/format";
 import { usePreferences } from "@/lib/preferences";
-import { useProfiles } from "@/lib/profiles";
+import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
@@ -104,6 +104,7 @@ function formatAge(minutes: number | null) {
 export default function DashboardPage() {
   const { preferences } = usePreferences();
   const { activeProfile, state: profileState } = useProfiles();
+  const needsProfileSetup = !activeProfile || isStarterProfile(activeProfile);
   const { queue } = useCrafting();
   const { marketData, allItemsDb } = useData();
 
@@ -217,6 +218,21 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {needsProfileSetup && (
+        <section className="dashboard-setup-state" aria-label="Recommended setup">
+          <div>
+            <span>Recommended setup</span>
+            <h2>Start with a profile before trusting route numbers.</h2>
+            <p>Zenith can still be explored without setup, but profile import unlocks character-aware tools, buffs, magic find, pets, housing, and better defaults.</p>
+          </div>
+          <div className="dashboard-setup-actions">
+            <Link href="/profiles"><UserRound size={16} /> Create or import profile</Link>
+            <Link href="/settings"><Settings size={16} /> Check settings</Link>
+            <Link href="/profiles"><Upload size={16} /> Backup local data</Link>
+          </div>
+        </section>
+      )}
 
       <section className="command-primary-grid" aria-label="Priority tools">
         <Link href="/skill-profit" className="command-priority-card command-priority-strong">

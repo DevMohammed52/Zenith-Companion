@@ -23,7 +23,7 @@ import {
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import { playZenithSound } from "@/lib/audio";
 import ZenithIcon from "@/components/icons/ZenithIcon";
-import { useProfiles } from "@/lib/profiles";
+import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
 import { getSafeMarketPrice, getSafeMarketValue } from "@/lib/market-pricing";
@@ -118,6 +118,7 @@ function ToolPicker({
 export default function SettingsPage() {
   const { preferences, setPreferences } = usePreferences();
   const { activeProfile } = useProfiles();
+  const needsProfileSetup = !activeProfile || isStarterProfile(activeProfile);
   const { allItemsDb, marketData, staticData } = useData();
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
@@ -327,7 +328,7 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-              <div className="settings-nav-style" aria-label="Desktop navigation style">
+              <div className="settings-nav-style settings-desktop-only" aria-label="Desktop navigation style">
                 <span><Compass size={15} /> Desktop navigation</span>
                 <div>
                   {([
@@ -347,7 +348,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               {preferences.desktopNavigationStyle === "dock" && (
-                <div className="settings-nav-style settings-nav-style-three" aria-label="Desktop dock position">
+                <div className="settings-nav-style settings-nav-style-three settings-desktop-only" aria-label="Desktop dock position">
                   <span><Compass size={15} /> Dock position</span>
                   <div>
                     {(["bottom", "left", "right"] as const).map((position) => (
@@ -364,7 +365,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
-              <div className="settings-nav-style" aria-label="Mobile navigation style">
+              <div className="settings-nav-style settings-mobile-only" aria-label="Mobile navigation style">
                 <span><Compass size={15} /> Mobile navigation</span>
                 <div>
                   <button
@@ -386,7 +387,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               {preferences.mobileNavigationStyle === "command" && (
-                <div className="settings-nav-style" aria-label="Radial menu thumb side">
+                <div className="settings-nav-style settings-mobile-only" aria-label="Radial menu thumb side">
                   <span><Compass size={15} /> Radial reach</span>
                   <div>
                     <button
@@ -468,17 +469,27 @@ export default function SettingsPage() {
         <div className="settings-panel">
           <h2><UserRound size={17} /> Active Profile Values</h2>
           <p className="settings-panel-note">Read-only values from the active profile. Edit character-owned stats from Profiles.</p>
-          <div className="settings-active-profile">
-            <strong>{activeProfile?.name?.trim() || "No active profile"}</strong>
-            <span>{profileLabel}</span>
-          </div>
-          <div className="profile-settings-readout">
-            <div><span>Bartering Level</span><strong>{Number(activeProfile?.boosts.barteringLevel || 0).toLocaleString()}</strong><small>+{profileBarteringPercent}% vendor value</small></div>
-            <div><span>Conquest</span><strong>{profileConquest === "none" ? "None" : profileConquest}</strong><small>Used by supported profit views</small></div>
-            <div><span>Daily Streak</span><strong>{Number(activeProfile?.magicFind.dailyStreak || 0).toLocaleString()}</strong><small>+{profileDailyBonus}% magic find cap</small></div>
-            <div><span>Magic Find</span><strong>{Number(activeProfile?.magicFind.combat || 0)} / {Number(activeProfile?.magicFind.dungeon || 0)} / {Number(activeProfile?.magicFind.worldBoss || 0)}</strong><small>Combat / dungeon / world boss</small></div>
-          </div>
-          <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-magic">Edit Profile Values <ExternalLink size={14} /></Link>
+          {!needsProfileSetup && activeProfile ? (
+            <>
+              <div className="settings-active-profile">
+                <strong>{activeProfile.name?.trim() || "No active profile"}</strong>
+                <span>{profileLabel}</span>
+              </div>
+              <div className="profile-settings-readout">
+                <div><span>Bartering Level</span><strong>{Number(activeProfile.boosts.barteringLevel || 0).toLocaleString()}</strong><small>+{profileBarteringPercent}% vendor value</small></div>
+                <div><span>Conquest</span><strong>{profileConquest === "none" ? "None" : profileConquest}</strong><small>Used by supported profit views</small></div>
+                <div><span>Daily Streak</span><strong>{Number(activeProfile.magicFind.dailyStreak || 0).toLocaleString()}</strong><small>+{profileDailyBonus}% magic find cap</small></div>
+                <div><span>Magic Find</span><strong>{Number(activeProfile.magicFind.combat || 0)} / {Number(activeProfile.magicFind.dungeon || 0)} / {Number(activeProfile.magicFind.worldBoss || 0)}</strong><small>Combat / dungeon / world boss</small></div>
+              </div>
+              <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-magic">Edit Profile Values <ExternalLink size={14} /></Link>
+            </>
+          ) : (
+            <div className="settings-empty-state">
+              <strong>Profile setup needed</strong>
+              <span>Import or create a profile so calculators can use your class, tools, buffs, pets, and magic find instead of generic defaults.</span>
+              <Link className="settings-link-button" href="/profiles">Set up profile <ExternalLink size={14} /></Link>
+            </div>
+          )}
         </div>
 
         <div className="settings-panel settings-panel-wide">

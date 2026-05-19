@@ -6,6 +6,8 @@ import ProfileSwitcher from "@/components/ProfileSwitcher";
 import SiteFooter from "@/components/SiteFooter";
 import RotatingTips from "@/components/RotatingTips";
 import ZenithAudio from "@/components/ZenithAudio";
+import FirstRunSetup from "@/components/FirstRunSetup";
+import LocalBackupReminder from "@/components/LocalBackupReminder";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -113,6 +115,8 @@ export default function RootLayout({
                     <DesktopDock />
                     <RotatingTips />
                     <ZenithAudio />
+                    <FirstRunSetup />
+                    <LocalBackupReminder />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />

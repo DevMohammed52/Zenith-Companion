@@ -713,6 +713,20 @@ export function getActiveProfile(state: ProfilesState): CharacterProfile | null 
   return state.profiles.find((profile) => profile.id === state.activeProfileId) || state.profiles[0] || null;
 }
 
+export function isStarterProfile(profile: CharacterProfile | null | undefined) {
+  if (!profile) return false;
+  return (
+    profile.name.trim() === "Main Character" &&
+    profile.className === "Warrior" &&
+    Number(profile.levels.totalLevel || 0) === 20 &&
+    Number(profile.levels.combat || 0) === 1 &&
+    Number(profile.boosts.barteringLevel || 0) === 0 &&
+    profile.importSource.mode === "manual" &&
+    profile.importSource.importedSections.length === 0 &&
+    Object.keys(profile.fieldSources || {}).length === 0
+  );
+}
+
 export function getProfileDungeonStatTotal(profile: CharacterProfile | null | undefined) {
   if (!profile) return 0;
   return (
