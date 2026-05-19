@@ -1,6 +1,6 @@
 "use client";
 
-export type ZenithSoundCue = "ui" | "open" | "close" | "notify" | "success" | "warning" | "contact";
+export type ZenithSoundCue = "ui" | "open" | "close" | "notify" | "success" | "warning" | "contact" | "lofi";
 export type ZenithSoundRequest = {
   cue: ZenithSoundCue;
   force?: boolean;

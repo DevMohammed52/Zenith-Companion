@@ -407,7 +407,11 @@ export default function SettingsPage() {
                       type="button"
                       className={preferences.ambientMusic ? "settings-nav-style-active" : ""}
                       aria-pressed={preferences.ambientMusic}
-                      onClick={() => setPreferences({ ambientMusic: !preferences.ambientMusic })}
+                      onClick={() => {
+                        const next = !preferences.ambientMusic;
+                        setPreferences({ ambientMusic: next });
+                        if (next) playZenithSound("lofi", { force: true });
+                      }}
                     >
                       Lo-fi
                     </button>

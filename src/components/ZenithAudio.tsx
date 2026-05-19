@@ -76,6 +76,10 @@ export default function ZenithAudio() {
 
   const playCue = (cue: ZenithSoundCue, options: { force?: boolean } = {}) => {
     if (!activeRef.current) return;
+    if (cue === "lofi") {
+      startAmbient();
+      return;
+    }
     const notificationCue = cue === "notify" || cue === "success" || cue === "warning" || cue === "contact";
     if (!options.force && notificationCue && !prefsRef.current.notificationSounds) return;
     if (!options.force && !notificationCue && !prefsRef.current.soundEffects) return;
@@ -206,7 +210,7 @@ export default function ZenithAudio() {
     const gain = ctx.createGain();
     const now = ctx.currentTime;
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.setTargetAtTime(outputLevel(0.22), now, 0.55);
+    gain.gain.setTargetAtTime(outputLevel(0.38), now, 0.35);
     gain.connect(ctx.destination);
 
     const nodes: LofiLoopNodes = {
@@ -264,7 +268,7 @@ export default function ZenithAudio() {
     const nodes = lofiRef.current;
     if (nodes && ctxRef.current) {
       const now = ctxRef.current.currentTime;
-      nodes.gain.gain.setTargetAtTime(outputLevel(0.22), now, 0.35);
+      nodes.gain.gain.setTargetAtTime(outputLevel(0.38), now, 0.25);
     }
   }, [loaded, preferences.ambientMusic, preferences.audioVolume]);
 
