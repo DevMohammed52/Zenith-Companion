@@ -4,6 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
 import ProfileSwitcher from "@/components/ProfileSwitcher";
 import SiteFooter from "@/components/SiteFooter";
+import RotatingTips from "@/components/RotatingTips";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -109,6 +110,7 @@ export default function RootLayout({
                     <Sidebar />
                     <MobileCommandWheelHost />
                     <DesktopDock />
+                    <RotatingTips />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />
@@ -212,6 +214,82 @@ export default function RootLayout({
           .site-footer-pill-muted {
             color: rgba(148, 163, 184, 0.66);
           }
+          .rotating-tip {
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 950;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 0.75rem;
+            align-items: start;
+            width: min(380px, calc(100vw - 2rem));
+            padding: 0.85rem;
+            border: 1px solid rgba(96, 165, 250, 0.24);
+            border-radius: 8px;
+            background: rgba(7, 12, 23, 0.94);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+            color: var(--text-secondary);
+            backdrop-filter: blur(16px);
+            animation: rotatingTipIn 180ms ease-out;
+          }
+          .rotating-tip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 7px;
+            background: rgba(59, 130, 246, 0.14);
+            color: rgb(147, 197, 253);
+          }
+          .rotating-tip-copy {
+            display: grid;
+            gap: 0.2rem;
+            min-width: 0;
+            font-size: 0.82rem;
+            line-height: 1.4;
+          }
+          .rotating-tip-copy strong {
+            color: var(--text-primary);
+            font-size: 0.86rem;
+          }
+          .rotating-tip-copy span {
+            overflow-wrap: anywhere;
+          }
+          .rotating-tip button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            cursor: pointer;
+          }
+          .rotating-tip button:hover,
+          .rotating-tip button:focus-visible {
+            color: var(--text-primary);
+            border-color: rgba(148, 163, 184, 0.38);
+            outline: none;
+          }
+          @keyframes rotatingTipIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .rotating-tip {
+              animation: none;
+            }
+          }
           .top-navigation {
             display: none;
           }
@@ -254,6 +332,11 @@ export default function RootLayout({
             }
             .site-footer-actions {
               justify-content: flex-start;
+            }
+            .rotating-tip {
+              right: 0.75rem;
+              bottom: 0.75rem;
+              width: calc(100vw - 1.5rem);
             }
           }
         `}</style>

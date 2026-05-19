@@ -214,7 +214,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       { label: "Dashboard", type: "Page", href: "/", detail: "Overview" },
       { label: "Profiles", type: "Page", href: "/profiles", detail: "Character setups and imports" },
       { label: "Settings", type: "Page", href: "/settings", detail: "Preferences, buffs, and theme" },
-      { label: "Items Database", type: "Page", href: "/items", detail: "Market data repository" },
+      { label: "Items Database", type: "Page", href: "/items", detail: "Market data index" },
       { label: "Enemy Database", type: "Page", href: "/enemies", detail: "Mobs, drops, weather behavior" },
       { label: "Pet Database", type: "Page", href: "/pets", detail: "Pet stats and listings" },
       { label: "Owned Pets", type: "Page", href: "/pets/owned", detail: "Imported and manual pet snapshots" },
