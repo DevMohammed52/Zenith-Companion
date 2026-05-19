@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Compass,
+  Bell,
   Coins,
   Database,
   ExternalLink,
@@ -337,6 +338,27 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+              <div className="settings-nav-style" aria-label="In-app notification tips">
+                <span><Bell size={15} /> Tips and notices</span>
+                <div>
+                  <button
+                    type="button"
+                    className={preferences.inAppNotifications ? "settings-nav-style-active" : ""}
+                    aria-pressed={preferences.inAppNotifications}
+                    onClick={() => setPreferences({ inAppNotifications: true })}
+                  >
+                    Enabled
+                  </button>
+                  <button
+                    type="button"
+                    className={!preferences.inAppNotifications ? "settings-nav-style-active" : ""}
+                    aria-pressed={!preferences.inAppNotifications}
+                    onClick={() => setPreferences({ inAppNotifications: false })}
+                  >
+                    Disabled
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

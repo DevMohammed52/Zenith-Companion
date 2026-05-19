@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useProfiles } from "@/lib/profiles";
+import { notifyZenith } from "@/lib/notifications";
 
 type SearchResult = {
   label: string;
@@ -327,8 +328,17 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       router.push(result.href);
     } else if (result.type === "Item") {
       openItemByName(result.label);
+      notifyZenith({
+        title: "Item opened",
+        body: `${result.label} details opened. Use sources and safe values before planning a bulk trade.`,
+      });
     } else {
       router.push(result.href);
+      notifyZenith({
+        title: `${result.label} opened`,
+        body: result.detail ? `${result.detail}.` : "Page opened from global search.",
+        tone: "success",
+      });
     }
   };
 

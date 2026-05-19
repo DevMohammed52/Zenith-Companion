@@ -29,6 +29,7 @@ export type Preferences = {
   desktopDockPosition: DesktopDockPosition;
   mobileNavigationStyle: MobileNavigationStyle;
   mobileCommandTriggerSide: MobileCommandTriggerSide;
+  inAppNotifications: boolean;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -51,6 +52,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   desktopDockPosition: "bottom",
   mobileNavigationStyle: "standard",
   mobileCommandTriggerSide: "left",
+  inAppNotifications: true,
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";

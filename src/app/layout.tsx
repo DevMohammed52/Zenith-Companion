@@ -243,6 +243,18 @@ export default function RootLayout({
             background: rgba(59, 130, 246, 0.14);
             color: rgb(147, 197, 253);
           }
+          .rotating-tip-success .rotating-tip-icon {
+            background: rgba(34, 197, 94, 0.14);
+            color: rgb(134, 239, 172);
+          }
+          .rotating-tip-warning .rotating-tip-icon {
+            background: rgba(245, 158, 11, 0.15);
+            color: rgb(252, 211, 77);
+          }
+          .rotating-tip-contact .rotating-tip-icon {
+            background: rgba(99, 102, 241, 0.16);
+            color: rgb(165, 180, 252);
+          }
           .rotating-tip-copy {
             display: grid;
             gap: 0.2rem;
@@ -335,7 +347,7 @@ export default function RootLayout({
             }
             .rotating-tip {
               right: 0.75rem;
-              bottom: 0.75rem;
+              bottom: calc(5.65rem + env(safe-area-inset-bottom));
               width: calc(100vw - 1.5rem);
             }
           }
