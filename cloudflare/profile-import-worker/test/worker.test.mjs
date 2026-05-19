@@ -533,6 +533,40 @@ async function json(response) {
 }
 
 {
+  const e = env({ IMPORT_MAX_PENDING: "1" });
+  const first = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.47",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000047",
+    }),
+  }), e);
+  assert.equal(first.status, 202);
+
+  const second = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.48",
+    },
+    body: JSON.stringify({
+      characterHash: "FixtureHash0000000048",
+    }),
+  }), e);
+  const body = await json(second);
+  assert.equal(second.status, 429);
+  assert.equal(body.error.code, "queue_busy");
+  assert.equal(typeof body.retryAfterMs, "number");
+  assert.ok(body.retryAfterMs >= 60000);
+  assert.match(body.error.message, /try again in about/i);
+}
+
+{
   const response = await handleRequest(new Request("https://worker.test/profile-import/start", {
     method: "POST",
     headers: {

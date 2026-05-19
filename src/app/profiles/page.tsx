@@ -292,6 +292,13 @@ function formatWaitTime(ms?: number) {
   return `${minutes} min`;
 }
 
+function getRetryAfterMs(payload: unknown) {
+  if (!isRecord(payload)) return null;
+  if (typeof payload.retryAfterMs === "number") return payload.retryAfterMs;
+  if (typeof payload.pollAfterMs === "number") return payload.pollAfterMs;
+  return null;
+}
+
 type PetPickerValue =
   | { kind: "database"; pet: PetDatabaseRecord }
   | { kind: "owned"; pet: ProfileOwnedPet };
@@ -346,21 +353,23 @@ function parseLiveImportLease(value: string | null): LiveProfileImportLease | nu
   }
 }
 
-function liveProfileImportStatusLabel(status: LiveProfileImportStatus) {
+function liveProfileImportStatusLabel(status: LiveProfileImportStatus, retryAfterMs?: number | null) {
   if (status === "queued") return "Queued";
   if (status === "running") return "Importing";
   if (status === "waiting_for_budget") return "Waiting for safe budget";
   if (status === "done") return "Ready to save";
+  if (status === "error" && retryAfterMs) return "Import paused";
   if (status === "error") return "Import failed";
   if (status === "expired") return "Expired";
   return "Not started";
 }
 
-function liveProfileImportStatusCopy(status: LiveProfileImportStatus) {
+function liveProfileImportStatusCopy(status: LiveProfileImportStatus, retryAfterMs?: number | null) {
   if (status === "queued") return "Your import is queued. Zenith will restore it if you leave this page and come back.";
   if (status === "running") return "Zenith is fetching visible character details. You can leave this page and return later.";
   if (status === "waiting_for_budget") return "Another scraper or import is using the shared budget, so this job is waiting briefly.";
   if (status === "done") return "Choose the character you want, check the summary, then save it to the active profile.";
+  if (status === "error" && retryAfterMs) return "Imports are busy right now. You can close this page and try again after the timer.";
   if (status === "error") return "The import could not finish. Check the message below and try again later.";
   if (status === "expired") return "This import result expired. Start a new import if you still need it.";
   return "Paste a character hash to fetch visible IdleMMO profile details. Nothing is saved until you confirm.";
@@ -371,11 +380,13 @@ function profileDraftDisplayName(draft?: ImportedProfileDraft) {
 }
 
 function getLiveImportErrorMessage(payload: unknown, fallback: string) {
-  const retryText = isRecord(payload) && typeof payload.retryAfterMs === "number"
-    ? formatWaitTime(payload.retryAfterMs)
-    : "";
+  const retryAfterMs = getRetryAfterMs(payload);
+  const retryText = retryAfterMs ? formatWaitTime(retryAfterMs) : "";
   if (isRecord(payload) && isRecord(payload.error) && typeof payload.error.message === "string") {
-    return retryText ? `${payload.error.message} Try again in about ${retryText}.` : payload.error.message;
+    const message = payload.error.message.trim();
+    return retryText && !message.toLowerCase().includes("try again")
+      ? `${message} Try again in about ${retryText}.`
+      : message;
   }
   return retryText ? `${fallback} Try again in about ${retryText}.` : fallback;
 }
@@ -1230,7 +1241,7 @@ export default function ProfilesPage() {
       const nextStatus = (isRecord(payload) && typeof payload.status === "string" ? payload.status : "error") as LiveProfileImportStatus;
       setLiveImportStatus(nextStatus);
       setLiveImportProgress(isRecord(payload) && isRecord(payload.progress) ? payload.progress : null);
-      setLiveImportRetryAfterMs(isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null);
+      setLiveImportRetryAfterMs(getRetryAfterMs(payload));
 
       if (nextStatus === "done") {
         const result = isRecord(payload) && isRecord(payload.result) ? payload.result as LiveProfileImportResult : null;
@@ -1262,7 +1273,7 @@ export default function ProfilesPage() {
           status: nextStatus,
           progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
           error: errorMessage,
-          retryAfterMs: isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null,
+          retryAfterMs: getRetryAfterMs(payload),
         });
         return;
       }
@@ -1272,7 +1283,7 @@ export default function ProfilesPage() {
         status: nextStatus,
         progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
         error: "",
-        retryAfterMs: isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null,
+        retryAfterMs: getRetryAfterMs(payload),
       });
       scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3500);
     } catch (error) {
@@ -1324,7 +1335,7 @@ export default function ProfilesPage() {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setLiveImportRetryAfterMs(isRecord(payload) && typeof payload.retryAfterMs === "number" ? payload.retryAfterMs : null);
+        setLiveImportRetryAfterMs(getRetryAfterMs(payload));
         throw new Error(getLiveImportErrorMessage(payload, "Could not start the import."));
       }
       const jobId = isRecord(payload) && typeof payload.jobId === "string" ? payload.jobId : "";
@@ -2359,8 +2370,8 @@ export default function ProfilesPage() {
               </div>
               <div className={`profile-live-import-status ${liveImportStatus}`} role="status">
                 <div>
-                  <strong>{liveProfileImportStatusLabel(liveImportStatus)}</strong>
-                  <span>{liveImportProgress?.label || liveProfileImportStatusCopy(liveImportStatus)}</span>
+                  <strong>{liveProfileImportStatusLabel(liveImportStatus, liveImportRetryAfterMs)}</strong>
+                  <span>{liveImportProgress?.label || liveProfileImportStatusCopy(liveImportStatus, liveImportRetryAfterMs)}</span>
                 </div>
                 <div>
                   <strong>

@@ -322,11 +322,14 @@ async function handleStartImport(request, env, cors) {
   const maxConcurrent = readPositiveInt(env.IMPORT_MAX_CONCURRENT, 1);
   const queue = await queueCounts(env);
   if (queue.pending >= maxPending || queue.running >= maxConcurrent) {
+    const budget = await importBudgetMode(env);
+    const retryAfterMs = estimateQueueRetryAfterMs(queue, maxConcurrent, env, budget);
     return json({
       error: {
         code: "queue_busy",
-        message: "Imports are temporarily busy. This protects the shared API limit.",
+        message: `Imports are temporarily busy. This protects the shared API limit. Please try again in about ${formatRetryWait(retryAfterMs)}.`,
       },
+      retryAfterMs,
       pollAfterMs: 10000,
     }, 429, cors);
   }
@@ -449,6 +452,20 @@ async function handleImportStatus(jobId, env, cors) {
 function estimateImportDurationMs(requestCount, env, budget = null) {
   const delayMs = budget ? importDelayMsForBudget(env, budget) : readNonNegativeInt(env.IDLEMMO_IMPORT_DELAY_MS, 1800);
   return Math.max(15000, Math.ceil(Number(requestCount || 0) * delayMs + 12000));
+}
+
+function estimateQueueRetryAfterMs(queue, maxConcurrent, env, budget = null) {
+  const requestCap = readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP);
+  const averageImportMs = estimateImportDurationMs(requestCap, env, budget);
+  const activeSlots = Math.max(1, Number(maxConcurrent || 1));
+  const queueAhead = Math.max(1, Number(queue?.running || 0) + Number(queue?.pending || 0) - activeSlots + 1);
+  return Math.min(30 * 60 * 1000, Math.max(60 * 1000, Math.ceil(queueAhead / activeSlots) * averageImportMs));
+}
+
+function formatRetryWait(ms) {
+  const seconds = Math.ceil(Number(ms || 0) / 1000);
+  if (seconds < 90) return `${Math.max(1, seconds)} seconds`;
+  return `${Math.ceil(seconds / 60)} minutes`;
 }
 
 function importProgressLabel(status, budget = null) {
