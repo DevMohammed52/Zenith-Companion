@@ -10,12 +10,11 @@ declare global {
   }
 }
 
-type AmbientNodes = {
+type LofiLoopNodes = {
   gain: GainNode;
-  filter: BiquadFilterNode;
-  oscillators: OscillatorNode[];
-  lfo: OscillatorNode;
-  lfoGain: GainNode;
+  timer: number;
+  nextStep: number;
+  nextTime: number;
 };
 
 const interactiveSelector = [
@@ -31,7 +30,7 @@ const interactiveSelector = [
 export default function ZenithAudio() {
   const { preferences, loaded } = usePreferences();
   const ctxRef = useRef<AudioContext | null>(null);
-  const ambientRef = useRef<AmbientNodes | null>(null);
+  const lofiRef = useRef<LofiLoopNodes | null>(null);
   const lastCueRef = useRef<Record<string, number>>({});
   const prefsRef = useRef(preferences);
 
@@ -122,54 +121,135 @@ export default function ZenithAudio() {
     tone(659.25, 0.13, { gain: 0.026, type: "sine", delay: 0.08 });
   };
 
+  const scheduleKick = (ctx: AudioContext, destination: AudioNode, time: number) => {
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(92, time);
+    oscillator.frequency.exponentialRampToValueAtTime(46, time + 0.16);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(outputLevel(0.16), time + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.28);
+    oscillator.connect(gain).connect(destination);
+    oscillator.start(time);
+    oscillator.stop(time + 0.32);
+  };
+
+  const scheduleNoiseHit = (
+    ctx: AudioContext,
+    destination: AudioNode,
+    time: number,
+    options: { duration: number; gain: number; frequency: number; type: BiquadFilterType },
+  ) => {
+    const samples = Math.max(1, Math.floor(ctx.sampleRate * options.duration));
+    const buffer = ctx.createBuffer(1, samples, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let index = 0; index < samples; index += 1) {
+      data[index] = (Math.random() * 2 - 1) * (1 - index / samples);
+    }
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    source.buffer = buffer;
+    filter.type = options.type;
+    filter.frequency.setValueAtTime(options.frequency, time);
+    filter.Q.setValueAtTime(0.7, time);
+    gain.gain.setValueAtTime(outputLevel(options.gain), time);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + options.duration);
+    source.connect(filter).connect(gain).connect(destination);
+    source.start(time);
+  };
+
+  const scheduleChord = (ctx: AudioContext, destination: AudioNode, time: number, root: number) => {
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(900, time);
+    filter.Q.setValueAtTime(0.45, time);
+    filter.connect(destination);
+
+    [root, root * 1.25, root * 1.5].forEach((frequency, index) => {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(frequency, time);
+      oscillator.detune.setValueAtTime(index === 1 ? -7 : index === 2 ? 5 : -3, time);
+      gain.gain.setValueAtTime(0.0001, time);
+      gain.gain.linearRampToValueAtTime(outputLevel(0.032), time + 0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.82);
+      oscillator.connect(gain).connect(filter);
+      oscillator.start(time);
+      oscillator.stop(time + 0.9);
+    });
+  };
+
   const stopAmbient = () => {
-    const nodes = ambientRef.current;
+    const nodes = lofiRef.current;
     if (!nodes) return;
     const ctx = ctxRef.current;
     const now = ctx?.currentTime ?? 0;
     try {
       nodes.gain.gain.cancelScheduledValues(now);
-      nodes.gain.gain.setTargetAtTime(0.0001, now, 0.45);
-      window.setTimeout(() => {
-        nodes.oscillators.forEach((oscillator) => {
-          try { oscillator.stop(); } catch {}
-        });
-        try { nodes.lfo.stop(); } catch {}
-      }, 800);
+      nodes.gain.gain.setTargetAtTime(0.0001, now, 0.25);
+      window.clearInterval(nodes.timer);
     } catch {}
-    ambientRef.current = null;
+    lofiRef.current = null;
   };
 
   const startAmbient = () => {
-    if (ambientRef.current) return;
+    if (lofiRef.current) return;
     const ctx = ensureContext();
     if (!ctx) return;
     const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
     const now = ctx.currentTime;
-    const oscillators = [196, 246.94, 329.63].map((frequency, index) => {
-      const oscillator = ctx.createOscillator();
-      oscillator.type = index === 1 ? "triangle" : "sine";
-      oscillator.frequency.setValueAtTime(frequency, now);
-      oscillator.detune.setValueAtTime(index === 0 ? -5 : index === 1 ? 3 : 8, now);
-      oscillator.connect(filter);
-      oscillator.start(now);
-      return oscillator;
-    });
-
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(720, now);
-    filter.Q.setValueAtTime(0.35, now);
-    lfo.frequency.setValueAtTime(0.045, now);
-    lfoGain.gain.setValueAtTime(outputLevel(0.012), now);
-    lfo.connect(lfoGain).connect(gain.gain);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.setTargetAtTime(outputLevel(0.035), now, 1.8);
-    filter.connect(gain).connect(ctx.destination);
-    lfo.start(now);
-    ambientRef.current = { gain, filter, oscillators, lfo, lfoGain };
+    gain.gain.setTargetAtTime(outputLevel(0.22), now, 0.55);
+    gain.connect(ctx.destination);
+
+    const nodes: LofiLoopNodes = {
+      gain,
+      timer: 0,
+      nextStep: 0,
+      nextTime: now + 0.08,
+    };
+
+    const stepDuration = 0.48;
+    const chords = [174.61, 146.83, 164.81, 130.81];
+    const schedule = () => {
+      const live = lofiRef.current;
+      if (!live) return;
+      while (live.nextTime < ctx.currentTime + 0.75) {
+        const step = live.nextStep % 16;
+        const bar = Math.floor(live.nextStep / 16) % chords.length;
+
+        if (step === 0 || step === 8) scheduleKick(ctx, live.gain, live.nextTime);
+        if (step === 4 || step === 12) {
+          scheduleNoiseHit(ctx, live.gain, live.nextTime, {
+            duration: 0.16,
+            gain: 0.052,
+            frequency: 1550,
+            type: "bandpass",
+          });
+        }
+        if (step % 2 === 1) {
+          scheduleNoiseHit(ctx, live.gain, live.nextTime, {
+            duration: 0.045,
+            gain: 0.018,
+            frequency: 5200,
+            type: "highpass",
+          });
+        }
+        if (step === 0 || step === 6 || step === 10) {
+          scheduleChord(ctx, live.gain, live.nextTime + 0.025, chords[bar]);
+        }
+
+        live.nextStep += 1;
+        live.nextTime += stepDuration;
+      }
+    };
+
+    schedule();
+    nodes.timer = window.setInterval(schedule, 180);
+    lofiRef.current = nodes;
   };
 
   useEffect(() => {
@@ -177,11 +257,10 @@ export default function ZenithAudio() {
     if (preferences.ambientMusic) startAmbient();
     else stopAmbient();
 
-    const nodes = ambientRef.current;
+    const nodes = lofiRef.current;
     if (nodes && ctxRef.current) {
       const now = ctxRef.current.currentTime;
-      nodes.gain.gain.setTargetAtTime(outputLevel(0.035), now, 0.35);
-      nodes.lfoGain.gain.setTargetAtTime(outputLevel(0.012), now, 0.35);
+      nodes.gain.gain.setTargetAtTime(outputLevel(0.22), now, 0.35);
     }
   }, [loaded, preferences.ambientMusic, preferences.audioVolume]);
 

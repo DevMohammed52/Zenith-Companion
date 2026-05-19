@@ -409,7 +409,7 @@ export default function SettingsPage() {
                       aria-pressed={preferences.ambientMusic}
                       onClick={() => setPreferences({ ambientMusic: !preferences.ambientMusic })}
                     >
-                      Ambient
+                      Lo-fi
                     </button>
                   </div>
                 </div>
