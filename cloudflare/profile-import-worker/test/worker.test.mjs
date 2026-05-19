@@ -150,6 +150,38 @@ class MemoryD1 {
       const cooldown = this.cooldowns.get(`${scope}:${fingerprint}`);
       return cooldown && cooldown.until_at > now ? cooldown : null;
     }
+    if (sql.includes("unique_import_users_all_time")) {
+      const [dayAgo, weekAgo, fifteenAgo, hourAgo, usersDayAgo, usersWeekAgo, charactersDayAgo, charactersWeekAgo] = args;
+      const jobs = Array.from(this.jobs.values());
+      return {
+        jobs_last_24h: jobs.filter((job) => job.created_at >= dayAgo).length,
+        jobs_last_7d: jobs.filter((job) => job.created_at >= weekAgo).length,
+        active_import_users_15m: distinctCount(jobs.filter((job) => job.created_at >= fifteenAgo), "requester_fingerprint"),
+        active_import_users_1h: distinctCount(jobs.filter((job) => job.created_at >= hourAgo), "requester_fingerprint"),
+        unique_import_users_24h: distinctCount(jobs.filter((job) => job.created_at >= usersDayAgo), "requester_fingerprint"),
+        unique_import_users_7d: distinctCount(jobs.filter((job) => job.created_at >= usersWeekAgo), "requester_fingerprint"),
+        unique_import_users_all_time: distinctCount(jobs, "requester_fingerprint"),
+        unique_characters_24h: distinctCount(jobs.filter((job) => job.created_at >= charactersDayAgo), "target_hash_fingerprint"),
+        unique_characters_7d: distinctCount(jobs.filter((job) => job.created_at >= charactersWeekAgo), "target_hash_fingerprint"),
+        unique_characters_all_time: distinctCount(jobs, "target_hash_fingerprint"),
+      };
+    }
+    if (sql.includes("SELECT COUNT(*) AS count") && sql.includes("FROM import_jobs")) {
+      const [createdAfter] = args;
+      return { count: Array.from(this.jobs.values()).filter((job) => job.created_at >= createdAfter).length };
+    }
+    if (sql.includes("oldest_queued_at")) {
+      const [now] = args;
+      const active = Array.from(this.jobs.values()).filter((job) => job.expires_at > now);
+      const queued = active.filter((job) => job.status === "queued").sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+      const running = active
+        .filter((job) => ["running", "waiting_for_budget"].includes(job.status))
+        .sort((a, b) => a.updated_at.localeCompare(b.updated_at))[0];
+      return {
+        oldest_queued_at: queued?.created_at || null,
+        oldest_running_at: running?.updated_at || null,
+      };
+    }
     if (sql.includes("SUM(CASE WHEN status = 'queued'")) {
       const [now] = args;
       let pending = 0;
@@ -160,6 +192,25 @@ class MemoryD1 {
         if (job.status === "running" || job.status === "waiting_for_budget") running += 1;
       }
       return { pending, running };
+    }
+    if (sql.includes("COUNT(*) AS total") && sql.includes("avg_duration_seconds")) {
+      const [createdAfter] = args;
+      const jobs = Array.from(this.jobs.values()).filter((job) => job.created_at >= createdAfter);
+      const completed = jobs.filter((job) => job.status === "complete");
+      return {
+        total: jobs.length,
+        completed: completed.length,
+        failed: jobs.filter((job) => job.status === "failed").length,
+        waiting_for_budget: jobs.filter((job) => job.status === "waiting_for_budget").length,
+        rate_limited: jobs.filter((job) => job.error_code === "rate_limited").length,
+        avg_request_count: average(completed.map((job) => Number(job.request_count || 0))),
+        avg_retry_count: average(completed.map((job) => Number(job.retry_count || 0))),
+        avg_duration_seconds: average(completed.map((job) => {
+          const start = new Date(job.created_at).getTime();
+          const end = new Date(job.updated_at).getTime();
+          return Number.isFinite(start) && Number.isFinite(end) ? (end - start) / 1000 : 0;
+        })),
+      };
     }
     if (sql.includes("SELECT id FROM import_jobs") && sql.includes("LIMIT 1")) {
       const [now] = args;
@@ -205,6 +256,14 @@ class MemoryD1 {
   }
 }
 
+function average(values) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+}
+
+function distinctCount(rows, key) {
+  return new Set(rows.map((row) => row[key]).filter(Boolean)).size;
+}
+
 function env(overrides = {}) {
   return {
     DB: new MemoryD1(),
@@ -236,6 +295,31 @@ async function json(response) {
 
 {
   const e = env();
+  const now = new Date();
+  e.DB.jobs.set("imp_recent_1", {
+    id: "imp_recent_1",
+    status: "complete",
+    target_hash_fingerprint: "hash-a",
+    requester_fingerprint: "user-a",
+    request_count: 14,
+    retry_count: 1,
+    budget_mode: "normal",
+    created_at: new Date(now.getTime() - 10 * 60 * 1000).toISOString(),
+    updated_at: new Date(now.getTime() - 8 * 60 * 1000).toISOString(),
+    expires_at: new Date(now.getTime() + 50 * 60 * 1000).toISOString(),
+  });
+  e.DB.jobs.set("imp_recent_2", {
+    id: "imp_recent_2",
+    status: "queued",
+    target_hash_fingerprint: "hash-b",
+    requester_fingerprint: "user-b",
+    request_count: 0,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
+    updated_at: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
+    expires_at: new Date(now.getTime() + 55 * 60 * 1000).toISOString(),
+  });
   const unauthorized = await handleRequest(new Request("https://worker.test/admin/import-health"), e);
   assert.equal(unauthorized.status, 401);
 
@@ -247,6 +331,10 @@ async function json(response) {
   assert.equal(body.ok, true);
   assert.equal(body.service.worker, "zenith-profile-import");
   assert.equal(typeof body.queue.pending, "number");
+  assert.equal(body.demand.activeImportUsers15m, 2);
+  assert.equal(body.demand.uniqueCharacters24h, 2);
+  assert.equal(body.last24h.completionRate, 50);
+  assert.equal(typeof body.pressure.oldestQueuedSeconds, "number");
   assert.equal(Array.isArray(body.recentJobs), true);
   assert.equal(JSON.stringify(body).includes("target_hash"), false);
   assert.equal(JSON.stringify(body).includes("result_json"), false);

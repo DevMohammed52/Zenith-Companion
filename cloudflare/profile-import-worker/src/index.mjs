@@ -90,9 +90,12 @@ async function handleAdminImportHealth(request, env, cors) {
   assertBindings(env);
 
   const now = new Date();
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const queue = await queueCounts(env);
   const cooldowns = await cooldownSummary(env, now);
+  const demand = await importDemandSummary(env, now);
+  const pressure = await queuePressure(env, now);
   const statusRows = await env.DB.prepare(`
     SELECT status, COUNT(*) AS count
     FROM import_jobs
@@ -143,8 +146,15 @@ async function handleAdminImportHealth(request, env, cors) {
       avgRequestCount: roundMetric(summary?.avg_request_count),
       avgRetryCount: roundMetric(summary?.avg_retry_count),
       avgDurationSeconds: roundMetric(summary?.avg_duration_seconds),
+      completionRate: percentage(summary?.completed, summary?.total),
+      failureRate: percentage(summary?.failed, summary?.total),
       statuses: Object.fromEntries((statusRows.results || []).map((row) => [row.status, Number(row.count || 0)])),
     },
+    demand: {
+      ...demand,
+      jobsLastHour: await countJobsSince(env, hourAgo),
+    },
+    pressure,
     coordinator: coordinatorStates.map((state) => ({
       active: Boolean(state.active && !isExpiredIso(state.expiresAt)),
       status: cleanString(state.status, 24),
@@ -168,6 +178,64 @@ async function handleAdminImportHealth(request, env, cors) {
       expired: isExpiredIso(row.expires_at),
     })),
   }, 200, cors);
+}
+
+async function importDemandSummary(env, now) {
+  const fifteenAgo = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+  const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const row = await env.DB.prepare(`
+    SELECT
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS jobs_last_24h,
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS jobs_last_7d,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN requester_fingerprint ELSE NULL END) AS active_import_users_15m,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN requester_fingerprint ELSE NULL END) AS active_import_users_1h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN requester_fingerprint ELSE NULL END) AS unique_import_users_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN requester_fingerprint ELSE NULL END) AS unique_import_users_7d,
+      COUNT(DISTINCT requester_fingerprint) AS unique_import_users_all_time,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_7d,
+      COUNT(DISTINCT target_hash_fingerprint) AS unique_characters_all_time
+    FROM import_jobs
+  `).bind(dayAgo, weekAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo).first();
+
+  return {
+    jobsLast24h: Number(row?.jobs_last_24h || 0),
+    jobsLast7d: Number(row?.jobs_last_7d || 0),
+    activeImportUsers15m: Number(row?.active_import_users_15m || 0),
+    activeImportUsers1h: Number(row?.active_import_users_1h || 0),
+    uniqueImportUsers24h: Number(row?.unique_import_users_24h || 0),
+    uniqueImportUsers7d: Number(row?.unique_import_users_7d || 0),
+    uniqueImportUsersAllTime: Number(row?.unique_import_users_all_time || 0),
+    uniqueCharacters24h: Number(row?.unique_characters_24h || 0),
+    uniqueCharacters7d: Number(row?.unique_characters_7d || 0),
+    uniqueCharactersAllTime: Number(row?.unique_characters_all_time || 0),
+  };
+}
+
+async function countJobsSince(env, createdAfter) {
+  const row = await env.DB.prepare(`
+    SELECT COUNT(*) AS count
+    FROM import_jobs
+    WHERE created_at >= ?
+  `).bind(createdAfter).first();
+  return Number(row?.count || 0);
+}
+
+async function queuePressure(env, now) {
+  const row = await env.DB.prepare(`
+    SELECT
+      MIN(CASE WHEN status = 'queued' THEN created_at ELSE NULL END) AS oldest_queued_at,
+      MIN(CASE WHEN status IN ('running', 'waiting_for_budget') THEN updated_at ELSE NULL END) AS oldest_running_at
+    FROM import_jobs
+    WHERE expires_at > ?
+  `).bind(now.toISOString()).first();
+
+  return {
+    oldestQueuedSeconds: secondsSince(row?.oldest_queued_at, now),
+    oldestRunningSeconds: secondsSince(row?.oldest_running_at, now),
+  };
 }
 
 async function handleScraperStatus(request, env, cors) {
@@ -908,6 +976,19 @@ function readNonNegativeInt(value, fallback) {
 function roundMetric(value) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.round(number * 10) / 10 : 0;
+}
+
+function percentage(part, total) {
+  const denominator = Number(total);
+  if (!Number.isFinite(denominator) || denominator <= 0) return 0;
+  return roundMetric((Number(part || 0) / denominator) * 100);
+}
+
+function secondsSince(value, now) {
+  if (!value) return 0;
+  const started = new Date(value).getTime();
+  if (!Number.isFinite(started)) return 0;
+  return Math.max(0, Math.round((now.getTime() - started) / 1000));
 }
 
 function coordinatorKey(source) {

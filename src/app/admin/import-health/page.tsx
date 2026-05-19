@@ -7,10 +7,13 @@ import {
   CheckCircle2,
   Clock,
   Database,
+  Gauge,
   Loader2,
   Lock,
   RefreshCw,
   ShieldCheck,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 
 type ImportHealth = {
@@ -40,7 +43,26 @@ type ImportHealth = {
     avgRequestCount: number;
     avgRetryCount: number;
     avgDurationSeconds: number;
+    completionRate: number;
+    failureRate: number;
     statuses: Record<string, number>;
+  };
+  demand: {
+    jobsLastHour: number;
+    jobsLast24h: number;
+    jobsLast7d: number;
+    activeImportUsers15m: number;
+    activeImportUsers1h: number;
+    uniqueImportUsers24h: number;
+    uniqueImportUsers7d: number;
+    uniqueImportUsersAllTime: number;
+    uniqueCharacters24h: number;
+    uniqueCharacters7d: number;
+    uniqueCharactersAllTime: number;
+  };
+  pressure: {
+    oldestQueuedSeconds: number;
+    oldestRunningSeconds: number;
   };
   coordinator: Array<{
     active: boolean;
@@ -79,6 +101,14 @@ function formatDuration(seconds: number) {
   return minutes > 0 ? `${minutes}m ${remaining}s` : `${remaining}s`;
 }
 
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en", { maximumFractionDigits: 1 }).format(value || 0);
+}
+
+function formatPercent(value: number) {
+  return `${formatNumber(value)}%`;
+}
+
 function statusTone(status: string) {
   if (status === "complete" || status === "idle" || status === "finished") return "good";
   if (status === "failed" || status === "rate_limited") return "bad";
@@ -113,7 +143,7 @@ export default function ImportHealthPage() {
       if (!response.ok) {
         throw new Error(body?.error?.message || "Could not load import health.");
       }
-      setHealth(body as ImportHealth);
+      setHealth(normalizeHealth(body));
     } catch (err) {
       setHealth(null);
       setError(err instanceof Error ? err.message : "Could not load import health.");
@@ -174,6 +204,63 @@ export default function ImportHealthPage() {
             </div>
           </section>
 
+          <section className="health-section">
+            <div className="section-heading">
+              <span className="panel-title"><Users size={17} /> Import Users & Demand</span>
+              <span>Anonymous import activity only</span>
+            </div>
+            <div className="metric-grid">
+              <Metric
+                icon={Users}
+                label="Active import users"
+                value={formatNumber(health.demand.activeImportUsers15m)}
+                detail={`${formatNumber(health.demand.activeImportUsers1h)} in the last hour`}
+              />
+              <Metric
+                icon={TrendingUp}
+                label="Unique import users"
+                value={formatNumber(health.demand.uniqueImportUsers24h)}
+                detail={`${formatNumber(health.demand.uniqueImportUsers7d)} in 7d - ${formatNumber(health.demand.uniqueImportUsersAllTime)} total`}
+              />
+              <Metric
+                icon={Database}
+                label="Characters requested"
+                value={formatNumber(health.demand.uniqueCharacters24h)}
+                detail={`${formatNumber(health.demand.uniqueCharacters7d)} in 7d - ${formatNumber(health.demand.uniqueCharactersAllTime)} total`}
+              />
+              <Metric
+                icon={Activity}
+                label="Import jobs"
+                value={formatNumber(health.demand.jobsLastHour)}
+                detail={`${formatNumber(health.demand.jobsLast24h)} in 24h - ${formatNumber(health.demand.jobsLast7d)} in 7d`}
+              />
+              <Metric
+                icon={CheckCircle2}
+                label="Completion rate"
+                value={formatPercent(health.last24h.completionRate)}
+                detail={`${formatNumber(health.last24h.completed)} complete from ${formatNumber(health.last24h.total)} jobs`}
+              />
+              <Metric
+                icon={AlertTriangle}
+                label="Failure rate"
+                value={formatPercent(health.last24h.failureRate)}
+                detail={`${formatNumber(health.last24h.failed)} failed - ${formatNumber(health.last24h.rateLimited)} rate limited`}
+              />
+              <Metric
+                icon={Gauge}
+                label="Oldest queued"
+                value={formatDuration(health.pressure.oldestQueuedSeconds)}
+                detail={`${health.queue.pending} jobs waiting now`}
+              />
+              <Metric
+                icon={Clock}
+                label="Oldest running"
+                value={formatDuration(health.pressure.oldestRunningSeconds)}
+                detail={`${health.queue.running} active or budget-waiting`}
+              />
+            </div>
+          </section>
+
           <section className="dashboard-grid">
             <Panel title="Scraper Coordinator" icon={Activity}>
               {health.coordinator.length ? health.coordinator.map((state) => (
@@ -207,6 +294,31 @@ export default function ImportHealthPage() {
                   </div>
                 </div>
               )) : <EmptyState text="No recent import jobs are stored." />}
+            </Panel>
+
+            <Panel title="Status Mix" icon={Gauge}>
+              {Object.entries(health.last24h.statuses).length ? Object.entries(health.last24h.statuses).map(([status, count]) => (
+                <div className="state-row compact" key={status}>
+                  <div>
+                    <strong>{status}</strong>
+                    <span>Last 24 hours</span>
+                  </div>
+                  <div className="state-meta">
+                    <span className={`status-chip ${statusTone(status)}`}>{formatNumber(count)}</span>
+                  </div>
+                </div>
+              )) : <EmptyState text="No status data exists for the last 24 hours." />}
+            </Panel>
+
+            <Panel title="Metric Boundaries" icon={ShieldCheck}>
+              <div className="boundary-note">
+                <strong>What the counts mean</strong>
+                <p>Users here means anonymous profile-import requesters. It does not count every site visitor yet because normal browsing stays local and private in the browser.</p>
+              </div>
+              <div className="boundary-note">
+                <strong>What is still private</strong>
+                <p>The dashboard never returns character hashes, names, imported profile payloads, pets, museum rows, or raw IdleMMO API responses.</p>
+              </div>
             </Panel>
           </section>
 
@@ -408,6 +520,9 @@ export default function ImportHealthPage() {
           border-top: 1px solid rgba(148, 163, 184, 0.1);
           padding: 0.9rem 0;
         }
+        .state-row.compact {
+          padding: 0.68rem 0;
+        }
         .state-row:first-of-type {
           border-top: 0;
         }
@@ -437,6 +552,22 @@ export default function ImportHealthPage() {
           background: rgba(2, 6, 23, 0.42);
           border-radius: 8px;
           padding: 1rem;
+        }
+        .boundary-note {
+          border-top: 1px solid rgba(148, 163, 184, 0.1);
+          padding: 0.9rem 0;
+        }
+        .boundary-note:first-of-type {
+          border-top: 0;
+          padding-top: 0;
+        }
+        .boundary-note strong {
+          display: block;
+          margin-bottom: 0.35rem;
+        }
+        .boundary-note p {
+          color: #a8b3c7;
+          line-height: 1.55;
         }
         .admin-footnote {
           border: 1px solid rgba(148, 163, 184, 0.12);
@@ -495,6 +626,49 @@ export default function ImportHealthPage() {
       `}</style>
     </main>
   );
+}
+
+function normalizeHealth(value: Partial<ImportHealth>): ImportHealth {
+  const last24h = value.last24h || {
+    total: 0,
+    completed: 0,
+    failed: 0,
+    waitingForBudget: 0,
+    rateLimited: 0,
+    avgRequestCount: 0,
+    avgRetryCount: 0,
+    avgDurationSeconds: 0,
+    completionRate: 0,
+    failureRate: 0,
+    statuses: {},
+  };
+
+  return {
+    ...(value as ImportHealth),
+    last24h: {
+      ...last24h,
+      completionRate: last24h.completionRate ?? 0,
+      failureRate: last24h.failureRate ?? 0,
+      statuses: last24h.statuses || {},
+    },
+    demand: value.demand || {
+      jobsLastHour: 0,
+      jobsLast24h: 0,
+      jobsLast7d: 0,
+      activeImportUsers15m: 0,
+      activeImportUsers1h: 0,
+      uniqueImportUsers24h: 0,
+      uniqueImportUsers7d: 0,
+      uniqueImportUsersAllTime: 0,
+      uniqueCharacters24h: 0,
+      uniqueCharacters7d: 0,
+      uniqueCharactersAllTime: 0,
+    },
+    pressure: value.pressure || {
+      oldestQueuedSeconds: 0,
+      oldestRunningSeconds: 0,
+    },
+  };
 }
 
 function Metric({ icon: Icon, label, value, detail }: {
