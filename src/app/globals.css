@@ -15782,6 +15782,22 @@ kbd {
   padding-left: 1.1rem;
 }
 
+.profile-import-help p {
+  margin: 0.55rem 0 0;
+}
+
+.profile-import-help ul {
+  display: grid;
+  gap: 0.32rem;
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.profile-import-limits {
+  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.055);
+}
+
 .profile-import-help strong {
   color: var(--text-main);
 }
