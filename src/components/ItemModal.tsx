@@ -41,9 +41,11 @@ const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase()
 
 const getSourceRoute = (source: AcquisitionSource) => {
   const type = normalizeSourceType(source.type);
-  const target = type.includes('BOSS') ? 'bosses' : type === 'DUNGEON' ? 'dungeons' : type === 'ENEMY' ? 'enemies' : 'combat';
+  const target = type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : type === 'ENEMY' ? 'enemies' : 'combat';
   return `/${target}?search=${encodeURIComponent(source.name || '')}`;
 };
+
+const formatSourceType = (type?: string) => normalizeSourceType(type).replace(/_/g, ' ') || 'SOURCE';
 
 const getRecipeOutputName = (recipeItem: any) => (
   recipeItem?.recipe_yield?.item_name ||
@@ -718,7 +720,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             }}
                           >
                             <div className="source-meta">
-                              <span className="source-type">{src.type}</span>
+                              <span className="source-type">{formatSourceType(src.type)}</span>
                               <span className="source-chance">{src.chance === 'Unknown' ? '' : `${src.chance}%`}</span>
                             </div>
                             <div className="source-name">{src.name}</div>

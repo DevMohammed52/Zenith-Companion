@@ -50,6 +50,47 @@ function getItemsByName(allItems: JsonObject | null, itemsMap: JsonObject | null
   return itemNameCache.data as JsonObject;
 }
 
+function normalizeRecipeDropName(value: unknown) {
+  return String(value || "")
+    .replace(/\s+\(Untradable\)$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isAlchemyRecipeItem(item: JsonObject) {
+  return item?.type === "RECIPE" && String(item?.recipe?.skill || "").trim().toLowerCase() === "alchemy";
+}
+
+function getFirstDungeonSource(chest: JsonObject) {
+  const dungeons = chest?.where_to_find?.dungeons;
+  return Array.isArray(dungeons) && dungeons.length > 0 ? dungeons[0] : null;
+}
+
+function getAlchemyChestSourcesForRecipe(item: JsonObject, allItems: JsonObject | null, itemsMap: JsonObject | null) {
+  if (!isAlchemyRecipeItem(item)) return [];
+
+  const recipeKey = normalizeRecipeDropName(item.name);
+  const chests = Object.values({ ...(allItems || {}), ...(itemsMap || {}) }).filter((candidate: any) => (
+    candidate?.type === "CHEST" && /Alchemy Chest/i.test(String(candidate?.name || ""))
+  ));
+
+  return chests.flatMap((chest: any) => {
+    const drops = [...(chest.loot_table || []), ...(chest.chest_drops || [])];
+    const matchingDrop = drops.find((drop: any) => normalizeRecipeDropName(drop?.item_name || drop?.name) === recipeKey);
+    if (!matchingDrop) return [];
+
+    const dungeon = getFirstDungeonSource(chest);
+    return [{
+      type: "DUNGEON_CHEST",
+      name: chest.name,
+      chance: matchingDrop.chance ?? "Unknown",
+      location: dungeon ? { id: dungeon.id, name: dungeon.name } : "Dungeon reward chest",
+      source_item_name: chest.name,
+      note: "Dropped from an alchemy chest earned through dungeons.",
+    }];
+  });
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -87,6 +128,16 @@ export async function GET(
         item.produced_from = null;
         item.recipe_yield = item.recipe_yield || null;
       }
+    }
+
+    const alchemyChestSources = getAlchemyChestSourcesForRecipe(item, allItems, itemsMap);
+    if (alchemyChestSources.length > 0) {
+      const existingSources = Array.isArray(item.dropped_by) ? item.dropped_by : [];
+      const existingKeys = new Set(existingSources.map((source: any) => `${source?.type || ""}:${source?.name || ""}`));
+      item.dropped_by = [
+        ...existingSources,
+        ...alchemyChestSources.filter((source) => !existingKeys.has(`${source.type}:${source.name}`)),
+      ];
     }
 
     if (!item.recipe_yield && item.recipe?.result?.item_name) {
