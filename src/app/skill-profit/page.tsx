@@ -53,6 +53,7 @@ import {
   SkillProfitRow,
   SkillProfitSettings,
   SkillProfitSortKey,
+  SaleMode,
   ToolSkill,
   buildForgeRecipes,
   calculateSkillProfitRow,
@@ -67,6 +68,7 @@ const STORAGE_KEY = "zenith_skill_profit_finder";
 const DEFAULT_SETTINGS: SkillProfitSettings = {
   membership: false,
   classBonus: false,
+  saleMode: "best",
   energizingPoolExp: 0,
   assaultRank: "none",
   ascensionBuffIds: [],
@@ -125,6 +127,12 @@ const CONQUEST_PICKER_OPTIONS: Array<{ value: AssaultRank; label: string; hint: 
   { value: "third", label: "3rd place", hint: "+8% EXP, +3% Eff" },
   { value: "fourthSeventh", label: "4th-7th", hint: "+6% EXP, +2% Eff" },
   { value: "eighthTenth", label: "8th-10th", hint: "+2% EXP, +1% Eff" },
+];
+
+const SALE_MODE_OPTIONS: Array<{ value: SaleMode; label: string; hint: string }> = [
+  { value: "best", label: "Auto", hint: "Use the better net return" },
+  { value: "market", label: "Market", hint: "Sell through market after tax" },
+  { value: "vendor", label: "Vendor", hint: "Sell to vendor with bartering" },
 ];
 
 export default function SkillProfitPage() {
@@ -817,6 +825,23 @@ export default function SkillProfitPage() {
             }}
           />
         </label>
+        <div className={styles.saleModeField}>
+          <span>Sell mode</span>
+          <div className={styles.segmentGroup} role="group" aria-label="Skill profit sell mode">
+            {SALE_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                aria-pressed={(settings.saleMode || "best") === option.value}
+                className={`${styles.segmentButton} ${(settings.saleMode || "best") === option.value ? styles.segmentActive : ""}`}
+                onClick={() => patchSettings({ saleMode: option.value })}
+                title={option.hint}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <button
           className={`${styles.toggle} ${settings.membership ? styles.toggleActive : ""}`}
           onClick={() => patchSettings({ membership: !settings.membership })}
@@ -1530,9 +1555,9 @@ function SkillStrategyModal({
   const rankedProfitPerHour = getRankedProfitPerHour(activeRow);
   const changeNeedsPriceData = (row.essenceActive && row.essenceNeedsPrice) || (activeRow.essenceActive && activeRow.essenceNeedsPrice);
   const profitPerHourDelta = changeNeedsPriceData ? null : rankedProfitPerHour - getRankedProfitPerHour(row);
-  const isMarketLikeSale = activeRow.saleSource === "market" || activeRow.saleSource === "custom" || activeRow.saleSource === "scenario";
-  const grossRevenue = isMarketLikeSale ? activeRow.salePrice : 0;
-  const taxPaid = isMarketLikeSale ? grossRevenue - activeRow.marketRevenue : 0;
+  const hasMarketRevenue = activeRow.marketRevenue > 0;
+  const grossRevenue = hasMarketRevenue ? Math.round(activeRow.marketRevenue / (1 - taxRate / 100)) : 0;
+  const taxPaid = hasMarketRevenue ? grossRevenue - activeRow.marketRevenue : 0;
   const item = allItemsDb?.[activeRow.name];
   const market = marketData?.[activeRow.name] || {};
   const itemStats = item?.stats && typeof item.stats === "object" ? Object.entries(item.stats).filter(([, value]) => value !== null && value !== 0 && value !== "") : [];
@@ -1767,11 +1792,11 @@ function SkillStrategyModal({
             <section className={styles.modalPanel}>
               <div className={styles.modalPanelTitle}><Info size={16} /> Calculation</div>
               <div className={styles.calcRows}>
-                <CalcRow label={activeRow.saleSource === "custom" ? "Custom gross" : activeRow.saleSource === "scenario" ? "Try price gross" : "Market gross"} value={isMarketLikeSale ? `${formatGold(grossRevenue)}g` : "No market"} muted={!isMarketLikeSale} />
-                <CalcRow label={`Market tax (${taxRate}%)`} value={isMarketLikeSale ? `-${formatGold(taxPaid)}g` : "0g"} muted={!isMarketLikeSale} />
+                <CalcRow label={hasScenarioPrices ? "Try/market gross" : "Market gross"} value={hasMarketRevenue ? `${formatGold(grossRevenue)}g` : "No market"} muted={!hasMarketRevenue} />
+                <CalcRow label={`Market tax (${taxRate}%)`} value={hasMarketRevenue ? `-${formatGold(taxPaid)}g` : "0g"} muted={!hasMarketRevenue} />
                 <CalcRow label="Market net" value={`${formatGold(activeRow.marketRevenue)}g`} muted={activeRow.marketRevenue <= 0} />
                 <CalcRow label="Vendor net" value={`${formatGold(activeRow.vendorRevenue)}g`} muted={activeRow.vendorRevenue <= 0} />
-                <CalcRow label="Best sell path" value={formatPriceSource(activeRow.bestSaleSource)} tone={activeRow.bestSaleSource === "vendor" ? "good" : undefined} />
+                <CalcRow label={(settings.saleMode || "best") === "best" ? "Best sell path" : "Selected sell path"} value={formatPriceSource(activeRow.bestSaleSource)} tone={activeRow.bestSaleSource === "vendor" ? "good" : undefined} />
                 <CalcRow label="Net revenue used" value={`${formatGold(activeRow.netRevenue)}g`} />
                 <CalcRow label="Input cost" value={`-${formatGold(activeRow.inputCost)}g`} />
                 <CalcRow label="Profit each" value={`${activeRow.profitEach >= 0 ? "+" : ""}${formatGold(activeRow.profitEach)}g`} tone={activeRow.profitEach >= 0 ? "good" : "bad"} />
@@ -1983,7 +2008,9 @@ function Metric({ label, value, sub, tone }: { label: string; value: string; sub
 }
 
 function isLiquid(row: SkillProfitRow, minVolume: number) {
-  return row.saleSource !== "market" || (row.stableVolume3d >= minVolume && !row.liquidityRisk);
+  if (row.saleSource === "missing") return false;
+  const isMarketLike = row.saleSource === "market" || row.saleSource === "custom" || row.saleSource === "scenario";
+  return !isMarketLike || (row.stableVolume3d >= minVolume && !row.liquidityRisk);
 }
 
 function isExcludedFromTop(row: SkillProfitRow, minVolume: number) {

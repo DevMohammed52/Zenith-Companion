@@ -76,6 +76,7 @@ export type ItemRegistry = Record<string, {
 export type SkillProfitSettings = {
   membership: boolean;
   classBonus: boolean;
+  saleMode?: SaleMode;
   profileClassName?: string;
   energizingPoolExp: number;
   assaultRank: AssaultRank;
@@ -157,6 +158,7 @@ export type SkillProfitRow = SkillRecipe & {
 };
 
 export type PriceSource = "scenario" | "custom" | "market" | "vendor" | "missing";
+export type SaleMode = "best" | "market" | "vendor";
 
 export function isFixedBuyPriceItem(name: string) {
   return getMerchantBuyPrice(name) > 0;
@@ -666,12 +668,21 @@ export function calculateSkillProfitRow(
   );
   const marketRevenue = sale.source === "market" || sale.source === "custom" || sale.source === "scenario" ? sale.value * taxMultiplier : 0;
   const vendorRevenue = vendorBase * barterMultiplier;
-  const bestSaleSource: PriceSource = marketRevenue <= 0 && vendorRevenue <= 0
-    ? "missing"
-    : vendorRevenue > marketRevenue
-      ? "vendor"
-      : sale.source === "custom" ? "custom" : sale.source === "scenario" ? "scenario" : "market";
+  const marketSaleSource: PriceSource = sale.source === "custom" || sale.source === "scenario"
+    ? sale.source
+    : marketRevenue > 0 ? "market" : "missing";
+  const saleMode = settings.saleMode || "best";
+  const bestSaleSource: PriceSource = saleMode === "vendor"
+    ? vendorRevenue > 0 ? "vendor" : "missing"
+    : saleMode === "market"
+      ? marketSaleSource
+      : marketRevenue <= 0 && vendorRevenue <= 0
+        ? "missing"
+        : vendorRevenue > marketRevenue
+          ? "vendor"
+          : marketSaleSource;
   const netRevenue = bestSaleSource === "vendor" ? vendorRevenue : marketRevenue;
+  const selectedSalePrice = bestSaleSource === "vendor" ? vendorBase : sale.value;
   const profitEach = netRevenue - inputCost;
   const baseEfficiency = Math.max(-99, buffs.efficiency - essenceEfficiencyBonus);
   const baseFinalDuration = recipe.baseDuration / ((baseEfficiency + toolBonus + 100) / 100);
@@ -707,8 +718,8 @@ export function calculateSkillProfitRow(
 
   return {
     ...recipe,
-    salePrice: sale.value,
-    saleSource: sale.source,
+    salePrice: Math.round(selectedSalePrice),
+    saleSource: bestSaleSource,
     marketRevenue: Math.round(marketRevenue),
     vendorRevenue: Math.round(vendorRevenue),
     bestSaleSource,

@@ -560,7 +560,8 @@
   width: 100%;
 }
 
-.numberField span {
+.numberField span,
+.saleModeField > span {
   color: var(--text-muted);
   font-size: 0.65rem;
   font-weight: 800;
@@ -572,6 +573,47 @@
 .numberField input {
   padding: 0 0.55rem;
   width: 100%;
+}
+
+.saleModeField {
+  display: grid;
+  gap: 0.25rem;
+  min-width: min(100%, 220px);
+}
+
+.segmentGroup {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: 38px;
+  padding: 0.18rem;
+}
+
+.segmentButton {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  min-width: 0;
+  padding: 0 0.35rem;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  white-space: nowrap;
+}
+
+.segmentButton:hover {
+  color: var(--text-main);
+}
+
+.segmentActive {
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  border-color: var(--border-focus);
+  color: var(--text-main);
 }
 
 .toggle,
