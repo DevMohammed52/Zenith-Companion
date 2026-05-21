@@ -692,135 +692,139 @@ export default function SkillProfitPage() {
       </section>
 
       <section className={`${styles.commandBar} ${activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""}`}>
-        <div className={styles.searchBox}>
-          <Search size={16} />
-          <input
-            aria-label="Search skill profit items"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search item or material"
-          />
-        </div>
-        <div className={`${styles.numberField} ${styles.conquestField}`}>
-          <span>Conquest</span>
-          <OptionPicker
-            options={CONQUEST_PICKER_OPTIONS}
-            value={settings.assaultRank}
-            onChange={(value) => patchSettings({ assaultRank: value as AssaultRank })}
-            onOpenChange={handleCommandPickerOpenChange}
-          />
-        </div>
-        <label className={styles.numberField}>
-          <span>Pool EXP</span>
-          <input
-            aria-label="Energizing pool EXP bonus"
-            type="number"
-            min={0}
-            max={15}
-            value={poolExpDraft}
-            placeholder="0"
-            onChange={(event) => {
-              const rawValue = event.target.value;
-              setPoolExpDraft(rawValue);
-              if (rawValue === "") return;
-              patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(rawValue) || 0)) });
-            }}
-            onBlur={() => {
-              if (poolExpDraft === "") {
-                patchSettings({ energizingPoolExp: 0 });
-                setPoolExpDraft("0");
-              }
-            }}
-          />
-        </label>
-        <label className={styles.numberField}>
-          <span>Bartering Level</span>
-          <input
-            aria-label="Bartering Level"
-            type="number"
-            min={0}
-            max={100}
-            value={displayedBarteringLevel}
-            placeholder="0"
-            onChange={(event) => {
-              const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
-              if (activeProfile) {
-                updateProfile(activeProfile.id, { boosts: { ...activeProfile.boosts, barteringLevel: level } });
-              } else {
-                patchSettings({ barteringBoost: level === "" ? "" : barteringBuffPercent(level) });
-              }
-            }}
-          />
-        </label>
-        <label className={styles.numberField}>
-          <span>Min Vol</span>
-          <input
-            aria-label="Minimum stable volume"
-            type="number"
-            min={0}
-            value={minVolumeDraft}
-            placeholder="0"
-            onChange={(event) => {
-              const rawValue = event.target.value;
-              setMinVolumeDraft(rawValue);
-              if (rawValue === "") return;
-              setMinVolume(Math.max(0, Number(rawValue) || 0));
-            }}
-            onBlur={() => {
-              if (minVolumeDraft === "") {
-                setMinVolume(0);
-                setMinVolumeDraft("0");
-              }
-            }}
-          />
-        </label>
-        <div className={styles.saleModeField}>
-          <span>Sell mode</span>
-          <div className={styles.segmentGroup} role="group" aria-label="Skill profit sell mode">
-            {SALE_MODE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                aria-pressed={(settings.saleMode || "best") === option.value}
-                className={`${styles.segmentButton} ${(settings.saleMode || "best") === option.value ? styles.segmentActive : ""}`}
-                onClick={() => patchSettings({ saleMode: option.value })}
-                title={option.hint}
-                type="button"
-              >
-                {option.label}
-              </button>
-            ))}
+        <div className={styles.filterRow}>
+          <div className={styles.searchBox}>
+            <Search size={16} />
+            <input
+              aria-label="Search skill profit items"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search item or material"
+            />
+          </div>
+          <div className={`${styles.numberField} ${styles.conquestField}`}>
+            <span>Conquest</span>
+            <OptionPicker
+              options={CONQUEST_PICKER_OPTIONS}
+              value={settings.assaultRank}
+              onChange={(value) => patchSettings({ assaultRank: value as AssaultRank })}
+              onOpenChange={handleCommandPickerOpenChange}
+            />
+          </div>
+          <label className={styles.numberField}>
+            <span>Pool EXP</span>
+            <input
+              aria-label="Energizing pool EXP bonus"
+              type="number"
+              min={0}
+              max={15}
+              value={poolExpDraft}
+              placeholder="0"
+              onChange={(event) => {
+                const rawValue = event.target.value;
+                setPoolExpDraft(rawValue);
+                if (rawValue === "") return;
+                patchSettings({ energizingPoolExp: Math.min(15, Math.max(0, Number(rawValue) || 0)) });
+              }}
+              onBlur={() => {
+                if (poolExpDraft === "") {
+                  patchSettings({ energizingPoolExp: 0 });
+                  setPoolExpDraft("0");
+                }
+              }}
+            />
+          </label>
+          <label className={styles.numberField}>
+            <span>Bartering Level</span>
+            <input
+              aria-label="Bartering Level"
+              type="number"
+              min={0}
+              max={100}
+              value={displayedBarteringLevel}
+              placeholder="0"
+              onChange={(event) => {
+                const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
+                if (activeProfile) {
+                  updateProfile(activeProfile.id, { boosts: { ...activeProfile.boosts, barteringLevel: level } });
+                } else {
+                  patchSettings({ barteringBoost: level === "" ? "" : barteringBuffPercent(level) });
+                }
+              }}
+            />
+          </label>
+          <label className={styles.numberField}>
+            <span>Min Vol</span>
+            <input
+              aria-label="Minimum stable volume"
+              type="number"
+              min={0}
+              value={minVolumeDraft}
+              placeholder="0"
+              onChange={(event) => {
+                const rawValue = event.target.value;
+                setMinVolumeDraft(rawValue);
+                if (rawValue === "") return;
+                setMinVolume(Math.max(0, Number(rawValue) || 0));
+              }}
+              onBlur={() => {
+                if (minVolumeDraft === "") {
+                  setMinVolume(0);
+                  setMinVolumeDraft("0");
+                }
+              }}
+            />
+          </label>
+          <div className={styles.saleModeField}>
+            <span>Sell mode</span>
+            <div className={styles.segmentGroup} role="group" aria-label="Skill profit sell mode">
+              {SALE_MODE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  aria-pressed={(settings.saleMode || "best") === option.value}
+                  className={`${styles.segmentButton} ${(settings.saleMode || "best") === option.value ? styles.segmentActive : ""}`}
+                  onClick={() => patchSettings({ saleMode: option.value })}
+                  title={option.hint}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        <button
-          className={`${styles.toggle} ${settings.membership ? styles.toggleActive : ""}`}
-          onClick={() => patchSettings({ membership: !settings.membership })}
-          type="button"
-        >
-          {settings.membership && <Check size={14} />} Member
-        </button>
-        <button
-          className={`${styles.toggle} ${(activeProfile ? settings.profileClassName : settings.classBonus) ? styles.toggleActive : ""}`}
-          onClick={() => {
-            if (!activeProfile) patchSettings({ classBonus: !settings.classBonus });
-          }}
-          disabled={Boolean(activeProfile)}
-          title={activeProfile ? `Using ${activeProfile.className} from active profile` : "Fallback class helper when no profile is active"}
-          type="button"
-        >
-          {(activeProfile ? settings.profileClassName : settings.classBonus) && <Check size={14} />} {activeProfile ? activeProfile.className : "Class"}
-        </button>
-        <div className={`${styles.taxPill} ${settings.membership ? styles.taxMember : ""}`}>
-          {settings.membership ? "12% tax" : "15% tax"}
+        <div className={styles.toggleRow}>
+          <button
+            className={`${styles.toggle} ${settings.membership ? styles.toggleActive : ""}`}
+            onClick={() => patchSettings({ membership: !settings.membership })}
+            type="button"
+          >
+            {settings.membership && <Check size={14} />} Member
+          </button>
+          <button
+            className={`${styles.toggle} ${(activeProfile ? settings.profileClassName : settings.classBonus) ? styles.toggleActive : ""}`}
+            onClick={() => {
+              if (!activeProfile) patchSettings({ classBonus: !settings.classBonus });
+            }}
+            disabled={Boolean(activeProfile)}
+            title={activeProfile ? `Using ${activeProfile.className} from active profile` : "Fallback class helper when no profile is active"}
+            type="button"
+          >
+            {(activeProfile ? settings.profileClassName : settings.classBonus) && <Check size={14} />} {activeProfile ? activeProfile.className : "Class"}
+          </button>
+          <div className={`${styles.taxPill} ${settings.membership ? styles.taxMember : ""}`}>
+            {settings.membership ? "12% tax" : "15% tax"}
+          </div>
+          <button
+            aria-pressed={includeForgeInfoRows}
+            className={`${styles.toggle} ${includeForgeInfoRows ? styles.toggleActive : ""}`}
+            onClick={() => setIncludeForgeInfoRows((current) => !current)}
+            title="Show Forge informational recipes in the All results table. The Forge tab always stays available."
+            type="button"
+          >
+            {includeForgeInfoRows && <Check size={14} />} Forge rows
+          </button>
         </div>
-        <button
-          aria-pressed={includeForgeInfoRows}
-          className={`${styles.toggle} ${includeForgeInfoRows ? styles.toggleActive : ""}`}
-          onClick={() => setIncludeForgeInfoRows((current) => !current)}
-          title="Show Forge informational recipes in the All results table. The Forge tab always stays available."
-          type="button"
-        >
-          {includeForgeInfoRows && <Check size={14} />} Forge rows
-        </button>
       </section>
 
       <section className={styles.mobileSetupSummary} aria-label="Profile and buff setup summary">

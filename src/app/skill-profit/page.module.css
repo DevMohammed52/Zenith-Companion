@@ -206,21 +206,47 @@
 }
 
 .commandBar {
-  align-items: end;
+  align-items: stretch;
   background:
     linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.016)),
     color-mix(in srgb, var(--bg-panel), transparent 8%);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
-  gap: 0.6rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
   padding: 0.75rem;
   animation: riseIn 280ms ease both;
   min-width: 0;
   max-width: 100%;
   position: relative;
   z-index: 10;
+}
+
+.filterRow,
+.toggleRow {
+  align-items: end;
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.filterRow > *,
+.toggleRow > * {
+  min-width: 0;
+}
+
+.filterRow {
+  grid-template-columns:
+    minmax(260px, 1.35fr)
+    minmax(160px, 0.72fr)
+    repeat(3, minmax(118px, 0.52fr))
+    minmax(270px, 1fr);
+}
+
+.toggleRow {
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
 }
 
 .setupGrid {
@@ -321,7 +347,7 @@
   border-radius: 6px;
   color: var(--text-main);
   font: inherit;
-  height: 38px;
+  height: 44px;
   min-width: 0;
   outline: none;
   transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
@@ -428,7 +454,7 @@
   display: flex;
   gap: 0.55rem;
   justify-content: space-between;
-  min-height: 42px;
+  min-height: 44px;
   min-width: 0;
   padding: 0.4rem 0.6rem;
   text-align: left;
@@ -671,7 +697,7 @@
   border-radius: 6px;
   color: var(--text-muted);
   display: flex;
-  height: 38px;
+  height: 44px;
   min-width: 0;
   padding: 0 0.65rem;
   width: 100%;
@@ -719,7 +745,8 @@
 .saleModeField {
   display: grid;
   gap: 0.25rem;
-  min-width: min(100%, 220px);
+  min-width: 0;
+  width: 100%;
 }
 
 .segmentGroup {
@@ -728,8 +755,9 @@
   border-radius: 6px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  height: 38px;
-  padding: 0.18rem;
+  height: 44px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .segmentButton {
@@ -741,8 +769,12 @@
   font: inherit;
   font-size: 0.76rem;
   font-weight: 900;
+  height: 100%;
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
   padding: 0 0.35rem;
+  text-overflow: ellipsis;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
   white-space: nowrap;
 }
@@ -768,12 +800,13 @@
   font-size: 0.82rem;
   font-weight: 800;
   gap: 0.35rem;
-  height: 38px;
+  height: 44px;
   justify-content: center;
-  min-width: 80px;
+  min-width: 0;
   padding: 0 0.7rem;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
   white-space: nowrap;
+  width: 100%;
 }
 
 .toggle {
@@ -2131,22 +2164,23 @@
     grid-template-columns: 1fr;
   }
 
-  .commandBar {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
-  }
-
   .overviewGrid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   }
 }
 
-@media (min-width: 980px) {
-  .searchBox {
+@media (max-width: 1180px) {
+  .filterRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .filterRow > .searchBox,
+  .filterRow > .saleModeField {
     grid-column: span 2;
   }
 
-  .conquestSelect {
-    min-width: 0;
+  .toggleRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -2175,13 +2209,14 @@
   }
 
   .heroStats,
-  .commandBar {
+  .filterRow,
+  .toggleRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .searchBox,
-  .conquestField,
-  .saleModeField {
+  .filterRow > .searchBox,
+  .filterRow > .conquestField,
+  .filterRow > .saleModeField {
     grid-column: 1 / -1;
   }
 
