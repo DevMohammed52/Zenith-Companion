@@ -626,17 +626,56 @@ export default function SkillProfitPage() {
     setSortDesc(key !== "name" && key !== "skill" && key !== "level" && key !== "finalDuration" && key !== "inputCost");
   };
 
+  const topRoute = rowModel.topOverall;
+  const saleModeLabel = SALE_MODE_OPTIONS.find((option) => option.value === (settings.saleMode || "best"))?.label || "Auto";
+  const scopeLabel = activeSkill === "All" ? "All skills" : activeSkill;
+  const profileLabel = activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback";
+
   return (
     <main className={`container ${styles.shell} ${mobileSetupOpen ? styles.mobileSetupOpen : styles.mobileSetupCollapsed}`}>
       <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <div className={styles.eyebrow}>Skill Profit Finder</div>
-          <h1 className={styles.title}>
-            Live Skill Profit <ZenithIcon name="skill" size={22} />
-          </h1>
+        <div className={styles.heroIntro}>
+          <div className={styles.heroCopy}>
+            <div className={styles.eyebrow}>Skill Profit Finder</div>
+            <h1 className={styles.title}>
+              Live Skill Profit <ZenithIcon name="skill" size={22} />
+            </h1>
+            <p className={styles.heroSubtitle}>
+              Compare market returns, vendor fallback, tools, buffs, housing windows, and essence costs in one route board.
+            </p>
+          </div>
+          <div className={styles.heroChips} aria-label="Current skill profit context">
+            <span>{profileLabel}</span>
+            <span>{scopeLabel}</span>
+            <span>{saleModeLabel} sell</span>
+          </div>
         </div>
+        <button
+          className={styles.spotlightCard}
+          disabled={!topRoute}
+          onClick={() => topRoute && setSelectedRow(topRoute)}
+          onMouseEnter={() => topRoute && prefetchItem(topRoute.name)}
+          type="button"
+        >
+          <span className={styles.spotlightLabel}>Best liquid route</span>
+          <strong>{topRoute?.name || "Waiting for data"}</strong>
+          <small>{topRoute ? `${topRoute.skill} Lvl ${topRoute.level} - ${getProfitSummary(topRoute)}` : "Market data is loading"}</small>
+          <span className={styles.spotlightMetrics}>
+            <span>
+              <em>Profit</em>
+              <strong>{topRoute ? getProfitCardValue(topRoute) : "0g/hr"}</strong>
+            </span>
+            <span>
+              <em>Cost</em>
+              <strong>{topRoute ? `${formatGold(topRoute.inputCost)}g` : "0g"}</strong>
+            </span>
+            <span>
+              <em>Volume</em>
+              <strong>{topRoute ? topRoute.stableVolume3d.toLocaleString() : "0"}</strong>
+            </span>
+          </span>
+        </button>
         <div className={styles.heroStats}>
-          <Metric label="Top liquid route" value={rowModel.topOverall?.name || "Waiting"} sub={rowModel.topOverall ? getProfitSummary(rowModel.topOverall) : "0g/hr"} tone="profit" />
           <Metric label="Market pulse" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
           <Metric label="Buffs" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active total"} />
           <Metric
@@ -648,98 +687,8 @@ export default function SkillProfitPage() {
               ? housingWindowAllSub
               : housingWindowSub}
           />
+          <Metric label="Results" value={rowModel.filtered.length.toLocaleString()} sub={`${scopeLabel} routes`} />
         </div>
-      </section>
-
-      <section className={styles.mobileSetupSummary} aria-label="Profile and buff setup summary">
-        <div>
-          <strong>Profile and buffs</strong>
-          <span>
-            {activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}
-            {" - "}
-            {activeEssenceCount > 0 ? `${activeEssenceCount} essence${activeEssenceCount === 1 ? "" : "s"}` : "No essences"}
-            {" - "}
-            {selectedBuffs.length}/5 ascension
-          </span>
-        </div>
-        <button
-          type="button"
-          aria-expanded={mobileSetupOpen}
-          onClick={() => setMobileSetupOpen((open) => !open)}
-        >
-          {mobileSetupOpen ? "Hide setup" : "Edit setup"}
-          <ChevronDown size={16} className={mobileSetupOpen ? styles.chevronOpen : ""} />
-        </button>
-      </section>
-
-      <section className={`${styles.toolPanel} ${activeDropdownLayer === "tools" ? styles.dropdownLayerActive : ""}`}>
-        {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => {
-          const toolValue = effectiveToolSelections[skill] || "";
-          const selectedTool = SKILL_TOOLS[skill].find((tool) => tool.name === toolValue);
-          return (
-            <div className={styles.toolField} key={skill}>
-              <span>{skill} tool</span>
-              <ToolPicker
-                options={SKILL_TOOLS[skill]}
-                value={toolValue}
-                onChange={(toolName) => patchTool(skill, toolName)}
-                onOpenChange={handleToolPickerOpenChange}
-              />
-              <small>
-                {selectedTool
-                  ? `Lvl ${selectedTool.level} - ${selectedTool.quality}`
-                  : activeProfile
-                    ? "No tool selected"
-                    : "No tool bonus"}
-                {activeProfile ? " - synced with profile" : " - global fallback"}
-              </small>
-            </div>
-          );
-        })}
-      </section>
-
-      <section className={`${styles.essencePanel} ${activeDropdownLayer === "essences" ? styles.dropdownLayerActive : ""}`}>
-        <button className={styles.essenceHeader} onClick={() => setEssenceOpen((open) => !open)} type="button">
-          <span><Sparkles size={16} /> Essences</span>
-          <span>
-            {activeEssenceCount > 0 ? `${activeEssenceCount}/5 active` : "No essence"}
-            <ChevronDown size={16} className={essenceOpen ? styles.chevronOpen : ""} />
-          </span>
-        </button>
-        {essenceOpen && (
-          <div className={styles.essenceGrid}>
-            {SUPPORTED_ESSENCE_SKILLS.map((skill) => {
-              const selectedName = settings.essenceBySkill?.[skill] || "";
-              const session = essenceSessionsBySkill[skill];
-              const actionHours = idleActionHoursBySkill[skill] || baseIdleActionHours;
-              return (
-                <div className={styles.essenceField} key={skill}>
-                  <span>{skill}</span>
-                  <EssencePicker
-                    label={`${skill} essence`}
-                    options={getEssenceOptionsForSkill(skill, allItemsDb, marketData, preferences.customPrices)}
-                    value={selectedName}
-                    onChange={(essenceName) => patchEssence(skill, essenceName)}
-                    onOpenChange={handleEssencePickerOpenChange}
-                  />
-                  <small>
-                    {session?.active
-                      ? session.needsPrice
-                        ? "Needs price/data"
-                        : `${formatGold(session.costPerStart)}g per start - ${formatGold(session.costPerHour || 0)}g/hr`
-                      : `No essence - ${formatHours(actionHours)} timer`}
-                  </small>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <p className={styles.essenceNote}>
-          {(activeProfile
-            ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? "; location-limited housing time is not added on this page." : ", plus housing time when it is available anywhere."}`
-            : "No active profile is loaded, so essence costs use an 8h fallback timer.")}
-          {" "}Dungeon, combat, hunting, and world boss potions are future support.
-        </p>
       </section>
 
       <section className={`${styles.commandBar} ${activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""}`}>
@@ -752,7 +701,7 @@ export default function SkillProfitPage() {
             placeholder="Search item or material"
           />
         </div>
-        <div className={styles.numberField}>
+        <div className={`${styles.numberField} ${styles.conquestField}`}>
           <span>Conquest</span>
           <OptionPicker
             options={CONQUEST_PICKER_OPTIONS}
@@ -874,60 +823,153 @@ export default function SkillProfitPage() {
         </button>
       </section>
 
-      <section className={styles.ascensionPanel}>
-        <button className={styles.ascensionHeader} onClick={() => setAscensionOpen((open) => !open)} type="button">
-          <span><Sparkles size={16} /> Ascension</span>
-          <span>{selectedBuffs.length}/5 <ChevronDown size={16} className={ascensionOpen ? styles.chevronOpen : ""} /></span>
+      <section className={styles.mobileSetupSummary} aria-label="Profile and buff setup summary">
+        <div>
+          <strong>Profile and buffs</strong>
+          <span>
+            {activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}
+            {" - "}
+            {activeEssenceCount > 0 ? `${activeEssenceCount} essence${activeEssenceCount === 1 ? "" : "s"}` : "No essences"}
+            {" - "}
+            {selectedBuffs.length}/5 ascension
+          </span>
+        </div>
+        <button
+          type="button"
+          aria-expanded={mobileSetupOpen}
+          onClick={() => setMobileSetupOpen((open) => !open)}
+        >
+          {mobileSetupOpen ? "Hide setup" : "Edit setup"}
+          <ChevronDown size={16} className={mobileSetupOpen ? styles.chevronOpen : ""} />
         </button>
-        <div className={styles.selectedBuffs}>
-          {Array.from({ length: 5 }).map((_, index) => {
-            const buff = selectedBuffs[index];
+      </section>
+
+      <div className={styles.setupGrid}>
+        <section className={`${styles.toolPanel} ${activeDropdownLayer === "tools" ? styles.dropdownLayerActive : ""}`}>
+          {(["Woodcutting", "Mining", "Fishing"] as ToolSkill[]).map((skill) => {
+            const toolValue = effectiveToolSelections[skill] || "";
+            const selectedTool = SKILL_TOOLS[skill].find((tool) => tool.name === toolValue);
             return (
-              <button
-                key={index}
-                className={`${styles.selectedSlot} ${buff ? styles.selectedSlotFilled : ""}`}
-                onClick={() => buff && toggleAscension(buff.id)}
-                title={buff ? `${buff.label}: +${buff.value}% ${buff.type === "Eff" ? "efficiency" : "experience"}` : "Empty ascension slot"}
-                type="button"
-              >
-                {buff ? `${buff.label.replace("Lvl ", "L")} +${buff.value}% ${buff.type}` : "Empty"}
-              </button>
+              <div className={styles.toolField} key={skill}>
+                <span>{skill} tool</span>
+                <ToolPicker
+                  options={SKILL_TOOLS[skill]}
+                  value={toolValue}
+                  onChange={(toolName) => patchTool(skill, toolName)}
+                  onOpenChange={handleToolPickerOpenChange}
+                />
+                <small>
+                  {selectedTool
+                    ? `Lvl ${selectedTool.level} - ${selectedTool.quality}`
+                    : activeProfile
+                      ? "No tool selected"
+                      : "No tool bonus"}
+                  {activeProfile ? " - synced with profile" : " - global fallback"}
+                </small>
+              </div>
             );
           })}
-          {selectedBuffs.length > 0 && (
-            <button className={styles.clearBuffs} onClick={() => patchSettings({ ascensionBuffIds: [] })} type="button">
-              Clear
-            </button>
+        </section>
+
+        <section className={`${styles.essencePanel} ${activeDropdownLayer === "essences" ? styles.dropdownLayerActive : ""}`}>
+          <button className={styles.essenceHeader} onClick={() => setEssenceOpen((open) => !open)} type="button">
+            <span><Sparkles size={16} /> Essences</span>
+            <span>
+              {activeEssenceCount > 0 ? `${activeEssenceCount}/5 active` : "No essence"}
+              <ChevronDown size={16} className={essenceOpen ? styles.chevronOpen : ""} />
+            </span>
+          </button>
+          {essenceOpen && (
+            <div className={styles.essenceGrid}>
+              {SUPPORTED_ESSENCE_SKILLS.map((skill) => {
+                const selectedName = settings.essenceBySkill?.[skill] || "";
+                const session = essenceSessionsBySkill[skill];
+                const actionHours = idleActionHoursBySkill[skill] || baseIdleActionHours;
+                return (
+                  <div className={styles.essenceField} key={skill}>
+                    <span>{skill}</span>
+                    <EssencePicker
+                      label={`${skill} essence`}
+                      options={getEssenceOptionsForSkill(skill, allItemsDb, marketData, preferences.customPrices)}
+                      value={selectedName}
+                      onChange={(essenceName) => patchEssence(skill, essenceName)}
+                      onOpenChange={handleEssencePickerOpenChange}
+                    />
+                    <small>
+                      {session?.active
+                        ? session.needsPrice
+                          ? "Needs price/data"
+                          : `${formatGold(session.costPerStart)}g per start - ${formatGold(session.costPerHour || 0)}g/hr`
+                        : `No essence - ${formatHours(actionHours)} timer`}
+                    </small>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </div>
-        {ascensionOpen && (
-          <div className={styles.buffGroups}>
-            {(["Eff", "Exp"] as const).map((type) => (
-              <div className={styles.buffGroup} key={type}>
-                <div className={styles.buffGroupTitle}>{type === "Eff" ? "Efficiency" : "Experience"}</div>
-                <div className={styles.buffRail}>
-                  {groupedBuffs[type].map((buff) => {
-                    const selected = settings.ascensionBuffIds.includes(buff.id);
-                    const disabled = !selected && settings.ascensionBuffIds.length >= 5;
-                    return (
-                      <button
-                        key={buff.id}
-                        className={`${styles.buffButton} ${selected ? styles.buffSelected : ""}`}
-                        disabled={disabled}
-                        onClick={() => toggleAscension(buff.id)}
-                        type="button"
-                      >
-                        {buff.label.replace("Lvl ", "")}
-                        <strong>+{buff.value}%</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          <p className={styles.essenceNote}>
+            {(activeProfile
+              ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? "; location-limited housing time is not added on this page." : ", plus housing time when it is available anywhere."}`
+              : "No active profile is loaded, so essence costs use an 8h fallback timer.")}
+            {" "}Dungeon, combat, hunting, and world boss potions are future support.
+          </p>
+        </section>
+
+        <section className={styles.ascensionPanel}>
+          <button className={styles.ascensionHeader} onClick={() => setAscensionOpen((open) => !open)} type="button">
+            <span><Sparkles size={16} /> Ascension</span>
+            <span>{selectedBuffs.length}/5 <ChevronDown size={16} className={ascensionOpen ? styles.chevronOpen : ""} /></span>
+          </button>
+          <div className={styles.selectedBuffs}>
+            {Array.from({ length: 5 }).map((_, index) => {
+              const buff = selectedBuffs[index];
+              return (
+                <button
+                  key={index}
+                  className={`${styles.selectedSlot} ${buff ? styles.selectedSlotFilled : ""}`}
+                  onClick={() => buff && toggleAscension(buff.id)}
+                  title={buff ? `${buff.label}: +${buff.value}% ${buff.type === "Eff" ? "efficiency" : "experience"}` : "Empty ascension slot"}
+                  type="button"
+                >
+                  {buff ? `${buff.label.replace("Lvl ", "L")} +${buff.value}% ${buff.type}` : "Empty"}
+                </button>
+              );
+            })}
+            {selectedBuffs.length > 0 && (
+              <button className={styles.clearBuffs} onClick={() => patchSettings({ ascensionBuffIds: [] })} type="button">
+                Clear
+              </button>
+            )}
           </div>
-        )}
-      </section>
+          {ascensionOpen && (
+            <div className={styles.buffGroups}>
+              {(["Eff", "Exp"] as const).map((type) => (
+                <div className={styles.buffGroup} key={type}>
+                  <div className={styles.buffGroupTitle}>{type === "Eff" ? "Efficiency" : "Experience"}</div>
+                  <div className={styles.buffRail}>
+                    {groupedBuffs[type].map((buff) => {
+                      const selected = settings.ascensionBuffIds.includes(buff.id);
+                      const disabled = !selected && settings.ascensionBuffIds.length >= 5;
+                      return (
+                        <button
+                          key={buff.id}
+                          className={`${styles.buffButton} ${selected ? styles.buffSelected : ""}`}
+                          disabled={disabled}
+                          onClick={() => toggleAscension(buff.id)}
+                          type="button"
+                        >
+                          {buff.label.replace("Lvl ", "")}
+                          <strong>+{buff.value}%</strong>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <section className={styles.overviewGrid}>
         {SKILLS.map((skill) => {
@@ -973,6 +1015,84 @@ export default function SkillProfitPage() {
         <div className={styles.panelMeta}>
           <Filter size={13} /> {rowModel.filtered.length.toLocaleString()} rows
         </div>
+      </section>
+
+      <section className={styles.mobileResults} aria-label="Skill profit routes">
+        {visibleRows.map((row) => {
+          const displayProfit = getDisplayProfitPerHour(row);
+          const matchedIngredient = getMatchedIngredient(row, deferredSearchTerm);
+          const liquidityText = row.skill === "Forge"
+            ? "Info"
+            : row.liquidityRisk
+              ? row.liquidityLabel === "Spike risk" ? "Spike risk" : "Volume risk"
+              : row.priceSwingRisk
+                ? "Price risk"
+                : isLiquid(row, minVolume) ? "Liquid" : "Thin";
+          return (
+            <button
+              className={styles.mobileResultCard}
+              key={`mobile-${row.skill}-${row.name}`}
+              onClick={() => setSelectedRow(row)}
+              onMouseEnter={() => prefetchItem(row.name)}
+              type="button"
+            >
+              <span className={styles.mobileResultTop}>
+                <span>{row.skill} Lvl {row.level}</span>
+                <span className={`${styles.saleBadge} ${row.bestSaleSource === "vendor" ? styles.saleVendor : row.bestSaleSource === "custom" ? styles.saleCustom : styles.saleMarket}`}>
+                  {row.bestSaleSource}
+                </span>
+              </span>
+              <strong>{row.name}</strong>
+              <span className={styles.mobileResultProfit}>
+                <span className={displayProfit === null ? styles.mutedValue : getRankedProfitPerHour(row) >= 0 ? styles.positive : styles.negative}>
+                  {getProfitCellValue(row)}
+                </span>
+                <small>{row.essenceActive && row.essenceNeedsPrice ? `${formatGold(row.baseProfitPerHour)}g/hr base` : `${row.itemsPerHour.toLocaleString()} actions/hr`}</small>
+              </span>
+              <span className={styles.mobileResultGrid}>
+                <span><em>Each</em>{formatSignedGold(row.profitEach)}</span>
+                <span><em>Cost</em>{formatGold(row.inputCost)}g</span>
+                <span><em>Volume</em>{row.stableVolume3d.toLocaleString()}</span>
+                <span><em>Status</em>{liquidityText}</span>
+              </span>
+              {(row.note || matchedIngredient) && (
+                <small className={styles.mobileResultNote}>
+                  {matchedIngredient ? `Uses ${matchedIngredient}` : row.note}
+                </small>
+              )}
+            </button>
+          );
+        })}
+        {hiddenRowCount > 0 && (
+          <div className={styles.resultBatchMore} role="status">
+            <span>
+              Showing {visibleRows.length.toLocaleString()} of {rowModel.filtered.length.toLocaleString()} routes.
+            </span>
+            <button
+              type="button"
+              onClick={() => setVisibleRowLimit((limit) => limit + MOBILE_RESULT_BATCH_SIZE)}
+            >
+              Show {Math.min(MOBILE_RESULT_BATCH_SIZE, hiddenRowCount).toLocaleString()} more
+            </button>
+          </div>
+        )}
+        {rowModel.filtered.length === 0 && (
+          <div className={styles.emptyRoutes} role="status">
+            <strong>No routes match this search</strong>
+            <span>Try an item name, skill, material, essence, sale source, or liquidity label.</span>
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setActiveSkill("All");
+                setMinVolume(0);
+                setMinVolumeDraft("0");
+              }}
+              type="button"
+            >
+              Reset filters
+            </button>
+          </div>
+        )}
       </section>
 
       <section className={styles.tableWrap}>
