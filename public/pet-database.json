@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-05-21T21:42:16.305Z",
+    "generatedAt": "2026-05-21T22:45:02.672Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 35,
-      "exchangeListings": 1072,
+      "exchangeListings": 1074,
       "exchangeSpecies": 36
     },
     "sources": [
@@ -87524,19 +87524,19 @@
       },
       "exchange": {
         "petId": 21,
-        "listingCount": 31,
+        "listingCount": 33,
         "minPrice": 50000,
         "maxPrice": 355000,
         "byQuality": {
           "PREMIUM": {
-            "count": 31,
+            "count": 33,
             "min_price": 50000,
             "max_price": 355000,
-            "total_price": 4645872,
-            "average_price": 149867
+            "total_price": 4788944,
+            "average_price": 145120
           }
         },
-        "averagePrice": 149867,
+        "averagePrice": 145120,
         "medianPrice": 115000,
         "sampleListings": [
           {
@@ -87580,6 +87580,16 @@
             "price": 71035
           },
           {
+            "level": 65,
+            "quality": "PREMIUM",
+            "price": 71369
+          },
+          {
+            "level": 66,
+            "quality": "PREMIUM",
+            "price": 71703
+          },
+          {
             "level": 64,
             "quality": "PREMIUM",
             "price": 72000
@@ -87588,16 +87598,6 @@
             "level": 78,
             "quality": "PREMIUM",
             "price": 80000
-          },
-          {
-            "level": 78,
-            "quality": "PREMIUM",
-            "price": 80000
-          },
-          {
-            "level": 79,
-            "quality": "PREMIUM",
-            "price": 85000
           }
         ]
       },
@@ -100453,8 +100453,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-05-21T21:42:16.287Z",
-    "listingCount": 1072,
+    "fetchedAt": "2026-05-21T22:45:02.648Z",
+    "listingCount": 1074,
     "speciesCount": 36,
     "pageCount": 43
   }
