@@ -33,6 +33,7 @@ type AcquisitionSource = DropSourceWithLocation & {
   type?: string;
   name?: string;
   chance?: number | string;
+  source_item_name?: string;
 };
 
 const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
@@ -709,14 +710,22 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="list-container scroll-y">
                     {acquisitionSources.map((src: AcquisitionSource, i: number) => {
                       const sourceLocation = getDropSourceLocation(src);
+                      const sourceItemName = src.source_item_name || (normalizeSourceType(src.type).includes('CHEST') ? src.name : '');
                       return (
                         <div className="source-actions-row" key={`${src.type || 'source'}-${src.name || i}-${sourceLocation.key || i}`}>
                           <button
                             type="button"
                             className="source-pill group-source"
                             onClick={() => {
+                              if (sourceItemName) {
+                                openItemByName?.(sourceItemName);
+                                return;
+                              }
                               onClose();
                               router.push(getSourceRoute(src));
+                            }}
+                            onMouseEnter={() => {
+                              if (sourceItemName) prefetchItem?.(sourceItemName);
                             }}
                           >
                             <div className="source-meta">
