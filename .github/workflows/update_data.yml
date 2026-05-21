@@ -89,16 +89,24 @@ jobs:
           git config --local user.name "GitHub Action"
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git stash push --include-untracked -m "generated market and conquest data" -- public/*.json
+          generated_dir="$(mktemp -d)"
+          cp public/*.json "$generated_dir"/
+          git checkout -- public/*.json
           git pull --rebase origin main
-          git stash pop || { echo "Generated data changed upstream. Resolve the generated JSON conflict before pushing."; git status --short; exit 1; }
+          cp "$generated_dir"/*.json public/
           git add public/*.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: auto-update market, boss, pet, and conquest data [skip ci]"
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             git push origin "HEAD:main" && exit 0
-            echo "Push attempt ${attempt} failed; rebasing generated-data commit onto latest main."
-            git pull --rebase origin main
+            echo "Push attempt ${attempt} failed; refreshing generated-data commit onto latest main."
+            sleep $((attempt * 10))
+            git fetch origin main
+            git reset --mixed origin/main
+            cp "$generated_dir"/*.json public/
+            git add public/*.json
+            git diff --cached --quiet && echo "Remote already contains the generated data" && exit 0
+            git commit -m "chore: auto-update market, boss, pet, and conquest data [skip ci]"
           done
-          echo "Unable to push generated data after 3 attempts."
+          echo "Unable to push generated data after 5 attempts."
           exit 1

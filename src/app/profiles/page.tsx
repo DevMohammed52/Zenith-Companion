@@ -2343,8 +2343,8 @@ export default function ProfilesPage() {
                   <p>Zenith only reads public character data visible through IdleMMO. It does not fetch private account data or anything that requires your API key.</p>
                   <ul>
                     <li>Inventory, bank, storage, gold, shards, and market orders</li>
-                    <li>Equipped gear, tools, loadouts, food, potions, and consumable stock</li>
-                    <li>Private or hidden alts, private museum pages, and unavailable profile sections</li>
+                    <li>Equipped gear, tools, food, potions, and anything else</li>
+                    <li>Private or hidden alts, and unavailable profile sections</li>
                     <li>Zenith-only settings such as membership, magic find, timers, housing, boosts, custom prices, and tool selections</li>
                   </ul>
                 </div>
