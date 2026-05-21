@@ -8,7 +8,19 @@ on:
     - cron: '15 1,6,11,16,21 * * *'
     - cron: '30 2,7,12,17,22 * * *'
     - cron: '45 3,8,13,18 * * *'
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      refresh_scope:
+        description: 'Data refresh scope'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - priority
+          - pets
+          - locations
+          - conquest
 
 concurrency:
   # Keep every scheduled IdleMMO API data job in one lane so generated-data
@@ -32,11 +44,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Resolve data refresh scope
+        id: data_scope
+        run: |
+          scope="full"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            scope="${{ inputs.refresh_scope }}"
+          fi
+
+          echo "scope=${scope}" >> "$GITHUB_OUTPUT"
 
       - name: Report data scraper start
         env:
@@ -49,7 +71,7 @@ jobs:
           fi
           started_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           payload=$(printf '{"status":"started","source":"github-actions:update_data","runId":"%s","startedAt":"%s"}' "$GITHUB_RUN_ID" "$started_at")
-          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+          curl --connect-timeout 5 --max-time 10 -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
             -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
             --data "$payload" \
@@ -58,10 +80,46 @@ jobs:
       - name: Run Market, Boss, Pet & Conquest Scraper
         env:
           IDLEMMO_API_KEY: ${{ secrets.IDLEMMO_API_KEY }}
-          SCRAPE_ONCE: "true"
-        run: node scraper.mjs
+        run: |
+          case "${{ steps.data_scope.outputs.scope }}" in
+            full)
+              SCRAPE_ONCE=true node scraper.mjs
+              ;;
+            priority)
+              node scraper.mjs --priority --once
+              ;;
+            pets)
+              node scraper.mjs --pets-only --once
+              ;;
+            locations)
+              node scraper.mjs --world-locations-only
+              ;;
+            conquest)
+              node scraper.mjs --conquest-only
+              ;;
+            *)
+              echo "Unknown data refresh scope: ${{ steps.data_scope.outputs.scope }}"
+              exit 1
+              ;;
+          esac
 
-      - name: Report data scraper finish
+      - name: Commit and Push changes
+        run: |
+          node scripts/publish-generated-data.mjs \
+            --path=public/market-data.json \
+            --path=public/static-data.json \
+            --path=public/pet-database.json \
+            --path=public/world-locations.json \
+            --path=public/conquest-data.json \
+            --path=public/scraper-status.json \
+            --path=public/usage-map.json \
+            --path=public/search-index.json \
+            --path=public/global-search-index.json \
+            --commit-message="chore: auto-update market, boss, pet, and conquest data [skip ci]" \
+            --empty-message="No changes to commit" \
+            --retry-message="refreshing generated-data commit onto latest main."
+
+      - name: Report data pipeline finish
         if: always()
         env:
           SCRAPER_COORDINATOR_URL: ${{ secrets.SCRAPER_COORDINATOR_URL }}
@@ -77,37 +135,8 @@ jobs:
           fi
           finished_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           payload=$(printf '{"status":"%s","source":"github-actions:update_data","runId":"%s","finishedAt":"%s"}' "$status" "$GITHUB_RUN_ID" "$finished_at")
-          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+          curl --connect-timeout 5 --max-time 10 -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
             -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
             --data "$payload" \
             || echo "Scraper coordinator finish report failed; coordinator TTL will expire stale state."
-
-      - name: Commit and Push changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add public/*.json
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-          generated_dir="$(mktemp -d)"
-          cp public/*.json "$generated_dir"/
-          git restore --staged --worktree -- public/*.json
-          git clean -f -- public/*.json
-          git pull --rebase origin main
-          cp "$generated_dir"/*.json public/
-          git add public/*.json
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
-          git commit -m "chore: auto-update market, boss, pet, and conquest data [skip ci]"
-          for attempt in 1 2 3 4 5; do
-            git push origin "HEAD:main" && exit 0
-            echo "Push attempt ${attempt} failed; refreshing generated-data commit onto latest main."
-            sleep $((attempt * 10))
-            git fetch origin main
-            git reset --mixed origin/main
-            cp "$generated_dir"/*.json public/
-            git add public/*.json
-            git diff --cached --quiet && echo "Remote already contains the generated data" && exit 0
-            git commit -m "chore: auto-update market, boss, pet, and conquest data [skip ci]"
-          done
-          echo "Unable to push generated data after 5 attempts."
-          exit 1

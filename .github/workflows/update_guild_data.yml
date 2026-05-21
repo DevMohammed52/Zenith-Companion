@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -76,7 +76,7 @@ jobs:
           fi
           started_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           payload=$(printf '{"status":"started","source":"github-actions:update_guild_data","runId":"%s","startedAt":"%s"}' "$GITHUB_RUN_ID" "$started_at")
-          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+          curl --connect-timeout 5 --max-time 10 -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
             -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
             --data "$payload" \
@@ -94,7 +94,21 @@ jobs:
             node scripts/refresh-idlemmo-guild-public-data.mjs --tier "${{ steps.scope.outputs.scope }}" --rate-profile shared
           fi
 
-      - name: Report guild scraper finish
+      - name: Commit and push guild data
+        run: |
+          node scripts/publish-generated-data.mjs \
+            --path=public/guild-database.json \
+            --path=public/guild-list.json \
+            --path=public/guild-search-index.json \
+            --path=public/guild-details.json \
+            --path=public/guild-members.json \
+            --path=public/guild-refresh-plan.json \
+            --path=public/guild-details/*.json \
+            --commit-message="chore: auto-update guild data [skip ci]" \
+            --empty-message="No guild changes to commit" \
+            --retry-message="refreshing guild data commit onto latest main."
+
+      - name: Report guild pipeline finish
         if: always()
         env:
           SCRAPER_COORDINATOR_URL: ${{ secrets.SCRAPER_COORDINATOR_URL }}
@@ -110,41 +124,8 @@ jobs:
           fi
           finished_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           payload=$(printf '{"status":"%s","source":"github-actions:update_guild_data","runId":"%s","finishedAt":"%s"}' "$status" "$GITHUB_RUN_ID" "$finished_at")
-          curl -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
+          curl --connect-timeout 5 --max-time 10 -fsS -X POST "$SCRAPER_COORDINATOR_URL/internal/scraper-status" \
             -H "Authorization: Bearer $SCRAPER_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
             --data "$payload" \
             || echo "Scraper coordinator finish report failed; coordinator TTL will expire stale state."
-
-      - name: Commit and push guild data
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
-          git diff --cached --quiet && echo "No guild changes to commit" && exit 0
-          generated_dir="$(mktemp -d)"
-          mkdir -p "$generated_dir/public/guild-details"
-          cp public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json "$generated_dir/public/"
-          cp public/guild-details/*.json "$generated_dir/public/guild-details/"
-          git restore --staged --worktree -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
-          git clean -f -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
-          git pull --rebase origin main
-          cp "$generated_dir"/public/*.json public/
-          cp "$generated_dir"/public/guild-details/*.json public/guild-details/
-          git add public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
-          git diff --cached --quiet && echo "No guild changes to commit" && exit 0
-          git commit -m "chore: auto-update guild data [skip ci]"
-          for attempt in 1 2 3 4 5; do
-            git push origin "HEAD:main" && exit 0
-            echo "Push attempt ${attempt} failed; refreshing guild data commit onto latest main."
-            sleep $((attempt * 10))
-            git fetch origin main
-            git reset --mixed origin/main
-            cp "$generated_dir"/public/*.json public/
-            cp "$generated_dir"/public/guild-details/*.json public/guild-details/
-            git add public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
-            git diff --cached --quiet && echo "Remote already contains the generated guild data" && exit 0
-            git commit -m "chore: auto-update guild data [skip ci]"
-          done
-          echo "Unable to push guild data after 5 attempts."
-          exit 1
