@@ -91,7 +91,8 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           generated_dir="$(mktemp -d)"
           cp public/*.json "$generated_dir"/
-          git checkout -- public/*.json
+          git restore --staged --worktree -- public/*.json
+          git clean -f -- public/*.json
           git pull --rebase origin main
           cp "$generated_dir"/*.json public/
           git add public/*.json

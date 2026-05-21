@@ -126,7 +126,8 @@ jobs:
           mkdir -p "$generated_dir/public/guild-details"
           cp public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json "$generated_dir/public/"
           cp public/guild-details/*.json "$generated_dir/public/guild-details/"
-          git checkout -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git restore --staged --worktree -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
+          git clean -f -- public/guild-database.json public/guild-list.json public/guild-search-index.json public/guild-details.json public/guild-members.json public/guild-refresh-plan.json public/guild-details/*.json
           git pull --rebase origin main
           cp "$generated_dir"/public/*.json public/
           cp "$generated_dir"/public/guild-details/*.json public/guild-details/
