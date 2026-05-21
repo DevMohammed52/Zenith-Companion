@@ -985,7 +985,6 @@
   gap: 0.55rem;
   min-width: 0;
   max-width: 100%;
-  order: 3;
 }
 
 .skillCard {
@@ -1057,7 +1056,6 @@
   gap: 0.65rem;
   justify-content: space-between;
   min-width: 0;
-  order: 4;
   padding: 0.65rem 0.75rem;
 }
 
@@ -1091,7 +1089,6 @@
   gap: 1rem;
   justify-content: space-between;
   min-width: 0;
-  order: 1;
 }
 
 .tabRow {
@@ -1134,7 +1131,6 @@
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   max-width: 100%;
-  order: 2;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   animation: riseIn 400ms ease both;
@@ -1142,7 +1138,6 @@
 
 .mobileResults {
   display: none;
-  order: 2;
 }
 
 .mobileResultCard {

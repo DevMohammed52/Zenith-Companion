@@ -691,6 +691,34 @@ export default function SkillProfitPage() {
         </div>
       </section>
 
+      <section className={styles.overviewGrid}>
+        {SKILLS.map((skill) => {
+          const top = rowModel.topBySkill.get(skill);
+          return (
+            <button
+              className={`${styles.skillCard} ${activeSkill === skill ? styles.skillCardActive : ""}`}
+              key={skill}
+              onClick={() => setActiveSkill(skill)}
+              title={skill === "Forge" ? `${forgeRecipes.length} forge recipes loaded for display only` : top ? `${top.name}: ${getProfitSummary(top)}` : "No liquid route"}
+              type="button"
+            >
+              <div className={styles.skillCardTop}>
+                <span>{skill}</span>
+                <span>{(rowModel.counts.get(skill) || 0).toLocaleString()}</span>
+              </div>
+              <div className={styles.skillCardBody}>
+                <span>{skill === "Forge" ? "Info only" : top?.name || "No liquid route"}</span>
+                <strong>{skill === "Forge" ? `${forgeRecipes.length} recipes` : top ? getProfitCardValue(top) : "0g/hr"}</strong>
+              </div>
+            </button>
+          );
+        })}
+      </section>
+      <div className={styles.forgeHandoff}>
+        <span>Forge recipes are informational here and hidden from All results by default.</span>
+        <a href="/forge">Open Forge Planner</a>
+      </div>
+
       <section className={`${styles.commandBar} ${activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""}`}>
         <div className={styles.filterRow}>
           <div className={styles.searchBox}>
@@ -973,34 +1001,6 @@ export default function SkillProfitPage() {
             </div>
           )}
         </section>
-      </div>
-
-      <section className={styles.overviewGrid}>
-        {SKILLS.map((skill) => {
-          const top = rowModel.topBySkill.get(skill);
-          return (
-            <button
-              className={`${styles.skillCard} ${activeSkill === skill ? styles.skillCardActive : ""}`}
-              key={skill}
-              onClick={() => setActiveSkill(skill)}
-              title={skill === "Forge" ? `${forgeRecipes.length} forge recipes loaded for display only` : top ? `${top.name}: ${getProfitSummary(top)}` : "No liquid route"}
-              type="button"
-            >
-              <div className={styles.skillCardTop}>
-                <span>{skill}</span>
-                <span>{(rowModel.counts.get(skill) || 0).toLocaleString()}</span>
-              </div>
-              <div className={styles.skillCardBody}>
-                <span>{skill === "Forge" ? "Info only" : top?.name || "No liquid route"}</span>
-                <strong>{skill === "Forge" ? `${forgeRecipes.length} recipes` : top ? getProfitCardValue(top) : "0g/hr"}</strong>
-              </div>
-            </button>
-          );
-        })}
-      </section>
-      <div className={styles.forgeHandoff}>
-        <span>Forge recipes are informational here and hidden from All results by default.</span>
-        <a href="/forge">Open Forge Planner</a>
       </div>
 
       <section className={styles.tableHeader}>
