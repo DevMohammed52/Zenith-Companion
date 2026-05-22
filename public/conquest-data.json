@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-05-22T11:32:13.050Z",
-    "fetched_at": "2026-05-22T11:31:56.492Z",
+    "generated_at": "2026-05-22T12:26:56.028Z",
+    "fetched_at": "2026-05-22T12:26:39.467Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-05-22T11:36:57+00:00",
+    "endpoint_updates_at": "2026-05-22T12:31:40+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16558
+      "elapsed_ms": 16561
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 5,
+      "active_assaults": 6,
       "leaderboard_rows": 37,
       "contribution_rows": 311,
       "guilds_observed": 20
@@ -669,10 +669,22 @@
       "kills": 306935,
       "experience": 1105849,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 36,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 815,
+            "name": "Mystic Ore Bros",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -1235,7 +1247,7 @@
           "character": {
             "hashed_id": "ZvrGV8RQpveZ6Y2wgA5j",
             "name": "Mizuu",
-            "total_level": 569,
+            "total_level": 573,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPMT28F1SBX3DSJE9AJWB.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -1470,7 +1482,7 @@
           "character": {
             "hashed_id": "rx463VdQgRnOxL5w1zWK",
             "name": "Rannay",
-            "total_level": 1195,
+            "total_level": 1196,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -3083,16 +3095,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#aaf200",
-      "kills": 757391,
-      "experience": 3976277,
+      "kills": 760292,
+      "experience": 3992698,
       "guilds_count": 2,
       "active_assaults_count": 1,
       "leaderboard_count": 2,
       "contribution_count": 31,
       "active_assaults": [
         {
-          "kills": 42,
-          "experience": 326,
+          "kills": 2943,
+          "experience": 16747,
           "guild": {
             "id": 697,
             "name": "You Rising",
@@ -3105,8 +3117,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 501835,
-          "experience": 2461767,
+          "kills": 504736,
+          "experience": 2478188,
           "guild": {
             "id": 697,
             "name": "You Rising",
@@ -3174,8 +3186,8 @@
         {
           "id": 120745,
           "guild_conquest_progress_id": 118609,
-          "kills": 43171,
-          "experience": 344251,
+          "kills": 44309,
+          "experience": 353355,
           "guild": null,
           "character": {
             "hashed_id": "bAB1E9poQqmKQnakeJj5",
@@ -3230,8 +3242,8 @@
         {
           "id": 120880,
           "guild_conquest_progress_id": 118609,
-          "kills": 40686,
-          "experience": 165998,
+          "kills": 41815,
+          "experience": 170514,
           "guild": null,
           "character": {
             "hashed_id": "aJydnOmQW83AkNbgRe5M",
@@ -3272,8 +3284,8 @@
         {
           "id": 120751,
           "guild_conquest_progress_id": 118609,
-          "kills": 28250,
-          "experience": 120765,
+          "kills": 28597,
+          "experience": 122153,
           "guild": null,
           "character": {
             "hashed_id": "6aDoyRnLyDEkyYpV5AGX",
@@ -3314,8 +3326,8 @@
         {
           "id": 120884,
           "guild_conquest_progress_id": 118609,
-          "kills": 28369,
-          "experience": 107067,
+          "kills": 28377,
+          "experience": 107087,
           "guild": null,
           "character": {
             "hashed_id": "7gw0k38L42nqkNWevJxy",
@@ -5414,8 +5426,8 @@
     {
       "id": 120745,
       "guild_conquest_progress_id": 118609,
-      "kills": 43171,
-      "experience": 344251,
+      "kills": 44309,
+      "experience": 353355,
       "guild": null,
       "character": {
         "hashed_id": "bAB1E9poQqmKQnakeJj5",
@@ -6058,6 +6070,25 @@
       }
     },
     {
+      "id": 120880,
+      "guild_conquest_progress_id": 118609,
+      "kills": 41815,
+      "experience": 170514,
+      "guild": null,
+      "character": {
+        "hashed_id": "aJydnOmQW83AkNbgRe5M",
+        "name": "Germa",
+        "total_level": 2054,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 118809,
       "guild_conquest_progress_id": 118608,
       "kills": 45163,
@@ -6074,25 +6105,6 @@
         "id": 8,
         "key": "celestial-observatory",
         "name": "Celestial Observatory"
-      }
-    },
-    {
-      "id": 120880,
-      "guild_conquest_progress_id": 118609,
-      "kills": 40686,
-      "experience": 165998,
-      "guild": null,
-      "character": {
-        "hashed_id": "aJydnOmQW83AkNbgRe5M",
-        "name": "Germa",
-        "total_level": 2054,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
       }
     },
     {
@@ -6286,6 +6298,25 @@
       }
     },
     {
+      "id": 120751,
+      "guild_conquest_progress_id": 118609,
+      "kills": 28597,
+      "experience": 122153,
+      "guild": null,
+      "character": {
+        "hashed_id": "6aDoyRnLyDEkyYpV5AGX",
+        "name": "Bennedro",
+        "total_level": 2013,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAG3DHDRKN1EJHJBAASDRY.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 119771,
       "guild_conquest_progress_id": 119347,
       "kills": 25205,
@@ -6302,25 +6333,6 @@
         "id": 8,
         "key": "celestial-observatory",
         "name": "Celestial Observatory"
-      }
-    },
-    {
-      "id": 120751,
-      "guild_conquest_progress_id": 118609,
-      "kills": 28250,
-      "experience": 120765,
-      "guild": null,
-      "character": {
-        "hashed_id": "6aDoyRnLyDEkyYpV5AGX",
-        "name": "Bennedro",
-        "total_level": 2013,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAG3DHDRKN1EJHJBAASDRY.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
       }
     },
     {
@@ -6402,8 +6414,8 @@
     {
       "id": 120884,
       "guild_conquest_progress_id": 118609,
-      "kills": 28369,
-      "experience": 107067,
+      "kills": 28377,
+      "experience": 107087,
       "guild": null,
       "character": {
         "hashed_id": "7gw0k38L42nqkNWevJxy",
