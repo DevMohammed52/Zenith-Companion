@@ -1,11 +1,11 @@
 {
   "_meta": {
     "source": "/v1/world/locations/list",
-    "fetched_at": "2026-05-21T23:35:01.742Z",
-    "endpoint_updates_at": "2026-05-21T23:35:03+00:00",
+    "fetched_at": "2026-05-22T04:09:51.276Z",
+    "endpoint_updates_at": "2026-05-22T04:10:51+00:00",
     "location_count": 10
   },
-  "endpoint_updates_at": "2026-05-21T23:35:03+00:00",
+  "endpoint_updates_at": "2026-05-22T04:10:51+00:00",
   "locations": [
     {
       "id": 1,
@@ -16,22 +16,6 @@
       "x": 180,
       "y": 100,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Thu 21 May, 22:43 to Fri 22 May, 10:43",
-              "starts_at": "2026-05-21T22:43:28+00:00",
-              "starts_at_time": "22:43",
-              "ends_at": "2026-05-22T10:43:28+00:00",
-              "buffs": []
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -286,6 +270,85 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "WINDY",
+              "icon": "windy",
+              "name": "Windy",
+              "window": "Mon 25 May, 23:43 to Tue 26 May, 05:43",
+              "starts_at": "2026-05-25T23:43:28+00:00",
+              "starts_at_time": "23:43",
+              "ends_at": "2026-05-26T05:43:28+00:00",
+              "buffs": [
+                "+15% Hunt Efficiency",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+25% Woodcutting EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Tue 26 May, 05:43 to Tue 26 May, 16:43",
+              "starts_at": "2026-05-26T05:43:28+00:00",
+              "starts_at_time": "05:43",
+              "ends_at": "2026-05-26T16:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "SNOW",
+              "icon": "snow",
+              "name": "Snow",
+              "window": "Tue 26 May, 16:43 to Tue 26 May, 22:43",
+              "starts_at": "2026-05-26T16:43:28+00:00",
+              "starts_at_time": "16:43",
+              "ends_at": "2026-05-26T22:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+20% Hunting Mastery EXP",
+                "-15% Fishing Efficiency",
+                "+30% Fishing EXP",
+                "-15% Woodcutting Efficiency",
+                "+30% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+20% Mining EXP",
+                "-10% Construction Efficiency",
+                "+20% Construction EXP"
+              ]
+            },
+            {
+              "key": "WINDY",
+              "icon": "windy",
+              "name": "Windy",
+              "window": "Tue 26 May, 22:43 to Wed 27 May, 09:43",
+              "starts_at": "2026-05-26T22:43:28+00:00",
+              "starts_at_time": "22:43",
+              "ends_at": "2026-05-27T09:43:28+00:00",
+              "buffs": [
+                "+15% Hunt Efficiency",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+25% Woodcutting EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -298,51 +361,6 @@
       "x": 500,
       "y": 150,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 11:43 to Thu 21 May, 23:43",
-              "starts_at": "2026-05-21T11:43:28+00:00",
-              "starts_at_time": "11:43",
-              "ends_at": "2026-05-21T23:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            },
-            {
-              "key": "HEATWAVE",
-              "icon": "heatwave",
-              "name": "Heatwave",
-              "window": "Thu 21 May, 23:43 to Fri 22 May, 07:43",
-              "starts_at": "2026-05-21T23:43:28+00:00",
-              "starts_at_time": "23:43",
-              "ends_at": "2026-05-22T07:43:28+00:00",
-              "buffs": [
-                "-5% Hunt Efficiency",
-                "+15% Hunting Mastery EXP",
-                "-15% Fishing Efficiency",
-                "+30% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-15% Mining Efficiency",
-                "+30% Mining EXP",
-                "-15% Construction Efficiency",
-                "+30% Construction EXP"
-              ]
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -599,6 +617,82 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Mon 25 May, 14:43 to Tue 26 May, 00:43",
+              "starts_at": "2026-05-25T14:43:28+00:00",
+              "starts_at_time": "14:43",
+              "ends_at": "2026-05-26T00:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Tue 26 May, 00:43 to Tue 26 May, 12:43",
+              "starts_at": "2026-05-26T00:43:28+00:00",
+              "starts_at_time": "00:43",
+              "ends_at": "2026-05-26T12:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Tue 26 May, 12:43 to Tue 26 May, 21:43",
+              "starts_at": "2026-05-26T12:43:28+00:00",
+              "starts_at_time": "12:43",
+              "ends_at": "2026-05-26T21:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "OVERCAST",
+              "icon": "overcast",
+              "name": "Overcast",
+              "window": "Tue 26 May, 21:43 to Wed 27 May, 07:43",
+              "starts_at": "2026-05-26T21:43:28+00:00",
+              "starts_at_time": "21:43",
+              "ends_at": "2026-05-27T07:43:28+00:00",
+              "buffs": []
+            }
+          ]
         }
       ]
     },
@@ -611,33 +705,6 @@
       "x": 290,
       "y": 380,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "STORM",
-              "icon": "storm",
-              "name": "Storm",
-              "window": "Thu 21 May, 21:43 to Fri 22 May, 09:43",
-              "starts_at": "2026-05-21T21:43:28+00:00",
-              "starts_at_time": "21:43",
-              "ends_at": "2026-05-22T09:43:28+00:00",
-              "buffs": [
-                "-15% Hunt Efficiency",
-                "+35% Hunting Mastery EXP",
-                "-20% Fishing Efficiency",
-                "+40% Fishing EXP",
-                "-20% Woodcutting Efficiency",
-                "+40% Woodcutting EXP",
-                "-10% Mining Efficiency",
-                "+25% Mining EXP",
-                "-10% Construction Efficiency",
-                "+25% Construction EXP"
-              ]
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -931,6 +998,58 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Mon 25 May, 22:43 to Tue 26 May, 05:43",
+              "starts_at": "2026-05-25T22:43:28+00:00",
+              "starts_at_time": "22:43",
+              "ends_at": "2026-05-26T05:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "OVERCAST",
+              "icon": "overcast",
+              "name": "Overcast",
+              "window": "Tue 26 May, 05:43 to Tue 26 May, 16:43",
+              "starts_at": "2026-05-26T05:43:28+00:00",
+              "starts_at_time": "05:43",
+              "ends_at": "2026-05-26T16:43:28+00:00",
+              "buffs": []
+            },
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Tue 26 May, 16:43 to Wed 27 May, 02:43",
+              "starts_at": "2026-05-26T16:43:28+00:00",
+              "starts_at_time": "16:43",
+              "ends_at": "2026-05-27T02:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -944,51 +1063,9 @@
       "y": 420,
       "forecast": [
         {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 13:43 to Fri 22 May, 00:43",
-              "starts_at": "2026-05-21T13:43:28+00:00",
-              "starts_at_time": "13:43",
-              "ends_at": "2026-05-22T00:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            }
-          ]
-        },
-        {
           "day_name": "Friday",
           "date": "22 May",
           "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 13:43 to Fri 22 May, 00:43",
-              "starts_at": "2026-05-21T13:43:28+00:00",
-              "starts_at_time": "13:43",
-              "ends_at": "2026-05-22T00:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            },
             {
               "key": "STORM",
               "icon": "storm",
@@ -1259,6 +1336,48 @@
               "buffs": []
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "OVERCAST",
+              "icon": "overcast",
+              "name": "Overcast",
+              "window": "Mon 25 May, 22:43 to Tue 26 May, 10:43",
+              "starts_at": "2026-05-25T22:43:28+00:00",
+              "starts_at_time": "22:43",
+              "ends_at": "2026-05-26T10:43:28+00:00",
+              "buffs": []
+            },
+            {
+              "key": "OVERCAST",
+              "icon": "overcast",
+              "name": "Overcast",
+              "window": "Tue 26 May, 10:43 to Tue 26 May, 17:43",
+              "starts_at": "2026-05-26T10:43:28+00:00",
+              "starts_at_time": "10:43",
+              "ends_at": "2026-05-26T17:43:28+00:00",
+              "buffs": []
+            },
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Tue 26 May, 17:43 to Wed 27 May, 03:43",
+              "starts_at": "2026-05-26T17:43:28+00:00",
+              "starts_at_time": "17:43",
+              "ends_at": "2026-05-27T03:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -1271,28 +1390,6 @@
       "x": 800,
       "y": 500,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "CLEAR",
-              "icon": "clear",
-              "name": "Clear",
-              "window": "Thu 21 May, 21:43 to Fri 22 May, 07:43",
-              "starts_at": "2026-05-21T21:43:28+00:00",
-              "starts_at_time": "21:43",
-              "ends_at": "2026-05-22T07:43:28+00:00",
-              "buffs": [
-                "+10% Hunt Efficiency",
-                "+10% Fishing Efficiency",
-                "+10% Woodcutting Efficiency",
-                "+5% Mining Efficiency",
-                "+5% Construction Efficiency"
-              ]
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -1579,6 +1676,86 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Mon 25 May, 20:43 to Tue 26 May, 05:43",
+              "starts_at": "2026-05-25T20:43:28+00:00",
+              "starts_at_time": "20:43",
+              "ends_at": "2026-05-26T05:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "STORM",
+              "icon": "storm",
+              "name": "Storm",
+              "window": "Tue 26 May, 05:43 to Tue 26 May, 17:43",
+              "starts_at": "2026-05-26T05:43:28+00:00",
+              "starts_at_time": "05:43",
+              "ends_at": "2026-05-26T17:43:28+00:00",
+              "buffs": [
+                "-15% Hunt Efficiency",
+                "+35% Hunting Mastery EXP",
+                "-20% Fishing Efficiency",
+                "+40% Fishing EXP",
+                "-20% Woodcutting Efficiency",
+                "+40% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+25% Mining EXP",
+                "-10% Construction Efficiency",
+                "+25% Construction EXP"
+              ]
+            },
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Tue 26 May, 17:43 to Tue 26 May, 23:43",
+              "starts_at": "2026-05-26T17:43:28+00:00",
+              "starts_at_time": "17:43",
+              "ends_at": "2026-05-26T23:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "SNOW",
+              "icon": "snow",
+              "name": "Snow",
+              "window": "Tue 26 May, 23:43 to Wed 27 May, 06:43",
+              "starts_at": "2026-05-26T23:43:28+00:00",
+              "starts_at_time": "23:43",
+              "ends_at": "2026-05-27T06:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+20% Hunting Mastery EXP",
+                "-15% Fishing Efficiency",
+                "+30% Fishing EXP",
+                "-15% Woodcutting Efficiency",
+                "+30% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+20% Mining EXP",
+                "-10% Construction Efficiency",
+                "+20% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -1592,43 +1769,9 @@
       "y": 770,
       "forecast": [
         {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "MAGIC_STORM",
-              "icon": "magic_storm",
-              "name": "Magic Storm",
-              "window": "Thu 21 May, 20:43 to Fri 22 May, 02:43",
-              "starts_at": "2026-05-21T20:43:28+00:00",
-              "starts_at_time": "20:43",
-              "ends_at": "2026-05-22T02:43:28+00:00",
-              "buffs": [
-                "+25% Battle Magic Find",
-                "+20% Dungeon Magic Find",
-                "+20% World Boss Magic Find"
-              ]
-            }
-          ]
-        },
-        {
           "day_name": "Friday",
           "date": "22 May",
           "weathers": [
-            {
-              "key": "MAGIC_STORM",
-              "icon": "magic_storm",
-              "name": "Magic Storm",
-              "window": "Thu 21 May, 20:43 to Fri 22 May, 02:43",
-              "starts_at": "2026-05-21T20:43:28+00:00",
-              "starts_at_time": "20:43",
-              "ends_at": "2026-05-22T02:43:28+00:00",
-              "buffs": [
-                "+25% Battle Magic Find",
-                "+20% Dungeon Magic Find",
-                "+20% World Boss Magic Find"
-              ]
-            },
             {
               "key": "HEATWAVE",
               "icon": "heatwave",
@@ -1915,6 +2058,83 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "STORM",
+              "icon": "storm",
+              "name": "Storm",
+              "window": "Mon 25 May, 21:43 to Tue 26 May, 06:43",
+              "starts_at": "2026-05-25T21:43:28+00:00",
+              "starts_at_time": "21:43",
+              "ends_at": "2026-05-26T06:43:28+00:00",
+              "buffs": [
+                "-15% Hunt Efficiency",
+                "+35% Hunting Mastery EXP",
+                "-20% Fishing Efficiency",
+                "+40% Fishing EXP",
+                "-20% Woodcutting Efficiency",
+                "+40% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+25% Mining EXP",
+                "-10% Construction Efficiency",
+                "+25% Construction EXP"
+              ]
+            },
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Tue 26 May, 06:43 to Tue 26 May, 16:43",
+              "starts_at": "2026-05-26T06:43:28+00:00",
+              "starts_at_time": "06:43",
+              "ends_at": "2026-05-26T16:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "WINDY",
+              "icon": "windy",
+              "name": "Windy",
+              "window": "Tue 26 May, 16:43 to Tue 26 May, 22:43",
+              "starts_at": "2026-05-26T16:43:28+00:00",
+              "starts_at_time": "16:43",
+              "ends_at": "2026-05-26T22:43:28+00:00",
+              "buffs": [
+                "+15% Hunt Efficiency",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+25% Woodcutting EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Tue 26 May, 22:43 to Wed 27 May, 07:43",
+              "starts_at": "2026-05-26T22:43:28+00:00",
+              "starts_at_time": "22:43",
+              "ends_at": "2026-05-27T07:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -1928,51 +2148,9 @@
       "y": 270,
       "forecast": [
         {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 21:43 to Fri 22 May, 03:43",
-              "starts_at": "2026-05-21T21:43:28+00:00",
-              "starts_at_time": "21:43",
-              "ends_at": "2026-05-22T03:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            }
-          ]
-        },
-        {
           "day_name": "Friday",
           "date": "22 May",
           "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 21:43 to Fri 22 May, 03:43",
-              "starts_at": "2026-05-21T21:43:28+00:00",
-              "starts_at_time": "21:43",
-              "ends_at": "2026-05-22T03:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            },
             {
               "key": "RAIN",
               "icon": "rain",
@@ -2246,6 +2424,67 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "CLEAR",
+              "icon": "clear",
+              "name": "Clear",
+              "window": "Mon 25 May, 18:43 to Tue 26 May, 06:43",
+              "starts_at": "2026-05-25T18:43:28+00:00",
+              "starts_at_time": "18:43",
+              "ends_at": "2026-05-26T06:43:28+00:00",
+              "buffs": [
+                "+10% Hunt Efficiency",
+                "+10% Fishing Efficiency",
+                "+10% Woodcutting Efficiency",
+                "+5% Mining Efficiency",
+                "+5% Construction Efficiency"
+              ]
+            },
+            {
+              "key": "WINDY",
+              "icon": "windy",
+              "name": "Windy",
+              "window": "Tue 26 May, 06:43 to Tue 26 May, 15:43",
+              "starts_at": "2026-05-26T06:43:28+00:00",
+              "starts_at_time": "06:43",
+              "ends_at": "2026-05-26T15:43:28+00:00",
+              "buffs": [
+                "+15% Hunt Efficiency",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+25% Woodcutting EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "FOG",
+              "icon": "fog",
+              "name": "Fog",
+              "window": "Tue 26 May, 15:43 to Wed 27 May, 00:43",
+              "starts_at": "2026-05-26T15:43:28+00:00",
+              "starts_at_time": "15:43",
+              "ends_at": "2026-05-27T00:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+25% Hunting Mastery EXP",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+20% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -2258,32 +2497,6 @@
       "x": 575,
       "y": 710,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "RAIN",
-              "icon": "rain",
-              "name": "Rain",
-              "window": "Thu 21 May, 22:43 to Fri 22 May, 09:43",
-              "starts_at": "2026-05-21T22:43:28+00:00",
-              "starts_at_time": "22:43",
-              "ends_at": "2026-05-22T09:43:28+00:00",
-              "buffs": [
-                "-5% Hunt Efficiency",
-                "+10% Hunting Mastery EXP",
-                "+10% Fishing Efficiency",
-                "-5% Woodcutting Efficiency",
-                "+10% Woodcutting EXP",
-                "-5% Mining Efficiency",
-                "+10% Mining EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -2569,6 +2782,75 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "STORM",
+              "icon": "storm",
+              "name": "Storm",
+              "window": "Mon 25 May, 22:43 to Tue 26 May, 07:43",
+              "starts_at": "2026-05-25T22:43:28+00:00",
+              "starts_at_time": "22:43",
+              "ends_at": "2026-05-26T07:43:28+00:00",
+              "buffs": [
+                "-15% Hunt Efficiency",
+                "+35% Hunting Mastery EXP",
+                "-20% Fishing Efficiency",
+                "+40% Fishing EXP",
+                "-20% Woodcutting Efficiency",
+                "+40% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+25% Mining EXP",
+                "-10% Construction Efficiency",
+                "+25% Construction EXP"
+              ]
+            },
+            {
+              "key": "FOG",
+              "icon": "fog",
+              "name": "Fog",
+              "window": "Tue 26 May, 07:43 to Tue 26 May, 15:43",
+              "starts_at": "2026-05-26T07:43:28+00:00",
+              "starts_at_time": "07:43",
+              "ends_at": "2026-05-26T15:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+25% Hunting Mastery EXP",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+20% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "FOG",
+              "icon": "fog",
+              "name": "Fog",
+              "window": "Tue 26 May, 15:43 to Wed 27 May, 01:43",
+              "starts_at": "2026-05-26T15:43:28+00:00",
+              "starts_at_time": "15:43",
+              "ends_at": "2026-05-27T01:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+25% Hunting Mastery EXP",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+20% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -2582,35 +2864,9 @@
       "y": 470,
       "forecast": [
         {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Thu 21 May, 19:43 to Fri 22 May, 01:43",
-              "starts_at": "2026-05-21T19:43:28+00:00",
-              "starts_at_time": "19:43",
-              "ends_at": "2026-05-22T01:43:28+00:00",
-              "buffs": []
-            }
-          ]
-        },
-        {
           "day_name": "Friday",
           "date": "22 May",
           "weathers": [
-            {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Thu 21 May, 19:43 to Fri 22 May, 01:43",
-              "starts_at": "2026-05-21T19:43:28+00:00",
-              "starts_at_time": "19:43",
-              "ends_at": "2026-05-22T01:43:28+00:00",
-              "buffs": []
-            },
             {
               "key": "FOG",
               "icon": "fog",
@@ -2910,6 +3166,73 @@
               ]
             }
           ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Mon 25 May, 20:43 to Tue 26 May, 02:43",
+              "starts_at": "2026-05-25T20:43:28+00:00",
+              "starts_at_time": "20:43",
+              "ends_at": "2026-05-26T02:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Tue 26 May, 02:43 to Tue 26 May, 14:43",
+              "starts_at": "2026-05-26T02:43:28+00:00",
+              "starts_at_time": "02:43",
+              "ends_at": "2026-05-26T14:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "FOG",
+              "icon": "fog",
+              "name": "Fog",
+              "window": "Tue 26 May, 14:43 to Wed 27 May, 02:43",
+              "starts_at": "2026-05-26T14:43:28+00:00",
+              "starts_at_time": "14:43",
+              "ends_at": "2026-05-27T02:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+25% Hunting Mastery EXP",
+                "-10% Fishing Efficiency",
+                "+20% Fishing EXP",
+                "-10% Woodcutting Efficiency",
+                "+20% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -2922,30 +3245,6 @@
       "x": 810,
       "y": 100,
       "forecast": [
-        {
-          "day_name": "Thursday",
-          "date": "21 May",
-          "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Thu 21 May, 21:43 to Fri 22 May, 07:43",
-              "starts_at": "2026-05-21T21:43:28+00:00",
-              "starts_at_time": "21:43",
-              "ends_at": "2026-05-22T07:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            }
-          ]
-        },
         {
           "day_name": "Friday",
           "date": "22 May",
@@ -3208,6 +3507,95 @@
                 "+10% Mining EXP",
                 "-5% Construction Efficiency",
                 "+10% Construction EXP"
+              ]
+            }
+          ]
+        },
+        {
+          "day_name": "Tuesday",
+          "date": "26 May",
+          "weathers": [
+            {
+              "key": "RAIN",
+              "icon": "rain",
+              "name": "Rain",
+              "window": "Mon 25 May, 16:43 to Tue 26 May, 01:43",
+              "starts_at": "2026-05-25T16:43:28+00:00",
+              "starts_at_time": "16:43",
+              "ends_at": "2026-05-26T01:43:28+00:00",
+              "buffs": [
+                "-5% Hunt Efficiency",
+                "+10% Hunting Mastery EXP",
+                "+10% Fishing Efficiency",
+                "-5% Woodcutting Efficiency",
+                "+10% Woodcutting EXP",
+                "-5% Mining Efficiency",
+                "+10% Mining EXP",
+                "-5% Construction Efficiency",
+                "+10% Construction EXP"
+              ]
+            },
+            {
+              "key": "STORM",
+              "icon": "storm",
+              "name": "Storm",
+              "window": "Tue 26 May, 01:43 to Tue 26 May, 10:43",
+              "starts_at": "2026-05-26T01:43:28+00:00",
+              "starts_at_time": "01:43",
+              "ends_at": "2026-05-26T10:43:28+00:00",
+              "buffs": [
+                "-15% Hunt Efficiency",
+                "+35% Hunting Mastery EXP",
+                "-20% Fishing Efficiency",
+                "+40% Fishing EXP",
+                "-20% Woodcutting Efficiency",
+                "+40% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+25% Mining EXP",
+                "-10% Construction Efficiency",
+                "+25% Construction EXP"
+              ]
+            },
+            {
+              "key": "SNOW",
+              "icon": "snow",
+              "name": "Snow",
+              "window": "Tue 26 May, 10:43 to Tue 26 May, 17:43",
+              "starts_at": "2026-05-26T10:43:28+00:00",
+              "starts_at_time": "10:43",
+              "ends_at": "2026-05-26T17:43:28+00:00",
+              "buffs": [
+                "-10% Hunt Efficiency",
+                "+20% Hunting Mastery EXP",
+                "-15% Fishing Efficiency",
+                "+30% Fishing EXP",
+                "-15% Woodcutting Efficiency",
+                "+30% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+20% Mining EXP",
+                "-10% Construction Efficiency",
+                "+20% Construction EXP"
+              ]
+            },
+            {
+              "key": "STORM",
+              "icon": "storm",
+              "name": "Storm",
+              "window": "Tue 26 May, 17:43 to Wed 27 May, 01:43",
+              "starts_at": "2026-05-26T17:43:28+00:00",
+              "starts_at_time": "17:43",
+              "ends_at": "2026-05-27T01:43:28+00:00",
+              "buffs": [
+                "-15% Hunt Efficiency",
+                "+35% Hunting Mastery EXP",
+                "-20% Fishing Efficiency",
+                "+40% Fishing EXP",
+                "-20% Woodcutting Efficiency",
+                "+40% Woodcutting EXP",
+                "-10% Mining Efficiency",
+                "+25% Mining EXP",
+                "-10% Construction Efficiency",
+                "+25% Construction EXP"
               ]
             }
           ]
