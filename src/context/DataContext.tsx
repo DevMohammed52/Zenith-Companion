@@ -90,7 +90,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [market, staticPayload, status, items, worldLocationsPayload] = await Promise.all([
-      fetchJson<MarketData>("/market-data.json"),
+      fetchJson<MarketData>("/market-data.json", { cache: "no-cache" }),
       fetchJson<StaticData>("/static-data.json"),
       fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" }),
       fetchJson<ItemLookup>("/all-items-db.json"),
