@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ChevronDown, DollarSign, Hammer, Plus, Search, TrendingUp, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, DollarSign, Hammer, Plus, Search, TrendingUp, X } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
@@ -11,7 +11,6 @@ import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import { getAssaultBuff } from "@/lib/skill-profit";
 import {
-  MYTHIC_ACTIVE_RECIPES_STORAGE_KEY,
   MYTHIC_CRAFT_TIME_SECONDS,
   MYTHIC_STORAGE_KEYS,
   buildMythicAlchemyRecipes,
@@ -28,11 +27,17 @@ import {
   type MythicRecipeCostMode,
 } from "@/lib/mythic-alchemy";
 
-const formatGold = (value: number, _digits = 0) =>
-  Math.round(value).toLocaleString();
+const formatGold = (value: number, digits = 0) =>
+  value.toLocaleString(undefined, { maximumFractionDigits: digits });
 
 const formatSignedGold = (value: number, digits = 0) =>
   `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
+
+const formatCraftWindow = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "Waiting";
+  if (seconds >= 3600) return `${(seconds / 3600).toFixed(1)}h`;
+  return `${Math.max(1, Math.round(seconds / 60))}m`;
+};
 
 const formatSource = (source: MythicPriceSource) => {
   if (source === "custom") return "Card custom";
@@ -225,6 +230,22 @@ export default function MythicAlchemyPage() {
     const best = activeRows[0];
     return { totalPotentialProfit, best };
   }, [activeRows]);
+  const labStats = useMemo(() => {
+    const warningProjects = activeRows.filter((row) => row.marketWarnings.length > 0).length;
+    const priceGapProjects = activeRows.filter((row) => (
+      row.recipePrice <= 0 ||
+      row.marketGross <= 0 ||
+      row.materialBreakdown.some((material) => material.unitPrice <= 0)
+    )).length;
+    const usesRemaining = activeRows.reduce((sum, row) => sum + row.usesLeft, 0);
+    return {
+      warningProjects,
+      priceGapProjects,
+      usesRemaining,
+      profitableProjects: activeRows.filter((row) => row.profitPerHour >= 0).length,
+    };
+  }, [activeRows]);
+  const recommendedPreview = recommendedRecipes.slice(0, activeRows.length > 0 ? 4 : 5);
 
   const addToLab = (recipe: MythicRecipe) => {
     setActiveRecipeNames((current) => (current.includes(recipe.resultName) ? current : [...current, recipe.resultName]));
@@ -304,13 +325,19 @@ export default function MythicAlchemyPage() {
   const taxNetPercent = Math.round(getMarketTaxMultiplier(preferences.membership) * 100);
 
   return (
-    <main className="container">
+    <main className="container" aria-label="Mythic Lab">
       <div className="header">
-        <div>
+        <div className="header-copy">
+          <div className="header-eyebrow">Alchemy Command Bench</div>
           <h1 className="header-title">
             <ZenithIcon name="spark" size={24} style={{ color: "var(--text-accent)" }} /> Mythic Lab
           </h1>
           <p className="header-subtitle">Workbench for level 90 alchemy recipe projects powered by the live item database.</p>
+          <div className="header-chips" aria-label="Current mythic lab context">
+            <span>{activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}</span>
+            <span>{taxNetPercent}% market net</span>
+            <span>{formatCraftWindow(mythicCraftTimeSeconds)} per craft</span>
+          </div>
         </div>
 
         <div className="workbench-actions" ref={searchRef}>
@@ -319,22 +346,38 @@ export default function MythicAlchemyPage() {
             className="search-trigger"
             aria-expanded={isSearchOpen}
             aria-controls={searchDropdownId}
+            aria-haspopup="dialog"
             onClick={() => setIsSearchOpen((open) => !open)}
           >
             <Plus size={16} /> Add Project
           </button>
           {isSearchOpen && (
             <div className="search-dropdown custom-scrollbar" id={searchDropdownId} role="dialog" aria-label="Add mythic recipe project">
-              <label className="dropdown-input">
-                <Search size={14} />
+              <div className="dropdown-head">
+                <div>
+                  <span>Project Intake</span>
+                  <strong>{availableMythics.length.toLocaleString()} available</strong>
+                </div>
+                <button type="button" className="dropdown-close" aria-label="Close mythic recipe search" onClick={() => setIsSearchOpen(false)}>
+                  <X size={15} />
+                </button>
+              </div>
+              <div className="dropdown-input">
+                <Search size={14} aria-hidden="true" />
                 <input
                   autoFocus
                   aria-label="Search mythic recipe, result, or material"
                   placeholder="Search recipe, result, material..."
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
+                  spellCheck={false}
                 />
-              </label>
+                {searchTerm.trim().length > 0 && (
+                  <button type="button" className="search-clear" aria-label="Clear mythic recipe search" onClick={() => setSearchTerm("")}>
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
               <div className="dropdown-results">
                 {availableMythics.length > 0 ? (
                   availableMythics.map((recipe) => (
@@ -358,8 +401,32 @@ export default function MythicAlchemyPage() {
         </div>
       </div>
 
+      <section className="lab-status" aria-label="Mythic lab status">
+        <div className="status-tile">
+          <span>Projects</span>
+          <strong>{activeRows.length.toLocaleString()}</strong>
+          <small>{labStats.usesRemaining.toLocaleString()} uses queued</small>
+        </div>
+        <div className="status-tile">
+          <span>Profitable</span>
+          <strong>{labStats.profitableProjects.toLocaleString()}</strong>
+          <small>{activeRows.length > 0 ? "based on current inputs" : "pin recipes to model"}</small>
+        </div>
+        <div className={`status-tile ${labStats.priceGapProjects > 0 ? "warn" : ""}`}>
+          <span>Price Gaps</span>
+          <strong>{labStats.priceGapProjects > 0 ? labStats.priceGapProjects.toLocaleString() : "Clear"}</strong>
+          <small>{labStats.priceGapProjects > 0 ? "custom prices recommended" : "inputs look complete"}</small>
+        </div>
+        <div className={`status-tile ${labStats.warningProjects > 0 ? "warn" : ""}`}>
+          <span>Market Risk</span>
+          <strong>{labStats.warningProjects > 0 ? labStats.warningProjects.toLocaleString() : "Clear"}</strong>
+          <small>{labStats.warningProjects > 0 ? "review liquidity notes" : `${mythicRecipes.length.toLocaleString()} recipes indexed`}</small>
+        </div>
+      </section>
+
       <div className="lab-summary">
         <div className="summary-card">
+          <div className="summary-kicker"><CheckCircle2 size={15} /> Lab Position</div>
           <div className="summary-content">
             <span className="summary-label">Combined Remaining Profit</span>
             <span className={`summary-value ${labSummary.totalPotentialProfit >= 0 ? "text-success" : "text-danger"}`}>
@@ -374,21 +441,45 @@ export default function MythicAlchemyPage() {
         </div>
 
         <div className="mode-card">
-          <span className="summary-label">Recipe Cost Mode</span>
+          <span className="summary-label"><Clock3 size={14} /> Recipe Cost Mode</span>
           <div className="mode-toggle" role="group" aria-label="Recipe cost mode">
-            <button type="button" className={recipeCostMode === "full" ? "active" : ""} onClick={() => setRecipeCostMode("full")}>
+            <button type="button" aria-pressed={recipeCostMode === "full"} className={recipeCostMode === "full" ? "active" : ""} onClick={() => setRecipeCostMode("full")}>
               Full recipe
             </button>
-            <button type="button" className={recipeCostMode === "remaining" ? "active" : ""} onClick={() => setRecipeCostMode("remaining")}>
+            <button type="button" aria-pressed={recipeCostMode === "remaining"} className={recipeCostMode === "remaining" ? "active" : ""} onClick={() => setRecipeCostMode("remaining")}>
               Remaining uses
             </button>
-            <button type="button" className={recipeCostMode === "owned" ? "active" : ""} onClick={() => setRecipeCostMode("owned")}>
+            <button type="button" aria-pressed={recipeCostMode === "owned"} className={recipeCostMode === "owned" ? "active" : ""} onClick={() => setRecipeCostMode("owned")}>
               Owned
             </button>
           </div>
           <p className="mode-helper">{RECIPE_COST_MODE_HELP[recipeCostMode]}</p>
         </div>
       </div>
+
+      {activeRows.length > 0 && recommendedPreview.length > 0 && (
+        <section className="quick-add-rail" aria-label="Recommended mythic projects">
+          <div>
+            <span>Recommended to review</span>
+            <strong>Add another project without leaving the bench</strong>
+          </div>
+          <div className="quick-add-list">
+            {recommendedPreview.map(({ recipe, missingInputs, liquidity, complete }) => (
+              <button
+                key={recipe.resultName}
+                type="button"
+                className="quick-add-chip"
+                onClick={() => addToLab(recipe)}
+                aria-label={`Pin ${recipe.resultName}. ${complete ? "Prices complete" : `${missingInputs} missing input prices`}. ${liquidity.label}.`}
+              >
+                <Plus size={13} />
+                <span>{recipe.resultName}</span>
+                <em>{complete ? "Ready" : "Needs prices"}</em>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="lab-grid">
         {activeRows.length === 0 ? (
@@ -404,7 +495,7 @@ export default function MythicAlchemyPage() {
             {recommendedRecipes.length > 0 && (
               <div className="recipe-index" aria-label="Recommended mythic recipes to review">
                 <span className="recipe-index-label">Recommended to review</span>
-                {recommendedRecipes.map(({ recipe, outputPrice, recipePrice, missingInputs, liquidity, complete }) => (
+                {recommendedPreview.map(({ recipe, outputPrice, recipePrice, missingInputs, liquidity, complete }) => (
                   <button
                     key={recipe.resultName}
                     type="button"
@@ -412,7 +503,7 @@ export default function MythicAlchemyPage() {
                     onClick={() => addToLab(recipe)}
                     aria-label={`Pin ${recipe.resultName}. ${complete ? "Prices complete" : `${missingInputs} missing input prices`}. ${liquidity.label}.`}
                   >
-                    {recipe.imageUrl ? <img src={recipe.imageUrl} alt="" /> : <span className="recipe-index-fallback" />}
+                    {recipe.imageUrl ? <img src={recipe.imageUrl} alt="" loading="lazy" decoding="async" /> : <span className="recipe-index-fallback" />}
                     <span>
                       <strong>{recipe.resultName}</strong>
                       <small>Lvl {recipe.level} - {recipe.maxUses} uses - {liquidity.label}</small>
@@ -435,7 +526,7 @@ export default function MythicAlchemyPage() {
               </button>
 
               <div className="card-header">
-                {row.recipe.imageUrl && <img className="result-art" src={row.recipe.imageUrl} alt="" />}
+                {row.recipe.imageUrl && <img className="result-art" src={row.recipe.imageUrl} alt="" loading="lazy" decoding="async" />}
                 <div className="title-area">
                   <button type="button" className="title-button" onClick={() => openItemByName(row.recipe.resultName)}>
                     {row.recipe.resultName}
@@ -495,6 +586,7 @@ export default function MythicAlchemyPage() {
                         <div className="input-row">
                           <input
                             type="number"
+                            inputMode="numeric"
                             min="0"
                             aria-label={`Recipe acquisition price for ${row.recipe.recipeName}`}
                             placeholder={row.recipePrice > 0 ? row.recipePrice.toLocaleString() : "No market data"}
@@ -512,6 +604,7 @@ export default function MythicAlchemyPage() {
                       <label className="uses-control">
                         <input
                           type="number"
+                          inputMode="numeric"
                           min="1"
                           max={row.recipe.maxUses}
                           aria-label={`Uses remaining for ${row.recipe.resultName}`}
@@ -540,6 +633,7 @@ export default function MythicAlchemyPage() {
                             <div className="input-source-hint">{formatSource(material.priceSource)}</div>
                             <input
                               type="number"
+                              inputMode="numeric"
                               min="0"
                               aria-label={`Custom unit price for ${material.name}`}
                               placeholder={material.unitPrice > 0 ? material.unitPrice.toLocaleString() : "Missing"}
@@ -574,6 +668,7 @@ export default function MythicAlchemyPage() {
                         <div className="input-row compact">
                           <input
                             type="number"
+                            inputMode="numeric"
                             min="0"
                             aria-label={`Gross sell price for ${row.recipe.resultName}`}
                             placeholder={row.marketGross > 0 ? row.marketGross.toLocaleString() : "No market data"}
@@ -625,94 +720,499 @@ export default function MythicAlchemyPage() {
       </div>
 
       <style jsx>{`
-        .container { padding-bottom: 5rem; }
-        .header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-        .header-title { font-size: 2.25rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem; color: #fff; }
-        .header-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-
-        .workbench-actions { position: relative; z-index: 100; }
-        .search-trigger, .empty-add-btn {
-          background: var(--text-accent); color: #000; border: none; padding: 0.75rem 1.25rem; border-radius: 12px;
-          font-weight: 800; font-size: 0.82rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-          cursor: pointer; transition: transform 0.2s, filter 0.2s;
+        .container {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          overflow-x: clip;
+          padding-bottom: 5rem;
+          -webkit-tap-highlight-color: transparent;
         }
-        .search-trigger:hover, .empty-add-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .container :where(button, input, [role="button"]) {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .container button {
+          -webkit-appearance: none;
+          appearance: none;
+          font: inherit;
+        }
+        .header {
+          align-items: flex-start;
+          display: flex;
+          gap: 1rem;
+          justify-content: space-between;
+          margin-bottom: 0.35rem;
+        }
+        .header-copy { min-width: 0; }
+        .header-eyebrow {
+          color: var(--text-accent);
+          font-size: 0.72rem;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+          margin-bottom: 0.45rem;
+          text-transform: uppercase;
+        }
+        .header-title {
+          align-items: center;
+          color: #fff;
+          display: flex;
+          font-size: 2.25rem;
+          font-weight: 900;
+          gap: 0.75rem;
+          line-height: 1.05;
+          margin: 0;
+          text-wrap: balance;
+        }
+        .header-subtitle {
+          color: var(--text-muted);
+          font-size: 0.92rem;
+          line-height: 1.55;
+          margin: 0.45rem 0 0;
+          max-width: 680px;
+        }
+        .header-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          margin-top: 0.85rem;
+        }
+        .header-chips span {
+          background: rgba(255,255,255,0.035);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 999px;
+          color: rgba(255,255,255,0.78);
+          font-size: 0.68rem;
+          font-weight: 900;
+          line-height: 1;
+          padding: 0.42rem 0.62rem;
+          text-transform: uppercase;
+        }
+
+        .workbench-actions { flex: 0 0 auto; position: relative; z-index: 100; }
+        .search-trigger, .empty-add-btn {
+          align-items: center;
+          background: linear-gradient(135deg, var(--text-accent), #8de8ff);
+          border: 1px solid rgba(255,255,255,0.12);
+          border-radius: 8px;
+          box-shadow: 0 12px 28px rgba(56,189,248,0.18);
+          color: #021015;
+          cursor: pointer;
+          display: inline-flex;
+          font-size: 0.82rem;
+          font-weight: 900;
+          gap: 8px;
+          justify-content: center;
+          min-height: 44px;
+          padding: 0.75rem 1.25rem;
+          transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+        }
+        .search-trigger:hover, .empty-add-btn:hover {
+          box-shadow: 0 16px 36px rgba(56,189,248,0.25);
+          filter: brightness(1.06);
+          transform: translateY(-1px);
+        }
+        .search-trigger:active, .empty-add-btn:active { transform: translateY(0) scale(0.985); }
 
         .search-dropdown {
-          position: absolute; top: calc(100% + 10px); right: 0; width: min(440px, calc(100vw - 2rem)); background: #0f0f0f;
-          border: 1px solid var(--border-subtle); border-radius: 18px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden;
+          animation: dropdown-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+          background: rgba(9,13,15,0.96);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 80%);
+          border-radius: 8px;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.025) inset;
+          overflow: hidden;
+          position: absolute;
+          right: 0;
+          top: calc(100% + 10px);
+          width: min(440px, calc(100vw - 2rem));
         }
-        .dropdown-input { padding: 1rem; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); }
-        .dropdown-input input { background: none; border: none; color: #fff; font-size: 0.95rem; width: 100%; outline: none; }
+        @supports (backdrop-filter: blur(16px)) {
+          .search-dropdown { backdrop-filter: blur(18px) saturate(1.2); }
+        }
+        @keyframes dropdown-in {
+          from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .dropdown-head {
+          align-items: center;
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018));
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          padding: 0.85rem 1rem;
+        }
+        .dropdown-head div { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+        .dropdown-head span {
+          color: var(--text-muted);
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .dropdown-head strong { color: #fff; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dropdown-close, .search-clear {
+          align-items: center;
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 8px;
+          color: var(--text-muted);
+          cursor: pointer;
+          display: inline-flex;
+          flex: 0 0 auto;
+          height: 34px;
+          justify-content: center;
+          transition: color 180ms ease, transform 180ms ease, border-color 180ms ease, background 180ms ease;
+          width: 34px;
+        }
+        .dropdown-close:hover, .search-clear:hover {
+          background: rgba(255,255,255,0.075);
+          border-color: rgba(255,255,255,0.14);
+          color: #fff;
+        }
+        .dropdown-close:active, .search-clear:active { transform: scale(0.96); }
+        .dropdown-input {
+          align-items: center;
+          background: rgba(255,255,255,0.026);
+          border-bottom: 1px solid rgba(255,255,255,0.055);
+          display: flex;
+          gap: 12px;
+          padding: 0.75rem 1rem;
+        }
+        .dropdown-input input {
+          background: none;
+          border: none;
+          color: #fff;
+          font-size: 0.95rem;
+          min-width: 0;
+          outline: none;
+          width: 100%;
+        }
         .dropdown-results { max-height: 370px; overflow-y: auto; padding: 0.35rem; }
         .result-item {
-          width: 100%; padding: 0.85rem 1rem; border: none; border-radius: 12px; cursor: pointer; background: transparent; color: rgba(255,255,255,0.78);
-          text-align: left; display: flex; flex-direction: column; gap: 0.25rem; transition: background 0.2s, color 0.2s, transform 0.2s;
+          background: transparent;
+          border: 1px solid transparent;
+          border-radius: 8px;
+          color: rgba(255,255,255,0.78);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          min-height: 54px;
+          padding: 0.82rem 0.9rem;
+          text-align: left;
+          transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+          width: 100%;
         }
-        .result-item:hover, .result-item:focus-visible { background: rgba(255,255,255,0.06); color: var(--text-accent); outline: none; transform: translateX(3px); }
-        .result-item span { font-weight: 800; }
-        .result-item small { color: var(--text-muted); font-size: 0.72rem; }
-        .no-results { padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; }
+        .result-item:hover, .result-item:focus-visible {
+          background: color-mix(in srgb, var(--text-accent), transparent 92%);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 74%);
+          color: #fff;
+          outline: none;
+          transform: translateX(2px);
+        }
+        .result-item:active { transform: translateX(0) scale(0.99); }
+        .result-item span { font-weight: 900; overflow-wrap: anywhere; }
+        .result-item small { color: var(--text-muted); font-size: 0.72rem; line-height: 1.35; }
+        .no-results { color: var(--text-muted); font-size: 0.8rem; padding: 2rem; text-align: center; }
 
-        .lab-summary { margin-bottom: 2rem; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); gap: 1rem; }
-        .summary-card, .mode-card {
-          background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 96%), rgba(255,255,255,0.015));
-          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 88%); padding: 1.4rem; border-radius: 22px;
+        .lab-status {
+          display: grid;
+          gap: 0.75rem;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
-        .summary-content { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-        .summary-label { font-size: 0.72rem; font-weight: 900; color: var(--text-accent); letter-spacing: 0.08em; text-transform: uppercase; }
-        .summary-value { font-size: 2.2rem; font-weight: 900; color: #fff; font-family: var(--font-mono); }
-        .summary-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem; }
-        .mode-toggle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.85rem; }
-        .mode-toggle button { border: 1px solid var(--border-subtle); border-radius: 10px; background: rgba(0,0,0,0.25); color: var(--text-muted); padding: 0.65rem 0.5rem; font-weight: 800; cursor: pointer; }
-        .mode-toggle button.active { background: var(--text-accent); border-color: var(--text-accent); color: #000; }
+        .status-tile {
+          background: linear-gradient(180deg, rgba(255,255,255,0.036), rgba(255,255,255,0.014));
+          border: 1px solid rgba(255,255,255,0.065);
+          border-radius: 8px;
+          min-height: 104px;
+          overflow: hidden;
+          padding: 1rem;
+          position: relative;
+        }
+        .status-tile::before {
+          background: linear-gradient(90deg, var(--text-accent), transparent);
+          content: "";
+          height: 2px;
+          inset: 0 0 auto;
+          opacity: 0.65;
+          position: absolute;
+        }
+        .status-tile.warn::before { background: linear-gradient(90deg, #fbbf24, transparent); }
+        .status-tile span {
+          color: var(--text-muted);
+          display: block;
+          font-size: 0.68rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .status-tile strong {
+          color: #fff;
+          display: block;
+          font-family: var(--font-mono);
+          font-size: clamp(1.35rem, 2vw, 1.8rem);
+          font-weight: 900;
+          margin-top: 0.45rem;
+          overflow-wrap: anywhere;
+        }
+        .status-tile small { color: var(--text-muted); display: block; font-size: 0.74rem; line-height: 1.35; margin-top: 0.25rem; }
+        .status-tile.warn strong { color: #f8d586; }
+
+        .lab-summary {
+          display: grid;
+          gap: 1rem;
+          grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+        }
+        .summary-card, .mode-card {
+          background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(255,255,255,0.016));
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 84%);
+          border-radius: 8px;
+          box-shadow: 0 18px 46px rgba(0,0,0,0.2);
+          padding: 1.25rem;
+        }
+        .summary-kicker {
+          align-items: center;
+          color: rgba(255,255,255,0.74);
+          display: inline-flex;
+          font-size: 0.72rem;
+          font-weight: 900;
+          gap: 0.4rem;
+          letter-spacing: 0.08em;
+          margin-bottom: 0.85rem;
+          text-transform: uppercase;
+        }
+        .summary-content { align-items: center; display: flex; gap: 1rem; justify-content: space-between; }
+        .summary-label {
+          align-items: center;
+          color: var(--text-accent);
+          display: inline-flex;
+          font-size: 0.72rem;
+          font-weight: 900;
+          gap: 0.4rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .summary-value {
+          color: #fff;
+          font-family: var(--font-mono);
+          font-size: clamp(1.55rem, 3.2vw, 2.2rem);
+          font-weight: 900;
+          overflow-wrap: anywhere;
+          text-align: right;
+        }
+        .summary-hint { color: var(--text-muted); font-size: 0.78rem; line-height: 1.45; margin-top: 0.5rem; }
+        .mode-toggle { display: grid; gap: 0.35rem; grid-template-columns: repeat(3, 1fr); margin-top: 0.85rem; }
+        .mode-toggle button {
+          background: rgba(0,0,0,0.26);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          color: var(--text-muted);
+          cursor: pointer;
+          font-weight: 900;
+          min-height: 40px;
+          padding: 0.65rem 0.5rem;
+          transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+        }
+        .mode-toggle button:hover { border-color: color-mix(in srgb, var(--text-accent), transparent 62%); color: #fff; }
+        .mode-toggle button:active { transform: scale(0.985); }
+        .mode-toggle button.active { background: var(--text-accent); border-color: var(--text-accent); color: #031016; }
         .mode-helper { color: var(--text-muted); font-size: 0.78rem; font-weight: 750; line-height: 1.45; margin: 0.75rem 0 0; }
 
-        .lab-grid { display: flex; flex-direction: column; gap: 1.5rem; }
-        .empty-bench {
-          min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-          background: rgba(255,255,255,0.015); border: 2px dashed var(--border-subtle); border-radius: 28px; padding: 4rem 2rem;
+        .quick-add-rail {
+          align-items: center;
+          background: rgba(255,255,255,0.018);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 8px;
+          display: grid;
+          gap: 1rem;
+          grid-template-columns: minmax(190px, 0.36fr) minmax(0, 1fr);
+          padding: 0.9rem;
         }
-        .empty-icon { margin-bottom: 1.25rem; opacity: 0.25; }
-        .empty-bench h2 { color: #fff; font-size: 1.75rem; margin-bottom: 0.75rem; }
-        .empty-bench p { font-size: 0.95rem; margin-bottom: 2rem; max-width: 520px; color: var(--text-muted); }
+        .quick-add-rail > div:first-child { min-width: 0; }
+        .quick-add-rail span {
+          color: var(--text-accent);
+          display: block;
+          font-size: 0.68rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .quick-add-rail strong { color: #fff; display: block; font-size: 0.88rem; line-height: 1.35; margin-top: 0.25rem; }
+        .quick-add-list { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); min-width: 0; }
+        .quick-add-chip {
+          align-items: center;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 8px;
+          color: #fff;
+          cursor: pointer;
+          display: grid;
+          gap: 0.35rem;
+          grid-template-columns: auto minmax(0, 1fr);
+          min-height: 50px;
+          padding: 0.58rem 0.68rem;
+          text-align: left;
+          transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+        }
+        .quick-add-chip:hover, .quick-add-chip:focus-visible {
+          background: color-mix(in srgb, var(--text-accent), transparent 92%);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+          outline: none;
+          transform: translateY(-1px);
+        }
+        .quick-add-chip:active { transform: scale(0.99); }
+        .quick-add-chip span {
+          color: #fff;
+          font-size: 0.8rem;
+          letter-spacing: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          text-transform: none;
+          white-space: nowrap;
+        }
+        .quick-add-chip em {
+          color: var(--text-muted);
+          font-size: 0.68rem;
+          font-style: normal;
+          font-weight: 900;
+          grid-column: 2;
+        }
+
+        .lab-grid { display: flex; flex-direction: column; gap: 1.25rem; }
+        .empty-bench {
+          align-items: center;
+          background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008));
+          border: 1px dashed color-mix(in srgb, var(--text-accent), transparent 72%);
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          min-height: 380px;
+          padding: 3rem 1.5rem;
+          text-align: center;
+        }
+        .empty-icon { color: var(--text-accent); margin-bottom: 1.25rem; opacity: 0.42; }
+        .empty-bench h2 { color: #fff; font-size: 1.75rem; margin: 0 0 0.75rem; text-wrap: balance; }
+        .empty-bench p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.55; margin: 0 0 2rem; max-width: 520px; }
         .recipe-index { display: grid; gap: 0.55rem; margin-top: 2rem; max-width: 760px; width: 100%; }
         .recipe-index-label { color: var(--text-accent); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
         .recipe-index-row {
-          align-items: center; background: rgba(255,255,255,0.022); border: 1px solid var(--border-subtle); border-radius: 12px;
-          color: inherit; cursor: pointer; display: grid; gap: 0.65rem; grid-template-columns: 38px minmax(0, 1fr) auto;
-          min-height: 54px; padding: 0.55rem 0.7rem; text-align: left; width: 100%;
+          align-items: center;
+          background: rgba(255,255,255,0.024);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          color: inherit;
+          cursor: pointer;
+          display: grid;
+          gap: 0.65rem;
+          grid-template-columns: 38px minmax(0, 1fr) auto;
+          min-height: 54px;
+          padding: 0.55rem 0.7rem;
+          text-align: left;
+          transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+          width: 100%;
         }
-        .recipe-index-row:hover, .recipe-index-row:focus-visible { background: rgba(255,255,255,0.05); border-color: var(--text-accent); outline: none; }
-        .recipe-index-row img, .recipe-index-fallback { background: rgba(255,255,255,0.05); border-radius: 8px; display: block; height: 38px; width: 38px; }
+        .recipe-index-row:hover, .recipe-index-row:focus-visible {
+          background: rgba(255,255,255,0.052);
+          border-color: var(--text-accent);
+          outline: none;
+          transform: translateY(-1px);
+        }
+        .recipe-index-row:active { transform: scale(0.995); }
+        .recipe-index-row img, .recipe-index-fallback {
+          background: rgba(255,255,255,0.05);
+          border-radius: 8px;
+          display: block;
+          height: 38px;
+          object-fit: cover;
+          width: 38px;
+        }
         .recipe-index-row strong { color: #fff; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .recipe-index-row small { color: var(--text-muted); display: block; font-size: 0.72rem; line-height: 1.35; margin-top: 0.12rem; }
+        .recipe-index-row small { color: var(--text-muted); display: block; font-size: 0.72rem; line-height: 1.35; margin-top: 0.12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .recipe-index-row em { color: var(--text-accent); font-size: 0.72rem; font-style: normal; font-weight: 900; white-space: nowrap; }
 
         .mythic-card {
-          background: #080808; border: 1px solid rgba(255,255,255,0.07); border-radius: 26px; padding: 2rem; position: relative;
-          transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s; animation: card-in 0.28s ease both;
+          animation: card-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          background: linear-gradient(180deg, #0b0f11, #070809);
+          border: 1px solid rgba(255,255,255,0.075);
+          border-radius: 8px;
+          box-shadow: 0 18px 54px rgba(0,0,0,0.22);
+          padding: 1.35rem;
+          position: relative;
+          transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
         }
-        .mythic-card:hover { border-color: color-mix(in srgb, var(--text-accent), transparent 76%); box-shadow: 0 18px 50px rgba(0,0,0,0.28); transform: translateY(-2px); }
-        @keyframes card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .mythic-card:hover {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 76%);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          transform: translateY(-1px);
+        }
+        @keyframes card-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
 
         .remove-btn {
-          position: absolute; top: -10px; right: -10px; width: 34px; height: 34px; border-radius: 50%; background: #ef4444; border: 3px solid #080808;
-          color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, filter 0.2s; z-index: 10;
+          align-items: center;
+          background: #ef4444;
+          border: 3px solid #080808;
+          border-radius: 999px;
+          color: #fff;
+          cursor: pointer;
+          display: flex;
+          height: 34px;
+          justify-content: center;
+          position: absolute;
+          right: -10px;
+          top: -10px;
+          transition: transform 180ms ease, filter 180ms ease;
+          width: 34px;
+          z-index: 10;
         }
-        .remove-btn:hover { transform: scale(1.08); filter: brightness(1.08); }
+        .remove-btn:hover { filter: brightness(1.08); transform: scale(1.06); }
+        .remove-btn:active { transform: scale(0.96); }
 
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem; }
-        .result-art { background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: 14px; flex: 0 0 auto; height: 64px; object-fit: cover; width: 64px; }
+        .card-header { align-items: flex-start; display: flex; gap: 1.25rem; justify-content: space-between; margin-bottom: 1.5rem; }
+        .result-art {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          flex: 0 0 auto;
+          height: 64px;
+          object-fit: cover;
+          width: 64px;
+        }
         .title-area { flex: 1 1 auto; min-width: 0; }
-        .title-button { display: block; border: none; background: transparent; padding: 0; color: #fff; font-size: 1.85rem; font-weight: 900; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+        .title-button {
+          background: transparent;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          display: block;
+          font-size: 1.85rem;
+          font-weight: 900;
+          line-height: 1.12;
+          overflow-wrap: anywhere;
+          padding: 0;
+          text-align: left;
+          transition: color 180ms ease;
+        }
         .title-button:hover { color: var(--text-accent); }
-        .recipe-link { border: none; background: transparent; padding: 0.25rem 0 0; color: var(--text-muted); font-size: 0.82rem; cursor: pointer; text-align: left; }
+        .recipe-link {
+          background: transparent;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          font-size: 0.82rem;
+          padding: 0.25rem 0 0;
+          text-align: left;
+          transition: color 180ms ease;
+        }
         .recipe-link:hover { color: var(--text-accent); }
         .meta-pills { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.8rem; }
         .meta-pills span { border: 1px solid var(--border-subtle); border-radius: 999px; color: var(--text-muted); padding: 0.28rem 0.55rem; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; }
         .profit-badge {
-          min-width: 190px; padding: 0.8rem 1rem; border-radius: 14px; font-family: var(--font-mono); display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem;
+          min-width: 190px; padding: 0.8rem 1rem; border-radius: 8px; font-family: var(--font-mono); display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem;
         }
         .profit-badge strong { font-size: 1.05rem; }
         .profit-badge span { font-size: 0.75rem; opacity: 0.75; }
@@ -728,23 +1228,24 @@ export default function MythicAlchemyPage() {
         .input-wrapper > span, .market-revenue-box > span { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; }
         .input-row { position: relative; display: flex; align-items: center; }
         .input-row input {
-          width: 100%; background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 0.9rem 4rem 0.9rem 1rem;
-          color: #fff; font-family: var(--font-mono); font-weight: 800; font-size: 1rem; transition: border-color 0.2s, background 0.2s;
+          width: 100%; background: rgba(255,255,255,0.025); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.9rem 4rem 0.9rem 1rem;
+          color: #fff; font-family: var(--font-mono); font-weight: 800; font-size: 1rem; transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
         }
-        .input-row input:focus { border-color: var(--text-accent); background: rgba(255,255,255,0.05); outline: none; }
+        .input-row input:focus { border-color: var(--text-accent); background: rgba(255,255,255,0.05); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 86%); outline: none; }
         .input-row.compact input { padding: 0.65rem 2.5rem 0.65rem 0.85rem; }
         .input-row .currency { position: absolute; right: 16px; font-size: 0.72rem; color: var(--text-muted); font-weight: 900; }
         .input-hint-row, .market-meta { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.72rem; color: var(--text-muted); }
         .fee-split, .market-meta b { color: var(--text-accent); }
         .uses-control { display: flex; flex-direction: column; gap: 0.55rem; }
         .uses-control input {
-          width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 0.9rem 0.75rem;
+          width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.9rem 0.75rem;
           color: var(--text-accent); font-weight: 900; text-align: center; font-family: var(--font-mono);
         }
+        .uses-control input:focus { border-color: var(--text-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 86%); outline: none; }
         .uses-control span { font-size: 0.68rem; color: var(--text-muted); font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
 
         .materials-ledger { display: flex; flex-direction: column; gap: 0.55rem; }
-        .ledger-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0.9rem; background: rgba(255,255,255,0.018); border: 1px solid rgba(255,255,255,0.04); border-radius: 14px; }
+        .ledger-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 0.9rem; background: rgba(255,255,255,0.018); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px; }
         .ledger-info { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
         .mat-qty { font-size: 0.75rem; color: var(--text-muted); font-weight: 900; min-width: 28px; }
         .mat-name { border: none; background: transparent; padding: 0; color: #fff; font-weight: 700; cursor: pointer; text-align: left; overflow-wrap: anywhere; }
@@ -752,13 +1253,13 @@ export default function MythicAlchemyPage() {
         .ledger-input { display: grid; grid-template-columns: 90px 100px 100px; align-items: center; gap: 0.6rem; }
         .input-source-hint { font-size: 0.58rem; font-weight: 900; color: rgba(255,255,255,0.22); text-transform: uppercase; text-align: right; }
         .ledger-input input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.45rem 0.55rem; color: #fff; font-size: 0.8rem; font-family: var(--font-mono); text-align: right; }
-        .ledger-input input:focus { border-color: var(--text-accent); outline: none; }
+        .ledger-input input:focus { border-color: var(--text-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 88%); outline: none; }
         .ledger-total { text-align: right; font-size: 0.84rem; font-weight: 800; color: rgba(255,255,255,0.48); font-family: var(--font-mono); }
 
         .revenue-manager { display: flex; flex-direction: column; gap: 1rem; }
         .market-warning-row {
           align-items: flex-start; background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.22);
-          border-radius: 12px; color: #f8e7bd; display: flex; gap: 0.65rem;
+          border-radius: 8px; color: #f8e7bd; display: flex; gap: 0.65rem;
           padding: 0.75rem 0.85rem;
         }
         .market-warning-row svg { color: #fbbf24; flex: 0 0 auto; margin-top: 0.1rem; }
@@ -767,15 +1268,15 @@ export default function MythicAlchemyPage() {
         .market-warning-copy small { color: var(--text-muted); display: block; line-height: 1.4; }
         .market-warning-row.active, .market-warning-row.steady { background: rgba(56,189,248,0.06); border-color: rgba(56,189,248,0.2); color: var(--text-main); }
         .market-warning-row.active svg, .market-warning-row.steady svg { color: var(--text-accent); }
-        .market-revenue-box { background: rgba(255,255,255,0.018); border: 1px solid var(--border-subtle); border-radius: 18px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem; }
-        .vendor-revenue-box { background: rgba(255,255,255,0.012); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; opacity: 0.65; transition: opacity 0.25s, border-color 0.25s; }
+        .market-revenue-box { background: rgba(255,255,255,0.018); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .vendor-revenue-box { background: rgba(255,255,255,0.012); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; opacity: 0.65; transition: opacity 0.25s, border-color 0.25s; }
         .vendor-revenue-box.highlight { background: color-mix(in srgb, var(--text-accent), transparent 96%); border-color: color-mix(in srgb, var(--text-accent), transparent 76%); opacity: 1; }
         .vendor-label { font-size: 0.68rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; }
         .vendor-note { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 0.25rem; }
         .vendor-val { font-size: 1.05rem; font-weight: 900; color: #fff; font-family: var(--font-mono); }
 
         .footer-stats-modern { display: grid; gap: 0.85rem; }
-        .stat-group { background: rgba(255,255,255,0.014); padding: 1rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.035); }
+        .stat-group { background: rgba(255,255,255,0.014); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.035); }
         .stat-group.highlight { background: linear-gradient(135deg, rgba(34,197,94,0.035), transparent); border-color: rgba(34,197,94,0.12); }
         .stat-group .label { font-size: 0.66rem; color: var(--text-muted); font-weight: 900; text-transform: uppercase; display: block; margin-bottom: 0.35rem; }
         .stat-group .value { font-size: 1.35rem; font-weight: 900; font-family: var(--font-mono); overflow-wrap: anywhere; }
@@ -784,30 +1285,33 @@ export default function MythicAlchemyPage() {
         .path-vendor { color: #8ff0bf; }
 
         @media (max-width: 1200px) {
+          .lab-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .card-grid { grid-template-columns: 1fr; gap: 1.25rem; }
         }
 
         @media (max-width: 780px) {
           .header { align-items: stretch; flex-direction: column; }
           .header-title { font-size: 1.7rem; }
+          .header-subtitle { font-size: 0.86rem; }
           .workbench-actions, .search-trigger { width: 100%; }
           .search-dropdown { position: fixed; left: 1rem; right: 1rem; top: 5rem; width: auto; max-height: calc(100vh - 6rem); z-index: 300; }
-          .dropdown-results { max-height: calc(100vh - 12rem); }
+          .dropdown-results { max-height: calc(100vh - 14rem); }
+          .lab-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .lab-summary { grid-template-columns: 1fr; }
+          .quick-add-rail { grid-template-columns: 1fr; }
           .summary-content, .card-header { flex-direction: column; align-items: stretch; }
           .result-art { height: 56px; width: 56px; }
-          .summary-value { font-size: 1.55rem; }
           .mode-toggle { grid-template-columns: 1fr; }
           .recipe-index-row { grid-template-columns: 34px minmax(0, 1fr); }
           .recipe-index-row em { grid-column: 2; }
-          .mythic-card { border-radius: 20px; padding: 1.1rem; }
+          .mythic-card { padding: 1.05rem; }
           .mythic-card:not(.project-expanded) .card-grid { display: none; }
           .profit-badge { min-width: 0; align-items: flex-start; }
           .mobile-card-summary {
             display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 1rem 0 0;
           }
           .mobile-card-summary div {
-            background: rgba(255,255,255,0.018); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;
+            background: rgba(255,255,255,0.018); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;
             min-width: 0; padding: 0.7rem 0.55rem;
           }
           .mobile-card-summary span {
@@ -819,7 +1323,7 @@ export default function MythicAlchemyPage() {
           }
           .mobile-details-toggle {
             align-items: center; background: rgba(255,255,255,0.028); border: 1px solid var(--border-subtle);
-            border-radius: 12px; color: #fff; cursor: pointer; display: flex; font-weight: 900; gap: 0.5rem;
+            border-radius: 8px; color: #fff; cursor: pointer; display: flex; font-weight: 900; gap: 0.5rem;
             justify-content: center; margin-top: 0.85rem; min-height: 44px; padding: 0.75rem 1rem; width: 100%;
           }
           .mobile-details-toggle:focus-visible, .mobile-details-toggle:hover { border-color: var(--text-accent); outline: none; }
@@ -833,8 +1337,40 @@ export default function MythicAlchemyPage() {
           .stat-group .value.large { font-size: 1.35rem; }
         }
 
+        @media (max-width: 480px) {
+          .container { gap: 0.85rem; }
+          .header-chips span { font-size: 0.62rem; padding: 0.38rem 0.5rem; }
+          .lab-status { grid-template-columns: 1fr; }
+          .status-tile { min-height: auto; padding: 0.85rem; }
+          .summary-card, .mode-card, .empty-bench, .quick-add-rail { padding: 1rem; }
+          .mobile-card-summary { grid-template-columns: 1fr; }
+          .quick-add-list { grid-template-columns: 1fr; }
+          .ledger-input { grid-template-columns: 1fr; }
+          .ledger-input input { text-align: left; }
+          .ledger-total { text-align: left; }
+        }
+
+        .container :where(button, input):focus-visible,
+        .mat-name:focus-visible,
+        .title-button:focus-visible,
+        .recipe-link:focus-visible {
+          outline: 2px solid var(--text-accent);
+          outline-offset: 3px;
+        }
+
         @media (prefers-reduced-motion: reduce) {
-          .mythic-card, .search-trigger, .empty-add-btn, .result-item { animation: none; transition: none; }
+          .mythic-card,
+          .search-dropdown,
+          .search-trigger,
+          .empty-add-btn,
+          .result-item,
+          .recipe-index-row,
+          .quick-add-chip,
+          .mode-toggle button,
+          .mobile-details-toggle svg {
+            animation: none;
+            transition: none;
+          }
         }
       `}</style>
     </main>

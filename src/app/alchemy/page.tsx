@@ -15,7 +15,9 @@ import {
   Filter,
   Info,
   PackageCheck,
+  RotateCcw,
   Search,
+  SlidersHorizontal,
   Target,
   X,
 } from "lucide-react";
@@ -174,6 +176,32 @@ const ALCHEMY_LIQUIDITY_FILTERS: { value: AlchemyLiquidityFilter; label: string 
   { value: "MISSING", label: "Missing" },
 ];
 
+const ALCHEMY_SORT_LABELS: Record<AlchemySortKey, string> = {
+  name: "Name",
+  level: "Level",
+  action: "Best path",
+  cost: "Cost",
+  bestRevenue: "Return",
+  profit: "Profit / pc",
+  profitPerHour: "Profit/Hr",
+  dailyProfit: "Daily profit",
+  vol_3: "Stable volume",
+  craftsPerHour: "Crafts/hr",
+  time: "Time",
+  signal: "Liquidity",
+};
+
+const ALCHEMY_MOBILE_SORT_OPTIONS: { value: AlchemySortKey; label: string }[] = [
+  { value: "profitPerHour", label: "Profit/Hr" },
+  { value: "profit", label: "Profit / pc" },
+  { value: "cost", label: "Cost" },
+  { value: "bestRevenue", label: "Return" },
+  { value: "dailyProfit", label: "Daily Profit" },
+  { value: "vol_3", label: "Stable Volume" },
+  { value: "level", label: "Level" },
+  { value: "name", label: "Name" },
+];
+
 type PersistedAlchemySettings = {
   minLevel: number | "";
   maxLevel: number | "";
@@ -187,8 +215,8 @@ type PersistedAlchemySettings = {
   sortDesc: boolean;
 };
 
-const formatGold = (value: number, _digits = 0) =>
-  Math.round(value).toLocaleString();
+const formatGold = (value: number, digits = 0) =>
+  value.toLocaleString(undefined, { maximumFractionDigits: digits });
 
 const formatSignedGold = (value: number, digits = 0) =>
   `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
@@ -762,6 +790,57 @@ function AlchemyContent() {
     return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
   };
 
+  const renderSortHeader = (col: AlchemySortKey, label: string, className = "") => {
+    const isActive = sortCol === col;
+    const nextDirection = isActive && sortDesc ? "ascending" : "descending";
+    return (
+      <th
+        aria-sort={isActive ? (sortDesc ? "descending" : "ascending") : "none"}
+        className={`sortable ${className}`.trim()}
+      >
+        <button
+          aria-label={`Sort by ${label} ${nextDirection}`}
+          className="alchemy-sort-button"
+          onClick={() => handleSort(col)}
+          type="button"
+        >
+          <span>{label}</span>
+          {renderSortIcon(col) || <span aria-hidden="true" className="alchemy-sort-spacer" />}
+        </button>
+      </th>
+    );
+  };
+
+  const activeFilterCount = [
+    searchTerm.trim().length > 0,
+    minLevel !== "" && minLevel !== 0,
+    maxLevel !== "" && maxLevel !== 89,
+    minProfit !== "",
+    minVolume !== "",
+    liquidityFilter !== "ALL",
+    onlyProfitable,
+    !hideMissing,
+    ownedCostMode,
+  ].filter(Boolean).length;
+  const hasActiveFilters = activeFilterCount > 0;
+  const profitableRowCount = rows.filter((row) => row.status === "ok" && row.profit > 0).length;
+  const marketRowCount = rows.filter((row) => row.status === "ok" && row.action === "MARKET").length;
+  const currentSortLabel = ALCHEMY_SORT_LABELS[sortCol];
+
+  const resetAlchemyControls = () => {
+    setSearchTerm("");
+    setMinLevel(0);
+    setMaxLevel(89);
+    setMinProfit("");
+    setMinVolume("");
+    setLiquidityFilter("ALL");
+    setOnlyProfitable(false);
+    setHideMissing(true);
+    setOwnedMode(false);
+    setSortCol("profitPerHour");
+    setSortDesc(true);
+  };
+
   const updatedAt = scraperStatus?.last_updated || data?._meta?.last_updated;
   const dataAgeMinutes = updatedAt ? Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000) : null;
   const staleMarket = dataAgeMinutes !== null && dataAgeMinutes > 90;
@@ -811,6 +890,16 @@ function AlchemyContent() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button
+                aria-label="Clear alchemy search"
+                className="alchemy-search-clear"
+                onClick={() => setSearchTerm("")}
+                type="button"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -870,23 +959,54 @@ function AlchemyContent() {
             ))}
           </div>
         </div>
+
+        <div className="alchemy-control-status" aria-live="polite">
+          <div>
+            <span><SlidersHorizontal size={14} /> Filters</span>
+            <strong>{activeFilterCount === 0 ? "Default" : `${activeFilterCount} active`}</strong>
+          </div>
+          <div>
+            <span>Showing</span>
+            <strong>{rows.length} of {allRows.length}</strong>
+          </div>
+          <div>
+            <span>Profitable</span>
+            <strong>{profitableRowCount}</strong>
+          </div>
+          <div>
+            <span>Market paths</span>
+            <strong>{marketRowCount}</strong>
+          </div>
+          <div>
+            <span>Sort</span>
+            <strong>{currentSortLabel} {sortDesc ? "Desc" : "Asc"}</strong>
+          </div>
+          <button
+            className="alchemy-reset-button"
+            disabled={!hasActiveFilters}
+            onClick={resetAlchemyControls}
+            type="button"
+          >
+            <RotateCcw size={15} /> Reset
+          </button>
+        </div>
       </div>
 
       <section className="table-wrapper">
         <div className="desktop-only">
-          <div className="table-container">
+          <div aria-label="Alchemy strategy results table" className="table-container" role="region" tabIndex={0}>
             <table className="alchemy-table">
               <thead>
                 <tr>
-                  <th className="sortable left-align" onClick={() => handleSort("name")}>Recipe {renderSortIcon("name")}</th>
-                  <th className="sortable" onClick={() => handleSort("level")}>Lvl {renderSortIcon("level")}</th>
-                  <th className="sortable" onClick={() => handleSort("action")}>Best Path {renderSortIcon("action")}</th>
-                  <th className="sortable" onClick={() => handleSort("cost")}>Cost {renderSortIcon("cost")}</th>
-                  <th className="sortable" onClick={() => handleSort("bestRevenue")}>Return {renderSortIcon("bestRevenue")}</th>
-                  <th className="sortable" onClick={() => handleSort("profitPerHour")}>Profit/Hr {renderSortIcon("profitPerHour")}</th>
-                  <th className="sortable" onClick={() => handleSort("profit")}>Profit / pc {renderSortIcon("profit")}</th>
-                  <th className="sortable" onClick={() => handleSort("vol_3")}>Stable Vol {renderSortIcon("vol_3")}</th>
-                  <th className="sortable" onClick={() => handleSort("time")}>Time (min) {renderSortIcon("time")}</th>
+                  {renderSortHeader("name", "Recipe", "left-align")}
+                  {renderSortHeader("level", "Lvl")}
+                  {renderSortHeader("action", "Best Path")}
+                  {renderSortHeader("cost", "Cost")}
+                  {renderSortHeader("bestRevenue", "Return")}
+                  {renderSortHeader("profitPerHour", "Profit/Hr")}
+                  {renderSortHeader("profit", "Profit / pc")}
+                  {renderSortHeader("vol_3", "Stable Vol")}
+                  {renderSortHeader("time", "Time (min)")}
                   <th>Liquidity</th>
                 </tr>
               </thead>
@@ -961,16 +1081,7 @@ function AlchemyContent() {
             descending={sortDesc}
             onSort={(value) => handleSort(value as AlchemySortKey)}
             onToggleDirection={() => setSortDesc((prev) => !prev)}
-            options={[
-              { value: "profitPerHour", label: "Profit/Hr" },
-              { value: "profit", label: "Profit / pc" },
-              { value: "cost", label: "Cost" },
-              { value: "bestRevenue", label: "Return" },
-              { value: "dailyProfit", label: "Daily Profit" },
-              { value: "vol_3", label: "Stable Volume" },
-              { value: "level", label: "Level" },
-              { value: "name", label: "Name" },
-            ]}
+            options={ALCHEMY_MOBILE_SORT_OPTIONS}
           />
           <div className="mobile-card-grid">
             {rows.map((row) => (
@@ -1013,6 +1124,7 @@ function AlchemyContent() {
                     <div className="m-card-footer">
                       <span className={`action-badge ${getSignalClass(row.signal)}`}>{row.signal}</span>
                       <div className="m-vol">{formatMinutes(row.time)} min each</div>
+                      <span className="alchemy-card-cta"><Eye size={14} /> Details</span>
                     </div>
                     {getVisibleAlchemyWarnings(row).length > 0 && (
                       <div className="m-card-warnings">
@@ -1073,7 +1185,13 @@ function SummaryCard({
   onSelect: (row: AlchemyRow) => void;
 }) {
   return (
-    <button type="button" className="alchemy-summary-card" disabled={!row} onClick={() => row && onSelect(row)}>
+    <button
+      aria-label={row ? `${label}: ${value} for ${row.name}. Open strategy.` : `${label}: no available strategy.`}
+      className="alchemy-summary-card"
+      disabled={!row}
+      onClick={() => row && onSelect(row)}
+      type="button"
+    >
       <span>{icon}</span>
       <small>{label}</small>
       <strong>{value}</strong>

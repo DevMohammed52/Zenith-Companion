@@ -19,7 +19,7 @@ import {
 import { useData } from "@/context/DataContext";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useItemModal } from "@/context/ItemModalContext";
-import { usePreferences } from "@/lib/preferences";
+import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { formatGold } from "@/lib/format";
@@ -90,6 +90,7 @@ export default function ForgePage() {
   }, [qualityFilter, recipeSearch, recipes, sortBy]);
 
   const selectedRecipe = selectedRecipeName ? recipesByName.get(selectedRecipeName) || null : null;
+  const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : Number(preferences.barteringBoost || 0);
 
   const plan = useMemo(
     () => calculateForgePlanner(
@@ -101,10 +102,10 @@ export default function ForgePage() {
       {
         customPrices: preferences.customPrices,
         membership: preferences.membership,
-        barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : Number(preferences.barteringBoost || 0),
+        barteringBoost: profileBarteringBoost,
       },
     ),
-    [activeProfile, allItemsDb, draft.lines, draft.ownedMaterials, marketData, preferences.barteringBoost, preferences.customPrices, preferences.membership, recipes],
+    [allItemsDb, draft.lines, draft.ownedMaterials, marketData, preferences.customPrices, preferences.membership, profileBarteringBoost, recipes],
   );
 
   useEffect(() => {
@@ -292,23 +293,38 @@ export default function ForgePage() {
   const selectedEntry = focusedEntryKey
     ? plan.entries.find((entry) => entry.recipe.recipeName === focusedEntryKey) || plan.entries[0] || null
     : plan.entries[0] || null;
+  const activeProfileName = activeProfile?.name?.trim() || "Global settings";
+  const marketNetPercent = Math.round(getMarketTaxMultiplier(preferences.membership) * 100);
+  const warningCount = plan.warnings.length;
+  const planHealthLabel = plan.entries.length === 0
+    ? `${visibleRecipeOptions.length.toLocaleString()} recipes visible`
+    : warningCount > 0
+      ? `${warningCount.toLocaleString()} review ${warningCount === 1 ? "flag" : "flags"}`
+      : plan.missingMaterialTypes > 0
+        ? `${plan.missingMaterialTypes.toLocaleString()} material ${plan.missingMaterialTypes === 1 ? "gap" : "gaps"}`
+        : "Ready to forge";
 
   return (
     <main className="forge-page">
       <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
       <header className="forge-hero">
-        <div>
+        <div className="hero-copy-stack">
           <p className="eyebrow"><ZenithIcon name="forge" size={16} /> Forge Planner</p>
-          <h1>Forging Planner</h1>
+          <h1>Forge Planner</h1>
           <p className="hero-copy">
             Plan saved legendary and mythic recipe sessions, count owned recipe copies, and see the exact missing materials before a bulk forge push.
           </p>
+          <div className="forge-context-chips" aria-label="Forge planner context">
+            <span><ShieldCheck size={14} aria-hidden="true" /> {activeProfile ? activeProfileName : "Global settings"}</span>
+            <span><ShoppingCart size={14} aria-hidden="true" /> {marketNetPercent}% market net</span>
+            <span><Hammer size={14} aria-hidden="true" /> {profileBarteringBoost}% bartering</span>
+          </div>
         </div>
         <div className="hero-metrics" aria-label="Plan summary">
           <Metric label="Planned crafts" value={plan.totalCrafts.toLocaleString()} />
           <Metric label="Missing cost" value={`${formatGold(plan.totalMissingCost)}g`} />
           <Metric label="Recipe copies" value={plan.missingRecipeCopies.toLocaleString()} />
-          <Metric label="Output value" value={`${formatGold(plan.totalOutputValue)}g`} tone={plan.projectedNet >= 0 ? "good" : "warn"} />
+          <Metric label="Projected net" value={`${formatGold(plan.projectedNet)}g`} tone={plan.projectedNet >= 0 ? "good" : "warn"} />
         </div>
       </header>
 
@@ -318,11 +334,14 @@ export default function ForgePage() {
             <p className="panel-kicker"><ReceiptText size={15} /> Add saved recipe</p>
             <h2>Session setup</h2>
           </div>
-          {draft.lines.length > 0 && (
-            <button type="button" className="ghost-button danger" aria-label="Clear all recipes from forge plan" onClick={clearPlan}>
-              <Trash2 size={15} /> Clear plan
-            </button>
-          )}
+          <div className="builder-actions">
+            <span className={`forge-builder-badge ${warningCount > 0 ? "warn" : ""}`}>{planHealthLabel}</span>
+            {draft.lines.length > 0 && (
+              <button type="button" className="ghost-button danger" aria-label="Clear all recipes from forge plan" onClick={clearPlan}>
+                <Trash2 size={15} /> Clear plan
+              </button>
+            )}
+          </div>
         </div>
         {clearedDraft && (
           <div className="forge-undo-toast" role="status" aria-live="polite">
@@ -344,7 +363,9 @@ export default function ForgePage() {
                 aria-expanded={pickerOpen}
                 aria-controls={pickerOpen ? "forge-recipe-options" : undefined}
                 aria-activedescendant={pickerOpen && visibleRecipeOptions[activeOptionIndex] ? `forge-recipe-option-${activeOptionIndex}` : undefined}
+                aria-autocomplete="list"
                 autoComplete="off"
+                spellCheck={false}
                 value={recipeSearch}
                 onChange={(event) => updateRecipeSearch(event.target.value)}
                 onFocus={() => {
@@ -423,6 +444,29 @@ export default function ForgePage() {
             <Plus size={16} /> Add recipe
           </button>
         </div>
+        {selectedRecipe && (
+          <div className="selected-recipe-card" aria-live="polite">
+            <button
+              type="button"
+              className="selected-recipe-title"
+              aria-label={`Open result item details for ${selectedRecipe.resultName}`}
+              onMouseEnter={() => prefetchItem(selectedRecipe.resultName)}
+              onClick={() => openItemByName(selectedRecipe.resultName)}
+            >
+              <img src={selectedRecipe.resultImageUrl || selectedRecipe.imageUrl || "/favicon.ico"} alt="" />
+              <span>
+                <small>Ready to add</small>
+                <strong>{selectedRecipe.resultName}</strong>
+                <em>{selectedRecipe.quality} | Lv.{selectedRecipe.levelRequired} | {selectedRecipe.resultType || "Forge result"}</em>
+              </span>
+            </button>
+            <div className="selected-recipe-meta" aria-label="Selected recipe summary">
+              <span>{selectedRecipe.maxUses.toLocaleString()} uses per copy</span>
+              <span>{selectedRecipe.materials.length.toLocaleString()} materials</span>
+              <span>{selectedRecipe.sourceSummary}</span>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className={`plan-shell ${selectedEntry ? "" : "no-side"}`} id="forge-plan">
@@ -432,7 +476,11 @@ export default function ForgePage() {
               <p className="panel-kicker"><Layers size={15} /> Planned crafts</p>
               <h2>{plan.entries.length ? `${plan.entries.length} recipe${plan.entries.length === 1 ? "" : "s"}` : "No recipes planned"}</h2>
             </div>
-            <span>{recipes.length.toLocaleString()} forge recipes indexed</span>
+            <div className="plan-summary-pills" aria-label="Forge plan health">
+              <span>{recipes.length.toLocaleString()} recipes indexed</span>
+              <span>{plan.missingMaterialTypes.toLocaleString()} material gaps</span>
+              <span className={warningCount > 0 ? "warn" : ""}>{warningCount.toLocaleString()} warnings</span>
+            </div>
           </div>
 
           {plan.entries.length === 0 ? (
@@ -1943,6 +1991,224 @@ export default function ForgePage() {
           background: rgba(34, 211, 238, 0.18);
           outline: none;
         }
+        .forge-page {
+          --forge-ember: #f59e0b;
+          --forge-gold: #fbbf24;
+          --forge-copper: #22d3ee;
+          --forge-focus: rgba(245, 158, 11, 0.46);
+          -webkit-tap-highlight-color: transparent;
+          padding-bottom: clamp(4.5rem, 8vh, 7rem);
+        }
+        .forge-page :where(button, input, [role="button"], [role="option"]) {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .forge-page .forge-hero,
+        .forge-page .forge-builder,
+        .forge-page .plan-shell,
+        .forge-page .shopping-layout > section {
+          border-color: rgba(245, 158, 11, 0.2);
+          background:
+            linear-gradient(145deg, rgba(245, 158, 11, 0.06), rgba(15, 23, 42, 0.5)),
+            radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.08), transparent 34%);
+        }
+        .forge-page .forge-hero:before {
+          background:
+            linear-gradient(115deg, rgba(245, 158, 11, 0.15), rgba(34, 211, 238, 0.07) 42%, transparent 68%),
+            radial-gradient(circle at 88% 10%, rgba(34, 211, 238, 0.13), transparent 32%);
+        }
+        .forge-page .hero-copy-stack {
+          min-width: 0;
+          display: grid;
+          gap: 0.85rem;
+          align-content: start;
+        }
+        .forge-page .forge-context-chips,
+        .forge-page .plan-summary-pills,
+        .forge-page .selected-recipe-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+        .forge-page .forge-context-chips span,
+        .forge-page .plan-summary-pills span,
+        .forge-page .forge-builder-badge,
+        .forge-page .selected-recipe-meta span {
+          min-height: 2rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          max-width: 100%;
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          border-radius: 999px;
+          background: rgba(245, 158, 11, 0.07);
+          color: #fde68a;
+          font-size: 0.74rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 1.15;
+          padding: 0.45rem 0.7rem;
+        }
+        .forge-page .forge-context-chips svg {
+          flex: 0 0 auto;
+          color: #67e8f9;
+        }
+        .forge-page .plan-summary-pills {
+          justify-content: flex-end;
+        }
+        .forge-page .plan-summary-pills span,
+        .forge-page .selected-recipe-meta span {
+          border-color: rgba(34, 211, 238, 0.18);
+          background: rgba(34, 211, 238, 0.055);
+          color: #bae6fd;
+        }
+        .forge-page .plan-summary-pills .warn,
+        .forge-page .forge-builder-badge.warn {
+          border-color: rgba(245, 158, 11, 0.36);
+          background: rgba(245, 158, 11, 0.12);
+          color: #fcd34d;
+        }
+        .forge-page .builder-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 0.65rem;
+          min-width: 0;
+        }
+        .forge-page .forge-builder-badge {
+          white-space: nowrap;
+        }
+        .forge-page .selected-recipe-card {
+          display: grid;
+          grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+          gap: 0.85rem;
+          align-items: center;
+          margin-top: 0.95rem;
+          border: 1px solid rgba(34, 211, 238, 0.18);
+          border-radius: 8px;
+          background:
+            linear-gradient(145deg, rgba(34, 211, 238, 0.055), rgba(245, 158, 11, 0.055)),
+            rgba(255, 255, 255, 0.025);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+          padding: 0.8rem;
+        }
+        .forge-page .selected-recipe-title {
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          border: 1px solid transparent;
+          border-radius: 8px;
+          background: transparent;
+          color: var(--text-primary);
+          cursor: pointer;
+          padding: 0.25rem;
+          text-align: left;
+        }
+        .forge-page .selected-recipe-title img {
+          width: 3rem;
+          height: 3rem;
+          flex: 0 0 auto;
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          border-radius: 8px;
+          background: rgba(0, 0, 0, 0.28);
+          object-fit: contain;
+        }
+        .forge-page .selected-recipe-title span {
+          min-width: 0;
+          display: grid;
+          gap: 0.12rem;
+        }
+        .forge-page .selected-recipe-title small,
+        .forge-page .selected-recipe-title em {
+          overflow: hidden;
+          color: rgba(244, 244, 245, 0.64);
+          font-size: 0.74rem;
+          font-style: normal;
+          font-weight: 800;
+          text-overflow: ellipsis;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .forge-page .selected-recipe-title strong {
+          overflow: hidden;
+          color: #fff7ed;
+          font-size: 1rem;
+          line-height: 1.15;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .forge-page .selected-recipe-title:hover {
+          border-color: rgba(245, 158, 11, 0.24);
+          background: rgba(245, 158, 11, 0.06);
+        }
+        .forge-page .selected-recipe-meta {
+          justify-content: flex-end;
+        }
+        .forge-page .selected-recipe-meta span {
+          overflow: hidden;
+          max-width: 100%;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .forge-page .metric,
+        .forge-page .plan-entry,
+        .forge-page .need-row,
+        .forge-page .detail-card,
+        .forge-page .selected-recipe-card {
+          transition:
+            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            background-color 180ms ease;
+        }
+        .forge-page .combo-shell:focus-within,
+        .forge-page .number-field input:focus-visible,
+        .forge-page .filter-picker-button:focus-visible,
+        .forge-page .filter-picker-menu button:focus-visible,
+        .forge-page .combo-option:focus-visible,
+        .forge-page .primary-button:focus-visible,
+        .forge-page .ghost-button:focus-visible,
+        .forge-page .entry-actions button:focus-visible,
+        .forge-page .entry-title:focus-visible,
+        .forge-page .need-name:focus-visible,
+        .forge-page .icon-clear:focus-visible,
+        .forge-page .selected-recipe-title:focus-visible,
+        .forge-page .forge-undo-toast button:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--forge-copper), white 12%);
+          outline-offset: 3px;
+          box-shadow: 0 0 0 5px rgba(34, 211, 238, 0.1);
+        }
+        .forge-page .primary-button:active:not(:disabled),
+        .forge-page .ghost-button:active,
+        .forge-page .entry-actions button:active,
+        .forge-page .need-name:active,
+        .forge-page .selected-recipe-title:active,
+        .forge-page .filter-picker-button:active {
+          transform: scale(0.985);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .forge-page .metric:hover,
+          .forge-page .selected-recipe-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+          }
+          .forge-page .plan-entry:hover,
+          .forge-page .need-row:hover {
+            transform: translateY(-1px);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .forge-page *,
+          .forge-page *::before,
+          .forge-page *::after {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
+        }
         @media (max-width: 1380px) {
           .forge-page .forge-hero {
             grid-template-columns: minmax(0, 1fr);
@@ -1974,7 +2240,44 @@ export default function ForgePage() {
         }
         @media (max-width: 620px) {
           .forge-page {
-            padding: 0 0.85rem 1.5rem;
+            padding: 0 0.85rem 8.5rem;
+          }
+          .forge-page .forge-context-chips,
+          .forge-page .plan-summary-pills,
+          .forge-page .builder-actions,
+          .forge-page .selected-recipe-meta {
+            justify-content: flex-start;
+          }
+          .forge-page .builder-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .forge-page .recipe-combobox,
+          .forge-page .primary-button {
+            grid-column: 1 / -1;
+            width: 100%;
+          }
+          .forge-page .filter-picker {
+            width: 100%;
+            z-index: 30;
+          }
+          .forge-page .filter-picker-menu {
+            max-height: min(18rem, calc(100vh - 8rem));
+          }
+          .forge-page .builder-actions {
+            width: 100%;
+            align-items: stretch;
+            flex-direction: column;
+          }
+          .forge-page .forge-builder-badge,
+          .forge-page .ghost-button {
+            width: 100%;
+            justify-content: center;
+          }
+          .forge-page .selected-recipe-card {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .forge-page .selected-recipe-title {
+            width: 100%;
           }
           .forge-page .need-list,
           .forge-page .need-row,
@@ -2034,9 +2337,12 @@ function NumberField({
       <label htmlFor={inputId}>{label}</label>
       <input
         id={inputId}
+        type="text"
         aria-label={ariaLabel || label}
         value={value}
         inputMode="numeric"
+        pattern="[0-9]*"
+        autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
         placeholder="0"
       />

@@ -13,7 +13,6 @@ import {
     PackageOpen,
     Search,
     Shield,
-    Skull,
     Sparkles,
     Timer,
     X,
@@ -383,6 +382,7 @@ function BossesContent() {
     const [routineClassDiscount, setRoutineClassDiscount] = useState(false);
     const [routineTravelMode, setRoutineTravelMode] = useState<TravelMode>("teleport");
     const [routineLocationOpen, setRoutineLocationOpen] = useState(false);
+    const [routineLocationPlacement, setRoutineLocationPlacement] = useState<"down" | "up">("down");
     const [worldBossItemModifierName, setWorldBossItemModifierName] = useState("");
     const [worldBossMagicFindDraft, setWorldBossMagicFindDraft] = useState("");
     const [worldBossMagicFindEditing, setWorldBossMagicFindEditing] = useState(false);
@@ -505,6 +505,24 @@ function BossesContent() {
         window.addEventListener("pointerdown", handlePointerDown);
         return () => window.removeEventListener("pointerdown", handlePointerDown);
     }, []);
+
+    useEffect(() => {
+        if (!routineLocationOpen) return;
+        const updatePlacement = () => {
+            const triggerRect = routineLocationTriggerRef.current?.getBoundingClientRect();
+            if (!triggerRect) return;
+            const spaceBelow = window.innerHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+            setRoutineLocationPlacement(spaceBelow < 300 && spaceAbove > spaceBelow ? "up" : "down");
+        };
+        updatePlacement();
+        window.addEventListener("resize", updatePlacement);
+        window.addEventListener("scroll", updatePlacement, true);
+        return () => {
+            window.removeEventListener("resize", updatePlacement);
+            window.removeEventListener("scroll", updatePlacement, true);
+        };
+    }, [routineLocationOpen]);
 
     useEffect(() => {
         if (!routineSettingsLoaded || !activeProfile || profileDefaultsAppliedRef.current === activeProfile.id) return;
@@ -969,7 +987,7 @@ function BossesContent() {
                             <ChevronDown size={16} />
                         </button>
                         {routineLocationOpen && (
-                            <div className="routine-location-menu custom-scrollbar" role="listbox">
+                            <div className={`routine-location-menu custom-scrollbar ${routineLocationPlacement === "up" ? "drop-up" : ""}`} role="listbox">
                                 {routineLocations.map((location, index) => (
                                     <button
                                         key={location}
@@ -1049,11 +1067,17 @@ function BossesContent() {
                                 key={bossKey}
                                 type="button"
                                 className={selected ? "selected" : ""}
+                                aria-pressed={selected}
                                 onClick={() => toggleRoutineBoss(bossKey)}
                             >
                                 {row.image_url && <img src={row.image_url} alt="" />}
                                 <span>{row.name}</span>
                                 <small>{row.location?.name || "Unknown"}</small>
+                                {selected && (
+                                    <span className="routine-boss-check" aria-hidden="true">
+                                        <Check size={13} />
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
@@ -1128,14 +1152,13 @@ function BossesContent() {
             <div className="controls boss-controls">
                 <div className="control-group boss-search-control">
                     <label className="control-label">Search Bosses</label>
-                    <div style={{ position: "relative" }}>
-                        <Search size={14} style={{ position: "absolute", left: "10px", top: "12px", color: "var(--text-muted)" }} />
+                    <div className="boss-input-shell">
+                        <Search aria-hidden="true" size={16} strokeWidth={2.1} />
                         <input
                             aria-label="Search bosses"
                             type="text"
                             className="control-input"
                             placeholder="Search boss, status, or location..."
-                            style={{ width: "100%", paddingLeft: "2rem" }}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
                         />
@@ -1143,15 +1166,14 @@ function BossesContent() {
                 </div>
                 <div className="control-group boss-mf-control">
                     <label className="control-label">World Boss Magic Find</label>
-                    <div style={{ position: "relative" }}>
-                        <Sparkles size={14} style={{ position: "absolute", left: "10px", top: "12px", color: "var(--text-accent)" }} />
+                    <div className="boss-input-shell boss-input-shell-accent">
+                        <Sparkles aria-hidden="true" size={16} strokeWidth={2.1} />
                         <input
                             aria-label="World Boss Magic Find"
                             type="number"
                             min="0"
                             max="500"
                             className="control-input"
-                            style={{ width: "100%", paddingLeft: "2rem" }}
                             value={displayedWorldBossMagicFind}
                             onFocus={() => {
                                 setWorldBossMagicFindEditing(true);
@@ -1653,6 +1675,7 @@ function BossesContent() {
                     border: 1px solid var(--border-subtle);
                     border-radius: 8px;
                     background: rgba(255,255,255,0.03);
+                    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
                 }
                 .boss-routine-summary span {
                     display: block;
@@ -1748,6 +1771,10 @@ function BossesContent() {
                     background: rgba(9, 13, 14, 0.98);
                     box-shadow: 0 18px 45px rgba(0,0,0,0.42);
                 }
+                .routine-location-menu.drop-up {
+                    top: auto;
+                    bottom: calc(100% + 0.4rem);
+                }
                 .routine-location-menu button {
                     display: flex;
                     align-items: center;
@@ -1826,6 +1853,7 @@ function BossesContent() {
                     margin-bottom: 0.75rem;
                 }
                 .routine-boss-picker button {
+                    position: relative;
                     display: grid;
                     grid-template-columns: 24px minmax(7rem, 1fr);
                     grid-template-rows: auto auto;
@@ -1847,6 +1875,9 @@ function BossesContent() {
                     background: rgba(74, 222, 128, 0.08);
                     transform: translateY(-1px);
                 }
+                .routine-boss-picker button.selected {
+                    padding-right: 2.15rem;
+                }
                 .routine-boss-picker img {
                     grid-row: 1 / span 2;
                     width: 24px;
@@ -1864,6 +1895,20 @@ function BossesContent() {
                     color: var(--text-muted);
                     font-size: 0.68rem;
                     overflow-wrap: anywhere;
+                }
+                .routine-boss-check {
+                    position: absolute;
+                    right: 0.55rem;
+                    top: 0.55rem;
+                    display: inline-flex !important;
+                    align-items: center;
+                    justify-content: center;
+                    width: 1.15rem;
+                    height: 1.15rem;
+                    border-radius: 999px;
+                    color: #06110a !important;
+                    background: var(--text-success);
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.28);
                 }
                 .routine-empty {
                     padding: 1rem;
@@ -1988,6 +2033,15 @@ function BossesContent() {
                     border: 1px solid var(--border-subtle);
                     border-radius: 8px;
                     background: rgba(255,255,255,0.03);
+                    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+                }
+                @media (hover: hover) {
+                    .boss-radar-stats div:hover,
+                    .boss-routine-summary div:hover {
+                        border-color: rgba(56,189,248,0.28);
+                        background: rgba(255,255,255,0.045);
+                        transform: translateY(-1px);
+                    }
                 }
                 .boss-radar-stats span {
                     display: block;
@@ -2006,6 +2060,49 @@ function BossesContent() {
                 .boss-controls {
                     display: grid;
                     grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+                    gap: 0.85rem;
+                }
+                .boss-input-shell {
+                    display: grid;
+                    grid-template-columns: 1.05rem minmax(0, 1fr);
+                    gap: 0.65rem;
+                    align-items: center;
+                    min-height: 44px;
+                    padding: 0 0.85rem;
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 8px;
+                    background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+                    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+                }
+                .boss-input-shell:focus-within {
+                    border-color: rgba(56,189,248,0.48);
+                    box-shadow: inset 0 0 0 1px rgba(56,189,248,0.16);
+                    background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018)), var(--bg-base);
+                }
+                .boss-input-shell svg {
+                    width: 1rem;
+                    height: 1rem;
+                    color: var(--text-muted);
+                    pointer-events: none;
+                }
+                .boss-input-shell-accent svg {
+                    color: var(--text-accent);
+                }
+                .boss-input-shell .control-input {
+                    width: 100%;
+                    min-width: 0;
+                    height: 44px;
+                    min-height: 44px;
+                    padding: 0;
+                    border: 0;
+                    background: transparent;
+                    box-shadow: none;
+                    line-height: 1;
+                }
+                .boss-input-shell .control-input:focus {
+                    border-color: transparent;
+                    box-shadow: none;
+                    outline: none;
                 }
                 .boss-item-modifier-panel {
                     display: grid;
@@ -2045,6 +2142,9 @@ function BossesContent() {
                 :global(.world-boss-effect-picker) {
                     position: relative;
                     min-width: 0;
+                }
+                :global(.world-boss-effect-picker.open) {
+                    z-index: 80;
                 }
                 :global(.world-boss-effect-trigger) {
                     width: 100%;
@@ -2088,7 +2188,7 @@ function BossesContent() {
                 }
                 :global(.world-boss-effect-menu) {
                     position: absolute;
-                    z-index: 45;
+                    z-index: 85;
                     inset-inline: 0;
                     top: calc(100% + 0.35rem);
                     display: grid;
@@ -2100,6 +2200,10 @@ function BossesContent() {
                     border-radius: 8px;
                     background: #07080d;
                     box-shadow: 0 18px 50px rgba(0,0,0,0.48);
+                }
+                :global(.world-boss-effect-picker.drop-up .world-boss-effect-menu) {
+                    top: auto;
+                    bottom: calc(100% + 0.45rem);
                 }
                 :global(.world-boss-effect-option) {
                     min-height: 42px;
@@ -2594,13 +2698,42 @@ function BossesContent() {
                     .boss-item-modifier-panel {
                         padding: 1rem;
                     }
+                    .boss-radar {
+                        gap: 0.9rem;
+                    }
                     .boss-view-switch {
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        gap: 0.35rem;
+                        margin-top: -0.25rem;
+                    }
+                    .boss-view-switch button {
+                        min-height: 4.25rem;
+                        padding: 0.62rem;
+                    }
+                    .boss-view-switch small {
+                        font-size: 0.62rem;
+                    }
+                    .boss-routine-controls {
                         grid-template-columns: 1fr;
                     }
                     .boss-radar-stats,
-                    .boss-routine-summary,
-                    .boss-routine-controls {
-                        grid-template-columns: 1fr;
+                    .boss-routine-summary {
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 0.45rem;
+                    }
+                    .boss-radar-stats div,
+                    .boss-routine-summary div {
+                        min-height: 4rem;
+                        padding: 0.58rem 0.5rem;
+                    }
+                    .boss-radar-stats span,
+                    .boss-routine-summary span {
+                        font-size: 0.56rem;
+                        margin-bottom: 0.28rem;
+                    }
+                    .boss-radar-stats strong,
+                    .boss-routine-summary strong {
+                        font-size: 0.86rem;
                     }
                     .boss-routine-summary {
                         position: sticky;
@@ -2613,7 +2746,7 @@ function BossesContent() {
                         backdrop-filter: blur(10px);
                     }
                     .boss-routine-summary div {
-                        padding: 0.62rem;
+                        padding: 0.58rem 0.5rem;
                     }
                     .routine-boss-picker {
                         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2652,6 +2785,9 @@ function BossesContent() {
                     }
                     :global(.world-boss-effect-option) {
                         grid-template-columns: auto minmax(0, 1fr) auto;
+                    }
+                    :global(.world-boss-effect-menu) {
+                        max-height: min(18rem, 50vh);
                     }
                     :global(.world-boss-effect-option em) {
                         grid-column: 2 / -1;
@@ -2726,6 +2862,7 @@ function WorldBossItemEffectPicker({
     value: string;
 }) {
     const [open, setOpen] = useState(false);
+    const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
     const pickerRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -2783,6 +2920,14 @@ function WorldBossItemEffectPicker({
 
     useEffect(() => {
         if (!open) return;
+        const updatePlacement = () => {
+            const triggerRect = triggerRef.current?.getBoundingClientRect();
+            if (!triggerRect) return;
+            const spaceBelow = window.innerHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+            setMenuPlacement(spaceBelow < 320 && spaceAbove > spaceBelow ? "up" : "down");
+        };
+        updatePlacement();
         const handlePointer = (event: MouseEvent) => {
             if (pickerRef.current?.contains(event.target as Node)) return;
             setOpen(false);
@@ -2790,16 +2935,20 @@ function WorldBossItemEffectPicker({
         const handleKey = (event: KeyboardEvent) => {
             if (event.key === "Escape") setOpen(false);
         };
+        window.addEventListener("resize", updatePlacement);
+        window.addEventListener("scroll", updatePlacement, true);
         document.addEventListener("mousedown", handlePointer);
         document.addEventListener("keydown", handleKey);
         return () => {
+            window.removeEventListener("resize", updatePlacement);
+            window.removeEventListener("scroll", updatePlacement, true);
             document.removeEventListener("mousedown", handlePointer);
             document.removeEventListener("keydown", handleKey);
         };
     }, [open]);
 
     return (
-        <div className={`world-boss-effect-picker ${open ? "open" : ""}`} ref={pickerRef}>
+        <div className={`world-boss-effect-picker ${open ? "open" : ""} ${menuPlacement === "up" ? "drop-up" : ""}`} ref={pickerRef}>
             <button
                 type="button"
                 ref={triggerRef}

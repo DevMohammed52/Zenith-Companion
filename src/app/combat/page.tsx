@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
+import Image from "next/image";
 import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, Clock, Utensils, Calculator, Target } from "lucide-react";
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -260,6 +261,11 @@ function CombatContent() {
             });
     }, [combatRows]);
 
+    const topCombatEnemy = useMemo(() => {
+        if (!combatRows.length) return null;
+        return [...combatRows].sort((a, b) => b.profitPerHour - a.profitPerHour)[0];
+    }, [combatRows]);
+
     const selectedAreaSummary = useMemo(() => {
         if (!selectedArea) return null;
         return areaSummaries.find(summary => summary.area === selectedArea) || null;
@@ -452,6 +458,11 @@ function CombatContent() {
         return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
     };
 
+    const getSortAria = (col: string): "none" | "ascending" | "descending" => {
+        if (sortCol !== col) return "none";
+        return sortDesc ? "descending" : "ascending";
+    };
+
     return (
         <main className="container combat-page">
             <div className="header">
@@ -465,6 +476,33 @@ function CombatContent() {
                     </span>
                 </div>
             </div>
+
+            <section className="combat-overview-grid" aria-label="Combat overview" tabIndex={0}>
+                <article className="combat-overview-card">
+                    <Swords size={17} aria-hidden="true" />
+                    <span>Enemies</span>
+                    <strong>{staticData ? staticData.enemies.length.toLocaleString() : "-"}</strong>
+                    <small>catalogued</small>
+                </article>
+                <article className="combat-overview-card">
+                    <MapPin size={17} aria-hidden="true" />
+                    <span>Zones</span>
+                    <strong>{areaSummaries.length.toLocaleString()}</strong>
+                    <small>mapped</small>
+                </article>
+                <article className="combat-overview-card highlight">
+                    <Target size={17} aria-hidden="true" />
+                    <span>Best EV/hr</span>
+                    <strong>{topCombatEnemy ? formatGold(topCombatEnemy.profitPerHour) : "-"}</strong>
+                    <small>{topCombatEnemy?.name || "pending"}</small>
+                </article>
+                <article className="combat-overview-card">
+                    <Calculator size={17} aria-hidden="true" />
+                    <span>KPH</span>
+                    <strong>{(Number(killsPerHour) || 0).toLocaleString()}</strong>
+                    <small>manual rate</small>
+                </article>
+            </section>
 
             <section className="combat-dev-notice" role="status" aria-label="Combat feature status">
                 <span className="combat-dev-pill mono">Feature in Development</span>
@@ -516,14 +554,25 @@ function CombatContent() {
                 </div>
                 <div className="control-group" style={{ flex: 1 }}>
                     <label className="control-label">Search</label>
-                    <div style={{ position: 'relative' }}>
-                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '12px', color: 'var(--text-muted)' }} />
+                    <div className="combat-search-field">
+                        <Search
+                            size={14}
+                            aria-hidden="true"
+                            style={{
+                                color: 'var(--text-muted)',
+                                left: '0.75rem',
+                                pointerEvents: 'none',
+                                position: 'absolute',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                            }}
+                        />
                         <input 
                             aria-label="Search enemies or locations"
                             type="text" 
                             className="control-input"
                             placeholder="Search enemy or location..."
-                            style={{ width: '100%', paddingLeft: '2rem' }}
+                            style={{ paddingLeft: '2.25rem', width: '100%' }}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -636,7 +685,7 @@ function CombatContent() {
                                 onClick={() => setSelectedEnemy(row)}
                             >
                                 <span className="zone-mob-main">
-                                    {row.image_url && <img src={row.image_url} alt="" />}
+                                    {row.image_url && <Image src={row.image_url} alt="" width={26} height={26} unoptimized style={{ borderRadius: '4px' }} />}
                                     <span>
                                         <strong>{row.name}</strong>
                                         <small>{row.location?.name || "Unknown"} - Level {row.level}</small>
@@ -661,23 +710,35 @@ function CombatContent() {
                         <table>
                             <thead>
                                 <tr>
-                                    <th className="sortable left-align" onClick={() => handleSort('name')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Enemy {renderSortIcon('name')}</div>
+                                    <th className="left-align" aria-sort={getSortAria('name')}>
+                                        <button type="button" className="table-sort-button" onClick={() => handleSort('name')}>
+                                            Enemy {renderSortIcon('name')}
+                                        </button>
                                     </th>
-                                    <th className="sortable left-align" onClick={() => handleSort('location')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>Location {renderSortIcon('location')}</div>
+                                    <th className="left-align" aria-sort={getSortAria('location')}>
+                                        <button type="button" className="table-sort-button" onClick={() => handleSort('location')}>
+                                            Location {renderSortIcon('location')}
+                                        </button>
                                     </th>
-                                    <th className="sortable" onClick={() => handleSort('level')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Level {renderSortIcon('level')}</div>
+                                    <th aria-sort={getSortAria('level')}>
+                                        <button type="button" className="table-sort-button align-right" onClick={() => handleSort('level')}>
+                                            Level {renderSortIcon('level')}
+                                        </button>
                                     </th>
-                                    <th className="sortable" onClick={() => handleSort('dropsCount')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Drops {renderSortIcon('dropsCount')}</div>
+                                    <th aria-sort={getSortAria('dropsCount')}>
+                                        <button type="button" className="table-sort-button align-right" onClick={() => handleSort('dropsCount')}>
+                                            Drops {renderSortIcon('dropsCount')}
+                                        </button>
                                     </th>
-                                    <th className="sortable" onClick={() => handleSort('ev')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>EV / Kill {renderSortIcon('ev')}</div>
+                                    <th aria-sort={getSortAria('ev')}>
+                                        <button type="button" className="table-sort-button align-right" onClick={() => handleSort('ev')}>
+                                            EV / Kill {renderSortIcon('ev')}
+                                        </button>
                                     </th>
-                                    <th className="sortable" onClick={() => handleSort('profitPerHour')}>
-                                        <div style={{display:'flex',alignItems:'center',gap:'0.5rem',justifyContent:'flex-end'}}>Loot EV / Hr {renderSortIcon('profitPerHour')}</div>
+                                    <th aria-sort={getSortAria('profitPerHour')}>
+                                        <button type="button" className="table-sort-button align-right" onClick={() => handleSort('profitPerHour')}>
+                                            Loot EV / Hr {renderSortIcon('profitPerHour')}
+                                        </button>
                                     </th>
                                 </tr>
                             </thead>
@@ -699,7 +760,7 @@ function CombatContent() {
                                     >
                                         <td className="item-name left-align">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                {row.image_url && <img src={row.image_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '4px' }} />}
+                                                {row.image_url && <Image src={row.image_url} alt="" width={24} height={24} unoptimized style={{ borderRadius: '4px' }} />}
                                                 <span>{row.name}</span>
                                             </div>
                                         </td>
@@ -738,24 +799,17 @@ function CombatContent() {
                     />
                     <div className="mobile-card-grid">
                         {rows.map((row, i) => (
-                            <div
+                            <button
                                 aria-label={`Open ${row.name} enemy details`}
                                 key={i}
-                                className="mobile-alchemy-card"
+                                className="mobile-alchemy-card combat-mobile-card"
                                 onClick={() => setSelectedEnemy(row)}
-                                onKeyDown={(event) => {
-                                    if (event.key === "Enter" || event.key === " ") {
-                                        event.preventDefault();
-                                        setSelectedEnemy(row);
-                                    }
-                                }}
-                                role="button"
-                                tabIndex={0}
+                                type="button"
                             >
                                 <div className="m-card-header">
                                     <div className="m-card-title">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {row.image_url && <img src={row.image_url} alt="" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />}
+                                            {row.image_url && <Image src={row.image_url} alt="" width={20} height={20} unoptimized style={{ borderRadius: '4px' }} />}
                                             <span className="m-name">{row.name}</span>
                                         </div>
                                         <span className="m-lvl">{row.location?.name || "Unknown"} - LVL {row.level}</span>
@@ -774,7 +828,7 @@ function CombatContent() {
                                         </span>
                                     </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -908,7 +962,7 @@ function CombatContent() {
                                 return (
                                     <article key={`${sessionLocation}-${enemy.name}`} className="session-enemy-row">
                                         <div className="session-enemy-title">
-                                            {enemy.image_url && <img src={enemy.image_url} alt="" />}
+                                            {enemy.image_url && <Image src={enemy.image_url} alt="" width={38} height={38} unoptimized style={{ borderRadius: '6px' }} />}
                                             <div>
                                                 <strong>{enemy.name}</strong>
                                                 <span>L{enemy.level} - {formatGold(enemy.ev, 1)} EV/kill</span>
@@ -960,7 +1014,7 @@ function CombatContent() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {selectedEnemy.image_url && (
                                     <div style={{ width: '48px', height: '48px', background: 'var(--bg-base)', borderRadius: '6px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
-                                        <img src={selectedEnemy.image_url} alt={selectedEnemy.name} style={{ maxWidth: '36px', maxHeight: '36px', margin: 'auto' }} />
+                                        <Image src={selectedEnemy.image_url} alt={selectedEnemy.name} width={36} height={36} unoptimized style={{ maxWidth: '36px', maxHeight: '36px', margin: 'auto' }} />
                                     </div>
                                 )}
                                 <div>
@@ -1006,18 +1060,19 @@ function CombatContent() {
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {selectedEnemy.lootDetails?.sort((a:any, b:any) => b.expectedVal - a.expectedVal).map((drop: any, i: number) => (
-                                     <div 
+                                     <button
                                          key={i} 
+                                         type="button"
                                          onClick={() => openItemByName(drop.name)}
-                                         className="clickable-row group-loot"
+                                         className="clickable-row group-loot loot-drop-button"
                                          style={{ 
                                              display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
                                              padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
-                                             borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s'
+                                             borderRadius: '6px', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', width: '100%'
                                          }}
                                      >
                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                             {drop.image_url && <img src={drop.image_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '4px' }} />}
+                                             {drop.image_url && <Image src={drop.image_url} alt="" width={32} height={32} unoptimized style={{ borderRadius: '4px' }} />}
                                              <div>
                                                 <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>
                                                     {drop.name}
@@ -1034,7 +1089,7 @@ function CombatContent() {
                                                  Inspect Item ({(drop.trueValue || drop.price).toLocaleString(undefined, { maximumFractionDigits: 0 })}g value) <ExternalLink size={10} />
                                              </div>
                                          </div>
-                                     </div>
+                                     </button>
                                 ))}
                             </div>
                         </div>
@@ -1528,7 +1583,396 @@ function CombatContent() {
                     font-size: 0.82rem;
                     padding: 1rem;
                 }
+                .combat-page {
+                    max-width: 1480px;
+                    padding-top: 1.25rem;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .combat-page :is(button, a, input) {
+                    touch-action: manipulation;
+                }
+                .header {
+                    align-items: center;
+                    background:
+                        radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--text-accent), transparent 82%), transparent 34%),
+                        linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.014)),
+                        rgba(12, 10, 7, 0.68);
+                    border: 1px solid color-mix(in srgb, var(--text-accent), transparent 82%);
+                    border-radius: 16px;
+                    box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+                    display: grid;
+                    gap: 1rem;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    margin-bottom: 0.85rem;
+                    overflow: hidden;
+                    padding: 1.15rem 1.2rem;
+                    position: relative;
+                }
+                .header::after {
+                    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 72%), transparent);
+                    content: "";
+                    height: 1px;
+                    inset: auto 1rem 0;
+                    opacity: 0.72;
+                    position: absolute;
+                }
+                .header-title {
+                    color: #fff;
+                    font-size: 1.55rem;
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    min-width: 0;
+                }
+                .header-status {
+                    border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+                    border-radius: 999px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 36px rgba(0,0,0,0.22);
+                    min-height: 2.45rem;
+                }
+                .status-dot {
+                    animation: combatStatusPulse 1.8s ease-in-out infinite;
+                }
+                .combat-overview-grid {
+                    display: grid;
+                    gap: 0.75rem;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    margin-bottom: 1rem;
+                }
+                .combat-overview-grid:focus-visible {
+                    outline: 2px solid color-mix(in srgb, var(--text-accent), transparent 30%);
+                    outline-offset: 4px;
+                }
+                .combat-overview-card {
+                    align-items: start;
+                    animation: combatRise 220ms ease both;
+                    background:
+                        linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012)),
+                        rgba(9, 10, 14, 0.72);
+                    border: 1px solid rgba(255,255,255,0.075);
+                    border-radius: 14px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+                    display: grid;
+                    gap: 0.28rem;
+                    min-height: 5.35rem;
+                    min-width: 0;
+                    padding: 0.85rem 0.95rem;
+                    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+                }
+                .combat-overview-card:nth-child(2) { animation-delay: 30ms; }
+                .combat-overview-card:nth-child(3) { animation-delay: 60ms; }
+                .combat-overview-card:nth-child(4) { animation-delay: 90ms; }
+                .combat-overview-card:hover {
+                    background:
+                        linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.018)),
+                        rgba(12, 13, 18, 0.8);
+                    border-color: color-mix(in srgb, var(--text-accent), transparent 74%);
+                    transform: translateY(-2px);
+                }
+                .combat-overview-card.highlight {
+                    border-color: color-mix(in srgb, var(--text-success), transparent 66%);
+                    background:
+                        linear-gradient(145deg, color-mix(in srgb, var(--text-success), transparent 93%), rgba(255,255,255,0.014)),
+                        rgba(9, 10, 14, 0.72);
+                }
+                .combat-overview-card svg {
+                    color: var(--text-accent);
+                }
+                .combat-overview-card span,
+                .combat-overview-card small {
+                    color: var(--text-muted);
+                    font-size: 0.74rem;
+                    font-weight: 850;
+                    letter-spacing: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                }
+                .combat-overview-card strong {
+                    color: #fff;
+                    display: block;
+                    font-family: var(--font-mono);
+                    font-size: 1.15rem;
+                    font-weight: 950;
+                    line-height: 1.12;
+                    min-width: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .combat-dev-notice {
+                    align-items: center;
+                    border-radius: 14px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.055);
+                    display: grid;
+                    grid-template-columns: auto minmax(0, 1fr);
+                    margin-bottom: 0.9rem;
+                    padding: 0.95rem 1rem;
+                }
+                .combat-dev-pill,
+                .combat-result-count,
+                .session-metric-card span,
+                .session-row-result span,
+                .actual-result span,
+                .session-fields label span,
+                .session-enemy-row label span,
+                .selected-zone-stats small,
+                .session-location-hint {
+                    letter-spacing: 0;
+                }
+                .combat-view-tabs {
+                    border-radius: 14px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+                    margin-bottom: 1rem;
+                }
+                .combat-view-tabs button {
+                    border-radius: 10px;
+                    transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+                }
+                .combat-view-tabs button:active,
+                .zone-select-button:active,
+                .zone-mob-button:active,
+                .session-location-strip button:active,
+                .combat-mobile-card:active,
+                .loot-drop-button:active {
+                    transform: scale(0.985);
+                }
+                .controls {
+                    border-radius: 14px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+                }
+                .combat-search-field {
+                    position: relative;
+                }
+                .combat-search-field svg {
+                    color: var(--text-muted);
+                    left: 0.75rem;
+                    pointer-events: none;
+                    position: absolute;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+                .combat-search-field .control-input {
+                    padding-left: 2.25rem;
+                    width: 100%;
+                }
+                .table-sort-button {
+                    align-items: center;
+                    background: transparent;
+                    border: 0;
+                    color: inherit;
+                    cursor: pointer;
+                    display: flex;
+                    font: inherit;
+                    font-weight: 900;
+                    gap: 0.45rem;
+                    justify-content: flex-start;
+                    padding: 0;
+                    text-align: left;
+                    width: 100%;
+                }
+                .table-sort-button.align-right {
+                    justify-content: flex-end;
+                    text-align: right;
+                }
+                .table-sort-button:focus-visible {
+                    border-radius: 6px;
+                    outline: 2px solid var(--text-accent);
+                    outline-offset: 4px;
+                }
+                .zone-select-button,
+                .zone-mob-button,
+                .session-location-strip button,
+                .session-metric-card,
+                .session-card,
+                .combat-mobile-card,
+                .loot-drop-button {
+                    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+                }
+                .zone-select-button:hover,
+                .zone-mob-button:hover,
+                .zone-mob-button:focus-visible,
+                .session-location-strip button:hover,
+                .session-location-strip button:focus-visible {
+                    box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+                    transform: translateY(-1px);
+                }
+                .session-hero,
+                .session-card,
+                .session-confidence,
+                .session-metric-card,
+                .combat-zone-panel {
+                    border-radius: 14px;
+                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+                }
+                .session-hero > div {
+                    min-width: 0;
+                    width: 100%;
+                }
+                .session-hero p {
+                    overflow-wrap: anywhere;
+                }
+                .combat-session-panel {
+                    gap: 0.85rem;
+                    max-width: 100%;
+                    min-width: 0;
+                    overflow-x: clip;
+                }
+                .session-location-wrap {
+                    min-width: 0;
+                    overflow: hidden;
+                }
+                .session-location-strip {
+                    display: flex;
+                    gap: 0.6rem;
+                    padding-bottom: 0.25rem;
+                    scroll-snap-type: x proximity;
+                }
+                .session-location-strip button {
+                    flex: 0 0 13.5rem;
+                    max-width: 13.5rem;
+                    min-height: 3.35rem;
+                    scroll-snap-align: start;
+                }
+                .session-summary-grid {
+                    grid-template-columns: minmax(15rem, 1.1fr) repeat(3, minmax(10.5rem, 0.75fr));
+                }
+                .session-metric-card {
+                    min-height: 5.7rem;
+                    padding: 0.85rem 0.95rem;
+                }
+                .session-form-grid {
+                    align-items: start;
+                    grid-template-columns: minmax(26rem, 1.35fr) minmax(18rem, 0.65fr);
+                }
+                .session-fields.two-col {
+                    grid-template-columns: repeat(2, minmax(9rem, 12rem));
+                    justify-content: start;
+                }
+                .session-fields label {
+                    width: min(12rem, 100%);
+                }
+                .session-fields .control-input,
+                .session-enemy-row .control-input {
+                    max-width: 12rem;
+                }
+                .session-fields .control-input {
+                    width: 100%;
+                }
+                .session-enemies-card {
+                    overflow: hidden;
+                }
+                .session-enemy-grid {
+                    gap: 0.75rem;
+                    grid-template-columns: repeat(auto-fit, minmax(min(100%, 29rem), 1fr));
+                }
+                .session-enemy-row {
+                    align-items: start;
+                    gap: 0.65rem;
+                    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(6.5rem, auto);
+                    padding: 0.8rem;
+                }
+                .session-enemy-title {
+                    border-bottom: 1px solid var(--border-subtle);
+                    grid-column: 1 / -1;
+                    padding-bottom: 0.6rem;
+                }
+                .session-enemy-row label {
+                    justify-self: stretch;
+                    width: 100%;
+                }
+                .session-enemy-row .control-input {
+                    max-width: none;
+                    width: 100%;
+                }
+                .session-row-result {
+                    align-self: end;
+                    background: rgba(255,255,255,0.018);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 7px;
+                    min-width: 0;
+                    padding: 0.62rem 0.7rem;
+                    text-align: right;
+                }
+                .combat-page .control-input:focus {
+                    border-color: color-mix(in srgb, var(--text-accent), transparent 56%);
+                    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 80%);
+                    outline: none;
+                }
+                .combat-mobile-card {
+                    appearance: none;
+                    color: inherit;
+                    cursor: pointer;
+                    font: inherit;
+                    text-align: left;
+                    width: 100%;
+                }
+                .combat-mobile-card:focus-visible,
+                .loot-drop-button:focus-visible {
+                    outline: 2px solid var(--text-accent);
+                    outline-offset: 3px;
+                }
+                .loot-drop-button:hover,
+                .loot-drop-button:focus-visible {
+                    background: color-mix(in srgb, var(--text-accent), transparent 96%) !important;
+                    border-color: var(--border-focus) !important;
+                }
+                @keyframes combatRise {
+                    from {
+                        opacity: 0;
+                        transform: translateY(8px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                @keyframes combatStatusPulse {
+                    0%, 100% {
+                        box-shadow: 0 0 0 0 color-mix(in srgb, var(--text-accent), transparent 58%);
+                    }
+                    50% {
+                        box-shadow: 0 0 0 6px color-mix(in srgb, var(--text-accent), transparent 100%);
+                    }
+                }
+                @media (max-width: 1040px) {
+                    .combat-overview-grid {
+                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                    }
+                }
                 @media (max-width: 768px) {
+                    .combat-page {
+                        padding-left: 0.75rem;
+                        padding-right: 0.75rem;
+                        padding-top: 1rem;
+                    }
+                    .header {
+                        grid-template-columns: 1fr;
+                        padding: 1rem;
+                    }
+                    .header-title {
+                        font-size: 1.35rem;
+                    }
+                    .header-status {
+                        justify-self: start;
+                    }
+                    .combat-overview-grid {
+                        gap: 0.55rem;
+                    }
+                    .combat-overview-card {
+                        min-height: 4.8rem;
+                        padding: 0.72rem;
+                    }
+                    .combat-overview-card strong {
+                        font-size: 1rem;
+                    }
+                    .combat-dev-notice {
+                        grid-template-columns: 1fr;
+                        padding: 0.9rem;
+                    }
+                    .session-hero h2 {
+                        font-size: 2rem;
+                    }
                     .combat-view-tabs {
                         display: grid;
                         grid-template-columns: 1fr 1fr;
@@ -1552,6 +1996,24 @@ function CombatContent() {
                     .session-enemy-row {
                         align-items: stretch;
                         grid-template-columns: 1fr;
+                    }
+                    .session-location-strip button {
+                        flex-basis: min(13rem, 78vw);
+                        max-width: min(13rem, 78vw);
+                    }
+                    .session-fields .control-input,
+                    .session-fields label,
+                    .session-enemy-row .control-input,
+                    .session-enemy-row label {
+                        max-width: none;
+                        width: 100%;
+                    }
+                    .session-enemy-title {
+                        grid-column: auto;
+                    }
+                    .session-row-result {
+                        justify-self: stretch;
+                        text-align: left;
                     }
                     .session-location-hint {
                         display: block;
@@ -1591,6 +2053,28 @@ function CombatContent() {
                     .zone-mob-button {
                         align-items: start;
                         grid-template-columns: 1fr;
+                    }
+                }
+                @media (max-width: 620px) {
+                    .combat-overview-grid {
+                        display: flex;
+                        gap: 0.55rem;
+                        margin-left: -0.15rem;
+                        margin-right: -0.15rem;
+                        overflow-x: auto;
+                        padding: 0.05rem 0.15rem 0.45rem;
+                        scroll-snap-type: x proximity;
+                    }
+                    .combat-overview-card {
+                        flex: 0 0 8.4rem;
+                        min-height: 4.45rem;
+                        scroll-snap-align: start;
+                    }
+                    .combat-dev-notice strong {
+                        font-size: 0.96rem;
+                    }
+                    .combat-dev-notice p {
+                        font-size: 0.84rem;
                     }
                 }
             `}</style>

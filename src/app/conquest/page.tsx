@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Check,
   Crown,
   Crosshair,
   ExternalLink,
@@ -371,7 +372,7 @@ export default function ConquestPage() {
         </div>
       </section>
 
-      <section className={styles.commandGrid} aria-label="Conquest highlights">
+      <section className={styles.commandGrid} aria-label="Conquest highlights" tabIndex={0}>
         <article className={styles.commandCard} data-tone={activeAssaults.length > 0 ? "hot" : "calm"}>
           <div className={styles.commandIcon}>
             <Flame size={18} />
@@ -491,6 +492,12 @@ export default function ConquestPage() {
                     <div className={styles.zoneTop}>
                       <h2 className={styles.zoneName}>{zone.name}</h2>
                       <span className={styles.zoneActions}>
+                        {selectedZone.key === zone.key && (
+                          <span className={styles.selectedPill}>
+                            <Check size={12} />
+                            Selected
+                          </span>
+                        )}
                         <span className={styles.statusPill} data-tone={getPressureTone(zone)}>
                           {getPressureLabel(zone)}
                         </span>
@@ -562,17 +569,17 @@ export default function ConquestPage() {
         </div>
 
         {filteredZones.length > 0 && (
-        <aside className={styles.panel} aria-label={`${selectedZone.name} details`}>
-          <div className={styles.panelHeader}>
-            <h2>
-              <Flag size={18} />
-              Zone Details
-            </h2>
-            <span className={styles.statusPill} data-tone={getPressureTone(selectedZone)}>
-              {getStatusLabel(selectedZone.status)}
-            </span>
-          </div>
-          <div className={styles.panelBody}>
+          <aside className={`${styles.panel} ${styles.detailPanel}`} aria-label={`${selectedZone.name} details`}>
+            <div className={styles.panelHeader}>
+              <h2>
+                <Flag size={18} />
+                Zone Details
+              </h2>
+              <span className={styles.statusPill} data-tone={getPressureTone(selectedZone)}>
+                {getStatusLabel(selectedZone.status)}
+              </span>
+            </div>
+            <div className={styles.panelBody}>
             <div className={styles.detailHero} style={getZoneStyle(selectedZone)}>
               <div className={styles.detailHeroTop}>
                 <div>

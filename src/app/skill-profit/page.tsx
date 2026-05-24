@@ -12,6 +12,7 @@ import {
   Filter,
   Info,
   PackageSearch,
+  RotateCcw,
   Search,
   Sparkles,
   X,
@@ -455,12 +456,28 @@ export default function SkillProfitPage() {
 
   useEffect(() => {
     setVisibleRowLimit(MOBILE_RESULT_BATCH_SIZE);
-  }, [activeSkill, deferredSearchTerm, minVolume, sortDesc, sortKey]);
+  }, [activeSkill, deferredSearchTerm, includeForgeInfoRows, minVolume, sortDesc, sortKey]);
 
   const visibleRows = compactResults
     ? rowModel.filtered.slice(0, visibleRowLimit)
     : rowModel.filtered;
   const hiddenRowCount = Math.max(0, rowModel.filtered.length - visibleRows.length);
+  const liquidRouteCount = useMemo(
+    () => rowModel.filtered.filter((row) => row.skill !== "Forge" && isLiquid(row, minVolume)).length,
+    [minVolume, rowModel.filtered],
+  );
+  const needsPriceCount = useMemo(
+    () => rowModel.filtered.filter((row) => row.essenceActive && row.essenceNeedsPrice).length,
+    [rowModel.filtered],
+  );
+  const routeFilterCount = [
+    deferredSearchTerm.trim().length > 0,
+    activeSkill !== "All",
+    minVolume !== DEFAULT_STATE.minVolume,
+    includeForgeInfoRows,
+    sortKey !== DEFAULT_STATE.sortKey || sortDesc !== DEFAULT_STATE.sortDesc,
+    (settings.saleMode || "best") !== DEFAULT_SETTINGS.saleMode,
+  ].filter(Boolean).length;
 
   const buffTotals = useMemo(
     () => getBuffTotals(effectiveSettings, activeSkill !== "Construction", activeSkill),
@@ -606,6 +623,17 @@ export default function SkillProfitPage() {
     patchSettings({ essenceBySkill: { [skill]: essenceName } });
   };
 
+  const resetRouteFilters = () => {
+    setSearchTerm("");
+    setActiveSkill(DEFAULT_STATE.activeSkill);
+    setMinVolume(DEFAULT_STATE.minVolume);
+    setMinVolumeDraft(String(DEFAULT_STATE.minVolume));
+    setSortKey(DEFAULT_STATE.sortKey);
+    setSortDesc(DEFAULT_STATE.sortDesc);
+    setIncludeForgeInfoRows(false);
+    patchSettings({ saleMode: DEFAULT_SETTINGS.saleMode });
+  };
+
   const toggleAscension = (id: string) => {
     setSettings((current) => {
       const isSelected = current.ascensionBuffIds.includes(id);
@@ -632,7 +660,7 @@ export default function SkillProfitPage() {
   const profileLabel = activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback";
 
   return (
-    <main className={`container ${styles.shell} ${mobileSetupOpen ? styles.mobileSetupOpen : styles.mobileSetupCollapsed}`}>
+    <main className={`container ${styles.shell} ${mobileSetupOpen ? styles.mobileSetupOpen : styles.mobileSetupCollapsed}`} aria-label="Skill Profit Finder">
       <section className={styles.hero}>
         <div className={styles.heroIntro}>
           <div className={styles.heroCopy}>
@@ -651,6 +679,7 @@ export default function SkillProfitPage() {
           </div>
         </div>
         <button
+          aria-label={topRoute ? `Open best liquid route ${topRoute.name}` : "Best liquid route is waiting for data"}
           className={styles.spotlightCard}
           disabled={!topRoute}
           onClick={() => topRoute && setSelectedRow(topRoute)}
@@ -696,6 +725,7 @@ export default function SkillProfitPage() {
           const top = rowModel.topBySkill.get(skill);
           return (
             <button
+              aria-pressed={activeSkill === skill}
               className={`${styles.skillCard} ${activeSkill === skill ? styles.skillCardActive : ""}`}
               key={skill}
               onClick={() => setActiveSkill(skill)}
@@ -720,7 +750,7 @@ export default function SkillProfitPage() {
       </div>
 
       <section className={`${styles.commandBar} ${activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""}`}>
-        <div className={styles.filterRow}>
+        <div className={styles.filterRow} aria-label="Skill profit route filters">
           <div className={styles.searchBox}>
             <Search size={16} />
             <input
@@ -728,7 +758,18 @@ export default function SkillProfitPage() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search item or material"
+              spellCheck={false}
             />
+            {searchTerm.trim().length > 0 && (
+              <button
+                aria-label="Clear skill profit search"
+                className={styles.searchClear}
+                onClick={() => setSearchTerm("")}
+                type="button"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
           <div className={`${styles.numberField} ${styles.conquestField}`}>
             <span>Conquest</span>
@@ -821,7 +862,7 @@ export default function SkillProfitPage() {
             </div>
           </div>
         </div>
-        <div className={styles.toggleRow}>
+        <div className={styles.toggleRow} aria-label="Skill profit route toggles">
           <button
             className={`${styles.toggle} ${settings.membership ? styles.toggleActive : ""}`}
             onClick={() => patchSettings({ membership: !settings.membership })}
@@ -851,6 +892,32 @@ export default function SkillProfitPage() {
             type="button"
           >
             {includeForgeInfoRows && <Check size={14} />} Forge rows
+          </button>
+        </div>
+        <div className={styles.commandStatus} aria-live="polite">
+          <div className={styles.commandStat}>
+            <span>Showing</span>
+            <strong>{rowModel.filtered.length.toLocaleString()} / {rows.length.toLocaleString()}</strong>
+          </div>
+          <div className={styles.commandStat}>
+            <span>Liquid</span>
+            <strong>{liquidRouteCount.toLocaleString()} routes</strong>
+          </div>
+          <div className={`${styles.commandStat} ${needsPriceCount > 0 ? styles.commandStatWarning : ""}`}>
+            <span>Needs data</span>
+            <strong>{needsPriceCount > 0 ? `${needsPriceCount.toLocaleString()} routes` : "Clear"}</strong>
+          </div>
+          <div className={styles.commandStat}>
+            <span>Sort</span>
+            <strong>{SORT_LABELS[sortKey]} {sortDesc ? "desc" : "asc"}</strong>
+          </div>
+          <button
+            className={styles.resetFilters}
+            disabled={routeFilterCount === 0}
+            onClick={resetRouteFilters}
+            type="button"
+          >
+            <RotateCcw size={14} /> Reset
           </button>
         </div>
       </section>
@@ -1008,6 +1075,7 @@ export default function SkillProfitPage() {
           {(["All", ...SKILLS] as const).map((skill) => (
             <button
               key={skill}
+              aria-pressed={activeSkill === skill}
               className={`${styles.tab} ${activeSkill === skill ? styles.tabActive : ""}`}
               onClick={() => setActiveSkill(skill)}
               type="button"
@@ -1034,6 +1102,7 @@ export default function SkillProfitPage() {
                 : isLiquid(row, minVolume) ? "Liquid" : "Thin";
           return (
             <button
+              aria-label={`Open ${row.name} ${row.skill} strategy`}
               className={styles.mobileResultCard}
               key={`mobile-${row.skill}-${row.name}`}
               onClick={() => setSelectedRow(row)}
@@ -1085,12 +1154,7 @@ export default function SkillProfitPage() {
             <strong>No routes match this search</strong>
             <span>Try an item name, skill, material, essence, sale source, or liquidity label.</span>
             <button
-              onClick={() => {
-                setSearchTerm("");
-                setActiveSkill("All");
-                setMinVolume(0);
-                setMinVolumeDraft("0");
-              }}
+              onClick={resetRouteFilters}
               type="button"
             >
               Reset filters
@@ -1099,7 +1163,7 @@ export default function SkillProfitPage() {
         )}
       </section>
 
-      <section className={styles.tableWrap}>
+      <section className={styles.tableWrap} aria-label="Skill profit route results table" role="region" tabIndex={0}>
         <table>
           <thead>
             <tr>
@@ -1122,6 +1186,13 @@ export default function SkillProfitPage() {
                   aria-label={`Open ${row.name} skill strategy`}
                   key={`${row.skill}-${row.name}`}
                   onClick={() => setSelectedRow(row)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedRow(row);
+                    }
+                  }}
+                  tabIndex={0}
                 >
                   <td className="left-align">
                     <div className={styles.nameCell}>
@@ -1216,12 +1287,7 @@ export default function SkillProfitPage() {
                     <strong>No routes match this search</strong>
                     <span>Try an item name, skill, material, essence, sale source, or liquidity label.</span>
                     <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setActiveSkill("All");
-                        setMinVolume(0);
-                        setMinVolumeDraft("0");
-                      }}
+                      onClick={resetRouteFilters}
                       type="button"
                     >
                       Reset filters

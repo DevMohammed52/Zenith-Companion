@@ -287,6 +287,10 @@ export default function MarketAlertsPage() {
   const { activeProfile } = useProfiles();
   const { openItem, openItemByName } = useItemModal();
   const searchListboxId = useId();
+  const builderRef = useRef<HTMLDivElement | null>(null);
+  const watchlistRef = useRef<HTMLElement | null>(null);
+  const vendorSectionRef = useRef<HTMLElement | null>(null);
+  const itemSearchInputRef = useRef<HTMLInputElement | null>(null);
   const [rules, setRules] = useState<MarketWatchRule[]>([]);
   const [rulesLoaded, setRulesLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -495,6 +499,20 @@ export default function MarketAlertsPage() {
   const vendorCandidates = useMemo(() => vendorCandidateCollection.candidates.slice(0, 250), [vendorCandidateCollection]);
   const vendorSummary = vendorCandidateCollection.summary;
   const visibleVendorCandidates = vendorCandidates.slice(0, visibleVendorCount);
+  const activeProfileName = activeProfile?.name?.trim() || 'No profile';
+  const snapshotAgeLabel = formatAge(marketUpdatedAt);
+  const rulesHealthLabel = `${enabledRules}/${rules.length} active`;
+  const alertsHealthLabel = activeAlerts.length
+    ? `${activeAlerts.length} live match${activeAlerts.length === 1 ? '' : 'es'}`
+    : 'No live matches';
+  const notificationHealthLabel = notificationState === 'granted'
+    ? `${notificationRules} notification rule${notificationRules === 1 ? '' : 's'}`
+    : notificationState === 'unsupported'
+      ? 'Notifications unsupported'
+      : `Notifications ${notificationState}`;
+  const vendorSignalLabel = vendorSummary.profitableRows > 0
+    ? `${vendorSummary.profitableRows.toLocaleString()} below vendor`
+    : `${vendorSummary.nearVendorRows.toLocaleString()} near vendor`;
 
   useEffect(() => {
     setVisibleVendorCount(24);
@@ -568,6 +586,23 @@ export default function MarketAlertsPage() {
     setManualMessage(`Watching vendor margin on ${candidate.itemName}.`);
   };
 
+  const getScrollBehavior = (): ScrollBehavior => (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+  );
+
+  const focusRuleBuilder = () => {
+    builderRef.current?.scrollIntoView({ behavior: getScrollBehavior(), block: 'start' });
+    window.setTimeout(() => itemSearchInputRef.current?.focus(), 180);
+  };
+
+  const jumpToWatchlist = () => {
+    watchlistRef.current?.scrollIntoView({ behavior: getScrollBehavior(), block: 'start' });
+  };
+
+  const jumpToVendorWatch = () => {
+    vendorSectionRef.current?.scrollIntoView({ behavior: getScrollBehavior(), block: 'start' });
+  };
+
   const selectedEvaluation = selectedItemName ? evaluateMarketWatchRule({
     rule: createMarketWatchRule({
       itemName: selectedItemName,
@@ -585,17 +620,41 @@ export default function MarketAlertsPage() {
   return (
     <main className="container market-watch-page">
       <section className="market-hero">
-        <div>
+        <div className="market-hero-copy">
           <span className="eyebrow"><ZenithIcon name="bell" size={15} /> Market Watch</span>
           <h1>Local market alerts</h1>
           <p>
             Watch generated market-history snapshots for price thresholds, sold-price moves, stable volume changes, and vendor-margin candidates.
           </p>
+          <div className="market-hero-chips" aria-label="Market watch context">
+            <span><Clock3 size={14} aria-hidden="true" /> {snapshotAgeLabel}</span>
+            <span><Eye size={14} aria-hidden="true" /> {rulesHealthLabel}</span>
+            <span className={activeAlerts.length ? 'hot' : ''}><BellRing size={14} aria-hidden="true" /> {alertsHealthLabel}</span>
+          </div>
+          <div className="market-quick-actions" aria-label="Market watch quick actions">
+            <button type="button" onClick={focusRuleBuilder}>
+              <Search size={15} aria-hidden="true" /> Add watch
+            </button>
+            <button type="button" onClick={jumpToWatchlist}>
+              <Eye size={15} aria-hidden="true" /> Watchlist
+            </button>
+            <button type="button" onClick={jumpToVendorWatch}>
+              <CircleDollarSign size={15} aria-hidden="true" /> Vendor
+            </button>
+            <button type="button" onClick={() => refresh()} aria-busy={loading} disabled={loading}>
+              <RefreshCcw size={15} aria-hidden="true" /> Refresh
+            </button>
+          </div>
         </div>
         <div className="market-hero-card">
           <span>Active profile</span>
-          <strong>{activeProfile?.name || 'No profile'}</strong>
+          <strong>{activeProfileName}</strong>
           <small>{barteringBoost ? `+${barteringBoost}% vendor value from bartering` : 'Base vendor value'}</small>
+          <div className="market-hero-metrics" aria-label="Market watch summary">
+            <span><small>Alerts</small><b>{alertsHealthLabel}</b></span>
+            <span><small>Notify</small><b>{notificationHealthLabel}</b></span>
+            <span><small>Vendor</small><b>{vendorSignalLabel}</b></span>
+          </div>
         </div>
       </section>
 
@@ -610,14 +669,14 @@ export default function MarketAlertsPage() {
         <div>
           <Clock3 size={17} />
           <span>Data snapshot</span>
-          <strong>{formatAge(marketUpdatedAt)}</strong>
+          <strong>{snapshotAgeLabel}</strong>
         </div>
         <div>
           <Eye size={17} />
           <span>Watch rules</span>
           <strong>{enabledRules} / {rules.length}</strong>
         </div>
-        <div>
+        <div className={activeAlerts.length ? 'alerting' : ''}>
           <ShieldAlert size={17} />
           <span>Current alerts</span>
           <strong>{activeAlerts.length}</strong>
@@ -637,7 +696,7 @@ export default function MarketAlertsPage() {
       </section>
 
       <section className="market-watch-layout">
-        <div className="watch-builder">
+        <div ref={builderRef} className="watch-builder">
           <div className="panel-heading">
             <div>
               <span className="eyebrow">Rule builder</span>
@@ -657,6 +716,7 @@ export default function MarketAlertsPage() {
                 type="text"
                 aria-label="Search item history"
                 aria-activedescendant={activeSearchOptionId}
+                ref={itemSearchInputRef}
                 value={searchTerm}
                 onChange={(event) => {
                   setSearchTerm(event.target.value);
@@ -855,7 +915,7 @@ export default function MarketAlertsPage() {
         </div>
       </section>
 
-      <section className="watch-rules-section">
+      <section ref={watchlistRef} className="watch-rules-section">
         <div className="panel-heading">
           <div>
             <span className="eyebrow">Saved locally</span>
@@ -865,7 +925,7 @@ export default function MarketAlertsPage() {
         </div>
         {rules.length > 0 && (
           <div className="watchlist-controls" aria-label="Watchlist filters">
-            <div className="watchlist-filter-row">
+            <div className="watchlist-filter-row" role="group" aria-label="Watchlist status filters">
               {watchFilterOptions.map((option) => (
                 <button
                   key={option.value}
@@ -917,7 +977,8 @@ export default function MarketAlertsPage() {
                       aria-label={`${evaluation.rule.enabled ? 'Disable' : 'Enable'} ${evaluation.rule.itemName} watch`}
                       onClick={() => updateRule(evaluation.rule.id, { enabled: !evaluation.rule.enabled })}
                     >
-                      {evaluation.rule.enabled ? 'On' : 'Off'}
+                      <Check size={14} aria-hidden="true" />
+                      <span>{evaluation.rule.enabled ? 'On' : 'Off'}</span>
                     </button>
                     <button
                       type="button"
@@ -927,7 +988,8 @@ export default function MarketAlertsPage() {
                       disabled={notificationState !== 'granted'}
                       onClick={() => updateRule(evaluation.rule.id, { notify: !evaluation.rule.notify })}
                     >
-                      Bell
+                      <Bell size={14} aria-hidden="true" />
+                      <span>Bell</span>
                     </button>
                     <button type="button" className="icon-danger" onClick={() => removeRule(evaluation.rule.id)} aria-label={`Remove ${evaluation.rule.itemName} watch`}>
                       <Trash2 size={15} />
@@ -955,7 +1017,7 @@ export default function MarketAlertsPage() {
         )}
       </section>
 
-      <section className="vendor-section">
+      <section ref={vendorSectionRef} className="vendor-section">
         <div className="panel-heading">
           <div>
             <span className="eyebrow"><CircleDollarSign size={15} /> Vendor candidates</span>
@@ -1327,6 +1389,8 @@ export default function MarketAlertsPage() {
           gap: 0.75rem;
           grid-template-columns: minmax(0, 1.1fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr);
           margin-top: 0.85rem;
+          position: relative;
+          z-index: 45;
         }
         :global(.market-watch-page .market-select) {
           position: relative;
@@ -1382,6 +1446,7 @@ export default function MarketAlertsPage() {
           top: 100%;
           width: max-content;
           max-width: calc(100vw - 2rem);
+          z-index: 120;
         }
         :global(.market-watch-page .market-select-option) {
           align-items: center;
@@ -1673,7 +1738,7 @@ export default function MarketAlertsPage() {
           box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
         }
         .watch-rule-grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
         }
         .watch-rule-card,
         .vendor-card {
@@ -1904,6 +1969,462 @@ export default function MarketAlertsPage() {
           }
           .vendor-actions {
             grid-template-columns: 1fr;
+          }
+        }
+        .market-watch-page {
+          --market-gold: #f5b041;
+          --market-mint: #34d399;
+          --market-sky: #38bdf8;
+          --market-rose: #fb7185;
+          --market-panel: rgba(9, 13, 17, 0.78);
+          -webkit-tap-highlight-color: transparent;
+          padding-bottom: clamp(5rem, 8vh, 7.5rem);
+        }
+        .market-watch-page :where(button, input, [role="button"], [role="option"]) {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .market-watch-page .market-hero {
+          position: relative;
+          overflow: hidden;
+          align-items: stretch;
+          border: 1px solid rgba(56, 189, 248, 0.18);
+          border-radius: 8px;
+          background:
+            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(7, 12, 15, 0.88)),
+            radial-gradient(circle at 92% 0%, rgba(245, 176, 65, 0.16), transparent 34%);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+          padding: clamp(1rem, 2.2vw, 1.45rem);
+        }
+        .market-watch-page .market-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(115deg, rgba(245, 176, 65, 0.13), rgba(52, 211, 153, 0.055) 42%, transparent 68%),
+            radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.12), transparent 28%);
+        }
+        .market-watch-page .market-hero > * {
+          position: relative;
+          z-index: 1;
+        }
+        .market-watch-page .market-hero-copy {
+          min-width: 0;
+          display: grid;
+          align-content: start;
+          gap: 0.78rem;
+        }
+        .market-watch-page .market-hero-copy .eyebrow,
+        .market-watch-page .market-hero-copy p {
+          margin: 0;
+        }
+        .market-watch-page .market-hero-copy p {
+          max-width: 72ch;
+          line-height: 1.62;
+        }
+        .market-watch-page .market-hero h1 {
+          color: #fffdf8;
+          margin: 0;
+        }
+        .market-watch-page .market-hero-chips,
+        .market-watch-page .market-quick-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+        .market-watch-page .market-hero-chips span {
+          min-height: 2rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          max-width: 100%;
+          border: 1px solid rgba(56, 189, 248, 0.22);
+          border-radius: 999px;
+          background: rgba(56, 189, 248, 0.08);
+          color: #bae6fd;
+          font-size: 0.74rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 1.15;
+          padding: 0.45rem 0.72rem;
+          text-transform: none;
+        }
+        .market-watch-page .market-hero-chips span.hot {
+          border-color: rgba(245, 176, 65, 0.3);
+          background: rgba(245, 176, 65, 0.11);
+          color: #fde68a;
+        }
+        .market-watch-page .market-hero-chips svg {
+          flex: 0 0 auto;
+          color: var(--market-gold);
+        }
+        .market-watch-page .market-quick-actions {
+          margin-top: 0.08rem;
+        }
+        .market-watch-page .market-quick-actions button {
+          min-height: 2.45rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          border: 1px solid rgba(245, 176, 65, 0.22);
+          border-radius: 8px;
+          background: rgba(245, 176, 65, 0.08);
+          color: #fde68a;
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.82rem;
+          font-weight: 900;
+          padding: 0.62rem 0.86rem;
+        }
+        .market-watch-page .market-quick-actions button:hover:not(:disabled) {
+          border-color: rgba(56, 189, 248, 0.38);
+          background: rgba(56, 189, 248, 0.1);
+          color: #e0f2fe;
+          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+          transform: translateY(-1px);
+        }
+        .market-watch-page .market-hero-card {
+          border-color: rgba(56, 189, 248, 0.22);
+          background:
+            linear-gradient(145deg, rgba(56, 189, 248, 0.1), rgba(0, 0, 0, 0.26)),
+            rgba(5, 10, 13, 0.54);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
+        }
+        .market-watch-page .market-hero-metrics {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.5rem;
+          margin-top: 0.42rem;
+        }
+        .market-watch-page .market-hero-metrics span {
+          min-width: 0;
+          display: grid;
+          gap: 0.18rem;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.045);
+          padding: 0.55rem;
+          text-transform: none;
+        }
+        .market-watch-page .market-hero-metrics small,
+        .market-watch-page .market-hero-metrics b {
+          display: block;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .market-watch-page .market-hero-metrics small {
+          color: var(--text-muted);
+          font-size: 0.66rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+        .market-watch-page .market-hero-metrics b {
+          color: var(--text-main);
+          font-size: 0.82rem;
+          line-height: 1.15;
+        }
+        .market-watch-page .market-status-grid > div.alerting {
+          border-color: rgba(245, 176, 65, 0.28);
+          background:
+            linear-gradient(145deg, rgba(245, 176, 65, 0.1), rgba(0, 0, 0, 0.14)),
+            rgba(255, 255, 255, 0.025);
+        }
+        .market-watch-page .watch-rules-section {
+          position: relative;
+          overflow: hidden;
+        }
+        .market-watch-page .watch-rules-section::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            radial-gradient(circle at 96% 0%, rgba(56, 189, 248, 0.08), transparent 28%),
+            linear-gradient(140deg, transparent 0%, rgba(255, 255, 255, 0.025) 100%);
+        }
+        .market-watch-page .watch-rules-section > * {
+          position: relative;
+          z-index: 1;
+        }
+        .market-watch-page .watch-rules-section .panel-heading {
+          align-items: flex-start;
+          margin-bottom: 0.85rem;
+        }
+        .market-watch-page .watch-rules-section .panel-count {
+          min-width: 2.35rem;
+          height: 2.35rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(56, 189, 248, 0.34);
+          border-radius: 999px;
+          background: rgba(56, 189, 248, 0.1);
+          color: #e0f2fe;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+          font-family: var(--font-mono);
+          font-size: 0.9rem;
+          font-weight: 900;
+        }
+        .market-watch-page .watchlist-controls {
+          grid-template-columns: minmax(0, auto) minmax(260px, 400px);
+          align-items: center;
+          justify-content: space-between;
+          border: 1px solid rgba(255, 255, 255, 0.055);
+          border-radius: 8px;
+          background: rgba(0, 0, 0, 0.14);
+          padding: 0.55rem;
+        }
+        .market-watch-page .watchlist-filter-row {
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.035);
+          gap: 0.25rem;
+          padding: 0.25rem;
+        }
+        .market-watch-page .watchlist-filter-row button {
+          border: 1px solid transparent;
+          border-radius: 6px;
+          background: transparent;
+          color: var(--text-muted);
+          min-height: 2.35rem;
+          padding-inline: 0.85rem;
+        }
+        .market-watch-page .watchlist-filter-row button:hover {
+          background: rgba(255, 255, 255, 0.055);
+          color: var(--text-main);
+        }
+        .market-watch-page .watchlist-filter-row button.active {
+          border-color: rgba(56, 189, 248, 0.34);
+          background: rgba(56, 189, 248, 0.14);
+          color: #e0f2fe;
+          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+        }
+        .market-watch-page .watchlist-search {
+          justify-self: end;
+          width: min(100%, 400px);
+          border-color: rgba(255, 255, 255, 0.075);
+          background: rgba(0, 0, 0, 0.24);
+        }
+        .market-watch-page .watch-rule-grid {
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+        }
+        .market-watch-page .watch-rule-card {
+          position: relative;
+          overflow: hidden;
+          border-color: rgba(255, 255, 255, 0.075);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        }
+        .market-watch-page .watch-rule-card.triggered {
+          background:
+            linear-gradient(145deg, rgba(52, 211, 153, 0.095), rgba(0, 0, 0, 0.16)),
+            var(--market-panel);
+        }
+        .market-watch-page .watch-rule-card.triggered::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 3px;
+          background: linear-gradient(180deg, var(--market-mint), rgba(56, 189, 248, 0.72));
+        }
+        .market-watch-page .rule-actions {
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 8px;
+          background: rgba(0, 0, 0, 0.12);
+          padding: 0.25rem;
+        }
+        .market-watch-page .mini-toggle,
+        .market-watch-page .icon-danger {
+          min-height: 2.25rem;
+          border-radius: 7px;
+        }
+        .market-watch-page .mini-toggle {
+          gap: 0.35rem;
+          min-width: 3.6rem;
+          padding-inline: 0.62rem;
+        }
+        .market-watch-page .mini-toggle:not(.active) svg {
+          color: var(--text-muted);
+        }
+        .market-watch-page .mini-toggle.active {
+          border-color: rgba(56, 189, 248, 0.34);
+          background: rgba(56, 189, 248, 0.14);
+          color: #e0f2fe;
+        }
+        .market-watch-page .rule-metrics div {
+          background: rgba(0, 0, 0, 0.2);
+          border-color: rgba(255, 255, 255, 0.065);
+        }
+        .market-watch-page .watch-builder,
+        .market-watch-page .alert-panel,
+        .market-watch-page .watch-rules-section,
+        .market-watch-page .vendor-section {
+          scroll-margin-top: 1rem;
+        }
+        .market-watch-page .watch-builder {
+          position: relative;
+          z-index: 40;
+        }
+        :global(.market-watch-page .watch-builder:has(.market-select.open)) {
+          z-index: 7600;
+        }
+        .market-watch-page .alert-panel {
+          position: relative;
+          z-index: 30;
+        }
+        .market-watch-page .market-hero-card,
+        .market-watch-page .market-status-grid > div,
+        .market-watch-page .watch-builder,
+        .market-watch-page .alert-panel,
+        .market-watch-page .watch-rules-section,
+        .market-watch-page .vendor-section,
+        .market-watch-page .watch-rule-card,
+        .market-watch-page .vendor-card,
+        .market-watch-page .alert-card,
+        .market-watch-page .watch-preview {
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
+            var(--market-panel);
+          backdrop-filter: blur(16px);
+        }
+        .market-watch-page .market-hero-card,
+        .market-watch-page .market-status-grid > div,
+        .market-watch-page .watch-builder,
+        .market-watch-page .alert-panel,
+        .market-watch-page .watch-rules-section,
+        .market-watch-page .vendor-section,
+        .market-watch-page .watch-rule-card,
+        .market-watch-page .vendor-card,
+        .market-watch-page .alert-card,
+        .market-watch-page button,
+        .market-watch-page :global(.market-select-trigger),
+        .market-watch-page :global(.market-select-menu) {
+          transition:
+            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            background-color 180ms ease,
+            color 180ms ease;
+        }
+        .market-watch-page button:active:not(:disabled),
+        .market-watch-page .vendor-card:active,
+        .market-watch-page .watch-rule-card:active {
+          transform: scale(0.985);
+        }
+        .market-watch-page .watch-field input:focus-visible,
+        .market-watch-page .watch-search input:focus-visible,
+        .market-watch-page .watchlist-search input:focus-visible,
+        .market-watch-page button:focus-visible,
+        .market-watch-page :global(.market-select-trigger:focus-visible),
+        .market-watch-page :global(.market-select-option:focus-visible) {
+          outline: 2px solid color-mix(in srgb, var(--market-sky), white 12%);
+          outline-offset: 3px;
+          box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.11);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .market-watch-page .watch-builder:hover,
+          .market-watch-page .alert-panel:hover,
+          .market-watch-page .watch-rules-section:hover,
+          .market-watch-page .vendor-section:hover,
+          .market-watch-page .watch-rule-card:hover,
+          .market-watch-page .vendor-card:hover,
+          .market-watch-page .alert-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245, 176, 65, 0.2);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .market-watch-page *,
+          .market-watch-page *::before,
+          .market-watch-page *::after {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
+        }
+        @media (max-width: 1100px) {
+          .market-watch-page .market-hero {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .market-watch-page .watchlist-controls {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .market-watch-page .watchlist-search {
+            justify-self: stretch;
+            width: 100%;
+          }
+        }
+        @media (max-width: 760px) {
+          .market-watch-page {
+            padding-bottom: 9rem;
+          }
+          .market-watch-page .market-hero {
+            margin-left: -0.15rem;
+            margin-right: -0.15rem;
+            padding: 1rem;
+          }
+          .market-watch-page .market-quick-actions,
+          .market-watch-page .market-hero-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .market-watch-page .market-quick-actions button {
+            min-width: 0;
+            padding-inline: 0.55rem;
+          }
+          .market-watch-page .market-hero-chips span {
+            width: 100%;
+          }
+          .market-watch-page .watch-rules-section .panel-heading {
+            align-items: center;
+          }
+          .market-watch-page .watchlist-controls {
+            padding: 0.45rem;
+          }
+          .market-watch-page .watchlist-filter-row button {
+            padding-inline: 0.7rem;
+          }
+          .market-watch-page .rule-actions {
+            width: 100%;
+          }
+          .market-watch-page :global(.market-select.open) {
+            z-index: 7000;
+          }
+          .market-watch-page :global(.market-select.open)::before {
+            background: rgba(0, 0, 0, 0.32);
+            content: "";
+            inset: 0;
+            position: fixed;
+            z-index: 7001;
+          }
+          .market-watch-page :global(.market-select.open .market-select-trigger) {
+            position: relative;
+            z-index: 7002;
+          }
+          .market-watch-page :global(.market-select-menu) {
+            bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+            left: 1rem !important;
+            max-height: min(360px, calc(100dvh - 2rem)) !important;
+            max-width: calc(100vw - 2rem);
+            position: fixed;
+            right: 1rem !important;
+            top: auto !important;
+            width: auto;
+            z-index: 7003;
+          }
+        }
+        @media (max-width: 520px) {
+          .market-watch-page .market-quick-actions,
+          .market-watch-page .market-hero-metrics {
+            grid-template-columns: minmax(0, 1fr);
           }
         }
       `}</style>

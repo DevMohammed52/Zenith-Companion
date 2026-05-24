@@ -226,10 +226,6 @@ function formatGold(value: number | null | undefined) {
   return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}g`;
 }
 
-function formatScore(value: number) {
-  return Math.round(value).toLocaleString();
-}
-
 function evaluateScore(stats: Record<string, number>, priority: Priority) {
   const weights = WEIGHTS[priority];
   return Object.entries(stats).reduce((total, [key, value]) => total + Number(value || 0) * (weights[key] || 0.25), 0);
@@ -305,6 +301,9 @@ export default function BisPage() {
   const { activeProfile, updateProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
   const comparePanelRef = useRef<HTMLElement | null>(null);
+  const recommendationPanelRef = useRef<HTMLElement | null>(null);
+  const gearListPanelRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const slotButtonRefs = useRef<Partial<Record<"ALL" | GearType, HTMLButtonElement | null>>>({});
 
   const [gearData, setGearData] = useState<GearItem[]>([]);
@@ -333,6 +332,7 @@ export default function BisPage() {
     dexterity: numberValue(profileDexterity),
     defence: numberValue(profileDefence),
   }), [profileCombatLevel, profileStrength, profileDexterity, profileDefence]);
+  const activeSlots = useMemo(() => activeStyleSlots(activeCombatStyle), [activeCombatStyle]);
 
   useEffect(() => {
     let cancelled = false;
@@ -382,14 +382,14 @@ export default function BisPage() {
 
   const recommendations = useMemo(() => {
     const result: Partial<Record<GearType, GearView>> = {};
-    for (const type of activeStyleSlots(activeCombatStyle)) {
+    for (const type of activeSlots) {
       const best = gearViews
         .filter((view) => view.item.type === type && view.eligible)
         .sort(compareBestGear)[0];
       if (best) result[type] = best;
     }
     return result;
-  }, [gearViews, activeCombatStyle]);
+  }, [gearViews, activeSlots]);
 
   const filteredGear = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -456,11 +456,25 @@ export default function BisPage() {
   const candidateStats = selected ? calculateGearStats(selected.item, effectiveCandidateTier) : {};
   const currentStats = currentProfileItem ? calculateGearStats(currentProfileItem, effectiveCompareTier) : {};
   const statComparison = selected ? compareStats(candidateStats, currentStats) : [];
-  const totalRecommendedCost = activeStyleSlots(activeCombatStyle).reduce((total, type) => {
+  const totalRecommendedCost = activeSlots.reduce((total, type) => {
     const view = recommendations[type];
     const multiplier = type === "DAGGER" && activeCombatStyle === "dualDaggers" ? 2 : 1;
     return total + Number(view?.price || 0) * multiplier;
   }, 0);
+  const activeProfileName = activeProfile?.name?.trim() || "Manual planner";
+  const activeStyleLabel = STYLE_OPTIONS.find((option) => option.id === activeCombatStyle)?.label || "Sword + Shield";
+  const priorityLabel = PRIORITIES.find((option) => option.id === priority)?.label || "Balanced";
+  const usableGearCount = gearViews.filter((view) => view.eligible).length;
+  const recommendedSlotCount = activeSlots.filter((type) => recommendations[type]).length;
+  const recommendationReadinessLabel = `${recommendedSlotCount}/${activeSlots.length} slots ready`;
+  const selectedDeltaTotal = statComparison.reduce((total, entry) => total + entry.delta, 0);
+  const positiveDeltaCount = statComparison.filter((entry) => entry.delta > 0).length;
+  const negativeDeltaCount = statComparison.filter((entry) => entry.delta < 0).length;
+  const comparisonTone = !currentProfileItem ? "neutral" : selectedDeltaTotal >= 0 ? "positive" : "negative";
+  const comparisonSummaryLabel = currentProfileItem
+    ? `${positiveDeltaCount} gain${positiveDeltaCount === 1 ? "" : "s"} / ${negativeDeltaCount} drop${negativeDeltaCount === 1 ? "" : "s"}`
+    : "Save a baseline item first";
+  const dataSourceLabel = activeProfile ? "Profile levels" : "Manual levels";
 
   const handleLevelChange = (key: "combatLevel" | "strStat" | "dexStat" | "defStat", value: string) => {
     const parsed = Number(value);
@@ -512,6 +526,23 @@ export default function BisPage() {
     });
   };
 
+  const focusSearch = () => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+    setStatusMessage("Search focused.");
+  };
+
+  const showUsableRecommendations = () => {
+    setUsableOnly(true);
+    setStatusMessage("Usable gear filter enabled.");
+    gearListPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const jumpToComparison = () => {
+    comparePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setStatusMessage(selected ? `${selected.item.name} comparison focused.` : "Comparison panel focused.");
+  };
+
   useEffect(() => {
     if (!selected) return;
     setCandidateTier((value) => clampTier(value, selectedMaxTier) || 1);
@@ -524,15 +555,36 @@ export default function BisPage() {
   return (
     <main className="container bis-page">
       <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
-      <div className="header">
-        <div>
+      <div className="header bis-hero">
+        <div className="bis-hero-copy">
           <div className="eyebrow"><ZenithIcon name="shield" size={15} /> Gear Recommender</div>
           <h1 className="header-title">Gear Recommender</h1>
           <p className="hero-copy">Profile-aware combat gear list with tier-by-tier stat comparison across every item stat.</p>
+          <div className="bis-hero-chips" aria-label="Recommendation context">
+            <span><Shield size={14} aria-hidden="true" /> {activeProfileName}</span>
+            <span><Sword size={14} aria-hidden="true" /> {activeStyleLabel}</span>
+            <span><Sparkles size={14} aria-hidden="true" /> {priorityLabel} ranking</span>
+          </div>
+          <div className="bis-quick-actions" aria-label="Gear recommender quick actions">
+            <button type="button" onClick={focusSearch}>
+              <Search size={15} aria-hidden="true" /> Search
+            </button>
+            <button type="button" onClick={showUsableRecommendations}>
+              <Check size={15} aria-hidden="true" /> Usable
+            </button>
+            <button type="button" onClick={jumpToComparison}>
+              <Gauge size={15} aria-hidden="true" /> Compare
+            </button>
+          </div>
         </div>
         <div className="hero-stat">
-          <span>{activeProfile ? activeProfile.name || "Active profile" : "No profile"}</span>
+          <span>{dataSourceLabel}</span>
           <strong>{filteredGear.length.toLocaleString()} shown</strong>
+          <div className="hero-stat-grid" aria-label="Gear recommendation summary">
+            <span><small>Usable</small><b>{usableGearCount.toLocaleString()}</b></span>
+            <span><small>Picks</small><b>{recommendationReadinessLabel}</b></span>
+            <span><small>Set value</small><b>{formatGold(totalRecommendedCost)}</b></span>
+          </div>
         </div>
       </div>
 
@@ -541,13 +593,13 @@ export default function BisPage() {
           <span>Search</span>
           <div className="search-wrap">
             <Search size={17} aria-hidden="true" />
-            <input aria-label="Search gear" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Gear, stat, rarity..." />
+            <input ref={searchInputRef} aria-label="Search gear" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Gear, stat, rarity..." />
           </div>
         </label>
 
         <ControlGroup label="Style">
           {STYLE_OPTIONS.map((option) => (
-            <button key={option.id} type="button" className={activeCombatStyle === option.id ? "is-active" : ""} onClick={() => setCombatStyle(option.id)}>
+            <button key={option.id} type="button" className={activeCombatStyle === option.id ? "is-active" : ""} aria-pressed={activeCombatStyle === option.id} onClick={() => setCombatStyle(option.id)}>
               {option.label}
             </button>
           ))}
@@ -555,7 +607,7 @@ export default function BisPage() {
 
         <ControlGroup label="Ranking">
           {PRIORITIES.map((option) => (
-            <button key={option.id} type="button" className={priority === option.id ? "is-active" : ""} onClick={() => setPriority(option.id)}>
+            <button key={option.id} type="button" className={priority === option.id ? "is-active" : ""} aria-pressed={priority === option.id} onClick={() => setPriority(option.id)}>
               {option.label}
             </button>
           ))}
@@ -581,14 +633,19 @@ export default function BisPage() {
         ))}
       </section>
 
-      <section className="recommendation-panel" aria-label="Current style picks">
+      <section ref={recommendationPanelRef} className="recommendation-panel" aria-label="Current style picks">
         <div className="panel-title">
           <span><Sparkles size={16} /> Current Style Picks</span>
           <strong>{formatGold(totalRecommendedCost)}</strong>
         </div>
+        <div className="recommendation-summary" aria-label="Recommendation readiness">
+          <span><Shield size={15} aria-hidden="true" /> {recommendationReadinessLabel}</span>
+          <span><Target size={15} aria-hidden="true" /> {priorityLabel} score</span>
+          <span><ShoppingCart size={15} aria-hidden="true" /> {formatGold(totalRecommendedCost)} estimated</span>
+        </div>
         <p className="ranking-note">Based on current levels, style, ranking priority, and base-tier stats. Compare tiers before saving.</p>
         <div className="recommendation-grid">
-          {activeStyleSlots(activeCombatStyle).map((type) => {
+          {activeSlots.map((type) => {
             const view = recommendations[type];
             const multiplier = type === "DAGGER" && activeCombatStyle === "dualDaggers" ? "x2" : "";
             return (
@@ -616,7 +673,14 @@ export default function BisPage() {
       </section>
 
       <section className="bis-layout">
-        <div className="gear-list-panel">
+        <div ref={gearListPanelRef} className="gear-list-panel">
+          <div className="list-command-strip" aria-label="Gear list status">
+            <div>
+              <span>Gear library</span>
+              <strong>{filteredGear.length.toLocaleString()} matching</strong>
+            </div>
+            <span>{usableOnly ? `${usableGearCount.toLocaleString()} usable from profile levels` : "Showing usable and locked gear"}</span>
+          </div>
           <div className="filter-row" aria-label="Gear filters">
             <div className="chip-scroll-shell">
             <div className="chip-scroll" aria-label="Slot filters">
@@ -636,7 +700,7 @@ export default function BisPage() {
               ))}
             </div>
             </div>
-            <button type="button" className={usableOnly ? "toggle is-active" : "toggle"} onClick={() => setUsableOnly((value) => !value)}>
+            <button type="button" className={usableOnly ? "toggle is-active" : "toggle"} aria-pressed={usableOnly} onClick={() => setUsableOnly((value) => !value)}>
               <Check size={15} /> Usable
             </button>
           </div>
@@ -647,6 +711,7 @@ export default function BisPage() {
                 key={option.id}
                 type="button"
                 className={sortKey === option.id ? "is-active" : ""}
+                aria-pressed={sortKey === option.id}
                 onClick={() => {
                   setSortKey(option.id);
                   if (option.id === "stats" || option.id === "quality") setDirection("desc");
@@ -656,7 +721,7 @@ export default function BisPage() {
                 {option.label}
               </button>
             ))}
-            <button type="button" className="direction" onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}>
+            <button type="button" className="direction" aria-label={`Sort ${direction === "asc" ? "ascending" : "descending"}`} onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}>
               {direction === "asc" ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
               {direction === "asc" ? "Asc" : "Desc"}
             </button>
@@ -667,7 +732,7 @@ export default function BisPage() {
           <p className="ranking-note list-note">List sorting uses base-tier stats. Use the comparison panel for candidate and saved tier differences.</p>
 
           <div className="gear-list" aria-label="Combat gear list">
-            {visibleGear.map((view, index) => {
+            {visibleGear.map((view) => {
               const isSelected = selected?.item.hashed_id === view.item.hashed_id;
               return (
               <button
@@ -677,8 +742,6 @@ export default function BisPage() {
                 aria-label={`Compare ${view.item.name}, ${slotLabel(view.item.type)}, level ${view.requirementLevel}, ${view.eligible ? "usable" : "locked"}`}
                 aria-pressed={isSelected}
                 aria-current={isSelected ? "true" : undefined}
-                aria-posinset={index + 1}
-                aria-setsize={filteredGear.length}
                 onClick={() => selectGear(view)}
                 onMouseEnter={() => prefetchGearItem(view.item.name)}
               >
@@ -765,6 +828,12 @@ export default function BisPage() {
                 <span>Profile comparison</span>
                 <strong>{currentProfileItem ? currentProfileItem.name : "No saved item"}</strong>
                 <small>{currentProfileItem ? `${slotLabel(currentProfileItem.type)} | T${effectiveCompareTier}/${currentMaxTier}` : "No profile gear saved in this slot yet."}</small>
+              </div>
+
+              <div className={`compare-result-strip ${comparisonTone}`} aria-label="Net stat comparison">
+                <span>Net stat delta</span>
+                <strong>{currentProfileItem ? `${selectedDeltaTotal > 0 ? "+" : ""}${selectedDeltaTotal.toLocaleString()}` : "No baseline"}</strong>
+                <small>{comparisonSummaryLabel}</small>
               </div>
 
               <div className="stat-compare-table">
@@ -1526,6 +1595,346 @@ export default function BisPage() {
             grid-template-columns: minmax(0, 1fr) minmax(48px, 58px) minmax(48px, 58px) minmax(48px, 58px);
             gap: 0.4rem;
             font-size: 0.8rem;
+          }
+        }
+        .bis-page {
+          --bis-gold: #f5b041;
+          --bis-mint: #34d399;
+          --bis-sky: #38bdf8;
+          --bis-rose: #fb7185;
+          --bis-panel: rgba(9, 13, 18, 0.78);
+          -webkit-tap-highlight-color: transparent;
+          padding-bottom: clamp(5rem, 7vh, 7rem);
+        }
+        .bis-page :where(button, input, [role="button"]) {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .bis-page .bis-hero {
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+          gap: clamp(1rem, 2vw, 1.5rem);
+          align-items: stretch;
+          border: 1px solid rgba(56, 189, 248, 0.18);
+          border-radius: 8px;
+          background:
+            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(7, 12, 17, 0.88)),
+            radial-gradient(circle at 88% 0%, rgba(245, 176, 65, 0.16), transparent 34%);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+          margin-bottom: 1rem;
+          padding: clamp(1rem, 2.2vw, 1.45rem);
+        }
+        .bis-page .bis-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(115deg, rgba(245, 176, 65, 0.13), rgba(52, 211, 153, 0.05) 42%, transparent 68%),
+            radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.13), transparent 28%);
+        }
+        .bis-page .bis-hero > * {
+          position: relative;
+          z-index: 1;
+        }
+        .bis-page .bis-hero-copy {
+          min-width: 0;
+          display: grid;
+          gap: 0.78rem;
+          align-content: start;
+        }
+        .bis-page .bis-hero-copy .eyebrow,
+        .bis-page .bis-hero-copy .hero-copy {
+          margin: 0;
+        }
+        .bis-page .bis-hero-copy .hero-copy {
+          max-width: 72ch;
+          line-height: 1.62;
+        }
+        .bis-page .bis-hero-chips,
+        .bis-page .bis-quick-actions,
+        .bis-page .recommendation-summary {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+        .bis-page .bis-hero-chips span,
+        .bis-page .recommendation-summary span {
+          min-height: 2rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          max-width: 100%;
+          border: 1px solid rgba(56, 189, 248, 0.22);
+          border-radius: 999px;
+          background: rgba(56, 189, 248, 0.08);
+          color: #bae6fd;
+          font-size: 0.74rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 1.15;
+          padding: 0.45rem 0.72rem;
+        }
+        .bis-page .bis-hero-chips span:first-child,
+        .bis-page .recommendation-summary span:first-child {
+          border-color: rgba(52, 211, 153, 0.24);
+          background: rgba(52, 211, 153, 0.09);
+          color: #bbf7d0;
+        }
+        .bis-page .bis-hero-chips svg,
+        .bis-page .recommendation-summary svg {
+          flex: 0 0 auto;
+          color: var(--bis-gold);
+        }
+        .bis-page .bis-quick-actions {
+          margin-top: 0.08rem;
+        }
+        .bis-page .bis-quick-actions button {
+          min-height: 2.45rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          border-color: rgba(245, 176, 65, 0.22);
+          background: rgba(245, 176, 65, 0.08);
+          color: #fde68a;
+          padding: 0.62rem 0.86rem;
+        }
+        .bis-page .hero-stat {
+          display: grid;
+          gap: 0.78rem;
+          border-color: rgba(56, 189, 248, 0.22);
+          background:
+            linear-gradient(145deg, rgba(56, 189, 248, 0.1), rgba(0, 0, 0, 0.26)),
+            rgba(5, 10, 13, 0.54);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
+        }
+        .bis-page .hero-stat-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0.5rem;
+        }
+        .bis-page .hero-stat-grid span {
+          min-width: 0;
+          display: grid;
+          gap: 0.18rem;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.045);
+          padding: 0.55rem;
+        }
+        .bis-page .hero-stat-grid small,
+        .bis-page .hero-stat-grid b {
+          display: block;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .bis-page .hero-stat-grid small {
+          color: var(--text-muted);
+          font-size: 0.66rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+        .bis-page .hero-stat-grid b {
+          color: var(--text-primary);
+          font-size: 0.84rem;
+          line-height: 1.15;
+        }
+        .bis-page .bis-toolbar,
+        .bis-page .level-strip,
+        .bis-page .recommendation-panel,
+        .bis-page .gear-list-panel,
+        .bis-page .compare-panel {
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
+            var(--bis-panel);
+          backdrop-filter: blur(16px);
+        }
+        .bis-page .recommendation-summary {
+          margin: -0.2rem 0 0.85rem;
+        }
+        .bis-page .list-command-strip {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-bottom: 0.85rem;
+          border: 1px solid rgba(56, 189, 248, 0.16);
+          border-radius: 8px;
+          background: rgba(56, 189, 248, 0.055);
+          padding: 0.72rem 0.8rem;
+        }
+        .bis-page .list-command-strip div {
+          min-width: 0;
+          display: grid;
+          gap: 0.18rem;
+        }
+        .bis-page .list-command-strip span {
+          color: var(--text-muted);
+          font-size: 0.74rem;
+          font-weight: 850;
+          line-height: 1.25;
+        }
+        .bis-page .list-command-strip strong {
+          color: var(--text-primary);
+          line-height: 1.2;
+        }
+        .bis-page .list-command-strip > span {
+          flex: 0 1 auto;
+          text-align: right;
+        }
+        .bis-page .compare-result-strip {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 0.25rem 0.7rem;
+          align-items: center;
+          margin: -0.1rem 0 0.9rem;
+          border: 1px solid rgba(56, 189, 248, 0.18);
+          border-radius: 8px;
+          background: rgba(56, 189, 248, 0.07);
+          padding: 0.82rem;
+        }
+        .bis-page .compare-result-strip span,
+        .bis-page .compare-result-strip small {
+          color: var(--text-muted);
+          font-size: 0.75rem;
+          font-weight: 850;
+          line-height: 1.3;
+        }
+        .bis-page .compare-result-strip strong {
+          color: var(--text-primary);
+          font-size: 1.05rem;
+          line-height: 1.15;
+        }
+        .bis-page .compare-result-strip small {
+          grid-column: 1 / -1;
+        }
+        .bis-page .compare-result-strip.positive {
+          border-color: rgba(52, 211, 153, 0.26);
+          background: rgba(52, 211, 153, 0.08);
+        }
+        .bis-page .compare-result-strip.positive strong {
+          color: var(--bis-mint);
+        }
+        .bis-page .compare-result-strip.negative {
+          border-color: rgba(251, 113, 133, 0.28);
+          background: rgba(251, 113, 133, 0.08);
+        }
+        .bis-page .compare-result-strip.negative strong {
+          color: var(--bis-rose);
+        }
+        .bis-page .compare-result-strip.neutral strong {
+          color: var(--bis-gold);
+        }
+        .bis-page .bis-toolbar,
+        .bis-page .level-strip,
+        .bis-page .recommendation-panel,
+        .bis-page .gear-list-panel,
+        .bis-page .compare-panel,
+        .bis-page .pick-card,
+        .bis-page .gear-row,
+        .bis-page button {
+          transition:
+            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            background-color 180ms ease,
+            color 180ms ease;
+        }
+        .bis-page button:active:not(:disabled),
+        .bis-page .gear-row:active,
+        .bis-page .pick-card:active:not(:disabled) {
+          transform: scale(0.985);
+        }
+        .bis-page button:hover:not(:disabled) {
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+        .bis-page .bis-quick-actions button:hover:not(:disabled) {
+          border-color: rgba(56, 189, 248, 0.38);
+          background: rgba(56, 189, 248, 0.1);
+          color: #e0f2fe;
+        }
+        .bis-page .gear-row.is-selected {
+          box-shadow: inset 3px 0 0 var(--bis-sky), 0 14px 34px rgba(0, 0, 0, 0.18);
+        }
+        .bis-page .gear-row img,
+        .bis-page .compare-head img {
+          image-rendering: auto;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .bis-page .bis-quick-actions button:focus-visible,
+        .bis-page button:focus-visible,
+        .bis-page input:focus-visible,
+        .bis-page .gear-row:focus-visible,
+        .bis-page .pick-card:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--bis-sky), white 12%);
+          outline-offset: 3px;
+          box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.11);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .bis-page .recommendation-panel:hover,
+          .bis-page .gear-list-panel:hover,
+          .bis-page .compare-panel:hover,
+          .bis-page .pick-card:hover:not(:disabled),
+          .bis-page .gear-row:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245, 176, 65, 0.22);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .bis-page *,
+          .bis-page *::before,
+          .bis-page *::after {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
+        }
+        @media (max-width: 1180px) {
+          .bis-page .bis-hero {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .bis-page .hero-stat-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 760px) {
+          .bis-page {
+            padding-bottom: 9rem;
+          }
+          .bis-page .bis-hero {
+            margin-left: -0.15rem;
+            margin-right: -0.15rem;
+            padding: 1rem;
+          }
+          .bis-page .bis-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .bis-page .bis-quick-actions button {
+            min-width: 0;
+            padding-inline: 0.55rem;
+          }
+          .bis-page .hero-stat-grid,
+          .bis-page .list-command-strip {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .bis-page .list-command-strip {
+            display: grid;
+          }
+          .bis-page .list-command-strip > span {
+            text-align: left;
+          }
+          .bis-page .bis-hero-chips span,
+          .bis-page .recommendation-summary span {
+            width: 100%;
           }
         }
       `}</style>

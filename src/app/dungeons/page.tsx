@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
-  Castle,
   Check,
   ChevronDown,
   ChevronUp,
@@ -778,6 +778,17 @@ function DungeonsContent() {
       matchingLocationText: visibleLocationText,
     };
   }, [activeProfile, rows]);
+  const heroDungeon = summary.bestReady ?? summary.bestProfit;
+  const heroModeLabel = summary.bestReady
+    ? "Top ready EV/run"
+    : summary.bestProfit
+      ? "Top visible EV/run"
+      : "Dungeon Planner";
+  const heroReason = summary.bestReady
+    ? `Showing the highest expected-value dungeon that ${activeProfile?.name || "the active profile"} can enter in the current filters.`
+    : summary.bestProfit
+      ? "Showing the highest expected-value dungeon in the current filters; it may still be blocked by profile requirements."
+      : "Use the filters below to compare entry cost, loot EV, shard value, action capacity, and magic-find EV.";
 
   const selectedDungeonLore = useMemo(() => {
     if (!selectedDungeon) return [];
@@ -834,10 +845,10 @@ function DungeonsContent() {
 
       <section className="dungeon-command">
         <div className="dungeon-command-main">
-          <span className="dungeon-eyebrow"><ShieldCheck size={14} /> Dungeon Planner</span>
-          <h2>{summary.bestReady?.name || summary.bestProfit?.name || "Build a dungeon plan"}</h2>
+          <span className="dungeon-eyebrow"><ShieldCheck size={14} /> {heroModeLabel}</span>
+          <h2>{heroDungeon?.name || "Build a dungeon plan"}</h2>
           <p>
-            Compare entry readiness, expected value, run costs, speed-style dungeon efficiency, gold per shard from cost and payout, and magic-find adjusted EV.
+            {heroReason} Compare entry readiness, run cost, speed-style dungeon efficiency, gold per shard, and magic-find adjusted EV.
           </p>
           {summary.sensitiveDropCount > 0 && (
             <p className="dungeon-risk-note">
@@ -845,96 +856,114 @@ function DungeonsContent() {
             </p>
           )}
         </div>
-        <div className="dungeon-command-stats">
-          <div><span>Ready</span><strong>{activeProfile ? `${summary.readyRows.length}/${rows.length}` : "No profile"}</strong></div>
-          <div><span>Best Ready EV</span><strong>{summary.bestReady ? formatGold(summary.bestReady.netProfitPerRun) : "-"}</strong></div>
-          <div><span>Cheapest</span><strong>{summary.cheapest ? formatPlainGold(summary.cheapest.entryCost) : "-"}</strong></div>
+        <div className="dungeon-command-stats" aria-label="Dungeon summary metrics" tabIndex={0}>
+          <div>
+            <span>Ready dungeons</span>
+            <strong>{activeProfile ? `${summary.readyRows.length} of ${rows.length} visible` : "Select profile"}</strong>
+            <small>{activeProfile ? "Current filters your profile can enter now." : "Readiness needs an active profile."}</small>
+          </div>
+          <div>
+            <span>Top ready EV/run</span>
+            <strong>{summary.bestReady ? formatGold(summary.bestReady.netProfitPerRun) : "-"}</strong>
+            <small>{summary.bestReady ? `${summary.bestReady.name} after entry cost.` : activeProfile ? "No ready dungeon in this view." : "Select a profile to check readiness."}</small>
+          </div>
+          <div>
+            <span>Lowest entry cost</span>
+            <strong>{summary.cheapest ? formatPlainGold(summary.cheapest.entryCost) : "-"}</strong>
+            <small>{summary.cheapest ? `${summary.cheapest.name} entry cost per run.` : "No dungeon matches the filters."}</small>
+          </div>
         </div>
       </section>
 
       <section className="dungeon-planner">
-        <div className="dungeon-planner-field dungeon-search-field">
-          <label className="control-label">Search</label>
-          <div className="dungeon-input-icon">
-            <Search size={14} />
+        <div className="dungeon-control-panel dungeon-find-panel" aria-label="Dungeon discovery controls">
+          <div className="dungeon-planner-field dungeon-search-field">
+            <label className="control-label">Search</label>
+            <div className="dungeon-input-icon">
+              <Search aria-hidden="true" size={16} strokeWidth={2.1} />
+              <input
+                aria-label="Search dungeons"
+                type="text"
+                className="control-input"
+                placeholder="Search dungeon or location"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="dungeon-planner-field dungeon-filter-field">
+            <span className="control-label">Profile Filter</span>
+            <div className="dungeon-segmented">
+              {(["all", "ready", "blocked"] as ReadinessFilter[]).map((mode) => (
+                <button key={mode} type="button" className={readinessFilter === mode ? "active" : ""} onClick={() => setReadinessFilter(mode)}>
+                  {mode === "all" ? "All" : mode === "ready" ? "Ready" : "Blocked"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="dungeon-control-panel dungeon-limits-panel" aria-label="Dungeon profile limits">
+          <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
+            <span className="control-label">Best Action Limit</span>
+            <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : formatHours(actionLimitSummary.base)}</strong>
+            <small>
+              {activeProfile
+                ? actionLimitSummary.maxHousing > 0
+                  ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)}. Housing applies per matching row${actionLimitSummary.matchingLocationText ? ` (${actionLimitSummary.matchingLocationText})` : ""}.`
+                  : `${activeProfile.kind === "main" ? "Main" : "Alt"} base. ${getHousingDungeonScopeText(activeProfile)}`
+                : "Select a profile."}
+            </small>
+          </div>
+          <div className="dungeon-planner-field dungeon-readonly-field dungeon-playtime-field">
+            <span className="control-label">Playtime</span>
+            <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
+            <small>Used for daily repeat capacity, not one queued action.</small>
+          </div>
+          <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
+            <span className="control-label">Completion MF</span>
+            <strong>+{completionMagicFindBonus}%</strong>
+            <small>{listedCompletionMagicFindBonus}% current list + {eventCompletionMagicFindBonus}% limited-time.</small>
+          </div>
+        </div>
+        <div className="dungeon-control-panel dungeon-tuning-panel" aria-label="Dungeon EV tuning controls">
+          <label className="dungeon-planner-field dungeon-profit-field">
+            <span className="control-label">Min Profit / Run</span>
+            <input aria-label="Minimum profit per run" className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number(event.target.value))} />
+          </label>
+          <label className="dungeon-planner-field dungeon-efficiency-field">
+            <span className="control-label">Dungeon Efficiency</span>
+            <input aria-label="Dungeon Efficiency" className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
+          </label>
+          <label className="dungeon-planner-field dungeon-mf-field">
+            <span className="control-label">Dungeon MF</span>
+            <input aria-label="Dungeon Magic Find" className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
+          </label>
+          <label className="dungeon-planner-field dungeon-event-completion-field">
+            <span className="control-label">Limited-Time Completions</span>
             <input
-              aria-label="Search dungeons"
-              type="text"
+              aria-label="Limited-time dungeon completions"
               className="control-input"
-              placeholder="Search dungeon or location"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              type="number"
+              min="0"
+              value={eventDungeonCompletionCount}
+              placeholder="0"
+              onChange={(event) => setEventDungeonCompletionCount(event.target.value === "" ? "" : normalizeCompletionCount(event.target.value))}
             />
-          </div>
+            <small>Adds completion MF for completed limited-time dungeons.</small>
+          </label>
+          <button
+            type="button"
+            className={`dungeon-check-toggle dungeon-mf-toggle ${includeMagicFindEv ? "active" : ""}`}
+            aria-pressed={includeMagicFindEv}
+            onClick={() => setIncludeMagicFindEv((value) => !value)}
+          >
+            <span className="dungeon-check-box">{includeMagicFindEv && <Check size={13} />}</span>
+            <span>
+              <strong>Apply MF</strong>
+              <small>Adjust loot EV with profile and completion magic find.</small>
+            </span>
+          </button>
         </div>
-        <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
-          <span className="control-label">Best Action Limit</span>
-          <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : formatHours(actionLimitSummary.base)}</strong>
-          <small>
-            {activeProfile
-              ? actionLimitSummary.maxHousing > 0
-                ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)}. Housing applies per matching row${actionLimitSummary.matchingLocationText ? ` (${actionLimitSummary.matchingLocationText})` : ""}.`
-                : `${activeProfile.kind === "main" ? "Main" : "Alt"} base. ${getHousingDungeonScopeText(activeProfile)}`
-              : "Select a profile."}
-          </small>
-        </div>
-        <div className="dungeon-planner-field dungeon-readonly-field dungeon-playtime-field">
-          <span className="control-label">Playtime</span>
-          <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
-          <small>Used for daily repeat capacity, not one queued action.</small>
-        </div>
-        <label className="dungeon-planner-field dungeon-profit-field">
-          <span className="control-label">Min Profit / Run</span>
-          <input aria-label="Minimum profit per run" className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number(event.target.value))} />
-        </label>
-        <label className="dungeon-planner-field dungeon-efficiency-field">
-          <span className="control-label">Dungeon Efficiency</span>
-          <input aria-label="Dungeon Efficiency" className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
-        </label>
-        <label className="dungeon-planner-field dungeon-mf-field">
-          <span className="control-label">Dungeon MF</span>
-          <input aria-label="Dungeon Magic Find" className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
-        </label>
-        <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
-          <span className="control-label">Completion MF</span>
-          <strong>+{completionMagicFindBonus}%</strong>
-          <small>{listedCompletionMagicFindBonus}% current list + {eventCompletionMagicFindBonus}% limited-time.</small>
-        </div>
-        <label className="dungeon-planner-field dungeon-event-completion-field">
-          <span className="control-label">Limited-Time Completions</span>
-          <input
-            aria-label="Limited-time dungeon completions"
-            className="control-input"
-            type="number"
-            min="0"
-            value={eventDungeonCompletionCount}
-            placeholder="0"
-            onChange={(event) => setEventDungeonCompletionCount(event.target.value === "" ? "" : normalizeCompletionCount(event.target.value))}
-          />
-          <small>Adds completion MF for completed limited-time dungeons.</small>
-        </label>
-        <div className="dungeon-planner-field dungeon-filter-field">
-          <span className="control-label">Profile Filter</span>
-          <div className="dungeon-segmented">
-            {(["all", "ready", "blocked"] as ReadinessFilter[]).map((mode) => (
-              <button key={mode} type="button" className={readinessFilter === mode ? "active" : ""} onClick={() => setReadinessFilter(mode)}>
-                {mode === "all" ? "All" : mode === "ready" ? "Ready" : "Blocked"}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button
-          type="button"
-          className={`dungeon-check-toggle dungeon-mf-toggle ${includeMagicFindEv ? "active" : ""}`}
-          aria-pressed={includeMagicFindEv}
-          onClick={() => setIncludeMagicFindEv((value) => !value)}
-        >
-          <span className="dungeon-check-box">{includeMagicFindEv && <Check size={13} />}</span>
-          <span>
-            <strong>Apply MF</strong>
-            <small>Adjust loot EV with profile and completion magic find.</small>
-          </span>
-        </button>
       </section>
 
       <div className="dungeon-advanced-row">
@@ -1012,19 +1041,19 @@ function DungeonsContent() {
       <section className="dungeon-insights">
         <button type="button" className="dungeon-insight" onClick={() => summary.bestProfit && setSelectedDungeonKey(getDungeonKey(summary.bestProfit))}>
           <BarChart3 size={16} />
-          <span>Best EV/run</span>
+          <span>Top EV/run in view</span>
           <strong>{summary.bestProfit ? summary.bestProfit.name : "-"}</strong>
-          <small>{summary.bestProfit ? formatGold(summary.bestProfit.netProfitPerRun) : "No data"}</small>
+          <small>{summary.bestProfit ? `${formatGold(summary.bestProfit.netProfitPerRun)} after entry cost.` : "No dungeon data in this view."}</small>
         </button>
         <button type="button" className="dungeon-insight" onClick={() => summary.bestReady && setSelectedDungeonKey(getDungeonKey(summary.bestReady))}>
           <ShieldCheck size={16} />
-          <span>Best Ready</span>
+          <span>Top ready EV/run</span>
           <strong>{summary.bestReady ? summary.bestReady.name : "-"}</strong>
-          <small>{summary.bestReady ? getReadinessText(summary.bestReady, Boolean(activeProfile)) : "No ready dungeon"}</small>
+          <small>{summary.bestReady ? `${formatGold(summary.bestReady.netProfitPerRun)} and ${getReadinessText(summary.bestReady, Boolean(activeProfile)).toLowerCase()}.` : "No ready dungeon in this view."}</small>
         </button>
         <div className="dungeon-insight passive">
           <Timer size={16} />
-          <span>Best Action Limit</span>
+          <span>Profile action limit</span>
           <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : `${formatHours(actionLimitSummary.base)} action limit`}</strong>
           <small>
             {actionLimitSummary.maxHousing > 0
@@ -1068,7 +1097,7 @@ function DungeonsContent() {
                           setSelectedDungeonKey(getDungeonKey(row));
                         }}
                       >
-                        {row.image_url && <img src={row.image_url} alt="" />}
+                        {row.image_url && <Image src={row.image_url} alt="" width={32} height={32} unoptimized />}
                         <div>
                           <span>{row.name}</span>
                           <small>Lv {row.level_required || 0} - {row.durationMins}m - {row.dropsCount} drops</small>
@@ -1138,19 +1167,10 @@ function DungeonsContent() {
               </div>
             )}
             {rows.map((row) => (
-              <div
+              <article
                 aria-label={getDungeonRowLabel(row, Boolean(activeProfile))}
                 key={row.id || row.name}
                 className="dungeon-card"
-                onClick={() => setSelectedDungeonKey(getDungeonKey(row))}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setSelectedDungeonKey(getDungeonKey(row));
-                  }
-                }}
-                role="button"
-                tabIndex={0}
               >
                 <div className="dungeon-card-top">
                   <button
@@ -1161,7 +1181,7 @@ function DungeonsContent() {
                       setSelectedDungeonKey(getDungeonKey(row));
                     }}
                   >
-                    {row.image_url && <img src={row.image_url} alt="" />}
+                    {row.image_url && <Image src={row.image_url} alt="" width={32} height={32} unoptimized />}
                     <div>
                       <strong>{row.name}</strong>
                           <small>{row.location?.name || "Unknown"} - {Math.round(row.effectiveDurationMins)}m</small>
@@ -1193,7 +1213,7 @@ function DungeonsContent() {
                     }}
                   />
                 </label>
-              </div>
+              </article>
             ))}
           </div>
         </div>
@@ -1212,7 +1232,7 @@ function DungeonsContent() {
           >
             <div className="modal-header">
               <div className="dungeon-modal-title">
-                {selectedDungeon.image_url && <img src={selectedDungeon.image_url} alt="" />}
+                {selectedDungeon.image_url && <Image src={selectedDungeon.image_url} alt="" width={52} height={52} unoptimized />}
                 <div>
                   <h2 id="dungeon-details-title">{selectedDungeon.name}</h2>
                   <div className="dungeon-modal-tags">
@@ -1311,7 +1331,7 @@ function DungeonsContent() {
                       onMouseEnter={() => prefetchItem(drop.name)}
                     >
                       <div className="dungeon-loot-main">
-                        {drop.image_url && <img src={drop.image_url} alt="" />}
+                        {drop.image_url && <Image src={drop.image_url} alt="" width={34} height={34} unoptimized />}
                         <div>
                           <strong>
                             {drop.name}
@@ -1443,12 +1463,26 @@ function DungeonsContent() {
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 0.75rem;
         }
+        .dungeon-command-stats {
+          align-self: center;
+        }
+        .dungeon-command-stats:focus-visible {
+          border-radius: 12px;
+          outline: 2px solid var(--text-accent);
+          outline-offset: 4px;
+        }
         .dungeon-command-stats div,
         .dungeon-insight {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: rgba(255,255,255,0.03);
           padding: 0.85rem;
+        }
+        .dungeon-command-stats div {
+          display: flex;
+          flex-direction: column;
+          gap: 0.42rem;
+          justify-content: flex-start;
         }
         .dungeon-command-stats span,
         .dungeon-insight span {
@@ -1465,6 +1499,13 @@ function DungeonsContent() {
           color: #fff;
           font-size: 1rem;
           overflow-wrap: anywhere;
+        }
+        .dungeon-command-stats small {
+          color: var(--text-muted);
+          display: block;
+          font-size: 0.72rem;
+          line-height: 1.32;
+          margin-top: 0.5rem;
         }
         .dungeon-planner {
           display: grid;
@@ -1578,9 +1619,12 @@ function DungeonsContent() {
           position: relative;
           width: 100%;
           min-width: 0;
-          display: flex;
+          display: grid;
+          grid-template-columns: 1.05rem minmax(0, 1fr);
+          gap: 0.65rem;
           align-items: center;
           min-height: 42px;
+          padding: 0 0.85rem;
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
           background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
@@ -1591,11 +1635,9 @@ function DungeonsContent() {
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
         }
         .dungeon-input-icon svg {
-          position: absolute;
-          left: 0.85rem;
-          top: 50%;
-          transform: translateY(-50%);
           color: var(--text-muted);
+          height: 1rem;
+          width: 1rem;
           z-index: 1;
           pointer-events: none;
           flex: 0 0 auto;
@@ -1606,11 +1648,12 @@ function DungeonsContent() {
           min-width: 0;
           height: 40px;
           min-height: 40px;
-          padding: 0 0.75rem 0 2.35rem;
+          padding: 0;
           border: 0;
           background: transparent;
           box-shadow: none;
           font-size: 0.86rem;
+          line-height: 1;
         }
         .dungeon-input-icon .control-input:focus {
           box-shadow: none;
@@ -1642,12 +1685,12 @@ function DungeonsContent() {
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           gap: 0.85rem;
           margin-bottom: 1rem;
-          align-items: stretch;
+          align-items: start;
         }
         .dungeon-modifier-panel {
           display: grid;
           grid-template-columns: minmax(14rem, 0.65fr) minmax(0, 1.35fr);
-          align-items: stretch;
+          align-items: start;
           gap: 0.75rem;
           min-width: 0;
           margin-bottom: 0;
@@ -1665,7 +1708,7 @@ function DungeonsContent() {
         .dungeon-modifier-copy {
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 0.3rem;
         }
         .dungeon-modifier-copy strong {
@@ -1684,11 +1727,17 @@ function DungeonsContent() {
         .dungeon-modifier-pickers {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: start;
           gap: 0.75rem;
         }
         :global(.dungeon-effect-picker) {
           position: relative;
           min-width: 0;
+          align-self: start;
+          height: fit-content;
+        }
+        :global(.dungeon-effect-picker.open) {
+          z-index: 70;
         }
         :global(.dungeon-effect-trigger) {
           width: 100%;
@@ -1800,7 +1849,7 @@ function DungeonsContent() {
         .dungeon-valuation-panel {
           display: grid;
           grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
-          align-items: stretch;
+          align-items: start;
           gap: 0.75rem;
           min-width: 0;
           margin-bottom: 0;
@@ -1818,7 +1867,7 @@ function DungeonsContent() {
         .dungeon-valuation-copy {
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: flex-start;
           gap: 0.3rem;
         }
         .dungeon-valuation-copy strong {
@@ -1832,7 +1881,7 @@ function DungeonsContent() {
         .dungeon-valuation-controls {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.4fr);
-          align-items: end;
+          align-items: start;
           gap: 0.75rem;
         }
         .dungeon-valuation-segmented {
@@ -2366,19 +2415,380 @@ function DungeonsContent() {
         .dungeon-chest-row span:last-child {
           text-align: right;
         }
+        .dungeons-page {
+          max-width: 1480px;
+          padding-top: 1.25rem;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .dungeons-page :is(button, input) {
+          touch-action: manipulation;
+        }
+        .header {
+          align-items: center;
+          background:
+            radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--text-accent), transparent 82%), transparent 36%),
+            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.012)),
+            rgba(14, 12, 8, 0.72);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
+          border-radius: 16px;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+          display: grid;
+          gap: 1rem;
+          grid-template-columns: minmax(0, 1fr) auto;
+          margin-bottom: 0.85rem;
+          overflow: hidden;
+          padding: 1rem 1.15rem;
+          position: relative;
+        }
+        .header::after {
+          background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 70%), transparent);
+          content: "";
+          height: 1px;
+          inset: auto 1rem 0;
+          opacity: 0.75;
+          position: absolute;
+        }
+        .header-title {
+          color: #fff;
+          font-size: 1.5rem;
+          font-weight: 950;
+          letter-spacing: 0;
+          min-width: 0;
+        }
+        .header-status {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 64%);
+          border-radius: 999px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 34px rgba(0,0,0,0.2);
+          min-height: 2.4rem;
+        }
+        .status-dot {
+          animation: dungeonPulse 1.8s ease-in-out infinite;
+        }
+        .dungeon-command,
+        .dungeon-planner,
+        .dungeon-modifier-panel,
+        .dungeon-valuation-panel,
+        .dungeon-insight,
+        .dungeon-card,
+        .dungeon-modal-panel,
+        .dungeon-loot-row {
+          border-radius: 14px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        .dungeon-command {
+          background:
+            radial-gradient(circle at 7% 12%, color-mix(in srgb, var(--text-accent), transparent 80%), transparent 35%),
+            linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.012)),
+            rgba(10, 13, 15, 0.74);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 72%);
+          grid-template-columns: minmax(0, 1.12fr) minmax(20rem, 0.88fr);
+          padding: 1.35rem;
+        }
+        .dungeon-eyebrow,
+        .control-label,
+        .dungeon-command-stats span,
+        .dungeon-insight span,
+        .dungeon-card-stats small,
+        .dungeon-scroll-hint,
+        .dungeon-readiness {
+          letter-spacing: 0;
+        }
+        .dungeon-risk-note {
+          border-radius: 10px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          max-width: 46rem;
+        }
+        .dungeon-command-stats div {
+          background:
+            linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.014)),
+            rgba(9, 10, 14, 0.72);
+          border-color: rgba(255,255,255,0.075);
+          min-height: 7.2rem;
+          transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+        .dungeon-command-stats div:hover {
+          background:
+            linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.018)),
+            rgba(12, 13, 18, 0.82);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 70%);
+          transform: translateY(-1px);
+        }
+        .dungeon-planner {
+          background:
+            linear-gradient(145deg, rgba(255,255,255,0.032), rgba(255,255,255,0.01)),
+            color-mix(in srgb, var(--bg-panel), #05070b 22%);
+          border-color: rgba(255,255,255,0.075);
+          gap: 0.9rem;
+          grid-template-areas: none;
+          grid-template-columns: minmax(20rem, 0.82fr) minmax(18rem, 0.72fr) minmax(32rem, 1.36fr);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 18px 48px rgba(0,0,0,0.16);
+          padding: 1rem;
+        }
+        .dungeon-control-panel {
+          background:
+            radial-gradient(circle at 15% 0%, rgba(255,255,255,0.055), transparent 34%),
+            linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)),
+            rgba(7, 9, 12, 0.64);
+          border: 1px solid rgba(255,255,255,0.075);
+          border-radius: 12px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.045);
+          display: grid;
+          gap: 0.75rem;
+          min-width: 0;
+          overflow: hidden;
+          padding: 0.85rem;
+          position: relative;
+        }
+        .dungeon-control-panel::before {
+          background: linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 42%), transparent);
+          content: "";
+          inset: 0 auto 0 0;
+          opacity: 0.58;
+          position: absolute;
+          width: 2px;
+        }
+        .dungeon-control-panel > .dungeon-planner-field,
+        .dungeon-control-panel > .dungeon-mf-toggle {
+          grid-area: auto;
+          position: relative;
+        }
+        .dungeon-find-panel {
+          align-content: start;
+          grid-template-rows: auto auto;
+        }
+        .dungeon-find-panel .dungeon-input-icon {
+          min-height: 54px;
+        }
+        .dungeon-find-panel .dungeon-input-icon .control-input {
+          font-size: 0.92rem;
+          height: 52px;
+          min-height: 52px;
+        }
+        .dungeon-find-panel .dungeon-segmented {
+          min-height: 48px;
+        }
+        .dungeon-limits-panel,
+        .dungeon-tuning-panel {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dungeon-tuning-panel {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .dungeon-action-limit-field,
+        .dungeon-tuning-panel .dungeon-event-completion-field {
+          grid-column: 1 / -1;
+        }
+        .dungeon-tuning-panel .dungeon-event-completion-field {
+          grid-column: span 2;
+        }
+        .dungeon-tuning-panel .dungeon-mf-toggle {
+          grid-column: span 1;
+        }
+        .dungeon-control-panel .dungeon-planner-field {
+          justify-content: flex-start;
+        }
+        .dungeon-control-panel .dungeon-readonly-field {
+          min-height: 5.55rem;
+        }
+        .dungeon-tuning-panel .dungeon-planner-field .control-input,
+        .dungeon-tuning-panel .dungeon-check-toggle {
+          min-height: 46px;
+        }
+        .dungeon-planner-field .control-input,
+        .dungeon-input-icon,
+        .dungeon-readonly-field,
+        .dungeon-check-toggle,
+        .dungeon-segmented,
+        .dungeon-completed-input,
+        .dungeon-mobile-completed input {
+          border-radius: 10px;
+        }
+        .dungeon-planner-field .control-input:focus,
+        .dungeon-completed-input:focus,
+        .dungeon-mobile-completed input:focus {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 52%);
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 82%);
+          outline: none;
+        }
+        .dungeon-input-icon:focus-within {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 52%);
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 82%);
+        }
+        .dungeon-input-icon .control-input:focus {
+          border-color: transparent;
+          box-shadow: none;
+          outline: none;
+        }
+        .dungeon-segmented {
+          padding: 0.28rem;
+        }
+        .dungeon-segmented button {
+          border-radius: 8px;
+          transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+        }
+        .dungeon-segmented button:hover:not(.active),
+        .dungeon-segmented button:focus-visible:not(.active) {
+          background: color-mix(in srgb, var(--text-accent), transparent 91%);
+          color: #fff;
+          outline: none;
+        }
+        .dungeon-segmented button:active,
+        .dungeon-check-toggle:active,
+        .dungeon-card:active,
+        .dungeon-insight:not(.passive):active {
+          transform: scale(0.99);
+        }
+        .dungeon-check-toggle,
+        .dungeon-insight,
+        .dungeon-card,
+        .dungeon-loot-row,
+        :global(.dungeon-effect-trigger),
+        :global(.dungeon-effect-option) {
+          transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+        .dungeon-check-toggle:hover,
+        .dungeon-check-toggle:focus-visible,
+        .dungeon-insight:hover,
+        .dungeon-insight:focus-visible,
+        .dungeon-card:hover,
+        .dungeon-card:focus-visible,
+        .dungeon-loot-row:hover,
+        .dungeon-loot-row:focus-visible {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 62%);
+          outline: none;
+        }
+        .dungeon-card:hover,
+        .dungeon-card:focus-visible,
+        .dungeon-insight:hover,
+        .dungeon-insight:focus-visible {
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.055), 0 14px 30px rgba(0,0,0,0.18);
+          transform: translateY(-1px);
+        }
+        .dungeon-insight.passive:focus-visible,
+        .dungeon-insight.passive:hover {
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          transform: none;
+        }
+        .dungeon-modifier-panel,
+        .dungeon-valuation-panel {
+          min-height: 0;
+        }
+        .dungeon-advanced-row {
+          align-items: start;
+          gap: 1.1rem;
+          grid-template-columns: minmax(40rem, 1.08fr) minmax(30rem, 0.92fr);
+        }
+        .dungeon-modifier-panel,
+        .dungeon-valuation-panel {
+          align-items: start;
+          padding: 1.05rem 1.1rem;
+        }
+        .dungeon-modifier-panel {
+          grid-template-columns: minmax(15.5rem, 0.68fr) minmax(21rem, 1.32fr);
+        }
+        .dungeon-modifier-copy,
+        .dungeon-valuation-copy {
+          justify-content: flex-start;
+          padding-top: 0.05rem;
+        }
+        .dungeon-modifier-pickers {
+          align-items: start;
+          grid-template-columns: repeat(2, minmax(12rem, 1fr));
+        }
+        :global(.dungeon-effect-picker) {
+          align-self: start;
+          height: fit-content;
+          z-index: 1;
+        }
+        :global(.dungeon-effect-picker.open) {
+          z-index: 90;
+        }
+        :global(.dungeon-effect-menu) {
+          z-index: 95;
+          top: calc(100% + 0.45rem);
+        }
+        .dungeon-valuation-controls {
+          align-items: start;
+          grid-template-columns: 1fr;
+          justify-items: start;
+          justify-self: start;
+          max-width: 100%;
+          min-width: min(22rem, 100%);
+        }
+        .dungeon-valuation-segmented {
+          align-self: start;
+          grid-template-columns: repeat(4, max-content);
+          min-height: 3.2rem;
+          width: fit-content;
+        }
+        .dungeon-valuation-segmented button {
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+        .dungeon-insights {
+          gap: 1rem;
+          grid-template-columns: minmax(0, 1.08fr) minmax(0, 1.08fr) minmax(0, 0.92fr);
+        }
+        .dungeon-insight {
+          min-height: 5.8rem;
+        }
+        .dungeon-mobile-grid {
+          gap: 0.85rem;
+        }
+        .dungeon-card {
+          animation: dungeonRise 220ms ease both;
+          background:
+            linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(8, 10, 13, 0.74);
+        }
+        .dungeon-card:nth-child(2) { animation-delay: 30ms; }
+        .dungeon-card:nth-child(3) { animation-delay: 60ms; }
+        .dungeon-card-stats span {
+          border-radius: 10px;
+          min-width: 0;
+        }
+        .dungeon-card-stats strong,
+        .dungeon-card-stats small {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .dungeon-open-button:focus-visible {
+          outline: 2px solid var(--text-accent);
+          outline-offset: 4px;
+        }
+        .dungeon-table tr.clickable-row {
+          transition: background 160ms ease, transform 160ms ease;
+        }
+        .dungeon-table tr.clickable-row:hover td {
+          background: color-mix(in srgb, var(--text-accent), transparent 96%);
+        }
+        .dungeon-table tr.clickable-row:active {
+          transform: scale(0.998);
+        }
+        @keyframes dungeonRise {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes dungeonPulse {
+          0%, 100% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--text-accent), transparent 58%);
+          }
+          50% {
+            box-shadow: 0 0 0 6px color-mix(in srgb, var(--text-accent), transparent 100%);
+          }
+        }
         @media (max-width: 1100px) {
           .dungeon-planner {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          .dungeon-planner {
-            grid-template-areas:
-              "search search"
-              "action playtime"
-              "profit efficiency"
-              "mf completion"
-              "event event"
-              "filter filter"
-              "toggle toggle";
+            grid-template-columns: 1fr;
+            grid-template-areas: none;
           }
           .dungeon-command {
             grid-template-columns: 1fr;
@@ -2393,35 +2803,109 @@ function DungeonsContent() {
           .dungeon-valuation-controls {
             grid-template-columns: 1fr;
           }
+          .dungeon-limits-panel,
+          .dungeon-tuning-panel {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .dungeon-tuning-panel .dungeon-event-completion-field,
+          .dungeon-tuning-panel .dungeon-mf-toggle {
+            grid-column: 1 / -1;
+          }
           .dungeon-advanced-row {
             grid-template-columns: 1fr;
           }
         }
         @media (min-width: 1101px) and (max-width: 1500px) {
           .dungeon-planner {
-            grid-template-columns: minmax(16rem, 1.6fr) repeat(4, minmax(0, 1fr));
-            grid-template-areas:
-              "search action playtime profit efficiency"
-              "mf completion event filter toggle";
+            grid-template-areas: none;
+            grid-template-columns: minmax(19rem, 0.78fr) minmax(17rem, 0.72fr) minmax(30rem, 1.35fr);
+          }
+          .dungeon-advanced-row {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+          }
+          .dungeon-modifier-panel {
+            grid-template-columns: 1fr;
           }
           .dungeon-modifier-pickers {
             grid-template-columns: 1fr;
           }
+          .dungeon-valuation-panel {
+            grid-template-columns: 1fr;
+          }
+          .dungeon-valuation-controls {
+            min-width: 0;
+            width: 100%;
+          }
+          .dungeon-valuation-segmented {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            width: 100%;
+          }
         }
         @media (max-width: 720px) {
+          .dungeons-page {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+            padding-top: 1rem;
+          }
+          .header {
+            grid-template-columns: 1fr;
+            padding: 1rem;
+          }
+          .header-title {
+            font-size: 1.22rem;
+          }
+          .header-status {
+            justify-self: start;
+          }
           .dungeon-command,
           .dungeon-planner {
             padding: 0.85rem;
           }
+          .dungeon-command {
+            gap: 0.85rem;
+          }
+          .dungeon-command h2 {
+            font-size: 1.45rem;
+            line-height: 1.08;
+          }
+          .dungeon-command p {
+            font-size: 0.88rem;
+          }
+          .dungeon-risk-note {
+            font-size: 0.8rem;
+          }
           .dungeon-planner {
             gap: 0.6rem;
+            grid-template-columns: 1fr;
+            grid-template-areas: none;
+          }
+          .dungeon-control-panel {
+            gap: 0.65rem;
+            padding: 0.72rem;
+          }
+          .dungeon-find-panel,
+          .dungeon-limits-panel,
+          .dungeon-tuning-panel {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+          }
+          .dungeon-control-panel .dungeon-readonly-field {
+            min-height: 0;
           }
           .dungeon-command-stats {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            display: flex;
             gap: 0.5rem;
+            margin-left: -0.1rem;
+            margin-right: -0.1rem;
+            overflow-x: auto;
+            padding: 0.05rem 0.1rem 0.35rem;
+            scroll-snap-type: x proximity;
           }
           .dungeon-command-stats div {
+            flex: 0 0 7.6rem;
+            min-height: 4.7rem;
             padding: 0.65rem;
+            scroll-snap-align: start;
           }
           .dungeon-command-stats span {
             font-size: 0.6rem;
@@ -2434,6 +2918,17 @@ function DungeonsContent() {
           .dungeon-insights,
           .dungeon-modal-grid {
             grid-template-columns: 1fr;
+          }
+          .dungeon-insights {
+            display: flex;
+            gap: 0.65rem;
+            overflow-x: auto;
+            padding-bottom: 0.3rem;
+            scroll-snap-type: x proximity;
+          }
+          .dungeon-insight {
+            flex: 0 0 min(17rem, 82vw);
+            scroll-snap-align: start;
           }
           .dungeon-valuation-panel {
             padding: 0.8rem;
@@ -2455,6 +2950,9 @@ function DungeonsContent() {
             grid-template-columns: 1fr;
           }
           .dungeon-card-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .dungeon-mobile-completed {
             grid-template-columns: 1fr;
           }
           .dungeon-loot-value {
@@ -2483,6 +2981,9 @@ function DungeonsContent() {
           }
           .dungeon-detail-row strong {
             text-align: left;
+          }
+          :global(body:has(.dungeons-page) .rotating-tip-tip) {
+            display: none;
           }
         }
       `}</style>
@@ -2566,9 +3067,10 @@ function DungeonItemEffectPicker({
     if (!open) return;
     const triggerRect = triggerRef.current?.getBoundingClientRect();
     if (triggerRect) {
+      const stackedAdvancedPanels = window.matchMedia("(max-width: 1100px)").matches;
       const spaceBelow = window.innerHeight - triggerRect.bottom;
       const spaceAbove = triggerRect.top;
-      setMenuPlacement(spaceBelow < 280 && spaceAbove > spaceBelow ? "up" : "down");
+      setMenuPlacement(stackedAdvancedPanels || (spaceBelow < 280 && spaceAbove > spaceBelow) ? "up" : "down");
     }
     const handlePointer = (event: MouseEvent) => {
       if (pickerRef.current?.contains(event.target as Node)) return;
@@ -2635,7 +3137,7 @@ function DungeonItemEffectPicker({
                 onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
                 onClick={() => selectOption(option.name)}
               >
-                {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
+                {option.imageUrl ? <Image src={option.imageUrl} alt="" width={30} height={30} unoptimized /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
                 <span>
                   <strong>{option.name}</strong>
                   <small>{option.quality} {option.type}</small>

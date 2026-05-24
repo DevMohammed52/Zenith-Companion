@@ -794,6 +794,20 @@ export default function HousingPage() {
     ? activeProfile.className
     : "";
   const guestHasLocationLimitedBuffs = housing.mode === "guest" && summary.locationLimited && activeIdleBuffs.length > 0;
+  const activeProfileName = activeProfile?.name?.trim() || "No profile";
+  const housingModeLabel = housing.mode === "owner" ? "Owner house" : housing.mode === "guest" ? "Guest access" : "Housing paused";
+  const housingScopeLabel = summary.availableAnywhere
+    ? "Available anywhere"
+    : housing.mode !== "none"
+      ? `Local to ${housing.location || "housing location"}`
+      : "Inactive";
+  const housingReadinessLabel = housing.mode === "owner"
+    ? housing.foundationBuilt
+      ? `${summary.freeSlots.toLocaleString()} free slot${summary.freeSlots === 1 ? "" : "s"}`
+      : "Foundation needed"
+    : housing.mode === "guest"
+      ? summary.availableAnywhere ? "Remote guest buffs" : "Local guest buffs"
+      : "Buffs paused";
 
   const getSlottedComponents = (componentIds: string[], slotCapacity = ownerSlotsAvailable) => {
     const slotted: string[] = [];
@@ -1035,17 +1049,40 @@ export default function HousingPage() {
   return (
     <main className="container housing-page">
       <section className="page-title-row">
-        <div>
+        <div className="housing-hero-copy">
           <p className="eyebrow"><ZenithIcon name="housing" size={16} /> Housing Manager</p>
           <h1>House Planner</h1>
           <p className="muted">
             Profile-scoped construction planner for idle-time bonuses, guest buffs, and build cost estimates.
           </p>
+          <div className="housing-hero-chips" aria-label="Housing context">
+            <span><Users size={14} aria-hidden="true" /> {activeProfileName}</span>
+            <span><Home size={14} aria-hidden="true" /> {housingModeLabel}</span>
+            <span className={summary.availableAnywhere ? "good" : ""}><MapPin size={14} aria-hidden="true" /> {housingScopeLabel}</span>
+          </div>
+          {activeProfile && (
+            <div className="housing-quick-actions" aria-label="Housing quick actions">
+              <button type="button" onClick={() => setActiveHousingTab("setup")}>
+                <Home size={15} aria-hidden="true" /> Setup
+              </button>
+              <button type="button" onClick={() => setActiveHousingTab(housing.mode === "guest" ? "guest" : "components")}>
+                <Package size={15} aria-hidden="true" /> {housing.mode === "guest" ? "Guest" : "Rooms"}
+              </button>
+              <button type="button" disabled={housing.mode !== "owner"} onClick={() => setActiveHousingTab("profit")}>
+                <TrendingUp size={15} aria-hidden="true" /> ROI
+              </button>
+            </div>
+          )}
         </div>
         <div className="housing-status-card">
           <span>{activeProfile?.name || "No profile"}</span>
           <strong>{housing.mode === "owner" ? "Owner" : housing.mode === "guest" ? "Guest" : "No house"}</strong>
           <em>{housing.mode === "guest" && housing.guestHostName ? `Host: ${housing.guestHostName}` : strongestBonusLabel}</em>
+          <div className="housing-status-details" aria-label="Housing summary">
+            <span><Clock size={14} aria-hidden="true" /> {strongestBonusLabel}</span>
+            <span><Package size={14} aria-hidden="true" /> {housingReadinessLabel}</span>
+            <span className={selectedBuildCost.missingMaterials.length ? "needs-data" : ""}><Coins size={14} aria-hidden="true" /> {selectedCostStatus}</span>
+          </div>
         </div>
       </section>
 
@@ -4045,6 +4082,284 @@ export default function HousingPage() {
             z-index: 6000;
             border: 0;
             background: rgba(0,0,0,0.52);
+          }
+        }
+        .housing-page {
+          --housing-gold: #f5b041;
+          --housing-mint: #34d399;
+          --housing-sky: #38bdf8;
+          --housing-panel: rgba(9, 14, 17, 0.76);
+          -webkit-tap-highlight-color: transparent;
+          padding-bottom: clamp(5rem, 8vh, 7.5rem);
+        }
+        .housing-page :where(button, input, textarea, summary, [role="button"], [role="option"]) {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .housing-page .page-title-row {
+          position: relative;
+          overflow: hidden;
+          grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+          gap: clamp(1rem, 2vw, 1.5rem);
+          align-items: stretch;
+          border: 1px solid rgba(245, 176, 65, 0.18);
+          border-radius: 8px;
+          background:
+            linear-gradient(145deg, rgba(245, 176, 65, 0.07), rgba(10, 16, 20, 0.78)),
+            radial-gradient(circle at 92% 0%, rgba(56, 189, 248, 0.12), transparent 34%);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+          margin-bottom: 1rem;
+          padding: clamp(1rem, 2.2vw, 1.45rem);
+        }
+        .housing-page .page-title-row::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background:
+            linear-gradient(115deg, rgba(245, 176, 65, 0.14), rgba(52, 211, 153, 0.06) 38%, transparent 66%),
+            radial-gradient(circle at 12% 0%, rgba(245, 176, 65, 0.12), transparent 28%);
+        }
+        .housing-page .page-title-row > * {
+          position: relative;
+          z-index: 1;
+        }
+        .housing-page .housing-hero-copy {
+          min-width: 0;
+          display: grid;
+          gap: 0.8rem;
+          align-content: start;
+        }
+        .housing-page .housing-hero-copy h1 {
+          margin: 0;
+          color: #fffdf8;
+        }
+        .housing-page .housing-hero-copy .muted {
+          max-width: 68ch;
+          margin: 0;
+          line-height: 1.65;
+        }
+        .housing-page .housing-hero-chips,
+        .housing-page .housing-quick-actions,
+        .housing-page .housing-status-details {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          min-width: 0;
+        }
+        .housing-page .housing-hero-chips span,
+        .housing-page .housing-status-details span {
+          min-height: 2rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          max-width: 100%;
+          border: 1px solid rgba(245, 176, 65, 0.2);
+          border-radius: 999px;
+          background: rgba(245, 176, 65, 0.08);
+          color: #fde68a;
+          font-size: 0.74rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 1.15;
+          padding: 0.45rem 0.72rem;
+        }
+        .housing-page .housing-hero-chips span.good,
+        .housing-page .housing-status-details span:not(.needs-data):first-child {
+          border-color: rgba(52, 211, 153, 0.24);
+          background: rgba(52, 211, 153, 0.09);
+          color: #bbf7d0;
+        }
+        .housing-page .housing-hero-chips svg,
+        .housing-page .housing-status-details svg {
+          flex: 0 0 auto;
+          color: var(--housing-sky);
+        }
+        .housing-page .housing-quick-actions {
+          margin-top: 0.1rem;
+        }
+        .housing-page .housing-quick-actions button {
+          min-height: 2.45rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          border: 1px solid rgba(56, 189, 248, 0.22);
+          border-radius: 8px;
+          background: rgba(56, 189, 248, 0.08);
+          color: #e0f2fe;
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.82rem;
+          font-weight: 900;
+          padding: 0.62rem 0.86rem;
+          transition: transform 170ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 170ms ease, background-color 170ms ease, box-shadow 170ms ease;
+        }
+        .housing-page .housing-quick-actions button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          border-color: rgba(245, 176, 65, 0.36);
+          background: rgba(245, 176, 65, 0.1);
+          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+        }
+        .housing-page .housing-quick-actions button:active:not(:disabled) {
+          transform: scale(0.985);
+        }
+        .housing-page .housing-quick-actions button:disabled {
+          cursor: not-allowed;
+          opacity: 0.48;
+        }
+        .housing-page .housing-status-card {
+          border-color: rgba(56, 189, 248, 0.2);
+          background:
+            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(0, 0, 0, 0.24)),
+            rgba(5, 10, 13, 0.5);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
+        }
+        .housing-page .housing-status-details {
+          margin-top: 0.25rem;
+        }
+        .housing-page .housing-status-details span {
+          width: 100%;
+          justify-content: flex-start;
+          overflow: hidden;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.045);
+          color: #e5e7eb;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .housing-page .housing-status-details .needs-data {
+          border-color: rgba(245, 158, 11, 0.32);
+          color: #fcd34d;
+        }
+        .housing-page .housing-panel,
+        .housing-page .housing-status-card,
+        .housing-page .component-card,
+        .housing-page .overview-card,
+        .housing-page .mode-card,
+        .housing-page .housing-tabs button,
+        .housing-page :global(.choice-trigger),
+        .housing-page :global(.choice-menu),
+        .housing-page .housing-undo-toast {
+          transition:
+            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            background-color 180ms ease,
+            color 180ms ease;
+        }
+        .housing-page .housing-panel,
+        .housing-page .component-card {
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
+            var(--housing-panel);
+        }
+        .housing-page .housing-tabs {
+          top: 0.65rem;
+          border-color: rgba(56, 189, 248, 0.16);
+          background: rgba(5, 10, 13, 0.84);
+        }
+        .housing-page .housing-tabs button:active,
+        .housing-page .mode-card:active,
+        .housing-page .foundation-toggle:active,
+        .housing-page .inline-link-button:active,
+        .housing-page .add-button:active:not(:disabled),
+        .housing-page .selected-button:active:not(:disabled),
+        .housing-page .ghost-button:active {
+          transform: scale(0.985);
+        }
+        .housing-page .housing-tabs button:focus-visible,
+        .housing-page .housing-quick-actions button:focus-visible,
+        .housing-page .housing-undo-toast button:focus-visible,
+        .housing-page .mode-card:focus-visible,
+        .housing-page .foundation-toggle:focus-visible,
+        .housing-page .slot-stepper button:focus-visible,
+        .housing-page .inline-link-button:focus-visible,
+        .housing-page .ghost-button:focus-visible,
+        .housing-page .search-box input:focus-visible,
+        .housing-page .housing-field input:focus-visible,
+        .housing-page .housing-field textarea:focus-visible,
+        .housing-page .add-button:focus-visible,
+        .housing-page .selected-button:focus-visible,
+        .housing-page .tier-selector button:focus-visible,
+        .housing-page .guest-tier-row button:focus-visible,
+        .housing-page .component-ledger-details summary:focus-visible,
+        .housing-page :global(.choice-trigger:focus-visible),
+        .housing-page :global(.choice-menu button:focus-visible) {
+          outline: 2px solid color-mix(in srgb, var(--housing-sky), white 12%);
+          outline-offset: 3px;
+          box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.11);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .housing-page .housing-panel:hover,
+          .housing-page .component-card:hover,
+          .housing-page .overview-card:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245, 176, 65, 0.2);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .housing-page *,
+          .housing-page *::before,
+          .housing-page *::after {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+          }
+        }
+        @media (max-width: 920px) {
+          .housing-page .page-title-row {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .housing-page .housing-status-card {
+            gap: 0.6rem;
+          }
+          .housing-page .housing-status-details {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .housing-page :global(.choice-menu) {
+            position: fixed;
+            z-index: 6010;
+            left: 1rem;
+            right: 1rem;
+            top: auto;
+            bottom: 1rem;
+            max-height: min(420px, 70dvh);
+          }
+          .housing-page :global(.choice-backdrop) {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 6000;
+            border: 0;
+            background: rgba(0, 0, 0, 0.52);
+          }
+        }
+        @media (max-width: 640px) {
+          .housing-page {
+            padding-bottom: 9rem;
+          }
+          .housing-page .page-title-row {
+            margin-left: -0.15rem;
+            margin-right: -0.15rem;
+            padding: 1rem;
+          }
+          .housing-page .housing-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .housing-page .housing-quick-actions button {
+            min-width: 0;
+            padding-inline: 0.55rem;
+          }
+          .housing-page .housing-status-details {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .housing-page .housing-hero-chips span,
+          .housing-page .housing-status-details span {
+            width: 100%;
           }
         }
       `}</style>

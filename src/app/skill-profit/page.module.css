@@ -5,6 +5,12 @@
   max-width: 1600px;
   min-width: 0;
   overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shell :where(button, a, input, [role="button"], [tabindex]) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .hero {
@@ -93,7 +99,7 @@
   min-width: 0;
   padding: 1rem;
   text-align: left;
-  transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease;
 }
 
 .spotlightCard:disabled {
@@ -103,7 +109,12 @@
 
 .spotlightCard:not(:disabled):hover {
   border-color: color-mix(in srgb, var(--text-success), transparent 45%);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--text-success), transparent 88%);
   transform: translateY(-1px);
+}
+
+.spotlightCard:not(:disabled):active {
+  transform: translateY(0) scale(0.992);
 }
 
 .spotlightLabel,
@@ -221,6 +232,88 @@
   max-width: 100%;
   position: relative;
   z-index: 10;
+}
+
+.commandStatus {
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(116px, auto);
+  min-width: 0;
+  padding-top: 0.7rem;
+}
+
+.commandStat,
+.resetFilters {
+  background: rgba(0,0,0,0.18);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  min-width: 0;
+}
+
+.commandStat {
+  display: grid;
+  gap: 0.14rem;
+  padding: 0.52rem 0.65rem;
+}
+
+.commandStat span {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.commandStat strong {
+  color: var(--text-main);
+  font-size: 0.82rem;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commandStatWarning {
+  background: color-mix(in srgb, var(--text-accent), transparent 93%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 66%);
+}
+
+.commandStatWarning strong {
+  color: var(--text-accent);
+}
+
+.resetFilters {
+  align-items: center;
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: 0.42rem;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 0.75rem;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+}
+
+.resetFilters:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
+  border-color: var(--border-focus);
+  transform: translateY(-1px);
+}
+
+.resetFilters:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+.resetFilters:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.48;
 }
 
 .filterRow,
@@ -441,6 +534,7 @@
   min-width: 0;
   padding: 0.45rem 0.65rem;
   text-align: left;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   width: 100%;
 }
 
@@ -458,7 +552,18 @@
   min-width: 0;
   padding: 0.4rem 0.6rem;
   text-align: left;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   width: 100%;
+}
+
+.toolTrigger:hover,
+.compactTrigger:hover {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+}
+
+.toolTrigger:active,
+.compactTrigger:active {
+  transform: scale(0.992);
 }
 
 .toolTrigger span,
@@ -556,6 +661,7 @@
   min-height: 44px;
   padding: 0.45rem 0.55rem;
   text-align: left;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
 }
 
 .compactOption {
@@ -574,6 +680,11 @@
 .toolOptionActive {
   background: color-mix(in srgb, var(--text-accent), transparent 90%);
   border-color: var(--border-focus);
+}
+
+.toolOption:active,
+.compactOption:active {
+  transform: scale(0.992);
 }
 
 .compactMenu {
@@ -697,9 +808,11 @@
   border-radius: 6px;
   color: var(--text-muted);
   display: flex;
+  gap: 0.5rem;
   height: 44px;
   min-width: 0;
   padding: 0 0.65rem;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   width: 100%;
 }
 
@@ -712,12 +825,39 @@
   height: auto;
   min-width: 0;
   outline: none;
-  padding: 0 0 0 0.5rem;
+  padding: 0;
   width: 100%;
 }
 
 .searchBox input::placeholder {
   color: var(--text-muted);
+}
+
+.searchClear {
+  align-items: center;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  width: 30px;
+}
+
+.searchClear:hover {
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.searchClear:active {
+  transform: translateY(0) scale(0.92);
 }
 
 .numberField {
@@ -775,12 +915,16 @@
   overflow: hidden;
   padding: 0 0.35rem;
   text-overflow: ellipsis;
-  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
   white-space: nowrap;
 }
 
 .segmentButton:hover {
   color: var(--text-main);
+}
+
+.segmentButton:active {
+  transform: scale(0.985);
 }
 
 .segmentActive {
@@ -815,6 +959,10 @@
 
 .toggle:hover {
   transform: translateY(-1px);
+}
+
+.toggle:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
 }
 
 .toggle:disabled {
@@ -1009,6 +1157,10 @@
   transform: translateY(-1px);
 }
 
+.skillCard:active {
+  transform: translateY(0) scale(0.99);
+}
+
 .skillCardTop {
   display: flex;
   gap: 0.5rem;
@@ -1108,7 +1260,17 @@
   font: inherit;
   font-weight: 800;
   padding: 0.42rem 0.65rem;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
   white-space: nowrap;
+}
+
+.tab:hover {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 72%);
+  color: var(--text-main);
+}
+
+.tab:active {
+  transform: scale(0.985);
 }
 
 .tabActive {
@@ -1136,6 +1298,27 @@
   animation: riseIn 400ms ease both;
 }
 
+.tableWrap:focus-visible {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
+  outline: none;
+}
+
+.tableWrap tbody tr {
+  cursor: pointer;
+  outline: none;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.tableWrap tbody tr:hover {
+  background: color-mix(in srgb, var(--text-accent), transparent 96%);
+}
+
+.tableWrap tbody tr:focus-visible {
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
+  box-shadow: inset 3px 0 0 var(--text-accent);
+}
+
 .mobileResults {
   display: none;
 }
@@ -1153,6 +1336,17 @@
   min-width: 0;
   padding: 0.78rem;
   text-align: left;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease, background 0.16s ease;
+}
+
+.mobileResultCard:hover {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 70%);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.24);
+  transform: translateY(-1px);
+}
+
+.mobileResultCard:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .mobileResultTop,
@@ -1333,6 +1527,10 @@
 .selectedSlotFilled:focus-visible,
 .clearBuffs:focus-visible,
 .buffButton:focus-visible,
+.toolTrigger:focus-visible,
+.compactTrigger:focus-visible,
+.searchClear:focus-visible,
+.resetFilters:focus-visible,
 .spotlightCard:focus-visible,
 .skillCard:focus-visible,
 .mobileResultCard:focus-visible,
@@ -2128,6 +2326,7 @@
 @media (prefers-reduced-motion: reduce) {
   .metric,
   .commandBar,
+  .commandStat,
   .toolPanel,
   .ascensionPanel,
   .spotlightCard,
@@ -2140,7 +2339,16 @@
   .toggle,
   .buffButton,
   .skillCard,
-  .spotlightCard {
+  .spotlightCard,
+  .mobileResultCard,
+  .resetFilters,
+  .searchClear,
+  .tab,
+  .toolTrigger,
+  .compactTrigger,
+  .toolOption,
+  .compactOption,
+  .tableWrap tbody tr {
     transition: none;
   }
 }
@@ -2177,6 +2385,14 @@
   .toggleRow {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .commandStatus {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .resetFilters {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 1100px) {
@@ -2205,7 +2421,8 @@
 
   .heroStats,
   .filterRow,
-  .toggleRow {
+  .toggleRow,
+  .commandStatus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2281,6 +2498,10 @@
     display: none;
   }
 
+  .resetFilters {
+    min-height: 44px;
+  }
+
   .toolMenu {
     max-height: min(420px, 72vh);
     position: fixed;
@@ -2327,6 +2548,13 @@
 
   .heroChips span {
     max-width: 100%;
+  }
+
+  .heroStats,
+  .filterRow,
+  .toggleRow,
+  .commandStatus {
+    grid-template-columns: 1fr;
   }
 
   .buffRail {

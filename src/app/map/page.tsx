@@ -415,7 +415,10 @@ function MapPageContent() {
   const searchParams = useSearchParams();
   const { staticData, marketData, allItemsDb, worldLocations, loading } = useData();
   const { openItemByName } = useItemModal();
-  const mobileRailRef = useRef<HTMLDivElement | null>(null);
+  const mobileRailRef = useRef<HTMLElement | null>(null);
+  const mapStageRef = useRef<HTMLDivElement | null>(null);
+  const dossierRef = useRef<HTMLElement | null>(null);
+  const intelRef = useRef<HTMLElement | null>(null);
   const [selectedKey, setSelectedKey] = useState("");
   const [query, setQuery] = useState("");
   const [activeForecastKey, setActiveForecastKey] = useState<string | null>(null);
@@ -561,12 +564,39 @@ function MapPageContent() {
     () => selectedLocation ? getWeatherTimeline(selectedLocation) : [],
     [selectedLocation],
   );
+  const selectedWeatherKey = String(
+    selectedLocation?.currentWeather?.key || selectedLocation?.nextWeather?.key || "OVERCAST",
+  ).toUpperCase();
+  const selectedWeatherLabel = selectedLocation
+    ? selectedLocation.currentWeather?.name || selectedLocation.nextWeather?.name || "Weather unknown"
+    : "No location selected";
+  const selectedLevelLabel = selectedLocation
+    ? selectedLocation.level !== null && selectedLocation.level !== undefined
+      ? `Level ${selectedLocation.level}`
+      : "Level unknown"
+    : "Level unknown";
+  const selectedActivityLabel = selectedLocation
+    ? [
+      formatCount(selectedLocation.enemies.length, "enemy", "enemies"),
+      formatCount(selectedLocation.dungeons.length, "dungeon"),
+      formatCount(selectedLocation.bosses.length, "boss", "bosses"),
+    ].join(" / ")
+    : "No sources selected";
 
   useEffect(() => {
-    const activeChip = mobileRailRef.current?.querySelector<HTMLElement>("[data-active='true']");
+    const rail = mobileRailRef.current;
+    const activeChip = rail?.querySelector<HTMLElement>("[data-active='true']");
+    if (!rail || !activeChip) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    activeChip?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", inline: "center", block: "nearest" });
+    const left = activeChip.offsetLeft - (rail.clientWidth - activeChip.clientWidth) / 2;
+    rail.scrollTo({ left: Math.max(0, left), behavior: reducedMotion ? "auto" : "smooth" });
   }, [selectedLocation?.key, filteredLocations.length]);
+
+  const scrollToSection = (target: HTMLElement | null) => {
+    if (!target) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  };
 
   if (!selectedLocation && loading) {
     return (
@@ -584,25 +614,50 @@ function MapPageContent() {
             <div className="atlas-title">
               <span><ZenithIcon name="map" size={16} /> Zenith Atlas</span>
               <h1>Valaron Map</h1>
+              <div className="atlas-context-row" aria-label="Selected map context">
+                <span>{filteredLocations.length.toLocaleString()} visible</span>
+                <span>{weatherIcon(selectedWeatherKey, 13)} {selectedWeatherLabel}</span>
+                <span>{selectedLevelLabel}</span>
+                <span>{selectedActivityLabel}</span>
+              </div>
             </div>
-            <div className="atlas-search">
-              <Search size={15} aria-hidden="true" />
-              <input
-                aria-label="Search locations and sources"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search location, boss, dungeon, enemy, loot..."
-              />
+            <div className="atlas-controls">
+              <div className="atlas-search">
+                <Search size={15} aria-hidden="true" />
+                <input
+                  aria-label="Search locations and sources"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search location, boss, dungeon, enemy, loot..."
+                />
+              </div>
+
+              <div className="atlas-control-row">
+                <div className="atlas-actions" aria-label="World map quick actions">
+                  <button type="button" onClick={() => scrollToSection(mapStageRef.current)}>
+                    <MapIcon size={15} aria-hidden="true" />
+                    Map
+                  </button>
+                  <button type="button" onClick={() => scrollToSection(dossierRef.current)} disabled={!selectedLocation}>
+                    <MapPin size={15} aria-hidden="true" />
+                    Dossier
+                  </button>
+                  <button type="button" onClick={() => scrollToSection(intelRef.current)} disabled={!selectedLocation}>
+                    <Crosshair size={15} aria-hidden="true" />
+                    Intel
+                  </button>
+                </div>
+
+                <div className="map-result-count" aria-live="polite">
+                  {filteredLocations.length === locations.length
+                    ? `${locations.length.toLocaleString()} locations`
+                    : `${filteredLocations.length.toLocaleString()} matching locations`}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="map-result-count" aria-live="polite">
-            {filteredLocations.length === locations.length
-              ? `${locations.length.toLocaleString()} locations`
-              : `${filteredLocations.length.toLocaleString()} matching locations`}
-          </div>
-
-          <div className="map-stage">
+          <div className="map-stage" ref={mapStageRef}>
             <img className="world-map-art" src={WORLD_MAP_IMAGE_URL} alt="" aria-hidden="true" />
 
             {filteredLocations.map((location) => {
@@ -649,9 +704,14 @@ function MapPageContent() {
               <Compass size={34} />
               <span>N</span>
             </div>
+
+            <div className="map-legend" aria-label="Map marker states">
+              <span><i className="legend-dot weather" aria-hidden="true" /> Weather</span>
+              <span><i className="legend-dot active" aria-hidden="true" /> Active</span>
+            </div>
           </div>
 
-          <div className="mobile-location-rail" ref={mobileRailRef} aria-label="Map locations">
+          <nav className="mobile-location-rail" ref={mobileRailRef} aria-label="Map locations">
             {filteredLocations.map((location) => {
               const active = selectedLocation?.key === location.key;
               const weatherKey = String(location.currentWeather?.key || location.nextWeather?.key || "OVERCAST").toUpperCase();
@@ -670,7 +730,7 @@ function MapPageContent() {
                 </button>
               );
             })}
-          </div>
+          </nav>
 
           <div className="atlas-metrics" aria-label="Map totals">
             <div><MapPin size={16} /><span>Locations</span><strong>{totals.locations}</strong></div>
@@ -683,7 +743,7 @@ function MapPageContent() {
         </div>
 
         {selectedLocation && (
-          <aside className="location-dossier" aria-label={`${selectedLocation.name} details`}>
+          <aside className="location-dossier" ref={dossierRef} aria-label={`${selectedLocation.name} details`}>
             <div className="location-image">
               {selectedLocation.image_url ? <img src={selectedLocation.image_url} alt={`${selectedLocation.name} location art`} /> : <MapPin size={42} />}
             </div>
@@ -768,7 +828,7 @@ function MapPageContent() {
       </section>
 
       {selectedLocation && (
-        <section className="intel-grid" aria-label={`${selectedLocation.name} source intelligence`}>
+        <section className="intel-grid" ref={intelRef} aria-label={`${selectedLocation.name} source intelligence`}>
           <div className="intel-section source-list">
             <header>
               <span><Crosshair size={15} /> Regional Sources</span>
@@ -904,6 +964,12 @@ function MapPageContent() {
         .map-page * {
           box-sizing: border-box;
         }
+        .map-page {
+          -webkit-tap-highlight-color: transparent;
+        }
+        .map-page :where(button, a, input) {
+          touch-action: manipulation;
+        }
         .map-loading {
           display: grid;
           min-height: 60vh;
@@ -932,18 +998,30 @@ function MapPageContent() {
           backdrop-filter: blur(18px);
         }
         .atlas-panel {
+          position: relative;
+          isolation: isolate;
           min-width: 0;
           align-self: start;
           border-radius: 12px;
           padding: clamp(0.85rem, 1.5vw, 1.2rem);
           overflow: hidden;
         }
+        .atlas-panel::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          background:
+            radial-gradient(circle at 16% 0%, rgba(57, 190, 255, 0.13), transparent 32%),
+            radial-gradient(circle at 86% 10%, rgba(255, 214, 128, 0.08), transparent 28%);
+          pointer-events: none;
+        }
         .atlas-topbar {
           display: grid;
-          grid-template-columns: minmax(240px, 1fr) minmax(280px, 470px);
-          gap: 1rem;
-          align-items: end;
-          margin-bottom: 0.85rem;
+          grid-template-columns: minmax(420px, 1fr) minmax(420px, 0.95fr);
+          gap: clamp(1rem, 2vw, 1.6rem);
+          align-items: start;
+          margin-bottom: 0.7rem;
         }
         .atlas-title span,
         .location-heading span,
@@ -962,12 +1040,70 @@ function MapPageContent() {
         .atlas-title h1 {
           margin-top: 0.15rem;
           color: #fff;
-          font-size: clamp(2rem, 4vw, 3.2rem);
+          font-size: clamp(2.25rem, 3vw, 3.3rem);
           line-height: 1;
           letter-spacing: 0;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .atlas-title {
+          min-width: 0;
+        }
+        .atlas-context-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.38rem;
+          margin-top: 0.7rem;
+        }
+        .atlas-context-row span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.32rem;
+          max-width: min(100%, 24rem);
+          min-height: 1.85rem;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.045);
+          color: rgba(255,255,255,0.78);
+          font-size: 0.72rem;
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 1;
+          overflow: hidden;
+          padding: 0 0.62rem;
+          text-overflow: ellipsis;
+          text-transform: none;
+          white-space: nowrap;
+        }
+        .atlas-context-row span:first-child {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          color: #d9f5ff;
+        }
+        .atlas-context-row svg {
+          color: var(--text-accent);
+          flex: 0 0 auto;
         }
         .atlas-search {
           position: relative;
+          min-width: 0;
+        }
+        .atlas-controls {
+          display: grid;
+          align-self: end;
+          gap: 0.62rem;
+          justify-self: end;
+          width: min(100%, 560px);
+          min-width: 0;
+        }
+        .atlas-control-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.7rem;
+          flex-wrap: wrap;
           min-width: 0;
         }
         .atlas-search svg {
@@ -1005,13 +1141,64 @@ function MapPageContent() {
         }
         .map-result-count {
           display: flex;
+          align-items: center;
           justify-content: flex-end;
-          min-height: 1rem;
-          margin: -0.3rem 0 0.55rem;
+          min-height: 2.35rem;
+          margin: 0;
           color: var(--text-muted);
           font-family: var(--font-mono);
           font-size: 0.72rem;
           font-weight: 850;
+          flex: 0 0 auto;
+          min-width: max-content;
+          text-align: right;
+          white-space: nowrap;
+        }
+        .atlas-actions {
+          display: flex;
+          flex: 0 1 auto;
+          flex-wrap: wrap;
+          justify-content: flex-start;
+          gap: 0.45rem;
+          min-width: 0;
+          margin: 0;
+        }
+        .atlas-actions button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.36rem;
+          min-height: 2.35rem;
+          border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.045);
+          color: rgba(255,255,255,0.82);
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.76rem;
+          font-weight: 850;
+          padding: 0 0.82rem;
+          transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+        }
+        .atlas-actions button:hover,
+        .atlas-actions button:focus-visible {
+          border-color: color-mix(in srgb, var(--text-accent), white 8%);
+          background: color-mix(in srgb, var(--text-accent), transparent 84%);
+          color: #fff;
+          transform: translateY(-1px);
+        }
+        .atlas-actions button:active {
+          transform: translateY(0);
+        }
+        .atlas-actions button:disabled {
+          cursor: not-allowed;
+          opacity: 0.42;
+          transform: none;
+        }
+        .map-stage,
+        .location-dossier,
+        .intel-grid {
+          scroll-margin-top: 1rem;
         }
         .map-stage {
           position: relative;
@@ -1031,6 +1218,7 @@ function MapPageContent() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          filter: saturate(1.05) contrast(1.02);
           user-select: none;
         }
         .map-stage::after {
@@ -1131,6 +1319,16 @@ function MapPageContent() {
           background: rgba(13, 22, 35, 0.9);
           box-shadow: 0 18px 40px rgba(0,0,0,0.42), 0 0 0 3px color-mix(in srgb, var(--pin-accent), transparent 78%);
         }
+        .map-pin.active::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pin-accent), white 28%);
+          opacity: 0.72;
+          pointer-events: none;
+          animation: mapPinGlow 2.6s ease-in-out infinite;
+        }
         .map-pin:focus-visible {
           outline: none;
         }
@@ -1180,6 +1378,53 @@ function MapPageContent() {
           font-size: 0.68rem;
           font-weight: 900;
         }
+        .map-legend {
+          position: absolute;
+          left: 1rem;
+          bottom: 1rem;
+          z-index: 4;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          max-width: calc(100% - 6.8rem);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 999px;
+          background: rgba(0,0,0,0.38);
+          box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+          color: rgba(255,255,255,0.76);
+          padding: 0.42rem 0.52rem;
+          backdrop-filter: blur(12px);
+        }
+        .map-legend span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.32rem;
+          font-size: 0.68rem;
+          font-weight: 850;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .legend-dot {
+          display: inline-block;
+          width: 0.5rem;
+          height: 0.5rem;
+          border-radius: 50%;
+          background: var(--text-accent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 82%);
+        }
+        .legend-dot.active {
+          background: #fff;
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 70%);
+        }
+        @keyframes mapPinGlow {
+          0%,
+          100% {
+            opacity: 0.38;
+          }
+          50% {
+            opacity: 0.86;
+          }
+        }
         .atlas-metrics {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -1218,9 +1463,17 @@ function MapPageContent() {
           font-family: var(--font-mono);
         }
         .location-dossier {
+          position: relative;
           min-width: 0;
           border-radius: 12px;
           overflow: hidden;
+        }
+        .location-dossier::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(57,190,255,0.08), transparent 34%);
+          pointer-events: none;
         }
         .location-image {
           display: grid;
@@ -1888,6 +2141,19 @@ function MapPageContent() {
             grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
           }
         }
+        @media (min-width: 1280px) and (max-width: 1660px) {
+          .atlas-topbar {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+          }
+          .atlas-controls {
+            justify-self: stretch;
+            width: 100%;
+          }
+          .atlas-control-row {
+            justify-content: space-between;
+          }
+        }
         @media (max-width: 1279px) {
           .atlas-shell,
           .intel-grid {
@@ -1921,6 +2187,13 @@ function MapPageContent() {
           }
           .atlas-title h1 {
             font-size: 2rem;
+            white-space: normal;
+          }
+          .atlas-controls {
+            align-self: stretch;
+          }
+          .atlas-control-row {
+            align-items: flex-start;
           }
           .map-pin {
             min-width: 116px;
@@ -1974,9 +2247,28 @@ function MapPageContent() {
           }
         }
         @media (max-width: 720px) {
+          .map-page {
+            padding-top: 1rem;
+          }
           .atlas-panel,
           .intel-section {
             padding: 0.65rem;
+          }
+          .atlas-control-row {
+            display: grid;
+            gap: 0.55rem;
+          }
+          .atlas-actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+          .atlas-actions button {
+            min-width: 0;
+            padding: 0 0.45rem;
+          }
+          .map-result-count {
+            justify-content: flex-end;
+            min-height: 1rem;
           }
           .atlas-metrics,
           .source-columns,

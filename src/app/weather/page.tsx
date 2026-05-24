@@ -2,6 +2,7 @@
 import type { CSSProperties } from 'react';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import { WEATHER_DATA, WeatherData } from '@/constants/weatherData';
 import { useData } from '@/context/DataContext';
@@ -159,7 +160,7 @@ function EnemyPreferenceGroup({
             className="enemy-pref-link"
             aria-label={getEnemyWeatherLabel(enemy, `${title.toLowerCase()}s ${weatherName}`)}
           >
-            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={20} />}
+            {enemy.imageUrl ? <Image src={enemy.imageUrl} alt="" width={40} height={40} unoptimized /> : <Swords size={20} />}
             <span>
               <strong>{enemy.name}</strong>
               <small>{enemy.locationName} - Lv.{enemy.level}</small>
@@ -322,7 +323,7 @@ function CurrentEnemyContext({
       className={`current-enemy-link ${tone}`}
       aria-label={getEnemyWeatherLabel(enemy, `${tone} by current ${activeWeather.name}`)}
     >
-      {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={18} />}
+      {enemy.imageUrl ? <Image src={enemy.imageUrl} alt="" width={34} height={34} unoptimized /> : <Swords size={18} />}
       <span>
         <strong>{enemy.name}</strong>
         <small>{enemy.locationName} - {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}</small>
@@ -371,9 +372,15 @@ export default function WeatherPage() {
     const interval = window.setInterval(() => setWeatherRefreshTick((tick) => tick + 1), 60_000);
     return () => window.clearInterval(interval);
   }, []);
-  const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData }), [marketData, staticData, worldLocations, weatherRefreshTick]);
+  const enemies = useMemo(() => {
+    void weatherRefreshTick;
+    return buildEnrichedEnemies({ staticData, worldLocations, marketData });
+  }, [marketData, staticData, worldLocations, weatherRefreshTick]);
   const locations = useMemo(
-    () => buildEnrichedLocations({ staticData, worldLocations, marketData, allItemsDb }),
+    () => {
+      void weatherRefreshTick;
+      return buildEnrichedLocations({ staticData, worldLocations, marketData, allItemsDb });
+    },
     [allItemsDb, marketData, staticData, worldLocations, weatherRefreshTick],
   );
   const weatherPreferenceIndex = useMemo(() => buildWeatherPreferenceIndex(enemies), [enemies]);
@@ -394,6 +401,8 @@ export default function WeatherPage() {
     return counts;
   }, [activeWeather.name, locations]);
   const currentWeatherEnemyContext = currentWeatherEnemyIndex.get(activeWeatherKey) || { favored: [], penalized: [] };
+  const favoredPreferenceCount = activeWeatherEnemies.loves.length + activeWeatherEnemies.likes.length;
+  const penalizedPreferenceCount = activeWeatherEnemies.dislikes.length + activeWeatherEnemies.hates.length;
   const weatherAccent = {
     '--accent': activeWeather.theme.primary,
     '--accent-2': activeWeather.theme.secondary,
@@ -411,6 +420,28 @@ export default function WeatherPage() {
             <span className="eyebrow"><ZenithIcon name="weather" size={15} /> IdleMMO Weather Index</span>
             <h1>Weather Guide</h1>
             <p>Track forecast windows, skill modifiers, and enemy reactions across IdleMMO regions.</p>
+            <div className="weather-snapshot-grid" aria-label={`${activeWeather.name} weather summary`}>
+              <div className="weather-snapshot-card">
+                <Clock size={15} aria-hidden="true" />
+                <span data-short="Active">Active windows</span>
+                <strong>{currentWeatherLocations.length}</strong>
+              </div>
+              <div className="weather-snapshot-card">
+                <MapPin size={15} aria-hidden="true" />
+                <span data-short="Next">Coming next</span>
+                <strong>{nextWeatherLocations.length}</strong>
+              </div>
+              <div className="weather-snapshot-card good">
+                <Sparkles size={15} aria-hidden="true" />
+                <span data-short="Favored">Favored enemies</span>
+                <strong>{favoredPreferenceCount}</strong>
+              </div>
+              <div className="weather-snapshot-card bad">
+                <Swords size={15} aria-hidden="true" />
+                <span data-short="Penalized">Penalized enemies</span>
+                <strong>{penalizedPreferenceCount}</strong>
+              </div>
+            </div>
           </div>
           <div className="weather-selector-shell">
             <div className="weather-selector" role="group" aria-label="Weather types">
@@ -604,6 +635,12 @@ export default function WeatherPage() {
             #020617;
         }
         .weather-container, .weather-container * { box-sizing: border-box; }
+        .weather-container {
+          -webkit-tap-highlight-color: transparent;
+        }
+        .weather-container :where(button, a) {
+          touch-action: manipulation;
+        }
         .weather-container::before,
         .weather-container::after {
           content: "";
@@ -655,16 +692,31 @@ export default function WeatherPage() {
           position: relative;
           z-index: 10;
           width: 100%;
-          max-width: 1200px;
+          max-width: 1480px;
           margin: 0 auto;
           min-width: 0;
         }
 
-        .page-header { margin-bottom: 2.5rem; text-align: center; animation: rise-in 0.55s ease both; }
+        .page-header {
+          display: grid;
+          grid-template-columns: minmax(320px, 0.82fr) minmax(420px, 1.18fr);
+          gap: clamp(1rem, 2vw, 1.6rem);
+          align-items: stretch;
+          margin-bottom: 1.2rem;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 28px;
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.016)),
+            rgba(8, 10, 18, 0.56);
+          box-shadow: 0 26px 70px rgba(0,0,0,0.28);
+          backdrop-filter: blur(18px);
+          padding: clamp(1rem, 1.6vw, 1.35rem);
+          text-align: left;
+          animation: rise-in 0.55s ease both;
+        }
         .eyebrow {
           display: inline-flex;
           align-items: center;
-          justify-content: center;
           gap: 0.45rem;
           color: var(--accent);
           font-size: 0.72rem;
@@ -673,12 +725,79 @@ export default function WeatherPage() {
           margin-bottom: 0.75rem;
           text-transform: uppercase;
         }
-        .header-text h1 { font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
-        .header-text p { color: rgba(255,255,255,0.5); font-size: 1.1rem; max-width: 650px; margin: 0 auto; }
+        .header-text {
+          display: grid;
+          align-content: center;
+          min-width: 0;
+        }
+        .header-text h1 {
+          color: #fff;
+          font-size: clamp(2.45rem, 4vw, 4rem);
+          font-weight: 850;
+          letter-spacing: 0;
+          line-height: 0.96;
+          margin-bottom: 0.65rem;
+        }
+        .header-text p {
+          color: rgba(255,255,255,0.64);
+          font-size: 1.02rem;
+          font-weight: 700;
+          line-height: 1.45;
+          max-width: 42rem;
+          margin: 0;
+        }
+        .weather-snapshot-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.55rem;
+          margin-top: 1rem;
+        }
+        .weather-snapshot-card {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+          gap: 0.45rem;
+          min-width: 0;
+          min-height: 2.35rem;
+          border: 1px solid rgba(255,255,255,0.075);
+          border-radius: 999px;
+          background: rgba(255,255,255,0.04);
+          color: rgba(255,255,255,0.72);
+          padding: 0.32rem 0.62rem;
+        }
+        .weather-snapshot-card svg {
+          color: var(--accent);
+          flex: 0 0 auto;
+        }
+        .weather-snapshot-card span {
+          min-width: 0;
+          overflow: hidden;
+          font-size: 0.7rem;
+          font-weight: 900;
+          letter-spacing: 0.03em;
+          text-overflow: ellipsis;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .weather-snapshot-card strong {
+          color: #fff;
+          font-family: var(--font-mono);
+          font-size: 0.86rem;
+          font-weight: 950;
+        }
+        .weather-snapshot-card.good strong {
+          color: #9af5c9;
+        }
+        .weather-snapshot-card.bad strong {
+          color: #fecdd3;
+        }
 
         .weather-selector-shell {
           position: relative;
-          margin-top: 2.5rem;
+          display: grid;
+          align-content: center;
+          margin-top: 0;
+          min-width: 0;
         }
         .weather-selector-shell::before,
         .weather-selector-shell::after {
@@ -701,9 +820,9 @@ export default function WeatherPage() {
         }
         .weather-selector {
           display: grid;
-          grid-template-columns: repeat(9, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 0.55rem;
-          padding: 0.5rem;
+          padding: 0;
           overflow: visible;
         }
 
@@ -711,8 +830,8 @@ export default function WeatherPage() {
           background: rgba(255,255,255,0.03);
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255,255,255,0.05);
-          padding: 0.78rem 0.9rem;
-          border-radius: 16px;
+          padding: 0.72rem 0.82rem;
+          border-radius: 12px;
           color: rgba(255,255,255,0.4);
           display: flex;
           align-items: center;
@@ -744,8 +863,8 @@ export default function WeatherPage() {
 
         .main-grid {
           display: grid;
-          grid-template-columns: 1fr 360px;
-          gap: 2.5rem;
+          grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+          gap: clamp(1rem, 2vw, 1.6rem);
           align-items: start;
         }
 
@@ -755,8 +874,8 @@ export default function WeatherPage() {
             linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
             rgba(9, 11, 20, 0.74);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 40px;
-          padding: 3.5rem;
+          border-radius: 24px;
+          padding: clamp(1.35rem, 2.2vw, 2.45rem);
           box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
           animation: rise-in 0.65s 0.05s ease both;
           min-width: 0;
@@ -778,7 +897,7 @@ export default function WeatherPage() {
           z-index: 1;
         }
 
-        .weather-hero { display: flex; align-items: center; gap: 3rem; margin-bottom: 4.5rem; }
+        .weather-hero { display: flex; align-items: center; gap: clamp(1.4rem, 2.4vw, 2.4rem); margin-bottom: clamp(1.7rem, 2.4vw, 2.6rem); }
         .hero-icon-shell {
           position: relative;
           display: grid;
@@ -812,15 +931,15 @@ export default function WeatherPage() {
           filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent), transparent 45%));
           animation: float-icon 4.5s ease-in-out infinite;
         }
-        .hero-text h2 { font-size: 4.5rem; font-weight: 800; margin-bottom: 0.75rem; letter-spacing: -0.05em; }
-        .hero-text .description { font-size: 1.3rem; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 650px; }
+        .hero-text h2 { font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 850; margin-bottom: 0.75rem; letter-spacing: 0; }
+        .hero-text .description { font-size: 1.18rem; color: rgba(255,255,255,0.66); line-height: 1.55; max-width: 650px; }
 
         .impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 2rem; }
         .impact-card, .mf-card {
           background: rgba(255,255,255,0.02);
           border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 28px;
-          padding: 2.5rem;
+          border-radius: 18px;
+          padding: clamp(1.2rem, 1.8vw, 2rem);
           transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
           min-width: 0;
         }
@@ -1344,7 +1463,15 @@ export default function WeatherPage() {
         .mf-stat .label { font-size: 0.85rem; color: rgba(255,255,255,0.4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         .mf-stat .value { font-size: 1.1rem; font-weight: 800; color: #a78bfa; text-shadow: 0 0 15px rgba(167, 139, 250, 0.4); }
 
-        .mechanics-panel { display: flex; flex-direction: column; gap: 2rem; animation: rise-in 0.65s 0.12s ease both; min-width: 0; }
+        .mechanics-panel {
+          position: sticky;
+          top: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          animation: rise-in 0.65s 0.12s ease both;
+          min-width: 0;
+        }
         .mech-item { display: flex; gap: 1.25rem; }
         .mech-item h4 { color: #fff; font-size: 0.95rem; font-weight: 800; margin-bottom: 0.35rem; }
         .mech-item p { color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.6; }
@@ -1422,10 +1549,21 @@ export default function WeatherPage() {
         @media (max-width: 1320px) {
           .main-grid { grid-template-columns: 1fr; }
           .weather-live-grid { grid-template-columns: 1fr; }
+          .mechanics-panel { position: static; }
         }
 
         @media (max-width: 1100px) {
-          .weather-selector { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .page-header {
+            grid-template-columns: 1fr;
+            text-align: center;
+          }
+          .header-text p {
+            margin-inline: auto;
+          }
+          .weather-snapshot-grid {
+            max-width: 44rem;
+            margin-inline: auto;
+          }
           .weather-hero { flex-direction: column; text-align: center; gap: 2rem; }
           .hero-text h2 { font-size: 3.5rem; }
           .active-info-panel { padding: 2.5rem; border-radius: 30px; }
@@ -1438,6 +1576,10 @@ export default function WeatherPage() {
             width: 100vw;
             max-width: 100vw;
             padding: 1.25rem;
+          }
+          .page-header {
+            border-radius: 20px;
+            padding: 1rem;
           }
           .content-wrapper,
           .main-grid,
@@ -1462,7 +1604,7 @@ export default function WeatherPage() {
           .header-text p { font-size: 0.95rem; padding: 0 0.25rem; max-width: 18.5rem; }
           .weather-selector {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             overflow: visible;
             scroll-snap-type: none;
             margin-inline: 0;
@@ -1488,7 +1630,7 @@ export default function WeatherPage() {
             gap: 0.5rem;
             font-size: 0.78rem;
           }
-          .weather-btn:last-child:nth-child(odd) {
+          .weather-btn:last-child:nth-child(3n + 1) {
             grid-column: 1 / -1;
           }
           .weather-btn svg {
@@ -1518,6 +1660,26 @@ export default function WeatherPage() {
           .active-info-panel { padding: 1.5rem; overflow: hidden; }
           .weather-hero { gap: 1rem; }
           .impact-card, .mf-card { padding: 1.5rem; border-radius: 20px; }
+          .weather-snapshot-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+          }
+          .weather-snapshot-card {
+            padding: 0.6rem 0.68rem;
+            gap: 0.42rem;
+          }
+          .weather-snapshot-card span {
+            font-size: 0;
+            letter-spacing: 0;
+          }
+          .weather-snapshot-card span::after {
+            content: attr(data-short);
+            font-size: 0.64rem;
+            letter-spacing: 0.04em;
+          }
+          .weather-snapshot-card strong {
+            margin-left: auto;
+          }
           :global(.forecast-strip) {
             margin-inline: -0.35rem;
             padding: 0.85rem;
@@ -1601,6 +1763,11 @@ type WeatherParticle = {
   spin: number;
   wave: number;
   vortexAngle: number;
+  layer: number;
+  length: number;
+  life: number;
+  kind?: "drop" | "flake" | "mist" | "spark" | "ray" | "leaf" | "wisp" | "cloud" | "ember";
+  color?: string;
   drift?: number;
   pulse?: number;
   isFlare?: boolean;
@@ -1613,7 +1780,14 @@ type WeatherParticle = {
   isGlint?: boolean;
 };
 
-/* --- CANVAS ENGINE --- */
+/* --- CANVAS ATMOSPHERE ENGINE --- */
+const WEATHER_CANVAS_STYLE: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 0,
+  pointerEvents: 'none',
+};
+
 function WeatherCanvas({ weatherId }: { weatherId: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -1635,7 +1809,31 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
     let lastScrollAt = 0;
     let scrollIdleTimeout: number | null = null;
     let frameSkip = 0;
+    let lastPaintAt = 0;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const countByWeather: Record<string, number> = {
+      clear: 82,
+      fog: 56,
+      heatwave: 96,
+      "magic-storm": 150,
+      overcast: 64,
+      rain: 230,
+      snow: 190,
+      storm: 280,
+      windy: 120,
+    };
+
+    const weatherPalette: Record<string, { base: string; glow: string; haze: string; shadow: string }> = {
+      clear: { base: "251, 191, 36", glow: "245, 158, 11", haze: "56, 189, 248", shadow: "15, 23, 42" },
+      fog: { base: "148, 163, 184", glow: "203, 213, 225", haze: "100, 116, 139", shadow: "15, 23, 42" },
+      heatwave: { base: "248, 113, 113", glow: "251, 146, 60", haze: "251, 191, 36", shadow: "69, 10, 10" },
+      "magic-storm": { base: "167, 139, 250", glow: "139, 92, 246", haze: "34, 211, 238", shadow: "49, 46, 129" },
+      overcast: { base: "148, 163, 184", glow: "71, 85, 105", haze: "203, 213, 225", shadow: "2, 6, 23" },
+      rain: { base: "96, 165, 250", glow: "59, 130, 246", haze: "125, 211, 252", shadow: "8, 47, 73" },
+      snow: { base: "226, 232, 240", glow: "255, 255, 255", haze: "147, 197, 253", shadow: "15, 23, 42" },
+      storm: { base: "56, 189, 248", glow: "125, 211, 252", haze: "129, 140, 248", shadow: "12, 18, 36" },
+      windy: { base: "74, 222, 128", glow: "34, 197, 94", haze: "187, 247, 208", shadow: "5, 46, 22" },
+    };
 
     const resize = () => {
       width = window.innerWidth;
@@ -1673,25 +1871,19 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
     const init = () => {
       particles = [];
       const isMobile = width < 768;
-      // Adaptive particle scaling: Reduce particles on mobile for efficiency
-      const multiplier = reducedMotion ? 0.18 : isMobile ? 0.45 : 1;
-      
-      const count = Math.floor((weatherId === 'storm' ? 350 : 
-                   weatherId === 'rain' ? 250 : 
-                   weatherId === 'snow' ? 200 : 
-                   weatherId === 'magic-storm' ? 180 : 
-                   weatherId === 'fog' ? 40 : 60) * multiplier);
+      const multiplier = reducedMotion ? 0.16 : isMobile ? 0.38 : 1;
+      const count = Math.floor((countByWeather[weatherId] ?? 72) * multiplier);
       
       for (let i = 0; i < count; i++) {
         particles.push(createParticle());
       }
     };
 
-    const createParticle = () => {
+    const createParticle = (seedFromEdge = false): WeatherParticle => {
       const isMobile = width < 768;
       const p: WeatherParticle = {
-        x: Math.random() * width,
-        y: Math.random() * height,
+        x: seedFromEdge ? Math.random() * width : Math.random() * width,
+        y: seedFromEdge ? -80 - Math.random() * 160 : Math.random() * height,
         vx: 0,
         vy: 0,
         size: 0,
@@ -1699,53 +1891,162 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
         angle: Math.random() * Math.PI * 2,
         spin: (Math.random() - 0.5) * 0.2,
         wave: Math.random() * Math.PI * 2,
-        vortexAngle: Math.random() * Math.PI * 2
+        vortexAngle: Math.random() * Math.PI * 2,
+        layer: Math.random(),
+        length: 0,
+        life: Math.random(),
       };
 
       if (weatherId === 'rain' || weatherId === 'storm') {
-        p.vy = (Math.random() * 12 + 12) * (isMobile ? 0.8 : 1);
-        p.vx = (weatherId === 'storm' ? 4 : 1.5) * (isMobile ? 0.8 : 1);
-        p.size = Math.random() * 2 + 1;
+        p.kind = "drop";
+        p.vy = (Math.random() * 16 + (weatherId === 'storm' ? 16 : 11)) * (isMobile ? 0.8 : 1);
+        p.vx = (weatherId === 'storm' ? 5.5 : 2.1) * (isMobile ? 0.8 : 1) * (0.7 + p.layer);
+        p.size = Math.random() * 1.4 + 0.65 + p.layer * 1.1;
+        p.length = Math.random() * 20 + (weatherId === 'storm' ? 18 : 10);
+        p.opacity = Math.random() * 0.32 + 0.16;
       } else if (weatherId === 'snow') {
-        p.vy = Math.random() * 1.5 + 0.8;
-        p.vx = Math.random() * 2 - 1;
-        p.size = Math.random() * 3.5 + 1.5;
-        p.drift = Math.random() * 2;
+        p.kind = "flake";
+        p.vy = Math.random() * 1.35 + 0.45 + p.layer * 0.65;
+        p.vx = Math.random() * 1.5 - 0.75;
+        p.size = Math.random() * 3.6 + 1.1 + p.layer * 1.3;
+        p.drift = Math.random() * 1.75 + 0.4;
+        p.opacity = Math.random() * 0.5 + 0.22;
       } else if (weatherId === 'magic-storm') {
-        p.vx = (Math.random() - 0.5) * (isMobile ? 4 : 6);
-        p.vy = (Math.random() - 0.5) * (isMobile ? 4 : 6);
-        p.size = Math.random() * 4 + 1;
-        p.pulse = Math.random() * 0.1;
+        p.kind = Math.random() > 0.78 ? "ray" : "spark";
+        p.vx = (Math.random() - 0.5) * (isMobile ? 3.2 : 5.2);
+        p.vy = (Math.random() - 0.5) * (isMobile ? 3.2 : 5.2);
+        p.size = Math.random() * 3.8 + 1.1 + p.layer * 2;
+        p.pulse = Math.random() * 0.12 + 0.03;
         p.isFlare = Math.random() > 0.9;
       } else if (weatherId === 'windy') {
-        p.vx = (Math.random() * 15 + 10) * (isMobile ? 0.7 : 1);
-        p.vy = (Math.random() - 0.5) * 6;
-        p.size = Math.random() * 6 + 2;
-        p.isLeaf = Math.random() > 0.6;
-        p.isDebris = !p.isLeaf && Math.random() > 0.5;
-        p.isWisp = !p.isLeaf && !p.isDebris && Math.random() > 0.5;
-        p.isCloud = !p.isLeaf && !p.isDebris && !p.isWisp;
-        p.turbulence = Math.random() * 0.1 + 0.05;
+        p.kind = Math.random() > 0.62 ? "leaf" : Math.random() > 0.42 ? "wisp" : "cloud";
+        p.vx = (Math.random() * 11 + 7) * (isMobile ? 0.7 : 1) * (0.65 + p.layer);
+        p.vy = (Math.random() - 0.5) * 4;
+        p.size = Math.random() * 5 + 2 + p.layer * 3;
+        p.length = Math.random() * 80 + 60;
+        p.isLeaf = p.kind === "leaf";
+        p.isWisp = p.kind === "wisp";
+        p.isCloud = p.kind === "cloud";
+        p.turbulence = Math.random() * 0.08 + 0.035;
       } else if (weatherId === 'fog') {
-        p.vx = Math.random() * 0.4 + 0.1;
-        p.vy = (Math.random() - 0.5) * 0.1;
-        p.size = Math.random() * (isMobile ? 150 : 250) + 100;
-        p.opacity = Math.random() * 0.08 + 0.02;
+        p.kind = "mist";
+        p.vx = Math.random() * 0.26 + 0.06;
+        p.vy = (Math.random() - 0.5) * 0.08;
+        p.size = Math.random() * (isMobile ? 130 : 260) + (isMobile ? 100 : 140);
+        p.opacity = Math.random() * 0.055 + 0.025;
       } else if (weatherId === 'heatwave') {
-        p.vy = Math.random() * -2 - 1;
+        p.kind = Math.random() > 0.55 ? "ember" : "ray";
+        p.vy = Math.random() * -1.6 - 0.45;
         p.vx = (Math.random() - 0.5) * 1;
-        p.size = Math.random() * 2 + 1;
-        p.opacity = Math.random() * 0.3 + 0.1;
+        p.size = Math.random() * 2.3 + 0.8 + p.layer;
+        p.opacity = Math.random() * 0.28 + 0.08;
+        p.length = Math.random() * 48 + 18;
         p.waveFreq = Math.random() * 0.05 + 0.02;
+      } else if (weatherId === 'overcast') {
+        p.kind = "cloud";
+        p.vx = Math.random() * 0.32 + 0.06;
+        p.vy = (Math.random() - 0.5) * 0.05;
+        p.size = Math.random() * (isMobile ? 120 : 240) + 120;
+        p.opacity = Math.random() * 0.045 + 0.022;
       } else if (weatherId === 'clear') {
-        p.vx = (Math.random() - 0.5) * 0.5;
-        p.vy = (Math.random() - 0.5) * 0.5;
-        p.size = Math.random() * 1.5 + 0.5;
-        p.opacity = Math.random() * 0.4 + 0.1;
+        p.kind = Math.random() > 0.82 ? "ray" : "spark";
+        p.vx = (Math.random() - 0.5) * 0.42;
+        p.vy = (Math.random() - 0.5) * 0.36;
+        p.size = Math.random() * 1.7 + 0.45 + p.layer * 0.8;
+        p.opacity = Math.random() * 0.36 + 0.08;
         p.isGlint = Math.random() > 0.8;
       }
       
       return p;
+    };
+
+    const drawSoftOrb = (x: number, y: number, radius: number, color: string, alpha: number) => {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, `rgba(${color}, ${alpha})`);
+      gradient.addColorStop(0.45, `rgba(${color}, ${alpha * 0.35})`);
+      gradient.addColorStop(1, `rgba(${color}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const drawAtmosphere = (now: number, intensity = 1) => {
+      const palette = weatherPalette[weatherId] ?? weatherPalette.clear;
+      const t = now * 0.001;
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      const vertical = ctx.createLinearGradient(0, 0, width, height);
+      vertical.addColorStop(0, `rgba(${palette.shadow}, ${0.16 * intensity})`);
+      vertical.addColorStop(0.45, `rgba(${palette.base}, ${0.055 * intensity})`);
+      vertical.addColorStop(1, `rgba(${palette.shadow}, ${0.24 * intensity})`);
+      ctx.fillStyle = vertical;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.globalCompositeOperation = "screen";
+      const driftX = Math.sin(t * 0.18) * width * 0.04;
+      drawSoftOrb(width * 0.78 + driftX, height * 0.08, Math.min(width, height) * 0.52, palette.glow, weatherId === "clear" ? 0.16 : 0.08);
+      drawSoftOrb(width * 0.18 - driftX, height * 0.62, Math.min(width, height) * 0.62, palette.base, 0.06);
+
+      if (weatherId === "clear") {
+        ctx.translate(width * 0.74, -height * 0.08);
+        ctx.rotate(-0.16 + Math.sin(t * 0.12) * 0.025);
+        for (let i = 0; i < 5; i++) {
+          const ray = ctx.createLinearGradient(0, 0, 0, height * 1.45);
+          ray.addColorStop(0, "rgba(251, 191, 36, 0.10)");
+          ray.addColorStop(0.45, "rgba(251, 191, 36, 0.035)");
+          ray.addColorStop(1, "rgba(251, 191, 36, 0)");
+          ctx.fillStyle = ray;
+          ctx.beginPath();
+          ctx.moveTo(i * 58 - 130, 0);
+          ctx.lineTo(i * 58 - 220, height * 1.45);
+          ctx.lineTo(i * 58 - 70, height * 1.45);
+          ctx.fill();
+        }
+      } else if (weatherId === "heatwave") {
+        for (let i = 0; i < 8; i++) {
+          const x = (i / 8) * width + Math.sin(t * 0.9 + i) * 18;
+          const shimmer = ctx.createLinearGradient(x, 0, x + 34, height);
+          shimmer.addColorStop(0, "rgba(251, 146, 60, 0)");
+          shimmer.addColorStop(0.5, "rgba(251, 191, 36, 0.055)");
+          shimmer.addColorStop(1, "rgba(248, 113, 113, 0)");
+          ctx.fillStyle = shimmer;
+          ctx.fillRect(x - 16, 0, 46, height);
+        }
+      } else if (weatherId === "magic-storm") {
+        drawSoftOrb(width * 0.5 + Math.sin(t * 0.3) * 70, height * 0.34, Math.min(width, height) * 0.46, "167, 139, 250", 0.18);
+        drawSoftOrb(width * 0.7, height * 0.74, Math.min(width, height) * 0.34, "34, 211, 238", 0.08);
+      } else if (weatherId === "storm") {
+        const flash = Math.sin(t * 7.7) > 0.985 ? 0.2 : 0;
+        if (flash) {
+          ctx.fillStyle = `rgba(226, 232, 240, ${flash})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+      } else if (weatherId === "fog" || weatherId === "overcast") {
+        ctx.globalCompositeOperation = "source-over";
+        const veil = ctx.createLinearGradient(0, height * 0.1, width, height * 0.88);
+        veil.addColorStop(0, `rgba(${palette.haze}, ${weatherId === "fog" ? 0.07 : 0.04})`);
+        veil.addColorStop(0.55, `rgba(${palette.base}, ${weatherId === "fog" ? 0.11 : 0.07})`);
+        veil.addColorStop(1, "rgba(2, 6, 23, 0)");
+        ctx.fillStyle = veil;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.restore();
+    };
+
+    const recycleParticle = (p: WeatherParticle) => {
+      const next = createParticle(true);
+      Object.assign(p, next);
+      if (weatherId === "rain" || weatherId === "storm") {
+        p.x = Math.random() * (width + 220) - 110;
+        p.y = -80 - Math.random() * 160;
+      } else if (weatherId === "windy") {
+        p.x = -140 - Math.random() * 220;
+        p.y = Math.random() * height;
+      } else if (weatherId === "heatwave") {
+        p.x = Math.random() * width;
+        p.y = height + 60 + Math.random() * 120;
+      }
     };
 
     const update = () => {
@@ -1771,76 +2072,70 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
         }
       }
 
-      const now = Date.now();
+      const now = performance.now();
+      const targetFrameMs = width < 768 ? 32 : 16;
+      if (now - lastPaintAt < targetFrameMs) {
+        animationFrameId = requestAnimationFrame(update);
+        return;
+      }
+      lastPaintAt = now;
       ctx.clearRect(0, 0, width, height);
-      
-      // Global Effects
-      if (weatherId === 'storm' && Math.random() > 0.985) {
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.fillRect(0, 0, width, height);
-      }
-      
-      if (weatherId === 'magic-storm' && Math.random() > 0.99) {
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)';
-        ctx.fillRect(0, 0, width, height);
-      }
-
-      if (weatherId === 'clear') {
-        // Subtle God Rays
-        ctx.save();
-        ctx.translate(width * 0.8, height * 0.1);
-        ctx.rotate(Math.PI / 6);
-        const rayGrad = ctx.createLinearGradient(0, 0, 0, height * 1.5);
-        rayGrad.addColorStop(0, 'rgba(251, 191, 36, 0.05)');
-        rayGrad.addColorStop(1, 'rgba(251, 191, 36, 0)');
-        ctx.fillStyle = rayGrad;
-        for (let i = 0; i < 3; i++) {
-          ctx.rotate(0.1);
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(-100, height * 1.5);
-          ctx.lineTo(100, height * 1.5);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
+      drawAtmosphere(now);
 
       particles.forEach(p => {
         if (weatherId === 'rain' || weatherId === 'storm') {
           p.y += p.vy;
           p.x += p.vx;
-          ctx.strokeStyle = `rgba(56, 189, 248, ${p.opacity})`;
+          ctx.strokeStyle = weatherId === "storm"
+            ? `rgba(125, 211, 252, ${p.opacity + 0.08})`
+            : `rgba(96, 165, 250, ${p.opacity})`;
           ctx.lineWidth = p.size;
+          ctx.lineCap = "round";
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x + p.vx * 1.5, p.y + p.vy * 1.5);
+          ctx.lineTo(p.x + p.vx * 0.9, p.y + p.length);
           ctx.stroke();
+          if (p.layer > 0.82 && weatherId === "rain") {
+            ctx.strokeStyle = `rgba(191, 219, 254, ${p.opacity * 0.24})`;
+            ctx.beginPath();
+            ctx.ellipse(p.x, height - 12 - p.layer * 18, p.size * 8, p.size * 1.7, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
         } else if (weatherId === 'snow') {
           p.angle += 0.02;
           p.y += p.vy;
           p.x += Math.sin(p.angle) * (p.drift ?? 0);
           ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (weatherId === 'magic-storm') {
-          p.vortexAngle += 0.05;
-          p.x += p.vx + Math.cos(p.vortexAngle) * 2;
-          p.y += p.vy + Math.sin(p.vortexAngle) * 2;
-          
-          if (p.isFlare) {
-            p.size = (Math.sin(now * 0.005) + 1.5) * 5;
-            ctx.fillStyle = `rgba(167, 139, 250, 0.3)`;
-          } else {
-            ctx.fillStyle = `rgba(167, 139, 250, ${p.opacity})`;
-          }
-          
-          ctx.shadowBlur = p.isFlare ? 20 : 10;
-          ctx.shadowColor = '#8b5cf6';
+          ctx.shadowBlur = p.layer > 0.7 ? 10 : 0;
+          ctx.shadowColor = "#dbeafe";
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
           ctx.shadowBlur = 0;
+        } else if (weatherId === 'magic-storm') {
+          p.vortexAngle += 0.035 + (p.pulse ?? 0);
+          p.x += p.vx + Math.cos(p.vortexAngle) * (1.2 + p.layer * 2.5);
+          p.y += p.vy + Math.sin(p.vortexAngle) * (1.2 + p.layer * 2.5);
+          
+          if (p.kind === "ray") {
+            ctx.strokeStyle = `rgba(34, 211, 238, ${0.11 + p.opacity * 0.24})`;
+            ctx.lineWidth = 1 + p.layer * 1.4;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.quadraticCurveTo(p.x + Math.sin(p.wave) * 28, p.y - 22, p.x + p.vx * 12, p.y + p.vy * 12);
+            ctx.stroke();
+          } else {
+            const pulse = Math.abs(Math.sin(now * 0.004 + p.wave));
+            ctx.fillStyle = p.isFlare
+              ? `rgba(167, 139, 250, ${0.18 + pulse * 0.22})`
+              : `rgba(167, 139, 250, ${p.opacity})`;
+            ctx.shadowBlur = p.isFlare ? 24 : 12;
+            ctx.shadowColor = p.layer > 0.65 ? "#22d3ee" : "#8b5cf6";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size + pulse * (p.isFlare ? 5 : 1.5), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
         } else if (weatherId === 'windy') {
           p.angle += p.spin;
           p.wave += p.turbulence ?? 0;
@@ -1853,7 +2148,7 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
             ctx.save();
             ctx.translate(p.x, p.y);
             ctx.rotate(p.angle);
-            ctx.fillStyle = `rgba(74, 222, 128, ${p.opacity})`;
+            ctx.fillStyle = `rgba(74, 222, 128, ${p.opacity + 0.08})`;
             ctx.beginPath();
             ctx.ellipse(0, 0, p.size, p.size / 2.5, 0, 0, Math.PI * 2);
             ctx.fill();
@@ -1866,67 +2161,79 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
             ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
             ctx.restore();
           } else if (p.isCloud) {
-            // Parallax Background Clouds
-            const cloudSize = p.size * 20;
+            const cloudSize = p.size * 22;
             const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, cloudSize);
-            grad.addColorStop(0, `rgba(255, 255, 255, ${p.opacity * 0.05})`);
+            grad.addColorStop(0, `rgba(187, 247, 208, ${p.opacity * 0.08})`);
             grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(p.x, p.y, cloudSize, 0, Math.PI * 2);
             ctx.fill();
-            p.x -= p.vx * 0.6; // Parallax effect (slower)
+            p.x -= p.vx * 0.68;
           } else {
-            // High Speed Air Wisps
-            ctx.strokeStyle = `rgba(255, 255, 255, ${p.opacity * 0.3})`;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = `rgba(187, 247, 208, ${p.opacity * 0.34})`;
+            ctx.lineWidth = 1 + p.layer * 1.5;
+            ctx.lineCap = "round";
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - p.vx * 3, p.y - gustVy);
+            ctx.bezierCurveTo(p.x - p.length * 0.2, p.y - 12, p.x - p.length * 0.65, p.y + 18, p.x - p.length, p.y - gustVy);
             ctx.stroke();
           }
-        } else if (weatherId === 'fog') {
+        } else if (weatherId === 'fog' || weatherId === 'overcast') {
           p.x += p.vx;
           p.y += p.vy;
           const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-          grad.addColorStop(0, `rgba(148, 163, 184, ${p.opacity})`);
+          grad.addColorStop(0, weatherId === "fog" ? `rgba(203, 213, 225, ${p.opacity})` : `rgba(148, 163, 184, ${p.opacity})`);
+          grad.addColorStop(0.55, `rgba(148, 163, 184, ${p.opacity * 0.35})`);
           grad.addColorStop(1, 'rgba(148, 163, 184, 0)');
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.ellipse(p.x, p.y, p.size * 1.4, p.size * 0.55, Math.sin(p.wave) * 0.12, 0, Math.PI * 2);
           ctx.fill();
         } else if (weatherId === 'heatwave') {
           p.y += p.vy;
           p.wave += p.waveFreq ?? 0;
-          p.x += Math.sin(p.wave) * 2;
-          ctx.fillStyle = `rgba(248, 113, 113, ${p.opacity})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-          // Shimmer line
-          ctx.strokeStyle = `rgba(251, 191, 36, ${p.opacity * 0.5})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x + Math.sin(p.wave) * 10, p.y + 15);
-          ctx.stroke();
+          p.x += Math.sin(p.wave) * (1.2 + p.layer * 2.4);
+          if (p.kind === "ember") {
+            ctx.fillStyle = `rgba(251, 146, 60, ${p.opacity})`;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#fb923c";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.strokeStyle = `rgba(251, 191, 36, ${p.opacity * 0.48})`;
+            ctx.lineWidth = 1 + p.layer;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.bezierCurveTo(p.x + 12, p.y + p.length * 0.25, p.x - 10, p.y + p.length * 0.65, p.x + Math.sin(p.wave) * 18, p.y + p.length);
+            ctx.stroke();
+          }
         } else if (weatherId === 'clear') {
           p.x += p.vx;
           p.y += p.vy;
           if (p.isGlint) {
-            p.opacity = Math.abs(Math.sin(now * 0.002)) * 0.6 + 0.1;
+            p.opacity = Math.abs(Math.sin(now * 0.002 + p.wave)) * 0.48 + 0.08;
           }
-          ctx.fillStyle = `rgba(251, 191, 36, ${p.opacity})`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
+          if (p.kind === "ray") {
+            ctx.strokeStyle = `rgba(251, 191, 36, ${p.opacity * 0.32})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x - p.size * 4, p.y);
+            ctx.lineTo(p.x + p.size * 4, p.y);
+            ctx.moveTo(p.x, p.y - p.size * 4);
+            ctx.lineTo(p.x, p.y + p.size * 4);
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = `rgba(251, 191, 36, ${p.opacity})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
 
-        // Wrap around logic
-        if (p.y > height + 100) p.y = -100;
-        if (p.x > width + 100) p.x = -100;
-        if (p.x < -100) p.x = width + 100;
-        if (p.y < -100) p.y = height + 100;
+        if (p.y > height + 130 || p.x > width + 180 || p.x < -180 || p.y < -160) recycleParticle(p);
       });
 
       animationFrameId = requestAnimationFrame(update);
@@ -1934,8 +2241,9 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
 
     function drawReducedMotionFrame() {
       drawCtx.clearRect(0, 0, width, height);
+      drawAtmosphere(performance.now(), 0.72);
       particles.forEach((p) => {
-        const size = weatherId === 'fog' ? Math.min(p.size, 140) : Math.max(p.size, 2);
+        const size = weatherId === 'fog' || weatherId === "overcast" ? Math.min(p.size, 150) : Math.max(p.size, 2);
         const gradient = drawCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
         const color = weatherId === 'rain' || weatherId === 'storm'
           ? '56, 189, 248'
@@ -1947,6 +2255,8 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
                 ? '251, 191, 36'
                 : weatherId === 'windy'
                   ? '148, 163, 184'
+                  : weatherId === 'fog' || weatherId === "overcast"
+                    ? '148, 163, 184'
                   : '251, 191, 36';
         gradient.addColorStop(0, `rgba(${color}, ${Math.min(p.opacity, 0.16)})`);
         gradient.addColorStop(1, `rgba(${color}, 0)`);
@@ -1981,7 +2291,7 @@ function WeatherCanvas({ weatherId }: { weatherId: string }) {
     };
   }, [weatherId]);
 
-  return <canvas ref={canvasRef} className="weather-canvas" aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }} />;
+  return <canvas ref={canvasRef} className="weather-canvas" aria-hidden="true" style={WEATHER_CANVAS_STYLE} />;
 }
 
 function getWeatherIcon(icon: string, size = 18) {
