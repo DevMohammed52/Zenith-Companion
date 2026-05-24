@@ -12,7 +12,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Database,
   Hammer,
   LockKeyhole,
   MapPin,
@@ -20,6 +19,7 @@ import {
   Search,
   Shield,
   ShoppingCart,
+  SlidersHorizontal,
   Store,
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
@@ -712,6 +712,15 @@ function ItemsArchiveContent() {
       { marketListed: 0, craftable: 0, used: 0, loreLinked: 0 },
     );
   }, [enrichedItems]);
+  const activeAdvancedFilterCount = [
+    selectedType !== 'ALL',
+    selectedQuality !== 'ALL',
+    selectedSignal !== 'ALL',
+    selectedLocation !== 'ALL',
+  ].filter(Boolean).length;
+  const advancedFilterStatus = activeAdvancedFilterCount > 0
+    ? `${activeAdvancedFilterCount} active`
+    : 'All items';
 
   const handleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -872,7 +881,7 @@ function ItemsArchiveContent() {
         </div>
       </div>
 
-      <section aria-label="Item database summary" className="db-summary">
+      <section aria-label="Item database summary metrics" className="db-summary" tabIndex={0}>
         <div>
           <span className="summary-label">Market listed</span>
           <strong>{stats.marketListed.toLocaleString()}</strong>
@@ -918,47 +927,7 @@ function ItemsArchiveContent() {
           />
         </div>
 
-        <div className="control-group">
-          <label className="control-label">Type</label>
-          <ItemFilterPicker
-            ariaLabel="Item type filter"
-            options={typeOptions}
-            value={selectedType}
-            onChange={handleTypeChange}
-          />
-        </div>
-
-        <div className="control-group">
-          <label className="control-label">Quality</label>
-          <ItemFilterPicker
-            ariaLabel="Item quality filter"
-            options={qualityOptions}
-            value={selectedQuality}
-            onChange={setSelectedQuality}
-          />
-        </div>
-
-        <div className="control-group">
-          <label className="control-label">Tag</label>
-          <ItemFilterPicker
-            ariaLabel="Item tag filter"
-            options={SIGNAL_OPTIONS}
-            value={selectedSignal}
-            onChange={setSelectedSignal}
-          />
-        </div>
-
-        <div className="control-group">
-          <label className="control-label">Source</label>
-          <ItemFilterPicker
-            ariaLabel="Item source location filter"
-            options={locationOptions}
-            value={selectedLocation}
-            onChange={setSelectedLocation}
-          />
-        </div>
-
-        <div className="control-group">
+        <div className="control-group sort-control">
           <label className="control-label">Sort</label>
           <ItemFilterPicker
             ariaLabel="Item sort"
@@ -968,7 +937,7 @@ function ItemsArchiveContent() {
           />
         </div>
 
-        <button type="button" className="control-input icon-toggle" onClick={() => setSortDesc(prev => !prev)}>
+        <button type="button" className="control-input icon-toggle sort-direction-toggle" onClick={() => setSortDesc(prev => !prev)}>
           <ArrowDownUp size={15} /> {sortDesc ? 'Desc' : 'Asc'}
         </button>
 
@@ -981,9 +950,61 @@ function ItemsArchiveContent() {
           <ShoppingCart size={15} /> Market
         </button>
 
-        <div className="view-toggle" aria-label="View mode">
-          <button type="button" className={viewMode === 'table' ? 'active' : ''} onClick={() => setViewMode('table')}>Table</button>
-          <button type="button" className={viewMode === 'cards' ? 'active' : ''} onClick={() => setViewMode('cards')}>Grid</button>
+        <details className="advanced-filter-panel" open={!isCompactViewport ? true : undefined}>
+          <summary>
+            <span>
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              Filters
+            </span>
+            <small>{advancedFilterStatus}</small>
+            <ChevronDown size={15} aria-hidden="true" />
+          </summary>
+          <div className="advanced-filter-grid">
+            <div className="control-group">
+              <label className="control-label">Type</label>
+              <ItemFilterPicker
+                ariaLabel="Item type filter"
+                options={typeOptions}
+                value={selectedType}
+                onChange={handleTypeChange}
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">Quality</label>
+              <ItemFilterPicker
+                ariaLabel="Item quality filter"
+                options={qualityOptions}
+                value={selectedQuality}
+                onChange={setSelectedQuality}
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">Tag</label>
+              <ItemFilterPicker
+                ariaLabel="Item tag filter"
+                options={SIGNAL_OPTIONS}
+                value={selectedSignal}
+                onChange={setSelectedSignal}
+              />
+            </div>
+
+            <div className="control-group">
+              <label className="control-label">Source</label>
+              <ItemFilterPicker
+                ariaLabel="Item source location filter"
+                options={locationOptions}
+                value={selectedLocation}
+                onChange={setSelectedLocation}
+              />
+            </div>
+          </div>
+        </details>
+
+        <div className="view-toggle" role="group" aria-label="View mode">
+          <button type="button" className={viewMode === 'table' ? 'active' : ''} aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')}>Table</button>
+          <button type="button" className={viewMode === 'cards' ? 'active' : ''} aria-pressed={viewMode === 'cards'} onClick={() => setViewMode('cards')}>Grid</button>
         </div>
       </section>
 
@@ -1139,6 +1160,7 @@ function ItemsArchiveContent() {
           overflow-x: hidden;
         }
         .db-summary {
+          animation: itemSurfaceIn 0.34s ease-out both;
           display: grid;
           gap: 0.55rem;
           grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1150,6 +1172,11 @@ function ItemsArchiveContent() {
           border-radius: 8px;
           min-height: 70px;
           padding: 0.68rem 0.8rem;
+        }
+        .db-summary:focus-visible {
+          border-radius: 10px;
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.18);
+          outline: none;
         }
         .summary-label {
           color: var(--text-muted);
@@ -1167,6 +1194,7 @@ function ItemsArchiveContent() {
           margin-top: 0.25rem;
         }
         .item-help {
+          animation: itemSurfaceIn 0.34s 0.04s ease-out both;
           background: rgba(56,189,248,0.045);
           border: 1px solid rgba(56,189,248,0.18);
           border-radius: 8px;
@@ -1214,6 +1242,7 @@ function ItemsArchiveContent() {
         }
         .db-controls {
           align-items: end;
+          animation: itemSurfaceIn 0.34s 0.08s ease-out both;
           background: rgba(255,255,255,0.015);
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
@@ -1227,25 +1256,39 @@ function ItemsArchiveContent() {
             minmax(126px, 0.55fr);
           grid-template-areas:
             "search search sort direction view"
-            "type quality tag source market";
+            "filters filters filters filters market";
           max-width: 100%;
           min-width: 0;
           padding: 0.75rem;
+          position: relative;
+          z-index: 30;
         }
-        .db-controls > :nth-child(1) { grid-area: search; }
-        .db-controls > :nth-child(2) { grid-area: type; }
-        .db-controls > :nth-child(3) { grid-area: quality; }
-        .db-controls > :nth-child(4) { grid-area: tag; }
-        .db-controls > :nth-child(5) { grid-area: source; }
-        .db-controls > :nth-child(6) { grid-area: sort; }
-        .db-controls > :nth-child(7) { grid-area: direction; }
-        .db-controls > :nth-child(8) { grid-area: market; }
-        .db-controls > :nth-child(9) { grid-area: view; }
+        .search-control { grid-area: search; }
+        .sort-control { grid-area: sort; }
+        .sort-direction-toggle { grid-area: direction; }
+        .market-toggle { grid-area: market; }
+        .advanced-filter-panel { grid-area: filters; }
+        .view-toggle { grid-area: view; }
         .control-group {
           min-width: 0;
         }
-        .search-control {
+        .advanced-filter-panel {
           min-width: 0;
+          overflow: visible;
+          position: relative;
+          z-index: 1;
+        }
+        .advanced-filter-panel summary {
+          display: none;
+        }
+        .advanced-filter-grid {
+          display: grid;
+          gap: 0.65rem;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          overflow: visible;
+        }
+        .advanced-filter-panel:not([open]) .advanced-filter-grid {
+          display: grid;
         }
         :global(.items-db-page .search-shell) {
           position: relative;
@@ -1273,7 +1316,7 @@ function ItemsArchiveContent() {
           z-index: 8;
         }
         :global(.items-db-page .item-select.open) {
-          z-index: 80;
+          z-index: 120;
         }
         :global(.items-db-page .item-select-trigger) {
           align-items: center;
@@ -1292,7 +1335,15 @@ function ItemsArchiveContent() {
           min-width: 0;
           padding: 0.45rem 0.62rem;
           text-align: left;
+          transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
           width: 100%;
+        }
+        :global(.items-db-page .item-select-trigger:hover) {
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018)), var(--bg-base);
+          border-color: rgba(255,255,255,0.14);
+        }
+        :global(.items-db-page .item-select-trigger:active) {
+          transform: translateY(1px);
         }
         :global(.items-db-page .item-select-trigger span) {
           min-width: 0;
@@ -1319,19 +1370,23 @@ function ItemsArchiveContent() {
           gap: 0.25rem;
           left: 0;
           margin-top: 0.35rem;
-          max-height: min(320px, 58vh);
+          max-height: min(var(--item-select-max-height, 320px), 58vh);
           min-width: min(250px, calc(100vw - 2rem));
           overflow-y: auto;
           padding: 0.35rem;
           position: absolute;
           right: auto;
           top: 100%;
+          transform-origin: top center;
+          animation: itemMenuReveal 0.16s ease-out both;
+          z-index: 130;
         }
         :global(.items-db-page .item-select.open-up .item-select-menu) {
           bottom: 100%;
           margin-bottom: 0.35rem;
           margin-top: 0;
           top: auto;
+          transform-origin: bottom center;
         }
         :global(.items-db-page .item-select-option) {
           align-items: center;
@@ -1349,12 +1404,16 @@ function ItemsArchiveContent() {
           min-height: 36px;
           padding: 0.45rem 0.55rem;
           text-align: left;
+          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
           width: 100%;
         }
         :global(.items-db-page .item-select-option:hover),
         :global(.items-db-page .item-select-option.active) {
           background: color-mix(in srgb, var(--text-accent), transparent 90%);
           border-color: rgba(56,189,248,0.24);
+        }
+        :global(.items-db-page .item-select-option:active) {
+          transform: scale(0.99);
         }
         :global(.items-db-page .item-select-option svg) {
           color: var(--text-accent);
@@ -1368,7 +1427,15 @@ function ItemsArchiveContent() {
           gap: 0.4rem;
           justify-content: center;
           min-width: 88px !important;
+          transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
           white-space: nowrap;
+        }
+        .icon-toggle:hover {
+          border-color: rgba(255,255,255,0.16);
+          color: var(--text-main);
+        }
+        .icon-toggle:active {
+          transform: translateY(1px);
         }
         .market-toggle {
           border-color: rgba(255,255,255,0.08);
@@ -1398,24 +1465,43 @@ function ItemsArchiveContent() {
           font-weight: 800;
           min-width: 58px;
           padding: 0 0.8rem;
+          transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+        .view-toggle button:not(.active):hover {
+          background: rgba(255,255,255,0.05);
+          color: var(--text-main);
+        }
+        .view-toggle button:active {
+          transform: translateY(1px);
         }
         .view-toggle button.active {
           background: var(--text-accent);
           color: #050505;
         }
         .result-meta {
+          animation: itemSurfaceIn 0.28s 0.12s ease-out both;
           color: var(--text-muted);
           display: flex;
           font-size: 0.8rem;
           justify-content: space-between;
           margin: 1rem 0 0.65rem;
+          position: relative;
+          z-index: 1;
         }
         .desktop-table-shell {
+          animation: itemSurfaceIn 0.34s 0.14s ease-out both;
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           contain: layout paint;
           min-height: 640px;
           overflow: auto;
+          position: relative;
+          z-index: 1;
+        }
+        .desktop-table-shell:focus-visible {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+          outline: none;
         }
         .desktop-table-shell.hidden {
           display: none;
@@ -1513,8 +1599,11 @@ function ItemsArchiveContent() {
           transition: background 0.16s ease;
         }
         .items-table tr:hover td,
-        .items-table tr:focus td {
+        .items-table tr:focus-visible td {
           background: color-mix(in srgb, var(--text-accent), transparent 96%);
+        }
+        .items-table tr:focus-visible td:first-child {
+          box-shadow: inset 3px 0 0 var(--text-accent);
         }
         .item-cell {
           min-width: 0;
@@ -1641,12 +1730,15 @@ function ItemsArchiveContent() {
         :global(.items-db-page .badge.legacy) { color: #c4b5fd; background: rgba(167,139,250,0.08); }
         :global(.items-db-page .badge.muted) { color: var(--text-muted); background: rgba(255,255,255,0.045); }
         .item-grid {
+          animation: itemSurfaceIn 0.34s 0.14s ease-out both;
           display: none;
           gap: 0.85rem;
           grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
           margin-top: 1rem;
           max-width: 100%;
           min-width: 0;
+          position: relative;
+          z-index: 1;
         }
         .item-grid.forced {
           display: grid;
@@ -1673,6 +1765,9 @@ function ItemsArchiveContent() {
           border-color: var(--border-focus);
           outline: none;
           transform: translateY(-1px);
+        }
+        .item-card:active {
+          transform: translateY(0) scale(0.997);
         }
         .quality-strip {
           bottom: 0;
@@ -1796,6 +1891,59 @@ function ItemsArchiveContent() {
           padding: 4rem 1rem;
           text-align: center;
         }
+        .advanced-filter-panel summary:focus-visible,
+        .icon-toggle:focus-visible,
+        .view-toggle button:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.16);
+        }
+        @keyframes itemSurfaceIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes itemMenuReveal {
+          from {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.99);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .db-summary,
+          .item-help,
+          .db-controls,
+          .result-meta,
+          .desktop-table-shell,
+          .item-grid,
+          :global(.items-db-page .item-select-menu),
+          .advanced-filter-panel[open] .advanced-filter-grid {
+            animation: none !important;
+          }
+          .icon-toggle,
+          .view-toggle button,
+          :global(.items-db-page .item-select-trigger),
+          :global(.items-db-page .item-select-option),
+          .item-card {
+            transition: none !important;
+          }
+          .icon-toggle:active,
+          .view-toggle button:active,
+          :global(.items-db-page .item-select-trigger:active),
+          :global(.items-db-page .item-select-option:active),
+          .item-card:hover,
+          .item-card:focus-visible {
+            transform: none !important;
+          }
+        }
         @media (max-width: 1200px) {
           .db-summary {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1805,10 +1953,16 @@ function ItemsArchiveContent() {
             grid-template-areas: none;
           }
           .db-controls > * {
-            grid-area: auto !important;
+            grid-area: auto;
           }
           .db-controls > .search-control {
-            grid-column: span 2 !important;
+            grid-column: span 2;
+          }
+          .advanced-filter-panel {
+            grid-column: 1 / -1 !important;
+          }
+          .advanced-filter-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
           }
           .icon-toggle,
           .view-toggle {
@@ -1837,10 +1991,65 @@ function ItemsArchiveContent() {
             grid-template-areas: none;
           }
           .db-controls > * {
-            grid-area: auto !important;
+            grid-area: auto;
           }
           .search-control {
-            grid-column: 1 / -1;
+            grid-column: 1 / -1 !important;
+          }
+          .advanced-filter-panel {
+            background: rgba(255,255,255,0.018);
+            border: 1px solid var(--border-subtle);
+            border-radius: 7px;
+            grid-column: 1 / -1 !important;
+          }
+          .advanced-filter-panel summary {
+            align-items: center;
+            color: var(--text-main);
+            cursor: pointer;
+            display: grid;
+            font-size: 0.82rem;
+            font-weight: 900;
+            gap: 0.55rem;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            min-height: 42px;
+            padding: 0.55rem 0.65rem;
+          }
+          .advanced-filter-panel summary::-webkit-details-marker {
+            display: none;
+          }
+          .advanced-filter-panel summary > span {
+            align-items: center;
+            display: inline-flex;
+            gap: 0.45rem;
+            min-width: 0;
+          }
+          .advanced-filter-panel summary small {
+            color: var(--text-muted);
+            font: inherit;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+          }
+          .advanced-filter-panel summary svg {
+            color: var(--text-accent);
+          }
+          .advanced-filter-panel summary > svg {
+            color: var(--text-muted);
+            transition: transform 0.18s ease;
+          }
+          .advanced-filter-panel[open] summary > svg {
+            transform: rotate(180deg);
+          }
+          .advanced-filter-panel:not([open]) .advanced-filter-grid {
+            display: none;
+          }
+          .advanced-filter-panel[open] .advanced-filter-grid {
+            animation: itemMenuReveal 0.16s ease-out both;
+            border-top: 1px solid var(--border-subtle);
+            display: grid;
+            gap: 0.55rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding: 0.62rem;
           }
           .control-group,
           .icon-toggle,
@@ -1894,6 +2103,9 @@ function ItemsArchiveContent() {
             gap: 0.55rem;
             padding: 0.62rem;
           }
+          .advanced-filter-panel[open] .advanced-filter-grid {
+            grid-template-columns: 1fr;
+          }
           .item-help summary {
             padding: 0.55rem 0.65rem;
           }
@@ -1934,6 +2146,7 @@ function ItemFilterPicker<T extends string>({
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
   const [placement, setPlacement] = useState<'down' | 'up'>('down');
+  const [menuMaxHeight, setMenuMaxHeight] = useState(320);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -1965,9 +2178,14 @@ function ItemFilterPicker<T extends string>({
     const updatePlacement = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      setPlacement(spaceBelow < 340 && spaceAbove > spaceBelow ? 'up' : 'down');
+      const viewportPadding = 12;
+      const preferredHeight = 320;
+      const isCompactPicker = window.matchMedia('(max-width: 820px)').matches;
+      const spaceBelow = Math.max(48, window.innerHeight - rect.bottom - viewportPadding);
+      const spaceAbove = Math.max(48, rect.top - viewportPadding);
+      const nextPlacement = !isCompactPicker && spaceBelow < preferredHeight && spaceAbove > spaceBelow ? 'up' : 'down';
+      setPlacement(nextPlacement);
+      setMenuMaxHeight(Math.min(preferredHeight, nextPlacement === 'up' ? spaceAbove : spaceBelow));
     };
     updatePlacement();
 
@@ -2012,6 +2230,14 @@ function ItemFilterPicker<T extends string>({
     }
   };
 
+  const handleTriggerClick = () => {
+    const nextOpen = !open;
+    if (nextOpen && window.matchMedia('(max-width: 820px)').matches) {
+      triggerRef.current?.scrollIntoView({ block: 'center', inline: 'nearest' });
+    }
+    setOpen(nextOpen);
+  };
+
   const handleListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
@@ -2053,14 +2279,20 @@ function ItemFilterPicker<T extends string>({
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="listbox"
-        onClick={() => setOpen((current) => !current)}
+        onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
       >
         <span>{selected?.label || 'Select'}</span>
         <ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (
-        <div className="item-select-menu" role="listbox" aria-label={ariaLabel} onKeyDown={handleListKeyDown}>
+        <div
+          className="item-select-menu"
+          role="listbox"
+          aria-label={ariaLabel}
+          onKeyDown={handleListKeyDown}
+          style={{ '--item-select-max-height': `${menuMaxHeight}px` } as React.CSSProperties}
+        >
           {options.map((option, index) => {
             const active = option.value === value;
             return (

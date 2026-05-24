@@ -1,20 +1,23 @@
 "use client";
 
-import { Suspense, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { Suspense, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowDownUp,
+  Check,
   ChevronDown,
   Cloud,
   ExternalLink,
   Heart,
   MapPin,
   Package,
+  RotateCcw,
   Search,
   Shield,
   Skull,
+  SlidersHorizontal,
   Sparkles,
   Swords,
   X,
@@ -158,6 +161,7 @@ function CustomSelect<T extends string>({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [placement, setPlacement] = useState<"down" | "up">("down");
+  const [menuMaxHeight, setMenuMaxHeight] = useState(260);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -173,6 +177,9 @@ function CustomSelect<T extends string>({
   };
 
   const openMenu = (focusIndex = selectedIndex) => {
+    if (window.matchMedia("(max-width: 820px)").matches) {
+      triggerRef.current?.scrollIntoView({ block: "center", inline: "nearest" });
+    }
     updatePlacement();
     setActiveIndex(focusIndex);
     setOpen(true);
@@ -182,9 +189,14 @@ function CustomSelect<T extends string>({
   const updatePlacement = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    setPlacement(spaceBelow < 280 && spaceAbove > spaceBelow ? "up" : "down");
+    const viewportPadding = 12;
+    const preferredHeight = 300;
+    const isCompactViewport = window.matchMedia("(max-width: 820px)").matches;
+    const spaceBelow = Math.max(72, window.innerHeight - rect.bottom - viewportPadding);
+    const spaceAbove = Math.max(72, rect.top - viewportPadding);
+    const nextPlacement = !isCompactViewport && spaceBelow < preferredHeight && spaceAbove > spaceBelow ? "up" : "down";
+    setPlacement(nextPlacement);
+    setMenuMaxHeight(Math.min(preferredHeight, nextPlacement === "up" ? spaceAbove : spaceBelow));
   };
 
   useEffect(() => {
@@ -287,7 +299,15 @@ function CustomSelect<T extends string>({
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div id={`${selectId}-menu`} className="select-menu" role="listbox" aria-label={label} ref={menuRef} onKeyDown={handleMenuKeyDown}>
+        <div
+          id={`${selectId}-menu`}
+          className="select-menu"
+          role="listbox"
+          aria-label={label}
+          ref={menuRef}
+          onKeyDown={handleMenuKeyDown}
+          style={{ "--enemy-select-max-height": `${menuMaxHeight}px` } as CSSProperties}
+        >
           {options.map((option, index) => (
             <button
               key={option.value}
@@ -297,13 +317,15 @@ function CustomSelect<T extends string>({
               tabIndex={index === activeIndex ? 0 : -1}
               className={`${option.value === value ? "selected" : ""} ${index === activeIndex ? "active" : ""}`.trim()}
               onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => setActiveIndex(index)}
               onClick={() => {
                 onChange(option.value);
                 setOpen(false);
                 triggerRef.current?.focus({ preventScroll: true });
               }}
             >
-              {option.label}
+              <span>{option.label}</span>
+              {option.value === value && <Check size={14} aria-hidden="true" />}
             </button>
           ))}
         </div>
@@ -342,7 +364,7 @@ function EnemyDetailModal({
         ref={dialogRef}
         tabIndex={-1}
       >
-        <header className="enemy-modal-header">
+        <div className="enemy-modal-header">
           <div className="modal-title-row">
             {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={38} />}
             <div>
@@ -354,7 +376,7 @@ function EnemyDetailModal({
           <button type="button" className="modal-close" aria-label="Close enemy details" onClick={onClose}>
             <X size={20} />
           </button>
-        </header>
+        </div>
 
         <div className="enemy-modal-body">
           <section className="modal-stat-grid" aria-label={`${enemy.name} combat stats`}>
@@ -390,6 +412,7 @@ function EnemyDetailModal({
                   key={`${enemy.name}-${drop.name}`}
                   onClick={() => onOpenItem(drop.name)}
                   className="loot-button"
+                  aria-label={`Open item details for ${drop.name}, ${drop.chance}% drop rate${Number(drop.quantity || 1) > 1 ? `, quantity ${drop.quantity}` : ""}`}
                 >
                   {drop.image_url ? <img src={drop.image_url} alt="" loading="lazy" decoding="async" /> : <Package size={20} />}
                   <span>
@@ -425,10 +448,19 @@ function EnemiesContent() {
   const [sortDesc, setSortDesc] = useState(false);
   const [selectedEnemy, setSelectedEnemy] = useState<EnrichedEnemy | null>(null);
   const [weatherNow, setWeatherNow] = useState(() => Date.now());
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => setWeatherNow(Date.now()), 60000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 720px)");
+    const syncViewport = () => setIsCompactViewport(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
   }, []);
 
   const enemies = useMemo(() => buildEnrichedEnemies({ staticData, worldLocations, marketData, now: weatherNow }), [marketData, staticData, weatherNow, worldLocations]);
@@ -474,6 +506,22 @@ function EnemiesContent() {
     favored: enemies.filter((enemy) => isFavorableWeather(enemy.currentWeatherMatch)).length,
     penalized: enemies.filter((enemy) => isPenalizedWeather(enemy.currentWeatherMatch)).length,
   }), [enemies]);
+  const activeFilterCount = [
+    query.trim().length > 0,
+    selectedLocation !== "all",
+    matchFilter !== "all",
+    levelFilter !== "all",
+  ].filter(Boolean).length;
+  const hasCustomSort = sortKey !== "level" || sortDesc;
+  const hasActiveControls = activeFilterCount > 0 || hasCustomSort;
+  const resetControls = () => {
+    setQuery("");
+    setSelectedLocation("all");
+    setMatchFilter("all");
+    setLevelFilter("all");
+    setSortKey("level");
+    setSortDesc(false);
+  };
 
   return (
     <main className="enemy-db-page">
@@ -503,6 +551,18 @@ function EnemiesContent() {
         </div>
 
         <section className="enemy-controls" aria-label="Enemy filters">
+          <div className="controls-heading">
+            <span><SlidersHorizontal size={15} aria-hidden="true" /> Filters</span>
+            <small>
+              {activeFilterCount > 0
+                ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
+                : `${filteredEnemies.length.toLocaleString()} visible`}
+            </small>
+            <button type="button" onClick={resetControls} disabled={!hasActiveControls} aria-label="Reset enemy filters and sorting">
+              <RotateCcw size={14} aria-hidden="true" />
+              Reset
+            </button>
+          </div>
           <label className="search-control">
             <span>Search</span>
             <div>
@@ -517,19 +577,29 @@ function EnemiesContent() {
               />
             </div>
           </label>
-          <CustomSelect label="Location" value={selectedLocation} options={locationOptions} onChange={setSelectedLocation} />
-          <CustomSelect label="Weather" value={matchFilter} options={MATCH_OPTIONS} onChange={setMatchFilter} />
-          <CustomSelect label="Level" value={levelFilter} options={LEVEL_OPTIONS} onChange={setLevelFilter} />
-          <CustomSelect label="Sort" value={sortKey} options={SORT_OPTIONS} onChange={setSortKey} />
-          <button
-            type="button"
-            className="sort-direction"
-            aria-label={`Change sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
-            onClick={() => setSortDesc((prev) => !prev)}
-          >
-            <ArrowDownUp size={16} />
-            {sortDesc ? "Desc" : "Asc"}
-          </button>
+          <details className="enemy-filter-panel" open={!isCompactViewport ? true : undefined}>
+            <summary tabIndex={0}>
+              <span><SlidersHorizontal size={15} aria-hidden="true" /> Tactical filters</span>
+              <small>{activeFilterCount > 0 || hasCustomSort ? "Customized" : "Default"}</small>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div className="enemy-filter-grid">
+              <CustomSelect label="Location" value={selectedLocation} options={locationOptions} onChange={setSelectedLocation} />
+              <CustomSelect label="Weather" value={matchFilter} options={MATCH_OPTIONS} onChange={setMatchFilter} />
+              <CustomSelect label="Level" value={levelFilter} options={LEVEL_OPTIONS} onChange={setLevelFilter} />
+              <CustomSelect label="Sort" value={sortKey} options={SORT_OPTIONS} onChange={setSortKey} />
+              <button
+                type="button"
+                className="sort-direction"
+                aria-pressed={sortDesc}
+                aria-label={`Change sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
+                onClick={() => setSortDesc((prev) => !prev)}
+              >
+                <ArrowDownUp size={16} />
+                {sortDesc ? "Desc" : "Asc"}
+              </button>
+            </div>
+          </details>
         </section>
 
         {loading && enemies.length === 0 ? (
@@ -540,7 +610,7 @@ function EnemiesContent() {
               <button
                 key={`${enemy.locationKey}-${enemy.name}`}
                 type="button"
-                className="enemy-card"
+                className={`enemy-card ${matchTone(enemy.currentWeatherMatch)}`}
                 onClick={() => setSelectedEnemy(enemy)}
                 aria-label={getEnemyCardLabel(enemy)}
               >
@@ -556,6 +626,10 @@ function EnemiesContent() {
                   <span className={`match-chip ${matchTone(enemy.currentWeatherMatch)}`}>
                     {enemy.currentWeather?.name || "Unknown"}: {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
                   </span>
+                  <span className="enemy-card-window">
+                    <Cloud size={13} aria-hidden="true" />
+                    {formatWindow(enemy)}
+                  </span>
                 </span>
                 <span className="enemy-card-stats">
                   <span>{enemy.lootCount} drops</span>
@@ -566,6 +640,12 @@ function EnemiesContent() {
             {filteredEnemies.length === 0 && (
               <div className="enemy-empty">
                 No enemies match the current filters.
+                {hasActiveControls && (
+                  <button type="button" onClick={resetControls}>
+                    <RotateCcw size={14} aria-hidden="true" />
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </section>
@@ -588,6 +668,7 @@ function EnemiesContent() {
           min-height: calc(100vh - 40px);
           padding: clamp(0.85rem, 1.6vw, 1.5rem);
           overflow-x: hidden;
+          isolation: isolate;
           background:
             radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.12), transparent 28rem),
             radial-gradient(circle at 10% 12%, rgba(168, 85, 247, 0.1), transparent 24rem),
@@ -597,7 +678,7 @@ function EnemiesContent() {
         .enemy-db-page * {
           box-sizing: border-box;
         }
-        .enemy-db-page :where(button, a, input):focus-visible {
+        .enemy-db-page :where(button, a, input, summary):focus-visible {
           outline: 2px solid var(--border-focus);
           outline-offset: 2px;
         }
@@ -610,6 +691,7 @@ function EnemiesContent() {
           margin: 0 auto 0.8rem;
           padding-bottom: 0.8rem;
           border-bottom: 1px solid rgba(255,255,255,0.08);
+          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
         }
         .enemy-hero h1 {
           display: flex;
@@ -636,7 +718,14 @@ function EnemiesContent() {
           border: 1px solid rgba(45, 212, 191, 0.22);
           border-radius: 999px;
           background: rgba(45, 212, 191, 0.08);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px rgba(0,0,0,0.24);
           padding: 0.55rem 0.85rem;
+          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+        }
+        .hero-meta:hover {
+          border-color: rgba(45, 212, 191, 0.38);
+          background: rgba(45, 212, 191, 0.12);
+          transform: translateY(-1px);
         }
         .hero-meta span {
           color: var(--text-accent);
@@ -659,7 +748,83 @@ function EnemiesContent() {
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(10, 10, 13, 0.76);
+          box-shadow: 0 18px 48px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04);
+          backdrop-filter: blur(18px) saturate(1.08);
+          -webkit-backdrop-filter: blur(18px) saturate(1.08);
           padding: 0.75rem;
+          position: relative;
+          z-index: 20;
+          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
+          animation-delay: 0.04s;
+        }
+        .controls-heading {
+          grid-column: 1 / -1;
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          min-width: 0;
+          padding-bottom: 0.25rem;
+        }
+        .controls-heading > span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          color: #fff;
+          font-size: 0.78rem;
+          font-weight: 900;
+          letter-spacing: 0;
+          text-transform: uppercase;
+        }
+        .controls-heading > span :global(svg) {
+          color: var(--text-accent);
+        }
+        .controls-heading small {
+          min-width: 0;
+          color: var(--text-muted);
+          font-size: 0.76rem;
+          font-weight: 850;
+        }
+        .controls-heading button {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.38rem;
+          min-height: 32px;
+          margin-left: auto;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 7px;
+          background: rgba(255,255,255,0.035);
+          color: #fff;
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 900;
+          padding: 0 0.6rem;
+          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, opacity 0.16s ease;
+        }
+        .controls-heading button:disabled {
+          cursor: default;
+          opacity: 0.45;
+        }
+        .controls-heading button:not(:disabled):hover {
+          border-color: rgba(56,189,248,0.35);
+          background: rgba(56,189,248,0.1);
+        }
+        .controls-heading button:not(:disabled):active {
+          transform: translateY(1px);
+        }
+        .enemy-filter-panel {
+          grid-column: span 5;
+          min-width: 0;
+        }
+        .enemy-filter-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(126px, 1fr)) minmax(92px, 0.45fr);
+          gap: 0.65rem;
+          align-items: end;
+          min-width: 0;
+        }
+        .enemy-filter-panel summary {
+          display: none;
         }
         .search-control,
         :global(.custom-select) {
@@ -669,7 +834,7 @@ function EnemiesContent() {
           min-width: 0;
         }
         :global(.custom-select.open) {
-          z-index: 60;
+          z-index: 120;
         }
         .search-control > span,
         :global(.custom-select label) {
@@ -686,6 +851,7 @@ function EnemiesContent() {
           border-radius: 8px;
           background: rgba(0,0,0,0.42);
           overflow: hidden;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
         }
         .search-icon {
           display: grid;
@@ -709,6 +875,7 @@ function EnemiesContent() {
           color: #fff;
           font: inherit;
           font-weight: 850;
+          transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
         }
         .search-control input {
           min-width: 0;
@@ -735,34 +902,67 @@ function EnemiesContent() {
           cursor: pointer;
           padding: 0 0.65rem;
         }
+        :global(.select-trigger:hover),
+        .sort-direction:hover {
+          border-color: rgba(255,255,255,0.14);
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018)), rgba(0,0,0,0.42);
+        }
+        :global(.select-trigger:active),
+        .sort-direction:active {
+          transform: translateY(1px);
+        }
+        :global(.custom-select.open .select-trigger),
+        :global(.select-trigger:focus-visible),
+        .sort-direction:focus-visible {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+          outline: none;
+        }
         :global(.select-trigger span) {
           min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
+        :global(.select-trigger svg) {
+          color: var(--text-muted);
+          flex: 0 0 auto;
+          transition: transform 0.16s ease, color 0.16s ease;
+        }
+        :global(.custom-select.open .select-trigger svg) {
+          color: var(--text-accent);
+          transform: rotate(180deg);
+        }
         :global(.select-menu) {
           position: absolute;
           top: calc(100% + 0.35rem);
           left: 0;
           right: 0;
-          z-index: 40;
+          z-index: 130;
           display: grid;
-          max-height: 260px;
+          max-height: min(var(--enemy-select-max-height, 300px), 58vh);
           overflow: auto;
-          border: 1px solid rgba(255,255,255,0.12);
+          overscroll-behavior: contain;
+          border: 1px solid var(--border-focus);
           border-radius: 8px;
-          background: #080a0f;
-          box-shadow: 0 18px 46px rgba(0,0,0,0.5);
+          background: color-mix(in srgb, var(--bg-base), black 18%);
+          box-shadow: 0 18px 46px rgba(0,0,0,0.5), 0 0 0 1px rgba(56,189,248,0.08);
           padding: 0.3rem;
+          transform-origin: top center;
+          animation: enemyMenuReveal 0.16s ease-out both;
         }
         :global(.custom-select.open-up .select-menu) {
           bottom: calc(100% + 0.35rem);
           top: auto;
+          transform-origin: bottom center;
         }
         :global(.select-menu button) {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.65rem;
           min-height: 40px;
-          border: 0;
+          border: 1px solid transparent;
           border-radius: 6px;
           background: transparent;
           color: var(--text-muted);
@@ -771,12 +971,27 @@ function EnemiesContent() {
           font-weight: 850;
           text-align: left;
           padding: 0 0.6rem;
+          transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+        }
+        :global(.select-menu button span) {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        :global(.select-menu button svg) {
+          color: var(--text-accent);
+          flex: 0 0 auto;
         }
         :global(.select-menu button:hover),
         :global(.select-menu button.selected),
         :global(.select-menu button.active) {
           background: color-mix(in srgb, var(--text-accent), transparent 84%);
+          border-color: rgba(56,189,248,0.24);
           color: #fff;
+        }
+        :global(.select-menu button:active) {
+          transform: scale(0.99);
         }
         .enemy-summary {
           display: grid;
@@ -784,6 +999,10 @@ function EnemiesContent() {
           gap: 0.55rem;
           max-width: 1480px;
           margin: 0 auto 0.75rem;
+          position: relative;
+          z-index: 1;
+          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
+          animation-delay: 0.02s;
         }
         .enemy-summary div {
           display: grid;
@@ -794,6 +1013,13 @@ function EnemiesContent() {
           border-radius: 7px;
           background: rgba(255,255,255,0.035);
           padding: 0.62rem 0.7rem;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+        }
+        .enemy-summary div:hover {
+          border-color: rgba(56,189,248,0.18);
+          background: rgba(255,255,255,0.048);
+          transform: translateY(-1px);
         }
         .enemy-summary span {
           color: var(--text-muted);
@@ -809,8 +1035,15 @@ function EnemiesContent() {
           gap: 0.75rem;
           max-width: 1480px;
           margin: 0 auto;
+          position: relative;
+          z-index: 0;
+          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
+          animation-delay: 0.08s;
         }
         .enemy-card {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
           display: grid;
           grid-template-columns: 52px minmax(0, 1fr) auto;
           gap: 0.65rem;
@@ -824,11 +1057,59 @@ function EnemiesContent() {
           cursor: pointer;
           padding: 0.66rem;
           text-align: left;
+          box-shadow: 0 16px 38px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
+          transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+        .enemy-card::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 3px;
+          background: var(--text-muted);
+          opacity: 0.48;
+          z-index: -1;
+        }
+        .enemy-card.good::before {
+          background: #5eead4;
+          box-shadow: 0 0 26px rgba(45, 212, 191, 0.38);
+        }
+        .enemy-card.bad::before {
+          background: #f87171;
+          box-shadow: 0 0 26px rgba(248, 113, 113, 0.28);
+        }
+        .enemy-card.neutral::before {
+          background: #d1d5db;
+        }
+        .enemy-card.muted::before {
+          opacity: 0.28;
+        }
+        .enemy-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: -2;
+          background: radial-gradient(circle at 18% 0%, rgba(56,189,248,0.08), transparent 16rem);
+          opacity: 0;
+          transition: opacity 0.18s ease;
         }
         .enemy-card:hover,
         .enemy-card:focus-visible {
           border-color: var(--border-focus);
           background: color-mix(in srgb, var(--text-accent), transparent 92%);
+          box-shadow: 0 20px 48px rgba(0,0,0,0.24), 0 0 0 1px rgba(56,189,248,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .enemy-card:hover::after,
+        .enemy-card:focus-visible::after {
+          opacity: 1;
+        }
+        .enemy-card:active {
+          transform: translateY(1px) scale(0.995);
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .enemy-card:hover,
+          .enemy-card:focus-visible {
+            transform: translateY(-2px);
+          }
         }
         .enemy-card-art {
           display: grid;
@@ -876,6 +1157,9 @@ function EnemiesContent() {
         .enemy-card-main small {
           color: var(--text-muted);
           font-weight: 800;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .match-chip {
           justify-self: start;
@@ -915,7 +1199,26 @@ function EnemiesContent() {
           color: var(--text-success);
           font-family: var(--font-mono);
         }
+        .enemy-card-window {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.34rem;
+          min-width: 0;
+          color: var(--text-muted);
+          font-size: 0.72rem;
+          font-weight: 850;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .enemy-card-window :global(svg) {
+          color: var(--text-accent);
+          flex: 0 0 auto;
+        }
         .enemy-empty {
+          display: grid;
+          justify-items: center;
+          gap: 0.85rem;
           grid-column: 1 / -1;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 10px;
@@ -924,6 +1227,29 @@ function EnemiesContent() {
           font-weight: 850;
           padding: 1.5rem;
           text-align: center;
+        }
+        .enemy-empty button {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          min-height: 38px;
+          border: 1px solid rgba(56,189,248,0.26);
+          border-radius: 7px;
+          background: rgba(56,189,248,0.1);
+          color: #fff;
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.82rem;
+          font-weight: 900;
+          padding: 0 0.75rem;
+          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+        }
+        .enemy-empty button:hover {
+          border-color: rgba(56,189,248,0.42);
+          background: rgba(56,189,248,0.16);
+        }
+        .enemy-empty button:active {
+          transform: translateY(1px);
         }
         .sr-only {
           position: absolute;
@@ -946,6 +1272,7 @@ function EnemiesContent() {
           backdrop-filter: blur(16px) saturate(0.72);
           -webkit-backdrop-filter: blur(16px) saturate(0.72);
           padding: 1rem;
+          animation: enemyBackdropIn 0.18s ease-out both;
         }
         :global(.enemy-modal) {
           width: min(100%, 940px);
@@ -953,8 +1280,11 @@ function EnemiesContent() {
           overflow: auto;
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 12px;
-          background: #10131a;
-          box-shadow: 0 28px 90px rgba(0,0,0,0.64);
+          background:
+            radial-gradient(circle at 18% 0%, rgba(56,189,248,0.08), transparent 24rem),
+            #10131a;
+          box-shadow: 0 28px 90px rgba(0,0,0,0.64), inset 0 1px 0 rgba(255,255,255,0.05);
+          animation: enemyModalIn 0.2s cubic-bezier(0.2, 0.72, 0.22, 1) both;
         }
         :global(.enemy-modal-header) {
           display: flex;
@@ -1000,6 +1330,14 @@ function EnemiesContent() {
           background: rgba(255,255,255,0.04);
           color: #fff;
           cursor: pointer;
+          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+        }
+        :global(.modal-close:hover) {
+          border-color: rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.08);
+        }
+        :global(.modal-close:active) {
+          transform: translateY(1px);
         }
         :global(.enemy-modal-body) {
           display: grid;
@@ -1020,6 +1358,7 @@ function EnemiesContent() {
           border-radius: 8px;
           background: rgba(255,255,255,0.035);
           padding: 0.75rem;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
         }
         :global(.modal-stat-grid strong) {
           grid-column: 1 / -1;
@@ -1035,6 +1374,7 @@ function EnemiesContent() {
           border-radius: 10px;
           background: rgba(255,255,255,0.025);
           padding: 0.85rem;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
         }
         :global(.detail-card header) {
           display: flex;
@@ -1105,10 +1445,15 @@ function EnemiesContent() {
           cursor: pointer;
           padding: 0.5rem;
           text-align: left;
+          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
         }
         :global(.loot-button:hover),
         :global(.loot-button:focus-visible) {
           border-color: var(--border-focus);
+          background: rgba(56,189,248,0.08);
+        }
+        :global(.loot-button:active) {
+          transform: translateY(1px);
         }
         :global(.loot-button img) {
           width: 34px;
@@ -1148,27 +1493,124 @@ function EnemiesContent() {
           color: #fff;
           font-weight: 850;
           text-decoration: none;
+          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
         }
         :global(.detail-links a:hover),
         :global(.detail-links a:focus-visible) {
           border-color: var(--border-focus);
+          background: rgba(56,189,248,0.08);
+        }
+        :global(.detail-links a:active) {
+          transform: translateY(1px);
         }
         .empty-inline {
           color: var(--text-muted);
           font-weight: 850;
         }
+        @keyframes enemySurfaceIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes enemyMenuReveal {
+          from {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.99);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes enemyBackdropIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes enemyModalIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.985);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .enemy-hero,
+          .enemy-summary,
+          .enemy-controls,
+          .enemy-grid,
+          :global(.select-menu),
+          :global(.enemy-modal-overlay),
+          :global(.enemy-modal) {
+            animation: none !important;
+          }
+          .hero-meta,
+          .controls-heading button,
+          .search-control div,
+          :global(.select-trigger),
+          .sort-direction,
+          :global(.select-trigger svg),
+          :global(.select-menu button),
+          .enemy-summary div,
+          .enemy-card,
+          .enemy-card::after,
+          .enemy-empty button,
+          :global(.modal-close),
+          :global(.loot-button),
+          :global(.detail-links a) {
+            transition: none !important;
+          }
+          .hero-meta:hover,
+          .controls-heading button:active,
+          :global(.select-trigger:active),
+          .sort-direction:active,
+          :global(.select-menu button:active),
+          .enemy-summary div:hover,
+          .enemy-card:hover,
+          .enemy-card:focus-visible,
+          .enemy-card:active,
+          .enemy-empty button:active,
+          :global(.modal-close:active),
+          :global(.loot-button:active),
+          :global(.detail-links a:active) {
+            transform: none !important;
+          }
+        }
         @media (max-width: 1360px) {
           .enemy-controls {
             grid-template-columns: minmax(240px, 1.35fr) repeat(4, minmax(120px, 0.8fr)) minmax(88px, 0.45fr);
+          }
+          .enemy-filter-grid {
+            grid-template-columns: repeat(4, minmax(120px, 1fr)) minmax(88px, 0.45fr);
           }
         }
         @media (max-width: 900px) {
           .enemy-controls {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
+          .enemy-filter-panel {
+            grid-column: 1 / -1;
+          }
+          .enemy-filter-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
           .search-control,
           .sort-direction {
             grid-column: span 3;
+          }
+          .controls-heading {
+            grid-column: 1 / -1;
           }
           .enemy-summary {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1198,14 +1640,78 @@ function EnemiesContent() {
             align-items: flex-start;
             flex-direction: column;
           }
+          .enemy-hero h1 {
+            font-size: clamp(1.55rem, 8vw, 2rem);
+          }
           .hero-meta {
             justify-items: start;
+          }
+          .controls-heading {
+            align-items: flex-start;
+            flex-wrap: wrap;
+          }
+          .controls-heading small {
+            flex: 1 1 auto;
           }
           .enemy-controls {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .search-control {
             grid-column: 1 / -1;
+          }
+          .enemy-filter-panel {
+            display: block;
+            grid-column: 1 / -1;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.025);
+            overflow: visible;
+          }
+          .enemy-filter-panel summary {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 0.55rem;
+            min-height: 42px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 900;
+            list-style: none;
+            padding: 0.55rem 0.65rem;
+          }
+          .enemy-filter-panel summary::-webkit-details-marker {
+            display: none;
+          }
+          .enemy-filter-panel summary span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-width: 0;
+          }
+          .enemy-filter-panel summary span :global(svg) {
+            color: var(--text-accent);
+            flex: 0 0 auto;
+          }
+          .enemy-filter-panel summary small {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 850;
+          }
+          .enemy-filter-panel summary > :global(svg) {
+            color: var(--text-muted);
+            transition: transform 0.16s ease, color 0.16s ease;
+          }
+          .enemy-filter-panel[open] summary > :global(svg) {
+            color: var(--text-accent);
+            transform: rotate(180deg);
+          }
+          .enemy-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 0.65rem;
           }
           .sort-direction {
             grid-column: auto;
@@ -1248,6 +1754,44 @@ function EnemiesContent() {
           }
           :global(.loot-list) {
             grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 520px) {
+          .enemy-controls {
+            grid-template-columns: 1fr;
+          }
+          .sort-direction {
+            grid-column: 1 / -1;
+          }
+          .enemy-filter-grid {
+            grid-template-columns: 1fr;
+          }
+          .controls-heading {
+            align-items: center;
+            flex-wrap: nowrap;
+          }
+          .controls-heading small {
+            display: none;
+          }
+          .controls-heading button {
+            width: auto;
+            justify-content: center;
+            margin-left: auto;
+          }
+          .enemy-summary {
+            gap: 0.45rem;
+          }
+          .enemy-card {
+            gap: 0.55rem;
+            padding: 0.62rem;
+          }
+          .enemy-title-row {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.18rem;
+          }
+          :global(.select-menu) {
+            max-height: min(var(--enemy-select-max-height, 300px), 44vh);
           }
         }
       `}</style>

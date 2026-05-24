@@ -1,9 +1,21 @@
 .page {
+  --guild-panel: rgba(255, 255, 255, 0.045);
+  --guild-panel-strong: rgba(255, 255, 255, 0.075);
+  --guild-blue: rgba(56, 189, 248, 0.72);
+  --guild-violet: rgba(139, 92, 246, 0.55);
   display: flex;
   flex-direction: column;
   gap: 1rem;
   width: 100%;
   padding: 0.25rem clamp(1rem, 2.4vw, 2rem) 2rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page button,
+.page a,
+.page summary {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .hero {
@@ -12,6 +24,7 @@
   gap: 1rem;
   align-items: end;
   padding-top: 1rem;
+  animation: guildRise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .eyebrow {
@@ -45,7 +58,8 @@
 .tableWrap {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.035);
+  background: linear-gradient(180deg, var(--guild-panel-strong), rgba(255, 255, 255, 0.026));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
 }
 
 .freshness {
@@ -54,6 +68,16 @@
   gap: 0.22rem;
   min-width: 210px;
   padding: 0.85rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.freshness::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.18), transparent 38%);
+  pointer-events: none;
 }
 
 .freshness strong {
@@ -69,6 +93,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
+  animation: guildRise 420ms 60ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .stat {
@@ -77,6 +102,13 @@
   align-items: center;
   min-width: 0;
   padding: 0.9rem;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.stat:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(255, 255, 255, 0.055);
+  transform: translateY(-1px);
 }
 
 .statIcon {
@@ -102,11 +134,56 @@
 }
 
 .toolbar {
-  display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto auto;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
-  align-items: center;
   padding: 0.75rem;
+  position: relative;
+  z-index: 20;
+  animation: guildRise 420ms 110ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.toolbarPrimary {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.resultBar {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.1rem 0.55rem;
+  align-content: center;
+  min-width: 190px;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.resultBar strong {
+  color: var(--text-primary);
+  font-size: 0.86rem;
+}
+
+.resultBar small {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.filterHeader {
+  display: none;
+}
+
+.filterControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px auto;
+  gap: 0.75rem;
+  align-items: stretch;
 }
 
 .utilityNotes {
@@ -114,6 +191,7 @@
   grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
   gap: 0.75rem;
   align-items: stretch;
+  animation: guildRise 420ms 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .utilityNotes p,
@@ -155,7 +233,14 @@
   padding: 0 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.24);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.search:focus-within {
+  border-color: var(--guild-blue);
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
 .search input {
@@ -173,8 +258,32 @@
   color: var(--text-muted);
 }
 
+.searchClear {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 7px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.searchClear:hover,
+.searchClear:focus-visible {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.searchClear:active {
+  transform: scale(0.96);
+}
+
 .tierTabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.35rem;
   padding: 0.25rem;
   border: 1px solid var(--border-subtle);
@@ -184,6 +293,7 @@
 
 .tierTabs button,
 .sortButton,
+.resetButton,
 .inspectButton,
 .showMoreBar button,
 .closeButton {
@@ -192,7 +302,10 @@
 }
 
 .tierTabs button {
-  min-width: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
   min-height: 2.75rem;
   padding: 0 0.72rem;
   border: 0;
@@ -201,16 +314,40 @@
   background: transparent;
   font-size: 0.78rem;
   font-weight: 800;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
 .tierTabs button[data-active="true"] {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.18), rgba(56, 189, 248, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.22);
+}
+
+.tierTabs button:not([data-active="true"]):hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.tierTabs button:active {
+  transform: scale(0.985);
+}
+
+.tierLabel,
+.tierCount {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tierCount {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
 }
 
 .sortPicker {
   position: relative;
-  z-index: 5;
+  z-index: 30;
 }
 
 .sortButton {
@@ -225,6 +362,16 @@
   border-radius: 8px;
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.24);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease, transform 160ms ease;
+}
+
+.sortButton:hover {
+  border-color: rgba(56, 189, 248, 0.32);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.sortButton:active {
+  transform: scale(0.985);
 }
 
 .sortMenu {
@@ -239,6 +386,7 @@
   border-radius: 8px;
   background: rgb(16, 18, 24);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  animation: guildMenuIn 160ms ease both;
 }
 
 .sortMenu button {
@@ -261,8 +409,39 @@
   background: rgba(255, 255, 255, 0.07);
 }
 
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 2.75rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.055);
+  font-weight: 800;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
+}
+
+.resetButton:not(:disabled):hover {
+  border-color: rgba(56, 189, 248, 0.34);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.resetButton:disabled {
+  color: rgba(148, 163, 184, 0.55);
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.resetButton:not(:disabled):active {
+  transform: scale(0.985);
+}
+
 .tableWrap {
   overflow: hidden;
+  animation: guildRise 420ms 190ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .tableHint {
@@ -277,6 +456,12 @@
   overflow: auto;
   max-height: calc(100vh - 390px);
   min-height: 430px;
+  outline: none;
+  scroll-behavior: smooth;
+}
+
+.tableScroll:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.62);
 }
 
 .mobileGuildList {
@@ -313,6 +498,10 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
+.table tbody tr td {
+  transition: background 160ms ease;
+}
+
 .guildName {
   display: grid;
   grid-template-columns: 2.45rem minmax(0, 1fr);
@@ -327,6 +516,7 @@
   border-radius: 8px;
   object-fit: cover;
   background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .nameBlock {
@@ -358,6 +548,7 @@
   justify-content: center;
   min-width: 4.25rem;
   padding: 0.25rem 0.55rem;
+  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 800;
@@ -365,16 +556,19 @@
 
 .pill[data-tier="hot"] {
   color: #86efac;
+  border-color: rgba(34, 197, 94, 0.24);
   background: rgba(34, 197, 94, 0.14);
 }
 
 .pill[data-tier="warm"] {
   color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.24);
   background: rgba(59, 130, 246, 0.14);
 }
 
 .pill[data-tier="cold"] {
   color: #d1d5db;
+  border-color: rgba(148, 163, 184, 0.2);
   background: rgba(148, 163, 184, 0.12);
 }
 
@@ -390,11 +584,16 @@
   background: rgba(255, 255, 255, 0.05);
   font-size: 0.78rem;
   font-weight: 800;
+  transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
 }
 
 .inspectButton:hover {
-  border-color: rgba(139, 92, 246, 0.55);
+  border-color: var(--guild-violet);
   background: rgba(139, 92, 246, 0.16);
+}
+
+.inspectButton:active {
+  transform: scale(0.97);
 }
 
 .guildCard {
@@ -402,8 +601,28 @@
   flex-direction: column;
   gap: 0.85rem;
   padding: 0.85rem;
-  border-bottom: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.026));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.guildCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.85), rgba(139, 92, 246, 0.7));
+  opacity: 0.8;
+}
+
+.guildCard:hover {
+  border-color: rgba(56, 189, 248, 0.26);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.032));
+  transform: translateY(-1px);
 }
 
 .guildCardHeader {
@@ -458,11 +677,16 @@
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
 }
 
 .cardInspectButton:hover {
-  border-color: rgba(139, 92, 246, 0.55);
+  border-color: var(--guild-violet);
   background: rgba(139, 92, 246, 0.16);
+}
+
+.cardInspectButton:active {
+  transform: scale(0.985);
 }
 
 .showMoreBar {
@@ -482,6 +706,16 @@
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.06);
   font-weight: 800;
+  transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
+}
+
+.showMoreBar button:hover {
+  border-color: rgba(56, 189, 248, 0.34);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.showMoreBar button:active {
+  transform: scale(0.985);
 }
 
 .modalBackdrop {
@@ -495,6 +729,7 @@
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   isolation: isolate;
+  animation: guildBackdropIn 180ms ease both;
 }
 
 .modal {
@@ -506,6 +741,7 @@
   background: rgb(12, 13, 17);
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.65);
   margin: auto;
+  animation: guildModalIn 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .modalArt {
@@ -527,6 +763,16 @@
   border-radius: 8px;
   color: var(--text-primary);
   background: rgba(0, 0, 0, 0.45);
+  transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
+}
+
+.closeButton:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.closeButton:active {
+  transform: scale(0.96);
 }
 
 .modalBody {
@@ -695,6 +941,7 @@
   background: rgba(255, 255, 255, 0.035);
   cursor: pointer;
   list-style: none;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .memberDetails summary::-webkit-details-marker {
@@ -707,6 +954,11 @@
 
 .memberDetails[open] summary svg:last-child {
   transform: rotate(180deg);
+}
+
+.memberDetails summary:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .memberRow,
@@ -722,11 +974,13 @@
   background: rgba(255, 255, 255, 0.035);
   color: inherit;
   text-decoration: none;
+  transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
 }
 
 .memberRow:hover {
   border-color: rgba(139, 92, 246, 0.45);
   background: rgba(139, 92, 246, 0.12);
+  transform: translateY(-1px);
 }
 
 .memberRow strong,
@@ -768,9 +1022,74 @@
   text-align: center;
 }
 
+.errorText {
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 8px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.tierTabs button:focus-visible,
+.sortButton:focus-visible,
+.sortMenu button:focus-visible,
+.resetButton:focus-visible,
+.inspectButton:focus-visible,
+.cardInspectButton:focus-visible,
+.showMoreBar button:focus-visible,
+.closeButton:focus-visible,
+.memberDetails summary:focus-visible,
+.memberRow:focus-visible,
+.searchClear:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.78);
+  outline-offset: 2px;
+}
+
+@keyframes guildRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes guildMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes guildBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes guildModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 1180px) {
   .hero,
-  .toolbar,
   .modalGrid,
   .utilityNotes {
     grid-template-columns: 1fr;
@@ -780,8 +1099,32 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tierTabs {
-    overflow-x: auto;
+  .toolbarPrimary,
+  .filterControls {
+    grid-template-columns: 1fr;
+  }
+
+  .resultBar {
+    min-width: 0;
+  }
+
+  .filterHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.4rem;
+    padding: 0 0.15rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .filterHeader span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
   }
 
   .sortButton {
@@ -796,6 +1139,23 @@
 
   .modalStats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .tableHint {
+    display: block;
+  }
+
+  .tableScroll {
+    display: none;
+  }
+
+  .mobileGuildList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
   }
 }
 
@@ -824,20 +1184,92 @@
     min-width: 0;
   }
 
+  .toolbar {
+    padding: 0.6rem;
+  }
+
+  .resultBar {
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+  }
+
+  .filterControls {
+    gap: 0.6rem;
+  }
+
+  .tierTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tierTabs button {
+    padding-inline: 0.62rem;
+  }
+
   .tierLegend {
     grid-template-columns: 1fr;
   }
 
-  .tableHint {
-    display: block;
+  .showMoreBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .modalBackdrop {
+    align-items: end;
+    padding: 0.5rem;
+  }
+
+  .modal {
+    max-height: calc(100vh - 1rem);
+  }
+
+  .modalArt {
+    height: 128px;
+  }
+
+  .modalBody {
+    max-height: calc(100vh - 1rem - 128px);
+    padding: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .statsGrid,
+  .toolbar,
+  .utilityNotes,
+  .tableWrap,
+  .sortMenu,
+  .modalBackdrop,
+  .modal {
+    animation: none;
+  }
+
+  .stat,
+  .tierTabs button,
+  .sortButton,
+  .search,
+  .searchClear,
+  .resetButton,
+  .inspectButton,
+  .guildCard,
+  .cardInspectButton,
+  .showMoreBar button,
+  .closeButton,
+  .memberDetails summary,
+  .memberRow,
+  .zoneRow,
+  .table tbody tr td {
+    transition: none;
+  }
+
+  .stat:hover,
+  .guildCard:hover,
+  .memberRow:hover {
+    transform: none;
   }
 
   .tableScroll {
-    display: none;
-  }
-
-  .mobileGuildList {
-    display: flex;
-    flex-direction: column;
+    scroll-behavior: auto;
   }
 }

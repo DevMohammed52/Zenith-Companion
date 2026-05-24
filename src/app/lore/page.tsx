@@ -16,9 +16,10 @@ import {
   Layers,
   Map,
   Package,
-  ScrollText,
+  RotateCcw,
   Search,
   ShieldAlert,
+  SlidersHorizontal,
   Skull,
   Sparkles,
   Users,
@@ -283,6 +284,19 @@ function LoreContent() {
     });
   }, [boardOptions, boardPickerCategory, boardPickerSearch]);
 
+  const activeViewLabel = VIEW_OPTIONS.find((view) => view.id === activeView)?.label || "Atlas";
+  const activeCategoryLabel = activeCategory === "all" ? "All categories" : CATEGORY_META[activeCategory].label;
+  const visibleEntryCount = (() => {
+    if (activeView === "timeline") return LORE_TIMELINE.length;
+    if (activeView === "characters") return characterEntries.length;
+    if (activeView === "artifacts") return artifactsAndBeasts.length;
+    if (activeView === "board") return boardRelations.length;
+    if (activeView === "theories") return LORE_THEORIES.length;
+    return featuredAtlas.length;
+  })();
+  const hasSearch = search.trim().length > 0;
+  const hasActiveControls = hasSearch || activeCategory !== "all" || activeView !== "atlas";
+
   const openEntry = (entry: LoreEntry) => {
     setSelectedEntry(entry);
     setBoardEntryId(entry.id);
@@ -292,6 +306,16 @@ function LoreContent() {
     setBoardEntryId(entryId);
     setBoardPickerOpen(false);
     setBoardPickerSearch("");
+  };
+
+  const resetLoreControls = () => {
+    setActiveView("atlas");
+    setActiveCategory("all");
+    setSearch("");
+    setRelationFilter("all");
+    setBoardPickerOpen(false);
+    setBoardPickerSearch("");
+    setBoardPickerCategory("all");
   };
 
   return (
@@ -323,6 +347,11 @@ function LoreContent() {
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search names, factions, places, artifacts..."
           />
+          {hasSearch && (
+            <button type="button" className="lore-search-clear" onClick={() => setSearch("")} aria-label="Clear lore search">
+              <X size={15} aria-hidden="true" />
+            </button>
+          )}
         </div>
         <div className="lore-view-tabs" role="group" aria-label="Lore view filter">
           {VIEW_OPTIONS.map((view) => (
@@ -337,6 +366,23 @@ function LoreContent() {
               <span>{view.label}</span>
             </button>
           ))}
+        </div>
+        <div className="lore-toolbar-status" aria-live="polite">
+          <div>
+            <span><SlidersHorizontal size={15} aria-hidden="true" /> Current view</span>
+            <strong>{activeViewLabel}</strong>
+          </div>
+          <div>
+            <span>Showing</span>
+            <strong>{visibleEntryCount} {activeView === "board" ? "links" : "records"}</strong>
+          </div>
+          <div>
+            <span>Category</span>
+            <strong>{activeCategoryLabel}</strong>
+          </div>
+          <button type="button" onClick={resetLoreControls} disabled={!hasActiveControls} aria-label="Reset lore filters and view">
+            <RotateCcw size={15} aria-hidden="true" /> Reset
+          </button>
         </div>
       </section>
 
@@ -644,6 +690,8 @@ function LoreContent() {
           --panel: rgba(13, 13, 16, 0.78);
           --line: rgba(255,255,255,0.08);
           --soft: rgba(255,255,255,0.055);
+          --lore-gold: rgba(245,176,65,0.74);
+          --lore-cyan: rgba(56,189,248,0.62);
           box-sizing: border-box;
           max-width: 100%;
           min-height: calc(100vh - 40px);
@@ -655,6 +703,14 @@ function LoreContent() {
             linear-gradient(225deg, rgba(56,189,248,0.08), transparent 38rem),
             #050506;
           color: #fff;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .lore-page button,
+        .lore-page a,
+        .lore-page summary {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
 
         .lore-shade {
@@ -688,6 +744,7 @@ function LoreContent() {
 
         .lore-hero {
           padding: 3rem 0 2rem;
+          animation: loreRise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .lore-eyebrow {
@@ -733,6 +790,7 @@ function LoreContent() {
           min-width: 0;
           overflow-wrap: anywhere;
           padding: 0.7rem 0.9rem;
+          box-shadow: 0 16px 42px rgba(0,0,0,0.18);
         }
 
         .lore-hero-stats strong {
@@ -754,6 +812,8 @@ function LoreContent() {
           top: 0.75rem;
           z-index: 20;
           backdrop-filter: blur(18px);
+          box-shadow: 0 18px 54px rgba(0,0,0,0.24);
+          animation: loreRise 420ms 70ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .lore-search {
@@ -763,9 +823,10 @@ function LoreContent() {
           border-radius: 7px;
           display: grid;
           gap: 0.65rem;
-          grid-template-columns: auto minmax(0, 1fr);
+          grid-template-columns: auto minmax(0, 1fr) auto;
           min-width: 0;
           padding: 0 0.8rem;
+          transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
         .lore-search:focus-within {
@@ -783,6 +844,30 @@ function LoreContent() {
           width: 100%;
         }
 
+        .lore-search-clear {
+          align-items: center;
+          background: rgba(255,255,255,0.045);
+          border: 0;
+          border-radius: 7px;
+          color: rgba(255,255,255,0.56);
+          cursor: pointer;
+          display: inline-flex;
+          height: 2rem;
+          justify-content: center;
+          padding: 0;
+          transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+          width: 2rem;
+        }
+
+        .lore-search-clear:hover {
+          background: rgba(255,255,255,0.09);
+          color: #fff;
+        }
+
+        .lore-search-clear:active {
+          transform: scale(0.94);
+        }
+
         .lore-view-tabs,
         .category-rail,
         .confidence-tabs,
@@ -796,7 +881,8 @@ function LoreContent() {
         .category-rail button,
         .confidence-tabs button,
         .thread-pills button,
-        .board-center button {
+        .board-center button,
+        .lore-toolbar-status button {
           align-items: center;
           background: rgba(255,255,255,0.035);
           border: 1px solid var(--line);
@@ -826,10 +912,20 @@ function LoreContent() {
         .category-rail button:hover,
         .confidence-tabs button:hover,
         .thread-pills button:hover,
-        .board-center button:hover {
+        .board-center button:hover,
+        .lore-toolbar-status button:not(:disabled):hover {
           border-color: rgba(245,176,65,0.45);
           color: #fff;
           transform: translateY(-1px);
+        }
+
+        .lore-view-tabs button:active,
+        .category-rail button:active,
+        .confidence-tabs button:active,
+        .thread-pills button:active,
+        .board-center button:active,
+        .lore-toolbar-status button:not(:disabled):active {
+          transform: scale(0.985);
         }
 
         .lore-view-tabs button.active,
@@ -840,8 +936,63 @@ function LoreContent() {
           color: #fff;
         }
 
+        .lore-toolbar-status {
+          align-items: stretch;
+          display: grid;
+          gap: 0.65rem;
+          grid-column: 1 / -1;
+          grid-template-columns: repeat(3, minmax(120px, 1fr)) auto;
+        }
+
+        .lore-toolbar-status > div {
+          background: rgba(0,0,0,0.22);
+          border: 1px solid rgba(255,255,255,0.065);
+          border-radius: 7px;
+          display: grid;
+          gap: 0.14rem;
+          min-height: 2.55rem;
+          min-width: 0;
+          padding: 0.55rem 0.7rem;
+        }
+
+        .lore-toolbar-status span {
+          align-items: center;
+          color: rgba(255,255,255,0.48);
+          display: inline-flex;
+          font-size: 0.66rem;
+          font-weight: 900;
+          gap: 0.35rem;
+          letter-spacing: 0.08em;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .lore-toolbar-status strong {
+          color: #fff;
+          font-size: 0.88rem;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .lore-toolbar-status button {
+          justify-content: center;
+          min-height: 2.55rem;
+        }
+
+        .lore-toolbar-status button:disabled {
+          color: rgba(255,255,255,0.34);
+          cursor: not-allowed;
+          background: rgba(255,255,255,0.018);
+        }
+
         .category-rail {
           margin-top: 1rem;
+          animation: loreRise 420ms 110ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .category-rail button {
@@ -855,6 +1006,7 @@ function LoreContent() {
 
         .lore-section {
           margin-top: 2rem;
+          animation: loreRise 420ms 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .section-heading {
@@ -923,8 +1075,15 @@ function LoreContent() {
         .lore-card:hover,
         .compact-card:hover,
         .thread-card:hover {
+          background: rgba(255,255,255,0.042);
           border-color: color-mix(in srgb, var(--tone, #f5b041), transparent 45%);
           transform: translateY(-3px);
+        }
+
+        .lore-card:active,
+        .compact-card:active,
+        .thread-card:active {
+          transform: scale(0.992);
         }
 
         .lore-card {
@@ -943,6 +1102,20 @@ function LoreContent() {
           position: absolute;
           right: 0;
           top: 0;
+        }
+
+        .lore-card::after {
+          background: radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--tone), transparent 72%), transparent 42%);
+          content: "";
+          inset: 0;
+          opacity: 0;
+          pointer-events: none;
+          position: absolute;
+          transition: opacity 0.18s ease;
+        }
+
+        .lore-card:hover::after {
+          opacity: 1;
         }
 
         .card-topline {
@@ -1021,6 +1194,7 @@ function LoreContent() {
           margin-bottom: 1rem;
           overflow: hidden;
           padding: 1rem;
+          box-shadow: 0 18px 54px rgba(0,0,0,0.18);
         }
 
         .npc-network-header {
@@ -1251,6 +1425,7 @@ function LoreContent() {
           position: absolute;
           right: 0;
           top: 100%;
+          z-index: 35;
         }
 
         .board-search-note {
@@ -1272,6 +1447,12 @@ function LoreContent() {
           display: flex;
           gap: 0.5rem;
           padding: 0.6rem 0.75rem;
+          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .board-picker-search:focus-within {
+          border-color: rgba(245,176,65,0.42);
+          box-shadow: 0 0 0 3px rgba(245,176,65,0.12);
         }
 
         .board-picker-categories {
@@ -1291,6 +1472,7 @@ function LoreContent() {
           font-weight: 900;
           min-height: 2rem;
           padding: 0.25rem 0.6rem;
+          transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
         }
 
         .board-picker-categories button:hover,
@@ -1298,6 +1480,12 @@ function LoreContent() {
           background: color-mix(in srgb, var(--tone, #f5b041), transparent 88%);
           border-color: color-mix(in srgb, var(--tone, #f5b041), transparent 50%);
           color: #fff;
+        }
+
+        .board-picker-categories button:active,
+        .board-option-list button:active,
+        .board-node:active {
+          transform: scale(0.985);
         }
 
         .board-picker-search input {
@@ -1616,6 +1804,16 @@ function LoreContent() {
           font: inherit;
           font-size: 0.78rem;
           padding: 0.35rem 0.65rem;
+          transition: border-color 0.18s ease, background 0.18s ease, transform 0.16s ease;
+        }
+
+        .theory-evidence button:hover {
+          background: rgba(255,255,255,0.07);
+          border-color: rgba(245,176,65,0.38);
+        }
+
+        .theory-evidence button:active {
+          transform: scale(0.985);
         }
 
         .counterpoint {
@@ -1638,6 +1836,37 @@ function LoreContent() {
           margin-top: 2rem;
         }
 
+        .lore-search-clear:focus-visible,
+        .lore-view-tabs button:focus-visible,
+        .category-rail button:focus-visible,
+        .confidence-tabs button:focus-visible,
+        .thread-pills button:focus-visible,
+        .board-center button:focus-visible,
+        .lore-toolbar-status button:focus-visible,
+        .lore-card:focus-visible,
+        .compact-card:focus-visible,
+        .thread-card:focus-visible,
+        .npc-chip-grid button:focus-visible,
+        .board-picker-trigger:focus-visible,
+        .board-picker-categories button:focus-visible,
+        .board-option-list button:focus-visible,
+        .board-node:focus-visible,
+        .theory-evidence button:focus-visible {
+          outline: 2px solid rgba(245,176,65,0.78);
+          outline-offset: 2px;
+        }
+
+        @keyframes loreRise {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @media (max-width: 960px) {
           .lore-toolbar,
           .mystery-board,
@@ -1648,6 +1877,14 @@ function LoreContent() {
           .lore-toolbar {
             position: relative;
             top: auto;
+          }
+
+          .lore-toolbar-status {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .lore-toolbar-status button {
+            grid-column: 1 / -1;
           }
 
           .section-heading {
@@ -1691,8 +1928,8 @@ function LoreContent() {
           .lore-section,
           .lore-empty {
             margin-inline: 0;
-            max-width: min(100%, 358px);
-            width: min(100%, 358px);
+            max-width: 100%;
+            width: 100%;
           }
 
           .lore-hero {
@@ -1708,10 +1945,19 @@ function LoreContent() {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
+          .lore-toolbar-status {
+            grid-template-columns: 1fr;
+          }
+
           .lore-view-tabs button,
           .category-rail button {
             justify-content: center;
             width: 100%;
+          }
+
+          .lore-search {
+            gap: 0.45rem;
+            padding-inline: 0.65rem;
           }
 
           .board-picker-trigger {
@@ -1727,6 +1973,7 @@ function LoreContent() {
             position: fixed;
             inset: auto 1rem 1rem 1rem;
             max-height: min(72dvh, 560px);
+            overflow: auto;
           }
 
           .board-option-list {
@@ -1747,6 +1994,54 @@ function LoreContent() {
           .compact-grid,
           .theory-grid {
             grid-template-columns: 1fr;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lore-hero,
+          .lore-toolbar,
+          .category-rail,
+          .lore-section,
+          .board-picker-popover {
+            animation: none;
+          }
+
+          .lore-search,
+          .lore-search-clear,
+          .lore-view-tabs button,
+          .category-rail button,
+          .confidence-tabs button,
+          .thread-pills button,
+          .board-center button,
+          .lore-toolbar-status button,
+          .lore-card,
+          .compact-card,
+          .thread-card,
+          .lore-card::after,
+          .npc-chip-grid button,
+          .board-picker-trigger,
+          .board-picker-search,
+          .board-picker-categories button,
+          .board-option-list button,
+          .board-node,
+          .theory-evidence button {
+            transition: none;
+          }
+
+          .lore-view-tabs button:hover,
+          .category-rail button:hover,
+          .confidence-tabs button:hover,
+          .thread-pills button:hover,
+          .board-center button:hover,
+          .lore-toolbar-status button:not(:disabled):hover,
+          .lore-card:hover,
+          .compact-card:hover,
+          .thread-card:hover,
+          .npc-chip-grid button:hover,
+          .board-picker-trigger:hover,
+          .board-option-list button:hover,
+          .board-node:hover {
+            transform: none;
           }
         }
       `}</style>
@@ -1859,7 +2154,7 @@ function LoreEntryModal({
         pointerStartedOnBackdrop.current = false;
       }}
     >
-      <article
+      <section
         ref={modalRef}
         aria-labelledby="lore-modal-title"
         aria-modal="true"
@@ -1944,7 +2239,7 @@ function LoreEntryModal({
             </section>
           )}
         </div>
-      </article>
+      </section>
 
       <style jsx>{`
         .lore-modal-shell {
@@ -1958,6 +2253,7 @@ function LoreEntryModal({
           padding: 1.25rem;
           position: fixed;
           z-index: 9999;
+          animation: loreModalBackdrop 0.18s ease both;
         }
 
         .lore-modal {
@@ -1970,6 +2266,7 @@ function LoreEntryModal({
           max-width: 980px;
           overflow: hidden;
           width: 100%;
+          animation: loreModalIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         header {
@@ -1982,7 +2279,7 @@ function LoreEntryModal({
         }
 
         header span {
-          color: color-mix(in srgb, var(--tone), white 10%);
+          color: #fff;
           display: inline-flex;
           font-size: 0.72rem;
           font-weight: 900;
@@ -2009,7 +2306,18 @@ function LoreEntryModal({
           flex: 0 0 auto;
           height: 38px;
           justify-content: center;
+          transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.16s ease;
           width: 38px;
+        }
+
+        header button:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: color-mix(in srgb, var(--tone), transparent 50%);
+          color: #fff;
+        }
+
+        header button:active {
+          transform: scale(0.94);
         }
 
         .modal-grid {
@@ -2027,6 +2335,12 @@ function LoreEntryModal({
           border-radius: 8px;
           min-width: 0;
           padding: 1rem;
+          transition: border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .modal-panel:hover {
+          border-color: color-mix(in srgb, var(--tone), transparent 76%);
+          background: rgba(255,255,255,0.045);
         }
 
         .span-two {
@@ -2055,6 +2369,15 @@ function LoreEntryModal({
           gap: 0.4rem;
           margin-top: 0.9rem;
           text-decoration: none;
+          transition: color 0.18s ease, transform 0.16s ease;
+        }
+
+        .modal-panel a:hover {
+          color: color-mix(in srgb, var(--tone), white 34%);
+        }
+
+        .modal-panel a:active {
+          transform: scale(0.985);
         }
 
         .modal-list,
@@ -2105,10 +2428,37 @@ function LoreEntryModal({
           min-height: 38px;
           padding: 0.55rem;
           text-align: left;
+          transition: border-color 0.18s ease, background 0.18s ease, transform 0.16s ease;
+        }
+
+        .related-grid button:hover {
+          background: rgba(255,255,255,0.07);
+          border-color: color-mix(in srgb, var(--tone), transparent 55%);
+        }
+
+        .related-grid button:active {
+          transform: scale(0.985);
         }
 
         .muted {
           color: rgba(255,255,255,0.5);
+        }
+
+        header button:focus-visible,
+        .modal-panel a:focus-visible,
+        .related-grid button:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--tone), white 12%);
+          outline-offset: 2px;
+        }
+
+        @keyframes loreModalBackdrop {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes loreModalIn {
+          from { opacity: 0; transform: translateY(10px) scale(0.985); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         @media (max-width: 720px) {
@@ -2130,6 +2480,20 @@ function LoreEntryModal({
           .modal-grid {
             grid-template-columns: 1fr;
             max-height: calc(100dvh - 96px);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .lore-modal-shell,
+          .lore-modal {
+            animation: none;
+          }
+
+          header button,
+          .modal-panel,
+          .modal-panel a,
+          .related-grid button {
+            transition: none;
           }
         }
       `}</style>

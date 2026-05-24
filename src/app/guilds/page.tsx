@@ -12,8 +12,10 @@ import {
   ExternalLink,
   Eye,
   Medal,
+  RotateCcw,
   Search,
   Shield,
+  SlidersHorizontal,
   Sparkles,
   Users,
   X,
@@ -372,11 +374,13 @@ function GuildModal({
   guild,
   details,
   loading,
+  error,
   onClose,
 }: {
   guild: GuildRecord;
   details: GuildDetails | null;
   loading: boolean;
+  error: string | null;
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
@@ -493,7 +497,9 @@ function GuildModal({
             </div>
           </div>
 
-          {loading ? (
+          {error ? (
+            <p className={styles.errorText} role="alert">{error}</p>
+          ) : loading ? (
             <p className={styles.mutedText}>Loading guild details...</p>
           ) : (
             <div className={styles.modalGrid}>
@@ -590,6 +596,7 @@ export default function GuildsPage() {
   const [sortBy, setSortBy] = useState<GuildSortKey>("activity");
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_ROWS);
   const [inspectingGuild, setInspectingGuild] = useState<GuildRecord | null>(null);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
   const initialQueryHandled = useRef(false);
   const deferredSearch = useDeferredValue(search);
 
@@ -629,9 +636,21 @@ export default function GuildsPage() {
   }, [deferredSearch, guilds, sortBy, tier]);
   const visibleGuilds = filteredGuilds.slice(0, visibleLimit);
   const tierCounts = database?.meta.totals.tiers || { hot: 0, warm: 0, cold: 0 };
+  const currentSortLabel = SORT_OPTIONS.find((option) => option.id === sortBy)?.label || SORT_OPTIONS[0].label;
+  const hasSearch = search.trim().length > 0;
+  const activeFilterCount = (hasSearch ? 1 : 0) + (tier !== "all" ? 1 : 0) + (sortBy !== "activity" ? 1 : 0);
+  const hasActiveFilters = activeFilterCount > 0;
+  const getTierFilterCount = (filter: TierFilter) => (filter === "all" ? database?.meta.totals.guilds || 0 : tierCounts[filter]);
+
+  const resetFilters = useCallback(() => {
+    setSearch("");
+    setTier("all");
+    setSortBy("activity");
+  }, []);
 
   const loadDetails = useCallback(async (guild: GuildRecord) => {
     setInspectingGuild(guild);
+    setDetailsError(null);
     if (detailsById?.has(guild.id)) return;
     setDetailsLoading(true);
     try {
@@ -643,6 +662,8 @@ export default function GuildsPage() {
         next.set(guild.id, payload);
         return next;
       });
+    } catch (detailsFetchError) {
+      setDetailsError(detailsFetchError instanceof Error ? detailsFetchError.message : "Unable to load guild details");
     } finally {
       setDetailsLoading(false);
     }
@@ -733,31 +754,66 @@ export default function GuildsPage() {
           </section>
 
           <section className={styles.toolbar} aria-label="Guild filters">
-            <label className={styles.search}>
-              <Search size={17} aria-hidden="true" />
-              <input
-                aria-label="Search guilds"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search guild, tag, leader, top member, or ID"
-              />
-            </label>
+            <div className={styles.toolbarPrimary}>
+              <div className={styles.search}>
+                <Search size={17} aria-hidden="true" />
+                <input
+                  aria-label="Search guilds"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search guild, tag, leader, top member, or ID"
+                />
+                {hasSearch && (
+                  <button type="button" className={styles.searchClear} onClick={() => setSearch("")} aria-label="Clear guild search">
+                    <X size={15} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
 
-            <div className={styles.tierTabs} role="group" aria-label="Refresh tier filter">
-              {TIER_FILTERS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={tier === option.id}
-                  data-active={tier === option.id}
-                  onClick={() => setTier(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+              <div className={styles.resultBar} aria-label="Visible guild results">
+                <span>Showing</span>
+                <strong>
+                  {formatGuildNumber(visibleGuilds.length)} of {formatGuildNumber(filteredGuilds.length)}
+                </strong>
+                <small>{currentSortLabel}</small>
+              </div>
             </div>
 
-            <SortPicker value={sortBy} onChange={setSortBy} />
+            <div className={styles.filterHeader} aria-hidden="true">
+              <span>
+                <SlidersHorizontal size={16} /> Filters
+              </span>
+              <span>{hasActiveFilters ? `${activeFilterCount} active` : "Default view"}</span>
+            </div>
+
+            <div className={styles.filterControls}>
+              <div className={styles.tierTabs} role="group" aria-label="Refresh tier filter">
+                {TIER_FILTERS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={tier === option.id}
+                    data-active={tier === option.id}
+                    onClick={() => setTier(option.id)}
+                  >
+                    <span className={styles.tierLabel}>{option.label}</span>
+                    <span className={styles.tierCount}>{formatGuildNumber(getTierFilterCount(option.id))}</span>
+                  </button>
+                ))}
+              </div>
+
+              <SortPicker value={sortBy} onChange={setSortBy} />
+
+              <button
+                type="button"
+                className={styles.resetButton}
+                onClick={resetFilters}
+                disabled={!hasActiveFilters}
+                aria-label="Reset guild filters"
+              >
+                <RotateCcw size={15} aria-hidden="true" /> Reset
+              </button>
+            </div>
           </section>
           <div className={styles.utilityNotes} aria-label="Guild database help">
             <p>Searches guild names, tags, leaders, top members, and IDs.</p>
@@ -780,7 +836,7 @@ export default function GuildsPage() {
 
           <section className={styles.tableWrap}>
             <p className={styles.tableHint}>Mobile view shows key fields as cards; open a guild for full details.</p>
-            <div className={styles.tableScroll}>
+            <div className={styles.tableScroll} tabIndex={0} aria-label="Scrollable guild results table">
               <table className={styles.table}>
                 <caption className="sr-only">Guild database results</caption>
                 <thead>
@@ -863,7 +919,11 @@ export default function GuildsPage() {
           guild={inspectingGuild}
           details={selectedDetails}
           loading={detailsLoading}
-          onClose={() => setInspectingGuild(null)}
+          error={detailsError}
+          onClose={() => {
+            setInspectingGuild(null);
+            setDetailsError(null);
+          }}
         />
       )}
     </main>

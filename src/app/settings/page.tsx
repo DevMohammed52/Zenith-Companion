@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Compass,
@@ -12,7 +12,7 @@ import {
   Keyboard,
   Palette,
   Plus,
-  Settings,
+  ShieldCheck,
   Sparkles,
   Trash2,
   UserRound,
@@ -61,17 +61,37 @@ function ToolPicker({
 }) {
   const selected = SKILL_TOOLS[skill].find((tool) => tool.name === value) || SKILL_TOOLS[skill][0];
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [menuMetrics, setMenuMetrics] = useState({ dropUp: false, maxHeight: 288 });
 
   useEffect(() => {
     if (!open) return;
+    const updateMenuMetrics = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const edgePadding = 14;
+      const gap = 8;
+      const below = Math.max(0, viewportHeight - rect.bottom - edgePadding - gap);
+      const above = Math.max(0, rect.top - edgePadding - gap);
+      const dropUp = below < 260 && above > below;
+      const available = dropUp ? above : below;
+      setMenuMetrics({ dropUp, maxHeight: Math.max(176, Math.min(288, available)) });
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       onToggle();
       window.requestAnimationFrame(() => triggerRef.current?.focus());
     };
+    updateMenuMetrics();
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updateMenuMetrics);
+    window.addEventListener("scroll", updateMenuMetrics, true);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updateMenuMetrics);
+      window.removeEventListener("scroll", updateMenuMetrics, true);
+    };
   }, [onToggle, open]);
 
   return (
@@ -92,7 +112,13 @@ function ToolPicker({
         <em>+{selected.efficiency}%</em>
       </button>
       {open && (
-        <div className="settings-tool-menu" id={`settings-tool-menu-${skill.toLowerCase()}`} role="listbox" aria-label={`${skill} fallback tool`}>
+        <div
+          className={`settings-tool-menu ${menuMetrics.dropUp ? "settings-tool-menu-up" : ""}`}
+          id={`settings-tool-menu-${skill.toLowerCase()}`}
+          role="listbox"
+          aria-label={`${skill} fallback tool`}
+          style={{ "--settings-tool-menu-max-height": `${menuMetrics.maxHeight}px` } as CSSProperties}
+        >
           {SKILL_TOOLS[skill].map((tool) => (
             <button
               type="button"
@@ -123,9 +149,12 @@ export default function SettingsPage() {
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
   const [itemSearchOpen, setItemSearchOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [openToolPicker, setOpenToolPicker] = useState<ToolSkill | null>(null);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
+  const confirmModalRef = useRef<HTMLDivElement | null>(null);
+  const itemSuggestionsId = "settings-custom-price-suggestions";
 
   const itemNames = useMemo(() => Object.keys(allItemsDb || {}).sort((a, b) => a.localeCompare(b)), [allItemsDb]);
   const itemSuggestions = useMemo(() => {
@@ -174,11 +203,86 @@ export default function SettingsPage() {
     setPreferences({ customPrices: next });
   };
 
+  const closeItemSearch = () => {
+    setItemSearchOpen(false);
+    setActiveSuggestionIndex(-1);
+  };
+
+  const selectCustomItem = (name: string) => {
+    setCustomItemName(name);
+    closeItemSearch();
+  };
+
+  const handleCustomItemKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape" && itemSearchOpen) {
+      event.preventDefault();
+      closeItemSearch();
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setItemSearchOpen(true);
+      if (itemSuggestions.length === 0) {
+        setActiveSuggestionIndex(-1);
+        return;
+      }
+      setActiveSuggestionIndex((current) => {
+        if (current < 0) return event.key === "ArrowDown" ? 0 : itemSuggestions.length - 1;
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        return (current + direction + itemSuggestions.length) % itemSuggestions.length;
+      });
+      return;
+    }
+
+    if (event.key === "Enter" && itemSearchOpen && activeSuggestionIndex >= 0) {
+      const selectedName = itemSuggestions[activeSuggestionIndex];
+      if (!selectedName) return;
+      event.preventDefault();
+      selectCustomItem(selectedName);
+    }
+  };
+
+  useEffect(() => {
+    if (!itemSearchOpen || itemSuggestions.length === 0) {
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+    setActiveSuggestionIndex((current) => (current >= 0 && current < itemSuggestions.length ? current : 0));
+  }, [itemSearchOpen, itemSuggestions.length]);
+
   useEffect(() => {
     if (!confirmClearOpen) return;
     window.requestAnimationFrame(() => confirmCancelRef.current?.focus());
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmClearOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setConfirmClearOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        confirmModalRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) || [],
+      ).filter((element) => element.offsetParent !== null);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!confirmModalRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -513,6 +617,33 @@ export default function SettingsPage() {
           )}
         </div>
 
+        <div className="settings-panel settings-privacy-panel">
+          <h2><ShieldCheck size={17} /> Data & Privacy</h2>
+          <p className="settings-panel-note">
+            Zenith does not store your character profiles on a server. Profiles, settings, queues, custom prices, and planner data are saved locally in this browser.
+          </p>
+          <div className="settings-summary-grid">
+            <div className="settings-summary-card">
+              <span>Saved profiles</span>
+              <strong>Local</strong>
+              <small>Use Profiles to export backups.</small>
+            </div>
+            <div className="settings-summary-card">
+              <span>Profile import</span>
+              <strong>Temporary</strong>
+              <small>Visible IdleMMO data is processed only to complete the import.</small>
+            </div>
+            <div className="settings-summary-card">
+              <span>Browser data</span>
+              <strong>User-owned</strong>
+              <small>Clearing site data removes local Zenith profiles unless backed up.</small>
+            </div>
+          </div>
+          <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-transfer">
+            Backup or manage profiles <ExternalLink size={14} />
+          </Link>
+        </div>
+
         <div className="settings-panel settings-panel-wide">
           <h2><Coins size={17} /> Custom Item Prices</h2>
           <p className="settings-panel-note">Custom prices override market cache values everywhere. Use whole gold values; safe market pricing still filters suspicious market outliers before comparisons.</p>
@@ -524,27 +655,40 @@ export default function SettingsPage() {
                   className="control-input"
                   placeholder="Search item name"
                   value={customItemName}
-                  onBlur={() => window.setTimeout(() => setItemSearchOpen(false), 120)}
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={itemSearchOpen && itemSuggestions.length > 0}
+                  aria-controls={itemSuggestionsId}
+                  aria-activedescendant={
+                    itemSearchOpen && activeSuggestionIndex >= 0
+                      ? `${itemSuggestionsId}-${activeSuggestionIndex}`
+                      : undefined
+                  }
+                  onBlur={() => window.setTimeout(closeItemSearch, 120)}
                   onChange={(e) => {
                     setCustomItemName(e.target.value);
                     setItemSearchOpen(true);
+                    setActiveSuggestionIndex(0);
                   }}
                   onFocus={() => setItemSearchOpen(true)}
+                  onKeyDown={handleCustomItemKeyDown}
                 />
                 {itemSearchOpen && itemSuggestions.length > 0 && (
-                  <div className="custom-price-suggestions">
-                    {itemSuggestions.map((name) => {
+                  <div className="custom-price-suggestions" id={itemSuggestionsId} role="listbox" aria-label="Item suggestions">
+                    {itemSuggestions.map((name, index) => {
                       const item = allItemsDb?.[name];
                       return (
                         <button
                           key={name}
+                          id={`${itemSuggestionsId}-${index}`}
                           type="button"
+                          role="option"
                           aria-label={`${name}, ${item?.type ? String(item.type).replace(/_/g, " ") : "Item"}`}
+                          aria-selected={index === activeSuggestionIndex}
+                          className={index === activeSuggestionIndex ? "custom-price-suggestion-active" : ""}
+                          onMouseEnter={() => setActiveSuggestionIndex(index)}
                           onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => {
-                            setCustomItemName(name);
-                            setItemSearchOpen(false);
-                          }}
+                          onClick={() => selectCustomItem(name)}
                         >
                           <span>{name}</span>
                           <small>{item?.type ? String(item.type).replace(/_/g, " ") : "Item"}</small>
@@ -624,7 +768,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="settings-panel settings-panel-wide">
+        <div className="settings-panel settings-panel-wide settings-desktop-only">
           <h2><Keyboard size={17} /> Keyboard Shortcuts</h2>
           <div className="shortcut-grid">
             <div><kbd>Ctrl</kbd><kbd>K</kbd><span>Global Search</span></div>
@@ -645,6 +789,7 @@ export default function SettingsPage() {
       {confirmClearOpen && (
         <div className="modal-overlay settings-confirm-overlay" role="presentation" onClick={() => setConfirmClearOpen(false)}>
           <div
+            ref={confirmModalRef}
             className="modal-content settings-confirm-modal"
             role="dialog"
             aria-modal="true"

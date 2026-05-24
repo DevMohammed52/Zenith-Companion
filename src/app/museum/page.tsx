@@ -13,8 +13,10 @@ import {
   LockKeyhole,
   Package,
   PawPrint,
+  RotateCcw,
   Search,
   Shield,
+  SlidersHorizontal,
   Sparkles,
   UserRound,
   X,
@@ -157,7 +159,7 @@ function museumEmptyState(status?: string) {
 function MuseumItemCard({ item }: { item: MuseumItem }) {
   const Icon = CATEGORY_ICONS[item.category];
   return (
-    <article className={`museum-item tone-${categoryTone(item.category)}`}>
+    <article className={`museum-item tone-${categoryTone(item.category)}`} data-tone={categoryTone(item.category)}>
       <div className="museum-item-art">
         {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <Icon size={28} aria-hidden="true" />}
       </div>
@@ -195,6 +197,11 @@ export default function MuseumPage() {
   const activeSummary = category === "ALL"
     ? { itemCount: items.length, totalQuantity }
     : summaries.find((summary) => summary.category === category) || { itemCount: 0, totalQuantity: 0 };
+  const summaryByCategory = useMemo(
+    () => new Map(summaries.map((summary) => [summary.category, summary])),
+    [summaries],
+  );
+  const selectedQuantity = visibleItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const hasMuseum = items.length > 0;
   const emptyState = museumEmptyState(museum?.status);
@@ -216,9 +223,17 @@ export default function MuseumPage() {
       ? `${formatNumber(museum.pageCount)} pages`
       : "No page data";
   const hasActiveFilters = Boolean(query.trim()) || category !== "ALL";
+  const hasCustomSort = sortKey !== "category" || sortDirection !== "asc";
+  const activeControlCount = (query.trim() ? 1 : 0) + (category !== "ALL" ? 1 : 0) + (hasCustomSort ? 1 : 0);
   const noMatchTitle = category === "ALL"
     ? `No museum items match "${query.trim()}"`
     : `No ${museumCategoryLabel(category)} match "${query.trim()}"`;
+  const resetControls = () => {
+    setQuery("");
+    setCategory("ALL");
+    setSortKey("category");
+    setSortDirection("asc");
+  };
 
   return (
     <main className="container museum-page">
@@ -257,6 +272,13 @@ export default function MuseumPage() {
       ) : (
         <>
           <section className="museum-controls" aria-label="Museum filters">
+            <div className="museum-controls-head">
+              <span>
+                <SlidersHorizontal size={16} aria-hidden="true" /> Collection controls
+              </span>
+              <strong>{activeControlCount ? `${activeControlCount} active` : "Default view"}</strong>
+            </div>
+
             <div className="museum-search">
               <label htmlFor="museum-search-input">Search</label>
               <div>
@@ -288,7 +310,8 @@ export default function MuseumPage() {
                 aria-pressed={category === "ALL"}
                 onClick={() => setCategory("ALL")}
               >
-                All
+                <span>All</span>
+                <small>{formatNumber(items.length)}</small>
               </button>
               {MUSEUM_CATEGORIES.map((option) => (
                 <button
@@ -298,7 +321,8 @@ export default function MuseumPage() {
                   aria-pressed={category === option}
                   onClick={() => setCategory(option)}
                 >
-                  {museumCategoryLabel(option)}
+                  <span>{museumCategoryLabel(option)}</span>
+                  <small>{formatNumber(summaryByCategory.get(option)?.itemCount || 0)}</small>
                 </button>
               ))}
             </div>
@@ -311,6 +335,7 @@ export default function MuseumPage() {
                   className={sortKey === option.key ? "active" : ""}
                   aria-pressed={sortKey === option.key}
                   onClick={() => setSortKey(option.key)}
+                  aria-label={`Sort museum items by ${option.label}`}
                 >
                   {option.label}
                 </button>
@@ -326,18 +351,36 @@ export default function MuseumPage() {
                 {sortDirection === "asc" ? "Asc" : "Desc"}
               </button>
             </div>
+
+            <div className="museum-control-status" aria-live="polite">
+              <div>
+                <span>Showing</span>
+                <strong>{formatNumber(visibleItems.length)} items</strong>
+              </div>
+              <div>
+                <span>Quantity</span>
+                <strong>{formatNumber(selectedQuantity)}</strong>
+              </div>
+              <button
+                type="button"
+                className="museum-reset"
+                onClick={resetControls}
+                disabled={!activeControlCount}
+                aria-label="Reset museum filters and sort"
+              >
+                <RotateCcw size={15} aria-hidden="true" /> Reset
+              </button>
+            </div>
           </section>
 
-          {hasActiveFilters && (
+          {(hasActiveFilters || hasCustomSort) && (
             <section className="museum-filter-chips" aria-label="Active museum filters">
               {query.trim() && <span>Search: {query.trim()}</span>}
               {category !== "ALL" && <span>Category: {museumCategoryLabel(category)}</span>}
+              {hasCustomSort && <span>Sort: {SORT_OPTIONS.find((option) => option.key === sortKey)?.label} {sortDirection}</span>}
               <button
                 type="button"
-                onClick={() => {
-                  setQuery("");
-                  setCategory("ALL");
-                }}
+                onClick={resetControls}
               >
                 Clear all
               </button>
@@ -404,15 +447,21 @@ export default function MuseumPage() {
             {summaries.map((summary) => {
               const Icon = CATEGORY_ICONS[summary.category];
               return (
-                <article
+                <button
+                  type="button"
                   key={summary.category}
                   className="museum-summary-card"
+                  data-tone={categoryTone(summary.category)}
+                  data-active={category === summary.category}
+                  aria-pressed={category === summary.category}
+                  onClick={() => setCategory((current) => current === summary.category ? "ALL" : summary.category)}
+                  aria-label={`Show ${summary.label} museum items`}
                 >
                   <Icon size={16} aria-hidden="true" />
                   <span>{summary.label}</span>
                   <strong>{formatNumber(summary.itemCount)}</strong>
                   <small>{formatNumber(summary.totalQuantity)} qty</small>
-                </article>
+                </button>
               );
             })}
           </section>
@@ -446,10 +495,22 @@ export default function MuseumPage() {
 
       <style jsx global>{`
         .museum-page {
+          --museum-panel: rgba(255,255,255,0.045);
+          --museum-panel-strong: rgba(255,255,255,0.075);
+          --museum-accent: rgba(34, 211, 238, 0.72);
+          --museum-violet: rgba(176, 130, 255, 0.58);
           display: grid;
           gap: 1rem;
           max-width: 1480px;
           min-width: 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .museum-page button,
+        .museum-page a,
+        .museum-page summary {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
 
         .museum-hero {
@@ -466,6 +527,8 @@ export default function MuseumPage() {
           overflow: hidden;
           padding: clamp(1rem, 2.6vw, 1.6rem);
           position: relative;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+          animation: museumRise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-hero-copy,
@@ -480,7 +543,8 @@ export default function MuseumPage() {
         .museum-item {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
-          background: rgba(255,255,255,0.025);
+          background: linear-gradient(180deg, var(--museum-panel), rgba(255,255,255,0.024));
+          box-shadow: 0 16px 42px rgba(0,0,0,0.16);
         }
 
         .museum-hero-copy {
@@ -566,6 +630,7 @@ export default function MuseumPage() {
           min-height: 2rem;
           padding: 0 0.65rem;
           text-decoration: none;
+          transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
         }
 
         .museum-profile-links a:hover {
@@ -573,11 +638,16 @@ export default function MuseumPage() {
           background: color-mix(in srgb, var(--text-accent), transparent 88%);
         }
 
+        .museum-profile-links a:active {
+          transform: scale(0.98);
+        }
+
         .museum-source-strip {
           display: grid;
           gap: 0.7rem;
           grid-template-columns: minmax(180px, 0.65fr) minmax(220px, 0.85fr) minmax(260px, 1.5fr);
           padding: 0.8rem;
+          animation: museumRise 420ms 60ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-source-strip > div,
@@ -603,6 +673,7 @@ export default function MuseumPage() {
           cursor: pointer;
           font-weight: 800;
           list-style-position: inside;
+          min-height: 2rem;
         }
 
         .museum-import-details[open] {
@@ -642,6 +713,7 @@ export default function MuseumPage() {
           gap: 0.75rem;
           grid-template-columns: auto minmax(0, 1fr);
           padding: 0.85rem 1rem;
+          animation: museumRise 420ms 90ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-warning-strip strong {
@@ -697,25 +769,56 @@ export default function MuseumPage() {
           min-height: 42px;
           padding: 0 1rem;
           text-decoration: none;
+          transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
+        }
+
+        .museum-empty a:hover {
+          background: color-mix(in srgb, var(--text-accent), transparent 70%);
+        }
+
+        .museum-empty a:active {
+          transform: scale(0.98);
         }
 
         .museum-summary {
           display: grid;
           gap: 0.75rem;
           grid-template-columns: 1.35fr repeat(6, minmax(0, 1fr));
+          animation: museumRise 420ms 140ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-summary-main,
         .museum-summary-card {
+          appearance: none;
+          border: 1px solid var(--border-subtle);
+          color: inherit;
+          cursor: pointer;
           display: grid;
+          font: inherit;
           gap: 0.35rem;
           min-width: 0;
           padding: 0.85rem;
           text-align: left;
+          transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
         }
 
         .museum-summary-card {
           min-height: 112px;
+        }
+
+        .museum-summary-main {
+          cursor: default;
+        }
+
+        .museum-summary-card:hover,
+        .museum-summary-card[data-active="true"] {
+          border-color: var(--museum-accent);
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          transform: translateY(-1px);
+        }
+
+        .museum-summary-card:active {
+          transform: scale(0.985);
         }
 
         .museum-summary-main strong,
@@ -734,6 +837,38 @@ export default function MuseumPage() {
           gap: 0.85rem;
           grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr) minmax(260px, auto);
           padding: 0.9rem;
+          position: relative;
+          z-index: 5;
+          animation: museumRise 420ms 110ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        .museum-controls-head,
+        .museum-control-status {
+          grid-column: 1 / -1;
+        }
+
+        .museum-controls-head {
+          align-items: center;
+          display: flex;
+          gap: 0.75rem;
+          justify-content: space-between;
+          color: var(--text-muted);
+          font-size: 0.78rem;
+          font-weight: 800;
+        }
+
+        .museum-controls-head span {
+          align-items: center;
+          display: inline-flex;
+          gap: 0.45rem;
+          min-width: 0;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+
+        .museum-controls-head strong {
+          color: #fff;
+          font-size: 0.78rem;
         }
 
         .museum-search {
@@ -750,6 +885,7 @@ export default function MuseumPage() {
           display: flex;
           min-height: 46px;
           position: relative;
+          transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
         }
 
         .museum-search svg {
@@ -788,11 +924,16 @@ export default function MuseumPage() {
           top: 50%;
           transform: translateY(-50%);
           width: 2rem;
+          transition: color 160ms ease, background 160ms ease, transform 160ms ease;
         }
 
         .museum-search-clear:hover {
           background: rgba(255,255,255,0.08);
           color: #fff;
+        }
+
+        .museum-search-clear:active {
+          transform: translateY(-50%) scale(0.94);
         }
 
         .museum-search > div:focus-within {
@@ -819,8 +960,25 @@ export default function MuseumPage() {
           display: inline-flex;
           font-weight: 800;
           gap: 0.35rem;
+          justify-content: space-between;
           min-height: 42px;
           padding: 0 0.8rem;
+          transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
+        }
+
+        .museum-segment button small {
+          color: var(--text-muted);
+          font-size: 0.7rem;
+          font-variant-numeric: tabular-nums;
+          margin-left: 0.35rem;
+          transition: color 180ms ease;
+        }
+
+        .museum-segment button span,
+        .museum-segment button small {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .museum-segment button:hover,
@@ -832,8 +990,80 @@ export default function MuseumPage() {
           color: #fff;
         }
 
+        .museum-segment button.active small,
+        .museum-segment button:hover small {
+          color: #fff;
+        }
+
+        .museum-segment button:active,
+        .museum-sort button:active {
+          transform: scale(0.985);
+        }
+
         .museum-sort-direction {
           color: #fff !important;
+        }
+
+        .museum-control-status {
+          align-items: stretch;
+          display: grid;
+          gap: 0.65rem;
+          grid-template-columns: repeat(2, minmax(120px, 1fr)) auto;
+        }
+
+        .museum-control-status > div {
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 7px;
+          background: rgba(0,0,0,0.2);
+          display: grid;
+          gap: 0.18rem;
+          min-height: 2.65rem;
+          padding: 0.58rem 0.7rem;
+        }
+
+        .museum-control-status span {
+          color: var(--text-muted);
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .museum-control-status strong {
+          color: #fff;
+          font-size: 0.9rem;
+        }
+
+        .museum-reset {
+          align-items: center;
+          background: rgba(255,255,255,0.055);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 7px;
+          color: #fff;
+          cursor: pointer;
+          display: inline-flex;
+          font: inherit;
+          font-weight: 800;
+          gap: 0.4rem;
+          justify-content: center;
+          min-height: 2.65rem;
+          padding: 0 0.8rem;
+          transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
+        }
+
+        .museum-reset:not(:disabled):hover {
+          border-color: var(--border-focus);
+          background: color-mix(in srgb, var(--text-accent), transparent 86%);
+        }
+
+        .museum-reset:disabled {
+          color: rgba(148,163,184,0.58);
+          cursor: not-allowed;
+          background: rgba(255,255,255,0.025);
+        }
+
+        .museum-reset:not(:disabled):active {
+          transform: scale(0.985);
         }
 
         .museum-filter-chips {
@@ -842,6 +1072,7 @@ export default function MuseumPage() {
           flex-wrap: wrap;
           gap: 0.5rem;
           padding: 0.65rem 0.75rem;
+          animation: museumRise 180ms ease both;
         }
 
         .museum-filter-chips span,
@@ -857,6 +1088,7 @@ export default function MuseumPage() {
           font-weight: 800;
           min-height: 2rem;
           padding: 0 0.7rem;
+          transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
         }
 
         .museum-filter-chips button {
@@ -869,12 +1101,17 @@ export default function MuseumPage() {
           background: color-mix(in srgb, var(--text-accent), transparent 86%);
         }
 
+        .museum-filter-chips button:active {
+          transform: scale(0.98);
+        }
+
         .museum-results-header {
           align-items: center;
           display: flex;
           gap: 0.75rem;
           justify-content: space-between;
           padding: 0.85rem 1rem;
+          animation: museumRise 420ms 170ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-results-header > div {
@@ -891,6 +1128,7 @@ export default function MuseumPage() {
           display: grid;
           gap: 0.75rem;
           grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          animation: museumRise 420ms 210ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .museum-item {
@@ -902,6 +1140,23 @@ export default function MuseumPage() {
           min-width: 0;
           padding: 0.8rem;
           overflow: hidden;
+          position: relative;
+          transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .museum-item::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 3px;
+          background: var(--museum-accent);
+          opacity: 0.78;
+        }
+
+        .museum-item:hover {
+          background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.028));
+          box-shadow: 0 18px 44px rgba(0,0,0,0.22);
+          transform: translateY(-1px);
         }
 
         .museum-item-art {
@@ -914,6 +1169,12 @@ export default function MuseumPage() {
           justify-content: center;
           overflow: hidden;
           width: 68px;
+          transition: border-color 180ms ease, background 180ms ease;
+        }
+
+        .museum-item:hover .museum-item-art {
+          border-color: rgba(255,255,255,0.16);
+          background: rgba(0,0,0,0.32);
         }
 
         .museum-item-art img {
@@ -966,6 +1227,38 @@ export default function MuseumPage() {
         .tone-amber { border-color: rgba(251, 146, 60, 0.18); }
         .tone-rose { border-color: rgba(251, 113, 133, 0.18); }
 
+        [data-tone="violet"] { --museum-accent: rgba(176, 130, 255, 0.72); }
+        [data-tone="cyan"] { --museum-accent: rgba(34, 211, 238, 0.72); }
+        [data-tone="gold"] { --museum-accent: rgba(250, 204, 21, 0.72); }
+        [data-tone="green"] { --museum-accent: rgba(52, 211, 153, 0.72); }
+        [data-tone="amber"] { --museum-accent: rgba(251, 146, 60, 0.72); }
+        [data-tone="rose"] { --museum-accent: rgba(251, 113, 133, 0.72); }
+
+        .museum-profile-links a:focus-visible,
+        .museum-empty a:focus-visible,
+        .museum-import-details summary:focus-visible,
+        .museum-technical-details summary:focus-visible,
+        .museum-search-clear:focus-visible,
+        .museum-segment button:focus-visible,
+        .museum-sort button:focus-visible,
+        .museum-reset:focus-visible,
+        .museum-filter-chips button:focus-visible,
+        .museum-summary-card:focus-visible {
+          outline: 2px solid color-mix(in srgb, var(--text-accent), white 8%);
+          outline-offset: 2px;
+        }
+
+        @keyframes museumRise {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @media (max-width: 1180px) {
           .museum-hero,
           .museum-source-strip,
@@ -989,6 +1282,14 @@ export default function MuseumPage() {
           .museum-results-header > div:last-child {
             text-align: left;
           }
+
+          .museum-control-status {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .museum-reset {
+            grid-column: 1 / -1;
+          }
         }
 
         @media (max-width: 640px) {
@@ -1006,6 +1307,16 @@ export default function MuseumPage() {
 
           .museum-summary {
             grid-template-columns: 1fr;
+          }
+
+          .museum-control-status {
+            grid-template-columns: 1fr;
+          }
+
+          .museum-controls-head {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.35rem;
           }
 
           .museum-segment,
@@ -1045,6 +1356,40 @@ export default function MuseumPage() {
             grid-column: 1 / -1;
             grid-template-columns: 1fr auto;
             text-align: left;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .museum-hero,
+          .museum-source-strip,
+          .museum-warning-strip,
+          .museum-summary,
+          .museum-controls,
+          .museum-filter-chips,
+          .museum-results-header,
+          .museum-grid {
+            animation: none;
+          }
+
+          .museum-profile-links a,
+          .museum-empty a,
+          .museum-summary-card,
+          .museum-search > div,
+          .museum-search-clear,
+          .museum-segment button,
+          .museum-sort button,
+          .museum-reset,
+          .museum-filter-chips span,
+          .museum-filter-chips button,
+          .museum-item,
+          .museum-item-art {
+            transition: none;
+          }
+
+          .museum-summary-card:hover,
+          .museum-summary-card[data-active="true"],
+          .museum-item:hover {
+            transform: none;
           }
         }
       `}</style>

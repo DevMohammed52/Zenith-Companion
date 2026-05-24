@@ -184,9 +184,13 @@ export default function DashboardPage() {
   const timeSince = lastUpdated ? Math.max(0, Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000)) : null;
   const registryCount = Object.keys(allItemsDb || {}).length;
   const marketFreshness = timeSince === null ? "Waiting for cache" : timeSince < 90 ? "Fresh enough" : "Needs refresh";
-  const activeProfileLabel = activeProfile?.name?.trim() || "No profile";
-  const profileDetail = activeProfile ? `${activeProfile.className || "Character"} profile active` : `${profileState.profiles.length}/5 saved profiles`;
-  const queuedItemCount = Object.keys(queue).length;
+  const hasStarterProfile = Boolean(activeProfile && isStarterProfile(activeProfile));
+  const activeProfileLabel = hasStarterProfile ? "Starter profile" : activeProfile?.name?.trim() || "No profile";
+  const profileDetail = hasStarterProfile
+    ? "Needs setup for reliable numbers"
+    : activeProfile
+      ? `${activeProfile.className || "Character"} profile active`
+      : `${profileState.profiles.length}/5 saved profiles`;
   const housingLabel = housingSummary.mode === "none"
     ? "Not configured"
     : housingSummary.mode === "guest"
@@ -280,33 +284,7 @@ export default function DashboardPage() {
         </Link>
       </section>
 
-      <section className="command-module-grid" aria-label="Tool groups">
-        {MODULE_GROUPS.map((group) => {
-          return (
-            <article className="command-module-card" key={group.title}>
-              <header>
-                <ZenithIcon name={group.icon} size={18} />
-                <div>
-                  <h2>{group.title}</h2>
-                  <p>{group.text}</p>
-                </div>
-              </header>
-              <div className="command-module-links">
-                {group.links.map((link) => {
-                  return (
-                    <Link href={link.href} key={link.href}>
-                      <ZenithIcon name={link.icon} size={15} />
-                      <span>{link.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </article>
-          );
-        })}
-      </section>
-
-      <section className="command-secondary-strip" aria-label="Secondary status">
+      <section className="command-secondary-strip" aria-label="Quick links">
         <Link href="/pets" className="command-mini-card">
           <ZenithIcon name="pets" size={17} />
           <span>Pet Database</span>
@@ -332,6 +310,32 @@ export default function DashboardPage() {
           <span>Guild Data</span>
           <strong>Browse</strong>
         </Link>
+      </section>
+
+      <section className="command-module-grid" aria-label="Tool groups">
+        {MODULE_GROUPS.map((group) => {
+          return (
+            <article className="command-module-card" key={group.title}>
+              <header>
+                <ZenithIcon name={group.icon} size={18} />
+                <div>
+                  <h2>{group.title}</h2>
+                  <p>{group.text}</p>
+                </div>
+              </header>
+              <div className="command-module-links">
+                {group.links.map((link) => {
+                  return (
+                    <Link href={link.href} key={link.href}>
+                      <ZenithIcon name={link.icon} size={15} />
+                      <span>{link.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })}
       </section>
     </main>
   );

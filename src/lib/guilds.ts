@@ -113,8 +113,8 @@ export function compareGuilds(a: GuildRecord, b: GuildRecord, sortKey: GuildSort
   if (sortKey === "name") return a.name.localeCompare(b.name);
   if (sortKey === "id") return a.id - b.id;
   if (sortKey === "season") {
-    const aSeason = a.season_position ?? Number.MAX_SAFE_INTEGER;
-    const bSeason = b.season_position ?? Number.MAX_SAFE_INTEGER;
+    const aSeason = a.season_position && a.season_position > 0 ? a.season_position : Number.MAX_SAFE_INTEGER;
+    const bSeason = b.season_position && b.season_position > 0 ? b.season_position : Number.MAX_SAFE_INTEGER;
     return aSeason - bSeason || b.activity_score - a.activity_score;
   }
   if (sortKey === "level") return (b.level ?? 0) - (a.level ?? 0) || b.activity_score - a.activity_score;

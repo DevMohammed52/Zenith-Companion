@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   BadgeCheck,
   ChevronDown,
@@ -18,7 +18,6 @@ import {
   Trash2,
   Upload,
   UserRound,
-  Users,
   X,
 } from "lucide-react";
 import {
@@ -138,6 +137,7 @@ const PROFILE_SECTIONS = [
 
 type ProfileSectionId = typeof PROFILE_SECTIONS[number][0];
 const PROFILE_SECTION_IDS = new Set<ProfileSectionId>(PROFILE_SECTIONS.map(([id]) => id));
+const PROFILE_BACKUP_HASH = "#profile-backup";
 
 const PROFILE_IMPORT_API_URL = "/api";
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
@@ -556,6 +556,7 @@ function ProfilePicker<T>({
   source?: ProfileFieldSource;
 }) {
   const [query, setQuery] = useState("");
+  const [menuMetrics, setMenuMetrics] = useState({ placement: "down" as "down" | "up", maxHeight: 320 });
   const open = openId === id;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const selectedImageClass = selected?.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined;
@@ -578,6 +579,42 @@ function ProfilePicker<T>({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, setOpenId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const updateMenuMetrics = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const mobilePicker = window.matchMedia("(max-width: 620px)").matches;
+      if (mobilePicker) {
+        const next = { placement: "down" as const, maxHeight: Math.max(260, window.innerHeight - 96) };
+        setMenuMetrics((current) => current.placement === next.placement && current.maxHeight === next.maxHeight ? current : next);
+        return;
+      }
+      const gap = 10;
+      const preferredHeight = 448;
+      const minimumUsefulHeight = 280;
+      const below = window.innerHeight - rect.bottom - gap;
+      const above = rect.top - gap;
+      const placement = below < minimumUsefulHeight && above > below ? "up" as const : "down" as const;
+      const available = placement === "up" ? above : below;
+      const maxHeight = Math.max(220, Math.min(preferredHeight, Math.floor(available)));
+      setMenuMetrics((current) => current.placement === placement && current.maxHeight === maxHeight ? current : { placement, maxHeight });
+    };
+
+    updateMenuMetrics();
+    window.addEventListener("resize", updateMenuMetrics);
+    window.addEventListener("scroll", updateMenuMetrics, true);
+    return () => {
+      window.removeEventListener("resize", updateMenuMetrics);
+      window.removeEventListener("scroll", updateMenuMetrics, true);
+    };
+  }, [open]);
+
+  const pickerMenuStyle = {
+    "--profile-picker-menu-max-height": `${menuMetrics.maxHeight}px`,
+  } as CSSProperties & Record<"--profile-picker-menu-max-height", string>;
 
   return (
     <div className={`profile-picker ${open ? "open" : ""}`}>
@@ -611,7 +648,13 @@ function ProfilePicker<T>({
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className="profile-picker-menu" id={`profile-picker-menu-${id}`} role="dialog" aria-label={`${label} picker`}>
+        <div
+          className={`profile-picker-menu ${menuMetrics.placement === "up" ? "drop-up" : ""}`}
+          id={`profile-picker-menu-${id}`}
+          role="dialog"
+          aria-label={`${label} picker`}
+          style={pickerMenuStyle}
+        >
           <div className="profile-picker-menu-head">
             <span>Choose {label}</span>
             <button
@@ -745,6 +788,10 @@ export default function ProfilesPage() {
 
   useEffect(() => {
     const syncSectionFromHash = () => {
+      if (window.location.hash === PROFILE_BACKUP_HASH) {
+        setActiveProfileSection("transfer");
+        return;
+      }
       const section = window.location.hash.replace(/^#profile-/, "") as ProfileSectionId;
       if (PROFILE_SECTION_IDS.has(section)) setActiveProfileSection(section);
     };
@@ -753,6 +800,21 @@ export default function ProfilesPage() {
     return () => window.removeEventListener("hashchange", syncSectionFromHash);
   }, []);
 
+  useEffect(() => {
+    if (activeProfileSection !== "transfer" || window.location.hash !== PROFILE_BACKUP_HASH) return;
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById("profile-backup");
+      if (!(target instanceof HTMLDetailsElement)) return;
+      target.open = true;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const stickyOffset = window.matchMedia("(max-width: 1180px)").matches ? 92 : 24;
+      const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - stickyOffset);
+      target.focus({ preventScroll: true });
+      window.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeProfileSection]);
+
   const openProfileSection = (section: ProfileSectionId) => {
     setActiveProfileSection(section);
     setOpenPicker(null);
@@ -760,6 +822,15 @@ export default function ProfilesPage() {
     if (window.location.hash !== nextHash) {
       window.history.pushState(null, "", nextHash);
     }
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(`profile-${section}`);
+      if (!target) return;
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const stickyOffset = window.matchMedia("(max-width: 1180px)").matches ? 92 : 24;
+      const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - stickyOffset);
+      target.focus({ preventScroll: true });
+      window.scrollTo({ top, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    });
   };
 
   useEffect(() => () => {
@@ -1828,7 +1899,7 @@ export default function ProfilesPage() {
 
         <div className="profile-editor">
           {activeProfileSection === "identity" && (
-          <section id="profile-identity" className="profile-panel profile-identity-panel">
+          <section id="profile-identity" className="profile-panel profile-identity-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Identity</h2>
@@ -1945,7 +2016,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "levels" && (
-          <section id="profile-levels" className="profile-panel">
+          <section id="profile-levels" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Levels</h2>
@@ -1973,7 +2044,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "combat" && (
-          <section id="profile-combat" className="profile-panel">
+          <section id="profile-combat" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Combat Snapshot</h2>
@@ -2006,7 +2077,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "magic" && (
-          <section id="profile-magic" className="profile-panel">
+          <section id="profile-magic" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Magic, Efficiency, Timers</h2>
@@ -2066,7 +2137,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "pet" && (
-          <section id="profile-pet" className="profile-panel">
+          <section id="profile-pet" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Pet</h2>
@@ -2135,7 +2206,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "gear" && (
-          <section id="profile-gear" className="profile-panel">
+          <section id="profile-gear" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Gear And Tools</h2>
@@ -2229,7 +2300,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "housing" && (
-          <section id="profile-housing" className="profile-panel">
+          <section id="profile-housing" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Housing Snapshot</h2>
@@ -2292,7 +2363,7 @@ export default function ProfilesPage() {
           )}
 
           {activeProfileSection === "transfer" && (
-          <section id="profile-transfer" className="profile-panel">
+          <section id="profile-transfer" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
                 <h2>Import from IdleMMO</h2>
@@ -2323,11 +2394,20 @@ export default function ProfilesPage() {
                   <span>Use the hashed ID shown on your IdleMMO profile. Zenith will fetch visible levels, class, metrics, pets, visible alts, and museum entries.</span>
                 </div>
                 <div className="profile-live-import-notes" aria-label="Import privacy notes">
+                  <span>Your saved Zenith profile stays in this browser.</span>
+                  <span>The import service only handles the fetch job; it does not keep your final profile.</span>
                   <span>Usually takes about {liveImportWaitText || "1-2 min"}.</span>
                   <span>You can leave this page and come back.</span>
                   <span>Never paste an IdleMMO API key here.</span>
                 </div>
               </div>
+              <details className="profile-import-help">
+                <summary>Where is my imported data saved?</summary>
+                <div>
+                  <p>Saved profiles, settings, queues, custom prices, and planner data are stored locally in this browser. Zenith does not store your character profile on a server.</p>
+                  <p>The import worker may briefly process visible IdleMMO profile data to finish the import, but you choose what to save, and the saved profile remains on your device. Export a backup before clearing browser data or switching devices.</p>
+                </div>
+              </details>
               <details className="profile-import-help">
                 <summary>How do I find my hashed character ID?</summary>
                 <ol>
@@ -2513,7 +2593,7 @@ export default function ProfilesPage() {
                 <Plus size={15} /> Create alt profile
               </button>
             </div>
-            <details className="profile-json-transfer">
+            <details id="profile-backup" className="profile-json-transfer" tabIndex={-1}>
               <summary>Backup or restore local profiles</summary>
               <p>This is only for moving Zenith profiles between browsers. It is separate from IdleMMO character import.</p>
               <div className="profile-inline-actions">
