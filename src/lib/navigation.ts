@@ -39,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/guilds", label: "Guild Database", icon: "guild" },
       { href: "/museum", label: "Museum", icon: "museum" },
       { href: "/lore", label: "Lore Wiki", icon: "archive", matchPrefix: true },
+      { href: "/patch-notes", label: "IdleMMO Patch Notes", icon: "archive" },
     ],
   },
   {

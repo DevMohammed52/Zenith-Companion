@@ -26,6 +26,8 @@
     "idlemmo:guild-public:merge": "node scripts/build-guild-public-data.mjs --merge-existing",
     "idlemmo:guild-refresh": "node --env-file=.env scripts/refresh-idlemmo-guild-public-data.mjs --tier hot --discover-new --rate-profile shared",
     "idlemmo:conquest": "node --env-file=.env scraper.mjs --conquest-only",
+    "idlemmo:patch-notes": "node scripts/fetch-idlemmo-patch-notes.mjs",
+    "idlemmo:patch-notes:latest": "node scripts/fetch-idlemmo-patch-notes.mjs --latest-only",
     "idlemmo:persona": "node --env-file=.env scripts/fetch-idlemmo-persona.mjs",
     "idlemmo:persona-summary": "node scripts/build-idlemmo-persona-summary.mjs",
     "idlemmo:derive": "node scripts/build-idlemmo-derived-cache.mjs",

@@ -1,0 +1,62 @@
+name: Update IdleMMO Patch Notes
+
+on:
+  schedule:
+    - cron: '12 * * * *'
+  workflow_dispatch:
+    inputs:
+      refresh_scope:
+        description: 'Patch notes refresh scope'
+        required: false
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - full
+
+concurrency:
+  group: idlemmo-patch-notes
+  cancel-in-progress: false
+
+jobs:
+  update-patch-notes:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch IdleMMO patch notes
+        run: |
+          scope="latest"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            scope="${{ inputs.refresh_scope }}"
+          fi
+
+          if [ "$scope" = "full" ]; then
+            npm run idlemmo:patch-notes
+          else
+            npm run idlemmo:patch-notes:latest
+          fi
+
+      - name: Commit and push generated patch notes
+        run: |
+          node scripts/publish-generated-data.mjs \
+            --path=public/idlemmo-patch-notes.json \
+            --commit-message="chore: auto-update IdleMMO patch notes [skip ci]" \
+            --empty-message="No patch note changes to commit" \
+            --retry-message="refreshing patch-note archive commit onto latest main."
