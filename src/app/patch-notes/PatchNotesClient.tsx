@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -57,6 +58,12 @@ type PatchNotesPayload = {
     categoryCounts: Record<string, number>;
   };
   patchNotes: PatchNote[];
+};
+
+type FilterOption = {
+  value: string;
+  label: string;
+  meta?: string;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -168,6 +175,25 @@ export default function PatchNotesClient() {
     });
   }, [payload]);
 
+  const categoryOptions = useMemo<FilterOption[]>(() => {
+    const counts = payload?.meta.categoryCounts ?? {};
+    return [
+      { value: ALL_CATEGORIES, label: "All categories" },
+      ...categories.map((categoryId) => ({
+        value: categoryId,
+        label: CATEGORY_LABELS[categoryId] || categoryId,
+        meta: (counts[categoryId] || 0).toLocaleString(),
+      })),
+    ];
+  }, [categories, payload]);
+
+  const yearOptions = useMemo<FilterOption[]>(() => {
+    return [
+      { value: ALL_CATEGORIES, label: "All years" },
+      ...years.map((yearOption) => ({ value: yearOption, label: yearOption })),
+    ];
+  }, [years]);
+
   const filteredNotes = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return patchNotes.filter((note) => {
@@ -233,41 +259,28 @@ export default function PatchNotesClient() {
           />
         </label>
 
-        <label className={styles.selectBox}>
-          <Filter size={16} />
-          <select
-            aria-label="Filter patch notes by category"
-            value={category}
-            onChange={(event) => {
-              setCategory(event.target.value);
-              setVisibleCount(INITIAL_VISIBLE);
-            }}
-          >
-            <option value={ALL_CATEGORIES}>All categories</option>
-            {categories.map((categoryId) => (
-              <option key={categoryId} value={categoryId}>
-                {CATEGORY_LABELS[categoryId] || categoryId}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterSelect
+          ariaLabel="Filter patch notes by category"
+          icon={<Filter size={16} />}
+          options={categoryOptions}
+          value={category}
+          onChange={(nextCategory) => {
+            setCategory(nextCategory);
+            setVisibleCount(INITIAL_VISIBLE);
+          }}
+        />
 
-        <label className={styles.selectBox}>
-          <CalendarDays size={16} />
-          <select
-            aria-label="Filter patch notes by year"
-            value={year}
-            onChange={(event) => {
-              setYear(event.target.value);
-              setVisibleCount(INITIAL_VISIBLE);
-            }}
-          >
-            <option value={ALL_CATEGORIES}>All years</option>
-            {years.map((yearOption) => (
-              <option key={yearOption} value={yearOption}>{yearOption}</option>
-            ))}
-          </select>
-        </label>
+        <FilterSelect
+          ariaLabel="Filter patch notes by year"
+          icon={<CalendarDays size={16} />}
+          menuAlign="end"
+          options={yearOptions}
+          value={year}
+          onChange={(nextYear) => {
+            setYear(nextYear);
+            setVisibleCount(INITIAL_VISIBLE);
+          }}
+        />
 
         <button className={styles.resetButton} type="button" onClick={resetFilters} disabled={!hasFilters}>
           <RotateCcw size={16} />
@@ -443,5 +456,150 @@ export default function PatchNotesClient() {
         </button>
       )}
     </main>
+  );
+}
+
+function FilterSelect({
+  ariaLabel,
+  icon,
+  options,
+  value,
+  onChange,
+  menuAlign = "start",
+}: {
+  ariaLabel: string;
+  icon: ReactNode;
+  menuAlign?: "start" | "end";
+  options: FilterOption[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const pickerId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
+  const selected = options[selectedIndex] || options[0] || { value: "", label: "Select" };
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(selectedIndex);
+
+  useEffect(() => {
+    setActiveIndex(selectedIndex);
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node | null)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [open]);
+
+  const chooseOption = (option: FilterOption) => {
+    onChange(option.value);
+    setOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const moveActive = (direction: 1 | -1) => {
+    if (!options.length) return;
+    setActiveIndex((current) => (current + direction + options.length) % options.length);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      setOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        setActiveIndex(selectedIndex);
+        return;
+      }
+      moveActive(event.key === "ArrowDown" ? 1 : -1);
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(0);
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(Math.max(0, options.length - 1));
+      return;
+    }
+
+    if ((event.key === "Enter" || event.key === " ") && open) {
+      event.preventDefault();
+      const option = options[activeIndex];
+      if (option) chooseOption(option);
+    }
+  };
+
+  return (
+    <div
+      className={`${styles.filterPicker} ${menuAlign === "end" ? styles.filterPickerEnd : ""}`}
+      ref={rootRef}
+      onKeyDown={handleKeyDown}
+    >
+      <button
+        ref={triggerRef}
+        aria-controls={open ? `${pickerId}-menu` : undefined}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={ariaLabel}
+        className={`${styles.filterTrigger} ${open ? styles.filterTriggerOpen : ""}`}
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+      >
+        {icon}
+        <span>{selected.label}</span>
+        <ChevronDown size={16} aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div
+          aria-label={ariaLabel}
+          className={styles.filterMenu}
+          id={`${pickerId}-menu`}
+          role="listbox"
+          tabIndex={-1}
+        >
+          {options.map((option, index) => {
+            const active = index === activeIndex;
+            const selectedOption = option.value === value;
+            return (
+              <button
+                key={option.value}
+                aria-selected={selectedOption}
+                className={`${styles.filterOption} ${active ? styles.filterOptionActive : ""}`}
+                id={`${pickerId}-option-${option.value}`}
+                role="option"
+                type="button"
+                onClick={() => chooseOption(option)}
+                onMouseEnter={() => setActiveIndex(index)}
+              >
+                <span>{option.label}</span>
+                {option.meta && <small>{option.meta}</small>}
+                {selectedOption && <Check size={15} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
