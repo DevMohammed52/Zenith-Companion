@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 
 const VISITOR_KEY = "zenith_usage_visitor_id";
 const SESSION_KEY = "zenith_usage_session_id";
+const DISABLE_ANALYTICS_KEY = "zenith_disable_analytics";
+const DEV_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function randomId(prefix: string) {
   const cryptoApi = globalThis.crypto;
@@ -28,7 +30,14 @@ function deviceType() {
   return "desktop";
 }
 
+function shouldSkipAnalytics() {
+  if (DEV_HOSTS.has(window.location.hostname)) return true;
+  if (navigator.webdriver) return true;
+  return window.localStorage.getItem(DISABLE_ANALYTICS_KEY) === "true";
+}
+
 function sendUsagePing(path: string, eventType: "pageview" | "heartbeat") {
+  if (shouldSkipAnalytics()) return;
   if (document.visibilityState === "hidden" && eventType !== "pageview") return;
 
   const payload = {

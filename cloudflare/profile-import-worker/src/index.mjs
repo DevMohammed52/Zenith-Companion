@@ -14,6 +14,16 @@ const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
 ];
+const ADMIN_TIMEFRAMES = [
+  { key: "15m", label: "15 min", ms: 15 * 60 * 1000 },
+  { key: "1h", label: "1 hour", ms: 60 * 60 * 1000 },
+  { key: "24h", label: "24 hours", ms: 24 * 60 * 60 * 1000 },
+  { key: "48h", label: "48 hours", ms: 48 * 60 * 60 * 1000 },
+  { key: "7d", label: "7 days", ms: 7 * 24 * 60 * 60 * 1000 },
+  { key: "14d", label: "14 days", ms: 14 * 24 * 60 * 60 * 1000 },
+  { key: "30d", label: "30 days", ms: 30 * 24 * 60 * 60 * 1000 },
+  { key: "all", label: "All time", ms: null },
+];
 const BASE_URL = "https://api.idle-mmo.com/v1";
 const USER_AGENT = "Zenith-Companion/1.0 profile-import";
 const MUSEUM_CATEGORIES = new Set([
@@ -101,6 +111,7 @@ async function handleAdminImportHealth(request, env, cors) {
   const demand = await importDemandSummary(env, now);
   const pressure = await queuePressure(env, now);
   const usage = await usageSummary(env, now);
+  const importAnalytics = await importAnalyticsSummary(env, now);
   const statusRows = await env.DB.prepare(`
     SELECT status, COUNT(*) AS count
     FROM import_jobs
@@ -161,6 +172,7 @@ async function handleAdminImportHealth(request, env, cors) {
     },
     pressure,
     usage,
+    imports: importAnalytics,
     coordinator: coordinatorStates.map((state) => ({
       active: Boolean(state.active && !isExpiredIso(state.expiresAt)),
       status: cleanString(state.status, 24),
@@ -266,6 +278,7 @@ async function usageSummary(env, now) {
   const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const overview = await env.DB.prepare(`
     SELECT
@@ -275,11 +288,13 @@ async function usageSummary(env, now) {
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_1h,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_24h,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_7d,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_30d,
       COUNT(DISTINCT visitor_fingerprint) AS unique_users_all_time,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d,
+      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_30d
     FROM usage_events
-  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo).first().catch(() => null);
+  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, monthAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null);
 
   const topPages = await env.DB.prepare(`
     SELECT path, COUNT(*) AS views, COUNT(DISTINCT visitor_fingerprint) AS users
@@ -287,8 +302,8 @@ async function usageSummary(env, now) {
     WHERE event_type = 'pageview' AND created_at >= ?
     GROUP BY path
     ORDER BY views DESC
-    LIMIT 8
-  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+    LIMIT 12
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
 
   const deviceRows = await env.DB.prepare(`
     SELECT device_type, COUNT(DISTINCT visitor_fingerprint) AS users
@@ -296,7 +311,7 @@ async function usageSummary(env, now) {
     WHERE created_at >= ?
     GROUP BY device_type
     ORDER BY users DESC
-  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
 
   const referrerRows = await env.DB.prepare(`
     SELECT referrer_host, COUNT(DISTINCT visitor_fingerprint) AS users
@@ -304,8 +319,63 @@ async function usageSummary(env, now) {
     WHERE created_at >= ? AND referrer_host != ''
     GROUP BY referrer_host
     ORDER BY users DESC
-    LIMIT 6
-  `).bind(weekAgo).all().catch(() => ({ results: [] }));
+    LIMIT 12
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const countryRows = await env.DB.prepare(`
+    SELECT country, COUNT(DISTINCT visitor_fingerprint) AS users, COUNT(*) AS events
+    FROM usage_events
+    WHERE created_at >= ? AND country != ''
+    GROUP BY country
+    ORDER BY users DESC, events DESC
+    LIMIT 16
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const browserRows = await env.DB.prepare(`
+    SELECT user_agent_family, COUNT(DISTINCT visitor_fingerprint) AS users
+    FROM usage_events
+    WHERE created_at >= ?
+    GROUP BY user_agent_family
+    ORDER BY users DESC
+    LIMIT 10
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const timezoneRows = await env.DB.prepare(`
+    SELECT timezone, COUNT(DISTINCT visitor_fingerprint) AS users
+    FROM usage_events
+    WHERE created_at >= ? AND timezone != ''
+    GROUP BY timezone
+    ORDER BY users DESC
+    LIMIT 12
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const dailyRows = await env.DB.prepare(`
+    SELECT
+      substr(created_at, 1, 10) AS day,
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+      COUNT(DISTINCT visitor_fingerprint) AS users,
+      COUNT(DISTINCT session_fingerprint) AS sessions
+    FROM usage_events
+    WHERE created_at >= ?
+    GROUP BY day
+    ORDER BY day ASC
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const hourlyRows = await env.DB.prepare(`
+    SELECT
+      substr(created_at, 1, 13) || ':00:00Z' AS hour,
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+      COUNT(DISTINCT visitor_fingerprint) AS users,
+      COUNT(DISTINCT session_fingerprint) AS sessions
+    FROM usage_events
+    WHERE created_at >= ?
+    GROUP BY hour
+    ORDER BY hour ASC
+  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+
+  const timeframes = await Promise.all(ADMIN_TIMEFRAMES.map((frame) => usageFrameSummary(env, now, frame)));
 
   const pageviews24h = Number(overview?.pageviews_24h || 0);
   const sessions24h = Number(overview?.sessions_24h || 0);
@@ -314,12 +384,29 @@ async function usageSummary(env, now) {
     activeUsers1h: Number(overview?.active_users_1h || 0),
     uniqueUsers24h: Number(overview?.unique_users_24h || 0),
     uniqueUsers7d: Number(overview?.unique_users_7d || 0),
+    uniqueUsers30d: Number(overview?.unique_users_30d || 0),
     uniqueUsersAllTime: Number(overview?.unique_users_all_time || 0),
     sessions24h,
     sessions7d: Number(overview?.sessions_7d || 0),
+    sessions30d: Number(overview?.sessions_30d || 0),
     events24h: Number(overview?.events_24h || 0),
     pageviews24h,
     pageviewsPerSession24h: sessions24h ? roundMetric(pageviews24h / sessions24h) : 0,
+    timeframes,
+    daily: (dailyRows.results || []).map((row) => ({
+      day: row.day,
+      events: Number(row.events || 0),
+      pageviews: Number(row.pageviews || 0),
+      users: Number(row.users || 0),
+      sessions: Number(row.sessions || 0),
+    })),
+    hourly: (hourlyRows.results || []).map((row) => ({
+      hour: row.hour,
+      events: Number(row.events || 0),
+      pageviews: Number(row.pageviews || 0),
+      users: Number(row.users || 0),
+      sessions: Number(row.sessions || 0),
+    })),
     topPages: (topPages.results || []).map((row) => ({
       path: cleanString(row.path, 120),
       views: Number(row.views || 0),
@@ -333,6 +420,216 @@ async function usageSummary(env, now) {
       host: cleanString(row.referrer_host, 120),
       users: Number(row.users || 0),
     })),
+    countries: (countryRows.results || []).map((row) => ({
+      country: cleanString(row.country || "unknown", 8),
+      users: Number(row.users || 0),
+      events: Number(row.events || 0),
+    })),
+    browsers: (browserRows.results || []).map((row) => ({
+      family: cleanString(row.user_agent_family || "unknown", 32),
+      users: Number(row.users || 0),
+    })),
+    timezones: (timezoneRows.results || []).map((row) => ({
+      timezone: cleanString(row.timezone || "unknown", 64),
+      users: Number(row.users || 0),
+    })),
+  };
+}
+
+async function usageFrameSummary(env, now, frame) {
+  const since = frame.ms === null ? null : new Date(now.getTime() - frame.ms).toISOString();
+  const where = since ? "WHERE created_at >= ?" : "";
+  const row = await env.DB.prepare(`
+    SELECT
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+      SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
+      COUNT(DISTINCT visitor_fingerprint) AS users,
+      COUNT(DISTINCT session_fingerprint) AS sessions
+    FROM usage_events
+    ${where}
+  `);
+  const result = since ? await row.bind(since).first().catch(() => null) : await row.first().catch(() => null);
+  const pageviews = Number(result?.pageviews || 0);
+  const sessions = Number(result?.sessions || 0);
+  return {
+    key: frame.key,
+    label: frame.label,
+    events: Number(result?.events || 0),
+    pageviews,
+    heartbeats: Number(result?.heartbeats || 0),
+    users: Number(result?.users || 0),
+    sessions,
+    pageviewsPerSession: sessions ? roundMetric(pageviews / sessions) : 0,
+  };
+}
+
+async function importAnalyticsSummary(env, now) {
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const timeframes = await Promise.all(ADMIN_TIMEFRAMES.map((frame) => importFrameSummary(env, now, frame)));
+  const dailyRows = await env.DB.prepare(`
+    SELECT
+      substr(created_at, 1, 10) AS day,
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type IN ('queued', 'cooldown', 'queue_busy', 'turnstile_failed') THEN 1 ELSE 0 END) AS attempts,
+      SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN event_type = 'failed' THEN 1 ELSE 0 END) AS failed,
+      SUM(CASE WHEN event_type = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+      SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+      COUNT(DISTINCT requester_fingerprint) AS users,
+      COUNT(DISTINCT target_hash_fingerprint) AS characters,
+      AVG(CASE WHEN event_type = 'complete' THEN duration_seconds ELSE NULL END) AS avg_duration_seconds
+    FROM import_events
+    WHERE created_at >= ?
+    GROUP BY day
+    ORDER BY day ASC
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+  const hourlyRows = await env.DB.prepare(`
+    SELECT
+      substr(created_at, 1, 13) || ':00:00Z' AS hour,
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type IN ('queued', 'cooldown', 'queue_busy', 'turnstile_failed') THEN 1 ELSE 0 END) AS attempts,
+      SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN event_type = 'failed' THEN 1 ELSE 0 END) AS failed,
+      SUM(CASE WHEN event_type = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+      SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+      COUNT(DISTINCT requester_fingerprint) AS users
+    FROM import_events
+    WHERE created_at >= ?
+    GROUP BY hour
+    ORDER BY hour ASC
+  `).bind(new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()).all().catch(() => ({ results: [] }));
+  const errorRows = await env.DB.prepare(`
+    SELECT error_code, COUNT(*) AS count
+    FROM import_events
+    WHERE created_at >= ? AND error_code != ''
+    GROUP BY error_code
+    ORDER BY count DESC
+    LIMIT 12
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+  const budgetRows = await env.DB.prepare(`
+    SELECT budget_mode, COUNT(*) AS events
+    FROM import_events
+    WHERE created_at >= ?
+    GROUP BY budget_mode
+    ORDER BY events DESC
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+  const busiestTargets = await env.DB.prepare(`
+    SELECT target_hash_fingerprint, COUNT(*) AS events, COUNT(DISTINCT requester_fingerprint) AS users
+    FROM import_events
+    WHERE created_at >= ? AND target_hash_fingerprint != ''
+    GROUP BY target_hash_fingerprint
+    ORDER BY events DESC
+    LIMIT 8
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+  const recentEvents = await env.DB.prepare(`
+    SELECT event_type, status, error_code, budget_mode, request_count, retry_count, duration_seconds, created_at
+    FROM import_events
+    ORDER BY created_at DESC
+    LIMIT 20
+  `).all().catch(() => ({ results: [] }));
+
+  return {
+    timeframes,
+    daily: (dailyRows.results || []).map((row) => ({
+      day: row.day,
+      events: Number(row.events || 0),
+      attempts: Number(row.attempts || 0),
+      completed: Number(row.completed || 0),
+      failed: Number(row.failed || 0),
+      waitingForBudget: Number(row.waiting_for_budget || 0),
+      rateLimited: Number(row.rate_limited || 0),
+      users: Number(row.users || 0),
+      characters: Number(row.characters || 0),
+      avgDurationSeconds: roundMetric(row.avg_duration_seconds),
+    })),
+    hourly: (hourlyRows.results || []).map((row) => ({
+      hour: row.hour,
+      events: Number(row.events || 0),
+      attempts: Number(row.attempts || 0),
+      completed: Number(row.completed || 0),
+      failed: Number(row.failed || 0),
+      waitingForBudget: Number(row.waiting_for_budget || 0),
+      rateLimited: Number(row.rate_limited || 0),
+      users: Number(row.users || 0),
+    })),
+    errors: (errorRows.results || []).map((row) => ({
+      code: cleanString(row.error_code || "unknown", 64),
+      count: Number(row.count || 0),
+    })),
+    budgets: (budgetRows.results || []).map((row) => ({
+      mode: cleanString(row.budget_mode || "unknown", 32),
+      events: Number(row.events || 0),
+    })),
+    busiestTargets: (busiestTargets.results || []).map((row) => ({
+      fingerprintTail: cleanString(row.target_hash_fingerprint || "", 80).slice(-10),
+      events: Number(row.events || 0),
+      users: Number(row.users || 0),
+    })),
+    recentEvents: (recentEvents.results || []).map((row) => ({
+      eventType: cleanString(row.event_type || "unknown", 32),
+      status: cleanString(row.status || "", 32),
+      errorCode: cleanString(row.error_code || "", 64),
+      budgetMode: cleanString(row.budget_mode || "unknown", 32),
+      requestCount: Number(row.request_count || 0),
+      retryCount: Number(row.retry_count || 0),
+      durationSeconds: roundMetric(row.duration_seconds),
+      createdAt: cleanIso(row.created_at),
+    })),
+  };
+}
+
+async function importFrameSummary(env, now, frame) {
+  const since = frame.ms === null ? null : new Date(now.getTime() - frame.ms).toISOString();
+  const where = since ? "WHERE created_at >= ?" : "";
+  const statement = env.DB.prepare(`
+    SELECT
+      COUNT(*) AS events,
+      SUM(CASE WHEN event_type IN ('queued', 'cooldown', 'queue_busy', 'turnstile_failed') THEN 1 ELSE 0 END) AS attempts,
+      SUM(CASE WHEN event_type = 'queued' THEN 1 ELSE 0 END) AS queued,
+      SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN event_type = 'failed' THEN 1 ELSE 0 END) AS failed,
+      SUM(CASE WHEN event_type = 'expired' THEN 1 ELSE 0 END) AS expired,
+      SUM(CASE WHEN event_type = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+      SUM(CASE WHEN event_type = 'queue_busy' THEN 1 ELSE 0 END) AS queue_busy,
+      SUM(CASE WHEN event_type = 'cooldown' THEN 1 ELSE 0 END) AS cooldown,
+      SUM(CASE WHEN event_type = 'turnstile_failed' THEN 1 ELSE 0 END) AS turnstile_failed,
+      SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+      COUNT(DISTINCT requester_fingerprint) AS users,
+      COUNT(DISTINCT target_hash_fingerprint) AS characters,
+      AVG(CASE WHEN event_type = 'complete' THEN duration_seconds ELSE NULL END) AS avg_duration_seconds,
+      MAX(CASE WHEN event_type = 'complete' THEN duration_seconds ELSE NULL END) AS max_duration_seconds,
+      AVG(CASE WHEN event_type = 'complete' THEN request_count ELSE NULL END) AS avg_request_count,
+      AVG(CASE WHEN event_type = 'complete' THEN retry_count ELSE NULL END) AS avg_retry_count
+    FROM import_events
+    ${where}
+  `);
+  const row = since ? await statement.bind(since).first().catch(() => null) : await statement.first().catch(() => null);
+  const attempts = Number(row?.attempts || 0);
+  const completed = Number(row?.completed || 0);
+  const failed = Number(row?.failed || 0);
+  return {
+    key: frame.key,
+    label: frame.label,
+    events: Number(row?.events || 0),
+    attempts,
+    queued: Number(row?.queued || 0),
+    completed,
+    failed,
+    expired: Number(row?.expired || 0),
+    waitingForBudget: Number(row?.waiting_for_budget || 0),
+    queueBusy: Number(row?.queue_busy || 0),
+    cooldown: Number(row?.cooldown || 0),
+    turnstileFailed: Number(row?.turnstile_failed || 0),
+    rateLimited: Number(row?.rate_limited || 0),
+    users: Number(row?.users || 0),
+    characters: Number(row?.characters || 0),
+    avgDurationSeconds: roundMetric(row?.avg_duration_seconds),
+    maxDurationSeconds: roundMetric(row?.max_duration_seconds),
+    avgRequestCount: roundMetric(row?.avg_request_count),
+    avgRetryCount: roundMetric(row?.avg_retry_count),
+    completionRate: percentage(completed, attempts),
+    failureRate: percentage(failed, attempts),
   };
 }
 
@@ -401,6 +698,33 @@ async function handleScraperStatus(request, env, cors) {
   return json({ ok: true, state: record.active ? "active" : "idle" }, 200, cors);
 }
 
+async function recordImportEvent(env, event) {
+  if (!env.DB) return;
+  try {
+    await env.DB.prepare(`
+      INSERT INTO import_events (
+        id, event_type, job_id, requester_fingerprint, target_hash_fingerprint,
+        status, error_code, budget_mode, request_count, retry_count, duration_seconds, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      `iev_${cryptoRandomId(24)}`,
+      cleanString(event.eventType || "unknown", 32),
+      cleanString(event.jobId || "", 80),
+      cleanString(event.requesterFingerprint || "", 128),
+      cleanString(event.targetHashFingerprint || "", 128),
+      cleanString(event.status || "", 32),
+      cleanString(event.errorCode || "", 64),
+      cleanString(event.budgetMode || "unknown", 32),
+      Math.max(0, Math.round(Number(event.requestCount || 0))),
+      Math.max(0, Math.round(Number(event.retryCount || 0))),
+      Number.isFinite(Number(event.durationSeconds)) ? Math.max(0, Number(event.durationSeconds)) : null,
+      cleanIso(event.createdAt) || new Date().toISOString(),
+    ).run();
+  } catch {
+    // Analytics must never block profile imports.
+  }
+}
+
 async function handleStartImport(request, env, cors) {
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Profile imports are not available from this origin." } }, 403, cors);
@@ -415,22 +739,39 @@ async function handleStartImport(request, env, cors) {
     return json({ error: { code: "invalid_hash", message: "Paste only the character hashed ID." } }, 400, cors);
   }
 
+  const now = new Date();
+  const requesterFingerprint = await fingerprint(requesterKey(request), env.IMPORT_SIGNING_SECRET);
+  const hashFingerprint = await fingerprint(characterHash, env.IMPORT_SIGNING_SECRET);
+
   if (env.TURNSTILE_SECRET_KEY) {
     const turnstileResult = await verifyTurnstile(env, payload.turnstileToken, request);
     if (!turnstileResult.ok) {
+      await recordImportEvent(env, {
+        eventType: "turnstile_failed",
+        requesterFingerprint,
+        targetHashFingerprint: hashFingerprint,
+        status: "blocked",
+        errorCode: "turnstile_failed",
+        createdAt: now.toISOString(),
+      });
       return json({ error: { code: "turnstile_failed", message: "Quick check failed. Try again." } }, 403, cors);
     }
   }
 
-  const now = new Date();
   const expiresAt = new Date(now.getTime() + JOB_TTL_MS).toISOString();
-  const requesterFingerprint = await fingerprint(requesterKey(request), env.IMPORT_SIGNING_SECRET);
-  const hashFingerprint = await fingerprint(characterHash, env.IMPORT_SIGNING_SECRET);
 
   const cooldown = await activeCooldown(env, "hash", hashFingerprint, now)
     || await activeCooldown(env, "ip", requesterFingerprint, now)
     || await activeCooldown(env, "global", "global", now);
   if (cooldown) {
+    await recordImportEvent(env, {
+      eventType: "cooldown",
+      requesterFingerprint,
+      targetHashFingerprint: hashFingerprint,
+      status: "blocked",
+      errorCode: "cooldown",
+      createdAt: now.toISOString(),
+    });
     return json({
       error: {
         code: "cooldown",
@@ -446,6 +787,15 @@ async function handleStartImport(request, env, cors) {
   if (queue.pending >= maxPending || queue.running >= maxConcurrent) {
     const budget = await importBudgetMode(env);
     const retryAfterMs = estimateQueueRetryAfterMs(queue, maxConcurrent, env, budget);
+    await recordImportEvent(env, {
+      eventType: "queue_busy",
+      requesterFingerprint,
+      targetHashFingerprint: hashFingerprint,
+      status: "blocked",
+      errorCode: "queue_busy",
+      budgetMode: budget.mode,
+      createdAt: now.toISOString(),
+    });
     return json({
       error: {
         code: "queue_busy",
@@ -486,6 +836,16 @@ async function handleStartImport(request, env, cors) {
     now.toISOString(),
     expiresAt,
   ).run();
+
+  await recordImportEvent(env, {
+    eventType: "queued",
+    jobId,
+    requesterFingerprint,
+    targetHashFingerprint: hashFingerprint,
+    status: "queued",
+    budgetMode: budget.mode,
+    createdAt: now.toISOString(),
+  });
 
   return json({
     jobId,
@@ -653,7 +1013,8 @@ async function processNextImportJob(env) {
   }
 
   const job = await env.DB.prepare(`
-    SELECT id, target_hash_encrypted, requested_options_json, request_count
+    SELECT id, target_hash_encrypted, target_hash_fingerprint, requester_fingerprint,
+           requested_options_json, request_count, retry_count, created_at
     FROM import_jobs
     WHERE status IN ('queued', 'waiting_for_budget') AND expires_at > ?
     ORDER BY created_at ASC
@@ -683,6 +1044,17 @@ async function processNextImportJob(env) {
       new Date().toISOString(),
       job.id,
     ).run();
+    await recordImportEvent(env, {
+      eventType: "complete",
+      jobId: job.id,
+      requesterFingerprint: job.requester_fingerprint,
+      targetHashFingerprint: job.target_hash_fingerprint,
+      status: "complete",
+      budgetMode: budget.mode,
+      requestCount: result.requestCount,
+      retryCount: result.retryCount,
+      durationSeconds: secondsBetween(job.created_at, new Date()),
+    });
     return { status: "complete", jobId: job.id, requestCount: result.requestCount };
   } catch (error) {
     const code = error?.code || "import_failed";
@@ -698,6 +1070,18 @@ async function processNextImportJob(env) {
             updated_at = ?
         WHERE id = ?
       `).bind(code, message, new Date().toISOString(), job.id).run();
+      await recordImportEvent(env, {
+        eventType: "waiting_for_budget",
+        jobId: job.id,
+        requesterFingerprint: job.requester_fingerprint,
+        targetHashFingerprint: job.target_hash_fingerprint,
+        status: "waiting_for_budget",
+        errorCode: code,
+        budgetMode: budget.mode,
+        requestCount: Number(job.request_count || 0),
+        retryCount: Number(job.retry_count || 0) + 1,
+        durationSeconds: secondsBetween(job.created_at, new Date()),
+      });
       return { status: "waiting_for_budget", jobId: job.id, code };
     }
     await env.DB.prepare(`
@@ -705,6 +1089,17 @@ async function processNextImportJob(env) {
       SET status = 'failed', error_code = ?, error_message = ?, updated_at = ?
       WHERE id = ?
     `).bind(code, message, new Date().toISOString(), job.id).run();
+    await recordImportEvent(env, {
+      eventType: "failed",
+      jobId: job.id,
+      requesterFingerprint: job.requester_fingerprint,
+      targetHashFingerprint: job.target_hash_fingerprint,
+      status: "failed",
+      errorCode: code,
+      budgetMode: budget.mode,
+      requestCount: Number(job.request_count || 0),
+      durationSeconds: secondsBetween(job.created_at, new Date()),
+    });
     return { status: "failed", jobId: job.id, code };
   }
 }
@@ -1004,6 +1399,28 @@ async function cooldownSummary(env, now) {
 async function cleanExpiredRows(env) {
   if (!env.DB) return;
   const now = new Date().toISOString();
+  const expiredRows = await env.DB.prepare(`
+    SELECT id, status, target_hash_fingerprint, requester_fingerprint, budget_mode,
+           request_count, retry_count, error_code, created_at
+    FROM import_jobs
+    WHERE expires_at <= ?
+    LIMIT 100
+  `).bind(now).all().catch(() => ({ results: [] }));
+  for (const row of expiredRows.results || []) {
+    await recordImportEvent(env, {
+      eventType: "expired",
+      jobId: row.id,
+      requesterFingerprint: row.requester_fingerprint,
+      targetHashFingerprint: row.target_hash_fingerprint,
+      status: row.status || "expired",
+      errorCode: row.error_code || "expired",
+      budgetMode: row.budget_mode,
+      requestCount: row.request_count,
+      retryCount: row.retry_count,
+      durationSeconds: secondsBetween(row.created_at, now),
+      createdAt: now,
+    });
+  }
   await env.DB.prepare("DELETE FROM import_jobs WHERE expires_at <= ?").bind(now).run();
   await env.DB.prepare("DELETE FROM cooldowns WHERE until_at <= ?").bind(now).run();
 }
@@ -1159,6 +1576,14 @@ function secondsSince(value, now) {
   const started = new Date(value).getTime();
   if (!Number.isFinite(started)) return 0;
   return Math.max(0, Math.round((now.getTime() - started) / 1000));
+}
+
+function secondsBetween(startValue, endValue) {
+  if (!startValue) return 0;
+  const started = new Date(startValue).getTime();
+  const ended = endValue instanceof Date ? endValue.getTime() : new Date(endValue).getTime();
+  if (!Number.isFinite(started) || !Number.isFinite(ended)) return 0;
+  return Math.max(0, Math.round((ended - started) / 1000));
 }
 
 function coordinatorKey(source) {
