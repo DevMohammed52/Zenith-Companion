@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
@@ -53,6 +53,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const router = useRouter();
   const { openItemByName, prefetchItem } = useItemModal();
   const { activeProfile, state: profileState } = useProfiles();
+  const idPrefix = useId().replace(/:/g, "");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<SearchResult[]>([]);
@@ -64,6 +65,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const dialogId = `${idPrefix}-global-search-dialog`;
+  const titleId = `${idPrefix}-global-search-title`;
+  const resultsId = `${idPrefix}-global-search-results`;
 
   // Load recent from storage
   useEffect(() => {
@@ -161,6 +165,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
 
     const previousOverflow = document.body.style.overflow;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const triggerElement = triggerRef.current;
     document.body.classList.add("command-open");
     document.body.style.overflow = "hidden";
     const focusFrame = window.requestAnimationFrame(() => {
@@ -174,7 +179,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       if (previouslyFocused && document.contains(previouslyFocused)) {
         previouslyFocused.focus({ preventScroll: true });
       } else {
-        triggerRef.current?.focus({ preventScroll: true });
+        triggerElement?.focus({ preventScroll: true });
       }
     };
   }, [open]);
@@ -357,7 +362,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     );
   };
 
-  const activeResultId = filteredResults[activeIndex] ? `global-search-result-${activeIndex}` : undefined;
+  const activeResultId = filteredResults[activeIndex] ? `${resultsId}-option-${activeIndex}` : undefined;
 
   const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
@@ -413,15 +418,16 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const palette = open ? (
     <div className="command-overlay" onClick={closeSearch}>
       <div
+        id={dialogId}
         className="command-palette"
         onClick={event => event.stopPropagation()}
         onKeyDown={handleDialogKeyDown}
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="global-search-title"
+        aria-labelledby={titleId}
       >
-        <h2 id="global-search-title" className="sr-only">Global search</h2>
+        <h2 id={titleId} className="sr-only">Global search</h2>
         <div className="command-input-wrap">
           <Search size={16} aria-hidden="true" />
           <input
@@ -431,7 +437,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             role="combobox"
             aria-autocomplete="list"
             aria-expanded="true"
-            aria-controls="global-search-results"
+            aria-controls={resultsId}
             aria-activedescendant={activeResultId}
             aria-label="Search tools, items, recipes, enemies, and lore"
             spellCheck={false}
@@ -446,14 +452,14 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         </div>
         <div
           className="command-results"
-          id="global-search-results"
+          id={resultsId}
           role="listbox"
           aria-label="Search results"
         >
           {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
           {filteredResults.map((result, index) => (
             <button
-              id={`global-search-result-${index}`}
+              id={`${resultsId}-option-${index}`}
               key={getSearchResultRenderKey(result, index)}
               type="button"
               role="option"
@@ -485,7 +491,17 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
 
   return (
     <>
-      <button ref={triggerRef} className="global-search-trigger" type="button" onClick={() => setOpen(true)} style={{ flex: 1 }} aria-haspopup="dialog" aria-expanded={open}>
+      <button
+        ref={triggerRef}
+        className="global-search-trigger"
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open global search"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls={dialogId}
+        data-open={open ? "true" : "false"}
+      >
         <Search size={14} aria-hidden="true" />
         <span>Search</span>
         <kbd>Ctrl K</kbd>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { getActiveNavGroup, isNavItemActive, NAV_GROUPS } from "@/lib/navigation";
 import { usePreferences } from "@/lib/preferences";
@@ -20,6 +20,7 @@ export default function DesktopDock() {
   const [dockMotions, setDockMotions] = useState(() => NAV_GROUPS.map(() => DEFAULT_DOCK_MOTION));
   const [openGroupLabel, setOpenGroupLabel] = useState<string | null>(null);
   const [pinnedGroupLabel, setPinnedGroupLabel] = useState<string | null>(null);
+  const shelfId = useId();
   const shellRef = useRef<HTMLElement | null>(null);
   const dockRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +59,11 @@ export default function DesktopDock() {
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (target instanceof Node && shellRef.current?.contains(target)) return;
-      closeDockNow();
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+      resetDockMotion();
+      setOpenGroupLabel(null);
+      setPinnedGroupLabel(null);
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -172,6 +177,7 @@ export default function DesktopDock() {
       }}
     >
       <div
+        id={shelfId}
         className={`desktop-dock-shelf ${denseShelf ? "desktop-dock-shelf-dense" : ""}`}
         aria-label={`${openGroup.label} destinations`}
       >
@@ -225,7 +231,11 @@ export default function DesktopDock() {
                 dockRefs.current[index] = node;
               }}
               aria-label={`${group.label}: ${group.eyebrow}`}
+              aria-controls={shelfId}
               aria-expanded={openGroupLabel === group.label}
+              aria-pressed={pinnedGroupLabel === group.label}
+              data-active={active ? "true" : "false"}
+              data-open={openGroupLabel === group.label ? "true" : "false"}
               className={`desktop-dock-item ${active ? "desktop-dock-item-active" : ""}`}
               style={{
                 ["--dock-size" as string]: `${motion.size}px`,
@@ -238,6 +248,7 @@ export default function DesktopDock() {
               onClick={() => pinDockGroup(group.label)}
             >
               <ZenithIcon name={group.icon} size={22} />
+              <span className="desktop-dock-item-label">{group.label}</span>
             </button>
           );
         })}

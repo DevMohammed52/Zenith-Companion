@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Activity, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { playZenithSound } from "@/lib/audio";
 import { getActiveNavGroup, isNavItemActive, NAV_GROUPS } from "@/lib/navigation";
@@ -22,6 +22,8 @@ export default function MobileCommandWheel({
   const pathname = usePathname();
   const activeGroup = useMemo(() => getActiveNavGroup(pathname) ?? NAV_GROUPS[0], [pathname]);
   const [selectedGroupLabel, setSelectedGroupLabel] = useState(activeGroup.label);
+  const idPrefix = useId();
+  const dialogRef = useRef<HTMLElement | null>(null);
   const groupRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const previousPathname = useRef(pathname);
 
@@ -83,6 +85,25 @@ export default function MobileCommandWheel({
         return;
       }
 
+      if (event.key === "Tab") {
+        const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? []).filter((node) => !node.hasAttribute("disabled") && node.getClientRects().length > 0);
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+          return;
+        }
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
+
       if (event.key === "ArrowDown" || event.key === "ArrowRight") {
         event.preventDefault();
         const next = NAV_GROUPS[(selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length];
@@ -120,6 +141,7 @@ export default function MobileCommandWheel({
         }}
       />
       <section
+        ref={dialogRef}
         className={`command-wheel command-wheel-side-${side} ${closing ? "command-wheel-closing" : ""}`}
         id="app-command-wheel"
         role="dialog"
@@ -128,6 +150,24 @@ export default function MobileCommandWheel({
       >
         <div className="command-wheel-arc" aria-hidden="true" />
         <div className="command-wheel-halo" aria-hidden="true" />
+
+        <div className="command-wheel-header">
+          <span>
+            <small>Command</small>
+            <strong>{selectedGroup.label}</strong>
+          </span>
+          <button
+            className="command-wheel-close"
+            type="button"
+            aria-label="Close command wheel"
+            onClick={() => {
+              playZenithSound("close");
+              onClose();
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         <div className="command-wheel-stage">
           <div className="command-wheel-center" aria-hidden="true">
@@ -140,18 +180,26 @@ export default function MobileCommandWheel({
             {NAV_GROUPS.map((group, index) => {
               const selected = group.label === selectedGroup.label;
               const active = group.label === activeGroup.label;
+              const tabId = `${idPrefix}-tab-${index}`;
+              const panelId = `${idPrefix}-panel`;
               return (
                 <button
                   key={group.label}
+                  id={tabId}
                   ref={(node) => {
                     groupRefs.current[index] = node;
                   }}
                   type="button"
                   role="tab"
                   aria-selected={selected}
+                  aria-controls={panelId}
+                  tabIndex={selected ? 0 : -1}
                   className={`command-wheel-group ${selected ? "command-wheel-group-selected" : ""} ${active ? "command-wheel-group-active" : ""}`}
                   style={{ ["--wheel-index" as string]: index }}
-                  onClick={() => setSelectedGroupLabel(group.label)}
+                  onClick={() => {
+                    playZenithSound("ui");
+                    setSelectedGroupLabel(group.label);
+                  }}
                 >
                   <span className="command-wheel-node"><ZenithIcon name={group.icon} size={17} /></span>
                   <span>
@@ -164,12 +212,20 @@ export default function MobileCommandWheel({
           </div>
         </div>
 
-        <div className="command-wheel-panel">
+        <div
+          id={`${idPrefix}-panel`}
+          className="command-wheel-panel"
+          role="tabpanel"
+          aria-labelledby={`${idPrefix}-tab-${selectedIndex}`}
+        >
           <div className="command-wheel-panel-heading">
             <button
               type="button"
               aria-label="Previous navigation section"
-              onClick={() => setSelectedGroupLabel(NAV_GROUPS[(selectedIndex - 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label)}
+              onClick={() => {
+                playZenithSound("ui");
+                setSelectedGroupLabel(NAV_GROUPS[(selectedIndex - 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label);
+              }}
             >
               <ChevronLeft size={16} />
             </button>
@@ -180,7 +236,10 @@ export default function MobileCommandWheel({
             <button
               type="button"
               aria-label="Next navigation section"
-              onClick={() => setSelectedGroupLabel(NAV_GROUPS[(selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label)}
+              onClick={() => {
+                playZenithSound("ui");
+                setSelectedGroupLabel(NAV_GROUPS[(selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label);
+              }}
             >
               <ChevronRight size={16} />
             </button>

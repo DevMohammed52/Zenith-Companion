@@ -29,9 +29,15 @@ export default function ZenithHaptics() {
       return window.matchMedia("(pointer: coarse)").matches;
     };
 
+    const prefersReducedMotion = () => {
+      if (typeof window === "undefined" || !window.matchMedia) return true;
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    };
+
     const pulse = () => {
       if (!prefsRef.current.mobileHaptics) return;
       if (!supportsCoarsePointer()) return;
+      if (prefersReducedMotion()) return;
       if (document.hidden || !document.hasFocus()) return;
       if (!navigator.vibrate) return;
       const now = performance.now();
@@ -41,9 +47,10 @@ export default function ZenithHaptics() {
     };
 
     const handlePointerUp = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") return;
+      if (!event.isTrusted || event.defaultPrevented || event.pointerType !== "touch") return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target?.closest(hapticTargets)) return;
+      if (target.closest("[aria-disabled='true'], [data-zenith-haptics='off']")) return;
       pulse();
     };
 

@@ -171,16 +171,35 @@ export default function RootLayout({
             overflow-x: clip;
           }
           .site-footer {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            margin: 1.5rem clamp(1rem, 2vw, 2rem) 1.25rem;
-            padding: 1rem;
-            border: 1px solid rgba(148, 163, 184, 0.16);
-            border-radius: 8px;
-            background: rgba(8, 12, 22, 0.72);
+            gap: 0.85rem 1.4rem;
+            margin: clamp(2.5rem, 5vw, 4rem) 0 0;
+            padding: 1.15rem clamp(1rem, 2.8vw, 2.4rem) calc(1.15rem + env(safe-area-inset-bottom));
+            border-top: 1px solid rgba(148, 163, 184, 0.14);
+            background:
+              linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
+              rgba(5, 8, 15, 0.42);
             color: var(--text-muted);
+          }
+          .site-footer-brand {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            gap: 0.7rem;
+            min-width: 0;
+          }
+          .site-footer-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(56, 189, 248, 0.24);
+            border-radius: 8px;
+            background: rgba(14, 165, 233, 0.08);
+            color: rgb(125, 211, 252);
           }
           .site-footer-copy {
             display: grid;
@@ -192,6 +211,9 @@ export default function RootLayout({
           .site-footer-copy strong {
             color: var(--text-primary);
             font-size: 0.86rem;
+          }
+          .site-footer-copy span {
+            max-width: 64rem;
           }
           .site-footer-actions {
             display: flex;
@@ -215,14 +237,26 @@ export default function RootLayout({
             font-weight: 700;
             text-decoration: none;
             white-space: nowrap;
+            transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
           }
-          a.site-footer-pill:hover {
+          a.site-footer-pill:hover,
+          a.site-footer-pill:focus-visible {
             border-color: rgba(59, 130, 246, 0.44);
             color: var(--text-primary);
             background: rgba(59, 130, 246, 0.1);
+            outline: none;
+            transform: translateY(-1px);
           }
-          .site-footer-pill-muted {
-            color: rgba(148, 163, 184, 0.66);
+          a.site-footer-pill:active {
+            transform: scale(0.985);
+          }
+          .site-footer-disclaimer {
+            grid-column: 1 / -1;
+            margin: 0;
+            max-width: 70rem;
+            color: rgba(148, 163, 184, 0.72);
+            font-size: 0.75rem;
+            line-height: 1.45;
           }
           .rotating-tip {
             position: fixed;
@@ -241,7 +275,38 @@ export default function RootLayout({
             box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
             color: var(--text-secondary);
             backdrop-filter: blur(16px);
+            isolation: isolate;
+            overflow: hidden;
+            transform-origin: bottom right;
+            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+            will-change: transform;
             animation: rotatingTipIn 180ms ease-out;
+          }
+          .rotating-tip::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background:
+              linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0) 42%),
+              radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.18), transparent 34%);
+            opacity: 0.6;
+            pointer-events: none;
+            transition: opacity 180ms ease;
+          }
+          .rotating-tip > * {
+            position: relative;
+            z-index: 1;
+          }
+          .rotating-tip:hover,
+          .rotating-tip:focus-within {
+            border-color: rgba(125, 211, 252, 0.42);
+            box-shadow: 0 22px 52px rgba(0, 0, 0, 0.44), 0 0 0 1px rgba(56, 189, 248, 0.08);
+            transform: translateY(-2px);
+          }
+          .rotating-tip:hover::before,
+          .rotating-tip:focus-within::before {
+            opacity: 0.9;
           }
           .rotating-tip-icon {
             display: inline-flex;
@@ -279,6 +344,34 @@ export default function RootLayout({
           .rotating-tip-copy span {
             overflow-wrap: anywhere;
           }
+          .rotating-tip-action {
+            align-items: center;
+            border: 1px solid rgba(96, 165, 250, 0.34);
+            border-radius: 7px;
+            color: rgb(191, 219, 254);
+            display: inline-flex;
+            font-size: 0.78rem;
+            font-weight: 800;
+            justify-content: center;
+            justify-self: start;
+            line-height: 1;
+            margin-top: 0.25rem;
+            min-height: 32px;
+            padding: 0.45rem 0.65rem;
+            text-decoration: none;
+            transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+          }
+          .rotating-tip-action:hover,
+          .rotating-tip-action:focus-visible {
+            background: rgba(59, 130, 246, 0.14);
+            border-color: rgba(147, 197, 253, 0.58);
+            color: #fff;
+            outline: none;
+            transform: translateY(-1px);
+          }
+          .rotating-tip-action:active {
+            transform: scale(0.985);
+          }
           .rotating-tip button {
             display: inline-flex;
             align-items: center;
@@ -290,12 +383,16 @@ export default function RootLayout({
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-muted);
             cursor: pointer;
+            transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
           }
           .rotating-tip button:hover,
           .rotating-tip button:focus-visible {
             color: var(--text-primary);
             border-color: rgba(148, 163, 184, 0.38);
             outline: none;
+          }
+          .rotating-tip button:active {
+            transform: scale(0.96);
           }
           @keyframes rotatingTipIn {
             from {
@@ -310,6 +407,15 @@ export default function RootLayout({
           @media (prefers-reduced-motion: reduce) {
             .rotating-tip {
               animation: none;
+              transition: none;
+            }
+            .rotating-tip-action,
+            .rotating-tip button {
+              transition: none;
+            }
+            .rotating-tip:hover,
+            .rotating-tip:focus-within {
+              transform: none;
             }
           }
           .top-navigation {
@@ -348,9 +454,9 @@ export default function RootLayout({
               flex: 0 0 auto;
             }
             .site-footer {
-              align-items: stretch;
-              flex-direction: column;
+              grid-template-columns: 1fr;
               margin: 1rem;
+              padding: 1rem 0 1.2rem;
             }
             .site-footer-actions {
               justify-content: flex-start;
@@ -359,6 +465,63 @@ export default function RootLayout({
               right: 0.75rem;
               bottom: calc(5.65rem + env(safe-area-inset-bottom));
               width: calc(100vw - 1.5rem);
+            }
+          }
+          @media (max-width: 640px) {
+            .site-footer {
+              margin: 1rem 0 0;
+              padding: 1rem 1rem calc(5.2rem + env(safe-area-inset-bottom));
+            }
+            .site-footer-brand {
+              gap: 0.6rem;
+            }
+            .site-footer-mark {
+              width: 32px;
+              height: 32px;
+            }
+            .site-footer-actions {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: 0.45rem;
+            }
+            .site-footer-pill {
+              justify-content: flex-start;
+              min-height: 38px;
+              white-space: normal;
+            }
+            .rotating-tip {
+              align-items: center;
+              bottom: calc(4.5rem + env(safe-area-inset-bottom));
+              gap: 0.55rem;
+              padding: 0.6rem;
+              width: calc(100vw - 1rem);
+              right: 0.5rem;
+            }
+            .rotating-tip-icon {
+              width: 28px;
+              height: 28px;
+            }
+            .rotating-tip-copy {
+              gap: 0.08rem;
+              font-size: 0.74rem;
+              line-height: 1.28;
+            }
+            .rotating-tip-copy strong {
+              font-size: 0.78rem;
+            }
+            .rotating-tip-copy span {
+              display: -webkit-box;
+              overflow: hidden;
+              -webkit-box-orient: vertical;
+              -webkit-line-clamp: 2;
+            }
+            .rotating-tip-action {
+              min-height: 34px;
+              padding: 0.42rem 0.58rem;
+            }
+            .rotating-tip button {
+              width: 34px;
+              height: 34px;
             }
           }
         `}</style>

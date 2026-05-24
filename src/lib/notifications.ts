@@ -4,6 +4,8 @@ export type ZenithNotification = {
   title: string;
   body: string;
   tone?: ZenithNotificationTone;
+  actionLabel?: string;
+  actionHref?: string;
 };
 
 export const ZENITH_NOTIFY_EVENT = "zenith-notify";

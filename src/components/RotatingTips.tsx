@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BadgeCheck, Bell, Lightbulb, MessageCircle, TriangleAlert, X } from "lucide-react";
 import { playZenithSound } from "@/lib/audio";
@@ -9,7 +10,7 @@ import { usePreferences } from "@/lib/preferences";
 
 const TIP_VISIBLE_MS = 8500;
 const TIP_INTERVAL_MS = 52000;
-const TIP_INITIAL_DELAY_MS = 11000;
+const TIP_INITIAL_DELAY_MS = 26000;
 const PAGE_NOTICE_DELAY_MS = 1800;
 const TIP_SNOOZE_MS = 30 * 60 * 1000;
 const TIP_SNOOZE_KEY = "zenith.tips.snoozedUntil.v1";
@@ -23,7 +24,7 @@ const tips: ZenithNotification[] = [
   },
   {
     title: "Profiles stay local",
-    body: "Zenith profiles are saved in this browser unless you export or import them yourself.",
+    body: "Zenith does not save your character profiles on a server. Profiles, queues, and settings stay in this browser.",
   },
   {
     title: "Market checks",
@@ -44,7 +45,7 @@ const tips: ZenithNotification[] = [
   },
   {
     title: "Profile imports",
-    body: "You only need the visible character hash. Never paste an IdleMMO API key into Zenith.",
+    body: "Imports briefly fetch visible IdleMMO data, then the saved profile stays on your device. Never paste an API key.",
     tone: "warning",
   },
   {
@@ -68,7 +69,7 @@ const pageNotices: Record<string, ZenithNotification> = {
   },
   "/profiles": {
     title: "Profile tip",
-    body: "Profiles are browser-local. Export a backup before clearing browser data.",
+    body: "Profiles are browser-local and not saved on Zenith servers. Export a backup before clearing browser data.",
   },
   "/items": {
     title: "Item tip",
@@ -185,25 +186,43 @@ function rememberSeenPage(pathname: string) {
 
 function isSuppressedByOverlay() {
   if (typeof document === "undefined") return true;
+  const isVisibleBlockingElement = (selector: string) => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    return elements.some((element) => {
+      const style = window.getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0" || style.pointerEvents === "none") {
+        return false;
+      }
+      const rect = element.getBoundingClientRect();
+      return rect.width > 1 && rect.height > 1;
+    });
+  };
+
   return Boolean(
     document.body.classList.contains("command-open")
-    || document.querySelector(".command-overlay")
-    || document.querySelector(".command-wheel-layer")
-    || document.querySelector(".mobile-backdrop")
-    || document.querySelector(".modal-overlay")
-    || document.querySelector('[role="dialog"][aria-modal="true"]')
-    || document.querySelector('[role="alertdialog"]')
+    || isVisibleBlockingElement(".command-overlay")
+    || isVisibleBlockingElement(".command-wheel-layer")
+    || isVisibleBlockingElement(".mobile-backdrop")
+    || isVisibleBlockingElement(".modal-overlay")
+    || isVisibleBlockingElement('[role="dialog"][aria-modal="true"]')
+    || isVisibleBlockingElement('[role="alertdialog"]')
   );
 }
 
 export default function RotatingTips() {
   const pathname = usePathname();
   const { preferences, loaded } = usePreferences();
+  const titleId = useId();
+  const bodyId = useId();
   const [index, setIndex] = useState(0);
   const [current, setCurrent] = useState<ZenithNotification | null>(null);
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const hideTimerRef = useRef<number | undefined>(undefined);
+  const hideStartedAtRef = useRef(0);
+  const hideRemainingRef = useRef(TIP_VISIBLE_MS);
+  const hideCallbackRef = useRef<(() => void) | null>(null);
+  const pausedRef = useRef(false);
   const pendingRetryRef = useRef<number | undefined>(undefined);
   const pendingRef = useRef<ZenithNotification | null>(null);
 
@@ -211,38 +230,69 @@ export default function RotatingTips() {
     setMounted(true);
   }, []);
 
-  const showNotification = (notification: ZenithNotification) => {
+  const clearHideTimer = useCallback(() => {
     window.clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = undefined;
+  }, []);
+
+  const armHideTimer = useCallback((duration = TIP_VISIBLE_MS, onAutoHide?: () => void) => {
+    clearHideTimer();
+    hideRemainingRef.current = duration;
+    hideCallbackRef.current = onAutoHide ?? null;
+    pausedRef.current = false;
+    hideStartedAtRef.current = Date.now();
+    hideTimerRef.current = window.setTimeout(() => {
+      hideTimerRef.current = undefined;
+      hideRemainingRef.current = TIP_VISIBLE_MS;
+      pausedRef.current = false;
+      setVisible(false);
+      hideCallbackRef.current?.();
+      hideCallbackRef.current = null;
+    }, duration);
+  }, [clearHideTimer]);
+
+  const showNotification = useCallback((notification: ZenithNotification) => {
     setCurrent(notification);
     setVisible(true);
     playZenithSound(notification.tone && notification.tone !== "tip" ? notification.tone : "notify");
-    hideTimerRef.current = window.setTimeout(() => setVisible(false), TIP_VISIBLE_MS);
-  };
+    armHideTimer();
+  }, [armHideTimer]);
 
-  const flushPendingIfClear = () => {
+  const pauseHideTimer = useCallback(() => {
+    if (!visible || !hideTimerRef.current || pausedRef.current) return;
+    const elapsed = Date.now() - hideStartedAtRef.current;
+    clearHideTimer();
+    hideRemainingRef.current = Math.max(1600, hideRemainingRef.current - elapsed);
+    pausedRef.current = true;
+  }, [clearHideTimer, visible]);
+
+  const resumeHideTimer = useCallback(() => {
+    if (!visible || !pausedRef.current) return;
+    armHideTimer(hideRemainingRef.current, hideCallbackRef.current ?? undefined);
+  }, [armHideTimer, visible]);
+
+  const flushPendingIfClear = useCallback(() => {
     const pending = pendingRef.current;
     if (!pending || isSuppressedByOverlay()) return false;
     pendingRef.current = null;
     showNotification(pending);
     return true;
-  };
+  }, [showNotification]);
 
-  const schedulePendingFlush = () => {
+  const schedulePendingFlush = useCallback(() => {
     window.clearTimeout(pendingRetryRef.current);
     const retry = (attemptsLeft: number) => {
       if (flushPendingIfClear() || attemptsLeft <= 0) return;
       pendingRetryRef.current = window.setTimeout(() => retry(attemptsLeft - 1), 450);
     };
     pendingRetryRef.current = window.setTimeout(() => retry(18), 450);
-  };
+  }, [flushPendingIfClear]);
 
   useEffect(() => {
     if (!mounted || !loaded || !preferences.inAppNotifications) {
       setVisible(false);
       return;
     }
-
-    let intervalTimer: number | undefined;
 
     const showTip = () => {
       if (Date.now() < getSnoozedUntil()) return;
@@ -252,25 +302,21 @@ export default function RotatingTips() {
         return;
       }
       const next = tips[index];
-      window.clearTimeout(hideTimerRef.current);
       setCurrent(next);
       setVisible(true);
-      hideTimerRef.current = window.setTimeout(() => {
-        setVisible(false);
-        setIndex((current) => (current + 1) % tips.length);
-      }, TIP_VISIBLE_MS);
+      armHideTimer(TIP_VISIBLE_MS, () => setIndex((current) => (current + 1) % tips.length));
     };
 
     const initialTimer = window.setTimeout(showTip, TIP_INITIAL_DELAY_MS);
-    intervalTimer = window.setInterval(showTip, TIP_INTERVAL_MS);
+    const intervalTimer = window.setInterval(showTip, TIP_INTERVAL_MS);
 
     return () => {
       window.clearTimeout(initialTimer);
-      window.clearTimeout(hideTimerRef.current);
+      clearHideTimer();
       window.clearTimeout(pendingRetryRef.current);
       window.clearInterval(intervalTimer);
     };
-  }, [index, loaded, mounted, preferences.inAppNotifications]);
+  }, [armHideTimer, clearHideTimer, index, loaded, mounted, preferences.inAppNotifications, schedulePendingFlush]);
 
   useEffect(() => {
     if (!mounted || !loaded || !preferences.inAppNotifications) return;
@@ -286,7 +332,7 @@ export default function RotatingTips() {
     };
     window.addEventListener(ZENITH_NOTIFY_EVENT, handleNotification);
     return () => window.removeEventListener(ZENITH_NOTIFY_EVENT, handleNotification);
-  }, [loaded, mounted, preferences.inAppNotifications]);
+  }, [flushPendingIfClear, loaded, mounted, preferences.inAppNotifications, schedulePendingFlush]);
 
   useEffect(() => {
     if (!mounted || !loaded || !preferences.inAppNotifications) return;
@@ -304,7 +350,7 @@ export default function RotatingTips() {
       showNotification(notice);
     }, PAGE_NOTICE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [loaded, mounted, pathname, preferences.inAppNotifications]);
+  }, [loaded, mounted, pathname, preferences.inAppNotifications, schedulePendingFlush, showNotification]);
 
   useEffect(() => {
     if (!mounted || !loaded || !preferences.inAppNotifications) return;
@@ -318,18 +364,27 @@ export default function RotatingTips() {
       flushPendingIfClear();
     }, 550);
     return () => window.clearInterval(timer);
-  }, [loaded, mounted, pathname, preferences.inAppNotifications, visible]);
+  }, [flushPendingIfClear, loaded, mounted, pathname, preferences.inAppNotifications, schedulePendingFlush, visible]);
 
   const dismiss = () => {
-    window.clearTimeout(hideTimerRef.current);
+    clearHideTimer();
+    hideCallbackRef.current = null;
     window.localStorage.setItem(TIP_SNOOZE_KEY, String(Date.now() + TIP_SNOOZE_MS));
     setVisible(false);
     setIndex((current) => (current + 1) % tips.length);
   };
 
+  const followAction = () => {
+    clearHideTimer();
+    hideCallbackRef.current = null;
+    pendingRef.current = null;
+    setVisible(false);
+  };
+
   if (!mounted || !loaded || !preferences.inAppNotifications || !visible || !current) return null;
 
   const tone = current.tone || "tip";
+  const hasAction = Boolean(current.actionHref && current.actionLabel);
   const Icon = tone === "contact"
     ? MessageCircle
     : tone === "success"
@@ -341,17 +396,41 @@ export default function RotatingTips() {
           : Bell;
 
   return (
-    <aside className={`rotating-tip rotating-tip-${tone}`} role="status" aria-live="polite" aria-label="Zenith notification">
+    <div
+      className={`rotating-tip rotating-tip-${tone}`}
+      role="status"
+      aria-live="polite"
+      aria-labelledby={titleId}
+      aria-describedby={bodyId}
+      onPointerEnter={pauseHideTimer}
+      onPointerLeave={resumeHideTimer}
+      onFocusCapture={pauseHideTimer}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          resumeHideTimer();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          dismiss();
+        }
+      }}
+    >
       <div className="rotating-tip-icon" aria-hidden="true">
         <Icon size={17} />
       </div>
       <div className="rotating-tip-copy">
-        <strong>{current.title}</strong>
-        <span>{current.body}</span>
+        <strong id={titleId}>{current.title}</strong>
+        <span id={bodyId}>{current.body}</span>
+        {hasAction && (
+          <Link href={current.actionHref || "#"} className="rotating-tip-action" onClick={followAction}>
+            {current.actionLabel}
+          </Link>
+        )}
       </div>
       <button type="button" onClick={dismiss} aria-label="Dismiss tips for now">
         <X size={15} />
       </button>
-    </aside>
+    </div>
   );
 }

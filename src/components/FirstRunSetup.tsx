@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Settings, Upload, UserRound, X } from "lucide-react";
 import { playZenithSound } from "@/lib/audio";
 import { usePreferences } from "@/lib/preferences";
@@ -13,7 +13,8 @@ export default function FirstRunSetup() {
   const { loaded: preferencesLoaded } = usePreferences();
   const { activeProfile, state, loaded: profilesLoaded } = useProfiles();
   const [visible, setVisible] = useState(false);
-  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!preferencesLoaded || !profilesLoaded) return;
@@ -25,34 +26,79 @@ export default function FirstRunSetup() {
     return () => window.clearTimeout(timer);
   }, [preferencesLoaded, profilesLoaded]);
 
+  const dismiss = useCallback(() => {
+    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    setVisible(false);
+    playZenithSound("close");
+  }, []);
+
+  const finish = useCallback(() => {
+    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    setVisible(false);
+    playZenithSound("success", { force: true });
+  }, []);
+
   useEffect(() => {
     if (!visible) return;
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.classList.add("zenith-setup-open");
-    const focusFrame = window.requestAnimationFrame(() => closeRef.current?.focus({ preventScroll: true }));
+    const focusFrame = window.requestAnimationFrame(() => modalRef.current?.focus({ preventScroll: true }));
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      dismiss();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        dismiss();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const focusable = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+      });
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+
+      if (!modal.contains(activeElement)) {
+        event.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (event.shiftKey && activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+
+      if (!event.shiftKey && activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.classList.remove("zenith-setup-open");
       window.cancelAnimationFrame(focusFrame);
       window.removeEventListener("keydown", handleKeyDown);
+      const previous = previouslyFocusedRef.current;
+      if (previous && document.contains(previous)) {
+        previous.focus({ preventScroll: true });
+      }
     };
-  }, [visible]);
-
-  const dismiss = () => {
-    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
-    setVisible(false);
-    playZenithSound("close");
-  };
-
-  const finish = () => {
-    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
-    setVisible(false);
-    playZenithSound("success", { force: true });
-  };
+  }, [dismiss, visible]);
 
   if (!visible) return null;
 
@@ -60,22 +106,36 @@ export default function FirstRunSetup() {
   const profileLabel = activeProfile?.name?.trim() || (hasProfile ? "Profile saved" : "No profile yet");
 
   return (
-    <div className="setup-overlay" role="presentation">
-      <section className="setup-modal" role="dialog" aria-modal="true" aria-labelledby="setup-title">
-        <button ref={closeRef} type="button" className="setup-close" onClick={dismiss} aria-label="Close setup guide">
+    <div
+      className="setup-overlay"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) dismiss();
+      }}
+    >
+      <section
+        ref={modalRef}
+        className="setup-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setup-title"
+        aria-describedby="setup-description"
+        tabIndex={-1}
+      >
+        <button type="button" className="setup-close" onClick={dismiss} aria-label="Close setup guide">
           <X size={16} />
         </button>
         <div className="setup-kicker">First time setup</div>
         <h2 id="setup-title">Make Zenith match your character before planning.</h2>
-        <p>
-          Zenith works best after you import or create a local profile, check your settings, and know how to back up your data.
+        <p id="setup-description">
+          Zenith works best after you import or create a local profile, check your settings, and know how to back up your data. Your saved profiles and planner data stay in this browser.
         </p>
 
         <div className="setup-step-grid">
           <Link href="/profiles" className={`setup-step ${hasProfile ? "setup-step-done" : ""}`} onClick={finish}>
             <span><UserRound size={17} /></span>
             <strong>{hasProfile ? profileLabel : "Create or import profile"}</strong>
-            <small>{hasProfile ? "Profile data is ready for calculators." : "Use your visible IdleMMO character hash or create one manually."}</small>
+            <small>{hasProfile ? "Profile data is ready for calculators and remains browser-local." : "Use your visible IdleMMO character hash or create one manually."}</small>
             {hasProfile && <CheckCircle2 size={16} />}
           </Link>
 
@@ -93,7 +153,7 @@ export default function FirstRunSetup() {
         </div>
 
         <div className="setup-actions">
-          <button type="button" className="setup-secondary" onClick={dismiss}>Remind me through tips</button>
+          <button type="button" className="setup-secondary" onClick={dismiss}>Not now</button>
           <button type="button" className="setup-primary" onClick={finish}>Start exploring</button>
         </div>
       </section>

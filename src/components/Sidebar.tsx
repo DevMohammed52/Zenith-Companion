@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import { getActiveNavGroup, isNavItemActive, NAV_GROUPS } from '@/lib/navigation';
 import { usePreferences } from '@/lib/preferences';
+import { useSidebar } from '@/context/SidebarContext';
 
 const DEFAULT_EXPANDED_GROUPS: Record<string, boolean> = {
     'General': true,
@@ -14,8 +15,6 @@ const DEFAULT_EXPANDED_GROUPS: Record<string, boolean> = {
     'World & Combat': true,
 };
 const SIDEBAR_GROUP_STORAGE_KEY = 'zenith.sidebar.expandedGroups.v1';
-
-import { useSidebar } from '@/context/SidebarContext';
 
 export default function Sidebar() {
     const pathname = usePathname();
@@ -149,34 +148,9 @@ export default function Sidebar() {
                         onClick={() => setMobileOpen(false)} 
                         className="mobile-sidebar-close"
                         aria-label="Close navigation menu"
-                        style={{ 
-                            background: 'rgba(255,255,255,0.05)', 
-                            border: '1px solid var(--border-subtle)', 
-                            borderRadius: '6px', 
-                            width: '40px',
-                            height: '40px',
-                            minWidth: '40px',
-                            minHeight: '40px',
-                            padding: 0,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--text-muted)'
-                        }}
                     >
                         <X size={18} />
                     </button>
-                    <style>{`
-                        @media (min-width: 1181px) {
-                            .mobile-sidebar-close {
-                                display: none !important;
-                            }
-                        }
-                        @media (max-width: 1180px) {
-                            .mobile-sidebar-close {
-                                display: flex !important;
-                            }
-                        }
-                    `}</style>
                 </div>
 
                 <nav className="sidebar-nav custom-scrollbar">
@@ -186,12 +160,18 @@ export default function Sidebar() {
                         const groupPanelId = `sidebar-group-${group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
                         
                         return (
-                            <div key={group.label} className={`sidebar-group ${isActiveGroup ? 'sidebar-group-active' : ''}`}>
+                            <div
+                                key={group.label}
+                                className={`sidebar-group ${isActiveGroup ? 'sidebar-group-active' : ''}`}
+                                data-active={isActiveGroup ? 'true' : 'false'}
+                            >
                                 <button 
                                     onClick={() => toggleGroup(group.label)}
                                     aria-expanded={isExpanded}
+                                    aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${group.label} navigation group`}
                                     aria-controls={groupPanelId}
                                     className="sidebar-group-button"
+                                    data-expanded={isExpanded ? 'true' : 'false'}
                                 >
                                     <div className="sidebar-group-title">
                                         <ZenithIcon name={group.icon} size={15} />
@@ -200,7 +180,7 @@ export default function Sidebar() {
                                             <small>{group.eyebrow}</small>
                                         </span>
                                     </div>
-                                    <div className="sidebar-group-chevron" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)' }}>
+                                    <div className="sidebar-group-chevron" aria-hidden="true">
                                         <ChevronDown size={14} />
                                     </div>
                                 </button>
@@ -209,7 +189,6 @@ export default function Sidebar() {
                                     id={groupPanelId}
                                     className="sidebar-group-panel"
                                     data-expanded={isExpanded ? 'true' : 'false'}
-                                    style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
                                 >
                                     <div className="sidebar-group-items">
                                         {group.items.map(item => {
@@ -219,6 +198,7 @@ export default function Sidebar() {
                                                     key={item.href} 
                                                     href={item.href} 
                                                     className={`nav-link ${active ? 'nav-link-active' : ''}`}
+                                                    aria-current={active ? 'page' : undefined}
                                                     onClick={closeMobileMenu}
                                                 >
                                                     <span className="nav-link-main">

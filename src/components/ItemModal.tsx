@@ -297,6 +297,18 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const modalLiquidity = getMarketLiquidity(modalMarketDatum);
   const modalStableVolume = modalLiquidity.stableVolume3d || modalMarketVolume;
 
+  const openRelatedItem = (name?: string | null) => {
+    const targetName = String(name || '').trim();
+    if (!targetName) return;
+    openItemByName?.(targetName);
+  };
+
+  const prefetchRelatedItem = (name?: string | null) => {
+    const targetName = String(name || '').trim();
+    if (!targetName) return;
+    prefetchItem?.(targetName);
+  };
+
   const showUtility = Object.keys(groupedUtility).length > 0;
   const showMarket = item && itemIsTradeable;
   const showAcquisition = acquisitionSources.length > 0;
@@ -349,6 +361,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         className="modal-card"
         ref={modalDialogRef}
         role="dialog"
+        aria-busy={loading}
         tabIndex={-1}
       >
         <div className="modal-header-section" style={{ borderBottomColor: qColor + '33' }}>
@@ -395,7 +408,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
         <div className="modal-body custom-scrollbar">
           {loading ? (
-            <div className="skeleton-grid">
+            <div className="skeleton-grid" role="status" aria-live="polite" aria-label="Loading item details">
               {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton-box" />)}
             </div>
           ) : (
@@ -654,8 +667,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 <button
                   type="button"
                   className="bento-card yield-card item-link-card"
-                  onClick={() => openItemByName?.(item.recipe_yield.item_name)}
-                  onMouseEnter={() => prefetchItem?.(item.recipe_yield.item_name)}
+                  aria-label={`Open crafted item ${item.recipe_yield.item_name}`}
+                  onClick={() => openRelatedItem(item.recipe_yield.item_name)}
+                  onMouseEnter={() => prefetchRelatedItem(item.recipe_yield.item_name)}
                 >
                   <div className="card-label"><Zap size={14} color="var(--text-accent)" /> CRAFTS</div>
                   <div className="yield-content">
@@ -692,13 +706,20 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><Package size={14} /> CHEST CONTENTS</div>
                   <div className="list-container scroll-y">
                     {(item.loot_table || item.chest_drops || []).map((drop: any, i: number) => (
-                      <div key={i} className="loot-row" onClick={() => openItemByName?.(drop.item_name || drop.name)}>
+                      <button
+                        key={i}
+                        type="button"
+                        className="loot-row"
+                        aria-label={`Open ${drop.item_name || drop.name} item details`}
+                        onClick={() => openRelatedItem(drop.item_name || drop.name)}
+                        onMouseEnter={() => prefetchRelatedItem(drop.item_name || drop.name)}
+                      >
                         <div className="loot-info">
                             <div className="loot-name">{drop.item_name || drop.name}</div>
                             {(Number(drop.quantity) || 1) > 1 && <div className="loot-qty">x{drop.quantity}</div>}
                         </div>
                         <div className="loot-chance">{drop.chance}%</div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -718,14 +739,14 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             className="source-pill group-source"
                             onClick={() => {
                               if (sourceItemName) {
-                                openItemByName?.(sourceItemName);
+                                openRelatedItem(sourceItemName);
                                 return;
                               }
                               onClose();
                               router.push(getSourceRoute(src));
                             }}
                             onMouseEnter={() => {
-                              if (sourceItemName) prefetchItem?.(sourceItemName);
+                              if (sourceItemName) prefetchRelatedItem(sourceItemName);
                             }}
                           >
                             <div className="source-meta">
@@ -792,10 +813,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <div className="utility-group-title">{type}</div>
                         <div className="utility-group-items">
                           {items.map((use: any, i: number) => (
-                            <div key={i} className="utility-pill-compact" onClick={() => openItemByName?.(use.name)}>
+                            <button
+                              key={i}
+                              type="button"
+                              className="utility-pill-compact"
+                              aria-label={`Open ${use.name} item details`}
+                              onClick={() => openRelatedItem(use.name)}
+                              onMouseEnter={() => prefetchRelatedItem(use.name)}
+                            >
                               <div className="up-name">{use.name}</div>
                               <div className="up-qty">x{use.amount}</div>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -883,8 +911,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <button
                           type="button"
                           className="recipe-link-button"
-                          onClick={() => openItemByName?.(craftedByRecipeName)}
-                          onMouseEnter={() => prefetchItem?.(craftedByRecipeName)}
+                          aria-label={`Open recipe item ${craftedByRecipeName}`}
+                          onClick={() => openRelatedItem(craftedByRecipeName)}
+                          onMouseEnter={() => prefetchRelatedItem(craftedByRecipeName)}
                         >
                           <span>
                             <span className="recipe-link-kicker">Recipe item</span>
@@ -897,13 +926,20 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       
                       <div className="list-container scroll-y" style={{ maxHeight: '180px' }}>
                         {recipeMats.map((ing: any, idx: number) => (
-                          <div key={idx} className="ing-row" onClick={() => openItemByName?.(ing.name || ing.item_name)}>
+                          <button
+                            key={idx}
+                            type="button"
+                            className="ing-row"
+                            aria-label={`Open ${ing.name || ing.item_name} item details`}
+                            onClick={() => openRelatedItem(ing.name || ing.item_name)}
+                            onMouseEnter={() => prefetchRelatedItem(ing.name || ing.item_name)}
+                          >
                             <div className="ing-name-link">
                               {ing?.name || ing?.item_name}
                               <span className="ing-price-sub">@{getRecipeMatUnitPrice(ing).toLocaleString()}g</span>
                             </div>
                             <span className="ing-qty">x{ing?.amount || ing?.quantity}</span>
-                          </div>
+                          </button>
                         ))}
                       </div>
 
@@ -960,41 +996,54 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       </div>
 
       <style jsx>{`
-        .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(16px); }
-        .modal-card { position: relative; width: 100%; max-width: 1200px; max-height: 90vh; background: #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 32px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8); }
+        .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
+        .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(20px) saturate(1.08); animation: modalBackdropFade 0.2s ease-out both; }
+        .modal-card { position: relative; width: 100%; max-width: 1200px; max-height: min(90vh, 920px); background: radial-gradient(circle at 14% 0%, color-mix(in srgb, ${qColor}, transparent 86%), transparent 34%), linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)), #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 90px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.03) inset; animation: modalCardReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .modal-card:focus { outline: none; }
         
-        .modal-header-section { flex-shrink: 0; padding: 2rem 3rem; background: linear-gradient(to bottom, rgba(255,255,255,0.03), transparent); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .modal-header-section { flex-shrink: 0; padding: 2rem 3rem; background: linear-gradient(to bottom, rgba(255,255,255,0.04), transparent); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .header-flex { display: flex; align-items: center; justify-content: space-between; }
-        .header-left { display: flex; align-items: center; gap: 1.5rem; }
-        .item-icon-large { width: 64px; height: 64px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .header-left { display: flex; align-items: center; gap: 1.5rem; min-width: 0; }
+        .item-icon-large { width: 64px; height: 64px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.28); object-fit: contain; padding: 0.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 26px rgba(0,0,0,0.28); }
         .item-title { font-size: 2.25rem; font-weight: 800; margin: 0; letter-spacing: -0.03em; }
         
         .badge-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
-        .type-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.05); padding: 2px 10px; border-radius: 6px; }
+        .type-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.06); padding: 2px 10px; border-radius: 6px; }
         .quality-text { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .dot { color: rgba(255,255,255,0.28); font-size: 0.8rem; line-height: 1; }
         .uses-badge { font-size: 10px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.1); padding: 2px 8px; border-radius: 4px; }
         .vendor-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; color: #fbbf24; }
         .vendor-badge img { width: 14px; height: 14px; }
+        .untradable-badge { border: 1px solid rgba(248,113,113,0.26); border-radius: 5px; background: rgba(248,113,113,0.09); color: #fca5a5; font-size: 10px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 8px; text-transform: uppercase; }
         
-        .modal-close-btn { background: rgba(255,255,255,0.05); border: none; color: rgba(255,255,255,0.4); padding: 10px; border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+        .modal-close-btn { background: rgba(255,255,255,0.05); border: none; color: rgba(255,255,255,0.72); padding: 10px; border-radius: 50%; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
         .modal-close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; transform: rotate(90deg); }
+        .modal-close-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56,189,248,0.2); }
 
-        .modal-body { flex: 1; overflow-y: auto; padding: 3rem; position: relative; }
+        .modal-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 3rem; position: relative; -webkit-overflow-scrolling: touch; }
         .bento-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
-        .bento-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 1.5rem; display: flex; flex-direction: column; flex: 1 1 350px; min-width: 300px; min-height: 180px; }
+        .bento-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.065); border-radius: 10px; padding: 1.5rem; display: flex; flex-direction: column; flex: 1 1 350px; min-width: 300px; min-height: 180px; }
         button.bento-card { color: inherit; font: inherit; text-align: left; width: auto; }
+        .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+        .skeleton-box { min-height: 168px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(90deg, rgba(255,255,255,0.035), rgba(255,255,255,0.075), rgba(255,255,255,0.035)); background-size: 220% 100%; animation: skeletonPulse 1.2s ease-in-out infinite; }
         .item-link-card { transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease; }
         .item-link-card:hover { transform: translateY(-2px); }
         .item-link-card:focus-visible,
         .recipe-link-button:focus-visible,
-        .add-queue-btn:focus-visible {
+        .add-queue-btn:focus-visible,
+        .loot-row:focus-visible,
+        .utility-pill-compact:focus-visible,
+        .ing-row:focus-visible,
+        .source-map-btn:focus-visible,
+        .source-pill:focus-visible,
+        .lore-thread-row:focus-visible,
+        .market-link:focus-visible {
           outline: none;
           border-color: var(--text-accent);
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 82%);
         }
         .full-width { flex: 1 1 100% !important; }
-        .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.25); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
+        .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.68); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
         .source-context-note { color: var(--text-muted); font-size: 0.8rem; font-weight: 650; line-height: 1.35; margin: -0.8rem 0 0.9rem; }
 
         .market-card { flex: 2 1 600px; background: linear-gradient(135deg, rgba(56,189,248,0.08), transparent); }
@@ -1004,12 +1053,15 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         
         .market-stats { display: flex; gap: 2.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); }
         .m-stat { display: flex; flex-direction: column; gap: 4px; }
-        .m-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 600; text-transform: uppercase; }
+        .m-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.58); font-weight: 600; text-transform: uppercase; }
         .m-stat strong { font-size: 1.1rem; color: #fff; }
         .liquidity-status.active { color: #4ade80; }
         .liquidity-status.steady { color: #facc15; }
         .liquidity-status.thin { color: #fbbf24; }
         .liquidity-status.risk { color: #f87171; }
+        .market-empty { align-items: flex-start; display: grid; gap: 0.35rem; padding: 1rem; border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.02); }
+        .empty-title { color: #fff; font-size: 1rem; font-weight: 900; }
+        .empty-sub { color: rgba(255,255,255,0.56); font-size: 0.86rem; line-height: 1.45; }
         .market-liquidity-note {
           display: flex;
           align-items: flex-start;
@@ -1035,9 +1087,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .req-pill .stat-val { color: #f87171; }
 
         .stats-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; width: 100%; }
-        .stat-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 12px; display: flex; flex-direction: column; gap: 2px; }
+        .stat-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; gap: 2px; }
         .stat-val { font-size: 1.1rem; font-weight: 800; color: #fff; }
-        .stat-key { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-key { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.58); text-transform: uppercase; letter-spacing: 0.05em; }
         .effect-pill { border-color: rgba(168, 85, 247, 0.2); background: rgba(168, 85, 247, 0.02); }
         .effect-pill .stat-val { color: #c084fc; font-size: 0.9rem; }
         .full-width-pill { grid-column: span 1; }
@@ -1077,7 +1129,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
         .sell-advisor-main span,
         .sell-advisor-metrics span {
-          color: rgba(255,255,255,0.45);
+          color: rgba(255,255,255,0.62);
           font-size: 0.65rem;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -1092,7 +1144,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         }
 
         .sell-advisor-main em {
-          color: rgba(255,255,255,0.45);
+          color: rgba(255,255,255,0.62);
           font-style: normal;
           overflow-wrap: anywhere;
         }
@@ -1206,7 +1258,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .y-stat strong { font-size: 0.9rem; color: #fff; }
         .yield-action { align-items: center; color: var(--text-accent); display: flex; font-size: 0.75rem; font-weight: 900; gap: 0.4rem; letter-spacing: 0.06em; margin-top: 1.2rem; text-transform: uppercase; }
 
-        .loot-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; cursor: pointer; transition: 0.2s; }
+        .loot-row { color: inherit; font: inherit; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
         .loot-row:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
         .loot-name { font-size: 0.9rem; font-weight: 600; color: #fff; }
         .loot-qty { font-size: 0.75rem; color: var(--text-accent); font-family: monospace; }
@@ -1215,7 +1267,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .utility-group { margin-bottom: 1.5rem; width: 100%; }
         .utility-group-title { font-size: 0.65rem; font-weight: 900; color: rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; }
         .utility-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
-        .utility-pill-compact { padding: 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .utility-pill-compact { color: inherit; font: inherit; text-align: left; width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
         .utility-pill-compact:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.08); }
         .up-name { font-size: 0.75rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .up-qty { font-size: 0.7rem; color: var(--text-accent); font-weight: 800; }
@@ -1226,7 +1278,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .scroll-y::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
         .source-actions-row { align-items: stretch; display: grid; gap: 0.5rem; grid-template-columns: minmax(0, 1fr) auto; margin-bottom: 0.5rem; }
-        .source-pill { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: inherit; cursor: pointer; display: block; font: inherit; padding: 1rem; border-radius: 16px; margin-bottom: 0.5rem; text-align: left; width: 100%; transition: all 0.2s ease; }
+        .source-pill { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: inherit; cursor: pointer; display: block; font: inherit; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; text-align: left; width: 100%; transition: all 0.2s ease; }
         .source-actions-row .source-pill { margin-bottom: 0; }
         .source-pill:focus-visible,
         .source-pill:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
@@ -1259,7 +1311,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .source-type { font-size: 0.65rem; font-weight: 800; color: var(--text-accent); text-transform: uppercase; }
         .source-chance { font-size: 0.7rem; font-weight: 700; color: var(--text-success); }
         .source-name { font-size: 1rem; font-weight: 600; color: #fff; }
-        .source-loc { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+        .source-loc { font-size: 0.8rem; color: rgba(255,255,255,0.64); margin-top: 4px; }
 
         .recipe-box { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
         .recipe-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
@@ -1268,7 +1320,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           align-items: center;
           background: rgba(251,191,36,0.05);
           border: 1px solid rgba(251,191,36,0.16);
-          border-radius: 14px;
+          border-radius: 10px;
           color: inherit;
           cursor: pointer;
           display: flex;
@@ -1353,13 +1405,18 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .ing-row { 
           display: flex; 
           justify-content: space-between; 
+          align-items: center;
           padding: 0.75rem 1rem; 
           border: 1px solid rgba(255,255,255,0.03);
           background: rgba(255,255,255,0.01);
+          color: inherit;
           cursor: pointer; 
+          font: inherit;
+          text-align: left;
           transition: all 0.2s ease; 
           border-radius: 12px; 
           margin-bottom: 0.5rem;
+          width: 100%;
         }
         .ing-row:hover { 
           background: rgba(255,255,255,0.04); 
@@ -1381,9 +1438,88 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .profit-footer strong { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; }
 
         .modal-footer { flex-shrink: 0; padding: 1.5rem 3rem; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); z-index: 10; }
-        .item-id { font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.2); }
+        .item-id { font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.56); }
         .market-link { font-size: 0.85rem; color: #38bdf8; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; }
         .market-link:hover { text-decoration: underline; }
+
+        .item-link-card,
+        .lore-thread-row,
+        .recipe-link-button,
+        .add-queue-btn,
+        .loot-row,
+        .utility-pill-compact,
+        .source-pill,
+        .source-map-btn,
+        .ing-row,
+        .market-link,
+        .modal-close-btn {
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+
+        .item-link-card:active,
+        .lore-thread-row:active,
+        .recipe-link-button:active,
+        .loot-row:active,
+        .utility-pill-compact:active,
+        .source-pill:active,
+        .source-map-btn:active,
+        .ing-row:active {
+          transform: scale(0.99);
+        }
+
+        @keyframes modalBackdropFade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes modalCardReveal {
+          from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.985);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes skeletonPulse {
+          from { background-position: 120% 0; }
+          to { background-position: -120% 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .modal-backdrop,
+          .modal-card,
+          .skeleton-box {
+            animation: none !important;
+          }
+          .modal-close-btn,
+          .item-link-card,
+          .lore-thread-row,
+          .recipe-link-button,
+          .add-queue-btn,
+          .loot-row,
+          .utility-pill-compact,
+          .source-pill,
+          .source-map-btn,
+          .ing-row {
+            transition: none !important;
+          }
+          .modal-close-btn:hover,
+          .item-link-card:hover,
+          .lore-thread-row:hover,
+          .recipe-link-button:hover,
+          .add-queue-btn:hover,
+          .loot-row:hover,
+          .utility-pill-compact:hover,
+          .source-pill:hover,
+          .source-map-btn:hover,
+          .ing-row:hover {
+            transform: none !important;
+          }
+        }
 
         @media (max-width: 900px) {
           .modal-container { align-items: stretch; padding: 0; }
@@ -1403,7 +1539,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           .modal-body { padding: 1rem; }
           .bento-grid { gap: 0.85rem; }
           .bento-card {
-            border-radius: 12px;
+            border-radius: 10px;
             flex: 1 1 100%;
             min-height: 0;
             min-width: 0;

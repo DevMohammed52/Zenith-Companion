@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ZENITH_SOUND_EVENT, ZenithSoundCue, ZenithSoundRequest } from "@/lib/audio";
 import { usePreferences } from "@/lib/preferences";
 
 const interactiveSelector = [
   "button:not(:disabled)",
   "a[href]",
+  "summary",
   "[role='button']",
   "[role='tab']",
-  "input:not(:disabled)",
+  "input[type='button']:not(:disabled)",
+  "input[type='checkbox']:not(:disabled)",
+  "input[type='radio']:not(:disabled)",
+  "input[type='range']:not(:disabled)",
+  "input[type='reset']:not(:disabled)",
+  "input[type='submit']:not(:disabled)",
   "select:not(:disabled)",
-  "textarea:not(:disabled)",
 ].join(",");
 
 const sfxSources: Record<Exclude<ZenithSoundCue, "lofi">, string> = {
@@ -35,16 +40,18 @@ export default function ZenithAudio() {
   const prefsRef = useRef(preferences);
   const activeRef = useRef(true);
 
-  const currentVolume = (scale = 1) => Math.max(0, Math.min(1, ((prefsRef.current.audioVolume ?? 35) / 100) * scale));
+  const currentVolume = useCallback((scale = 1) => {
+    return Math.max(0, Math.min(1, ((prefsRef.current.audioVolume ?? 35) / 100) * scale));
+  }, []);
 
-  const refreshVolumes = () => {
+  const refreshVolumes = useCallback(() => {
     Object.values(sfxRef.current).forEach((audio) => {
       if (audio) audio.volume = currentVolume(0.78);
     });
     if (musicRef.current) musicRef.current.volume = currentVolume(0.48);
-  };
+  }, [currentVolume]);
 
-  const getSfx = (cue: Exclude<ZenithSoundCue, "lofi">) => {
+  const getSfx = useCallback((cue: Exclude<ZenithSoundCue, "lofi">) => {
     if (!sfxRef.current[cue]) {
       const audio = new Audio(sfxSources[cue]);
       audio.preload = "auto";
@@ -52,14 +59,14 @@ export default function ZenithAudio() {
       sfxRef.current[cue] = audio;
     }
     return sfxRef.current[cue];
-  };
+  }, [currentVolume]);
 
-  const stopMusic = () => {
+  const stopMusic = useCallback(() => {
     if (!musicRef.current) return;
     musicRef.current.pause();
-  };
+  }, []);
 
-  const startMusic = () => {
+  const startMusic = useCallback(() => {
     if (!activeRef.current) return;
     if (!musicRef.current) {
       const audio = new Audio(musicSource);
@@ -70,9 +77,23 @@ export default function ZenithAudio() {
     }
     refreshVolumes();
     void musicRef.current.play().catch(() => {});
-  };
+  }, [currentVolume, refreshVolumes]);
 
-  const playCue = (cue: ZenithSoundCue, options: { force?: boolean } = {}) => {
+  const releaseAudio = useCallback(() => {
+    stopMusic();
+    Object.values(sfxRef.current).forEach((audio) => {
+      if (!audio) return;
+      audio.pause();
+      audio.src = "";
+    });
+    sfxRef.current = {};
+    if (musicRef.current) {
+      musicRef.current.src = "";
+      musicRef.current = null;
+    }
+  }, [stopMusic]);
+
+  const playCue = useCallback((cue: ZenithSoundCue, options: { force?: boolean } = {}) => {
     if (!activeRef.current) return;
     if (cue === "lofi") {
       startMusic();
@@ -91,7 +112,7 @@ export default function ZenithAudio() {
     refreshVolumes();
     audio.currentTime = 0;
     void audio.play().catch(() => {});
-  };
+  }, [getSfx, refreshVolumes, startMusic]);
 
   useEffect(() => {
     prefsRef.current = preferences;
@@ -99,7 +120,7 @@ export default function ZenithAudio() {
     if (!loaded) return;
     if (preferences.ambientMusic && activeRef.current) startMusic();
     else stopMusic();
-  }, [loaded, preferences, preferences.audioVolume]);
+  }, [loaded, preferences, preferences.audioVolume, refreshVolumes, startMusic, stopMusic]);
 
   useEffect(() => {
     const refreshActiveState = () => {
@@ -119,9 +140,11 @@ export default function ZenithAudio() {
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isTrusted || event.defaultPrevented || event.button !== 0) return;
       if (!prefsRef.current.soundEffects) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target?.closest(interactiveSelector)) return;
+      if (target.closest("[aria-disabled='true'], [data-zenith-sound='off']")) return;
       playCue("ui");
     };
 
@@ -138,15 +161,9 @@ export default function ZenithAudio() {
       window.removeEventListener("blur", refreshActiveState);
       document.removeEventListener("visibilitychange", refreshActiveState);
       document.removeEventListener("pointerdown", handlePointerDown, true);
-      stopMusic();
-      Object.values(sfxRef.current).forEach((audio) => {
-        if (!audio) return;
-        audio.pause();
-        audio.src = "";
-      });
-      if (musicRef.current) musicRef.current.src = "";
+      releaseAudio();
     };
-  }, []);
+  }, [playCue, releaseAudio, startMusic, stopMusic]);
 
   return null;
 }
