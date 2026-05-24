@@ -1,4 +1,5 @@
 import type { CharacterProfile } from "@/lib/profiles";
+import { calculatePetStatValue, type PetStatKey } from "@/lib/pet-stats";
 
 export type ProfileItemRecord = {
   name?: string;
@@ -21,7 +22,6 @@ export type PetDatabaseRecord = {
 };
 
 export const RARITY_ORDER = ["STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"];
-const PET_BOOSTED_STATS = new Set(["agility", "accuracy", "protection", "attack_power", "movement_speed"]);
 
 export type PetMasteryLevelRecord = {
   level?: number;
@@ -250,8 +250,6 @@ export function calculatePetStats(
   if (!pet?.stats) return stats;
   const petLevel = Math.max(1, Number(level || 1));
   const evo = Math.max(0, Number(evolution || 0));
-  const boostPercent = Number(masteryBonusPercent || 0) + Math.min(5, evo) * 5;
-  const multiplier = 1 + boostPercent / 100;
   const mapping: Record<string, keyof typeof stats> = {
     agility: "agility",
     accuracy: "accuracy",
@@ -266,11 +264,13 @@ export function calculatePetStats(
   for (const [rawKey, formula] of Object.entries(pet.stats)) {
     const key = mapping[rawKey];
     if (!key) continue;
-    const value = Number(formula.base || 0) + (petLevel - 1) * Number(formula.per_level || 0);
-    const boosted = PET_BOOSTED_STATS.has(rawKey) ? value * multiplier : value;
-    stats[key] = key === "movementSpeed" || key === "criticalDamage" || key === "criticalChance"
-      ? roundStat(boosted)
-      : Math.floor(boosted);
+    stats[key] = calculatePetStatValue(formula, {
+      statKey: rawKey as PetStatKey,
+      level: petLevel,
+      masteryBonusPercent,
+      evolutionStage: evo,
+      evolutionApplies: true,
+    });
   }
   return stats;
 }

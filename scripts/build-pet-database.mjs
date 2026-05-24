@@ -495,8 +495,10 @@ const database = {
   },
   formulas: {
     rawStat: "base + ((level - 1) * per_level)",
-    petMastery: "Pet Mastery stat bonus uses the published breakpoint table.",
-    evolution: "Each evolution stage adds 5% to the chosen stat bonus, up to 25%. UI treats it as an all-stat preview until per-stat allocation is verified.",
+    petMastery: "For boosted pet stats, round base first, then add rounded(base * Pet Mastery bonus). Level 100 Pet Mastery is 20%.",
+    boostedStats: "Pet Mastery boosted stats are agility, accuracy, protection, attack_power, and movement_speed.",
+    movementSpeedRounding: "Movement speed rounds base to 1 decimal and bonus to 2 decimals. Pat/evolution bonuses are not applied to movement speed.",
+    evolution: "Each evolution stage adds 5% to the chosen boosted stat bonus, up to 25%. Profile fallback treats evolution as an all-boosted-stat preview until per-stat allocation is stored.",
     huntingTimePerEnemySeconds: "200 - 125 * ((0.7 * min(agility / 120, 1)) + (0.3 * min(movementSpeed / 100, 1)))",
     battleDurationSeconds: "max(8, 8 + (5.65 * currentHealth) + (15 * (totalPower - 3.9 * averageEnemyLevel)))",
   },

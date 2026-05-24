@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowDownUp, ArrowRight, BadgeCheck, Clock3, Database, PawPrint, Plus, Search, Shield, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { AlertTriangle, ArrowDownUp, ArrowRight, BadgeCheck, ChevronDown, Clock3, Database, PawPrint, Plus, RotateCcw, Search, Shield, SlidersHorizontal, Trash2 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { type CharacterProfile, type ProfileOwnedPet, type ProfilePetStats, useProfiles } from "@/lib/profiles";
-import { buildPetMatchLookup, findPetRecordForOwnedPet, type PetRecord } from "@/lib/pets";
+import { buildPetMatchLookup, findPetRecordForOwnedPet, QUALITY_COLORS, type PetRecord, type Quality } from "@/lib/pets";
 import styles from "./page.module.css";
 
 const PET_STAT_LABELS: Array<[keyof ProfilePetStats, string]> = [
@@ -137,6 +137,11 @@ function missingStatCount(stats: ProfilePetStats) {
   return PET_STAT_LABELS.filter(([key]) => stats[key] === "").length;
 }
 
+function getQualityColor(quality?: string) {
+  const normalized = String(quality || "UNKNOWN").trim().toUpperCase() as Quality;
+  return QUALITY_COLORS[normalized] || QUALITY_COLORS.UNKNOWN;
+}
+
 export default function OwnedPetsPage() {
   const { activeProfile, updateProfile } = useProfiles();
   const [petDb, setPetDb] = useState<PetRecord[]>([]);
@@ -146,7 +151,16 @@ export default function OwnedPetsPage() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("level");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
   const ownedPets = useMemo(() => activeProfile?.ownedPets || [], [activeProfile?.ownedPets]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 760px)");
+    const syncViewport = () => setIsCompactViewport(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
 
   useEffect(() => {
     if (!ownedPets.length) {
@@ -213,6 +227,22 @@ export default function OwnedPetsPage() {
 
     return sortDirection === "desc" ? filtered.reverse() : filtered;
   }, [activePetKey, ownedPets, query, sortDirection, sortKey, sourceFilter]);
+  const activeControlCount = [
+    query.trim() !== "",
+    sourceFilter !== "all",
+    sortKey !== "level",
+    sortDirection !== "desc",
+  ].filter(Boolean).length;
+  const controlsModified = activeControlCount > 0;
+  const sourceFilterLabel = SOURCE_FILTERS.find((option) => option.id === sourceFilter)?.label || "All";
+  const sortLabel = SORT_OPTIONS.find((option) => option.id === sortKey)?.label || "Level";
+
+  const resetControls = () => {
+    setQuery("");
+    setSourceFilter("all");
+    setSortKey("level");
+    setSortDirection("desc");
+  };
 
   const updateOwnedPets = (nextPets: ProfileOwnedPet[], message: string) => {
     if (!activeProfile) return;
@@ -265,7 +295,7 @@ export default function OwnedPetsPage() {
           stats: { ...ownedPet.stats },
           notes: ownedPet.notes,
         },
-        ownedPets: ownedPets.map((pet) => ({ ...pet, active: pet.id === ownedPet.id })),
+        ownedPets: ownedPets.map((pet) => ({ ...pet, active: pet.id === ownedPet.id, equipped: pet.id === ownedPet.id })),
       },
       { source: "manual", fieldPaths: ["pet", "ownedPets"] },
     );
@@ -288,7 +318,7 @@ export default function OwnedPetsPage() {
         </div>
       </section>
 
-      <section className={styles.summaryGrid} aria-label="Owned pet summary">
+      <section className={styles.summaryGrid} aria-label="Owned pet summary" tabIndex={0}>
         <div><Database size={17} /><span>Total saved</span><strong>{ownedPets.length}</strong></div>
         <div><PawPrint size={17} /><span>Active/equipped</span><strong>{activeCount}</strong></div>
         <div><BadgeCheck size={17} /><span>Manual</span><strong>{manualCount}</strong></div>
@@ -296,7 +326,7 @@ export default function OwnedPetsPage() {
       </section>
 
       {activeProfile && (
-        <section className={styles.importReadiness} aria-label="Owned pet import readiness">
+        <section className={styles.importReadiness} aria-label="Owned pet import readiness" tabIndex={0}>
           <div>
             <Shield size={16} />
             <span>Profile source</span>
@@ -327,6 +357,18 @@ export default function OwnedPetsPage() {
 
       {activeProfile && ownedPets.length > 0 && (
         <section className={styles.controls} aria-label="Owned pet filters">
+          <div className={styles.controlsHeader}>
+            <span><SlidersHorizontal size={15} aria-hidden="true" /> Controls</span>
+            <small>
+              {controlsModified
+                ? `${activeControlCount} active control${activeControlCount === 1 ? "" : "s"}`
+                : `${visiblePets.length} visible`}
+            </small>
+            <button type="button" onClick={resetControls} disabled={!controlsModified} aria-label="Reset owned pet search, filters, and sorting">
+              <RotateCcw size={14} aria-hidden="true" />
+              Reset
+            </button>
+          </div>
           <label className={styles.searchBox} htmlFor="owned-pet-search">
             <span>Search</span>
             <div>
@@ -341,41 +383,57 @@ export default function OwnedPetsPage() {
             </div>
           </label>
 
-          <div className={styles.segment} aria-label="Source filter">
-            {SOURCE_FILTERS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={sourceFilter === option.id ? styles.activeControl : ""}
-                aria-pressed={sourceFilter === option.id}
-                onClick={() => setSourceFilter(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <details className={styles.filterPanel} open={!isCompactViewport ? true : undefined}>
+            <summary>
+              <span><SlidersHorizontal size={15} aria-hidden="true" /> Source & sort</span>
+              <small>{sourceFilterLabel} / {sortLabel} {sortDirection}</small>
+              <ChevronDown size={16} aria-hidden="true" />
+            </summary>
+            <div className={styles.filterGroups}>
+              <div className={styles.controlGroup}>
+                <span>Source</span>
+                <div className={styles.segment} aria-label="Source filter">
+                  {SOURCE_FILTERS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={sourceFilter === option.id ? styles.activeControl : ""}
+                      aria-pressed={sourceFilter === option.id}
+                      onClick={() => setSourceFilter(option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div className={styles.segment} aria-label="Sort controls">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={sortKey === option.id ? styles.activeControl : ""}
-                aria-pressed={sortKey === option.id}
-                onClick={() => setSortKey(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              className={styles.directionButton}
-              aria-label={`Change sort direction, currently ${sortDirection === "asc" ? "ascending" : "descending"}`}
-              onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}
-            >
-              <ArrowDownUp size={15} /> {sortDirection === "asc" ? "Asc" : "Desc"}
-            </button>
-          </div>
+              <div className={styles.controlGroup}>
+                <span>Sort</span>
+                <div className={styles.segment} aria-label="Sort controls">
+                  {SORT_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={sortKey === option.id ? styles.activeControl : ""}
+                      aria-pressed={sortKey === option.id}
+                      onClick={() => setSortKey(option.id)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={styles.directionButton}
+                    aria-pressed={sortDirection === "desc"}
+                    aria-label={`Change sort direction, currently ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                    onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}
+                  >
+                    <ArrowDownUp size={15} /> {sortDirection === "asc" ? "Asc" : "Desc"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </details>
         </section>
       )}
 
@@ -410,7 +468,11 @@ export default function OwnedPetsPage() {
             const missingStats = missingStatCount(ownedPet.stats);
             const displayName = ownedPet.nickname || ownedPet.species;
             return (
-              <article key={ownedPet.id} className={`${styles.card} ${isActive ? styles.activeCard : ""}`}>
+              <article
+                key={ownedPet.id}
+                className={`${styles.card} ${isActive ? styles.activeCard : ""}`}
+                style={{ "--owned-pet-quality": getQualityColor(ownedPet.quality || databasePet?.quality) } as CSSProperties}
+              >
                 <div className={styles.cardTop}>
                   <div className={styles.petImage}>
                     {ownedPet.imageUrl || databasePet?.imageUrl ? <img src={ownedPet.imageUrl || databasePet?.imageUrl || ""} alt="" /> : <PawPrint size={24} />}
@@ -434,7 +496,10 @@ export default function OwnedPetsPage() {
                   {ownedPet.totalExperience !== "" && <span>{Number(ownedPet.totalExperience).toLocaleString()} pet XP</span>}
                 </div>
                 <details className={styles.detailPanel}>
-                  <summary aria-label={`View details for ${displayName}`}>Details for {displayName}</summary>
+                  <summary aria-label={`View details for ${displayName}`}>
+                    <span>Details</span>
+                    <strong>{databasePet ? "Linked data" : "Local snapshot"}</strong>
+                  </summary>
                   <div className={styles.detailGrid}>
                     <div>
                       <strong>All Stats</strong>
@@ -475,7 +540,14 @@ export default function OwnedPetsPage() {
                 </details>
                 {ownedPet.notes && <p className={styles.notes}>{ownedPet.notes}</p>}
                 <div className={styles.cardActions}>
-                  <button type="button" aria-label={`Set ${displayName} as active pet`} onClick={() => handleUseAsActivePet(ownedPet)}>Set active pet</button>
+                  <button
+                    type="button"
+                    aria-label={isActive ? `${displayName} is already the active pet` : `Set ${displayName} as active pet`}
+                    disabled={isActive}
+                    onClick={() => handleUseAsActivePet(ownedPet)}
+                  >
+                    {isActive ? "Current active" : "Set active pet"}
+                  </button>
                   <button type="button" aria-label={`Remove ${displayName} from owned pets`} onClick={() => removePet(ownedPet)}><Trash2 size={15} /> Remove</button>
                 </div>
               </article>
@@ -489,6 +561,7 @@ export default function OwnedPetsPage() {
           <Search size={40} />
           <h2>No owned pets match.</h2>
           <p>Adjust the search text or filter selection.</p>
+          <button type="button" className={styles.emptyAction} onClick={resetControls}>Clear controls</button>
         </section>
       )}
 

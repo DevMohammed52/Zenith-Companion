@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import {
   ArrowRight,
   BarChart3,
+  CheckCircle2,
   ChevronDown,
   CircleDollarSign,
   Clock3,
@@ -14,8 +15,10 @@ import {
   HeartPulse,
   MapPinned,
   PawPrint,
+  RotateCcw,
   Search,
   Shield,
+  SlidersHorizontal,
   Sparkles,
   Swords,
   Trash2,
@@ -231,6 +234,7 @@ function NumberField({
       <span>{label}</span>
       <input
         type="number"
+        inputMode="numeric"
         min={min}
         max={max}
         value={draft}
@@ -387,6 +391,8 @@ function PetPicker({
   onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const reactId = useId();
+  const panelId = `pet-compare-picker-${reactId}`;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const selected = options.find((option) => option.id === value) || null;
@@ -405,6 +411,11 @@ function PetPicker({
 
   useEffect(() => {
     if (!open) return;
+    const compact = window.matchMedia("(max-width: 560px)").matches;
+    if (compact) {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      triggerRef.current?.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+    }
     window.requestAnimationFrame(() => searchRef.current?.focus());
   }, [open]);
 
@@ -415,14 +426,18 @@ function PetPicker({
         type="button"
         className={styles.pickerTrigger}
         style={selected ? ({ "--accent": QUALITY_COLORS[selected.pet.quality] } as CSSProperties) : undefined}
+        data-filled={selected ? "true" : undefined}
+        aria-controls={open ? panelId : undefined}
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-label={selected ? `Change comparison slot ${slotIndex + 1}, currently ${selected.title}` : `Choose pet for comparison slot ${slotIndex + 1}`}
         onClick={() => onOpen(!open)}
       >
         {selected ? <PetImage pet={selected.pet} /> : <div className={styles.emptyAvatar}>{slotIndex + 1}</div>}
         <span>
           <strong>{selected?.title || `Choose pet ${slotIndex + 1}`}</strong>
           <small>{selected ? `${selected.subtitle}${selected.kind === "owned" ? " / Snapshot stats" : ""}` : "Search pet database or owned snapshots"}</small>
+          {selected && <em className={styles.slotSource}>{selected.kind === "owned" ? "Owned snapshot" : qualityLabel(selected.pet.quality)}</em>}
         </span>
         <ChevronDown size={17} />
       </button>
@@ -432,7 +447,7 @@ function PetPicker({
         </button>
       )}
       {open && (
-        <div className={styles.pickerPanel} role="dialog" aria-label={`Choose pet for comparison slot ${slotIndex + 1}`}>
+        <div className={styles.pickerPanel} id={panelId} role="dialog" aria-label={`Choose pet for comparison slot ${slotIndex + 1}`}>
           <div className={styles.pickerPanelHeader}>
             <span>Choose pet</span>
             <button
@@ -453,12 +468,14 @@ function PetPicker({
               aria-label={`Search pets for comparison slot ${slotIndex + 1}`}
             />
           </label>
-          <div className={styles.petOptions}>
+          <div className={styles.petOptions} role="listbox" aria-label={`Pet options for comparison slot ${slotIndex + 1}`}>
             {filtered.map((option) => (
               <button
                 type="button"
                 key={option.id}
                 className={option.id === value ? styles.petOptionSelected : ""}
+                role="option"
+                aria-selected={option.id === value}
                 onClick={() => {
                   onSelect(option.id);
                   closePicker();
@@ -530,9 +547,18 @@ export default function PetComparisonPage() {
   const [battleZone, setBattleZone] = useState(BEST_BATTLE_ZONE);
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
   const loadedStorageKeyRef = useRef<string | null>(null);
   const activeProfileId = activeProfile?.id || null;
   const storageKey = useMemo(() => getProfileStorageKey(STORAGE_KEY, activeProfileId), [activeProfileId]);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const update = () => setIsCompactViewport(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     loadedStorageKeyRef.current = null;
@@ -787,6 +813,28 @@ export default function PetComparisonPage() {
 
   const clearSlot = (index: number) => setSelectedIds((current) => current.filter((_, slotIndex) => slotIndex !== index));
 
+  const scenarioModified =
+    petLevel !== 100 ||
+    masteryLevel !== 100 ||
+    evolutionStage !== 0 ||
+    evolutionStat !== "all" ||
+    patBonus ||
+    battleMode !== "withSleep" ||
+    battleZone !== BEST_BATTLE_ZONE ||
+    foodPolicy !== "standard";
+
+  const resetScenario = () => {
+    setPetLevel(100);
+    setMasteryLevel(100);
+    setEvolutionStage(0);
+    setEvolutionStat("all");
+    setPatBonus(false);
+    setBattleMode("withSleep");
+    setBattleZone(BEST_BATTLE_ZONE);
+    setFoodPolicy("standard");
+    setOpenMenu(null);
+  };
+
   const metricBounds = useMemo(() => {
     const keys = ["power", "hunt", "battle", "market", ...COMPARISON_STAT_KEYS];
     return Object.fromEntries(
@@ -799,6 +847,8 @@ export default function PetComparisonPage() {
 
   const slotCount = Math.max(2, Math.min(MAX_COMPARE, selectedIds.length + 1));
   const slots = Array.from({ length: selectedIds.length >= MAX_COMPARE ? MAX_COMPARE : slotCount }, (_, index) => selectedIds[index] || null);
+  const scenarioSummary = `Lv ${petLevel} / PM ${masteryLevel} / ${getBattleModeLabel(battleMode)}`;
+  const comparisonSummary = rows.length ? `${rows.length} selected / ${battleCoverage.comparedWithZone} with EV` : "No pets selected";
 
   return (
     <main className={styles.page}>
@@ -818,10 +868,24 @@ export default function PetComparisonPage() {
             <Trash2 size={16} /> Clear comparison
           </button>
         </div>
+        <div className={styles.heroStats} aria-label="Current pet comparison summary">
+          <div>
+            <span>Selected</span>
+            <strong>{rows.length}/{MAX_COMPARE}</strong>
+          </div>
+          <div>
+            <span>Owned pool</span>
+            <strong>{activeProfile?.ownedPets?.length || 0}</strong>
+          </div>
+          <div>
+            <span>Battle data</span>
+            <strong>{battleCoverage.petsWithBattle || 0}</strong>
+          </div>
+        </div>
       </section>
 
-      {loadError && <div className={styles.state}>{loadError}</div>}
-      {!database && !loadError && <div className={styles.state}>Loading pet comparison data...</div>}
+      {loadError && <div className={styles.state} role="alert">{loadError}</div>}
+      {!database && !loadError && <div className={styles.state} role="status">Loading pet comparison data...</div>}
 
       {database && (
         <>
@@ -831,30 +895,43 @@ export default function PetComparisonPage() {
                 <span className={styles.kicker}>Scenario</span>
                 <h2>Shared Pet Setup</h2>
               </div>
-              {profilePetOption && (
-                <button type="button" className={styles.profilePetButton} onClick={() => addPet(profilePetOption.id)}>
-                  <Sparkles size={16} />
-                  Add {activeProfile?.name}&apos;s {profilePetOption.title}
+              <div className={styles.headerActions}>
+                {profilePetOption && (
+                  <button type="button" className={styles.profilePetButton} onClick={() => addPet(profilePetOption.id)}>
+                    <Sparkles size={16} />
+                    Add {activeProfile?.name}&apos;s {profilePetOption.title}
+                  </button>
+                )}
+                <button type="button" className={styles.resetButton} onClick={resetScenario} disabled={!scenarioModified} aria-label="Reset setup to defaults">
+                  <RotateCcw size={16} />
+                  Reset setup
                 </button>
-              )}
+              </div>
             </div>
-            <div className={styles.controls}>
-              <NumberField label="Pet level" value={petLevel} min={1} max={100} onChange={setPetLevel} />
-              <NumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
-              <NumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
-              <OptionMenu label="Evolution stat" value={evolutionStat} options={EVOLUTION_OPTIONS} open={openMenu === "evolution"} onOpen={(open) => setOpenMenu(open ? "evolution" : null)} onChange={setEvolutionStat} />
-              <OptionMenu label="Battle sample" value={battleMode} options={BATTLE_OPTIONS} open={openMenu === "battle"} onOpen={(open) => setOpenMenu(open ? "battle" : null)} onChange={setBattleMode} />
-              <OptionMenu label="Battle zone" value={battleZone} options={battleZoneOptions} open={openMenu === "battle-zone"} onOpen={(open) => setOpenMenu(open ? "battle-zone" : null)} onChange={setBattleZone} />
-              <OptionMenu label="Food" value={foodPolicy} options={FOOD_OPTIONS} open={openMenu === "food"} onOpen={(open) => setOpenMenu(open ? "food" : null)} onChange={setFoodPolicy} />
-              <button
-                type="button"
-                className={`${styles.toggle} ${patBonus ? styles.activeToggle : ""}`}
-                aria-pressed={patBonus}
-                onClick={() => setPatBonus((value) => !value)}
-              >
-                <HeartPulse size={16} /> Pat +5%
-              </button>
-            </div>
+            <details className={styles.scenarioDrawer} open={!isCompactViewport ? true : undefined}>
+              <summary>
+                <span><SlidersHorizontal size={17} /> Scenario controls</span>
+                <small>{scenarioSummary}</small>
+                <ChevronDown size={17} />
+              </summary>
+              <div className={styles.controls}>
+                <NumberField label="Pet level" value={petLevel} min={1} max={100} onChange={setPetLevel} />
+                <NumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
+                <NumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
+                <OptionMenu label="Evolution stat" value={evolutionStat} options={EVOLUTION_OPTIONS} open={openMenu === "evolution"} onOpen={(open) => setOpenMenu(open ? "evolution" : null)} onChange={setEvolutionStat} />
+                <OptionMenu label="Battle sample" value={battleMode} options={BATTLE_OPTIONS} open={openMenu === "battle"} onOpen={(open) => setOpenMenu(open ? "battle" : null)} onChange={setBattleMode} />
+                <OptionMenu label="Battle zone" value={battleZone} options={battleZoneOptions} open={openMenu === "battle-zone"} onOpen={(open) => setOpenMenu(open ? "battle-zone" : null)} onChange={setBattleZone} />
+                <OptionMenu label="Food" value={foodPolicy} options={FOOD_OPTIONS} open={openMenu === "food"} onOpen={(open) => setOpenMenu(open ? "food" : null)} onChange={setFoodPolicy} />
+                <button
+                  type="button"
+                  className={`${styles.toggle} ${patBonus ? styles.activeToggle : ""}`}
+                  aria-pressed={patBonus}
+                  onClick={() => setPatBonus((value) => !value)}
+                >
+                  <HeartPulse size={16} /> Pat +5%
+                </button>
+              </div>
+            </details>
             <p className={styles.snapshotHint}>Shared setup affects database pets only; owned snapshots use saved stats.</p>
             <p className={styles.scenarioNote}>
               Level, mastery, evolution, and pat affect database species previews. Owned snapshots keep imported/manual stat values. Battle EV uses recorded
@@ -911,9 +988,9 @@ export default function PetComparisonPage() {
                 <span className={styles.kicker}>Selection</span>
                 <h2>Pets To Compare</h2>
               </div>
-              <div className={styles.countPill}>{rows.length}/{MAX_COMPARE}</div>
+              <div className={styles.countPill} aria-label={comparisonSummary}>{rows.length}/{MAX_COMPARE}</div>
             </div>
-            <div className={styles.pickerGrid}>
+            <div className={styles.pickerGrid} aria-label="Pet comparison slots">
               {slots.map((name, index) => (
                 <PetPicker
                   key={index}
@@ -946,25 +1023,36 @@ export default function PetComparisonPage() {
               </p>
             )}
             <div className={styles.quickPicks}>
-              {topPicks.map(([label, pet]) => (
-                <button type="button" key={label} onClick={() => addPet(databaseOptionId(pet.name))}>
-                  <span>{label}</span>
-                  <strong>{pet.name}</strong>
-                </button>
-              ))}
+              {topPicks.map(([label, pet]) => {
+                const optionId = databaseOptionId(pet.name);
+                const isSelected = selectedIds.includes(optionId);
+                return (
+                  <button
+                    type="button"
+                    key={label}
+                    className={isSelected ? styles.quickPickSelected : ""}
+                    aria-pressed={isSelected}
+                    onClick={() => addPet(optionId)}
+                  >
+                    <span>{label}</span>
+                    <strong>{pet.name}</strong>
+                    {isSelected && <CheckCircle2 size={15} aria-hidden="true" />}
+                  </button>
+                );
+              })}
             </div>
             <p className={styles.quickPickNote}>Quick picks use the shared formula setup and market listings only; they are not personalized map or route recommendations.</p>
           </section>
 
           {rows.length === 0 ? (
-            <section className={styles.emptyState}>
+            <section className={styles.emptyState} role="status">
               <PawPrint size={38} />
               <h2>Select a pet to preview, add another to compare.</h2>
               <p>Use the quick picks or search by pet, boss, source, rarity, or exchange listing.</p>
             </section>
           ) : (
             <>
-              <section className={styles.compareCards}>
+              <section className={styles.compareCards} aria-label="Selected pet comparison cards">
                 {rows.map((row) => {
                   const recordedZones = getRecordedZoneCount(row.pet);
                   const recordedDrops = getRecordedDropCount(row.pet, row.battle.zone);
@@ -1021,7 +1109,7 @@ export default function PetComparisonPage() {
                     <h2>Side-by-Side Metrics</h2>
                   </div>
                 </div>
-                <div className={styles.tableWrap}>
+                <div className={styles.tableWrap} tabIndex={0} aria-label="Side-by-side pet comparison metrics">
                   <div className={styles.tableScrollHint}>Swipe sideways for metrics</div>
                   <table className={styles.compareTable} style={{ "--compare-cols": rows.length } as CSSProperties}>
                     <thead>

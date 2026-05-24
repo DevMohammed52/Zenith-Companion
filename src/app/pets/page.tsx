@@ -1,11 +1,12 @@
 "use client";
 
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowDownUp,
   BadgeInfo,
   BarChart3,
+  Check,
   ChevronDown,
   ChevronsUp,
   Database,
@@ -14,8 +15,10 @@ import {
   Gauge,
   HeartPulse,
   PawPrint,
+  RotateCcw,
   Search,
   Shield,
+  SlidersHorizontal,
   Swords,
   X,
   Zap,
@@ -24,6 +27,7 @@ import { useItemModal } from "@/context/ItemModalContext";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
+import { calculatePetStatValue, type PetStatKey } from "@/lib/pet-stats";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 
 type Quality =
@@ -36,16 +40,7 @@ type Quality =
   | "UNIQUE"
   | "UNKNOWN";
 
-type StatKey =
-  | "agility"
-  | "accuracy"
-  | "protection"
-  | "attack_power"
-  | "movement_speed"
-  | "max_health"
-  | "max_stamina"
-  | "critical_damage"
-  | "critical_chance";
+type StatKey = PetStatKey;
 
 type PetStat = {
   base: number;
@@ -267,14 +262,6 @@ const STAT_LABELS: Record<StatKey, string> = {
   critical_chance: "Crit Chance",
 };
 
-const BOOSTED_STATS = new Set<StatKey>([
-  "agility",
-  "accuracy",
-  "protection",
-  "attack_power",
-  "movement_speed",
-]);
-
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "power", label: "Power" },
   { value: "speed", label: "Move Speed" },
@@ -388,24 +375,19 @@ function calculateStats(
   patBonus: boolean,
 ) {
   const stats = pet.stats || {};
-  const globalBoostPercent = masteryBonusPercent;
-  const evolutionBoostPercent = evolutionStage * 5;
   const values: Partial<Record<StatKey, number>> = {};
 
   (Object.keys(STAT_LABELS) as StatKey[]).forEach((key) => {
     const stat = stats[key];
     if (!stat) return;
-    const raw = Number(stat.base || 0) + (level - 1) * Number(stat.per_level || 0);
-    const patBoostPercent = patBonus && key !== "movement_speed" ? 5 : 0;
-    const boostPercent =
-      globalBoostPercent + patBoostPercent + (evolutionStat === "all" || evolutionStat === key ? evolutionBoostPercent : 0);
-    const boostMultiplier = 1 + boostPercent / 100;
-    const boosted = BOOSTED_STATS.has(key) ? raw * boostMultiplier : raw;
-    if (key === "movement_speed" || key === "critical_damage" || key === "critical_chance") {
-      values[key] = Number(boosted.toFixed(2));
-    } else {
-      values[key] = Math.floor(boosted);
-    }
+    values[key] = calculatePetStatValue(stat, {
+      statKey: key,
+      level,
+      masteryBonusPercent,
+      evolutionStage,
+      evolutionApplies: evolutionStat === "all" || evolutionStat === key,
+      patBonus,
+    });
   });
 
   return values;
@@ -528,11 +510,36 @@ function PetSelect<T extends string>({
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
+  const [placement, setPlacement] = useState<"down" | "up">("down");
+  const [menuMaxHeight, setMenuMaxHeight] = useState(280);
+
+  const updateMenuPlacement = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const viewportPadding = 12;
+    const preferredHeight = 300;
+    const isCompactPicker = window.matchMedia("(max-width: 820px)").matches;
+    const spaceBelow = Math.max(72, window.innerHeight - rect.bottom - viewportPadding);
+    const spaceAbove = Math.max(72, rect.top - viewportPadding);
+    const nextPlacement = !isCompactPicker && spaceBelow < preferredHeight && spaceAbove > spaceBelow ? "up" : "down";
+    setPlacement(nextPlacement);
+    setMenuMaxHeight(Math.min(preferredHeight, nextPlacement === "up" ? spaceAbove : spaceBelow));
+  };
 
   useEffect(() => {
     if (!open) return;
+    updateMenuPlacement();
+    if (window.matchMedia("(max-width: 820px)").matches) {
+      triggerRef.current?.scrollIntoView({ block: "center", inline: "nearest" });
+    }
     setActiveIndex(selectedIndex);
     window.requestAnimationFrame(() => optionRefs.current[selectedIndex]?.focus());
+    window.addEventListener("resize", updateMenuPlacement);
+    window.addEventListener("scroll", updateMenuPlacement, true);
+    return () => {
+      window.removeEventListener("resize", updateMenuPlacement);
+      window.removeEventListener("scroll", updateMenuPlacement, true);
+    };
   }, [open, selectedIndex]);
 
   const closeMenu = (returnFocus = true) => {
@@ -586,7 +593,7 @@ function PetSelect<T extends string>({
   };
 
   return (
-    <div className={`pet-field pet-dropdown ${open ? "open" : ""}`}>
+    <div className={`pet-field pet-dropdown ${open ? "open" : ""} ${open && placement === "up" ? "open-up" : ""}`}>
       <span id={labelId}>{label}</span>
       <button
         ref={triggerRef}
@@ -597,13 +604,23 @@ function PetSelect<T extends string>({
         aria-haspopup="listbox"
         aria-labelledby={`${labelId} ${valueId}`}
         onKeyDown={handleKeyDown}
-        onClick={() => onOpenChange(!open)}
+        onClick={() => {
+          if (!open) updateMenuPlacement();
+          onOpenChange(!open);
+        }}
       >
         <span id={valueId}>{selected?.label}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
-        <div className="pet-select-menu" id={menuId} role="listbox" aria-labelledby={labelId} onKeyDown={handleKeyDown}>
+        <div
+          className="pet-select-menu"
+          id={menuId}
+          role="listbox"
+          aria-labelledby={labelId}
+          onKeyDown={handleKeyDown}
+          style={{ "--pet-select-max-height": `${menuMaxHeight}px` } as CSSProperties}
+        >
           {options.map((option, index) => (
             <button
               ref={(node) => {
@@ -620,8 +637,10 @@ function PetSelect<T extends string>({
                 closeMenu();
               }}
               onFocus={() => setActiveIndex(index)}
+              onMouseEnter={() => setActiveIndex(index)}
             >
-              {option.label}
+              <span>{option.label}</span>
+              {option.value === value && <Check size={14} aria-hidden="true" />}
             </button>
           ))}
         </div>
@@ -777,12 +796,21 @@ export default function PetsPage() {
   const [selectedBattle, setSelectedBattle] = useState<BattleSelection | null>(null);
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const [modalRootReady, setModalRootReady] = useState(false);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const { openItem, openItemByName } = useItemModal();
   const { activeProfile } = useProfiles();
 
   useEffect(() => {
     setModalRootReady(true);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 760px)");
+    const syncViewport = () => setIsCompactViewport(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
   }, []);
 
   useEffect(() => {
@@ -997,8 +1025,8 @@ export default function PetsPage() {
     () => selectedBattle?.zone.drops?.filter(isDisplayableBattleDrop) || [],
     [selectedBattle],
   );
-  const petDetailDialogRef = useModalA11y<HTMLElement>(Boolean(selectedRow), () => setSelectedPetName(null));
-  const petBattleDialogRef = useModalA11y<HTMLElement>(Boolean(selectedBattle), () => setSelectedBattle(null));
+  const petDetailDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedRow), () => setSelectedPetName(null));
+  const petBattleDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedBattle), () => setSelectedBattle(null));
 
   const counts = database?.meta.counts;
   const bestHunter = petRows.reduce<(typeof petRows)[number] | null>(
@@ -1010,7 +1038,14 @@ export default function PetsPage() {
     null,
   );
   const battleResearchPetCount = petRows.filter((row) => (row.pet.battle?.zones?.length || 0) > 0).length;
-  const hasActiveFilters = searchTerm.trim() !== "" || qualityFilter !== "ALL" || sourceFilter !== "ALL";
+  const activeFilterCount = [
+    searchTerm.trim() !== "",
+    qualityFilter !== "ALL",
+    sourceFilter !== "ALL",
+  ].filter(Boolean).length;
+  const hasActiveFilters = activeFilterCount > 0;
+  const sortIsModified = sortBy !== "power" || !sortDesc;
+  const primaryControlsModified = hasActiveFilters || sortIsModified;
   const scenarioIsModified =
     petLevel !== 100 ||
     masteryLevel !== 100 ||
@@ -1028,6 +1063,11 @@ export default function PetsPage() {
     setSearchTerm("");
     setQualityFilter("ALL");
     setSourceFilter("ALL");
+  };
+  const resetPetControls = () => {
+    clearPetFilters();
+    setSortBy("power");
+    setSortDesc(true);
   };
 
   return (
@@ -1067,6 +1107,18 @@ export default function PetsPage() {
       </section>
 
       <section className="pets-toolbar">
+        <div className="pet-toolbar-title">
+          <span><SlidersHorizontal size={15} aria-hidden="true" /> Filters</span>
+          <small>
+            {hasActiveFilters
+              ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
+              : `${petRows.length.toLocaleString()} visible`}
+          </small>
+          <button type="button" onClick={resetPetControls} disabled={!primaryControlsModified} aria-label="Reset pet filters and sorting">
+            <RotateCcw size={14} aria-hidden="true" />
+            Reset
+          </button>
+        </div>
         <label className="pet-search">
           <Search size={18} />
           <input
@@ -1076,18 +1128,34 @@ export default function PetsPage() {
             onChange={(event) => setSearchTerm(event.target.value)}
           />
         </label>
-        <PetSelect label="Quality" value={qualityFilter} options={QUALITY_OPTIONS} onChange={setQualityFilter} open={openPetSelect === "quality"} onOpenChange={(open) => setOpenPetSelect(open ? "quality" : null)} />
-        <PetSelect label="Source" value={sourceFilter} options={SOURCE_OPTIONS} onChange={setSourceFilter} open={openPetSelect === "source"} onOpenChange={(open) => setOpenPetSelect(open ? "source" : null)} />
-        <PetSelect label="Sort" value={sortBy} options={SORT_OPTIONS} onChange={setSortBy} open={openPetSelect === "sort"} onOpenChange={(open) => setOpenPetSelect(open ? "sort" : null)} />
-        <button className="pet-icon-button" onClick={() => setSortDesc((value) => !value)} title="Toggle sort direction">
-          <ArrowDownUp size={17} />
-          <span>{sortDesc ? "Desc" : "Asc"}</span>
-        </button>
+        <details className="pet-filter-panel" open={!isCompactViewport ? true : undefined}>
+          <summary>
+            <span><SlidersHorizontal size={15} aria-hidden="true" /> Pet filters</span>
+            <small>{primaryControlsModified ? "Customized" : "Default"}</small>
+            <ChevronDown size={16} aria-hidden="true" />
+          </summary>
+          <div className="pet-filter-grid">
+            <PetSelect label="Quality" value={qualityFilter} options={QUALITY_OPTIONS} onChange={setQualityFilter} open={openPetSelect === "quality"} onOpenChange={(open) => setOpenPetSelect(open ? "quality" : null)} />
+            <PetSelect label="Source" value={sourceFilter} options={SOURCE_OPTIONS} onChange={setSourceFilter} open={openPetSelect === "source"} onOpenChange={(open) => setOpenPetSelect(open ? "source" : null)} />
+            <PetSelect label="Sort" value={sortBy} options={SORT_OPTIONS} onChange={setSortBy} open={openPetSelect === "sort"} onOpenChange={(open) => setOpenPetSelect(open ? "sort" : null)} />
+            <button
+              type="button"
+              className="pet-icon-button"
+              aria-pressed={sortDesc}
+              aria-label={`Toggle sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
+              onClick={() => setSortDesc((value) => !value)}
+              title="Toggle sort direction"
+            >
+              <ArrowDownUp size={17} />
+              <span>{sortDesc ? "Desc" : "Asc"}</span>
+            </button>
+          </div>
+        </details>
         <div className="pet-segment" aria-label="View mode">
-          <button className={viewMode === "cards" ? "active" : ""} onClick={() => setViewMode("cards")}>
+          <button type="button" className={viewMode === "cards" ? "active" : ""} aria-pressed={viewMode === "cards"} onClick={() => setViewMode("cards")}>
             Cards
           </button>
-          <button className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>
+          <button type="button" className={viewMode === "table" ? "active" : ""} aria-pressed={viewMode === "table"} onClick={() => setViewMode("table")}>
             Table
           </button>
         </div>
@@ -1283,7 +1351,7 @@ export default function PetsPage() {
             {modalRootReady && selectedRow ? createPortal(
               (
               <div className="pet-modal-backdrop" role="presentation" onClick={() => setSelectedPetName(null)}>
-              <article className="pet-detail pet-modal" aria-labelledby="pet-detail-title" aria-modal="true" ref={petDetailDialogRef} role="dialog" tabIndex={-1} onClick={(event) => event.stopPropagation()}>
+              <div className="pet-detail pet-modal" aria-labelledby="pet-detail-title" aria-modal="true" ref={petDetailDialogRef} role="dialog" tabIndex={-1} onClick={(event) => event.stopPropagation()}>
                 <button className="pet-detail-close" type="button" aria-label="Close pet details" onClick={() => setSelectedPetName(null)} title="Close pet details">
                   <X size={16} />
                 </button>
@@ -1495,7 +1563,7 @@ export default function PetsPage() {
                   <BadgeInfo size={15} />
                   <span>Pet stats update from the scenario controls above. Listing prices, value estimates, and battle returns are separate data sources and should not be read as the same type of value.</span>
                 </div>
-              </article>
+              </div>
               </div>
               ),
               document.body,
@@ -1505,7 +1573,7 @@ export default function PetsPage() {
           {modalRootReady && selectedBattle ? createPortal(
             (
             <div className="pet-modal-backdrop pet-battle-backdrop" role="presentation" onClick={() => setSelectedBattle(null)}>
-              <article className="pet-battle-modal" aria-labelledby="pet-battle-title" aria-modal="true" ref={petBattleDialogRef} role="dialog" tabIndex={-1} onClick={(event) => event.stopPropagation()}>
+              <div className="pet-battle-modal" aria-labelledby="pet-battle-title" aria-modal="true" ref={petBattleDialogRef} role="dialog" tabIndex={-1} onClick={(event) => event.stopPropagation()}>
                 <button className="pet-detail-close" type="button" aria-label="Close battle details" onClick={() => setSelectedBattle(null)} title="Close battle details">
                   <X size={16} />
                 </button>
@@ -1673,7 +1741,7 @@ export default function PetsPage() {
                   <BadgeInfo size={15} />
                   <span>Profit shown here reflects the selected sleep and food settings. Beastmaster is shown as pet EXP context.</span>
                 </div>
-              </article>
+              </div>
             </div>
             ),
             document.body,

@@ -1,10 +1,35 @@
 .page {
+  --compare-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --compare-ease-press: cubic-bezier(0.2, 0.8, 0.2, 1);
   width: min(100%, 1500px);
   margin: 0 auto;
   padding: clamp(1rem, 2vw, 1.8rem);
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes compareRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes comparePanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .hero,
@@ -25,6 +50,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 1.2rem;
   align-items: end;
+  animation: compareRise 420ms var(--compare-ease-out) both;
 }
 
 .hero h1 {
@@ -69,10 +95,40 @@
   justify-content: flex-end;
 }
 
+.heroStats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.heroStats div {
+  min-width: 0;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.heroStats span {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.heroStats strong {
+  font-size: 1.2rem;
+}
+
 .secondaryLink,
 .profilePetButton,
 .toggle,
-.addSlot {
+.addSlot,
+.resetButton {
   min-height: 48px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.045);
@@ -86,25 +142,71 @@
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  transition:
+    transform 180ms var(--compare-ease-press),
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
 .secondaryLink:hover,
 .profilePetButton:hover,
 .toggle:hover,
-.addSlot:hover {
+.addSlot:hover,
+.resetButton:hover {
   transform: translateY(-1px);
   border-color: rgba(56, 189, 248, 0.45);
   background: rgba(56, 189, 248, 0.1);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.secondaryLink:active,
+.profilePetButton:active,
+.toggle:active,
+.addSlot:active,
+.resetButton:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.secondaryLink:focus-visible,
+.profilePetButton:focus-visible,
+.toggle:focus-visible,
+.addSlot:focus-visible,
+.resetButton:focus-visible {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.resetButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
+  box-shadow: none;
 }
 
 .panel,
 .emptyState {
   padding: clamp(1rem, 2vw, 1.35rem);
+  animation: compareRise 360ms var(--compare-ease-out) both;
+}
+
+.panel:has(.pickerPanel),
+.panel:has(.menuPanel) {
+  position: relative;
+  z-index: 1300;
 }
 
 .panelHeader {
   margin-bottom: 1rem;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
 }
 
 .panelHeader h2,
@@ -127,6 +229,63 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
   gap: 0.8rem;
   align-items: end;
+}
+
+.scenarioDrawer {
+  position: relative;
+}
+
+.scenarioDrawer summary {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 50px;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 55%),
+    rgba(0, 0, 0, 0.18);
+  color: var(--text-primary);
+  padding: 0 0.85rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.scenarioDrawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.scenarioDrawer summary span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 900;
+}
+
+.scenarioDrawer summary small {
+  min-width: 0;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenarioDrawer summary > svg:last-child {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  transition: transform 180ms var(--compare-ease-press);
+}
+
+.scenarioDrawer[open] summary > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.scenarioDrawer summary:focus-visible {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
 }
 
 .scenarioNote {
@@ -271,13 +430,20 @@
   font-size: 1.03rem;
   font-weight: 800;
   outline: none;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms var(--compare-ease-press);
 }
 
 .field input:focus,
 .menuTrigger:focus-visible,
 .pickerTrigger:focus-visible,
 .clearSlot:focus-visible,
-.quickPicks button:focus-visible {
+.quickPicks button:focus-visible,
+.petOptions button:focus-visible {
+  outline: none;
   border-color: var(--text-accent);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
 }
@@ -290,6 +456,27 @@
   cursor: pointer;
 }
 
+.menuTrigger:hover,
+.field input:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(0, 0, 0, 0.24));
+}
+
+.menuTrigger[aria-expanded="true"] {
+  border-color: rgba(56, 189, 248, 0.52);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.menuTrigger[aria-expanded="true"] svg,
+.pickerTrigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+
+.menuTrigger svg,
+.pickerTrigger > svg {
+  transition: transform 180ms var(--compare-ease-press);
+}
+
 .menuTrigger span {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -299,7 +486,7 @@
 .menuPanel,
 .pickerPanel {
   position: absolute;
-  z-index: 40;
+  z-index: 1200;
   top: calc(100% + 0.45rem);
   left: 0;
   right: 0;
@@ -308,6 +495,8 @@
   background: rgba(5, 10, 12, 0.98);
   box-shadow: 0 22px 55px rgba(0, 0, 0, 0.42);
   padding: 0.45rem;
+  animation: comparePanelIn 180ms var(--compare-ease-out) both;
+  backdrop-filter: blur(18px);
 }
 
 .menuPanel button {
@@ -355,7 +544,13 @@
   min-width: 0;
 }
 
+.picker:has(.pickerPanel),
+.menuField:has(.menuPanel) {
+  z-index: 1200;
+}
+
 .pickerTrigger {
+  position: relative;
   width: 100%;
   min-height: 78px;
   border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 45%, rgba(255, 255, 255, 0.1));
@@ -371,6 +566,36 @@
   padding: 0.75rem;
   cursor: pointer;
   text-align: left;
+  overflow: hidden;
+  transition:
+    transform 180ms var(--compare-ease-press),
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.pickerTrigger::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent, rgba(56, 189, 248, 0.65));
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.pickerTrigger[data-filled="true"]::before {
+  opacity: 1;
+}
+
+.pickerTrigger:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent, #38bdf8) 70%, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.2);
+}
+
+.pickerTrigger:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .pickerTrigger span,
@@ -394,6 +619,19 @@
   white-space: nowrap;
 }
 
+.slotSource {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 52%, transparent);
+  border-radius: 999px;
+  color: var(--accent, #38bdf8);
+  padding: 0.18rem 0.42rem;
+  font-size: 0.65rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .petAvatar,
 .emptyAvatar {
   position: relative;
@@ -406,6 +644,7 @@
   place-items: center;
   flex: 0 0 auto;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .petAvatar img {
@@ -422,7 +661,7 @@
 
 .petImageLoaded {
   opacity: 1;
-  transition: opacity 140ms ease;
+  transition: opacity 160ms ease, transform 180ms var(--compare-ease-press);
 }
 
 .petImageUpsideDown {
@@ -447,6 +686,13 @@
   cursor: pointer;
   display: grid;
   place-items: center;
+  transition: transform 160ms var(--compare-ease-press), border-color 160ms ease, background 160ms ease;
+}
+
+.clearSlot:hover {
+  transform: scale(1.04);
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(127, 29, 29, 0.55);
 }
 
 .pickerPanel {
@@ -528,11 +774,16 @@
   padding: 0.65rem;
   cursor: pointer;
   text-align: left;
+  transition: background 160ms ease, transform 160ms var(--compare-ease-press);
 }
 
 .petOptions button:hover,
 .petOptionSelected {
   background: rgba(56, 189, 248, 0.11) !important;
+}
+
+.petOptions button:active {
+  transform: scale(0.992);
 }
 
 .petOptions em {
@@ -567,6 +818,7 @@
 }
 
 .quickPicks button {
+  position: relative;
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
@@ -575,11 +827,28 @@
   padding: 0.75rem;
   text-align: left;
   display: grid;
-  gap: 0.2rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 0.5rem;
   cursor: pointer;
+  transition:
+    transform 180ms var(--compare-ease-press),
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.quickPicks button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.quickPicks button:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .quickPicks span {
+  grid-column: 1 / -1;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -589,6 +858,18 @@
 
 .quickPicks strong {
   overflow-wrap: anywhere;
+}
+
+.quickPickSelected {
+  border-color: rgba(134, 239, 172, 0.42) !important;
+  background:
+    linear-gradient(135deg, rgba(34, 197, 94, 0.12), transparent 58%),
+    rgba(255, 255, 255, 0.04) !important;
+}
+
+.quickPickSelected svg {
+  align-self: center;
+  color: #86efac;
 }
 
 .quickPickNote {
@@ -647,6 +928,7 @@
 }
 
 .compareCard {
+  position: relative;
   min-width: 0;
   border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 55%, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
@@ -656,7 +938,40 @@
   padding: 1rem;
   display: grid;
   gap: 0.9rem;
-  animation: cardIn 200ms ease both;
+  overflow: hidden;
+  animation: cardIn 260ms var(--compare-ease-out) both;
+  transition:
+    transform 180ms var(--compare-ease-press),
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.compareCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--accent, #38bdf8);
+  opacity: 0.9;
+}
+
+.compareCard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent, #38bdf8) 72%, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.24), 0 0 28px color-mix(in srgb, var(--accent, #38bdf8), transparent 88%);
+}
+
+.compareCard:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.compareCard:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.compareCard:nth-child(4) {
+  animation-delay: 135ms;
 }
 
 .cardTop {
@@ -764,6 +1079,12 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.tableWrap:focus-visible {
+  outline: none;
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
 .tableScrollHint {
   display: none;
   position: sticky;
@@ -793,6 +1114,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.72rem;
+  background: rgba(5, 10, 12, 0.72);
 }
 
 .compareTable td:not(:first-child) {
@@ -809,7 +1131,9 @@
 
 .bestCell {
   color: #86efac;
-  background: rgba(34, 197, 94, 0.08);
+  background:
+    linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.04));
+  box-shadow: inset 3px 0 0 rgba(134, 239, 172, 0.58);
 }
 
 .state {
@@ -849,8 +1173,14 @@
     flex-direction: column;
   }
 
+  .headerActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
   .heroActions > *,
-  .profilePetButton {
+  .profilePetButton,
+  .resetButton {
     width: 100%;
   }
 
@@ -861,12 +1191,62 @@
   .contextStrip {
     grid-template-columns: 1fr;
   }
+
+  .menuPanel,
+  .pickerPanel {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 5.2rem;
+    width: auto;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+  }
+
+  .petOptions {
+    max-height: calc(100vh - 12rem);
+  }
+}
+
+@media (max-width: 760px) {
+  .heroStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .scenarioDrawer summary {
+    display: flex;
+  }
+
+  .scenarioDrawer[open] .controls {
+    margin-top: 0.75rem;
+    animation: comparePanelIn 180ms var(--compare-ease-out) both;
+  }
+
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls .menuField {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 560px) {
   .page {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
+  }
+
+  .heroStats {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .controls .menuField {
+    grid-column: auto;
   }
 
   .compareTable {
@@ -902,6 +1282,16 @@
     overflow-y: auto;
   }
 
+  .cardTop {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .cardTop > span {
+    grid-column: 1 / -1;
+    width: fit-content;
+    max-width: 100%;
+  }
+
   .petOptions {
     max-height: calc(100vh - 12rem);
   }
@@ -921,11 +1311,21 @@
 @media (prefers-reduced-motion: reduce) {
   .secondaryLink,
   .profilePetButton,
+  .resetButton,
   .toggle,
   .addSlot,
+  .pickerTrigger,
+  .clearSlot,
+  .quickPicks button,
   .petImageLoaded,
-  .compareCard {
+  .compareCard,
+  .hero,
+  .panel,
+  .emptyState,
+  .menuPanel,
+  .pickerPanel {
     animation: none;
     transition: none;
+    transform: none;
   }
 }

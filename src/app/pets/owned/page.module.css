@@ -1,5 +1,31 @@
 .page {
+  --owned-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --owned-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   padding-bottom: 3rem;
+}
+
+@keyframes ownedPetsRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.996);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ownedPetsToast {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .header {
@@ -58,11 +84,31 @@
   font-weight: 850;
   text-decoration: none;
   cursor: pointer;
+  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), box-shadow 160ms var(--owned-ease), color 160ms var(--owned-ease), transform 160ms var(--owned-ease);
 }
 
 .primaryAction {
   border-color: color-mix(in srgb, var(--text-accent), transparent 45%);
   background: color-mix(in srgb, var(--text-accent), transparent 82%);
+}
+
+.secondaryAction:hover,
+.secondaryAction:focus-visible,
+.primaryAction:hover,
+.primaryAction:focus-visible,
+.cardActions button:hover,
+.cardActions button:focus-visible {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 48%);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  color: #fff;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.secondaryAction:active,
+.primaryAction:active,
+.cardActions button:active {
+  transform: translateY(1px) scale(0.99);
 }
 
 .summaryGrid,
@@ -74,6 +120,18 @@
 .summaryGrid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 1rem;
+  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
+}
+
+.summaryGrid:focus,
+.importReadiness:focus {
+  outline: none;
+}
+
+.summaryGrid:focus-visible,
+.importReadiness:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text-accent), transparent 28%);
+  outline-offset: 3px;
 }
 
 .summaryGrid div {
@@ -110,6 +168,7 @@
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), transparent 48%),
     rgba(255,255,255,0.025);
+  animation: ownedPetsRise 400ms var(--owned-ease-out) 40ms both;
 }
 
 .importReadiness div {
@@ -133,7 +192,7 @@
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 850;
-  letter-spacing: 0.07em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -158,7 +217,7 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(0, auto) minmax(0, auto);
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 2.2fr);
   gap: 0.75rem;
   align-items: end;
   margin-bottom: 1rem;
@@ -166,6 +225,79 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   background: rgba(255,255,255,0.03);
+  animation: ownedPetsRise 420ms var(--owned-ease-out) 80ms both;
+  isolation: isolate;
+}
+
+.controlsHeader {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.controlsHeader > span,
+.filterPanel summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.controlsHeader svg,
+.filterPanel summary svg {
+  color: var(--text-accent);
+  flex: 0 0 auto;
+}
+
+.controlsHeader small,
+.filterPanel summary small {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  min-width: 0;
+}
+
+.controlsHeader button,
+.emptyAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: 2rem;
+  margin-left: auto;
+  padding: 0 0.62rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  background: rgba(255,255,255,0.035);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), opacity 160ms var(--owned-ease), transform 160ms var(--owned-ease);
+}
+
+.controlsHeader button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.controlsHeader button:not(:disabled):hover,
+.emptyAction:hover,
+.emptyAction:focus-visible {
+  border-color: color-mix(in srgb, var(--text-accent), transparent 55%);
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  outline: none;
+}
+
+.controlsHeader button:not(:disabled):active,
+.emptyAction:active {
+  transform: translateY(1px);
 }
 
 .searchBox {
@@ -175,10 +307,12 @@
 }
 
 .searchBox span,
-.resultHeader span {
+.resultHeader span,
+.controlGroup > span {
   color: var(--text-muted);
   font-size: 0.74rem;
   font-weight: 850;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -215,11 +349,35 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
 }
 
+.filterPanel {
+  min-width: 0;
+  overflow: visible;
+}
+
+.filterPanel summary {
+  display: none;
+}
+
+.filterGroups {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.4fr);
+  gap: 0.65rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.controlGroup {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
 .segment {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .segment button,
@@ -236,14 +394,21 @@
   color: var(--text-muted);
   cursor: pointer;
   font-weight: 850;
+  transition: background 150ms var(--owned-ease), border-color 150ms var(--owned-ease), color 150ms var(--owned-ease), transform 150ms var(--owned-ease);
 }
 
 .segment button:hover,
 .activeControl,
-.directionButton:hover {
+.directionButton:hover,
+.directionButton[aria-pressed="true"] {
   border-color: var(--border-focus) !important;
   background: color-mix(in srgb, var(--text-accent), transparent 86%) !important;
   color: #fff !important;
+}
+
+.segment button:active,
+.directionButton:active {
+  transform: translateY(1px);
 }
 
 .resultHeader {
@@ -256,6 +421,7 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   background: rgba(255,255,255,0.025);
+  animation: ownedPetsRise 360ms var(--owned-ease-out) 120ms both;
 }
 
 .resultHeader strong {
@@ -275,10 +441,35 @@
 
 .card {
   padding: 0.9rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.035);
+  transition: background 180ms var(--owned-ease), border-color 180ms var(--owned-ease), box-shadow 180ms var(--owned-ease), transform 180ms var(--owned-ease);
+  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--owned-pet-quality, var(--text-accent));
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.card:hover,
+.card:focus-within {
+  border-color: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 48%);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.24), 0 0 28px color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 88%);
+  transform: translateY(-2px);
 }
 
 .activeCard {
-  border-color: color-mix(in srgb, var(--text-accent), transparent 45%);
+  border-color: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 42%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 91%), transparent 42%),
+    rgba(255,255,255,0.04);
 }
 
 .cardTop {
@@ -294,12 +485,16 @@
   height: 3.2rem;
   place-items: center;
   border-radius: 8px;
-  background: rgba(0,0,0,0.18);
+  border: 1px solid color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 76%);
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 78%), transparent 62%),
+    rgba(0,0,0,0.2);
 }
 
 .petImage img {
   max-width: 100%;
   max-height: 100%;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,0.28));
   object-fit: contain;
 }
 
@@ -317,9 +512,10 @@
 
 .activePill {
   padding: 0.25rem 0.45rem;
-  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 55%);
+  border: 1px solid color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 55%);
   border-radius: 999px;
-  color: var(--text-accent);
+  color: #fff;
+  background: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 82%);
   font-size: 0.7rem;
   font-weight: 900;
 }
@@ -340,6 +536,7 @@
   background: rgba(0,0,0,0.16);
   color: var(--text-muted);
   font-size: 0.72rem;
+  min-width: 0;
 }
 
 .statGrid strong {
@@ -351,15 +548,56 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   background: rgba(0,0,0,0.12);
+  transition: border-color 160ms var(--owned-ease), background 160ms var(--owned-ease);
+}
+
+.detailPanel[open] {
+  border-color: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 70%);
+  background: rgba(0,0,0,0.18);
 }
 
 .detailPanel summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
   cursor: pointer;
+  list-style: none;
   padding: 0.65rem 0.75rem;
   color: var(--text-muted);
   font-size: 0.76rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.detailPanel summary::-webkit-details-marker {
+  display: none;
+}
+
+.detailPanel summary span {
+  color: #fff;
+}
+
+.detailPanel summary strong {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-transform: none;
+}
+
+.detailPanel summary::after {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: color 160ms var(--owned-ease), transform 160ms var(--owned-ease);
+}
+
+.detailPanel[open] summary::after {
+  color: var(--owned-pet-quality, var(--text-accent));
+  transform: rotate(225deg);
 }
 
 .detailGrid {
@@ -487,12 +725,25 @@
   color: #ffb4a8;
 }
 
+.cardActions button:disabled {
+  cursor: default;
+  opacity: 0.52;
+  transform: none;
+}
+
+.cardActions button:disabled:hover {
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: none;
+  transform: none;
+}
+
 .empty {
   display: grid;
   place-items: center;
   min-height: 18rem;
   padding: 2rem;
   text-align: center;
+  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
 }
 
 .empty h2 {
@@ -506,10 +757,16 @@
   color: var(--text-muted);
 }
 
+.emptyAction {
+  margin: 0.9rem 0 0;
+  min-height: 2.35rem;
+  padding-inline: 0.8rem;
+}
+
 .toast {
   position: fixed;
   right: 1rem;
-  bottom: 1rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
   z-index: 1000;
   max-width: min(24rem, calc(100vw - 2rem));
   padding: 0.8rem 0.95rem;
@@ -523,6 +780,7 @@
   justify-content: space-between;
   font-weight: 850;
   box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  animation: ownedPetsToast 220ms var(--owned-ease-out) both;
 }
 
 .toast button {
@@ -559,21 +817,107 @@
   }
 
   .summaryGrid {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .summaryGrid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .summaryGrid div {
+    flex: 0 0 min(10.5rem, 78vw);
+    scroll-snap-align: start;
   }
 
   .importReadiness {
-    grid-template-columns: 1fr;
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .importReadiness::-webkit-scrollbar {
+    display: none;
+  }
+
+  .importReadiness div {
+    flex: 0 0 min(16rem, 78vw);
+    scroll-snap-align: start;
   }
 
   .controls {
     grid-template-columns: 1fr;
   }
 
-  .segment {
+  .controlsHeader {
+    flex-wrap: nowrap;
+  }
+
+  .controlsHeader small {
+    display: none;
+  }
+
+  .filterPanel {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.025);
+  }
+
+  .filterPanel summary {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.65rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .filterPanel summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .filterPanel summary > svg:last-child {
+    color: var(--text-muted);
+    transition: color 160ms var(--owned-ease), transform 160ms var(--owned-ease);
+  }
+
+  .filterPanel[open] summary > svg:last-child {
+    color: var(--text-accent);
+    transform: rotate(180deg);
+  }
+
+  .filterGroups {
+    grid-template-columns: 1fr;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 0.65rem;
+  }
+
+  .segment {
+    flex-wrap: nowrap;
     justify-content: stretch;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .segment::-webkit-scrollbar {
+    display: none;
+  }
+
+  .segment button,
+  .directionButton {
+    flex: 0 0 auto;
+    min-width: 5.8rem;
+    scroll-snap-align: start;
   }
 
   .resultHeader {
@@ -583,5 +927,82 @@
 
   .detailGrid {
     grid-template-columns: 1fr;
+  }
+
+  .cardActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .toast {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    max-width: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .header h1 {
+    font-size: clamp(1.75rem, 10vw, 2.25rem);
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cardTop {
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .activePill {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summaryGrid,
+  .importReadiness,
+  .controls,
+  .resultHeader,
+  .card,
+  .empty,
+  .toast {
+    animation: none !important;
+  }
+
+  .secondaryAction,
+  .primaryAction,
+  .cardActions button,
+  .controlsHeader button,
+  .emptyAction,
+  .segment button,
+  .directionButton,
+  .card,
+  .detailPanel,
+  .detailPanel summary::after,
+  .filterPanel summary > svg:last-child {
+    transition: none !important;
+  }
+
+  .secondaryAction:hover,
+  .secondaryAction:focus-visible,
+  .primaryAction:hover,
+  .primaryAction:focus-visible,
+  .cardActions button:hover,
+  .cardActions button:focus-visible,
+  .card:hover,
+  .card:focus-within,
+  .segment button:active,
+  .directionButton:active,
+  .controlsHeader button:not(:disabled):active,
+  .emptyAction:active {
+    transform: none !important;
   }
 }
