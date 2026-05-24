@@ -1,12 +1,7 @@
+import { QUALITY_COLORS as SHARED_QUALITY_COLORS, QUALITY_RANK, formatQualityLabel, type QualityName } from "@/lib/quality";
+
 export type Quality =
-  | "STANDARD"
-  | "REFINED"
-  | "PREMIUM"
-  | "EPIC"
-  | "LEGENDARY"
-  | "MYTHIC"
-  | "UNIQUE"
-  | "UNKNOWN";
+  QualityName;
 
 export type StatKey =
   | "agility"
@@ -184,27 +179,9 @@ export type PetMatchLookup = {
   byName: Map<string, PetRecord>;
 };
 
-export const QUALITY_ORDER: Record<Quality, number> = {
-  UNKNOWN: 0,
-  STANDARD: 1,
-  REFINED: 2,
-  PREMIUM: 3,
-  EPIC: 4,
-  LEGENDARY: 5,
-  MYTHIC: 6,
-  UNIQUE: 7,
-};
+export const QUALITY_ORDER: Record<Quality, number> = QUALITY_RANK;
 
-export const QUALITY_COLORS: Record<Quality, string> = {
-  UNKNOWN: "#94a3b8",
-  STANDARD: "#e4e4e7",
-  REFINED: "#60a5fa",
-  PREMIUM: "#4ade80",
-  EPIC: "#a855f7",
-  LEGENDARY: "#f59e0b",
-  MYTHIC: "#ef4444",
-  UNIQUE: "#ec4899",
-};
+export const QUALITY_COLORS: Record<Quality, string> = SHARED_QUALITY_COLORS;
 
 export const STAT_LABELS: Record<StatKey, string> = {
   agility: "Agility",
@@ -294,8 +271,7 @@ export function clampNumber(value: number, min: number, max: number) {
 }
 
 export function qualityLabel(quality: string) {
-  if (!quality) return "Unknown";
-  return quality.charAt(0) + quality.slice(1).toLowerCase();
+  return formatQualityLabel(quality);
 }
 
 export function secondsToDuration(seconds?: number | null) {

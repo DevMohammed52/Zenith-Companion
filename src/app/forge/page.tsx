@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import { useItemModal } from "@/context/ItemModalContext";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
@@ -35,6 +36,7 @@ import {
   type ForgeQuality,
   type ForgeRecipeOption,
 } from "@/lib/forge-planner";
+import { getQualityRank, getQualityTextStyle } from "@/lib/quality";
 
 type PlannerDraft = {
   lines: Array<Omit<ForgePlannerLine, "quantity" | "ownedRecipes"> & { quantity: number | ""; ownedRecipes: number | "" }>;
@@ -412,7 +414,7 @@ export default function ForgePage() {
                     <img src={recipe.resultImageUrl || recipe.imageUrl || "/favicon.ico"} alt="" />
                     <span>
                       <strong>{recipe.resultName}</strong>
-                      <small>{recipe.quality} | Lv.{recipe.levelRequired} | {recipe.materials.length} materials</small>
+                      <small><QualityText value={recipe.quality}>{recipe.quality}</QualityText> | Lv.{recipe.levelRequired} | {recipe.materials.length} materials</small>
                     </span>
                   </button>
                 ))}
@@ -422,7 +424,11 @@ export default function ForgePage() {
 
           <CustomPicker
             label="Quality"
-            options={QUALITY_OPTIONS.map((quality) => ({ id: quality, label: quality === "ALL" ? "All" : titleCase(quality) }))}
+            options={QUALITY_OPTIONS.map((quality) => ({
+              id: quality,
+              label: quality === "ALL" ? "All" : quality,
+              qualityTone: quality === "ALL" ? undefined : quality,
+            }))}
             value={qualityFilter}
             onChange={(value) => setQualityFilter(value as typeof qualityFilter)}
             pickerKey="quality"
@@ -457,7 +463,7 @@ export default function ForgePage() {
               <span>
                 <small>Ready to add</small>
                 <strong>{selectedRecipe.resultName}</strong>
-                <em>{selectedRecipe.quality} | Lv.{selectedRecipe.levelRequired} | {selectedRecipe.resultType || "Forge result"}</em>
+                <em><QualityText value={selectedRecipe.quality}>{selectedRecipe.quality}</QualityText> | Lv.{selectedRecipe.levelRequired} | {selectedRecipe.resultType || "Forge result"}</em>
               </span>
             </button>
             <div className="selected-recipe-meta" aria-label="Selected recipe summary">
@@ -514,7 +520,7 @@ export default function ForgePage() {
                     <img src={entry.recipe.resultImageUrl || entry.recipe.imageUrl || "/favicon.ico"} alt="" />
                     <span>
                       <strong>{entry.recipe.resultName}</strong>
-                      <small>{entry.recipe.quality} | Lv.{entry.recipe.levelRequired} | {entry.recipe.resultType || "Forge result"}</small>
+                      <small><QualityText value={entry.recipe.quality}>{entry.recipe.quality}</QualityText> | Lv.{entry.recipe.levelRequired} | {entry.recipe.resultType || "Forge result"}</small>
                     </span>
                   </button>
 
@@ -563,7 +569,7 @@ export default function ForgePage() {
             <div className="detail-card hero-detail">
               <img src={selectedEntry.recipe.resultImageUrl || selectedEntry.recipe.imageUrl || "/favicon.ico"} alt="" />
               <div>
-                <p>{selectedEntry.recipe.quality}</p>
+                <p><QualityText value={selectedEntry.recipe.quality}>{selectedEntry.recipe.quality}</QualityText></p>
                 <h3>{selectedEntry.recipe.resultName}</h3>
                 <span>{selectedEntry.recipe.description || "Forge recipe result"}</span>
               </div>
@@ -2361,7 +2367,7 @@ function CustomPicker({
   onPointerToggle,
 }: {
   label: string;
-  options: Array<{ id: string; label: string }>;
+  options: Array<{ id: string; label: string; qualityTone?: string }>;
   value: string;
   onChange: (value: string) => void;
   pickerKey: "quality" | "sort";
@@ -2373,12 +2379,19 @@ function CustomPicker({
   const open = openPicker === pickerKey;
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((option) => option.id === value)));
   const selected = options.find((option) => option.id === value) || options[0] || { id: "", label: "Choose" };
+  const renderOptionLabel = (option: { id: string; label: string; qualityTone?: string } | undefined) => {
+    if (!option) return "Choose";
+    if (option.qualityTone) {
+      return <span style={getQualityTextStyle(option.qualityTone)}>{option.label}</span>;
+    }
+    return option.label;
+  };
 
   useEffect(() => {
     setActiveIndex(Math.max(0, options.findIndex((option) => option.id === value)));
   }, [options, value]);
 
-  const choose = (option: { id: string; label: string }) => {
+  const choose = (option: { id: string; label: string; qualityTone?: string }) => {
     onChange(option.id);
     setOpenPicker("");
   };
@@ -2403,6 +2416,9 @@ function CustomPicker({
         onPointerDown={(event) => {
           event.preventDefault();
           onPointerToggle?.();
+          if (!open && window.matchMedia("(max-width: 820px)").matches) {
+            event.currentTarget.scrollIntoView({ block: "center", inline: "nearest" });
+          }
           setOpenPicker(open ? "" : pickerKey);
         }}
         onKeyDown={(event) => {
@@ -2425,7 +2441,7 @@ function CustomPicker({
           }
         }}
       >
-        <span>{selected?.label || "Choose"}</span>
+        <span>{renderOptionLabel(selected)}</span>
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       {open && (
@@ -2441,7 +2457,7 @@ function CustomPicker({
               onMouseEnter={() => setActiveIndex(options.findIndex((item) => item.id === option.id))}
               onClick={() => choose(option)}
           >
-              <span>{option.label}</span>
+              <span>{renderOptionLabel(option)}</span>
               {value === option.id ? <Check size={15} aria-hidden="true" /> : null}
           </button>
         ))}
@@ -2491,7 +2507,7 @@ function NeedTable({
               <img src={row.imageUrl || "/favicon.ico"} alt="" />
               <span>
                 <strong>{row.name}</strong>
-                <small>{row.quality} | {row.source}</small>
+                <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
               </span>
             </button>
             <div className="need-stat"><span>Required</span><strong>{row.required.toLocaleString()}</strong></div>
@@ -2544,7 +2560,7 @@ function RecipeNeedTable({
               <img src={row.imageUrl || "/favicon.ico"} alt="" />
               <span>
                 <strong>{row.recipeName}</strong>
-                <small>{row.quality} | {row.source}</small>
+                <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
               </span>
             </button>
             <div className="need-stat"><span>Needed</span><strong>{row.copiesNeeded.toLocaleString()}</strong></div>
@@ -2558,11 +2574,6 @@ function RecipeNeedTable({
   );
 }
 
-function titleCase(value: string) {
-  return value.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 function getRecipeDisplayValue(recipe: ForgeRecipeOption) {
-  const qualityRank: Record<string, number> = { MYTHIC: 5, LEGENDARY: 4, EPIC: 3, PREMIUM: 2, REFINED: 1 };
-  return (qualityRank[recipe.quality] || 0) * 1_000_000 + recipe.levelRequired * 1_000 - recipe.materials.length;
+  return getQualityRank(recipe.quality) * 1_000_000 + recipe.levelRequired * 1_000 - recipe.materials.length;
 }

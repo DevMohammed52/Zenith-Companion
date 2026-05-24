@@ -29,6 +29,7 @@ import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
 import { calculatePetStatValue, type PetStatKey } from "@/lib/pet-stats";
 import { useModalA11y } from "@/lib/use-modal-a11y";
+import { QUALITY_COLORS, getQualityRank, formatQualityLabel, getQualityTextStyle } from "@/lib/quality";
 
 type Quality =
   | "STANDARD"
@@ -218,29 +219,9 @@ type StoredPetState = {
   beastmaster?: boolean;
 };
 
+type PetSelectOption<T extends string> = { value: T; label: string; qualityTone?: string };
+
 const PET_DATABASE_STORAGE_KEY = "zenith_pet_database_state_v1";
-
-const QUALITY_ORDER: Record<Quality, number> = {
-  UNKNOWN: 0,
-  STANDARD: 1,
-  REFINED: 2,
-  PREMIUM: 3,
-  EPIC: 4,
-  LEGENDARY: 5,
-  MYTHIC: 6,
-  UNIQUE: 7,
-};
-
-const QUALITY_COLORS: Record<Quality, string> = {
-  UNKNOWN: "#94a3b8",
-  STANDARD: "#e4e4e7",
-  REFINED: "#60a5fa",
-  PREMIUM: "#4ade80",
-  EPIC: "#a855f7",
-  LEGENDARY: "#f59e0b",
-  MYTHIC: "#ef4444",
-  UNIQUE: "#ec4899",
-};
 
 const isDisplayableBattleDrop = (drop: BattleDrop | null | undefined) => {
   const itemName = String(drop?.itemName || "").trim();
@@ -262,7 +243,7 @@ const STAT_LABELS: Record<StatKey, string> = {
   critical_chance: "Crit Chance",
 };
 
-const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
+const SORT_OPTIONS: Array<PetSelectOption<SortKey>> = [
   { value: "power", label: "Power" },
   { value: "speed", label: "Move Speed" },
   { value: "battleProfit", label: "Battle Samples" },
@@ -272,7 +253,7 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "name", label: "Name" },
 ];
 
-const SOURCE_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
+const SOURCE_OPTIONS: Array<PetSelectOption<SourceFilter>> = [
   { value: "ALL", label: "All" },
   { value: "OWNED", label: "Owned by active profile" },
   { value: "EGG", label: "Has egg item" },
@@ -284,7 +265,7 @@ const SOURCE_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
   { value: "MISSING_EGG", label: "No linked egg item" },
 ];
 
-const EVOLUTION_STAT_OPTIONS: Array<{ value: StatKey | "all"; label: string }> = [
+const EVOLUTION_STAT_OPTIONS: Array<PetSelectOption<StatKey | "all">> = [
   { value: "all", label: "All stats" },
   { value: "agility", label: "Agility" },
   { value: "accuracy", label: "Accuracy" },
@@ -304,15 +285,15 @@ const FOOD_OPTIONS: Array<{ value: FoodPolicy; label: string }> = [
   { value: "none", label: "No food" },
 ];
 
-const QUALITY_OPTIONS: Array<{ value: Quality | "ALL"; label: string }> = [
+const QUALITY_OPTIONS: Array<PetSelectOption<Quality | "ALL">> = [
   { value: "ALL", label: "All" },
-  { value: "STANDARD", label: "Standard" },
-  { value: "REFINED", label: "Refined" },
-  { value: "PREMIUM", label: "Premium" },
-  { value: "EPIC", label: "Epic" },
-  { value: "LEGENDARY", label: "Legendary" },
-  { value: "MYTHIC", label: "Mythic" },
-  { value: "UNIQUE", label: "Unique" },
+  { value: "STANDARD", label: "STANDARD", qualityTone: "STANDARD" },
+  { value: "REFINED", label: "REFINED", qualityTone: "REFINED" },
+  { value: "PREMIUM", label: "PREMIUM", qualityTone: "PREMIUM" },
+  { value: "EPIC", label: "EPIC", qualityTone: "EPIC" },
+  { value: "LEGENDARY", label: "LEGENDARY", qualityTone: "LEGENDARY" },
+  { value: "MYTHIC", label: "MYTHIC", qualityTone: "MYTHIC" },
+  { value: "UNIQUE", label: "UNIQUE", qualityTone: "UNIQUE" },
 ];
 
 function formatGold(value?: number | null) {
@@ -345,7 +326,7 @@ function clampNumber(value: number, min: number, max: number) {
 }
 
 function qualityLabel(quality: string) {
-  return quality.charAt(0) + quality.slice(1).toLowerCase();
+  return formatQualityLabel(quality);
 }
 
 function secondsToDuration(seconds?: number | null) {
@@ -496,7 +477,7 @@ function PetSelect<T extends string>({
 }: {
   label: string;
   value: T;
-  options: Array<{ value: T; label: string }>;
+  options: Array<PetSelectOption<T>>;
   onChange: (value: T) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -512,6 +493,13 @@ function PetSelect<T extends string>({
   const [activeIndex, setActiveIndex] = useState(selectedIndex);
   const [placement, setPlacement] = useState<"down" | "up">("down");
   const [menuMaxHeight, setMenuMaxHeight] = useState(280);
+  const renderOptionLabel = (option: PetSelectOption<T> | undefined) => {
+    if (!option) return "";
+    if (option.qualityTone) {
+      return <span style={getQualityTextStyle(option.qualityTone)}>{option.label}</span>;
+    }
+    return option.label;
+  };
 
   const updateMenuPlacement = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -609,7 +597,7 @@ function PetSelect<T extends string>({
           onOpenChange(!open);
         }}
       >
-        <span id={valueId}>{selected?.label}</span>
+        <span id={valueId}>{renderOptionLabel(selected)}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
@@ -639,7 +627,7 @@ function PetSelect<T extends string>({
               onFocus={() => setActiveIndex(index)}
               onMouseEnter={() => setActiveIndex(index)}
             >
-              <span>{option.label}</span>
+              <span>{renderOptionLabel(option)}</span>
               {option.value === value && <Check size={14} aria-hidden="true" />}
             </button>
           ))}
@@ -993,8 +981,8 @@ export default function PetsPage() {
           left = Number(a.pet.rarity?.dropChancePercent || 0);
           right = Number(b.pet.rarity?.dropChancePercent || 0);
         } else if (sortBy === "quality") {
-          left = QUALITY_ORDER[a.pet.quality] || 0;
-          right = QUALITY_ORDER[b.pet.quality] || 0;
+          left = getQualityRank(a.pet.quality);
+          right = getQualityRank(b.pet.quality);
         } else {
           return sortDesc ? b.pet.name.localeCompare(a.pet.name) : a.pet.name.localeCompare(b.pet.name);
         }
@@ -1358,7 +1346,7 @@ export default function PetsPage() {
                 <div className="pet-detail-head">
                   <PetImage pet={selectedRow.pet} />
                   <div>
-                    <span className="pet-quality-line" style={{ color: QUALITY_COLORS[selectedRow.pet.quality] }}>
+                    <span className="pet-quality-line" style={getQualityTextStyle(selectedRow.pet.quality)}>
                       {qualityLabel(selectedRow.pet.quality)}
                     </span>
                     <h2 id="pet-detail-title">{selectedRow.pet.name}</h2>
@@ -1580,7 +1568,7 @@ export default function PetsPage() {
                 <div className="pet-detail-head">
                   <PetImage pet={selectedBattle.pet} />
                   <div>
-                    <span className="pet-quality-line" style={{ color: QUALITY_COLORS[selectedBattle.pet.quality] }}>
+                    <span className="pet-quality-line" style={getQualityTextStyle(selectedBattle.pet.quality)}>
                       Battle Samples
                     </span>
                     <h2 id="pet-battle-title">{selectedBattle.pet.name}</h2>

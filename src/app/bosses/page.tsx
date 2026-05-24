@@ -20,6 +20,7 @@ import {
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import { useItemModal } from "@/context/ItemModalContext";
 import { BOSS_SCHEDULES } from "../../constants/events";
 import { getItemTrueValue } from "@/lib/ev-logic";
@@ -3000,7 +3001,7 @@ function WorldBossItemEffectPicker({
                                 {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />}
                                 <span>
                                     <strong>{option.name}</strong>
-                                    <small>{option.quality} {option.type}</small>
+                                    <small><QualityText value={option.quality}>{option.quality}</QualityText> {option.type}</small>
                                 </span>
                                 <em>{getWorldBossItemModifierSummary(option)}</em>
                                 {active && <Check size={14} />}

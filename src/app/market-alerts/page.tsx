@@ -20,6 +20,7 @@ import {
 import { useData } from '@/context/DataContext';
 import { useItemModal } from '@/context/ItemModalContext';
 import ZenithIcon from '@/components/icons/ZenithIcon';
+import QualityText from '@/components/QualityText';
 import {
   comparatorLabel,
   collectMarketWatchVendorCandidates,
@@ -762,7 +763,7 @@ export default function MarketAlertsPage() {
                       {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="item-pick-fallback" />}
                       <span>
                         <strong>{item.name}</strong>
-                        <small>{item.type || item.quality || 'Market item'}</small>
+                        <small>{item.type || (item.quality ? <QualityText value={item.quality}>{item.quality}</QualityText> : 'Market item')}</small>
                       </span>
                       <em>{market ? formatMarketWatchValue('safe_price', Number(market.safe_price || market.price || 0)) : '-'}</em>
                     </button>

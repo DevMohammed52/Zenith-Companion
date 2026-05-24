@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { getItemTrueValueBreakdown } from "@/lib/ev-logic";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
@@ -1337,7 +1338,9 @@ function DungeonsContent() {
                             {drop.name}
                             {(Number(drop.quantity) || 1) > 1 && <span> x{drop.quantity}</span>}
                           </strong>
-                          <small>{drop.adjustedChancePercent !== drop.baseChancePercent ? `${drop.baseChancePercent}% -> ${drop.adjustedChancePercent.toFixed(2)}%` : `${drop.chance}% drop`} - {drop.quality || "Unknown"}</small>
+                          <small>
+                            {drop.adjustedChancePercent !== drop.baseChancePercent ? `${drop.baseChancePercent}% -> ${drop.adjustedChancePercent.toFixed(2)}%` : `${drop.chance}% drop`} - <QualityText value={drop.quality}>{drop.quality || "Unknown"}</QualityText>
+                          </small>
                         </div>
                       </div>
                       <div className="dungeon-loot-value">
@@ -3140,7 +3143,7 @@ function DungeonItemEffectPicker({
                 {option.imageUrl ? <Image src={option.imageUrl} alt="" width={30} height={30} unoptimized /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
                 <span>
                   <strong>{option.name}</strong>
-                  <small>{option.quality} {option.type}</small>
+                  <small><QualityText value={option.quality}>{option.quality}</QualityText> {option.type}</small>
                 </span>
                 <em>{getDungeonItemModifierSummary(option)}</em>
                 {active && <Check size={14} />}

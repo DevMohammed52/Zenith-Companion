@@ -31,6 +31,7 @@ import {
   useProfiles,
 } from "@/lib/profiles";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import {
   mergeImportedProfileDraft,
   type ImportedProfileDraft,
@@ -524,9 +525,9 @@ function ProfileTextField({
 type PickerOption<T> = {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   image?: string;
-  badge?: string;
+  badge?: ReactNode;
   searchText: string;
   value: T | null;
   muted?: boolean;
@@ -1630,7 +1631,12 @@ export default function ProfilesPage() {
   const itemPickerOption = (item: ProfileItemRecord): PickerOption<ProfileItemRecord> => ({
     id: item.name || "",
     title: item.name || "Unknown item",
-    subtitle: `${item.quality || "UNKNOWN"} - ${String(item.type || "").replace(/_/g, " ")}${getItemRequirementLevel(item) ? ` - Lv. ${getItemRequirementLevel(item)}` : ""}`,
+    subtitle: (
+      <>
+        <QualityText value={item.quality || "UNKNOWN"}>{item.quality || "UNKNOWN"}</QualityText> - {String(item.type || "").replace(/_/g, " ")}
+        {getItemRequirementLevel(item) ? ` - Lv. ${getItemRequirementLevel(item)}` : ""}
+      </>
+    ),
     image: item.image_url,
     badge: item.max_tier ? `T${item.max_tier}` : undefined,
     searchText: `${item.name} ${item.quality} ${item.type} ${formatShortStats(item.stats, 6)}`,
@@ -1781,9 +1787,14 @@ export default function ProfilesPage() {
     ...pets.map((pet) => ({
       id: `db-${pet.name}`,
       title: pet.name,
-      subtitle: `${pet.quality || "UNKNOWN"}${pet.acquisition?.[0]?.boss ? ` - ${pet.acquisition[0].boss}` : ""}`,
+      subtitle: (
+        <>
+          <QualityText value={pet.quality || "UNKNOWN"}>{pet.quality || "UNKNOWN"}</QualityText>
+          {pet.acquisition?.[0]?.boss ? ` - ${pet.acquisition[0].boss}` : ""}
+        </>
+      ),
       image: pet.imageUrl,
-      badge: pet.quality,
+      badge: <QualityText value={pet.quality}>{pet.quality}</QualityText>,
       searchText: `${pet.name} ${pet.quality} ${pet.acquisition?.map((entry) => `${entry.boss} ${entry.location}`).join(" ")}`,
       value: { kind: "database", pet } as PetPickerValue,
     })),
@@ -2173,9 +2184,15 @@ export default function ProfilesPage() {
                 <div>
                   <h3>{selectedOwnedPet?.nickname || selectedOwnedPet?.species || selectedPet?.name}</h3>
                   <p>
-                    {selectedOwnedPet
-                      ? `${selectedOwnedPet.quality || "Unknown quality"} - ${selectedOwnedPet.source === "imported" ? "Imported owned snapshot" : "Owned snapshot"}`
-                      : `${selectedPet?.quality || "Unknown quality"} - ${selectedPet?.acquisition?.[0]?.boss || "Pet Database"}`}
+                    {selectedOwnedPet ? (
+                      <>
+                        <QualityText value={selectedOwnedPet.quality || "UNKNOWN"}>{selectedOwnedPet.quality || "Unknown quality"}</QualityText> - {selectedOwnedPet.source === "imported" ? "Imported owned snapshot" : "Owned snapshot"}
+                      </>
+                    ) : (
+                      <>
+                        <QualityText value={selectedPet?.quality || "UNKNOWN"}>{selectedPet?.quality || "Unknown quality"}</QualityText> - {selectedPet?.acquisition?.[0]?.boss || "Pet Database"}
+                      </>
+                    )}
                   </p>
                   <div className="profile-chip-row">
                     {PET_STAT_FIELDS.slice(0, 6).map(([key, label]) => <span key={key}>{label}: {profile.pet.stats[key] || 0}</span>)}

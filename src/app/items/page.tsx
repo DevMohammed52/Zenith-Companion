@@ -37,6 +37,7 @@ import {
 import { getMarketLiquidity, getSafeMarketValue, type MarketLiquidityInfo } from '@/lib/market-pricing';
 import { getMerchantBuyPrice } from '@/constants';
 import { loadUsageMap } from '@/lib/usage-map';
+import { getQualityColor, getQualityRank, getQualityTextStyle } from '@/lib/quality';
 
 interface SearchIndexItem {
   id: string;
@@ -49,7 +50,7 @@ interface SearchIndexItem {
 type SortKey = 'volume' | 'price' | 'name' | 'quality' | 'type' | 'vendor' | 'usage' | 'requiredLevel';
 type SignalFilter = 'ALL' | 'MARKET' | 'PRICE_SWINGS' | 'VENDOR' | 'UNTRADABLE' | 'LEGACY' | 'CRAFTABLE' | 'PRODUCED' | 'USED' | 'DROPPED' | 'FARMABLE' | 'EQUIPMENT' | 'EFFECTS' | 'LORE';
 type ViewMode = 'table' | 'cards';
-type FilterOption<T extends string> = { value: T; label: string };
+type FilterOption<T extends string> = { value: T; label: string; qualityTone?: string };
 
 type UsageEntry = {
   dropped_by?: DropSourceWithLocation[];
@@ -101,26 +102,6 @@ type MarketConfidence = {
   label: 'Likely market' | 'Check listings' | 'Vendor safer' | 'Needs recent sales' | 'No market';
   tone: 'good' | 'warn' | 'bad' | 'muted';
   note: string;
-};
-
-const QUALITY_ORDER: Record<string, number> = {
-  STANDARD: 1,
-  REFINED: 2,
-  PREMIUM: 3,
-  EPIC: 4,
-  LEGENDARY: 5,
-  MYTHIC: 6,
-  UNIQUE: 7,
-};
-
-const QUALITY_COLORS: Record<string, string> = {
-  STANDARD: '#f4f4f5',
-  REFINED: '#4ade80',
-  PREMIUM: '#60a5fa',
-  EPIC: '#a855f7',
-  LEGENDARY: '#f59e0b',
-  MYTHIC: '#ef4444',
-  UNIQUE: '#ec4899',
 };
 
 function getNumericRequirementEntries(item: Record<string, any>) {
@@ -583,14 +564,18 @@ function ItemsArchiveContent() {
 
   const qualities = useMemo(() => {
     const q = new Set(enrichedItems.map(i => i.quality).filter(Boolean));
-    return ['ALL', ...Array.from(q).sort((a, b) => (QUALITY_ORDER[a] || 0) - (QUALITY_ORDER[b] || 0))];
+    return ['ALL', ...Array.from(q).sort((a, b) => getQualityRank(a) - getQualityRank(b))];
   }, [enrichedItems]);
   const typeOptions = useMemo<FilterOption<string>[]>(
     () => types.map((type) => ({ value: type, label: type === 'ALL' ? 'All types' : formatLabel(type) })),
     [types],
   );
   const qualityOptions = useMemo<FilterOption<string>[]>(
-    () => qualities.map((quality) => ({ value: quality, label: quality === 'ALL' ? 'All qualities' : quality })),
+    () => qualities.map((quality) => ({
+      value: quality,
+      label: quality === 'ALL' ? 'All qualities' : quality,
+      qualityTone: quality === 'ALL' ? undefined : quality,
+    })),
     [qualities],
   );
   const locationOptions = useMemo<FilterOption<string>[]>(
@@ -656,8 +641,8 @@ function ItemsArchiveContent() {
         valA = a.type.toLowerCase();
         valB = b.type.toLowerCase();
       } else if (sortBy === 'quality') {
-        valA = QUALITY_ORDER[a.quality] || 0;
-        valB = QUALITY_ORDER[b.quality] || 0;
+        valA = getQualityRank(a.quality);
+        valB = getQualityRank(b.quality);
       } else if (sortBy === 'requiredLevel') {
         valA = a.requiredLevel;
         valB = b.requiredLevel;
@@ -682,7 +667,7 @@ function ItemsArchiveContent() {
       const primary = sortDesc ? Number(valB) - Number(valA) : Number(valA) - Number(valB);
       if (primary !== 0) return primary;
       if (sortBy === 'requiredLevel') {
-        const rarityTieBreak = (QUALITY_ORDER[b.quality] || 0) - (QUALITY_ORDER[a.quality] || 0);
+        const rarityTieBreak = getQualityRank(b.quality) - getQualityRank(a.quality);
         if (rarityTieBreak !== 0) return rarityTieBreak;
       }
       if (sortBy === 'quality') {
@@ -1061,7 +1046,7 @@ function ItemsArchiveContent() {
                   {renderSortHeader('vendor', 'Vendor')}
                   {renderSortHeader('volume', 'Stable Vol')}
                   {renderSortHeader('usage', 'Usage')}
-                  <th className="left">Tags</th>
+                  <th className="center">Tags</th>
                 </tr>
               </thead>
               <tbody>
@@ -1089,7 +1074,7 @@ function ItemsArchiveContent() {
                       </div>
                     </td>
                     <td>{formatLabel(item.type)}</td>
-                    <td style={{ color: QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD }}>{item.quality}</td>
+                    <td style={getQualityTextStyle(item.quality)}>{item.quality}</td>
                     <td className="mono" title={item.requirementsText || undefined}>{item.requiredLevel || '-'}</td>
                     <td className="mono" title={item.marketConfidence.note}>{formatGold(item.marketPrice)}</td>
                     <td className="mono">{formatGold(item.vendorPrice)}</td>
@@ -1110,7 +1095,7 @@ function ItemsArchiveContent() {
           <div className="item-grid forced">
             {visibleItems.map(item => (
               <button aria-label={`Open ${item.name} item details`} key={item.id} type="button" onClick={() => open(item)} className="item-card">
-                <div className="quality-strip" style={{ '--quality-color': QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD } as React.CSSProperties} />
+                <div className="quality-strip" style={{ '--quality-color': getQualityColor(item.quality) } as React.CSSProperties} />
                 <img src={item.image} alt="" loading="lazy" decoding="async" />
                 <div className="item-card-body">
                   <div className="card-topline">
@@ -1119,7 +1104,7 @@ function ItemsArchiveContent() {
                   </div>
                   <div className="card-meta">
                     <span>{formatLabel(item.type)}</span>
-                    <span style={{ color: QUALITY_COLORS[item.quality] || QUALITY_COLORS.STANDARD }}>{item.quality}</span>
+                    <span style={getQualityTextStyle(item.quality)}>{item.quality}</span>
                   </div>
                   <div className="card-stats">
                     <span><small>Market</small><strong title={item.marketConfidence.note}>{formatGold(item.marketPrice)}</strong></span>
@@ -1525,6 +1510,9 @@ function ItemsArchiveContent() {
         .items-table th.left {
           text-align: left;
         }
+        .items-table th.center {
+          text-align: center;
+        }
         .sort-header-button,
         :global(.items-db-page .sort-header-button) {
           align-items: center;
@@ -1542,6 +1530,9 @@ function ItemsArchiveContent() {
           text-align: inherit;
           text-transform: inherit;
           width: 100%;
+        }
+        .items-table th:not(.left) .sort-header-button {
+          justify-content: center;
         }
         .sort-header-button.active,
         :global(.items-db-page .sort-header-button.active) {
@@ -1570,8 +1561,8 @@ function ItemsArchiveContent() {
           border-top: 1px solid rgba(255,255,255,0.035);
           color: var(--text-main);
           font-size: 0.84rem;
-          padding: 0.8rem 0.85rem;
-          text-align: right;
+          padding: 0.9rem 0.85rem;
+          text-align: center;
           vertical-align: middle;
         }
         .items-table th:nth-child(1),
@@ -1594,8 +1585,6 @@ function ItemsArchiveContent() {
         .items-table td:nth-child(9) { width: 11%; }
         .items-table tr {
           cursor: pointer;
-          content-visibility: auto;
-          contain-intrinsic-size: auto 76px;
           transition: background 0.16s ease;
         }
         .items-table tr:hover td,
@@ -1639,7 +1628,8 @@ function ItemsArchiveContent() {
           white-space: nowrap;
         }
         .signals-cell {
-          text-align: left !important;
+          overflow: hidden;
+          text-align: center !important;
         }
         .liquidity-volume.thin {
           color: #fbbf24;
@@ -1679,10 +1669,11 @@ function ItemsArchiveContent() {
           min-width: 0;
         }
         :global(.items-db-page .item-badges.compact) {
-          align-content: flex-start;
+          align-content: center;
+          align-items: center;
           gap: 0.28rem;
-          max-height: 54px;
-          overflow: hidden;
+          justify-content: center;
+          overflow: visible;
         }
         :global(.items-db-page .badge) {
           align-items: center;
@@ -1696,14 +1687,14 @@ function ItemsArchiveContent() {
           line-height: 1;
           max-width: 100%;
           min-width: 0;
-          overflow-wrap: anywhere;
           padding: 0.25rem 0.5rem;
           text-transform: uppercase;
-          white-space: normal;
+          white-space: nowrap;
         }
         :global(.items-db-page .badge span) {
           min-width: 0;
-          overflow-wrap: anywhere;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         :global(.items-db-page .badge svg) {
           flex: 0 0 auto;
@@ -2151,6 +2142,13 @@ function ItemFilterPicker<T extends string>({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selected = options.find((option) => option.value === value) || options[0] || null;
+  const renderOptionLabel = (option: FilterOption<T> | null) => {
+    if (!option) return 'Select';
+    if (option.qualityTone) {
+      return <span style={getQualityTextStyle(option.qualityTone)}>{option.label}</span>;
+    }
+    return option.label;
+  };
 
   const closePicker = (returnFocus = false) => {
     setOpen(false);
@@ -2282,7 +2280,7 @@ function ItemFilterPicker<T extends string>({
         onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span>{selected?.label || 'Select'}</span>
+        <span>{renderOptionLabel(selected)}</span>
         <ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (
@@ -2309,7 +2307,7 @@ function ItemFilterPicker<T extends string>({
                   selectOption(option);
                 }}
               >
-                <span>{option.label}</span>
+                <span>{renderOptionLabel(option)}</span>
                 {active && <Check size={14} aria-hidden="true" />}
               </button>
             );

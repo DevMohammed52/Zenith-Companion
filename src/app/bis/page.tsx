@@ -25,6 +25,7 @@ import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketValue, type MarketPriceDatum } from "@/lib/market-pricing";
 import { calculateGearStats, formatStatName } from "@/lib/profile-calculations";
+import { getQualityRank, getQualityTextStyle } from "@/lib/quality";
 
 type GearType =
   | "SWORD"
@@ -144,14 +145,6 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   shoes: ["boots"],
 };
 
-const QUALITY_ORDER = ["REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"];
-const QUALITY_COLOR: Record<string, string> = {
-  REFINED: "#22c55e",
-  PREMIUM: "#38bdf8",
-  EPIC: "#a855f7",
-  LEGENDARY: "#f59e0b",
-  MYTHIC: "#ef4444",
-};
 const INITIAL_VISIBLE_GEAR_ROWS = 120;
 
 const WEIGHTS: Record<Priority, Record<string, number>> = {
@@ -214,11 +207,6 @@ function numberValue(value: number | "" | undefined) {
 
 function getRequirementLevel(item: GearItem) {
   return Math.max(0, ...Object.values(item.requirements || {}).map((value) => Number(value || 0)));
-}
-
-function getQualityRank(quality: string | undefined) {
-  const index = QUALITY_ORDER.indexOf(String(quality || "").toUpperCase());
-  return index === -1 ? -1 : index;
 }
 
 function formatGold(value: number | null | undefined) {
@@ -754,7 +742,7 @@ export default function BisPage() {
                 </span>
                 <span className="gear-meta">
                   <strong>{formatGold(view.price)}</strong>
-                  <small style={{ color: QUALITY_COLOR[view.item.quality] || "var(--text-muted)" }}>{view.item.quality}</small>
+                  <small style={getQualityTextStyle(view.item.quality)}>{view.item.quality}</small>
                 </span>
                 <span className={view.eligible ? "status ok" : "status locked"}>{view.eligible ? "Usable" : "Locked"}</span>
               </button>
@@ -782,7 +770,7 @@ export default function BisPage() {
               <div className="compare-head">
                 <img src={selected.item.image_url || "/favicon.ico"} alt="" loading="eager" decoding="async" />
                 <div>
-                  <span style={{ color: QUALITY_COLOR[selected.item.quality] || "var(--text-muted)" }}>{selected.item.quality}</span>
+                  <span style={getQualityTextStyle(selected.item.quality)}>{selected.item.quality}</span>
                   <h2>{selected.item.name}</h2>
                   <p>{slotLabel(selected.item.type)} | Level {selected.requirementLevel} | {selected.priceLabel}</p>
                 </div>

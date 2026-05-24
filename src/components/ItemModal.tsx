@@ -23,6 +23,7 @@ import { GATHERED_RESOURCE_SOURCE_NOTE, getDropSourceLocation, getResourceLocati
 import { useModalA11y } from '@/lib/use-modal-a11y';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 import { loadUsageMap } from '@/lib/usage-map';
+import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
 
 interface ItemModalProps {
   id: string;
@@ -155,17 +156,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
   const GOLD_ICON = "https://cdn.idle-mmo.com/cdn-cgi/image/width=20,height=20,format=auto/global/gold_coin.png";
 
-  const qualityColors: any = {
-    STANDARD: 'var(--text-secondary)',
-    REFINED: '#4ade80',
-    PREMIUM: '#60a5fa',
-    EPIC: '#a855f7',
-    LEGENDARY: '#f59e0b',
-    MYTHIC: '#ef4444',
-    UNIQUE: '#ec4899'
-  };
-
-  const qColor = item ? qualityColors[item.quality] || qualityColors.STANDARD : qualityColors.STANDARD;
+  const qColor = item ? getQualityColor(item.quality) : getQualityColor('STANDARD');
   const itemName = item?.name;
   const itemIsTradeable = item ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false : false;
   const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
@@ -374,28 +365,29 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 </h2>
                 <div className="badge-row">
                   <span className="type-badge">{formatItemTypeLabel(item?.type || 'UNKNOWN')}</span>
-                  <span className="dot">•</span>
-                  <span className="quality-text" style={{ color: qColor }}>{item?.quality || 'STANDARD'}</span>
+                  <span className="meta-divider">/</span>
+                  <span className="quality-text" style={getQualityTextStyle(item?.quality || 'STANDARD')}>{item?.quality || 'STANDARD'}</span>
                   {item?.recipe_yield?.uses && (
                     <>
-                      <span className="dot">•</span>
+                      <span className="meta-divider">/</span>
                       <span className="uses-badge">
-                        {item.recipe_yield.uses === 'Infinite' ? '∞ USES' : `${item.recipe_yield.uses} USES`}
+                        {item.recipe_yield.uses === 'Infinite' ? 'Unlimited uses' : `${item.recipe_yield.uses} uses`}
                       </span>
                     </>
                   )}
                   {item?.vendor_price > 0 && (
                     <>
-                      <span className="dot">•</span>
-                      <span className="vendor-badge">
-                        <img src={GOLD_ICON} alt="Gold" />
+                      <span className="meta-divider">/</span>
+                      <span className="vendor-badge" title={`Vendor base price: ${formatGold(item.vendor_price || 0)}`} aria-label={`Vendor base price ${formatGold(item.vendor_price || 0)}`}>
+                        <span>Vendor</span>
+                        <img src={GOLD_ICON} alt="" />
                         {(item.vendor_price || 0).toLocaleString()}
                       </span>
                     </>
                   )}
                   {item && !itemIsTradeable && (
                     <>
-                      <span className="dot">•</span>
+                      <span className="meta-divider">/</span>
                       <span className="untradable-badge">Untradable</span>
                     </>
                   )}
@@ -419,15 +411,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="vendor-message">
                     This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" rel="noopener noreferrer" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
                     <p className="vendor-warning">You cannot obtain this from the market and cannot sell it on the market as well and it is not tradable as well.</p>
-                  </div>
-                </div>
-              )}
-
-              {item?.description && (
-                <div className="bento-card description-card full-width" style={{ background: 'rgba(255,255,255,0.01)', borderStyle: 'dashed' }}>
-                  <div className="card-label"><Info size={14} /> Item Description</div>
-                  <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    &quot;{item.description}&quot;
                   </div>
                 </div>
               )}
@@ -457,6 +440,15 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <strong title={saleInsight.stableVolume !== saleInsight.volume ? `Raw 3-day volume: ${saleInsight.volume.toLocaleString()}` : undefined}>{saleInsight.stableVolume.toLocaleString()}</strong>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {item?.description && (
+                <div className="bento-card description-card full-width" style={{ background: 'rgba(255,255,255,0.01)', borderStyle: 'dashed' }}>
+                  <div className="card-label"><Info size={14} /> Item Description</div>
+                  <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    &quot;{item.description}&quot;
                   </div>
                 </div>
               )}
@@ -675,7 +667,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="yield-content">
                     <div className="yield-item-name">{item.recipe_yield.item_name}</div>
                     <div className="yield-details">
-                      {recipeOutputItem?.type || 'ITEM'}{recipeOutputItem?.quality ? ` - ${recipeOutputItem.quality}` : ''}
+                      {recipeOutputItem?.type || 'ITEM'}{recipeOutputItem?.quality ? <> - <span style={getQualityTextStyle(recipeOutputItem.quality)}>{recipeOutputItem.quality}</span></> : ''}
                     </div>
                     <div className="yield-stats">
                         <div className="y-stat">
@@ -918,7 +910,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           <span>
                             <span className="recipe-link-kicker">Recipe item</span>
                             <strong>{craftedByRecipeName}</strong>
-                            {craftedByRecipeItem?.quality && <em>{craftedByRecipeItem.quality}</em>}
+                            {craftedByRecipeItem?.quality && <em style={getQualityTextStyle(craftedByRecipeItem.quality)}>{craftedByRecipeItem.quality}</em>}
                           </span>
                           <ExternalLink size={14} />
                         </button>
@@ -1007,17 +999,18 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .item-icon-large { width: 64px; height: 64px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.28); object-fit: contain; padding: 0.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 26px rgba(0,0,0,0.28); }
         .item-title { font-size: 2.25rem; font-weight: 800; margin: 0; letter-spacing: -0.03em; }
         
-        .badge-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+        .badge-row { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.55rem; }
         .type-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.06); padding: 2px 10px; border-radius: 6px; }
         .quality-text { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .dot { color: rgba(255,255,255,0.28); font-size: 0.8rem; line-height: 1; }
-        .uses-badge { font-size: 10px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.1); padding: 2px 8px; border-radius: 4px; }
-        .vendor-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; color: #fbbf24; }
+        .meta-divider { color: rgba(255,255,255,0.26); font-size: 0.72rem; line-height: 1; }
+        .uses-badge { font-size: 10px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.1); padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+        .vendor-badge { align-items: center; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.16); border-radius: 6px; color: #fbbf24; display: inline-flex; font-size: 11px; font-weight: 800; gap: 4px; padding: 2px 8px; }
         .vendor-badge img { width: 14px; height: 14px; }
         .untradable-badge { border: 1px solid rgba(248,113,113,0.26); border-radius: 5px; background: rgba(248,113,113,0.09); color: #fca5a5; font-size: 10px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 8px; text-transform: uppercase; }
         
-        .modal-close-btn { background: rgba(255,255,255,0.05); border: none; color: rgba(255,255,255,0.72); padding: 10px; border-radius: 50%; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
-        .modal-close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; transform: rotate(90deg); }
+        .modal-close-btn { align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: rgba(255,255,255,0.72); cursor: pointer; display: inline-flex; height: 40px; justify-content: center; padding: 0; width: 40px; transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
+        .modal-close-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: #fff; transform: translateY(-1px); }
+        .modal-close-btn:active { transform: translateY(0) scale(0.98); }
         .modal-close-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56,189,248,0.2); }
 
         .modal-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 3rem; position: relative; -webkit-overflow-scrolling: touch; }
@@ -1534,7 +1527,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             overflow-wrap: anywhere;
           }
           .badge-row { flex-wrap: wrap; gap: 0.45rem; }
-          .modal-close-btn { flex-shrink: 0; padding: 0.55rem; }
+          .modal-close-btn { flex-shrink: 0; height: 38px; padding: 0; width: 38px; }
 
           .modal-body { padding: 1rem; }
           .bento-grid { gap: 0.85rem; }

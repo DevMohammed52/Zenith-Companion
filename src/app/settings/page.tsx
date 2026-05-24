@@ -23,6 +23,7 @@ import {
 import { ThemeName, usePreferences } from "@/lib/preferences";
 import { playZenithSound } from "@/lib/audio";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
@@ -130,7 +131,7 @@ function ToolPicker({
             >
               <span>
                 <strong>{tool.name}</strong>
-                <small>{tool.quality} - Lv. {tool.level}</small>
+                <small><QualityText value={tool.quality}>{tool.quality}</QualityText> - Lv. {tool.level}</small>
               </span>
               <em>+{tool.efficiency}%</em>
             </button>

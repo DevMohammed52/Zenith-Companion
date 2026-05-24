@@ -1,5 +1,6 @@
 import { ALCHEMY_ITEMS } from "@/constants";
 import { getSafeMarketPrice, type MarketPriceDatum } from "@/lib/market-pricing";
+import { getQualityRank, normalizeQuality } from "@/lib/quality";
 
 export const SUPPORTED_ESSENCE_SKILLS = [
   "Woodcutting",
@@ -65,15 +66,6 @@ export type EssenceSession = {
   needsPrice: boolean;
 };
 
-const QUALITY_RANK: Record<string, number> = {
-  MYTHIC: 6,
-  LEGENDARY: 5,
-  EPIC: 4,
-  PREMIUM: 3,
-  REFINED: 2,
-  STANDARD: 1,
-};
-
 const EMPTY_PRICE: EssencePriceInfo = {
   value: 0,
   source: "missing",
@@ -83,10 +75,6 @@ const EMPTY_PRICE: EssencePriceInfo = {
 
 function normalizeSkill(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase();
-}
-
-function normalizeQuality(value: string | null | undefined) {
-  return String(value || "").trim().toUpperCase();
 }
 
 function isPositiveNumber(value: unknown) {
@@ -230,7 +218,7 @@ export function getEssenceOptionsForSkill(
   });
 
   return options.sort((a, b) => {
-    const rarity = (QUALITY_RANK[a.quality] || 0) - (QUALITY_RANK[b.quality] || 0);
+    const rarity = getQualityRank(a.quality) - getQualityRank(b.quality);
     if (rarity !== 0) return rarity;
     const levelA = a.level ?? Number.MAX_SAFE_INTEGER;
     const levelB = b.level ?? Number.MAX_SAFE_INTEGER;

@@ -1,4 +1,5 @@
 import { getMarketLiquidity, getSafeMarketPrice, type MarketLiquidityInfo, type MarketPriceDatum } from "@/lib/market-pricing";
+import { getQualityRank } from "@/lib/quality";
 
 export type ForgeQuality = "REFINED" | "PREMIUM" | "EPIC" | "LEGENDARY" | "MYTHIC" | string;
 
@@ -143,15 +144,6 @@ export type ForgePlannerSummary = {
   warnings: string[];
 };
 
-const QUALITY_RANK: Record<string, number> = {
-  MYTHIC: 5,
-  LEGENDARY: 4,
-  EPIC: 3,
-  PREMIUM: 2,
-  REFINED: 1,
-  STANDARD: 0,
-};
-
 export const FORGE_PLANNER_STORAGE_KEY = "zenith_forge_planner_v1";
 export const FORGE_PLANNER_MAX_QTY = 999_999;
 
@@ -239,7 +231,7 @@ export function buildForgeRecipeOptions(items: ForgeItemLookup | null | undefine
     })
     .filter((option) => option.recipeName && option.resultName && option.materials.length > 0)
     .sort((a, b) => {
-      const qualityDelta = (QUALITY_RANK[b.quality] || 0) - (QUALITY_RANK[a.quality] || 0);
+      const qualityDelta = getQualityRank(b.quality) - getQualityRank(a.quality);
       return qualityDelta || b.levelRequired - a.levelRequired || a.resultName.localeCompare(b.resultName);
     });
 }

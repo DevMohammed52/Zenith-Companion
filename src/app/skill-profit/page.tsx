@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowDownUp,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatGold } from "@/lib/format";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import QualityText from "@/components/QualityText";
 import { usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { barteringBuffPercent, getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
@@ -958,9 +959,11 @@ export default function SkillProfitPage() {
                   onOpenChange={handleToolPickerOpenChange}
                 />
                 <small>
-                  {selectedTool
-                    ? `Lvl ${selectedTool.level} - ${selectedTool.quality}`
-                    : activeProfile
+                  {selectedTool ? (
+                    <>
+                      Lvl {selectedTool.level} - <QualityText value={selectedTool.quality}>{selectedTool.quality}</QualityText>
+                    </>
+                  ) : activeProfile
                       ? "No tool selected"
                       : "No tool bonus"}
                   {activeProfile ? " - synced with profile" : " - global fallback"}
@@ -1533,7 +1536,7 @@ function ToolPicker({
             >
               <span>
                 <strong>{option.name}</strong>
-                <small>Lvl {option.level} - {option.quality}</small>
+                <small>Lvl {option.level} - <QualityText value={option.quality}>{option.quality}</QualityText></small>
               </span>
               <em>+{option.efficiency}%</em>
               {option.name === value && <Check size={15} />}
@@ -2053,7 +2056,9 @@ function SkillStrategyModal({
                 <DetailPill label="Base EXP" value={formatOptionalNumber(activeRow.experience)} muted={activeRow.experience === null} />
                 <DetailPill label="EXP/hr" value={formatOptionalNumber(activeRow.expPerHour)} muted={activeRow.expPerHour === null} />
                 <DetailPill label="Type" value={formatType(item?.type)} muted={!item?.type} />
-                <DetailPill label="Quality" value={formatType(item?.quality)} muted={!item?.quality} />
+                <DetailPill label="Quality" value={formatType(item?.quality)} muted={!item?.quality}>
+                  {item?.quality ? <QualityText value={item.quality}>{formatType(item.quality)}</QualityText> : undefined}
+                </DetailPill>
                 <DetailPill label="Tradeable" value={item ? (item.is_tradeable ? "Yes" : "No") : "Unknown"} muted={!item} />
                 <DetailPill label="Vendor Base" value={item?.vendor_price ? `${formatGold(item.vendor_price)}g` : "None"} muted={!item?.vendor_price} />
                 <DetailPill label="3d Avg" value={market?.avg_3 ? `${formatGold(market.avg_3)}g` : "No data"} muted={!market?.avg_3} />
@@ -2093,11 +2098,11 @@ function SkillStrategyModal({
   );
 }
 
-function DetailPill({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function DetailPill({ label, value, muted, children }: { label: string; value: string; muted?: boolean; children?: ReactNode }) {
   return (
     <div className={styles.detailPill}>
       <span>{label}</span>
-      <strong className={muted ? styles.mutedValue : ""}>{value}</strong>
+      <strong className={muted ? styles.mutedValue : ""}>{children ?? value}</strong>
     </div>
   );
 }
