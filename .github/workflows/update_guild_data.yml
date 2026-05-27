@@ -101,7 +101,6 @@ jobs:
             --path=public/guild-list.json \
             --path=public/guild-search-index.json \
             --path=public/guild-details.json \
-            --path=public/guild-members.json \
             --path=public/guild-refresh-plan.json \
             --path=public/guild-details/*.json \
             --commit-message="chore: auto-update guild data [skip ci]" \

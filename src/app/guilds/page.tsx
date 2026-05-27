@@ -60,6 +60,15 @@ const TIER_FILTERS: Array<{ id: TierFilter; label: string }> = [
   { id: "cold", label: "Archive" },
 ];
 
+function getSafeExternalHref(value: string) {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function getSearchText(guild: GuildRecord) {
   return [guild.id, guild.name, guild.tag, ...guild.leader_names, ...guild.top_member_names]
     .filter(Boolean)
@@ -74,18 +83,22 @@ function InlineMarkdown({ text }: { text: string }) {
       {parts.map((part, index) => {
         const markdownLink = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
         if (markdownLink) {
-          return (
-            <a key={`${part}-${index}`} href={markdownLink[2]} target="_blank" rel="noreferrer">
+          const href = getSafeExternalHref(markdownLink[2]);
+          return href ? (
+            <a key={`${part}-${index}`} href={href} target="_blank" rel="noopener noreferrer">
               {markdownLink[1]}
             </a>
+          ) : (
+            <span key={`${part}-${index}`}>{markdownLink[1]}</span>
           );
         }
         if (part.startsWith("**") && part.endsWith("**")) {
           const inner = part.slice(2, -2);
-          if (/^https?:\/\//.test(inner)) {
+          const href = getSafeExternalHref(inner);
+          if (href) {
             return (
               <strong key={`${part}-${index}`}>
-                <a href={inner} target="_blank" rel="noreferrer">
+                <a href={href} target="_blank" rel="noopener noreferrer">
                   {inner}
                 </a>
               </strong>
@@ -93,9 +106,10 @@ function InlineMarkdown({ text }: { text: string }) {
           }
           return <strong key={`${part}-${index}`}>{inner}</strong>;
         }
-        if (/^https?:\/\//.test(part)) {
+        const href = getSafeExternalHref(part);
+        if (href) {
           return (
-            <a key={`${part}-${index}`} href={part} target="_blank" rel="noreferrer">
+            <a key={`${part}-${index}`} href={href} target="_blank" rel="noopener noreferrer">
               {part}
             </a>
           );

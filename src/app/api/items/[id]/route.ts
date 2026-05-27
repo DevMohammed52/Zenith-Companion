@@ -13,6 +13,16 @@ type ItemNameCacheEntry = CacheEntry & {
   sourceKey: string;
 };
 
+const ITEM_ID_PATTERN = /^[A-Za-z0-9_-]{1,160}$/;
+const ITEM_RESPONSE_HEADERS = {
+  "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+  "x-robots-tag": "noindex, nofollow",
+};
+const ITEM_ERROR_HEADERS = {
+  "cache-control": "no-store",
+  "x-robots-tag": "noindex, nofollow",
+};
+
 // Singleton caches with timestamps
 const caches: Record<string, CacheEntry> = {
   itemsMap: { data: null, mtime: 0 },
@@ -96,6 +106,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  if (!ITEM_ID_PATTERN.test(id)) {
+    return NextResponse.json({ error: 'Invalid item id' }, { status: 400, headers: ITEM_ERROR_HEADERS });
+  }
   
   try {
     const dataDir = path.join(process.cwd(), 'public');
@@ -109,7 +123,7 @@ export async function GET(
     // 3. Lookup Item (clone to prevent cache mutation)
     const rawItem = itemsMap?.[id] || allItems?.[id] || null;
     if (!rawItem) {
-      return NextResponse.json({ error: 'Item not found in any registry' }, { status: 404 });
+      return NextResponse.json({ error: 'Item not found in any registry' }, { status: 404, headers: ITEM_ERROR_HEADERS });
     }
     
     const item = structuredClone(rawItem);
@@ -207,9 +221,9 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(item);
+    return NextResponse.json(item, { headers: ITEM_RESPONSE_HEADERS });
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: ITEM_ERROR_HEADERS });
   }
 }

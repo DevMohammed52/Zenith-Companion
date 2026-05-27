@@ -10,6 +10,8 @@ const JOB_TTL_MS = 60 * 60 * 1000;
 const DEFAULT_POLL_MS = 2000;
 const DEFAULT_BASELINE_REQUEST_CAP = 45;
 const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
+const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
+const USAGE_PING_RATE_LIMIT_TTL_SECONDS = 90;
 const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
@@ -199,10 +201,23 @@ async function handleAdminImportHealth(request, env, cors) {
 }
 
 async function handleUsagePing(request, env, cors) {
+  if (!hasBearerSecret(request, env.USAGE_PING_SECRET)) {
+    return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
+  }
+
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Usage ping is not available from this origin." } }, 403, cors);
   }
   assertBindings(env);
+
+  const rateLimit = await checkUsagePingRateLimit(request, env);
+  if (!rateLimit.ok) {
+    return json(
+      { error: { code: "rate_limited", message: "Usage ping rate limit reached." } },
+      429,
+      { ...cors, "retry-after": String(rateLimit.retryAfterSeconds) },
+    );
+  }
 
   const payload = await readJson(request);
   const visitorId = cleanString(payload.visitorId, 128);
@@ -1594,6 +1609,39 @@ function requesterKey(request) {
   return request.headers.get("cf-connecting-ip")
     || request.headers.get("x-forwarded-for")
     || "unknown-requester";
+}
+
+async function checkUsagePingRateLimit(request, env) {
+  const maxPerMinute = readPositiveInt(env.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
+  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
+
+  const now = Date.now();
+  const bucket = Math.floor(now / 60000);
+  const requesterFingerprint = await fingerprint(`usage:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
+  const key = `usage-ping:${bucket}:${requesterFingerprint.slice(0, 32)}`;
+  let current = 0;
+
+  try {
+    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
+  } catch {
+    return { ok: true };
+  }
+
+  if (Number.isFinite(current) && current >= maxPerMinute) {
+    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
+  }
+
+  try {
+    await env.ZENITH_COORDINATOR.put(
+      key,
+      String((Number.isFinite(current) ? current : 0) + 1),
+      { expirationTtl: USAGE_PING_RATE_LIMIT_TTL_SECONDS },
+    );
+  } catch {
+    return { ok: true };
+  }
+
+  return { ok: true };
 }
 
 async function fingerprint(value, secret) {

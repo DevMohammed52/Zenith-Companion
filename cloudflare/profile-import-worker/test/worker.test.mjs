@@ -350,6 +350,8 @@ function env(overrides = {}) {
     IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER: "8",
     SCRAPER_COORDINATOR_SECRET: "coordinator-secret",
     ADMIN_DASHBOARD_SECRET: "admin-secret",
+    USAGE_PING_SECRET: "usage-secret",
+    USAGE_PING_MAX_PER_MINUTE: "120",
     IMPORT_SIGNING_SECRET: "signing-secret",
     IMPORT_ENCRYPTION_SECRET: "encryption-secret",
     IDLEMMO_API_KEY: "idlemmo-secret",
@@ -418,10 +420,27 @@ async function json(response) {
 
 {
   const e = env();
+  const unauthorized = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "visitor-fixture",
+      sessionId: "session-fixture",
+      eventType: "pageview",
+      path: "/profiles",
+    }),
+  }), e);
+  assert.equal(unauthorized.status, 401);
+  assert.equal(e.DB.usageEvents.size, 0);
+
   const response = await handleRequest(new Request("https://worker.test/usage/ping", {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      authorization: "Bearer usage-secret",
       origin: "https://zenith.example",
       "user-agent": "Mozilla/5.0 Chrome/126.0",
       "cf-ipcountry": "IN",
@@ -448,6 +467,30 @@ async function json(response) {
   assert.equal(body.usage.pageviews24h, 1);
   assert.equal(body.usage.topPages[0].path, "/profiles");
   assert.equal(body.usage.devices[0].type, "mobile");
+}
+
+{
+  const e = env({ USAGE_PING_MAX_PER_MINUTE: "1" });
+  const requestInit = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.10",
+    },
+    body: JSON.stringify({
+      visitorId: "visitor-fixture",
+      sessionId: "session-fixture",
+      eventType: "heartbeat",
+      path: "/items",
+    }),
+  };
+  const first = await handleRequest(new Request("https://worker.test/usage/ping", requestInit), e);
+  const second = await handleRequest(new Request("https://worker.test/usage/ping", requestInit), e);
+  assert.equal(first.status, 202);
+  assert.equal(second.status, 429);
+  assert.equal(e.DB.usageEvents.size, 1);
 }
 
 {

@@ -2,8 +2,26 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const ADMIN_USERNAME = "zenith";
 const ADMIN_REALM = "Zenith Import Health";
+const BLOCKED_PUBLIC_DATA_PATHS = new Set([
+  "/guild-members.json",
+  "/guild-database.json",
+  "/guild-details.json",
+  "/guild-refresh-plan.json",
+  "/items-map.json",
+  "/scraper-priority.json",
+]);
 
 export function proxy(request: NextRequest) {
+  if (BLOCKED_PUBLIC_DATA_PATHS.has(request.nextUrl.pathname)) {
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: {
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    });
+  }
+
   const adminSecret = process.env.ADMIN_DASHBOARD_SECRET?.trim();
 
   if (!adminSecret) {
@@ -31,7 +49,16 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/import-health/:path*", "/api/admin/import-health/:path*"],
+  matcher: [
+    "/admin/import-health/:path*",
+    "/api/admin/import-health/:path*",
+    "/guild-members.json",
+    "/guild-database.json",
+    "/guild-details.json",
+    "/guild-refresh-plan.json",
+    "/items-map.json",
+    "/scraper-priority.json",
+  ],
 };
 
 function parseBasicAuth(header: string | null) {

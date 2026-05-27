@@ -13,7 +13,6 @@ const listOutFile = path.resolve(String(args["list-out"] || "public/guild-list.j
 const guildSearchOutFile = path.resolve(String(args["guild-search-out"] || "public/guild-search-index.json"));
 const detailsOutFile = path.resolve(String(args["details-out"] || "public/guild-details.json"));
 const detailsOutDir = path.resolve(String(args["details-dir"] || "public/guild-details"));
-const membersOutFile = path.resolve(String(args["members-out"] || "public/guild-members.json"));
 const refreshPlanFile = path.resolve(String(args["refresh-plan-out"] || "public/guild-refresh-plan.json"));
 const shouldMergeExisting = Boolean(args["merge-existing"]);
 
@@ -175,19 +174,6 @@ function compactGuildDetails(guild, fetchedAt) {
   };
 }
 
-function compactMember(guild, member) {
-  return {
-    guild_id: numberValue(guild.id),
-    guild_name: guild.name || `Guild ${guild.id}`,
-    guild_tag: guild.tag || null,
-    name: member.name || "Unknown",
-    position: member.position || null,
-    total_level: numberValue(member.total_level, null),
-    image_url: member.image_url || null,
-    background_url: member.background_url || null,
-  };
-}
-
 const guilds = readJson(path.join(sourceDir, "guilds.json"));
 const summaryPath = path.join(sourceDir, "guild_intelligence_summary.json");
 const sourceSummary = fs.existsSync(summaryPath) ? readJson(summaryPath) : null;
@@ -256,23 +242,8 @@ const guildSearchIndex = compactGuilds.map((guild) => ({
   leader_names: guild.leader_names,
 }));
 
-const membersDatabase = {
-  meta: {
-    generated_at: database.meta.generated_at,
-    source_fetched_at: fetchedAt,
-    guilds: compactGuilds.length,
-    members: 0,
-  },
-  members: [
-    ...((shouldMergeExisting && fs.existsSync(membersOutFile) ? readJson(membersOutFile).members || [] : []).filter(
-      (member) => !updatedGuildIds.has(member.guild_id),
-    ).map(stripCharacterHashes)),
-    ...guilds.flatMap((guild) => (Array.isArray(guild.members) ? guild.members.map((member) => compactMember(guild, member)) : [])),
-  ],
-};
-membersDatabase.meta.members = membersDatabase.members.length;
 database.meta.totals.guilds = compactGuilds.length;
-database.meta.totals.members = membersDatabase.members.length;
+database.meta.totals.members = compactGuilds.reduce((sum, guild) => sum + numberValue(guild.member_count), 0);
 
 const detailsDatabase = {
   meta: {
@@ -323,7 +294,6 @@ writeJson(detailsOutFile, detailsDatabase);
 for (const detail of guildDetails) {
   writeJson(path.join(detailsOutDir, `${detail.id}.json`), detail);
 }
-writeJson(membersOutFile, membersDatabase);
 writeJson(refreshPlanFile, refreshPlan);
 
 for (const fileName of fs.existsSync(detailsOutDir) ? fs.readdirSync(detailsOutDir) : []) {
@@ -336,5 +306,4 @@ console.log(`Wrote ${path.relative(repoRoot, outFile)} with ${compactGuilds.leng
 console.log(`Wrote ${path.relative(repoRoot, listOutFile)} with ${guildListDatabase.guilds.length} trimmed guild rows.`);
 console.log(`Wrote ${path.relative(repoRoot, guildSearchOutFile)} with ${guildSearchIndex.length} guild search rows.`);
 console.log(`Wrote ${path.relative(repoRoot, detailsOutFile)} and ${guildDetails.length} per-guild detail files.`);
-console.log(`Wrote ${path.relative(repoRoot, membersOutFile)} with ${membersDatabase.members.length} members.`);
 console.log(`Wrote ${path.relative(repoRoot, refreshPlanFile)}.`);

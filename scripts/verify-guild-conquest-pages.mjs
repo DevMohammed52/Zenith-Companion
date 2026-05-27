@@ -43,11 +43,10 @@ async function openPage(browser, path, viewport, label) {
 
 async function verifyGuildPage(browser) {
   const database = await readJson("public/guild-database.json");
-  const members = await readJson("public/guild-members.json");
   const detail = await readJson(`public/guild-details/${GUILD_MODAL_ID}.json`);
 
   assert(database.guilds.length >= 1000, `Expected a large guild registry, got ${database.guilds.length}`);
-  assert(members.members.length >= 10000, `Expected member registry rows, got ${members.members.length}`);
+  assert(database.meta.totals.members >= 10000, `Expected member totals, got ${database.meta.totals.members}`);
   assert(detail.members.length >= 20, `Expected full member details for guild ${GUILD_MODAL_ID}`);
   assert(
     detail.member_summary.leaders.some((member) => member.position === "LEADER") &&
