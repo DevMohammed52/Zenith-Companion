@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:full": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
-    "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && next build",
+    "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
@@ -13,7 +13,7 @@
     "test:a11y": "playwright test tests/a11y",
     "audit:deadcode": "knip --exclude exports,types",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
-    "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs",
+    "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
     "scrape:priority": "node --env-file=.env scraper.mjs --priority --once",
     "scrape:pets": "node --env-file=.env scraper.mjs --pets-only --once",

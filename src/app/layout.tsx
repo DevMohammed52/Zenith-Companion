@@ -10,6 +10,7 @@ import ZenithHaptics from "@/components/ZenithHaptics";
 import FirstRunSetup from "@/components/FirstRunSetup";
 import LocalBackupReminder from "@/components/LocalBackupReminder";
 import UsageTracker from "@/components/UsageTracker";
+import OfflineSupport from "@/components/OfflineSupport";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -121,6 +122,7 @@ export default function RootLayout({
                     <FirstRunSetup />
                     <LocalBackupReminder />
                     <UsageTracker />
+                    <OfflineSupport />
                     <div className="main-content">
                       <header className="top-navigation">
                         <MobileMenuBtn />

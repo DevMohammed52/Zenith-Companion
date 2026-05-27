@@ -39,6 +39,47 @@ type AcquisitionSource = DropSourceWithLocation & {
 
 const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
 
+async function fetchPublicJson<T>(url: string): Promise<T | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return await response.json() as T;
+  } catch {
+    return null;
+  }
+}
+
+function clonePlainItem(item: unknown) {
+  if (typeof structuredClone === 'function') return structuredClone(item);
+  return JSON.parse(JSON.stringify(item));
+}
+
+async function loadPublicItemFallback(id: string) {
+  const [allItemsDb, marketData, usageMap] = await Promise.all([
+    fetchPublicJson<Record<string, any>>('/all-items-db.json'),
+    fetchPublicJson<Record<string, any>>('/market-data.json'),
+    fetchPublicJson<Record<string, any>>('/usage-map.json'),
+  ]);
+  const rawItem = allItemsDb?.[id];
+  if (!rawItem) return null;
+
+  const item = clonePlainItem(rawItem) as Record<string, any>;
+  const marketItem = item.name ? marketData?.[item.name] : null;
+  if (marketItem && typeof marketItem === 'object') {
+    Object.assign(item, marketItem);
+  }
+
+  const relations = item.name ? usageMap?.[item.name] : null;
+  if (relations && typeof relations === 'object') {
+    item.dropped_by = relations.dropped_by || [];
+    item.required_for = relations.required_for || [];
+    item.produced_from = relations.produced_from || null;
+    item.recipe_yield = relations.recipe_yield || item.recipe_yield || null;
+  }
+
+  return item;
+}
+
 const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase().replace(/\s+/g, '_');
 
 const getSourceRoute = (source: AcquisitionSource) => {
@@ -110,14 +151,30 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       setError(null);
       try {
         const res = await fetch(`/api/items/${id}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Item not found');
-        } else {
+        if (res.ok) {
+          const data = await res.json();
           setItem(data);
           setCachedItem(id, data);
+          return;
         }
+
+        const fallback = await loadPublicItemFallback(id);
+        if (fallback) {
+          setItem(fallback);
+          setCachedItem(id, fallback);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Item not found');
       } catch (e) {
+        const fallback = await loadPublicItemFallback(id);
+        if (fallback) {
+          setItem(fallback);
+          setCachedItem(id, fallback);
+          return;
+        }
+
         setError('Failed to connect to database');
         console.error('Failed to load item:', e);
       } finally {
