@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const ADMIN_USERNAME = "zenith";
 const ADMIN_REALM = "Zenith Import Health";
+const ERROR_PREVIEW_PATH = "/error-preview";
+const LOADING_PREVIEW_PATH = "/loading-preview";
 const BLOCKED_PUBLIC_DATA_PATHS = new Set([
   "/guild-members.json",
   "/guild-database.json",
@@ -12,6 +14,30 @@ const BLOCKED_PUBLIC_DATA_PATHS = new Set([
 ]);
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === ERROR_PREVIEW_PATH) {
+    if (process.env.ENABLE_ERROR_PREVIEW === "1") return NextResponse.next();
+
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: {
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    });
+  }
+
+  if (request.nextUrl.pathname === LOADING_PREVIEW_PATH) {
+    if (process.env.ENABLE_LOADING_PREVIEW === "1") return NextResponse.next();
+
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: {
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    });
+  }
+
   if (BLOCKED_PUBLIC_DATA_PATHS.has(request.nextUrl.pathname)) {
     return new NextResponse("Not found", {
       status: 404,
@@ -58,6 +84,8 @@ export const config = {
     "/guild-refresh-plan.json",
     "/items-map.json",
     "/scraper-priority.json",
+    "/error-preview",
+    "/loading-preview",
   ],
 };
 

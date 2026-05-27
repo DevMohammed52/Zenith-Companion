@@ -1,0 +1,390 @@
+.loadingShell {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 1080px;
+  min-height: calc(100vh - 14rem);
+  padding: clamp(1rem, 3vw, 2.25rem);
+  width: 100%;
+}
+
+.loadingPanel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 96%), transparent 34%),
+    color-mix(in srgb, var(--bg-panel), #050505 18%);
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  display: grid;
+  gap: 1rem;
+  max-width: 720px;
+  overflow: hidden;
+  padding: clamp(1rem, 2.4vw, 1.35rem);
+  position: relative;
+  width: min(100%, 720px);
+}
+
+.loadingPanel::before {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 40%), transparent);
+  content: "";
+  height: 1px;
+  left: 0;
+  opacity: 0.75;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.loadingHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.loadingMark {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 78%), rgba(255, 255, 255, 0.025));
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 50%);
+  border-radius: 8px;
+  color: var(--text-accent);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 48px;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  width: 48px;
+}
+
+.loadingMark svg {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--text-accent), transparent 54%));
+  position: relative;
+  z-index: 2;
+}
+
+.scanBeam {
+  animation: scanSweep 1.75s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 48%), transparent);
+  bottom: 0;
+  left: -70%;
+  position: absolute;
+  top: 0;
+  transform: skewX(-18deg);
+  width: 54%;
+  z-index: 1;
+}
+
+.routeTrace {
+  bottom: 7px;
+  display: grid;
+  gap: 3px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  left: 9px;
+  position: absolute;
+  right: 9px;
+  z-index: 3;
+}
+
+.routeTrace span {
+  animation: routeTick 1.35s ease-in-out infinite;
+  background: color-mix(in srgb, var(--text-accent), white 10%);
+  border-radius: 999px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--text-accent), transparent 46%);
+  height: 2px;
+  opacity: 0.34;
+  transform: scaleX(0.45);
+  transform-origin: left;
+}
+
+.routeTrace span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.routeTrace span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.loadingCopy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.loadingCopy span {
+  color: var(--text-accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.loadingCopy strong {
+  color: var(--text-main);
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.skeletonFrame {
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.85rem;
+  overflow: hidden;
+  padding: clamp(0.85rem, 2vw, 1rem);
+}
+
+.skeletonTopline {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.skeletonBlock,
+.rowIcon,
+.chartBars span {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
+  background-size: 220% 100%;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  display: block;
+}
+
+.skeletonBlock,
+.rowIcon {
+  animation: skeletonSweep 1.55s ease-in-out infinite;
+}
+
+.titleBlock {
+  border-radius: 6px;
+  height: 18px;
+  max-width: 260px;
+  width: 42%;
+}
+
+.statusPill {
+  border-radius: 999px;
+  height: 18px;
+  width: 96px;
+}
+
+.metricGrid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metricShell {
+  background: color-mix(in srgb, var(--bg-card), transparent 18%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.8rem;
+}
+
+.metricValue {
+  border-radius: 6px;
+  height: 22px;
+  width: 64%;
+}
+
+.metricLabel {
+  border-radius: 999px;
+  height: 10px;
+  width: 82%;
+}
+
+.contentGrid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(180px, 0.9fr);
+}
+
+.chartShell,
+.rowStack {
+  background: color-mix(in srgb, var(--bg-card), transparent 18%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 0.8rem;
+}
+
+.chartShell {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 158px;
+}
+
+.chartHeader {
+  border-radius: 999px;
+  height: 12px;
+  width: 58%;
+}
+
+.chartBars {
+  align-items: end;
+  display: grid;
+  gap: 0.42rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 105px;
+}
+
+.chartBars span {
+  animation: chartLift 1.6s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--text-accent), transparent 86%);
+  border-radius: 6px 6px 3px 3px;
+}
+
+.chartBars span:nth-child(2n) {
+  animation-delay: 0.14s;
+}
+
+.chartBars span:nth-child(3n) {
+  animation-delay: 0.28s;
+}
+
+.rowStack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rowShell {
+  align-items: center;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 26px minmax(0, 1fr) 48px;
+}
+
+.rowIcon {
+  border-radius: 7px;
+  height: 26px;
+  width: 26px;
+}
+
+.rowMain {
+  border-radius: 999px;
+  height: 12px;
+  width: 100%;
+}
+
+.rowMeta {
+  border-radius: 999px;
+  height: 12px;
+  width: 48px;
+}
+
+.loadingHint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+@keyframes scanSweep {
+  0% {
+    left: -70%;
+    opacity: 0;
+  }
+
+  24%,
+  68% {
+    opacity: 0.72;
+  }
+
+  100% {
+    left: 112%;
+    opacity: 0;
+  }
+}
+
+@keyframes routeTick {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: scaleX(0.45);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes skeletonSweep {
+  0% {
+    background-position: 120% 0;
+    opacity: 0.62;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    background-position: -120% 0;
+    opacity: 0.62;
+  }
+}
+
+@keyframes chartLift {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scaleY(0.9);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scaleY(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .loadingShell {
+    align-items: start;
+    min-height: calc(100vh - 11rem);
+    padding-top: 1rem;
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metricShell {
+    padding: 0.65rem;
+  }
+
+  .skeletonTopline {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .titleBlock {
+    width: 78%;
+  }
+
+  .chartShell {
+    min-height: 132px;
+  }
+
+  .chartBars {
+    min-height: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanBeam,
+  .routeTrace span,
+  .skeletonBlock,
+  .rowIcon,
+  .chartBars span {
+    animation: none;
+  }
+}
