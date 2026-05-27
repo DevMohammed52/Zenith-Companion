@@ -1,5 +1,32 @@
 import type { NextConfig } from "next";
 
+const scriptSources = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(process.env.NODE_ENV === "production" ? [] : ["'unsafe-eval'"]),
+  "https://challenges.cloudflare.com",
+].join(" ");
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src ${scriptSources}`,
+  "script-src-attr 'none'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com",
+  "child-src https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "media-src 'self' data: blob:",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const securityHeaders = [
   {
     key: "X-Content-Type-Options",
@@ -19,7 +46,7 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value: "base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    value: contentSecurityPolicy,
   },
 ];
 
