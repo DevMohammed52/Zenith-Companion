@@ -50,12 +50,14 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  const url = new URL(event.request.url);
+
   if (event.request.destination === "image") {
+    if (url.origin !== self.location.origin) return;
     event.respondWith(handleImageRequest(event.request));
     return;
   }
 
-  const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
   if (shouldBypass(url.pathname)) return;
 
@@ -136,7 +138,7 @@ async function staleWhileRevalidate(request) {
 
 async function handleImageRequest(request) {
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin && url.hostname !== "cdn.idle-mmo.com") {
+  if (url.origin !== self.location.origin) {
     return fetch(request);
   }
 
