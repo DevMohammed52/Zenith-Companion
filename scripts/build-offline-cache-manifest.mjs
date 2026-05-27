@@ -30,18 +30,63 @@ async function main() {
     versionHash.update(`${entry.url}:${entry.size}:${entry.hash}\n`);
   }
 
+  const version = versionHash.digest("hex").slice(0, 16);
+  const existingManifest = await readExistingManifest();
+  const generatedAt =
+    isSameCacheContents(existingManifest, { version, count: urls.length, totalBytes, urls }) &&
+    typeof existingManifest.generatedAt === "string"
+      ? existingManifest.generatedAt
+      : new Date().toISOString();
+
   const manifest = {
-    generatedAt: new Date().toISOString(),
-    version: versionHash.digest("hex").slice(0, 16),
+    generatedAt,
+    version,
     count: urls.length,
     totalBytes,
     urls,
   };
 
-  await fs.writeFile(OUTPUT_PATH, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
+  const existingOutput = await readExistingOutput();
+
+  if (existingOutput !== serialized) {
+    await fs.writeFile(OUTPUT_PATH, serialized, "utf8");
+  }
+
   console.log(
     `Offline cache manifest generated: ${manifest.count} urls, ${(manifest.totalBytes / 1024 / 1024).toFixed(2)} MiB.`,
   );
+}
+
+async function readExistingManifest() {
+  try {
+    return JSON.parse(await fs.readFile(OUTPUT_PATH, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+async function readExistingOutput() {
+  try {
+    return await fs.readFile(OUTPUT_PATH, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+function isSameCacheContents(existing, next) {
+  if (!existing) return false;
+  if (
+    existing.version !== next.version ||
+    existing.count !== next.count ||
+    existing.totalBytes !== next.totalBytes ||
+    !Array.isArray(existing.urls) ||
+    existing.urls.length !== next.urls.length
+  ) {
+    return false;
+  }
+
+  return existing.urls.every((url, index) => url === next.urls[index]);
 }
 
 async function collectEntries(directory) {

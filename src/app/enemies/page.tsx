@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
+import { LoadingState, NoResultsState } from "@/components/StateBlock";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
@@ -603,7 +604,10 @@ function EnemiesContent() {
         </section>
 
         {loading && enemies.length === 0 ? (
-          <div className="enemy-empty">Loading enemy intelligence...</div>
+          <LoadingState
+            title="Loading enemy intelligence"
+            description="Preparing enemies, drops, locations, and current weather windows."
+          />
         ) : (
           <section className="enemy-grid" aria-label="Enemy results">
             {filteredEnemies.map((enemy) => (
@@ -638,15 +642,16 @@ function EnemiesContent() {
               </button>
             ))}
             {filteredEnemies.length === 0 && (
-              <div className="enemy-empty">
-                No enemies match the current filters.
-                {hasActiveControls && (
+              <NoResultsState
+                title="No enemies match the current filters"
+                description="Clear search, weather, level, or sort controls to widen the enemy list."
+                action={hasActiveControls ? (
                   <button type="button" onClick={resetControls}>
                     <RotateCcw size={14} aria-hidden="true" />
                     Clear filters
                   </button>
-                )}
-              </div>
+                ) : null}
+              />
             )}
           </section>
         )}

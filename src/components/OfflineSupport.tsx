@@ -7,10 +7,8 @@ import styles from "./OfflineSupport.module.css";
 type NetworkStatus = "online" | "offline" | "restored";
 
 export default function OfflineSupport() {
-  const [status, setStatus] = useState<NetworkStatus>(() =>
-    typeof navigator === "undefined" || navigator.onLine ? "online" : "offline",
-  );
-  const wasOffline = useRef(status === "offline");
+  const [status, setStatus] = useState<NetworkStatus>("online");
+  const wasOffline = useRef(false);
   const restoreTimer = useRef<number | null>(null);
 
   useEffect(() => {

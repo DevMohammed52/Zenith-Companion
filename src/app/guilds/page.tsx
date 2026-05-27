@@ -35,6 +35,7 @@ import {
   type GuildRefreshTier,
   type GuildSortKey,
 } from "@/lib/guilds";
+import { ErrorState, NoResultsState } from "@/components/StateBlock";
 
 type TierFilter = "all" | GuildRefreshTier;
 type SearchableGuildRecord = GuildRecord & { searchText: string };
@@ -725,7 +726,7 @@ export default function GuildsPage() {
       </section>
 
       {error ? (
-        <div className={styles.empty}>{error}</div>
+        <ErrorState title="Guild data unavailable" description={error} />
       ) : (
         <>
           <section className={styles.statsGrid} aria-label="Guild database summary">
@@ -906,13 +907,35 @@ export default function GuildsPage() {
                   ))}
                 </tbody>
               </table>
-              {filteredGuilds.length === 0 && <div className={styles.empty}>No guilds match the current filters.</div>}
+              {filteredGuilds.length === 0 && (
+                <NoResultsState
+                  compact
+                  title="No guilds match the current filters"
+                  description="Clear the search term or refresh-tier filter to widen the guild list."
+                  action={hasActiveFilters ? (
+                    <button type="button" className={styles.resetButton} onClick={resetFilters}>
+                      <RotateCcw size={15} aria-hidden="true" /> Reset filters
+                    </button>
+                  ) : null}
+                />
+              )}
             </div>
             <div className={styles.mobileGuildList} aria-label="Guild results">
               {visibleGuilds.map((guild) => (
                 <GuildMobileCard guild={guild} key={`mobile-${guild.id}`} onInspect={loadDetails} />
               ))}
-              {filteredGuilds.length === 0 && <div className={styles.empty}>No guilds match the current filters.</div>}
+              {filteredGuilds.length === 0 && (
+                <NoResultsState
+                  compact
+                  title="No guilds match the current filters"
+                  description="Clear the search term or refresh-tier filter to widen the guild list."
+                  action={hasActiveFilters ? (
+                    <button type="button" className={styles.resetButton} onClick={resetFilters}>
+                      <RotateCcw size={15} aria-hidden="true" /> Reset filters
+                    </button>
+                  ) : null}
+                />
+              )}
             </div>
             {visibleGuilds.length < filteredGuilds.length && (
               <div className={styles.showMoreBar}>

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
+import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import { getAllLoreForItem } from '@/data/lore';
 import { formatItemTypeLabel, isForcedUntradableItem, isLegacyItem } from '@/lib/item-display';
@@ -994,36 +995,32 @@ function ItemsArchiveContent() {
       </section>
 
       {loadError && (
-        <div className="state-panel">
-          <Package size={36} />
-          <p>{loadError}</p>
-        </div>
+        <ErrorState title="Item data unavailable" description={loadError} />
       )}
 
       {!loadError && (loading || index.length === 0) && (
-        <div className="state-panel">
-          <div className="skeleton-text" style={{ width: '220px' }} />
-          <p>Loading item data...</p>
-        </div>
+        <LoadingState title="Loading item data" description="Preparing the item index, market rows, and relationship map." />
       )}
 
       {!loadError && index.length > 0 && filteredItems.length === 0 && (
-        <div className="state-panel">
-          <Package size={42} />
-          <p>No items found matching your filters.</p>
-          <button type="button" className="reset-btn" onClick={() => {
-            setSearchTerm('');
-            setSelectedType('ALL');
-            setSelectedQuality('ALL');
-            setSelectedSignal('ALL');
-            setSelectedLocation('ALL');
-            setHideNonMarket(false);
-            setSortBy('volume');
-            setSortDesc(true);
-          }}>
-            Reset filters
-          </button>
-        </div>
+        <NoResultsState
+          title="No items match the current filters"
+          description="Clear the search, market-only view, or advanced filters to widen the catalog."
+          action={(
+            <button type="button" className="reset-btn" onClick={() => {
+              setSearchTerm('');
+              setSelectedType('ALL');
+              setSelectedQuality('ALL');
+              setSelectedSignal('ALL');
+              setSelectedLocation('ALL');
+              setHideNonMarket(false);
+              setSortBy('volume');
+              setSortDesc(true);
+            }}>
+              Reset filters
+            </button>
+          )}
+        />
       )}
 
       {!loadError && filteredItems.length > 0 && (
