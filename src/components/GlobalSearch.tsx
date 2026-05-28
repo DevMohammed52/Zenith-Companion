@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
+import { NoResultsState } from "@/components/StateBlock";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useProfiles } from "@/lib/profiles";
 import { notifyZenith } from "@/lib/notifications";
@@ -21,6 +22,11 @@ function getSearchResultIdentity(result: SearchResult) {
 
 function getSearchResultRenderKey(result: SearchResult, index: number) {
   return `${getSearchResultIdentity(result)}::${index}`;
+}
+
+function hasBlockingModal() {
+  return Array.from(document.querySelectorAll<HTMLElement>('[aria-modal="true"]'))
+    .some((element) => !element.classList.contains("command-palette") && element.getClientRects().length > 0);
 }
 
 const navShortcuts: Record<string, string> = {
@@ -60,6 +66,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const [staticSearchRows, setStaticSearchRows] = useState<SearchResult[]>([]);
   const [generatedSearchRows, setGeneratedSearchRows] = useState<SearchResult[]>([]);
   const [guildSearchRows, setGuildSearchRows] = useState<GuildSearchRow[]>([]);
+  const [generatedSearchLoading, setGeneratedSearchLoading] = useState(false);
+  const [staticSearchLoading, setStaticSearchLoading] = useState(false);
+  const [guildSearchLoading, setGuildSearchLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -68,6 +77,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const dialogId = `${idPrefix}-global-search-dialog`;
   const titleId = `${idPrefix}-global-search-title`;
   const resultsId = `${idPrefix}-global-search-results`;
+  const statusId = `${idPrefix}-global-search-status`;
 
   // Load recent from storage
   useEffect(() => {
@@ -84,6 +94,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     if (!open || generatedSearchRows.length > 0) return;
     let cancelled = false;
+    setGeneratedSearchLoading(true);
     fetch("/global-search-index.json")
       .then((response) => (response.ok ? response.json() : []))
       .then((payload) => {
@@ -96,6 +107,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       })
       .catch(() => {
         if (!cancelled) setGeneratedSearchRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setGeneratedSearchLoading(false);
       });
     return () => {
       cancelled = true;
@@ -105,6 +119,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     if (!open || staticSearchRows.length > 0) return;
     let cancelled = false;
+    setStaticSearchLoading(true);
     Promise.all([
       import("@/constants"),
       import("@/data/lore"),
@@ -137,6 +152,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       setStaticSearchRows(rows);
     }).catch(() => {
       if (!cancelled) setStaticSearchRows([]);
+    }).finally(() => {
+      if (!cancelled) setStaticSearchLoading(false);
     });
     return () => {
       cancelled = true;
@@ -146,6 +163,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   useEffect(() => {
     if (!open || guildSearchRows.length > 0) return;
     let cancelled = false;
+    setGuildSearchLoading(true);
     fetch("/guild-search-index.json")
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
@@ -154,6 +172,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       })
       .catch(() => {
         if (!cancelled) setGuildSearchRows([]);
+      })
+      .finally(() => {
+        if (!cancelled) setGuildSearchLoading(false);
       });
     return () => {
       cancelled = true;
@@ -164,7 +185,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previouslyFocused = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
     const triggerElement = triggerRef.current;
     document.body.classList.add("command-open");
     document.body.style.overflow = "hidden";
@@ -176,11 +199,12 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       window.cancelAnimationFrame(focusFrame);
       document.body.classList.remove("command-open");
       document.body.style.overflow = previousOverflow;
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        previouslyFocused.focus({ preventScroll: true });
-      } else {
-        triggerElement?.focus({ preventScroll: true });
-      }
+      const restoreFocusTarget = previouslyFocused && document.contains(previouslyFocused) ? previouslyFocused : triggerElement;
+      window.setTimeout(() => {
+        if (restoreFocusTarget && document.contains(restoreFocusTarget)) {
+          restoreFocusTarget.focus({ preventScroll: true });
+        }
+      }, 0);
     };
   }, [open]);
 
@@ -192,6 +216,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
 
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        const triggerElement = triggerRef.current;
+        if (!triggerElement || triggerElement.getClientRects().length === 0) return;
+        if (hasBlockingModal()) return;
         event.preventDefault();
         setOpen(true);
         return;
@@ -363,6 +390,10 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   };
 
   const activeResultId = filteredResults[activeIndex] ? `${resultsId}-option-${activeIndex}` : undefined;
+  const searchLoading = generatedSearchLoading || staticSearchLoading || guildSearchLoading;
+  const resultStatusCopy = searchLoading
+    ? `Search indexes are loading. ${filteredResults.length} ${filteredResults.length === 1 ? "result is" : "results are"} available so far.`
+    : `${filteredResults.length} search ${filteredResults.length === 1 ? "result" : "results"} available.`;
 
   const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
@@ -377,20 +408,21 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )).filter((element) => element.offsetParent !== null || element === document.activeElement);
+      )).filter((element) => (
+        (element.tabIndex >= 0 || element === document.activeElement)
+        && (element.offsetParent !== null || element.getClientRects().length > 0 || element === document.activeElement)
+      ));
 
       if (focusable.length === 0) return;
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+      const activeFocusIndex = activeElement instanceof HTMLElement ? focusable.indexOf(activeElement) : -1;
+      const nextFocusIndex = event.shiftKey
+        ? activeFocusIndex <= 0 ? focusable.length - 1 : activeFocusIndex - 1
+        : activeFocusIndex === -1 || activeFocusIndex >= focusable.length - 1 ? 0 : activeFocusIndex + 1;
 
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus({ preventScroll: true });
-      }
+      event.preventDefault();
+      focusable[nextFocusIndex]?.focus({ preventScroll: true });
     }
   };
 
@@ -439,6 +471,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             aria-expanded="true"
             aria-controls={resultsId}
             aria-activedescendant={activeResultId}
+            aria-describedby={statusId}
             aria-label="Search tools, items, recipes, enemies, and lore"
             spellCheck={false}
             value={query}
@@ -447,7 +480,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             placeholder="Search tools, items, recipes, enemies, lore..."
           />
           <button type="button" onClick={closeSearch} aria-label="Close search">
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
         <div
@@ -455,6 +488,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
           id={resultsId}
           role="listbox"
           aria-label="Search results"
+          aria-busy={searchLoading}
         >
           {!query && recent.length > 0 && <div className="section-title" style={{ padding: '0.5rem 1rem', fontSize: '0.7rem' }}>Recently Viewed</div>}
           {filteredResults.map((result, index) => (
@@ -464,7 +498,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
               type="button"
               role="option"
               aria-label={`${result.label}. ${result.detail || result.href}. ${result.type}.`}
+              aria-posinset={index + 1}
               aria-selected={index === activeIndex}
+              aria-setsize={filteredResults.length}
               tabIndex={-1}
               className={index === activeIndex ? "active" : undefined}
               onClick={() => openResult(result)}
@@ -480,10 +516,16 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
               <em>{result.type}</em>
             </button>
           ))}
-          {filteredResults.length === 0 && <div className="dashboard-empty" role="status" style={{ padding: '2rem' }}>No matches found for &quot;{query}&quot;</div>}
+          {filteredResults.length === 0 ? (
+            <NoResultsState
+              compact
+              title="No matches found"
+              description={query ? `No tools, items, profiles, or references match "${query}".` : "Start typing to search Zenith."}
+            />
+          ) : null}
         </div>
-        <div className="sr-only" aria-live="polite">
-          {filteredResults.length} search {filteredResults.length === 1 ? "result" : "results"} available.
+        <div id={statusId} className="sr-only" aria-live="polite" aria-atomic="true">
+          {resultStatusCopy}
         </div>
       </div>
     </div>
