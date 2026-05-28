@@ -142,7 +142,7 @@ export default function FirstRunSetup() {
           <Link href="/settings" className="setup-step" onClick={finish}>
             <span><Settings size={17} /></span>
             <strong>Configure settings</strong>
-            <small>Set membership, theme, navigation, sound, fallback tools, and custom prices.</small>
+            <small>Set membership, theme, navigation, audio feedback, fallback tools, and custom prices.</small>
           </Link>
 
           <Link href="/profiles" className="setup-step" onClick={finish}>

@@ -350,9 +350,9 @@ export default function SettingsPage() {
                   </button>
                 </label>
               </div>
-              <div className="settings-audio-panel" aria-label="Sound settings">
+              <div className="settings-audio-panel" aria-label="Audio feedback settings">
                 <div className="settings-audio-heading">
-                  <span><Volume2 size={15} /> Sound</span>
+                  <span><Volume2 size={15} /> Audio feedback</span>
                   <button
                     type="button"
                     onClick={() => playZenithSound(preferences.notificationSounds ? "success" : "open", { force: true })}
@@ -361,8 +361,8 @@ export default function SettingsPage() {
                     Preview
                   </button>
                 </div>
-                <div className="settings-nav-style settings-nav-style-three" aria-label="Sound toggles">
-                  <span>Audio modes</span>
+                <div className="settings-nav-style settings-nav-style-three" aria-label="Interface and tip sound toggles">
+                  <span>Sound choices</span>
                   <div>
                     <button
                       type="button"
@@ -374,7 +374,7 @@ export default function SettingsPage() {
                         if (next) playZenithSound("open", { force: true });
                       }}
                     >
-                      SFX
+                      UI sounds
                     </button>
                     <button
                       type="button"
@@ -386,7 +386,7 @@ export default function SettingsPage() {
                         if (next) playZenithSound("notify", { force: true });
                       }}
                     >
-                      Notices
+                      Tip sounds
                     </button>
                     <button
                       type="button"
