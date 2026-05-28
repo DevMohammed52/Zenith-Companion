@@ -13,6 +13,7 @@ import {
   Search,
   Tag,
 } from "lucide-react";
+import { ErrorState, NoResultsState } from "@/components/StateBlock";
 import styles from "./page.module.css";
 
 type PatchContentBlock = {
@@ -351,18 +352,15 @@ export default function PatchNotesClient() {
       )}
 
       {loadError && (
-        <section className={styles.emptyState}>
-          <h2>Patch notes could not load</h2>
-          <p>{loadError}</p>
-        </section>
+        <ErrorState title="Patch notes could not load" description={loadError} />
       )}
 
       {!isLoading && !loadError && filteredNotes.length === 0 && (
-        <section className={styles.emptyState}>
-          <h2>No patch notes found</h2>
-          <p>Try a broader keyword or remove one of the filters.</p>
-          <button type="button" onClick={resetFilters}>Clear filters</button>
-        </section>
+        <NoResultsState
+          title="No patch notes found"
+          description="Try a broader keyword or remove one of the filters."
+          action={<button type="button" onClick={resetFilters}>Clear filters</button>}
+        />
       )}
 
       {!isLoading && !loadError && visibleNotes.length > 0 && (
