@@ -24,6 +24,7 @@ import { useModalA11y } from '@/lib/use-modal-a11y';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 import { loadUsageMap } from '@/lib/usage-map';
 import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
+import { ErrorState } from '@/components/StateBlock';
 
 interface ItemModalProps {
   id: string;
@@ -376,24 +377,23 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       <div className="modal-container">
         <div className="modal-backdrop" onClick={onClose} />
         <div
-          aria-labelledby="item-modal-error-title"
+          aria-label="Registry error"
           aria-modal="true"
-          className="error-card"
+          className="item-modal-error-card"
           ref={modalDialogRef}
           role="alertdialog"
           tabIndex={-1}
         >
-          <div className="error-label" id="item-modal-error-title">Registry Error</div>
-          <div className="error-msg">{error}</div>
-          <button onClick={onClose} className="error-btn" type="button">Dismiss</button>
+          <ErrorState
+            title="Registry error"
+            description={error}
+            action={<button onClick={onClose} type="button">Dismiss</button>}
+          />
         </div>
         <style jsx>{`
           .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
           .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
-          .error-card { position: relative; padding: 3rem; background: #0a0a0a; border: 1px solid rgba(255,255,255,0.1); border-radius: 32px; text-align: center; max-width: 400px; }
-          .error-label { color: #f87171; margin-bottom: 0.5rem; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: 0.1em; }
-          .error-msg { color: #fff; font-size: 1.25rem; font-weight: 300; margin-bottom: 2rem; }
-          .error-btn { padding: 0.75rem 2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; }
+          .item-modal-error-card { position: relative; width: min(100%, 28rem); }
         `}</style>
       </div>
     );
