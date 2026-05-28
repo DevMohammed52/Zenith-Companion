@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-05-28T22:01:32.478Z",
+    "generatedAt": "2026-05-28T22:48:27.500Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 37,
-      "exchangeListings": 1005,
+      "exchangeListings": 1011,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -44391,25 +44391,35 @@
       },
       "exchange": {
         "petId": 12,
-        "listingCount": 4,
+        "listingCount": 6,
         "minPrice": 50000,
         "maxPrice": 790382,
         "byQuality": {
           "PREMIUM": {
-            "count": 4,
+            "count": 6,
             "min_price": 50000,
             "max_price": 790382,
-            "total_price": 1158412,
-            "average_price": 289603
+            "total_price": 1350783,
+            "average_price": 225131
           }
         },
-        "averagePrice": 289603,
-        "medianPrice": 159015,
+        "averagePrice": 225131,
+        "medianPrice": 135000,
         "sampleListings": [
           {
             "level": 1,
             "quality": "PREMIUM",
             "price": 50000
+          },
+          {
+            "level": 68,
+            "quality": "PREMIUM",
+            "price": 72371
+          },
+          {
+            "level": 83,
+            "quality": "PREMIUM",
+            "price": 120000
           },
           {
             "level": 72,
@@ -81401,19 +81411,19 @@
       },
       "exchange": {
         "petId": 15,
-        "listingCount": 36,
+        "listingCount": 40,
         "minPrice": 50000,
         "maxPrice": 1600000,
         "byQuality": {
           "PREMIUM": {
-            "count": 36,
+            "count": 40,
             "min_price": 50000,
             "max_price": 1600000,
-            "total_price": 11986099,
-            "average_price": 332947
+            "total_price": 12466099,
+            "average_price": 311652
           }
         },
-        "averagePrice": 332947,
+        "averagePrice": 311652,
         "medianPrice": 100000,
         "sampleListings": [
           {
@@ -100339,8 +100349,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-05-28T22:01:32.457Z",
-    "listingCount": 1005,
+    "fetchedAt": "2026-05-28T22:48:27.479Z",
+    "listingCount": 1011,
     "speciesCount": 38,
     "pageCount": 41
   }
