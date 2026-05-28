@@ -39,6 +39,7 @@ import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
 import { useModalA11y } from "@/lib/use-modal-a11y";
+import { EmptyState, LoadingState, NoResultsState } from "@/components/StateBlock";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
@@ -1085,7 +1086,11 @@ function BossesContent() {
                 </div>
 
                 {routinePlan.legs.length === 0 ? (
-                    <div className="routine-empty">Select at least one boss to build a route.</div>
+                    <EmptyState
+                        compact
+                        title="No route selected"
+                        description="Select at least one boss to build a route."
+                    />
                 ) : (
                     <div className="routine-timeline">
                         {routinePlan.legs.map((leg, index) => {
@@ -1293,11 +1298,11 @@ function BossesContent() {
                                 {rows.length === 0 && (
                                     <tr>
                                         <td colSpan={6}>
-                                            <div className="boss-empty-state">
-                                                <strong>No matching bosses</strong>
-                                                <span>Loaded {totalBossCount} bosses, but none match the current search.</span>
-                                                <button type="button" onClick={() => setSearchTerm("")}>Reset search</button>
-                                            </div>
+                                            <NoResultsState
+                                                title="No matching bosses"
+                                                description={`Loaded ${totalBossCount} bosses, but none match the current search.`}
+                                                action={<button type="button" onClick={() => setSearchTerm("")}>Reset search</button>}
+                                            />
                                         </td>
                                     </tr>
                                 )}
@@ -1366,11 +1371,11 @@ function BossesContent() {
                             </div>
                         ))}
                         {rows.length === 0 && (
-                            <div className="boss-empty-state boss-mobile-empty">
-                                <strong>No matching bosses</strong>
-                                <span>Loaded {totalBossCount} bosses, but none match the current search.</span>
-                                <button type="button" onClick={() => setSearchTerm("")}>Reset search</button>
-                            </div>
+                            <NoResultsState
+                                title="No matching bosses"
+                                description={`Loaded ${totalBossCount} bosses, but none match the current search.`}
+                                action={<button type="button" onClick={() => setSearchTerm("")}>Reset search</button>}
+                            />
                         )}
                     </div>
                 </div>
@@ -1911,13 +1916,6 @@ function BossesContent() {
                     background: var(--text-success);
                     box-shadow: 0 8px 20px rgba(0,0,0,0.28);
                 }
-                .routine-empty {
-                    padding: 1rem;
-                    color: var(--text-muted);
-                    border: 1px dashed var(--border-subtle);
-                    border-radius: 8px;
-                    text-align: center;
-                }
                 .routine-timeline {
                     display: flex;
                     flex-direction: column;
@@ -2319,34 +2317,6 @@ function BossesContent() {
                     text-transform: uppercase;
                     letter-spacing: 0.04em;
                 }
-                .boss-empty-state {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 0.45rem;
-                    padding: 1.35rem;
-                    color: var(--text-muted);
-                    text-align: center;
-                }
-                .boss-empty-state strong {
-                    color: #fff;
-                    font-size: 0.95rem;
-                }
-                .boss-empty-state button {
-                    min-height: 2.25rem;
-                    padding: 0 0.8rem;
-                    border: 1px solid rgba(56,189,248,0.3);
-                    border-radius: 7px;
-                    background: rgba(56,189,248,0.1);
-                    color: #fff;
-                    font-weight: 900;
-                    cursor: pointer;
-                }
-                .boss-empty-state button:hover,
-                .boss-empty-state button:focus-visible {
-                    border-color: rgba(56,189,248,0.55);
-                    outline: none;
-                }
                 .boss-phase,
                 .boss-signal {
                     display: inline-flex;
@@ -2406,11 +2376,6 @@ function BossesContent() {
                     flex-direction: column;
                     align-items: flex-end;
                     gap: 0.25rem;
-                }
-                .boss-mobile-empty {
-                    border: 1px dashed var(--border-subtle);
-                    border-radius: 8px;
-                    background: rgba(255,255,255,0.02);
                 }
                 .boss-mobile-card:focus-visible,
                 .boss-loot-row:focus-visible,
@@ -3016,7 +2981,7 @@ function WorldBossItemEffectPicker({
 
 export default function BossesPage() {
     return (
-        <Suspense fallback={<div>Loading Bosses...</div>}>
+        <Suspense fallback={<LoadingState title="Loading bosses" description="Preparing spawn timers, route planner, and EV estimates." />}>
             <BossesContent />
         </Suspense>
     );
