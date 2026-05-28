@@ -12,6 +12,10 @@ const DEFAULT_BASELINE_REQUEST_CAP = 45;
 const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
 const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
 const USAGE_PING_RATE_LIMIT_TTL_SECONDS = 90;
+const DEFAULT_USAGE_VITALS_MAX_PER_MINUTE = 80;
+const USAGE_VITALS_RATE_LIMIT_TTL_SECONDS = 90;
+const DEFAULT_ERROR_REPORT_MAX_PER_MINUTE = 30;
+const ERROR_REPORT_RATE_LIMIT_TTL_SECONDS = 90;
 const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
@@ -79,6 +83,14 @@ export async function handleRequest(request, env, _ctx = {}) {
       return await handleUsagePing(request, env, cors);
     }
 
+    if (url.pathname === "/usage/vitals" && request.method === "POST") {
+      return await handleUsageVitals(request, env, cors);
+    }
+
+    if (url.pathname === "/error/report" && request.method === "POST") {
+      return await handleErrorReport(request, env, cors);
+    }
+
     if (url.pathname === "/profile-import/start" && request.method === "POST") {
       return await handleStartImport(request, env, cors);
     }
@@ -113,6 +125,8 @@ async function handleAdminImportHealth(request, env, cors) {
   const demand = await importDemandSummary(env, now);
   const pressure = await queuePressure(env, now);
   const usage = await usageSummary(env, now);
+  const webVitals = await webVitalsSummary(env, now);
+  const appErrors = await appErrorSummary(env, now);
   const importAnalytics = await importAnalyticsSummary(env, now);
   const statusRows = await env.DB.prepare(`
     SELECT status, COUNT(*) AS count
@@ -174,6 +188,8 @@ async function handleAdminImportHealth(request, env, cors) {
     },
     pressure,
     usage,
+    webVitals,
+    appErrors,
     imports: importAnalytics,
     coordinator: coordinatorStates.map((state) => ({
       active: Boolean(state.active && !isExpiredIso(state.expiresAt)),
@@ -247,6 +263,101 @@ async function handleUsagePing(request, env, cors) {
     normalizeDeviceType(payload.deviceType),
     cleanString(payload.timezone, 64),
     cleanString(request.headers.get("cf-ipcountry"), 8),
+    userAgentFamilyFrom(request.headers.get("user-agent") || ""),
+    now,
+  ).run();
+
+  return json({ ok: true }, 202, cors);
+}
+
+async function handleUsageVitals(request, env, cors) {
+  if (!hasBearerSecret(request, env.USAGE_PING_SECRET)) {
+    return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
+  }
+
+  if (!isAllowedOrigin(request, env)) {
+    return json({ error: { code: "origin_not_allowed", message: "Usage vitals are not available from this origin." } }, 403, cors);
+  }
+  assertBindings(env);
+
+  const rateLimit = await checkUsageVitalsRateLimit(request, env);
+  if (!rateLimit.ok) {
+    return json(
+      { error: { code: "rate_limited", message: "Usage vitals rate limit reached." } },
+      429,
+      { ...cors, "retry-after": String(rateLimit.retryAfterSeconds) },
+    );
+  }
+
+  const payload = await readJson(request);
+  const metricName = normalizeWebVitalMetricName(payload.metricName || payload.metric || payload.name);
+  const metricValue = normalizeWebVitalValue(payload.value);
+  const path = normalizeUsagePath(payload.path);
+  if (!metricName || metricValue === null || !path) {
+    return json({ error: { code: "bad_request", message: "Invalid usage vitals event." } }, 400, cors);
+  }
+
+  const now = new Date().toISOString();
+  await env.DB.prepare(`
+    INSERT INTO web_vital_events (
+      id, metric_name, metric_value, metric_rating, path,
+      device_type, navigation_type, user_agent_family, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    `vit_${cryptoRandomId(24)}`,
+    metricName,
+    metricValue,
+    normalizeWebVitalRating(payload.rating),
+    path,
+    normalizeDeviceType(payload.deviceType),
+    normalizeNavigationType(payload.navigationType),
+    userAgentFamilyFrom(request.headers.get("user-agent") || ""),
+    now,
+  ).run();
+
+  return json({ ok: true }, 202, cors);
+}
+
+async function handleErrorReport(request, env, cors) {
+  const secret = errorReportSecret(env);
+  if (!hasBearerSecret(request, secret)) {
+    return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
+  }
+
+  if (!isAllowedOrigin(request, env)) {
+    return json({ error: { code: "origin_not_allowed", message: "Error reporting is not available from this origin." } }, 403, cors);
+  }
+  assertBindings(env);
+
+  const rateLimit = await checkErrorReportRateLimit(request, env);
+  if (!rateLimit.ok) {
+    return json(
+      { error: { code: "rate_limited", message: "Error report rate limit reached." } },
+      429,
+      { ...cors, "retry-after": String(rateLimit.retryAfterSeconds) },
+    );
+  }
+
+  const payload = await readJson(request);
+  const path = normalizeUsagePath(payload.path);
+  if (!path) {
+    return json({ error: { code: "bad_request", message: "Invalid error report." } }, 400, cors);
+  }
+
+  const now = new Date().toISOString();
+  await env.DB.prepare(`
+    INSERT INTO app_error_events (
+      id, source, event_type, path, digest, app_version,
+      browser_class, user_agent_family, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    `err_${cryptoRandomId(24)}`,
+    normalizeErrorSource(payload.source),
+    normalizeErrorEventType(payload.eventType),
+    path,
+    normalizeErrorDigest(payload.digest),
+    cleanString(payload.appVersion, 64),
+    normalizeBrowserClass(payload.browserClass),
     userAgentFamilyFrom(request.headers.get("user-agent") || ""),
     now,
   ).run();
@@ -476,6 +587,227 @@ async function usageFrameSummary(env, now, frame) {
     users: Number(result?.users || 0),
     sessions,
     pageviewsPerSession: sessions ? roundMetric(pageviews / sessions) : 0,
+  };
+}
+
+async function webVitalsSummary(env, now) {
+  const empty = {
+    events24h: 0,
+    events7d: 0,
+    events30d: 0,
+    poor24h: 0,
+    poor30d: 0,
+    poorRate30d: 0,
+    metrics: [],
+    topPaths: [],
+    devices: [],
+  };
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const overview = await env.DB.prepare(`
+    SELECT
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_7d,
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_30d,
+      SUM(CASE WHEN metric_rating = 'poor' AND created_at >= ? THEN 1 ELSE 0 END) AS poor_24h,
+      SUM(CASE WHEN metric_rating = 'poor' AND created_at >= ? THEN 1 ELSE 0 END) AS poor_30d
+    FROM web_vital_events
+  `).bind(dayAgo, weekAgo, monthAgo, dayAgo, monthAgo).first().catch(() => null);
+
+  if (!overview) return empty;
+
+  const metricRows = await env.DB.prepare(`
+    SELECT
+      metric_name,
+      COUNT(*) AS events,
+      SUM(CASE WHEN metric_rating = 'poor' THEN 1 ELSE 0 END) AS poor,
+      AVG(metric_value) AS avg_value,
+      MAX(metric_value) AS max_value
+    FROM web_vital_events
+    WHERE created_at >= ?
+    GROUP BY metric_name
+    ORDER BY metric_name ASC
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const p75Rows = await env.DB.prepare(`
+    SELECT metric_name, metric_value
+    FROM web_vital_events
+    WHERE created_at >= ?
+    ORDER BY created_at DESC
+    LIMIT 10000
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const p75ByMetric = new Map();
+  for (const row of p75Rows.results || []) {
+    const key = cleanString(row.metric_name, 12);
+    const value = Number(row.metric_value);
+    if (!key || !Number.isFinite(value)) continue;
+    const values = p75ByMetric.get(key) || [];
+    values.push(value);
+    p75ByMetric.set(key, values);
+  }
+
+  const topPaths = await env.DB.prepare(`
+    SELECT
+      path,
+      metric_name,
+      COUNT(*) AS events,
+      SUM(CASE WHEN metric_rating = 'poor' THEN 1 ELSE 0 END) AS poor
+    FROM web_vital_events
+    WHERE created_at >= ?
+    GROUP BY path, metric_name
+    ORDER BY poor DESC, events DESC
+    LIMIT 10
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const deviceRows = await env.DB.prepare(`
+    SELECT
+      device_type,
+      COUNT(*) AS events,
+      SUM(CASE WHEN metric_rating = 'poor' THEN 1 ELSE 0 END) AS poor
+    FROM web_vital_events
+    WHERE created_at >= ?
+    GROUP BY device_type
+    ORDER BY poor DESC, events DESC
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const events30d = Number(overview.events_30d || 0);
+  const poor30d = Number(overview.poor_30d || 0);
+  return {
+    events24h: Number(overview.events_24h || 0),
+    events7d: Number(overview.events_7d || 0),
+    events30d,
+    poor24h: Number(overview.poor_24h || 0),
+    poor30d,
+    poorRate30d: percentage(poor30d, events30d),
+    metrics: (metricRows.results || []).map((row) => {
+      const name = cleanString(row.metric_name, 12);
+      const events = Number(row.events || 0);
+      const poor = Number(row.poor || 0);
+      return {
+        name,
+        events,
+        poor,
+        poorRate: percentage(poor, events),
+        avgValue: roundWebVitalMetric(row.avg_value),
+        p75Value: percentile75(p75ByMetric.get(name) || []),
+        maxValue: roundWebVitalMetric(row.max_value),
+      };
+    }),
+    topPaths: (topPaths.results || []).map((row) => {
+      const events = Number(row.events || 0);
+      const poor = Number(row.poor || 0);
+      return {
+        path: cleanString(row.path, 120),
+        metricName: cleanString(row.metric_name, 12),
+        events,
+        poor,
+        poorRate: percentage(poor, events),
+      };
+    }),
+    devices: (deviceRows.results || []).map((row) => {
+      const events = Number(row.events || 0);
+      const poor = Number(row.poor || 0);
+      return {
+        type: cleanString(row.device_type || "unknown", 24),
+        events,
+        poor,
+        poorRate: percentage(poor, events),
+      };
+    }),
+  };
+}
+
+async function appErrorSummary(env, now) {
+  const empty = {
+    events24h: 0,
+    events7d: 0,
+    events30d: 0,
+    uniqueDigests24h: 0,
+    topPaths: [],
+    topDigests: [],
+    browsers: [],
+    recentEvents: [],
+  };
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const overview = await env.DB.prepare(`
+    SELECT
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_7d,
+      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_30d,
+      COUNT(DISTINCT CASE WHEN created_at >= ? AND digest != '' THEN digest ELSE NULL END) AS unique_digests_24h
+    FROM app_error_events
+  `).bind(dayAgo, weekAgo, monthAgo, dayAgo).first().catch(() => null);
+
+  if (!overview) return empty;
+
+  const topPaths = await env.DB.prepare(`
+    SELECT path, COUNT(*) AS events, COUNT(DISTINCT digest) AS digests
+    FROM app_error_events
+    WHERE created_at >= ?
+    GROUP BY path
+    ORDER BY events DESC
+    LIMIT 10
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const topDigests = await env.DB.prepare(`
+    SELECT digest, COUNT(*) AS events, COUNT(DISTINCT path) AS paths, MAX(created_at) AS last_seen_at
+    FROM app_error_events
+    WHERE created_at >= ? AND digest != ''
+    GROUP BY digest
+    ORDER BY events DESC
+    LIMIT 10
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const browserRows = await env.DB.prepare(`
+    SELECT browser_class, COUNT(*) AS events
+    FROM app_error_events
+    WHERE created_at >= ?
+    GROUP BY browser_class
+    ORDER BY events DESC
+    LIMIT 8
+  `).bind(monthAgo).all().catch(() => ({ results: [] }));
+
+  const recentRows = await env.DB.prepare(`
+    SELECT event_type, path, digest, app_version, browser_class, created_at
+    FROM app_error_events
+    ORDER BY created_at DESC
+    LIMIT 10
+  `).all().catch(() => ({ results: [] }));
+
+  return {
+    events24h: Number(overview.events_24h || 0),
+    events7d: Number(overview.events_7d || 0),
+    events30d: Number(overview.events_30d || 0),
+    uniqueDigests24h: Number(overview.unique_digests_24h || 0),
+    topPaths: (topPaths.results || []).map((row) => ({
+      path: cleanString(row.path, 120),
+      events: Number(row.events || 0),
+      digests: Number(row.digests || 0),
+    })),
+    topDigests: (topDigests.results || []).map((row) => ({
+      digest: cleanString(row.digest, 128),
+      events: Number(row.events || 0),
+      paths: Number(row.paths || 0),
+      lastSeenAt: cleanIso(row.last_seen_at),
+    })),
+    browsers: (browserRows.results || []).map((row) => ({
+      family: cleanString(row.browser_class || "unknown", 24),
+      events: Number(row.events || 0),
+    })),
+    recentEvents: (recentRows.results || []).map((row) => ({
+      eventType: cleanString(row.event_type || "unknown", 32),
+      path: cleanString(row.path, 120),
+      digest: cleanString(row.digest, 128),
+      appVersion: cleanString(row.app_version, 64),
+      browserClass: cleanString(row.browser_class || "unknown", 24),
+      createdAt: cleanIso(row.created_at),
+    })),
   };
 }
 
@@ -1530,6 +1862,46 @@ function normalizeDeviceType(value) {
   return ["mobile", "tablet", "desktop"].includes(text) ? text : "unknown";
 }
 
+function normalizeWebVitalMetricName(value) {
+  const text = cleanString(value, 12).toUpperCase();
+  return ["CLS", "FCP", "INP", "LCP", "TTFB"].includes(text) ? text : "";
+}
+
+function normalizeWebVitalValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return null;
+  return Math.round(Math.min(number, 120000) * 1000) / 1000;
+}
+
+function normalizeWebVitalRating(value) {
+  const text = cleanString(value, 32).toLowerCase();
+  return ["good", "needs-improvement", "poor"].includes(text) ? text : "unknown";
+}
+
+function normalizeNavigationType(value) {
+  const text = cleanString(value, 32).toLowerCase();
+  return ["navigate", "reload", "back-forward", "restore", "prerender"].includes(text) ? text : "unknown";
+}
+
+function normalizeErrorSource(value) {
+  const text = cleanString(value, 24).toLowerCase();
+  return ["client", "server"].includes(text) ? text : "client";
+}
+
+function normalizeErrorEventType(value) {
+  const text = cleanString(value, 32).toLowerCase();
+  return ["route_error", "app_shell_error", "server_request_error"].includes(text) ? text : "route_error";
+}
+
+function normalizeErrorDigest(value) {
+  return cleanString(value, 128).replace(/[^A-Za-z0-9_./:-]/g, "");
+}
+
+function normalizeBrowserClass(value) {
+  const text = cleanString(value, 24).toLowerCase();
+  return ["chrome", "edge", "firefox", "safari", "bot", "other", "unknown"].includes(text) ? text : "unknown";
+}
+
 function userAgentFamilyFrom(userAgent) {
   const ua = String(userAgent || "").toLowerCase();
   if (ua.includes("edg/")) return "edge";
@@ -1580,6 +1952,18 @@ function roundMetric(value) {
   return Number.isFinite(number) ? Math.round(number * 10) / 10 : 0;
 }
 
+function roundWebVitalMetric(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number * 1000) / 1000 : 0;
+}
+
+function percentile75(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.max(0, Math.ceil(sorted.length * 0.75) - 1);
+  return roundWebVitalMetric(sorted[Math.min(index, sorted.length - 1)]);
+}
+
 function percentage(part, total) {
   const denominator = Number(total);
   if (!Number.isFinite(denominator) || denominator <= 0) return 0;
@@ -1611,6 +1995,12 @@ function requesterKey(request) {
     || "unknown-requester";
 }
 
+function errorReportSecret(env) {
+  const dedicated = typeof env.ERROR_REPORT_SECRET === "string" ? env.ERROR_REPORT_SECRET.trim() : "";
+  const fallback = typeof env.USAGE_PING_SECRET === "string" ? env.USAGE_PING_SECRET.trim() : "";
+  return dedicated || fallback;
+}
+
 async function checkUsagePingRateLimit(request, env) {
   const maxPerMinute = readPositiveInt(env.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
   if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
@@ -1636,6 +2026,72 @@ async function checkUsagePingRateLimit(request, env) {
       key,
       String((Number.isFinite(current) ? current : 0) + 1),
       { expirationTtl: USAGE_PING_RATE_LIMIT_TTL_SECONDS },
+    );
+  } catch {
+    return { ok: true };
+  }
+
+  return { ok: true };
+}
+
+async function checkUsageVitalsRateLimit(request, env) {
+  const maxPerMinute = readPositiveInt(env.USAGE_VITALS_MAX_PER_MINUTE, DEFAULT_USAGE_VITALS_MAX_PER_MINUTE);
+  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
+
+  const now = Date.now();
+  const bucket = Math.floor(now / 60000);
+  const requesterFingerprint = await fingerprint(`vitals:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
+  const key = `usage-vitals:${bucket}:${requesterFingerprint.slice(0, 32)}`;
+  let current = 0;
+
+  try {
+    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
+  } catch {
+    return { ok: true };
+  }
+
+  if (Number.isFinite(current) && current >= maxPerMinute) {
+    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
+  }
+
+  try {
+    await env.ZENITH_COORDINATOR.put(
+      key,
+      String((Number.isFinite(current) ? current : 0) + 1),
+      { expirationTtl: USAGE_VITALS_RATE_LIMIT_TTL_SECONDS },
+    );
+  } catch {
+    return { ok: true };
+  }
+
+  return { ok: true };
+}
+
+async function checkErrorReportRateLimit(request, env) {
+  const maxPerMinute = readPositiveInt(env.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
+  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
+
+  const now = Date.now();
+  const bucket = Math.floor(now / 60000);
+  const requesterFingerprint = await fingerprint(`error:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
+  const key = `error-report:${bucket}:${requesterFingerprint.slice(0, 32)}`;
+  let current = 0;
+
+  try {
+    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
+  } catch {
+    return { ok: true };
+  }
+
+  if (Number.isFinite(current) && current >= maxPerMinute) {
+    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
+  }
+
+  try {
+    await env.ZENITH_COORDINATOR.put(
+      key,
+      String((Number.isFinite(current) ? current : 0) + 1),
+      { expirationTtl: ERROR_REPORT_RATE_LIMIT_TTL_SECONDS },
     );
   } catch {
     return { ok: true };

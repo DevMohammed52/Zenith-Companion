@@ -52,6 +52,8 @@ class MemoryD1 {
     this.jobs = new Map();
     this.cooldowns = new Map();
     this.usageEvents = new Map();
+    this.appErrorEvents = new Map();
+    this.webVitalEvents = new Map();
   }
   prepare(sql) {
     return new Statement(this, sql);
@@ -86,6 +88,34 @@ class MemoryD1 {
         device_type: deviceType,
         timezone,
         country,
+        user_agent_family: userAgentFamily,
+        created_at: createdAt,
+      });
+    }
+    if (sql.includes("INSERT INTO app_error_events")) {
+      const [id, source, eventType, path, digest, appVersion, browserClass, userAgentFamily, createdAt] = args;
+      this.appErrorEvents.set(id, {
+        id,
+        source,
+        event_type: eventType,
+        path,
+        digest,
+        app_version: appVersion,
+        browser_class: browserClass,
+        user_agent_family: userAgentFamily,
+        created_at: createdAt,
+      });
+    }
+    if (sql.includes("INSERT INTO web_vital_events")) {
+      const [id, metricName, metricValue, metricRating, path, deviceType, navigationType, userAgentFamily, createdAt] = args;
+      this.webVitalEvents.set(id, {
+        id,
+        metric_name: metricName,
+        metric_value: metricValue,
+        metric_rating: metricRating,
+        path,
+        device_type: deviceType,
+        navigation_type: navigationType,
         user_agent_family: userAgentFamily,
         created_at: createdAt,
       });
@@ -198,6 +228,27 @@ class MemoryD1 {
         sessions_7d: distinctCount(events.filter((event) => event.created_at >= sessionsWeekAgo), "session_fingerprint"),
       };
     }
+    if (sql.includes("unique_digests_24h")) {
+      const [dayAgo, weekAgo, monthAgo, digestDayAgo] = args;
+      const events = Array.from(this.appErrorEvents.values());
+      return {
+        events_24h: events.filter((event) => event.created_at >= dayAgo).length,
+        events_7d: events.filter((event) => event.created_at >= weekAgo).length,
+        events_30d: events.filter((event) => event.created_at >= monthAgo).length,
+        unique_digests_24h: distinctCount(events.filter((event) => event.created_at >= digestDayAgo && event.digest), "digest"),
+      };
+    }
+    if (sql.includes("FROM web_vital_events") && sql.includes("events_30d")) {
+      const [dayAgo, weekAgo, monthAgo, poorDayAgo, poorMonthAgo] = args;
+      const events = Array.from(this.webVitalEvents.values());
+      return {
+        events_24h: events.filter((event) => event.created_at >= dayAgo).length,
+        events_7d: events.filter((event) => event.created_at >= weekAgo).length,
+        events_30d: events.filter((event) => event.created_at >= monthAgo).length,
+        poor_24h: events.filter((event) => event.metric_rating === "poor" && event.created_at >= poorDayAgo).length,
+        poor_30d: events.filter((event) => event.metric_rating === "poor" && event.created_at >= poorMonthAgo).length,
+      };
+    }
     if (sql.includes("SELECT COUNT(*) AS count") && sql.includes("FROM import_jobs")) {
       const [createdAfter] = args;
       return { count: Array.from(this.jobs.values()).filter((job) => job.created_at >= createdAfter).length };
@@ -268,6 +319,122 @@ class MemoryD1 {
     return null;
   }
   async all(sql, args) {
+    if (sql.includes("FROM web_vital_events") && sql.includes("GROUP BY metric_name") && !sql.includes("path")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.webVitalEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        const row = grouped.get(event.metric_name) || { metric_name: event.metric_name, values: [], events: 0, poor: 0 };
+        row.events += 1;
+        row.values.push(Number(event.metric_value || 0));
+        if (event.metric_rating === "poor") row.poor += 1;
+        grouped.set(event.metric_name, row);
+      }
+      return {
+        results: Array.from(grouped.values()).map((row) => ({
+          metric_name: row.metric_name,
+          events: row.events,
+          poor: row.poor,
+          avg_value: average(row.values),
+          max_value: row.values.length ? Math.max(...row.values) : 0,
+        })),
+      };
+    }
+    if (sql.includes("FROM web_vital_events") && sql.includes("ORDER BY created_at DESC")) {
+      const [createdAfter] = args;
+      return {
+        results: Array.from(this.webVitalEvents.values())
+          .filter((event) => event.created_at >= createdAfter)
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 10000)
+          .map((event) => ({ metric_name: event.metric_name, metric_value: event.metric_value })),
+      };
+    }
+    if (sql.includes("FROM web_vital_events") && sql.includes("GROUP BY path, metric_name")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.webVitalEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        const key = `${event.path}:${event.metric_name}`;
+        const row = grouped.get(key) || { path: event.path, metric_name: event.metric_name, events: 0, poor: 0 };
+        row.events += 1;
+        if (event.metric_rating === "poor") row.poor += 1;
+        grouped.set(key, row);
+      }
+      return {
+        results: Array.from(grouped.values())
+          .sort((a, b) => (b.poor - a.poor) || (b.events - a.events))
+          .slice(0, 10),
+      };
+    }
+    if (sql.includes("FROM web_vital_events") && sql.includes("GROUP BY device_type")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.webVitalEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        const row = grouped.get(event.device_type) || { device_type: event.device_type, events: 0, poor: 0 };
+        row.events += 1;
+        if (event.metric_rating === "poor") row.poor += 1;
+        grouped.set(event.device_type, row);
+      }
+      return {
+        results: Array.from(grouped.values())
+          .sort((a, b) => (b.poor - a.poor) || (b.events - a.events)),
+      };
+    }
+    if (sql.includes("FROM app_error_events") && sql.includes("GROUP BY path")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.appErrorEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        const row = grouped.get(event.path) || { path: event.path, events: 0, digests: new Set() };
+        row.events += 1;
+        if (event.digest) row.digests.add(event.digest);
+        grouped.set(event.path, row);
+      }
+      return {
+        results: Array.from(grouped.values())
+          .map((row) => ({ path: row.path, events: row.events, digests: row.digests.size }))
+          .sort((a, b) => b.events - a.events)
+          .slice(0, 10),
+      };
+    }
+    if (sql.includes("FROM app_error_events") && sql.includes("GROUP BY digest")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.appErrorEvents.values()) {
+        if (event.created_at < createdAfter || !event.digest) continue;
+        const row = grouped.get(event.digest) || { digest: event.digest, events: 0, paths: new Set(), last_seen_at: "" };
+        row.events += 1;
+        row.paths.add(event.path);
+        row.last_seen_at = row.last_seen_at && row.last_seen_at > event.created_at ? row.last_seen_at : event.created_at;
+        grouped.set(event.digest, row);
+      }
+      return {
+        results: Array.from(grouped.values())
+          .map((row) => ({ digest: row.digest, events: row.events, paths: row.paths.size, last_seen_at: row.last_seen_at }))
+          .sort((a, b) => b.events - a.events)
+          .slice(0, 10),
+      };
+    }
+    if (sql.includes("FROM app_error_events") && sql.includes("GROUP BY browser_class")) {
+      const [createdAfter] = args;
+      const grouped = new Map();
+      for (const event of this.appErrorEvents.values()) {
+        if (event.created_at < createdAfter) continue;
+        grouped.set(event.browser_class, (grouped.get(event.browser_class) || 0) + 1);
+      }
+      return {
+        results: Array.from(grouped, ([browser_class, events]) => ({ browser_class, events })),
+      };
+    }
+    if (sql.includes("FROM app_error_events") && sql.includes("ORDER BY created_at DESC")) {
+      return {
+        results: Array.from(this.appErrorEvents.values())
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 10),
+      };
+    }
     if (sql.includes("FROM usage_events") && sql.includes("GROUP BY path")) {
       const [createdAfter] = args;
       const grouped = new Map();
@@ -352,6 +519,9 @@ function env(overrides = {}) {
     ADMIN_DASHBOARD_SECRET: "admin-secret",
     USAGE_PING_SECRET: "usage-secret",
     USAGE_PING_MAX_PER_MINUTE: "120",
+    USAGE_VITALS_MAX_PER_MINUTE: "80",
+    ERROR_REPORT_SECRET: "error-secret",
+    ERROR_REPORT_MAX_PER_MINUTE: "120",
     IMPORT_SIGNING_SECRET: "signing-secret",
     IMPORT_ENCRYPTION_SECRET: "encryption-secret",
     IDLEMMO_API_KEY: "idlemmo-secret",
@@ -470,6 +640,141 @@ async function json(response) {
 }
 
 {
+  const e = env();
+  const unauthorized = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      metricName: "LCP",
+      value: 2512.3456,
+      rating: "poor",
+      path: "/items",
+    }),
+  }), e);
+  assert.equal(unauthorized.status, 401);
+  assert.equal(e.DB.webVitalEvents.size, 0);
+
+  const response = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "user-agent": "Mozilla/5.0 Edg/126.0",
+    },
+    body: JSON.stringify({
+      metricName: "lcp",
+      value: 2512.3456,
+      rating: "poor",
+      path: "/items?search=private#row",
+      deviceType: "desktop",
+      navigationType: "reload",
+      id: "metric-id-must-not-be-stored",
+      attribution: { element: "#private-selector" },
+    }),
+  }), e);
+  assert.equal(response.status, 202);
+  assert.equal((await json(response)).ok, true);
+  assert.equal(e.DB.webVitalEvents.size, 1);
+  const event = Array.from(e.DB.webVitalEvents.values())[0];
+  assert.equal(event.metric_name, "LCP");
+  assert.equal(event.metric_value, 2512.346);
+  assert.equal(event.metric_rating, "poor");
+  assert.equal(event.path, "/items");
+  assert.equal(event.device_type, "desktop");
+  assert.equal(event.navigation_type, "reload");
+  assert.equal(event.user_agent_family, "edge");
+  assert.equal(JSON.stringify(event).includes("metric-id-must-not-be-stored"), false);
+  assert.equal(JSON.stringify(event).includes("private-selector"), false);
+
+  const bad = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      metricName: "CUSTOM",
+      value: -1,
+      path: "/items",
+    }),
+  }), e);
+  assert.equal(bad.status, 400);
+  assert.equal(e.DB.webVitalEvents.size, 1);
+
+  const health = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  const body = await json(health);
+  assert.equal(body.webVitals.events24h, 1);
+  assert.equal(body.webVitals.poor24h, 1);
+  assert.equal(body.webVitals.metrics[0].name, "LCP");
+  assert.equal(body.webVitals.topPaths[0].path, "/items");
+}
+
+{
+  const e = env();
+  const unauthorized = await handleRequest(new Request("https://worker.test/error/report", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      source: "client",
+      eventType: "route_error",
+      path: "/items",
+      digest: "NEXT_DIGEST_1",
+      message: "raw message must not be stored",
+      stack: "raw stack must not be stored",
+    }),
+  }), e);
+  assert.equal(unauthorized.status, 401);
+  assert.equal(e.DB.appErrorEvents.size, 0);
+
+  const response = await handleRequest(new Request("https://worker.test/error/report", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer error-secret",
+      origin: "https://zenith.example",
+      "user-agent": "Mozilla/5.0 Firefox/126.0",
+    },
+    body: JSON.stringify({
+      source: "client",
+      eventType: "route_error",
+      path: "/items?search=private#hash",
+      digest: "NEXT_DIGEST_1:abc/def",
+      appVersion: "abc123",
+      browserClass: "firefox",
+      message: "raw message must not be stored",
+      stack: "raw stack must not be stored",
+    }),
+  }), e);
+  assert.equal(response.status, 202);
+  assert.equal((await json(response)).ok, true);
+  assert.equal(e.DB.appErrorEvents.size, 1);
+  const event = Array.from(e.DB.appErrorEvents.values())[0];
+  assert.equal(event.path, "/items");
+  assert.equal(event.digest, "NEXT_DIGEST_1:abc/def");
+  assert.equal(event.browser_class, "firefox");
+  assert.equal(JSON.stringify(event).includes("raw message"), false);
+  assert.equal(JSON.stringify(event).includes("raw stack"), false);
+
+  const health = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  const body = await json(health);
+  assert.equal(body.appErrors.events24h, 1);
+  assert.equal(body.appErrors.topPaths[0].path, "/items");
+  assert.equal(body.appErrors.topDigests[0].digest, "NEXT_DIGEST_1:abc/def");
+}
+
+{
   const e = env({ USAGE_PING_MAX_PER_MINUTE: "1" });
   const requestInit = {
     method: "POST",
@@ -491,6 +796,54 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.usageEvents.size, 1);
+}
+
+{
+  const e = env({ USAGE_VITALS_MAX_PER_MINUTE: "1" });
+  const requestInit = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.15",
+    },
+    body: JSON.stringify({
+      metricName: "INP",
+      value: 420,
+      rating: "poor",
+      path: "/guilds",
+    }),
+  };
+  const first = await handleRequest(new Request("https://worker.test/usage/vitals", requestInit), e);
+  const second = await handleRequest(new Request("https://worker.test/usage/vitals", requestInit), e);
+  assert.equal(first.status, 202);
+  assert.equal(second.status, 429);
+  assert.equal(e.DB.webVitalEvents.size, 1);
+}
+
+{
+  const e = env({ ERROR_REPORT_MAX_PER_MINUTE: "1" });
+  const requestInit = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer error-secret",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.20",
+    },
+    body: JSON.stringify({
+      source: "client",
+      eventType: "app_shell_error",
+      path: "/profiles",
+      digest: "SHELL_DIGEST",
+    }),
+  };
+  const first = await handleRequest(new Request("https://worker.test/error/report", requestInit), e);
+  const second = await handleRequest(new Request("https://worker.test/error/report", requestInit), e);
+  assert.equal(first.status, 202);
+  assert.equal(second.status, 429);
+  assert.equal(e.DB.appErrorEvents.size, 1);
 }
 
 {

@@ -12,6 +12,9 @@ Implemented:
 - `GET /health`
 - `POST /internal/scraper-status`
 - `GET /admin/import-health`
+- `POST /usage/ping`
+- `POST /usage/vitals`
+- `POST /error/report`
 - `POST /profile-import/start`
 - `GET /profile-import/status/:jobId`
 - CORS allowlist
@@ -27,6 +30,7 @@ Implemented:
 - visible alt `information`, `metrics`, `pets`, and `museum`
 - sanitized `ImportedProfileDraft`-compatible result envelopes
 - privacy-safe admin health summary, protected by a separate bearer secret
+- privacy-safe Core Web Vitals aggregation with no visitor/session IDs or raw selectors
 - local route tests
 
 Not implemented yet:
@@ -78,6 +82,7 @@ npx wrangler d1 migrations apply zenith_profile_import
 npx wrangler secret put IDLEMMO_API_KEY
 npx wrangler secret put SCRAPER_COORDINATOR_SECRET
 npx wrangler secret put ADMIN_DASHBOARD_SECRET
+npx wrangler secret put USAGE_PING_SECRET
 npx wrangler secret put IMPORT_SIGNING_SECRET
 npx wrangler secret put IMPORT_ENCRYPTION_SECRET
 npx wrangler secret put TURNSTILE_SECRET_KEY
@@ -88,6 +93,10 @@ production. Add the matching public site key to Vercel as
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. Never expose the Worker secret through a
 `NEXT_PUBLIC_*` variable.
 
+Privacy-safe app error reporting uses `ERROR_REPORT_SECRET` when present, and
+falls back to `USAGE_PING_SECRET` otherwise. If you set a dedicated
+`ERROR_REPORT_SECRET`, set the same value in both the Worker and Vercel.
+
 `IDLEMMO_IMPORT_DELAY_MS` defaults to `1800`, which keeps a single baseline job
 near the intended idle-mode request budget. `IMPORT_BASELINE_REQUEST_CAP`
 defaults to `45`, and `IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER` defaults to `8`
@@ -97,6 +106,10 @@ reads those known KV keys directly instead of using KV `list()`, which keeps the
 public import path inside Cloudflare free-plan limits. Do not reduce the delay
 or raise these caps in production unless the Cloudflare coordinator is already
 protecting the GitHub workflows.
+
+`USAGE_VITALS_MAX_PER_MINUTE` defaults to `80` per requester. Web Vitals events
+are expected to be a few small pings per page load, so keep this separate from
+normal usage pings and only raise it if real traffic proves the cap too low.
 
 ## Admin Dashboard
 
@@ -160,3 +173,5 @@ The tests use in-memory KV/D1 stubs and do not call IdleMMO.
 - Treat stale coordinator state as conservative budget mode.
 - Keep admin health responses operational-only: no character hashes, names,
   levels, pets, museum records, or raw import JSON.
+- Keep Web Vitals aggregate-only: no raw URLs, selectors, visitor IDs, session
+  IDs, profile data, localStorage contents, or metric attribution payloads.
