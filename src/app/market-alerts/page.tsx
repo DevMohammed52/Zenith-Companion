@@ -21,6 +21,7 @@ import { useData } from '@/context/DataContext';
 import { useItemModal } from '@/context/ItemModalContext';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import QualityText from '@/components/QualityText';
+import { EmptyState, LoadingState, NoResultsState } from '@/components/StateBlock';
 import {
   comparatorLabel,
   collectMarketWatchVendorCandidates,
@@ -776,7 +777,12 @@ export default function MarketAlertsPage() {
                 )}
               </div>
             ) : hasSearchQuery && filteredItems.length === 0 ? (
-              <div className="inline-status search-empty">No matching item history. Pick an item from the list before adding a watch.</div>
+              <NoResultsState
+                compact
+                className="market-search-empty"
+                title="No matching item history"
+                description="Pick an item from the list before adding a watch."
+              />
             ) : !selectedItemName ? (
               <div className="selected-item-hint muted">
                 <Search size={14} aria-hidden="true" />
@@ -893,10 +899,11 @@ export default function MarketAlertsPage() {
             <span className="panel-count">{activeAlerts.length}</span>
           </div>
           {activeAlerts.length === 0 ? (
-            <div className="empty-state">
-              <Bell size={30} />
-              <p>No current rule matches. Rules are checked whenever the market snapshot refreshes while the app is open.</p>
-            </div>
+            <EmptyState
+              compact
+              title="No current rule matches"
+              description="Rules are checked whenever the market snapshot refreshes while the app is open."
+            />
           ) : (
             <div className="alert-list">
               {activeAlerts.map((evaluation) => (
@@ -952,15 +959,15 @@ export default function MarketAlertsPage() {
           </div>
         )}
         {rules.length === 0 ? (
-          <div className="empty-state wide">
-            <Eye size={30} />
-            <p>No saved watch rules yet. Add a rule above to track market-history thresholds on this browser.</p>
-          </div>
+          <EmptyState
+            title="No saved watch rules yet"
+            description="Add a rule above to track market-history thresholds on this browser."
+          />
         ) : filteredEvaluations.length === 0 ? (
-          <div className="empty-state wide">
-            <Eye size={30} />
-            <p>No saved rules match the current watchlist filter.</p>
-          </div>
+          <NoResultsState
+            title="No saved rules match"
+            description="Clear the search or choose a different watchlist filter."
+          />
         ) : (
           <div className="watch-rule-grid">
             {filteredEvaluations.map((evaluation) => (
@@ -1035,13 +1042,10 @@ export default function MarketAlertsPage() {
           <span><strong>{vendorSummary.pricedRows.toLocaleString()}</strong> priced rows</span>
         </div>
         {vendorCandidates.length === 0 ? (
-          <div className="empty-state wide">
-            <CircleDollarSign size={30} />
-            <p>
-              No market-history averages are near your current profile-adjusted vendor value.
-              Vendor checks compare market average against your active profile&apos;s vendor value; higher bartering profiles can reveal more rows to watch.
-            </p>
-          </div>
+          <NoResultsState
+            title="No vendor-margin candidates"
+            description="No market-history averages are near your current profile-adjusted vendor value. Vendor checks compare market average against your active profile's vendor value; higher bartering profiles can reveal more rows to watch."
+          />
         ) : (
           <>
           <div className="vendor-grid">
@@ -1087,7 +1091,13 @@ export default function MarketAlertsPage() {
         )}
       </section>
 
-      {loading && <div className="inline-status">Loading market snapshot...</div>}
+      {loading && (
+        <LoadingState
+          compact
+          title="Loading market snapshot"
+          description="Refreshing market history and watch evaluations."
+        />
+      )}
 
       <style jsx>{`
         .market-watch-page {
@@ -1360,7 +1370,7 @@ export default function MarketAlertsPage() {
           border-radius: 7px;
           padding: 0.55rem 0.65rem;
         }
-        .search-empty {
+        :global(.market-search-empty) {
           margin-top: 0.55rem;
         }
         .selected-item-hint {
@@ -1615,28 +1625,6 @@ export default function MarketAlertsPage() {
           font-weight: 800;
           margin-top: 0.75rem;
           padding: 0.65rem 0.75rem;
-        }
-        .empty-state {
-          align-items: center;
-          background: rgba(255,255,255,0.018);
-          border: 1px dashed var(--border-subtle);
-          border-radius: 8px;
-          color: var(--text-muted);
-          display: flex;
-          flex-direction: column;
-          gap: 0.7rem;
-          min-height: 220px;
-          justify-content: center;
-          padding: 1rem;
-          text-align: center;
-        }
-        .empty-state.wide {
-          min-height: 150px;
-        }
-        .empty-state p {
-          line-height: 1.5;
-          margin: 0;
-          max-width: 520px;
         }
         .alert-list,
         .watch-rule-grid,
