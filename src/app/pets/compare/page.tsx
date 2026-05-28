@@ -28,6 +28,7 @@ import {
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import { useProfiles, type ProfileOwnedPet, type ProfilePetStats } from "@/lib/profiles";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { EmptyState, ErrorState, LoadingState } from "@/components/StateBlock";
 import {
   BattleProfitMode,
   COMPARISON_STAT_KEYS,
@@ -393,8 +394,10 @@ function PetPicker({
   const [query, setQuery] = useState("");
   const reactId = useId();
   const panelId = `pet-compare-picker-${reactId}`;
+  const listboxId = `${panelId}-options`;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selected = options.find((option) => option.id === value) || null;
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -402,11 +405,20 @@ function PetPicker({
       .filter((option) => !needle || option.searchText.includes(needle))
       .slice(0, 32);
   }, [options, query]);
+  const selectedFilteredIndex = Math.max(0, filtered.findIndex((option) => option.id === value));
+  const [activeIndex, setActiveIndex] = useState(selectedFilteredIndex);
 
   const closePicker = () => {
     setQuery("");
     onOpen(false);
     window.requestAnimationFrame(() => triggerRef.current?.focus());
+  };
+
+  const moveToOption = (index: number) => {
+    if (!filtered.length) return;
+    const nextIndex = Math.min(filtered.length - 1, Math.max(0, index));
+    setActiveIndex(nextIndex);
+    window.requestAnimationFrame(() => optionRefs.current[nextIndex]?.focus());
   };
 
   useEffect(() => {
@@ -418,6 +430,57 @@ function PetPicker({
     }
     window.requestAnimationFrame(() => searchRef.current?.focus());
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setActiveIndex(selectedFilteredIndex);
+  }, [open, selectedFilteredIndex]);
+
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePicker();
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      moveToOption(activeIndex);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      moveToOption(filtered.length - 1);
+    }
+  };
+
+  const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePicker();
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? filtered.length - 1
+            : event.key === "ArrowDown"
+              ? (index + 1) % filtered.length
+              : (index - 1 + filtered.length) % filtered.length;
+      moveToOption(nextIndex);
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const option = filtered[index];
+      if (!option) return;
+      onSelect(option.id);
+      closePicker();
+    }
+  };
 
   return (
     <div className={styles.picker} data-menu-root>
@@ -466,20 +529,28 @@ function PetPicker({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search pet, boss, source..."
               aria-label={`Search pets for comparison slot ${slotIndex + 1}`}
+              aria-controls={listboxId}
+              onKeyDown={handleSearchKeyDown}
             />
           </label>
-          <div className={styles.petOptions} role="listbox" aria-label={`Pet options for comparison slot ${slotIndex + 1}`}>
-            {filtered.map((option) => (
+          <div className={styles.petOptions} id={listboxId} role="listbox" aria-label={`Pet options for comparison slot ${slotIndex + 1}`}>
+            {filtered.map((option, index) => (
               <button
+                ref={(node) => {
+                  optionRefs.current[index] = node;
+                }}
                 type="button"
                 key={option.id}
                 className={option.id === value ? styles.petOptionSelected : ""}
                 role="option"
                 aria-selected={option.id === value}
+                tabIndex={index === activeIndex ? 0 : -1}
                 onClick={() => {
                   onSelect(option.id);
                   closePicker();
                 }}
+                onFocus={() => setActiveIndex(index)}
+                onKeyDown={(event) => handleOptionKeyDown(event, index)}
               >
                 <PetImage pet={option.pet} />
                 <span>
@@ -884,8 +955,10 @@ export default function PetComparisonPage() {
         </div>
       </section>
 
-      {loadError && <div className={styles.state} role="alert">{loadError}</div>}
-      {!database && !loadError && <div className={styles.state} role="status">Loading pet comparison data...</div>}
+      {loadError && <ErrorState title="Pet comparison data unavailable" description={loadError} />}
+      {!database && !loadError && (
+        <LoadingState title="Loading pet comparison data" description="Preparing pet stats, sources, battle samples, and market listings." />
+      )}
 
       {database && (
         <>
@@ -1045,11 +1118,11 @@ export default function PetComparisonPage() {
           </section>
 
           {rows.length === 0 ? (
-            <section className={styles.emptyState} role="status">
-              <PawPrint size={38} />
-              <h2>Select a pet to preview, add another to compare.</h2>
-              <p>Use the quick picks or search by pet, boss, source, rarity, or exchange listing.</p>
-            </section>
+            <EmptyState
+              title="Select a pet to preview, add another to compare"
+              description="Use the quick picks or search by pet, boss, source, rarity, or exchange listing."
+              icon={PawPrint}
+            />
           ) : (
             <>
               <section className={styles.compareCards} aria-label="Selected pet comparison cards">
