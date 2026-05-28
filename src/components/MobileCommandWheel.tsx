@@ -31,6 +31,8 @@ export default function MobileCommandWheel({
   const selectedIndex = NAV_GROUPS.findIndex((group) => group.label === selectedGroup.label);
   const selectedGroupHasActiveItem = selectedGroup.items.some((candidate) => isNavItemActive(pathname, candidate));
   const visible = open || closing;
+  const dialogTitleId = `${idPrefix}-title`;
+  const dialogDescriptionId = `${idPrefix}-description`;
 
   useEffect(() => {
     if (!open) return;
@@ -94,12 +96,12 @@ export default function MobileCommandWheel({
         const last = focusable[focusable.length - 1];
         if (event.shiftKey && document.activeElement === first) {
           event.preventDefault();
-          last.focus();
+          last.focus({ preventScroll: true });
           return;
         }
         if (!event.shiftKey && document.activeElement === last) {
           event.preventDefault();
-          first.focus();
+          first.focus({ preventScroll: true });
         }
         return;
       }
@@ -146,8 +148,13 @@ export default function MobileCommandWheel({
         id="app-command-wheel"
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation menu"
+        aria-labelledby={dialogTitleId}
+        aria-describedby={dialogDescriptionId}
       >
+        <h2 id={dialogTitleId} className="sr-only">Navigation menu</h2>
+        <p id={dialogDescriptionId} className="sr-only">
+          Choose a navigation section, then choose a destination. Use arrow keys to switch sections and Escape to close.
+        </p>
         <div className="command-wheel-arc" aria-hidden="true" />
         <div className="command-wheel-halo" aria-hidden="true" />
 
@@ -165,18 +172,18 @@ export default function MobileCommandWheel({
               onClose();
             }}
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         <div className="command-wheel-stage">
           <div className="command-wheel-center" aria-hidden="true">
-            <Activity size={24} />
+            <Activity size={24} aria-hidden="true" />
             <strong>{selectedGroup.label}</strong>
             <small>{selectedGroup.eyebrow}</small>
           </div>
 
-          <div className="command-wheel-groups" role="tablist" aria-label="Navigation sections">
+          <div className="command-wheel-groups" role="tablist" aria-label="Navigation sections" aria-orientation="vertical">
             {NAV_GROUPS.map((group, index) => {
               const selected = group.label === selectedGroup.label;
               const active = group.label === activeGroup.label;
@@ -227,7 +234,7 @@ export default function MobileCommandWheel({
                 setSelectedGroupLabel(NAV_GROUPS[(selectedIndex - 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label);
               }}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} aria-hidden="true" />
             </button>
             <span>
               <strong>{selectedGroup.label}</strong>
@@ -241,7 +248,7 @@ export default function MobileCommandWheel({
                 setSelectedGroupLabel(NAV_GROUPS[(selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length].label);
               }}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} aria-hidden="true" />
             </button>
           </div>
 

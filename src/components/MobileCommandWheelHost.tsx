@@ -40,7 +40,7 @@ export default function MobileCommandWheelHost() {
           setMobileOpen(!mobileOpen);
         }}
       >
-        {mobileOpen ? <X size={22} /> : <Compass size={22} />}
+        {mobileOpen ? <X size={22} aria-hidden="true" /> : <Compass size={22} aria-hidden="true" />}
         <span>Menu</span>
       </button>
       {renderWheel && (
