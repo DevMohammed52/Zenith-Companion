@@ -20,6 +20,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import { ErrorState, LoadingState } from "@/components/StateBlock";
 
 type TimeframeKey = "15m" | "1h" | "24h" | "48h" | "7d" | "14d" | "30d" | "all";
 
@@ -72,6 +73,37 @@ type TrendRow = {
   sessions?: number;
   characters?: number;
   avgDurationSeconds?: number;
+};
+
+type WebVitalsSummary = {
+  events24h: number;
+  events7d: number;
+  events30d: number;
+  poor24h: number;
+  poor30d: number;
+  poorRate30d: number;
+  metrics: Array<{
+    name: string;
+    events: number;
+    poor: number;
+    poorRate: number;
+    avgValue: number;
+    p75Value: number;
+    maxValue: number;
+  }>;
+  topPaths: Array<{
+    path: string;
+    metricName: string;
+    events: number;
+    poor: number;
+    poorRate: number;
+  }>;
+  devices: Array<{
+    type: string;
+    events: number;
+    poor: number;
+    poorRate: number;
+  }>;
 };
 
 type ImportHealth = {
@@ -149,6 +181,24 @@ type ImportHealth = {
     browsers: Array<{ family: string; users: number }>;
     timezones: Array<{ timezone: string; users: number }>;
   };
+  appErrors: {
+    events24h: number;
+    events7d: number;
+    events30d: number;
+    uniqueDigests24h: number;
+    topPaths: Array<{ path: string; events: number; digests: number }>;
+    topDigests: Array<{ digest: string; events: number; paths: number; lastSeenAt: string }>;
+    browsers: Array<{ family: string; events: number }>;
+    recentEvents: Array<{
+      eventType: string;
+      path: string;
+      digest: string;
+      appVersion: string;
+      browserClass: string;
+      createdAt: string;
+    }>;
+  };
+  webVitals: WebVitalsSummary;
   imports: {
     timeframes: ImportFrame[];
     daily: TrendRow[];
@@ -222,6 +272,10 @@ function formatNumber(value: number) {
 
 function formatPercent(value: number) {
   return `${formatNumber(value)}%`;
+}
+
+function formatVitalValue(metricName: string, value: number) {
+  return metricName === "CLS" ? formatNumber(value) : `${formatNumber(value)}ms`;
 }
 
 function statusTone(status: string) {
@@ -339,17 +393,20 @@ export default function ImportHealthPage() {
             <p>Stored analytics use anonymous fingerprints and aggregate metadata. Profile payloads, raw hashes, names, pets, and museum rows are not kept.</p>
           </div>
         </div>
-        {error ? <div className="admin-error"><AlertTriangle size={16} /> {error}</div> : null}
+        {error ? (
+          <ErrorState
+            compact
+            title="Operational data unavailable"
+            description={error}
+          />
+        ) : null}
       </section>
 
       {isInitialLoading ? (
-        <section className="admin-loading" aria-live="polite" aria-label="Loading import health">
-          <Loader2 size={18} className="spin" />
-          <div>
-            <h2>Loading operational data</h2>
-            <p>Requesting private import and traffic metrics from the admin proxy.</p>
-          </div>
-        </section>
+        <LoadingState
+          title="Loading operational data"
+          description="Requesting private import and traffic metrics from the admin proxy."
+        />
       ) : null}
 
       {health && importFrame && usageFrame ? (
@@ -427,6 +484,43 @@ export default function ImportHealthPage() {
               </div>
             </Panel>
 
+            <Panel title="App Errors" icon={AlertTriangle} detail="Privacy-safe route/digest signals">
+              <div className="metric-grid compact">
+                <Metric icon={Activity} label="24h events" value={formatNumber(health.appErrors.events24h)} detail={`${formatNumber(health.appErrors.uniqueDigests24h)} digests`} tone={health.appErrors.events24h > 0 ? "warn" : "neutral"} />
+                <Metric icon={BarChart3} label="7d events" value={formatNumber(health.appErrors.events7d)} detail={`${formatNumber(health.appErrors.events30d)} in 30d`} tone={health.appErrors.events7d > 0 ? "warn" : "neutral"} />
+              </div>
+              <div className="split-grid">
+                <RankList rows={health.appErrors.topPaths.map((row) => ({ label: row.path, value: row.events, meta: `${formatNumber(row.digests)} digests` }))} empty="No app errors recorded." />
+                <RankList rows={health.appErrors.topDigests.map((row) => ({ label: row.digest || "no digest", value: row.events, meta: `${formatNumber(row.paths)} paths` }))} empty="No digest clusters yet." />
+              </div>
+            </Panel>
+
+            <Panel title="Web Vitals" icon={Gauge} detail="Aggregate LCP, CLS, INP, FCP, and TTFB">
+              <div className="metric-grid compact">
+                <Metric icon={Activity} label="24h events" value={formatNumber(health.webVitals.events24h)} detail={`${formatNumber(health.webVitals.poor24h)} poor signals`} tone={health.webVitals.poor24h > 0 ? "warn" : "neutral"} />
+                <Metric icon={BarChart3} label="30d events" value={formatNumber(health.webVitals.events30d)} detail={`${formatPercent(health.webVitals.poorRate30d)} poor`} tone={health.webVitals.poor30d > 0 ? "warn" : "neutral"} />
+                <Metric icon={Gauge} label="Metric types" value={formatNumber(health.webVitals.metrics.length)} detail={`${formatNumber(health.webVitals.events7d)} events in 7d`} />
+              </div>
+              <div className="split-grid">
+                <RankList
+                  rows={health.webVitals.metrics.map((metric) => ({
+                    label: `${metric.name} p75 ${formatVitalValue(metric.name, metric.p75Value)}`,
+                    value: metric.events,
+                    meta: `${formatPercent(metric.poorRate)} poor`,
+                  }))}
+                  empty="No Web Vitals have been recorded yet."
+                />
+                <RankList
+                  rows={health.webVitals.topPaths.map((row) => ({
+                    label: `${row.path} (${row.metricName})`,
+                    value: row.poor,
+                    meta: `poor of ${formatNumber(row.events)} events (${formatPercent(row.poorRate)})`,
+                  }))}
+                  empty="No slow route signals yet."
+                />
+              </div>
+            </Panel>
+
             <Panel title="Busiest Imported Characters" icon={Database} detail="Anonymous fingerprint tails">
               <RankList rows={health.imports.busiestTargets.map((row) => ({ label: row.fingerprintTail || "unknown", value: row.events, meta: `${formatNumber(row.users)} users` }))} empty="No durable import events yet." />
             </Panel>
@@ -484,6 +578,10 @@ export default function ImportHealthPage() {
                 <p>Users, sessions, countries, pages, devices, browsers, referrers, and timezones are counted from browser events and Cloudflare metadata.</p>
               </div>
               <div className="boundary-note">
+                <strong>Web Vitals are aggregate-only.</strong>
+                <p>Core Web Vitals store metric names, values, ratings, routes, device class, navigation type, and browser family; they do not store selectors, raw URLs, visitor IDs, sessions, profile data, or localStorage contents.</p>
+              </div>
+              <div className="boundary-note">
                 <strong>Profile data remains temporary.</strong>
                 <p>Imported profiles still return to the browser only. The durable table stores operational events, not profile names, pets, museum items, raw hashes, or IdleMMO API responses.</p>
               </div>
@@ -525,7 +623,6 @@ export default function ImportHealthPage() {
         .health-section,
         .metric-card,
         .dashboard-panel,
-        .admin-loading,
         .admin-footnote {
           border: 1px solid var(--admin-border);
           border-radius: 7px;
@@ -750,41 +847,6 @@ export default function ImportHealthPage() {
         .access-copy h2 {
           color: var(--admin-text);
           font-size: 0.95rem;
-        }
-
-        .admin-error {
-          grid-column: 1 / -1;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin: 0.85rem;
-          border-radius: 7px;
-          border-color: rgba(238, 123, 138, 0.34);
-          background: #1a1013;
-          padding: 0.75rem 1rem;
-          color: #ffd7dc;
-          font-weight: 800;
-        }
-
-        .admin-loading {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.75rem;
-          padding: 1rem;
-        }
-
-        .admin-loading svg {
-          color: var(--admin-accent);
-        }
-
-        .admin-loading h2 {
-          margin: 0;
-          font-size: 1rem;
-        }
-
-        .admin-loading p {
-          margin-top: 0.25rem;
-          color: var(--admin-muted);
         }
 
         .hero-metrics {
@@ -1243,6 +1305,27 @@ function normalizeHealth(value: Partial<ImportHealth>): ImportHealth {
       countries: value.usage?.countries || [],
       browsers: value.usage?.browsers || [],
       timezones: value.usage?.timezones || [],
+    },
+    appErrors: {
+      events24h: value.appErrors?.events24h || 0,
+      events7d: value.appErrors?.events7d || 0,
+      events30d: value.appErrors?.events30d || 0,
+      uniqueDigests24h: value.appErrors?.uniqueDigests24h || 0,
+      topPaths: value.appErrors?.topPaths || [],
+      topDigests: value.appErrors?.topDigests || [],
+      browsers: value.appErrors?.browsers || [],
+      recentEvents: value.appErrors?.recentEvents || [],
+    },
+    webVitals: {
+      events24h: value.webVitals?.events24h || 0,
+      events7d: value.webVitals?.events7d || 0,
+      events30d: value.webVitals?.events30d || 0,
+      poor24h: value.webVitals?.poor24h || 0,
+      poor30d: value.webVitals?.poor30d || 0,
+      poorRate30d: value.webVitals?.poorRate30d || 0,
+      metrics: value.webVitals?.metrics || [],
+      topPaths: value.webVitals?.topPaths || [],
+      devices: value.webVitals?.devices || [],
     },
     imports: {
       timeframes: importFrames.length ? importFrames : fallbackImportFrames(value),
