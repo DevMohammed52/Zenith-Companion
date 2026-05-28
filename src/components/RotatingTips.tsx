@@ -15,6 +15,7 @@ const PAGE_NOTICE_DELAY_MS = 1800;
 const TIP_SNOOZE_MS = 30 * 60 * 1000;
 const TIP_SNOOZE_KEY = "zenith.tips.snoozedUntil.v1";
 const PAGE_NOTICE_STORAGE_KEY = "zenith.tips.seenPages.v1";
+const KO_FI_URL = "https://ko-fi.com/d3vxgh0st";
 
 const tips: ZenithNotification[] = [
   {
@@ -38,6 +39,12 @@ const tips: ZenithNotification[] = [
     title: "Still improving",
     body: "If a tool feels confusing or missing something, message d3v_gh0st with the use case.",
     tone: "contact",
+  },
+  {
+    title: "Support Zenith",
+    body: "If Zenith saves you time, you can support the project and future UI work on Ko-fi.",
+    actionLabel: "Open Ko-fi",
+    actionHref: KO_FI_URL,
   },
   {
     title: "Use global search",
@@ -385,6 +392,7 @@ export default function RotatingTips() {
 
   const tone = current.tone || "tip";
   const hasAction = Boolean(current.actionHref && current.actionLabel);
+  const isExternalAction = Boolean(current.actionHref?.startsWith("http://") || current.actionHref?.startsWith("https://"));
   const Icon = tone === "contact"
     ? MessageCircle
     : tone === "success"
@@ -422,7 +430,18 @@ export default function RotatingTips() {
       <div className="rotating-tip-copy">
         <strong id={titleId}>{current.title}</strong>
         <span id={bodyId}>{current.body}</span>
-        {hasAction && (
+        {hasAction && isExternalAction && (
+          <a
+            href={current.actionHref}
+            className="rotating-tip-action"
+            onClick={followAction}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {current.actionLabel}
+          </a>
+        )}
+        {hasAction && !isExternalAction && (
           <Link href={current.actionHref || "#"} className="rotating-tip-action" onClick={followAction}>
             {current.actionLabel}
           </Link>

@@ -1,6 +1,7 @@
-import { ExternalLink, MessageCircle, ShieldCheck, UserCircle } from "lucide-react";
+import { Coffee, ExternalLink, MessageCircle, ShieldCheck, UserCircle } from "lucide-react";
 
 const idleMmoProfileUrl = "https://web.idle-mmo.com/@D3vxGh0st";
+const koFiUrl = "https://ko-fi.com/d3vxgh0st";
 const discordHandle = "d3v_gh0st";
 
 export default function SiteFooter() {
@@ -27,6 +28,17 @@ export default function SiteFooter() {
           <MessageCircle size={15} />
           {discordHandle}
         </span>
+        <a
+          className="site-footer-pill"
+          href={koFiUrl}
+          rel="noreferrer"
+          target="_blank"
+          aria-label="Support Zenith Companion on Ko-fi in a new tab"
+        >
+          <Coffee size={15} />
+          Ko-fi
+          <ExternalLink size={13} />
+        </a>
         <a
           className="site-footer-pill"
           href={idleMmoProfileUrl}
