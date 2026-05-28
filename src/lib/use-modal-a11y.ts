@@ -1,10 +1,44 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
-export function useModalA11y<T extends HTMLElement>(isOpen: boolean, onClose: () => void) {
+type ModalA11yOptions = {
+  initialFocusRef?: RefObject<HTMLElement | null>;
+  restoreFocus?: boolean;
+};
+
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "summary",
+  "[contenteditable='true']",
+  "[role='button']",
+  "[role='link']",
+  "[role='tab']",
+  "[role='option']",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+function isVisibleFocusable(element: HTMLElement) {
+  return (
+    !element.hasAttribute("disabled")
+    && element.getAttribute("aria-hidden") !== "true"
+    && (element.tabIndex >= 0 || element === document.activeElement)
+    && (element.offsetParent !== null || element.getClientRects().length > 0 || element === document.activeElement)
+  );
+}
+
+export function useModalA11y<T extends HTMLElement>(
+  isOpen: boolean,
+  onClose: () => void,
+  options: ModalA11yOptions = {},
+) {
   const dialogRef = useRef<T | null>(null);
   const onCloseRef = useRef(onClose);
+  const { initialFocusRef, restoreFocus = true } = options;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -13,12 +47,22 @@ export function useModalA11y<T extends HTMLElement>(isOpen: boolean, onClose: ()
   useEffect(() => {
     if (!isOpen) return;
 
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previouslyFocused = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
     const focusTimer = window.setTimeout(() => {
-      dialogRef.current?.focus({ preventScroll: true });
+      const dialog = dialogRef.current;
+      const initialFocus = initialFocusRef?.current;
+      if (initialFocus && dialog?.contains(initialFocus) && isVisibleFocusable(initialFocus)) {
+        initialFocus.focus({ preventScroll: true });
+        return;
+      }
+      dialog?.focus({ preventScroll: true });
     }, 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+
       if (event.key === "Escape") {
         event.preventDefault();
         onCloseRef.current();
@@ -30,20 +74,8 @@ export function useModalA11y<T extends HTMLElement>(isOpen: boolean, onClose: ()
       const dialog = dialogRef.current;
       if (!dialog) return;
 
-      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
-        [
-          "a[href]",
-          "button:not([disabled])",
-          "input:not([disabled])",
-          "select:not([disabled])",
-          "textarea:not([disabled])",
-          "[tabindex]:not([tabindex='-1'])",
-        ].join(","),
-      )).filter((element) => (
-        !element.hasAttribute("disabled")
-        && element.getAttribute("aria-hidden") !== "true"
-        && (element.offsetParent !== null || element === document.activeElement)
-      ));
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        .filter(isVisibleFocusable);
 
       if (focusable.length === 0) {
         event.preventDefault();
@@ -51,31 +83,25 @@ export function useModalA11y<T extends HTMLElement>(isOpen: boolean, onClose: ()
         return;
       }
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       const activeElement = document.activeElement;
+      const activeIndex = activeElement instanceof HTMLElement ? focusable.indexOf(activeElement) : -1;
+      const nextIndex = event.shiftKey
+        ? activeIndex <= 0 ? focusable.length - 1 : activeIndex - 1
+        : activeIndex === -1 || activeIndex >= focusable.length - 1 ? 0 : activeIndex + 1;
 
-      if (event.shiftKey && activeElement === first) {
-        event.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!event.shiftKey && activeElement === last) {
-        event.preventDefault();
-        first.focus({ preventScroll: true });
-      } else if (!dialog.contains(activeElement)) {
-        event.preventDefault();
-        first.focus({ preventScroll: true });
-      }
+      event.preventDefault();
+      focusable[nextIndex]?.focus({ preventScroll: true });
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
-      if (previouslyFocused && document.contains(previouslyFocused)) {
+      if (restoreFocus && previouslyFocused && document.contains(previouslyFocused)) {
         previouslyFocused.focus({ preventScroll: true });
       }
     };
-  }, [isOpen]);
+  }, [initialFocusRef, isOpen, restoreFocus]);
 
   return dialogRef;
 }
