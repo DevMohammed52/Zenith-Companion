@@ -139,6 +139,20 @@
   border-color: rgba(251, 191, 36, 0.3);
 }
 
+.permission {
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.permission::before {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.62), transparent);
+}
+
+.permission .iconShell {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: #cbd5e1;
+}
+
 .spin {
   animation: state-spin 0.95s linear infinite;
 }

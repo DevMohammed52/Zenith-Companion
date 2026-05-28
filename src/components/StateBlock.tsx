@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, Inbox, Loader2, SearchX, WifiOff } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, LockKeyhole, SearchX, WifiOff } from "lucide-react";
 import styles from "./StateBlock.module.css";
 
-type StateBlockVariant = "loading" | "empty" | "error" | "no-results" | "stale";
+type StateBlockVariant = "loading" | "empty" | "error" | "no-results" | "stale" | "permission";
 
 type StateBlockProps = {
   title: string;
@@ -15,6 +15,7 @@ type StateBlockProps = {
   variant?: StateBlockVariant;
   compact?: boolean;
   className?: string;
+  id?: string;
 };
 
 const DEFAULT_ICONS: Record<StateBlockVariant, LucideIcon> = {
@@ -23,6 +24,7 @@ const DEFAULT_ICONS: Record<StateBlockVariant, LucideIcon> = {
   error: AlertTriangle,
   "no-results": SearchX,
   stale: WifiOff,
+  permission: LockKeyhole,
 };
 
 export default function StateBlock({
@@ -33,15 +35,18 @@ export default function StateBlock({
   variant = "empty",
   compact = false,
   className = "",
+  id,
 }: StateBlockProps) {
   const Icon = icon || DEFAULT_ICONS[variant];
   const role = variant === "error" ? "alert" : "status";
 
   return (
     <section
+      id={id}
       className={`${styles.block} ${styles[variant] || ""} ${compact ? styles.compact : ""} ${className}`}
       role={role}
       aria-live={variant === "loading" || variant === "error" ? "polite" : undefined}
+      aria-atomic={variant === "loading" || variant === "error" ? true : undefined}
       aria-busy={variant === "loading" ? true : undefined}
     >
       <span className={styles.iconShell} aria-hidden="true">
@@ -74,4 +79,8 @@ export function NoResultsState(props: Omit<StateBlockProps, "variant">) {
 
 export function StaleDataNotice(props: Omit<StateBlockProps, "variant">) {
   return <StateBlock {...props} variant="stale" />;
+}
+
+export function PermissionBlockedState(props: Omit<StateBlockProps, "variant">) {
+  return <StateBlock {...props} variant="permission" />;
 }
