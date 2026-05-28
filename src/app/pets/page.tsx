@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
 import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
 import { calculatePetStatValue, type PetStatKey } from "@/lib/pet-stats";
@@ -1218,8 +1219,8 @@ export default function PetsPage() {
         </div>
       </details>
 
-      {loadError && <div className="pet-state">{loadError}</div>}
-      {!database && !loadError && <div className="pet-state">Loading pet database...</div>}
+      {loadError && <ErrorState title="Pet database unavailable" description={loadError} />}
+      {!database && !loadError && <LoadingState title="Loading pet database" description="Preparing pet stats, exchange listings, ownership matches, and battle samples." />}
 
       {database && (
         <>
@@ -1260,20 +1261,19 @@ export default function PetsPage() {
           <div className="pets-content">
             <section className="pets-list" aria-label="Pet results">
               {petRows.length === 0 ? (
-                <div className="pet-empty-state">
-                  <Search size={22} />
-                  <div>
-                    <strong>No pets found</strong>
-                    <span>
-                      {hasActiveFilters
-                        ? `Search "${searchTerm || "any"}" with ${qualityFilter === "ALL" ? "all qualities" : qualityLabel(qualityFilter)} and ${SOURCE_OPTIONS.find((option) => option.value === sourceFilter)?.label || "all sources"}.`
-                        : "The pet database loaded, but no rows matched the current view."}
-                    </span>
-                  </div>
-                  <button type="button" onClick={clearPetFilters} disabled={!hasActiveFilters}>
-                    Clear filters
-                  </button>
-                </div>
+                <NoResultsState
+                  title="No pets found"
+                  description={
+                    hasActiveFilters
+                      ? `Search "${searchTerm || "any"}" with ${qualityFilter === "ALL" ? "all qualities" : qualityLabel(qualityFilter)} and ${SOURCE_OPTIONS.find((option) => option.value === sourceFilter)?.label || "all sources"}.`
+                      : "The pet database loaded, but no rows matched the current view."
+                  }
+                  action={hasActiveFilters ? (
+                    <button type="button" onClick={clearPetFilters}>
+                      Clear filters
+                    </button>
+                  ) : null}
+                />
               ) : viewMode === "cards" ? (
                 <div className="pets-card-grid">
                   {petRows.map((row) => (
