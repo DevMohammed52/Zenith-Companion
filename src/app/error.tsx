@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import AppErrorFallback from "@/components/AppErrorFallback";
+import { reportAppError } from "@/lib/error-reporting";
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -8,7 +10,9 @@ type ErrorPageProps = {
 };
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
-  void error;
+  useEffect(() => {
+    reportAppError(error, "route_error");
+  }, [error]);
 
   return (
     <AppErrorFallback

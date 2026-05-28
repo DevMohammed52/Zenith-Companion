@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import AppErrorFallback from "@/components/AppErrorFallback";
+import { reportAppError } from "@/lib/error-reporting";
 import styles from "@/components/AppErrorFallback.module.css";
 
 type GlobalErrorPageProps = {
@@ -9,7 +11,9 @@ type GlobalErrorPageProps = {
 };
 
 export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) {
-  void error;
+  useEffect(() => {
+    reportAppError(error, "app_shell_error");
+  }, [error]);
 
   return (
     <html lang="en">
