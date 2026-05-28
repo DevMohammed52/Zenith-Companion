@@ -63,6 +63,8 @@ import {
   markProfileBackupCopied,
   PROFILE_BACKUP_DUE_MS,
 } from "@/lib/local-backup";
+import { useModalA11y } from "@/lib/use-modal-a11y";
+import { ErrorState } from "@/components/StateBlock";
 
 const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
   ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
@@ -146,6 +148,9 @@ const LIVE_IMPORT_STORAGE_KEY = "zenith.profileImport.active.v1";
 const LIVE_IMPORT_CHANNEL = "zenith-profile-import";
 const LIVE_IMPORT_LEASE_KEY = "zenith.profileImport.pollLease.v1";
 const LIVE_IMPORT_LEASE_MS = 18000;
+const LIVE_IMPORT_HASH_HELP_ID = "profile-live-import-hash-help";
+const LIVE_IMPORT_STATUS_ID = "profile-live-import-status";
+const LIVE_IMPORT_ERROR_ID = "profile-live-import-error";
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === "1"
   ? ""
   : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
@@ -1611,16 +1616,9 @@ export default function ProfilesPage() {
           onConfirm: confirmDeleteProfile,
         }
       : null;
-
-  useEffect(() => {
-    if (!confirmAction) return;
-    window.requestAnimationFrame(() => confirmCancelRef.current?.focus());
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmAction(null);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmAction]);
+  const confirmDialogRef = useModalA11y<HTMLDivElement>(Boolean(confirmDetails), () => setConfirmAction(null), {
+    initialFocusRef: confirmCancelRef,
+  });
 
   const liveImportWaitText = formatWaitTime(liveImportProgress?.estimatedRemainingMs || liveImportEstimatedMs || undefined);
   const liveImportRetryText = formatWaitTime(liveImportRetryAfterMs || undefined);
@@ -2452,6 +2450,8 @@ export default function ProfilesPage() {
                   <input
                     className="control-input"
                     value={liveImportHash}
+                    aria-describedby={`${LIVE_IMPORT_HASH_HELP_ID} ${LIVE_IMPORT_STATUS_ID}${liveImportError ? ` ${LIVE_IMPORT_ERROR_ID}` : ""}`}
+                    aria-invalid={liveImportError && !liveImportJobId ? true : undefined}
                     onChange={(event) => {
                       setLiveImportHash(event.target.value);
                       setLiveImportError("");
@@ -2459,6 +2459,7 @@ export default function ProfilesPage() {
                     placeholder="Your character hashed ID"
                     autoComplete="off"
                   />
+                  <small id={LIVE_IMPORT_HASH_HELP_ID}>Paste the character hashed ID only, not a full IdleMMO profile URL.</small>
                 </label>
                 {TURNSTILE_SITE_KEY ? (
                   <div className="profile-turnstile" aria-label="Import safety check">
@@ -2477,7 +2478,13 @@ export default function ProfilesPage() {
                   {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}
                 </button>
               </div>
-              <div className={`profile-live-import-status ${liveImportStatus}`} role="status">
+              <div
+                id={LIVE_IMPORT_STATUS_ID}
+                className={`profile-live-import-status ${liveImportStatus}`}
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <div>
                   <strong>{liveProfileImportStatusLabel(liveImportStatus, liveImportRetryAfterMs)}</strong>
                   <span>{liveImportProgress?.label || liveProfileImportStatusCopy(liveImportStatus, liveImportRetryAfterMs)}</span>
@@ -2495,7 +2502,14 @@ export default function ProfilesPage() {
                   <span>{liveImportRetryText ? "Try again in" : liveImportProgress ? "Requests used" : "Estimated time"}</span>
                 </div>
               </div>
-              {liveImportError && <p className="profile-transfer-message error">{liveImportError}</p>}
+              {liveImportError && (
+                <ErrorState
+                  compact
+                  id={LIVE_IMPORT_ERROR_ID}
+                  title="Import could not finish"
+                  description={liveImportError}
+                />
+              )}
               {liveImportJobId && (
                 <div className="profile-import-savebar" aria-label="Import recovery controls">
                   <div>
@@ -2634,21 +2648,24 @@ export default function ProfilesPage() {
         <div className="modal-overlay profile-confirm-overlay" role="presentation" onClick={() => setConfirmAction(null)}>
           <div
             className="modal-content profile-confirm-modal"
-            role="dialog"
+            role="alertdialog"
             aria-modal="true"
             aria-labelledby="profile-confirm-title"
+            aria-describedby="profile-confirm-copy"
+            ref={confirmDialogRef}
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="modal-header">
               <h2 id="profile-confirm-title">{confirmDetails.title}</h2>
               <button className="close-btn" type="button" aria-label="Close confirmation" onClick={() => setConfirmAction(null)}>
-                <X size={18} />
+                <X size={18} aria-hidden="true" />
               </button>
             </div>
             <div className="modal-body">
-              <p className="profile-confirm-copy">{confirmDetails.body}</p>
+              <p className="profile-confirm-copy" id="profile-confirm-copy">{confirmDetails.body}</p>
               <div className="profile-confirm-actions">
-                <button type="button" ref={confirmCancelRef} className="profile-action" onClick={() => setConfirmAction(null)} autoFocus>Cancel</button>
+                <button type="button" ref={confirmCancelRef} className="profile-action" onClick={() => setConfirmAction(null)}>Cancel</button>
                 <button type="button" className="profile-action danger" onClick={confirmDetails.onConfirm}>{confirmDetails.action}</button>
               </div>
             </div>
