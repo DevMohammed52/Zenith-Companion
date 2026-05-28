@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import MobileSortControls from "@/components/MobileSortControls";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
+import { LoadingState, NoResultsState } from "@/components/StateBlock";
 import { getLoreHintsForNames } from "@/lib/lore-links";
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { getSafeMarketValue } from "@/lib/market-pricing";
@@ -695,9 +696,11 @@ function CombatContent() {
                             </button>
                         ))}
                         {rows.length === 0 && (
-                            <div className="zone-empty-state">
-                                No enemies match the current zone and search.
-                            </div>
+                            <NoResultsState
+                                compact
+                                title="No enemies match"
+                                description="Adjust the selected zone or search term."
+                            />
                         )}
                     </div>
                 </div>
@@ -1576,13 +1579,6 @@ function CombatContent() {
                     font-weight: 800;
                     white-space: nowrap;
                 }
-                .zone-empty-state {
-                    border: 1px dashed var(--border-subtle);
-                    border-radius: 7px;
-                    color: var(--text-muted);
-                    font-size: 0.82rem;
-                    padding: 1rem;
-                }
                 .combat-page {
                     max-width: 1480px;
                     padding-top: 1.25rem;
@@ -2084,7 +2080,7 @@ function CombatContent() {
 
 export default function CombatPage() {
     return (
-        <Suspense fallback={<div>Loading Combat Data...</div>}>
+        <Suspense fallback={<LoadingState title="Loading combat data" description="Preparing enemies, drops, and EV estimates." />}>
             <CombatContent />
         </Suspense>
     );
