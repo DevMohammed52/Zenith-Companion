@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   formatConquestAge,
@@ -338,7 +339,11 @@ export default function ConquestPage() {
     return (
       <main className={styles.page}>
         <section className={styles.panel}>
-          <div className={styles.empty}>{error}</div>
+          <ErrorState
+            title="Conquest data unavailable"
+            description={error}
+            action={<button type="button" onClick={() => window.location.reload()}>Retry</button>}
+          />
         </section>
       </main>
     );
@@ -348,7 +353,7 @@ export default function ConquestPage() {
     return (
       <main className={styles.page}>
         <section className={styles.panel}>
-          <div className={styles.empty}>Loading conquest data...</div>
+          <LoadingState title="Loading conquest data" description="Preparing zone control, guild leaders, and active assault details." />
         </section>
       </main>
     );
@@ -550,10 +555,10 @@ export default function ConquestPage() {
             );
           })}
           {filteredZones.length === 0 && (
-            <div className={styles.emptyState}>
-              <strong>{getFilterEmptyLabel(filter)}</strong>
-              <span>{searchActive ? `No zone, guild, or player matched "${searchTerm.trim()}".` : "Try another conquest filter."}</span>
-              {(searchActive || filter !== "all") && (
+            <NoResultsState
+              title={getFilterEmptyLabel(filter)}
+              description={searchActive ? `No zone, guild, or player matched "${searchTerm.trim()}".` : "Try another conquest filter."}
+              action={(searchActive || filter !== "all") ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -563,8 +568,8 @@ export default function ConquestPage() {
                 >
                   Reset filters
                 </button>
-              )}
-            </div>
+              ) : null}
+            />
           )}
         </div>
 
@@ -702,7 +707,7 @@ export default function ConquestPage() {
                   <GuildRow key={`${selectedZone.key}-${row.position}-${row.guild?.id ?? row.guild?.name}`} row={row} />
                 ))
               ) : (
-                <div className={styles.empty}>No guilds are shown for this zone.</div>
+                <NoResultsState compact title="No guilds shown" description="The latest conquest snapshot did not include guild rows for this zone." />
               )}
             </div>
 
@@ -721,7 +726,7 @@ export default function ConquestPage() {
                   />
                 ))
               ) : (
-                <div className={styles.empty}>No players are shown for this zone.</div>
+                <NoResultsState compact title="No players shown" description="The latest conquest snapshot did not include player contribution rows for this zone." />
               )}
             </div>
 
@@ -737,7 +742,7 @@ export default function ConquestPage() {
                   <AssaultRow key={`${selectedZone.key}-assault-${assault.guild?.id ?? index}`} assault={assault} index={index} />
                 ))
               ) : (
-                <div className={styles.empty}>No active fight in this zone right now.</div>
+                <NoResultsState compact title="No active fight" description="No guild is actively assaulting this zone in the latest snapshot." />
               )}
             </div>
           </div>
