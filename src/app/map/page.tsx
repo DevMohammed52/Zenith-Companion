@@ -31,6 +31,7 @@ import {
 import { useData } from "@/context/DataContext";
 import { useItemModal } from "@/context/ItemModalContext";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { LoadingState, NoResultsState } from "@/components/StateBlock";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import {
   GATHERED_RESOURCE_SOURCE_NOTE,
@@ -601,7 +602,9 @@ function MapPageContent() {
   if (!selectedLocation && loading) {
     return (
       <main className="map-page">
-        <div className="map-loading">Loading atlas data...</div>
+        <div className="map-loading">
+          <LoadingState title="Loading atlas data" description="Preparing locations, weather, enemies, dungeons, bosses, and drops." />
+        </div>
       </main>
     );
   }
@@ -692,12 +695,12 @@ function MapPageContent() {
             })}
 
             {filteredLocations.length === 0 && (
-              <div className="map-empty-state" role="status" aria-label="No matching locations. Adjust the search query.">
-                <Search size={18} />
-                <strong>No matching locations.</strong>
-                {" "}
-                <span>Try adjusting the search query.</span>
-              </div>
+              <NoResultsState
+                compact
+                className="map-empty-state"
+                title="No matching locations"
+                description="Try adjusting the search query."
+              />
             )}
 
             <div className="map-compass" aria-hidden="true">
@@ -2439,7 +2442,15 @@ function getSourceKind(title: string) {
 
 export default function MapPage() {
   return (
-    <Suspense fallback={<main className="map-page"><div className="map-loading">Loading atlas data...</div></main>}>
+    <Suspense
+      fallback={(
+        <main className="map-page">
+          <div className="map-loading">
+            <LoadingState title="Loading atlas data" description="Preparing locations, weather, enemies, dungeons, bosses, and drops." />
+          </div>
+        </main>
+      )}
+    >
       <MapPageContent />
     </Suspense>
   );
