@@ -35,7 +35,8 @@ import {
   type GuildRefreshTier,
   type GuildSortKey,
 } from "@/lib/guilds";
-import { ErrorState, NoResultsState } from "@/components/StateBlock";
+import { useModalA11y } from "@/lib/use-modal-a11y";
+import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
 
 type TierFilter = "all" | GuildRefreshTier;
 type SearchableGuildRecord = GuildRecord & { searchText: string };
@@ -399,51 +400,20 @@ function GuildModal({
   onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
-  const modalRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useModalA11y<HTMLElement>(mounted, onClose, { initialFocusRef: closeButtonRef });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeButtonRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-
-      if (event.key !== "Tab" || !modalRef.current) return;
-      const focusable = Array.from(
-        modalRef.current.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((element) => element.offsetParent !== null || element === document.activeElement);
-      if (!focusable.length) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-      previousFocusRef.current?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   const modal = (
     <div
@@ -513,9 +483,9 @@ function GuildModal({
           </div>
 
           {error ? (
-            <p className={styles.errorText} role="alert">{error}</p>
+            <ErrorState compact title="Guild details unavailable" description={error} />
           ) : loading ? (
-            <p className={styles.mutedText}>Loading guild details...</p>
+            <LoadingState compact title="Loading guild details" description="Fetching guild bio, members, zones, and refresh metadata." />
           ) : (
             <div className={styles.modalGrid}>
               <section className={styles.bioPanel}>
