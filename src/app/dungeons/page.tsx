@@ -48,6 +48,7 @@ import {
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { getLoreHintsForNames } from "@/lib/lore-links";
+import { LoadingState, NoResultsState } from "@/components/StateBlock";
 
 type ReadinessFilter = "all" | "ready" | "blocked";
 type DungeonDropValuationMode = "safe-market" | "vendor" | "manual" | "exclude";
@@ -1132,10 +1133,10 @@ function DungeonsContent() {
                 {rows.length === 0 && (
                   <tr>
                     <td colSpan={8}>
-                      <div className="dungeon-empty-state">
-                        <strong>No dungeons match these filters.</strong>
-                        <span>Relax the profile filter, search term, or minimum profit target.</span>
-                      </div>
+                      <NoResultsState
+                        title="No dungeons match these filters"
+                        description="Relax the profile filter, search term, or minimum profit target."
+                      />
                     </td>
                   </tr>
                 )}
@@ -1162,10 +1163,10 @@ function DungeonsContent() {
           />
           <div className="dungeon-mobile-grid">
             {rows.length === 0 && (
-              <div className="dungeon-empty-state">
-                <strong>No dungeons match these filters.</strong>
-                <span>Relax the profile filter, search term, or minimum profit target.</span>
-              </div>
+              <NoResultsState
+                title="No dungeons match these filters"
+                description="Relax the profile filter, search term, or minimum profit target."
+              />
             )}
             {rows.map((row) => (
               <article
@@ -2091,27 +2092,6 @@ function DungeonsContent() {
         .dungeon-mobile-grid {
           display: grid;
           gap: 0.75rem;
-        }
-        .dungeon-empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 0.35rem;
-          min-height: 8rem;
-          padding: 1.25rem;
-          color: var(--text-muted);
-          text-align: center;
-          border: 1px dashed var(--border-subtle);
-          border-radius: 8px;
-          background: rgba(255,255,255,0.025);
-        }
-        .dungeon-empty-state strong {
-          color: #fff;
-          font-size: 0.95rem;
-        }
-        .dungeon-empty-state span {
-          font-size: 0.8rem;
         }
         .dungeon-card {
           display: flex;
@@ -3158,7 +3138,7 @@ function DungeonItemEffectPicker({
 
 export default function DungeonsPage() {
   return (
-    <Suspense fallback={<div>Loading Dungeons...</div>}>
+    <Suspense fallback={<LoadingState title="Loading dungeons" description="Preparing dungeon drops, requirements, and EV estimates." />}>
       <DungeonsContent />
     </Suspense>
   );
