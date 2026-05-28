@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AlertTriangle, ArrowDownUp, ArrowRight, BadgeCheck, ChevronDown, Clock3, Database, PawPrint, Plus, RotateCcw, Search, Shield, SlidersHorizontal, Trash2 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { EmptyState, NoResultsState } from "@/components/StateBlock";
 import { type CharacterProfile, type ProfileOwnedPet, type ProfilePetStats, useProfiles } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, QUALITY_COLORS, type PetRecord, type Quality } from "@/lib/pets";
 import styles from "./page.module.css";
@@ -438,19 +439,21 @@ export default function OwnedPetsPage() {
       )}
 
       {!activeProfile && (
-        <section className={styles.empty}>
-          <PawPrint size={40} />
-          <h2>No active profile.</h2>
-          <p>Create or select a profile before saving owned pets.</p>
-        </section>
+        <EmptyState
+          title="No active profile"
+          description="Create or select a profile before saving owned pets."
+          icon={PawPrint}
+          action={<Link href="/profiles">Open profiles</Link>}
+        />
       )}
 
       {activeProfile && !ownedPets.length && (
-        <section className={styles.empty}>
-          <PawPrint size={40} />
-          <h2>No owned pets saved.</h2>
-          <p>Select a pet in Profiles, set its level/evolution, then add it here as a local snapshot.</p>
-        </section>
+        <EmptyState
+          title="No owned pets saved"
+          description="Select a pet in Profiles, set its level/evolution, then add it here as a local snapshot."
+          icon={PawPrint}
+          action={<Link href="/profiles">Open profiles</Link>}
+        />
       )}
 
       {activeProfile && ownedPets.length > 0 && (
@@ -557,12 +560,11 @@ export default function OwnedPetsPage() {
       )}
 
       {activeProfile && ownedPets.length > 0 && !visiblePets.length && (
-        <section className={styles.empty}>
-          <Search size={40} />
-          <h2>No owned pets match.</h2>
-          <p>Adjust the search text or filter selection.</p>
-          <button type="button" className={styles.emptyAction} onClick={resetControls}>Clear controls</button>
-        </section>
+        <NoResultsState
+          title="No owned pets match"
+          description="Adjust the search text or filter selection."
+          action={<button type="button" onClick={resetControls}>Clear controls</button>}
+        />
       )}
 
       {toast && (
