@@ -27,6 +27,8 @@ import {
 } from "@/lib/housing";
 import { MYTHIC_ACTIVE_RECIPES_STORAGE_KEY } from "@/lib/mythic-alchemy";
 
+type DashboardMarketData = Record<string, any>;
+
 type ModuleLink = {
   href: string;
   label: string;
@@ -43,7 +45,7 @@ type ModuleGroup = {
 const MODULE_GROUPS: ModuleGroup[] = [
   {
     title: "Economy",
-    text: "Market, crafting, and profit planning.",
+    text: "Prices, sell-through, recipes, and saved queues.",
     icon: "economy",
     links: [
       { href: "/skill-profit", label: "Skill Profit", icon: "skill" },
@@ -55,7 +57,7 @@ const MODULE_GROUPS: ModuleGroup[] = [
   },
   {
     title: "Character",
-    text: "Profile-scoped setup and long-term upgrades.",
+    text: "Local profile, house buffs, gear, tools, and pets.",
     icon: "profile",
     links: [
       { href: "/profiles", label: "Profiles", icon: "profile" },
@@ -67,7 +69,7 @@ const MODULE_GROUPS: ModuleGroup[] = [
   },
   {
     title: "Combat & World",
-    text: "Routes, enemies, bosses, weather, and dungeon planning.",
+    text: "Enemy drops, dungeon runs, boss windows, weather, and travel.",
     icon: "world",
     links: [
       { href: "/map", label: "Map", icon: "map" },
@@ -80,7 +82,7 @@ const MODULE_GROUPS: ModuleGroup[] = [
   },
   {
     title: "Guild & Archive",
-    text: "Community data, collections, and reference records.",
+    text: "Guild reference data, collections, lore, and patch history.",
     icon: "archive",
     links: [
       { href: "/guilds", label: "Guilds", icon: "guild" },
@@ -106,7 +108,9 @@ export default function DashboardPage() {
   const { activeProfile, state: profileState } = useProfiles();
   const needsProfileSetup = !activeProfile || isStarterProfile(activeProfile);
   const { queue } = useCrafting();
-  const { marketData, allItemsDb } = useData();
+  const { marketData: sharedMarketData, allItemsDb } = useData({ autoLoad: false });
+  const [dashboardMarketData, setDashboardMarketData] = useState<DashboardMarketData | null>(null);
+  const marketData = sharedMarketData ?? dashboardMarketData;
 
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
   const activeMythicStorageKey = useMemo(
@@ -127,6 +131,18 @@ export default function DashboardPage() {
       setActiveMythicNames([]);
     }
   }, [activeMythicStorageKey, activeProfile?.id]);
+
+  useEffect(() => {
+    if (sharedMarketData) return;
+    const controller = new AbortController();
+    fetch("/market-data.json", { cache: "no-cache", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (payload && !controller.signal.aborted) setDashboardMarketData(payload);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [sharedMarketData]);
 
   const skillProfitSettings = useMemo<SkillProfitSettings>(() => ({
     membership: preferences.membership,
@@ -182,8 +198,11 @@ export default function DashboardPage() {
 
   const lastUpdated = marketData?._meta?.last_updated;
   const timeSince = lastUpdated ? Math.max(0, Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000)) : null;
-  const registryCount = Object.keys(allItemsDb || {}).length;
+  const registryCount = allItemsDb
+    ? Object.keys(allItemsDb).length
+    : Object.keys(marketData || {}).filter((key) => !key.startsWith("_")).length;
   const marketFreshness = timeSince === null ? "Waiting for cache" : timeSince < 90 ? "Fresh enough" : "Needs refresh";
+  const registryCountLabel = allItemsDb ? "items indexed" : "market entries";
   const hasStarterProfile = Boolean(activeProfile && isStarterProfile(activeProfile));
   const activeProfileLabel = hasStarterProfile ? "Starter profile" : activeProfile?.name?.trim() || "No profile";
   const profileDetail = hasStarterProfile
@@ -201,22 +220,22 @@ export default function DashboardPage() {
     <main className="container dashboard dashboard-command">
       <section className="command-hero">
         <div className="command-hero-copy">
-          <h1>Zenith Operations</h1>
-          <p>A start point for market checks, route planning, profile tools, and world data.</p>
+          <h1>Today's IdleMMO Checks</h1>
+          <p>Check market age, profile setup, saved projects, and the next routes worth opening.</p>
         </div>
         <div className="command-status-grid" aria-label="App status">
           <div className="command-status-card">
-            <span>Market cache</span>
+            <span>Market snapshot</span>
             <strong>{formatAge(timeSince)}</strong>
             <em>{marketFreshness}</em>
           </div>
           <div className="command-status-card">
-            <span>Registry</span>
+            <span>Item index</span>
             <strong>{registryCount.toLocaleString()}</strong>
-            <em>items indexed</em>
+            <em>{registryCountLabel}</em>
           </div>
           <div className="command-status-card">
-            <span>Profile</span>
+            <span>Active profile</span>
             <strong title={activeProfileLabel}>{activeProfileLabel}</strong>
             <em title={profileDetail}>{profileDetail}</em>
           </div>
@@ -224,16 +243,16 @@ export default function DashboardPage() {
       </section>
 
       {needsProfileSetup && (
-        <section className="dashboard-setup-state" aria-label="Recommended setup">
+        <section className="dashboard-setup-state" aria-label="Profile setup reminder">
           <div>
-            <span>Recommended setup</span>
-            <h2>Start with a profile before trusting route numbers.</h2>
-            <p>Zenith can still be explored without setup, but profile import unlocks character-aware tools, buffs, magic find, pets, housing, and better defaults.</p>
+            <span>Before trusting profit</span>
+            <h2>Set the character facts that change route math.</h2>
+            <p>Class, tools, bartering, pets, housing, magic find, and timers all change Zenith estimates. Saved profile data stays in this browser.</p>
           </div>
           <div className="dashboard-setup-actions">
             <Link href="/profiles"><UserRound size={16} /> Create or import profile</Link>
-            <Link href="/settings"><Settings size={16} /> Check settings</Link>
-            <Link href="/profiles"><Upload size={16} /> Backup local data</Link>
+            <Link href="/settings"><Settings size={16} /> Check route settings</Link>
+            <Link href="/profiles"><Upload size={16} /> Export local backup</Link>
           </div>
         </section>
       )}
@@ -298,7 +317,7 @@ export default function DashboardPage() {
         <Link href="/market-alerts" className="command-mini-card">
           <ZenithIcon name="bell" size={17} />
           <span>Market Watch</span>
-          <strong>Experimental</strong>
+          <strong>Snapshot rules</strong>
         </Link>
         <Link href="/weather" className="command-mini-card">
           <ZenithIcon name="weather" size={17} />
