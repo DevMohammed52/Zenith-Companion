@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import Image from "next/image";
 import { Swords, X, ChevronDown, ChevronUp, Search, MapPin, Shield, Heart, ExternalLink, Clock, Utensils, Calculator, Target } from "lucide-react";
 import { Suspense } from 'react';
@@ -464,10 +465,35 @@ function CombatContent() {
         return sortDesc ? "descending" : "ascending";
     };
 
+    const focusCombatView = (view: CombatView) => {
+        setActiveView(view);
+        window.requestAnimationFrame(() => {
+            document.getElementById(`combat-tab-${view}`)?.focus();
+        });
+    };
+
+    const handleCombatViewKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+        const order: CombatView[] = ["ev", "session"];
+        const currentIndex = order.indexOf(activeView);
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+            event.preventDefault();
+            focusCombatView(order[(currentIndex + 1) % order.length]);
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+            event.preventDefault();
+            focusCombatView(order[(currentIndex - 1 + order.length) % order.length]);
+        } else if (event.key === "Home") {
+            event.preventDefault();
+            focusCombatView(order[0]);
+        } else if (event.key === "End") {
+            event.preventDefault();
+            focusCombatView(order[order.length - 1]);
+        }
+    };
+
     return (
-        <main className="container combat-page">
+        <main className="container combat-page" aria-labelledby="combat-page-title">
             <div className="header">
-                <h1 className="header-title">
+                <h1 className="header-title" id="combat-page-title">
                     <ZenithIcon name="combat" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH COMBAT
                 </h1>
                 <div className="header-status">
@@ -478,7 +504,7 @@ function CombatContent() {
                 </div>
             </div>
 
-            <section className="combat-overview-grid" aria-label="Combat overview" tabIndex={0}>
+            <section className="combat-overview-grid" aria-label="Combat overview">
                 <article className="combat-overview-card">
                     <Swords size={17} aria-hidden="true" />
                     <span>Enemies</span>
@@ -517,25 +543,33 @@ function CombatContent() {
                 <button
                     type="button"
                     role="tab"
+                    id="combat-tab-ev"
                     aria-selected={activeView === "ev"}
+                    aria-controls="combat-panel-ev"
+                    tabIndex={activeView === "ev" ? 0 : -1}
                     className={activeView === "ev" ? "active" : ""}
                     onClick={() => setActiveView("ev")}
+                    onKeyDown={handleCombatViewKeyDown}
                 >
                     Enemy EV
                 </button>
                 <button
                     type="button"
                     role="tab"
+                    id="combat-tab-session"
                     aria-selected={activeView === "session"}
+                    aria-controls="combat-panel-session"
+                    tabIndex={activeView === "session" ? 0 : -1}
                     className={activeView === "session" ? "active" : ""}
                     onClick={() => setActiveView("session")}
+                    onKeyDown={handleCombatViewKeyDown}
                 >
                     Combat Session
                 </button>
             </div>
 
             {activeView === "ev" && (
-                <>
+                <section className="combat-view-panel" id="combat-panel-ev" role="tabpanel" aria-labelledby="combat-tab-ev">
             <div className="controls">
                 <div className="control-group">
                     <label className="control-label">Kills Per Hour</label>
@@ -686,7 +720,7 @@ function CombatContent() {
                                 onClick={() => setSelectedEnemy(row)}
                             >
                                 <span className="zone-mob-main">
-                                    {row.image_url && <Image src={row.image_url} alt="" width={26} height={26} unoptimized style={{ borderRadius: '4px' }} />}
+                                    {row.image_url && <Image src={row.image_url} alt="" width={26} height={26} loading="lazy" unoptimized style={{ borderRadius: '4px' }} />}
                                     <span>
                                         <strong>{row.name}</strong>
                                         <small>{row.location?.name || "Unknown"} - Level {row.level}</small>
@@ -763,7 +797,7 @@ function CombatContent() {
                                     >
                                         <td className="item-name left-align">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                {row.image_url && <Image src={row.image_url} alt="" width={24} height={24} unoptimized style={{ borderRadius: '4px' }} />}
+                                                {row.image_url && <Image src={row.image_url} alt="" width={24} height={24} loading="lazy" unoptimized style={{ borderRadius: '4px' }} />}
                                                 <span>{row.name}</span>
                                             </div>
                                         </td>
@@ -812,7 +846,7 @@ function CombatContent() {
                                 <div className="m-card-header">
                                     <div className="m-card-title">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            {row.image_url && <Image src={row.image_url} alt="" width={20} height={20} unoptimized style={{ borderRadius: '4px' }} />}
+                                            {row.image_url && <Image src={row.image_url} alt="" width={20} height={20} loading="lazy" unoptimized style={{ borderRadius: '4px' }} />}
                                             <span className="m-name">{row.name}</span>
                                         </div>
                                         <span className="m-lvl">{row.location?.name || "Unknown"} - LVL {row.level}</span>
@@ -836,11 +870,11 @@ function CombatContent() {
                     </div>
                 </div>
             </section>
-                </>
+                </section>
             )}
 
             {activeView === "session" && (
-                <section className="combat-session-panel" aria-label="Combat session planner">
+                <section className="combat-session-panel" id="combat-panel-session" role="tabpanel" aria-labelledby="combat-tab-session">
                     <div className="session-hero">
                         <div>
                             <span className="combat-dev-pill mono">Manual Session</span>
@@ -965,7 +999,7 @@ function CombatContent() {
                                 return (
                                     <article key={`${sessionLocation}-${enemy.name}`} className="session-enemy-row">
                                         <div className="session-enemy-title">
-                                            {enemy.image_url && <Image src={enemy.image_url} alt="" width={38} height={38} unoptimized style={{ borderRadius: '6px' }} />}
+                                            {enemy.image_url && <Image src={enemy.image_url} alt="" width={38} height={38} loading="lazy" unoptimized style={{ borderRadius: '6px' }} />}
                                             <div>
                                                 <strong>{enemy.name}</strong>
                                                 <span>L{enemy.level} - {formatGold(enemy.ev, 1)} EV/kill</span>
@@ -1017,7 +1051,7 @@ function CombatContent() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 {selectedEnemy.image_url && (
                                     <div style={{ width: '48px', height: '48px', background: 'var(--bg-base)', borderRadius: '6px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
-                                        <Image src={selectedEnemy.image_url} alt={selectedEnemy.name} width={36} height={36} unoptimized style={{ maxWidth: '36px', maxHeight: '36px', margin: 'auto' }} />
+                                        <Image src={selectedEnemy.image_url} alt={selectedEnemy.name} width={36} height={36} loading="lazy" unoptimized style={{ maxWidth: '36px', maxHeight: '36px', margin: 'auto' }} />
                                     </div>
                                 )}
                                 <div>
@@ -1071,11 +1105,11 @@ function CombatContent() {
                                          style={{ 
                                              display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
                                              padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', 
-                                             borderRadius: '6px', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', width: '100%'
+                                             borderRadius: '6px', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 160ms ease, background 160ms ease, color 160ms ease', width: '100%'
                                          }}
                                      >
                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                             {drop.image_url && <Image src={drop.image_url} alt="" width={32} height={32} unoptimized style={{ borderRadius: '4px' }} />}
+                                             {drop.image_url && <Image src={drop.image_url} alt="" width={32} height={32} loading="lazy" unoptimized style={{ borderRadius: '4px' }} />}
                                              <div>
                                                 <div className="loot-item-name" style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem', transition: 'color 0.2s' }}>
                                                     {drop.name}
@@ -1174,6 +1208,11 @@ function CombatContent() {
                     letter-spacing: 0.04em;
                     margin-top: 0.45rem;
                     text-transform: uppercase;
+                }
+                .combat-view-panel {
+                    display: grid;
+                    gap: 1rem;
+                    min-width: 0;
                 }
                 .combat-session-panel {
                     display: grid;
@@ -1589,13 +1628,10 @@ function CombatContent() {
                 }
                 .header {
                     align-items: center;
-                    background:
-                        radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--text-accent), transparent 82%), transparent 34%),
-                        linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.014)),
-                        rgba(12, 10, 7, 0.68);
+                    background: rgba(12, 10, 7, 0.82);
                     border: 1px solid color-mix(in srgb, var(--text-accent), transparent 82%);
-                    border-radius: 16px;
-                    box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+                    border-radius: 8px;
+                    box-shadow: 0 12px 34px rgba(0,0,0,0.2);
                     display: grid;
                     gap: 1rem;
                     grid-template-columns: minmax(0, 1fr) auto;
@@ -1609,7 +1645,7 @@ function CombatContent() {
                     content: "";
                     height: 1px;
                     inset: auto 1rem 0;
-                    opacity: 0.72;
+                    opacity: 0.35;
                     position: absolute;
                 }
                 .header-title {
@@ -1634,19 +1670,13 @@ function CombatContent() {
                     grid-template-columns: repeat(4, minmax(0, 1fr));
                     margin-bottom: 1rem;
                 }
-                .combat-overview-grid:focus-visible {
-                    outline: 2px solid color-mix(in srgb, var(--text-accent), transparent 30%);
-                    outline-offset: 4px;
-                }
                 .combat-overview-card {
                     align-items: start;
-                    animation: combatRise 220ms ease both;
-                    background:
-                        linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.012)),
-                        rgba(9, 10, 14, 0.72);
+                    animation: none;
+                    background: rgba(9, 10, 14, 0.78);
                     border: 1px solid rgba(255,255,255,0.075);
-                    border-radius: 14px;
-                    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+                    border-radius: 8px;
+                    box-shadow: none;
                     display: grid;
                     gap: 0.28rem;
                     min-height: 5.35rem;
@@ -1658,17 +1688,12 @@ function CombatContent() {
                 .combat-overview-card:nth-child(3) { animation-delay: 60ms; }
                 .combat-overview-card:nth-child(4) { animation-delay: 90ms; }
                 .combat-overview-card:hover {
-                    background:
-                        linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.018)),
-                        rgba(12, 13, 18, 0.8);
+                    background: rgba(12, 13, 18, 0.84);
                     border-color: color-mix(in srgb, var(--text-accent), transparent 74%);
-                    transform: translateY(-2px);
                 }
                 .combat-overview-card.highlight {
                     border-color: color-mix(in srgb, var(--text-success), transparent 66%);
-                    background:
-                        linear-gradient(145deg, color-mix(in srgb, var(--text-success), transparent 93%), rgba(255,255,255,0.014)),
-                        rgba(9, 10, 14, 0.72);
+                    background: color-mix(in srgb, var(--text-success), rgba(9, 10, 14, 0.86) 92%);
                 }
                 .combat-overview-card svg {
                     color: var(--text-accent);
@@ -1929,6 +1954,32 @@ function CombatContent() {
                     }
                     50% {
                         box-shadow: 0 0 0 6px color-mix(in srgb, var(--text-accent), transparent 100%);
+                    }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .status-dot,
+                    .combat-overview-card,
+                    .combat-view-tabs button,
+                    .zone-select-button,
+                    .zone-mob-button,
+                    .session-location-strip button,
+                    .combat-mobile-card,
+                    .loot-drop-button {
+                        animation: none;
+                        transition: none;
+                    }
+                    .combat-view-tabs button:active,
+                    .zone-select-button:active,
+                    .zone-mob-button:active,
+                    .session-location-strip button:active,
+                    .combat-mobile-card:active,
+                    .loot-drop-button:active,
+                    .zone-select-button:hover,
+                    .zone-mob-button:hover,
+                    .zone-mob-button:focus-visible,
+                    .session-location-strip button:hover,
+                    .session-location-strip button:focus-visible {
+                        transform: none;
                     }
                 }
                 @media (max-width: 1040px) {
