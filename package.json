@@ -12,6 +12,7 @@
     "test:unit": "vitest run",
     "test:a11y": "playwright test tests/a11y",
     "audit:deadcode": "knip --exclude exports,types",
+    "audit:cache-headers": "node scripts/audit-cache-headers.mjs",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
     "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
