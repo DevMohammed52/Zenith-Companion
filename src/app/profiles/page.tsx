@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  DEFAULT_PROFILE_BACKGROUND_IMAGE_URL,
   MAX_PROFILES,
   createDefaultProfile,
   type CharacterProfile,
@@ -31,6 +32,7 @@ import {
   useProfiles,
 } from "@/lib/profiles";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { GameImage } from "@/components/GameImage";
 import QualityText from "@/components/QualityText";
 import {
   mergeImportedProfileDraft,
@@ -713,10 +715,111 @@ function ProfilePicker<T>({
   );
 }
 
+function ProfilesLoadingShell() {
+  return (
+    <main className="container profiles-page" aria-busy="true" aria-live="polite">
+      <div className="header profile-header">
+        <div>
+          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles</h1>
+        </div>
+        <div className="profile-header-actions" aria-hidden="true">
+          <button className="profile-action" type="button" disabled>
+            <Plus size={15} /> Add
+          </button>
+          <button className="profile-action" type="button" disabled>
+            <Download size={15} /> Export
+          </button>
+        </div>
+      </div>
+
+      <nav className="profile-section-nav profile-section-nav-loading" aria-label="Profile sections loading">
+        {PROFILE_SECTIONS.map(([id, label]) => (
+          <a key={id} aria-disabled="true" tabIndex={-1}>
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <div className="profile-import-jump-card profile-loading-card" aria-hidden="true">
+        <span>
+          <FileUp size={17} />
+          <strong>Import from IdleMMO</strong>
+        </span>
+        <em className="profile-skeleton-line" />
+      </div>
+
+      <div className="profile-backup-reminder profile-loading-card" aria-hidden="true">
+        <div>
+          <strong>Local browser data</strong>
+          <span className="profile-skeleton-line" />
+        </div>
+        <button type="button" className="profile-action" disabled>
+          <Download size={15} /> Copy backup
+        </button>
+      </div>
+
+      <section className="profile-layout" aria-label="Profile manager loading">
+        <section className="profile-list-panel">
+          <div className="profile-count">
+            <span>Loading</span>
+            <strong>Local Profiles</strong>
+          </div>
+          <div className="profile-list">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div className="profile-list-item profile-loading-item" key={index}>
+                <span className="profile-avatar" />
+                <span>
+                  <strong className="profile-skeleton-line" />
+                  <small className="profile-skeleton-line short" />
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="profile-editor">
+          <section className="profile-panel profile-identity-panel profile-loading-panel" tabIndex={-1}>
+            <div className="profile-panel-heading">
+              <div>
+                <h2>Identity</h2>
+                <p>Preparing saved character data.</p>
+              </div>
+              <div className="profile-inline-actions" aria-hidden="true">
+                <button type="button" disabled><Copy size={15} /></button>
+                <button type="button" disabled><Trash2 size={15} /></button>
+              </div>
+            </div>
+            <div className="profile-game-hero profile-loading-hero">
+              <div className="profile-game-hero-character" />
+              <div className="profile-game-hero-panel">
+                <div className="profile-skeleton-line title" />
+                <div className="profile-chip-row">
+                  <span>Class</span>
+                  <span>Total Lv.</span>
+                  <span>Location</span>
+                </div>
+              </div>
+            </div>
+            <div className="profile-grid identity-grid">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div className="profile-field" key={index}>
+                  <span className="profile-skeleton-line short" />
+                  <div className="control-input profile-loading-input" />
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function ProfilesPage() {
   const {
     state,
     activeProfile,
+    loaded,
     addProfile,
     duplicateProfile,
     deleteProfile,
@@ -853,6 +956,12 @@ export default function ProfilesPage() {
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY) {
       setTurnstileReady(true);
+      return;
+    }
+    if (activeProfileSection !== "transfer") {
+      setTurnstileReady(true);
+      setTurnstileToken("");
+      setTurnstileError("");
       return;
     }
 
@@ -1732,11 +1841,13 @@ export default function ProfilesPage() {
     );
   };
 
+  if (!loaded) return <ProfilesLoadingShell />;
+
   if (!profile) {
     return (
-      <main className="container">
+      <main className="container profiles-page">
         <div className="header">
-          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> PROFILES</h1>
+          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles</h1>
         </div>
       </main>
     );
@@ -1802,6 +1913,10 @@ export default function ProfilesPage() {
     : selectedPet
       ? petOptions.find((option) => option.id === `db-${selectedPet.name}`)
       : petOptions[0];
+  const profileBackgroundUrl =
+    profile.backgroundUrl && profile.backgroundUrl !== DEFAULT_PROFILE_BACKGROUND_IMAGE_URL
+      ? profile.backgroundUrl
+      : "";
 
   return (
     <main className="container profiles-page" onClick={(event) => {
@@ -1810,8 +1925,7 @@ export default function ProfilesPage() {
       <Toast message={toast} onClose={() => setToast("")} />
       <div className="header profile-header">
         <div>
-          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> PROFILES</h1>
-          <p className="profile-subtitle">Local character setups for calculators. Global prices, membership, custom prices, and theme stay in Settings.</p>
+          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles</h1>
         </div>
         <div className="profile-header-actions">
           <button className="profile-action" type="button" onClick={() => {
@@ -1882,18 +1996,30 @@ export default function ProfilesPage() {
           <div className="profile-list">
             {state.profiles.map((item) => {
               const active = item.id === profile.id;
+              const itemBackgroundUrl =
+                item.backgroundUrl && item.backgroundUrl !== DEFAULT_PROFILE_BACKGROUND_IMAGE_URL
+                  ? item.backgroundUrl
+                  : "";
               return (
                 <button
                   key={item.id}
                   type="button"
-                  className={`profile-list-item ${item.imageUrl || item.backgroundUrl ? "has-art" : ""} ${active ? "active" : ""}`}
+                  className={`profile-list-item ${item.imageUrl || itemBackgroundUrl ? "has-art" : ""} ${active ? "active" : ""}`}
                   aria-pressed={active}
                   aria-label={`${active ? "Active profile" : "Switch to profile"}: ${item.name || "Unnamed Character"}`}
                   onClick={() => setActiveProfile(item.id)}
                 >
-                  {item.backgroundUrl && <span className="profile-list-item-bg" style={{ backgroundImage: `url("${item.backgroundUrl}")` }} aria-hidden="true" />}
+                  {itemBackgroundUrl && <span className="profile-list-item-bg" style={{ backgroundImage: `url("${itemBackgroundUrl}")` }} aria-hidden="true" />}
                   <span className="profile-avatar">
-                    {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <UserRound size={18} />}
+                    {item.imageUrl ? (
+                      <GameImage
+                        src={item.imageUrl}
+                        alt=""
+                        width={40}
+                        height={48}
+                        sizes="40px"
+                      />
+                    ) : <UserRound size={18} />}
                   </span>
                   <span>
                     <strong>{item.name || "Unnamed Character"}</strong>
@@ -1927,11 +2053,21 @@ export default function ProfilesPage() {
               </div>
             </div>
             <div
-              className={`profile-game-hero ${profile.backgroundUrl ? "has-background" : ""}`}
-              style={profile.backgroundUrl ? { backgroundImage: `url(${profile.backgroundUrl})` } : undefined}
+              className={`profile-game-hero ${profileBackgroundUrl ? "has-background" : ""}`}
+              style={profileBackgroundUrl ? { backgroundImage: `url(${profileBackgroundUrl})` } : undefined}
             >
               <div className="profile-game-hero-character">
-                {profile.imageUrl ? <img src={profile.imageUrl} alt="" /> : <UserRound size={38} />}
+                {profile.imageUrl ? (
+                  <GameImage
+                    src={profile.imageUrl}
+                    alt=""
+                    width={144}
+                    height={168}
+                    sizes="144px"
+                    priority
+                    fetchPriority="high"
+                  />
+                ) : <UserRound size={38} />}
               </div>
               <div className="profile-game-hero-panel">
                 <div className="profile-game-hero-title">
