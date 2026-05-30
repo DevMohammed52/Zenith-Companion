@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-05-30T11:26:01.411Z",
-    "fetched_at": "2026-05-30T11:25:44.812Z",
+    "generated_at": "2026-05-30T12:17:39.449Z",
+    "fetched_at": "2026-05-30T12:17:22.730Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-05-30T11:30:46+00:00",
+    "endpoint_updates_at": "2026-05-30T12:22:24+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16599
+      "elapsed_ms": 16719
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 4,
+      "active_assaults": 5,
       "leaderboard_rows": 48,
       "contribution_rows": 391,
       "guilds_observed": 21
@@ -1399,13 +1399,25 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 583802,
-      "experience": 2365988,
+      "kills": 583829,
+      "experience": 2366066,
       "guilds_count": 8,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 8,
       "contribution_count": 50,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 27,
+          "experience": 78,
+          "guild": {
+            "id": 129,
+            "name": "Ore Bros",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -1421,8 +1433,8 @@
         },
         {
           "position": 2,
-          "kills": 127690,
-          "experience": 592015,
+          "kills": 127717,
+          "experience": 592093,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -1654,7 +1666,7 @@
           "character": {
             "hashed_id": "kK49j1VN95WwrNq6B2do",
             "name": "Azep",
-            "total_level": 830,
+            "total_level": 831,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/AKFD1fVHvACUrjqj56XwqmIxxUqXqf-metaRmVyb24gKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -1704,8 +1716,8 @@
         {
           "id": 124795,
           "guild_conquest_progress_id": 124657,
-          "kills": 25013,
-          "experience": 39463,
+          "kills": 25040,
+          "experience": 39541,
           "guild": null,
           "character": {
             "hashed_id": "yE1A84kYOpP83Ll6XeVK",
@@ -1822,7 +1834,7 @@
           "character": {
             "hashed_id": "rx463VdQgRnOxL5w1zWK",
             "name": "Rannay",
-            "total_level": 1206,
+            "total_level": 1207,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -4605,7 +4617,7 @@
           "character": {
             "hashed_id": "jEaOeBkLagJVrNlGwxVP",
             "name": "Nomodon",
-            "total_level": 1927,
+            "total_level": 1928,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
           }
@@ -7534,7 +7546,7 @@
       "character": {
         "hashed_id": "jEaOeBkLagJVrNlGwxVP",
         "name": "Nomodon",
-        "total_level": 1927,
+        "total_level": 1928,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
       },
