@@ -104,7 +104,7 @@ export default function CraftingPage() {
     const queueReadiness = missingItemCount > 0
         ? `${missingItemCount.toLocaleString()} price gap${missingItemCount === 1 ? "" : "s"}`
         : plan.entries.length > 0
-            ? "Ready to shop"
+            ? "Prices ready"
             : "Waiting for recipes";
     const itemImages = useMemo(() => (allItemsDb || {}) as Record<string, CraftingItemRecord>, [allItemsDb]);
     const getItemImage = (name: string) => itemImages[name]?.image_url || itemImages[name]?.image || "";
@@ -163,6 +163,20 @@ export default function CraftingPage() {
             event.preventDefault();
             setPickerOpen(true);
             setActiveRecipeIndex((index) => Math.max(index - 1, 0));
+            return;
+        }
+
+        if (event.key === "Home") {
+            event.preventDefault();
+            setPickerOpen(true);
+            setActiveRecipeIndex(0);
+            return;
+        }
+
+        if (event.key === "End") {
+            event.preventDefault();
+            setPickerOpen(true);
+            setActiveRecipeIndex(Math.max(filteredRecipeOptions.length - 1, 0));
             return;
         }
 
@@ -233,11 +247,11 @@ export default function CraftingPage() {
     };
 
     return (
-        <main className="container crafting-page-shell" aria-label="Crafting Queue">
+        <main className="container crafting-page-shell" aria-labelledby="crafting-page-title">
             <div className="header craft-hero">
                 <div className="craft-hero-copy">
                     <div className="craft-eyebrow">Alchemy Batch Planner</div>
-                    <h1 className="header-title craft-title">
+                    <h1 id="crafting-page-title" className="header-title craft-title">
                         <ZenithIcon name="crafting" size={24} style={{ color: "var(--text-accent)" }} /> Crafting Queue
                     </h1>
                     <p className="craft-subtitle">Plan recipe copies, vials, materials, and sale paths before committing to a long craft.</p>
@@ -267,7 +281,7 @@ export default function CraftingPage() {
                 <div className={`craft-summary-card ${missingItemCount > 0 || warningEntryCount > 0 ? "warn" : ""}`}>
                     <span>Risk</span>
                     <strong>{warningEntryCount > 0 ? warningEntryCount.toLocaleString() : missingItemCount > 0 ? missingItemCount.toLocaleString() : "Clear"}</strong>
-                    <small>{warningEntryCount > 0 ? "review sale warnings" : missingItemCount > 0 ? "missing price data" : "pricing looks complete"}</small>
+                    <small>{warningEntryCount > 0 ? "review sale warnings" : missingItemCount > 0 ? "missing price data" : "market/vendor prices ready"}</small>
                 </div>
                 <div className={`craft-summary-card ${plan.totalProfit >= 0 ? "positive" : "negative"}`}>
                     <span>Net Position</span>
@@ -291,8 +305,10 @@ export default function CraftingPage() {
                                         ref={inputRef}
                                         role="combobox"
                                         aria-label="Recipe to add"
+                                        aria-autocomplete="list"
                                         aria-expanded={pickerOpen}
                                         aria-controls={pickerOpen ? "craft-recipe-options" : undefined}
+                                        aria-haspopup="listbox"
                                         aria-activedescendant={pickerOpen && filteredRecipeOptions[activeRecipeIndex] ? `craft-recipe-option-${activeRecipeIndex}` : undefined}
                                         autoComplete="off"
                                         value={recipeSearch}
@@ -329,6 +345,7 @@ export default function CraftingPage() {
                                                         key={option.name}
                                                         role="option"
                                                         aria-selected={isSelected}
+                                                        tabIndex={-1}
                                                         onMouseDown={(event) => event.preventDefault()}
                                                         onMouseEnter={() => setActiveRecipeIndex(index)}
                                                         onClick={() => chooseRecipe(option.name)}
@@ -362,7 +379,7 @@ export default function CraftingPage() {
                                 aria-label={selectedRecipe ? `Add ${selectedRecipe.name} to crafting queue` : "Add selected recipe to crafting queue"}
                                 className="craft-add-button"
                             >
-                                <Plus size={16} /> {selectedRecipe ? `Add ${selectedRecipe.name}` : "Add"}
+                                <Plus size={16} /> Add recipe
                             </button>
                         </div>
                         {selectedRecipe && (
@@ -395,13 +412,14 @@ export default function CraftingPage() {
                                             onMouseEnter={() => prefetchItem(entry.name)}
                                             className="craft-row-main group"
                                         >
-                                            {getItemImage(entry.name) ? (
-                                                <img className="craft-row-image" src={getItemImage(entry.name)} alt="" loading="lazy" decoding="async" />
-                                            ) : (
-                                                <span className="craft-row-image craft-row-image-fallback" aria-hidden="true">
-                                                    <FlaskConical size={17} />
-                                                </span>
-                                            )}
+                                            <CraftItemImage
+                                                className="craft-row-image"
+                                                fallbackClassName="craft-row-image-fallback"
+                                                src={getItemImage(entry.name)}
+                                                size={38}
+                                            >
+                                                <FlaskConical size={17} />
+                                            </CraftItemImage>
                                             <div className="craft-row-title group-hover:text-accent">{entry.name}</div>
                                             <div className="craft-row-meta">
                                                 <span className={`craft-row-profit ${entry.totalProfit >= 0 ? "profit-positive" : "profit-negative"}`}>{formatSignedGold(entry.totalProfit)} total</span>
@@ -509,7 +527,7 @@ export default function CraftingPage() {
                     {plan.missingItems.length > 0 && (
                         <div className="table-container craft-panel craft-missing-panel">
                             <div className="craft-warning-copy">
-                                <AlertTriangle size={16} color="var(--text-warning)" />
+                                <AlertTriangle size={16} color="var(--text-warning)" aria-hidden="true" />
                                 <div>
                                     <strong>Missing price data</strong>
                                     <div className="craft-missing-chip-list" aria-label="Items missing price data">
@@ -526,7 +544,7 @@ export default function CraftingPage() {
 
                     {plan.recipeList.length > 0 && (
                         <NeedPanel
-                            title="RECIPES NEEDED"
+                            title="Recipe scrolls"
                             icon={<ReceiptText size={14} />}
                             rows={plan.recipeList}
                             renderSubline={(row) => `${row.maxUses} uses each - covers ${row.craftQuantity.toLocaleString()} crafts`}
@@ -538,7 +556,7 @@ export default function CraftingPage() {
 
                     {plan.vialList.length > 0 && (
                         <NeedPanel
-                            title="VIALS NEEDED"
+                            title="Vials"
                             icon={<Package size={14} />}
                             rows={plan.vialList}
                             getItemImage={getItemImage}
@@ -548,7 +566,7 @@ export default function CraftingPage() {
                     )}
 
                     <NeedPanel
-                        title="SHOPPING LIST"
+                        title="Shopping list"
                         icon={<ShoppingCart size={14} />}
                         rows={plan.shoppingList}
                         emptyText="Your shopping list will appear here once you add recipes."
@@ -636,7 +654,11 @@ export default function CraftingPage() {
                     font-size: 0.68rem;
                     font-weight: 900;
                     line-height: 1;
+                    max-width: min(100%, 24rem);
+                    min-width: 0;
+                    overflow: hidden;
                     padding: 0.42rem 0.62rem;
+                    text-overflow: ellipsis;
                     text-transform: uppercase;
                     white-space: nowrap;
                 }
@@ -747,14 +769,16 @@ export default function CraftingPage() {
                         rgba(8,10,11,0.72);
                     border: 1px solid rgba(255,255,255,0.075);
                     border-radius: 8px;
-                    box-shadow: 0 18px 48px rgba(0,0,0,0.2);
+                    box-shadow: 0 10px 28px rgba(0,0,0,0.14);
                     overflow: visible;
                     padding: 1.1rem;
                 }
 
                 .craft-panel-title {
                     justify-content: space-between;
+                    letter-spacing: 0;
                     margin: 0 0 1rem;
+                    text-transform: none;
                 }
 
                 .craft-panel-title em {
@@ -767,21 +791,10 @@ export default function CraftingPage() {
                 }
 
                 .crafting-page-shell .recipe-combobox-menu {
-                    animation: craftMenuIn 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+                    animation: none;
                     background: rgba(9,13,15,0.96);
                     border-radius: 8px;
-                    box-shadow: 0 24px 70px rgba(0,0,0,0.68), 0 0 0 1px rgba(255,255,255,0.025) inset;
-                }
-
-                @supports (backdrop-filter: blur(16px)) {
-                    .crafting-page-shell .recipe-combobox-menu {
-                        backdrop-filter: blur(18px) saturate(1.18);
-                    }
-                }
-
-                @keyframes craftMenuIn {
-                    from { opacity: 0; transform: translateY(-6px) scale(0.985); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                    box-shadow: 0 16px 40px rgba(0,0,0,0.48), 0 0 0 1px rgba(255,255,255,0.025) inset;
                 }
 
                 .crafting-page-shell .recipe-combobox-shell {
@@ -791,47 +804,24 @@ export default function CraftingPage() {
                 .crafting-page-shell .recipe-option-row,
                 .crafting-page-shell .craft-entry-row,
                 .crafting-page-shell .source-row {
-                    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
-                }
-
-                .crafting-page-shell .recipe-option-row:hover,
-                .crafting-page-shell .recipe-option-row.is-active,
-                .crafting-page-shell .recipe-option-row:focus-visible,
-                .crafting-page-shell .source-row:hover,
-                .crafting-page-shell .source-row:focus-visible {
-                    transform: translateY(-1px);
+                    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
                 }
 
                 .crafting-page-shell .craft-add-button {
                     background: linear-gradient(135deg, var(--text-accent), #8de8ff);
-                    box-shadow: 0 12px 28px rgba(245,176,65,0.16);
+                    box-shadow: 0 8px 20px rgba(245,176,65,0.12);
                     color: #041015;
                     min-height: 48px;
+                    transition: box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
                 }
 
                 .crafting-page-shell .craft-add-button:hover:not(:disabled) {
-                    box-shadow: 0 16px 36px rgba(245,176,65,0.24);
-                    transform: translateY(-1px);
-                }
-
-                .crafting-page-shell .craft-add-button:active:not(:disabled),
-                .crafting-page-shell .queue-icon-button:active,
-                .crafting-page-shell .queue-remove-button:active,
-                .crafting-page-shell .craft-clear-button:active,
-                .crafting-page-shell .recipe-combobox-clear:active,
-                .crafting-page-shell .source-row:active,
-                .crafting-page-shell .recipe-option-row:active {
-                    transform: scale(0.985);
+                    box-shadow: 0 10px 26px rgba(245,176,65,0.18);
+                    transform: none;
                 }
 
                 .craft-selected-recipe {
-                    animation: craftCardIn 220ms ease both;
                     border-radius: 8px;
-                }
-
-                @keyframes craftCardIn {
-                    from { opacity: 0; transform: translateY(6px); }
-                    to { opacity: 1; transform: translateY(0); }
                 }
 
                 .craft-empty-state {
@@ -868,6 +858,12 @@ export default function CraftingPage() {
                     border-radius: 8px;
                 }
 
+                .crafting-page-shell .craft-entry-row:hover,
+                .crafting-page-shell .source-row:hover,
+                .crafting-page-shell .source-row:focus-visible {
+                    transform: none;
+                }
+
                 .crafting-page-shell .craft-row-title {
                     font-size: 0.95rem;
                     font-weight: 850;
@@ -883,9 +879,9 @@ export default function CraftingPage() {
                 .crafting-page-shell .queue-icon-button,
                 .crafting-page-shell .queue-remove-button {
                     border-radius: 8px;
-                    min-height: 34px;
-                    min-width: 34px;
-                    transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+                    min-height: 44px;
+                    min-width: 44px;
+                    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
                 }
 
                 .crafting-page-shell .queue-icon-button:hover,
@@ -896,7 +892,7 @@ export default function CraftingPage() {
 
                 .crafting-page-shell .queue-qty-input {
                     border-radius: 8px;
-                    min-height: 34px;
+                    min-height: 44px;
                     transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
                     width: 58px;
                 }
@@ -909,7 +905,15 @@ export default function CraftingPage() {
 
                 .crafting-page-shell .craft-clear-button {
                     border-radius: 8px;
-                    transition: border-color 180ms ease, color 180ms ease, background 180ms ease, transform 180ms ease;
+                    min-height: 44px;
+                    transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+                }
+
+                .crafting-page-shell .recipe-combobox-clear {
+                    height: 44px;
+                    min-width: 44px;
+                    transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+                    width: 44px;
                 }
 
                 .crafting-page-shell .craft-clear-button:hover {
@@ -1141,13 +1145,14 @@ function NeedPanel({
                             className="source-row group"
                         >
                             <div className="craft-need-main">
-                                {getItemImage(row.name) ? (
-                                    <img className="craft-need-image" src={getItemImage(row.name)} alt="" loading="lazy" decoding="async" />
-                                ) : (
-                                    <span className="craft-need-image craft-need-image-fallback" aria-hidden="true">
-                                        <Package size={13} />
-                                    </span>
-                                )}
+                                <CraftItemImage
+                                    className="craft-need-image"
+                                    fallbackClassName="craft-need-image-fallback"
+                                    src={getItemImage(row.name)}
+                                    size={30}
+                                >
+                                    <Package size={13} />
+                                </CraftItemImage>
                                 <span className="craft-need-name group-hover:text-accent transition-colors">
                                     <span className="text-muted">{row.quantity.toLocaleString()}x</span> {row.name}
                                 </span>
@@ -1157,7 +1162,7 @@ function NeedPanel({
                                     {row.totalPrice > 0 ? `${formatGold(row.totalPrice)}g` : "-"}
                                 </div>
                                 <div className="craft-need-subline">
-                                    {row.unitPrice > 0 ? `${formatGold(row.unitPrice)}g ea - ${formatPriceSource(row.source)}` : "No data"}
+                                    {row.unitPrice > 0 ? `${formatGold(row.unitPrice)}g ea - ${formatPriceSource(row.source)}` : "Missing price"}
                                 </div>
                                 {renderSubline && "maxUses" in row && (
                                     <div className="craft-need-subline">{renderSubline(row)}</div>
@@ -1174,6 +1179,43 @@ function NeedPanel({
                 </div>
             )}
         </div>
+    );
+}
+
+function CraftItemImage({
+    className,
+    fallbackClassName,
+    src,
+    size,
+    children,
+}: {
+    className: string;
+    fallbackClassName: string;
+    src: string;
+    size: number;
+    children: ReactNode;
+}) {
+    const [failed, setFailed] = useState(false);
+
+    if (!src || failed) {
+        return (
+            <span className={`${className} ${fallbackClassName}`} aria-hidden="true">
+                {children}
+            </span>
+        );
+    }
+
+    return (
+        <img
+            className={className}
+            src={src}
+            alt=""
+            width={size}
+            height={size}
+            loading="lazy"
+            decoding="async"
+            onError={() => setFailed(true)}
+        />
     );
 }
 
