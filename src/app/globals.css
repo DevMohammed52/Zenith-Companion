@@ -4272,6 +4272,10 @@ button.source-row {
 }
 
 /* ---- Global Search ---- */
+.top-navigation {
+  display: none;
+}
+
 .shell-quickbar {
   display: grid;
   grid-template-columns: minmax(220px, 360px) minmax(190px, 260px);
@@ -4982,6 +4986,11 @@ kbd {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+.profile-header-actions {
+  min-width: 11.75rem;
+  justify-content: flex-end;
 }
 
 .profile-section-nav {
@@ -8334,7 +8343,7 @@ kbd {
 .alchemy-page-shell .alchemy-controls-panel,
 .alchemy-page-shell .table-wrapper,
 .alchemy-page-shell .mobile-alchemy-card.rich {
-  animation: alchemyRise 220ms ease both;
+  animation: none;
 }
 
 .alchemy-page-shell .alchemy-summary-card:nth-child(2) { animation-delay: 25ms; }
@@ -8360,7 +8369,7 @@ kbd {
 .alchemy-page-shell .alchemy-filter-chip,
 .alchemy-page-shell .mobile-sort-chip,
 .alchemy-page-shell .mobile-sort-direction {
-  will-change: transform;
+  will-change: auto;
 }
 
 .alchemy-page-shell .alchemy-summary-card:active:not(:disabled),
@@ -8370,7 +8379,7 @@ kbd {
 .alchemy-page-shell .alchemy-filter-chip:active,
 .alchemy-page-shell .mobile-sort-chip:active,
 .alchemy-page-shell .mobile-sort-direction:active {
-  transform: scale(0.985);
+  transform: none;
 }
 
 .alchemy-page-shell .alchemy-search-field {
@@ -8385,9 +8394,11 @@ kbd {
   color: var(--text-muted);
   cursor: pointer;
   display: inline-flex;
-  height: 28px;
+  height: 2.75rem;
   justify-content: center;
-  width: 28px;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  width: 2.75rem;
 }
 
 .alchemy-search-clear:hover,
@@ -8456,7 +8467,7 @@ kbd {
   justify-content: center;
   min-height: 42px;
   padding: 0.55rem 0.75rem;
-  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
 
 .alchemy-reset-button:hover:not(:disabled),
@@ -8464,7 +8475,6 @@ kbd {
   border-color: var(--border-focus);
   color: #fff;
   outline: none;
-  transform: translateY(-1px);
 }
 
 .alchemy-reset-button:disabled {
@@ -8519,7 +8529,7 @@ kbd {
 }
 
 .alchemy-page-shell .alchemy-table tbody tr {
-  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
 .alchemy-page-shell .alchemy-table tbody tr:hover {
@@ -8529,17 +8539,42 @@ kbd {
 
 .alchemy-page-shell .mobile-alchemy-card.rich {
   border-radius: 10px;
-  box-shadow: 0 16px 42px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+  color: inherit;
+  font: inherit;
   outline: 1px solid rgba(255,255,255,0.025);
   outline-offset: -1px;
+  text-align: left;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  width: 100%;
 }
 
 .alchemy-page-shell .mobile-alchemy-card.rich:hover,
 .alchemy-page-shell .mobile-alchemy-card.rich:focus-visible {
   border-color: var(--border-focus);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.28), 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 76%);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2), 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 78%);
   outline: none;
-  transform: translateY(-1px);
+}
+
+.alchemy-page-shell .mobile-alchemy-card.rich:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.alchemy-page-shell .alchemy-summary-card {
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.alchemy-page-shell .alchemy-summary-card:hover:not(:disabled),
+.alchemy-page-shell .alchemy-summary-card:focus-visible:not(:disabled) {
+  transform: none;
+}
+
+.alchemy-page-shell .alchemy-toggle:hover,
+.alchemy-page-shell .alchemy-filter-chip:hover,
+.alchemy-page-shell .mobile-sort-chip:hover,
+.alchemy-page-shell .mobile-sort-direction:hover {
+  transform: none;
 }
 
 .alchemy-card-cta {
@@ -11011,27 +11046,23 @@ kbd {
 }
 
 .command-hero {
-  background:
-    linear-gradient(120deg, rgba(14, 18, 29, 0.98), rgba(10, 16, 26, 0.96) 58%, rgba(12, 25, 30, 0.94)),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 84px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(12, 17, 24, 0.98), rgba(8, 13, 19, 0.98));
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid color-mix(in srgb, var(--text-accent), transparent 36%);
+  border-radius: 8px;
   display: grid;
-  gap: 1.2rem;
-  grid-template-columns: minmax(0, 0.95fr) minmax(28rem, 1.05fr);
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(24rem, 0.9fr);
   overflow: hidden;
-  padding: clamp(1rem, 2.4vw, 1.55rem);
+  padding: clamp(1rem, 2vw, 1.35rem);
   position: relative;
 }
 
 .command-hero::before {
-  background:
-    linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255,255,255,0.032) 1px, transparent 1px);
-  background-size: 54px 54px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 42%);
   content: "";
   inset: 0;
-  opacity: 0.14;
+  opacity: 0.5;
   pointer-events: none;
   position: absolute;
 }
@@ -11081,7 +11112,7 @@ kbd {
 
 .command-hero h1 {
   color: #fff;
-  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  font-size: clamp(1.9rem, 3.4vw, 3rem);
   letter-spacing: 0;
   line-height: 1;
   margin: 0 0 0.75rem;
@@ -11092,7 +11123,7 @@ kbd {
   font-size: clamp(0.95rem, 1.6vw, 1.12rem);
   line-height: 1.55;
   margin: 0;
-  max-width: 46rem;
+  max-width: 36rem;
 }
 
 .command-status-grid {
@@ -11107,7 +11138,7 @@ kbd {
 .command-priority-card,
 .command-module-card,
 .command-mini-card {
-  background: rgba(255,255,255,0.025);
+  background: rgba(255,255,255,0.018);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   min-width: 0;
@@ -11127,7 +11158,7 @@ kbd {
   border-radius: 999px;
   content: "";
   height: 5px;
-  opacity: 0.7;
+  opacity: 0.55;
   position: absolute;
   right: 0.8rem;
   top: 0.85rem;
@@ -11176,10 +11207,9 @@ kbd {
 
 .dashboard-setup-state {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(20, 28, 45, 0.94), rgba(9, 16, 23, 0.94)),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.032) 0 1px, transparent 1px 70px);
+  background: linear-gradient(180deg, rgba(16, 22, 32, 0.96), rgba(8, 13, 19, 0.96));
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 74%);
+  border-left-width: 3px;
   border-radius: 8px;
   display: grid;
   gap: 1rem;
@@ -11267,7 +11297,7 @@ kbd {
 .command-priority-card:focus-visible {
   background: color-mix(in srgb, var(--text-accent), transparent 95%);
   border-color: var(--border-focus);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.22);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.18);
   outline: none;
   transform: translateY(-2px);
 }
@@ -11280,7 +11310,7 @@ kbd {
 }
 
 .command-priority-strong {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), rgba(255,255,255,0.025));
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
 }
 
 .command-card-top {
@@ -11361,7 +11391,6 @@ kbd {
 }
 
 .command-module-card header svg {
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--text-accent), transparent 72%));
   margin-top: 0.12rem;
 }
 
@@ -14040,6 +14069,45 @@ body.pet-modal-open {
 
 .pets-page .pet-result-status {
   display: flex;
+}
+
+.pets-page .pets-hero > div:first-child::before,
+.pets-page .pets-calculator::before {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--text-accent), transparent 92%), transparent 38%);
+  opacity: 0.42;
+}
+
+.pets-page .pet-load-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.9rem 0 0;
+  padding: 0.75rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.025);
+}
+
+.pets-page .pet-load-more button {
+  min-height: 40px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  color: var(--text-main);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 0.85rem;
+}
+
+.pets-page .pet-load-more button:hover,
+.pets-page .pet-load-more button:focus-visible {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 84%);
+  outline: none;
 }
 
 .pets-page .pets-table tbody tr {
@@ -17008,10 +17076,10 @@ kbd {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+  grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
   align-items: end;
   gap: clamp(0.75rem, 2vw, 1.35rem);
-  min-height: 16rem;
+  min-height: 13rem;
   margin: 0.9rem 0 1rem;
   padding: 1rem 1.15rem 0;
   overflow: hidden;
@@ -17055,13 +17123,14 @@ kbd {
   align-self: stretch;
   display: grid;
   place-items: end center;
-  min-height: 15rem;
+  min-height: 11rem;
   margin-bottom: -0.2rem;
 }
 
 .profile-game-hero-character img {
-  max-width: min(14rem, 100%);
-  max-height: 16rem;
+  width: min(9rem, 100%);
+  height: 10.5rem;
+  max-width: 100%;
   object-fit: contain;
   filter: drop-shadow(0 20px 24px rgba(0,0,0,0.62));
 }
@@ -17590,6 +17659,7 @@ kbd {
   gap: 0.75rem;
   justify-content: space-between;
   margin: -0.35rem 0 1rem;
+  min-height: 4rem;
   padding: 0.8rem 0.9rem;
 }
 
@@ -17613,6 +17683,67 @@ kbd {
   color: var(--text-muted);
   font-size: 0.8rem;
   line-height: 1.4;
+}
+
+.profile-section-nav-loading a {
+  color: color-mix(in srgb, var(--text-muted), transparent 32%);
+  pointer-events: none;
+}
+
+.profile-loading-card,
+.profile-loading-item,
+.profile-loading-panel {
+  pointer-events: none;
+}
+
+.profile-loading-item {
+  cursor: default;
+}
+
+.profile-skeleton-line {
+  display: block;
+  width: min(18rem, 100%);
+  height: 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted), transparent 88%);
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-skeleton-line.short {
+  width: min(8rem, 72%);
+}
+
+.profile-skeleton-line.title {
+  width: min(14rem, 82%);
+  height: 1.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.profile-skeleton-line::after,
+.profile-loading-input::after,
+.profile-loading-hero .profile-game-hero-character::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.profile-loading-input {
+  min-height: 2.45rem;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.035);
+}
+
+.profile-loading-hero .profile-game-hero-character {
+  min-height: 11rem;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+  overflow: hidden;
+  position: relative;
 }
 
 .profile-import-current {
@@ -17807,7 +17938,7 @@ kbd {
 @media (max-width: 760px) {
   .profile-game-hero {
     grid-template-columns: 1fr;
-    min-height: 18rem;
+    min-height: 17rem;
     padding: 0.85rem 0.85rem 0.85rem;
   }
 
@@ -17817,7 +17948,7 @@ kbd {
   }
 
   .profile-game-hero-character img {
-    max-height: 10rem;
+    height: 8.75rem;
   }
 
   .profile-game-hero-panel {
@@ -19737,6 +19868,11 @@ kbd {
   transform: translateY(0) scale(0.995);
 }
 
+.global-search-trigger:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .global-search-trigger:focus-visible,
 .profile-switcher-trigger:focus-visible,
 .profile-switcher-option:focus-visible,
@@ -19942,6 +20078,118 @@ kbd {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* ---- Alchemy craft-pass overrides ---- */
+.alchemy-page-shell .alchemy-alert,
+.alchemy-page-shell .alchemy-summary-card,
+.alchemy-page-shell .alchemy-controls-panel,
+.alchemy-page-shell .table-wrapper,
+.alchemy-page-shell .mobile-alchemy-card.rich {
+  animation: none;
+}
+
+.alchemy-page-shell .alchemy-summary-card,
+.alchemy-page-shell .alchemy-toggle,
+.alchemy-page-shell .alchemy-open-strategy,
+.alchemy-page-shell .mobile-alchemy-card.rich,
+.alchemy-page-shell .alchemy-filter-chip,
+.alchemy-page-shell .mobile-sort-chip,
+.alchemy-page-shell .mobile-sort-direction {
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+  will-change: auto;
+}
+
+.alchemy-page-shell .alchemy-summary-card:hover:not(:disabled),
+.alchemy-page-shell .alchemy-summary-card:focus-visible:not(:disabled),
+.alchemy-page-shell .alchemy-toggle:hover,
+.alchemy-page-shell .alchemy-filter-chip:hover,
+.alchemy-page-shell .mobile-sort-chip:hover,
+.alchemy-page-shell .mobile-sort-direction:hover,
+.alchemy-page-shell .mobile-alchemy-card.rich:hover,
+.alchemy-page-shell .mobile-alchemy-card.rich:focus-visible,
+.alchemy-page-shell .alchemy-summary-card:active:not(:disabled),
+.alchemy-page-shell .alchemy-toggle:active,
+.alchemy-page-shell .alchemy-open-strategy:active,
+.alchemy-page-shell .mobile-alchemy-card.rich:active,
+.alchemy-page-shell .alchemy-filter-chip:active,
+.alchemy-page-shell .mobile-sort-chip:active,
+.alchemy-page-shell .mobile-sort-direction:active {
+  transform: none;
+}
+
+.alchemy-page-shell .mobile-alchemy-card.rich {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.alchemy-page-shell .mobile-alchemy-card.rich:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.alchemy-search-clear {
+  height: 2.75rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  width: 2.75rem;
+}
+
+.alchemy-page-shell .alchemy-table tbody tr {
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.alchemy-page-shell .alchemy-reset-button {
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.alchemy-page-shell .alchemy-reset-button:hover:not(:disabled),
+.alchemy-page-shell .alchemy-reset-button:focus-visible:not(:disabled) {
+  transform: none;
+}
+
+/* ---- Settings craft pass ---- */
+.settings-page .settings-overview,
+.settings-page .settings-panel,
+.settings-page .settings-tool-menu,
+.settings-page .custom-price-suggestions {
+  animation: none;
+}
+
+.settings-page .settings-overview div,
+.settings-page .settings-panel,
+.settings-page .theme-option,
+.settings-page :is(.settings-link-button, .settings-nav-style button, .settings-tool-trigger, .settings-tool-menu button, .custom-price-add) {
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+}
+
+.settings-page .settings-overview div:hover,
+.settings-page .settings-panel:hover,
+.settings-page .theme-option:hover,
+.settings-page .theme-option:focus-visible,
+.settings-page .settings-nav-style button:hover,
+.settings-page .settings-nav-style button:focus-visible,
+.settings-page .settings-nav-style-active {
+  transform: none;
+}
+
+.settings-page .settings-overview div:hover,
+.settings-page .settings-panel:hover,
+.settings-page .theme-option:hover,
+.settings-page .theme-option:focus-visible {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.settings-page :is(.settings-link-button, .settings-nav-style button, .settings-tool-trigger, .settings-tool-menu button, .custom-price-add):active {
+  transform: none;
+}
+
+.settings-page .settings-nav-style button:hover,
+.settings-page .settings-nav-style button:focus-visible,
+.settings-page .settings-nav-style-active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-accent), transparent 76%);
 }
 
 /* ---- Mobile touch target guardrails ---- */
