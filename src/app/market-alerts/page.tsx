@@ -43,7 +43,7 @@ import {
   showBrowserNotification,
   type BrowserNotificationState,
 } from '@/lib/browser-notifications';
-import type { MarketPriceDatum } from '@/lib/market-pricing';
+import type { MarketLiquidityTone, MarketPriceDatum } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
 
@@ -63,6 +63,8 @@ type ItemOption = {
 };
 
 type WatchFilter = 'all' | 'triggered' | 'enabled' | 'paused';
+type VendorStatusFilter = 'all' | 'below_vendor' | 'near_vendor';
+type VendorLiquidityFilter = 'all' | Exclude<MarketLiquidityTone, 'none'>;
 
 const metricOptions: FilterOption<MarketWatchMetric>[] = MARKET_WATCH_METRIC_OPTIONS.map((option) => ({
   value: option.value,
@@ -75,6 +77,20 @@ const watchFilterOptions: Array<{ value: WatchFilter; label: string }> = [
   { value: 'triggered', label: 'Triggered' },
   { value: 'enabled', label: 'Enabled' },
   { value: 'paused', label: 'Paused' },
+];
+
+const vendorStatusOptions: Array<{ value: VendorStatusFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'below_vendor', label: 'Below vendor' },
+  { value: 'near_vendor', label: 'Near vendor' },
+];
+
+const vendorLiquidityOptions: Array<{ value: VendorLiquidityFilter; label: string }> = [
+  { value: 'all', label: 'Any volume' },
+  { value: 'active', label: 'Active' },
+  { value: 'steady', label: 'Steady' },
+  { value: 'thin', label: 'Thin' },
+  { value: 'risk', label: 'Spike risk' },
 ];
 
 const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
@@ -311,6 +327,9 @@ export default function MarketAlertsPage() {
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [watchFilter, setWatchFilter] = useState<WatchFilter>('all');
   const [watchSearch, setWatchSearch] = useState('');
+  const [vendorStatusFilter, setVendorStatusFilter] = useState<VendorStatusFilter>('all');
+  const [vendorLiquidityFilter, setVendorLiquidityFilter] = useState<VendorLiquidityFilter>('all');
+  const [vendorSearch, setVendorSearch] = useState('');
   const [visibleVendorCount, setVisibleVendorCount] = useState(24);
   const marketUpdatedAt = getMarketUpdatedAt(marketData, scraperStatus);
   const typedMarketData = marketData as Record<string, MarketPriceDatum> | null;
@@ -498,8 +517,22 @@ export default function MarketAlertsPage() {
     includeNearVendor: true,
   }), [typedMarketData, allItemsDb, barteringBoost]);
   const vendorCandidates = useMemo(() => vendorCandidateCollection.candidates.slice(0, 250), [vendorCandidateCollection]);
+  const filteredVendorCandidates = useMemo(() => {
+    const query = vendorSearch.trim().toLowerCase();
+    return vendorCandidates.filter((candidate) => {
+      if (vendorStatusFilter !== 'all' && candidate.status !== vendorStatusFilter) return false;
+      if (vendorLiquidityFilter !== 'all' && candidate.liquidity.tone !== vendorLiquidityFilter) return false;
+      if (!query) return true;
+      return [
+        candidate.itemName,
+        candidate.item?.type,
+        candidate.item?.quality,
+        candidate.liquidity.label,
+      ].filter(Boolean).join(' ').toLowerCase().includes(query);
+    });
+  }, [vendorCandidates, vendorLiquidityFilter, vendorSearch, vendorStatusFilter]);
   const vendorSummary = vendorCandidateCollection.summary;
-  const visibleVendorCandidates = vendorCandidates.slice(0, visibleVendorCount);
+  const visibleVendorCandidates = filteredVendorCandidates.slice(0, visibleVendorCount);
   const activeProfileName = activeProfile?.name?.trim() || 'No profile';
   const snapshotAgeLabel = formatAge(marketUpdatedAt);
   const rulesHealthLabel = `${enabledRules}/${rules.length} active`;
@@ -518,6 +551,10 @@ export default function MarketAlertsPage() {
   useEffect(() => {
     setVisibleVendorCount(24);
   }, [barteringBoost, typedMarketData]);
+
+  useEffect(() => {
+    setVisibleVendorCount(24);
+  }, [vendorStatusFilter, vendorLiquidityFilter, vendorSearch]);
 
   useEffect(() => {
     setActiveSearchIndex(0);
@@ -617,13 +654,13 @@ export default function MarketAlertsPage() {
   const canCreateRule = Boolean(selectedItemName && selectedItemMatchesSearch && Number(threshold) > 0);
 
   return (
-    <main className="container market-watch-page">
+    <main className="container market-watch-page" aria-labelledby="market-alerts-page-title">
       <section className="market-hero">
         <div className="market-hero-copy">
           <span className="eyebrow"><ZenithIcon name="bell" size={15} /> Market Watch</span>
-          <h1>Local market alerts</h1>
+          <h1 id="market-alerts-page-title">Local market alerts</h1>
           <p>
-            Watch generated market-history snapshots for price thresholds, sold-price moves, stable volume changes, and vendor-margin candidates.
+            Build browser-local watches from generated market history: price thresholds, sold-price moves, stable volume, and vendor margins.
           </p>
           <div className="market-hero-chips" aria-label="Market watch context">
             <span><Clock3 size={14} aria-hidden="true" /> {snapshotAgeLabel}</span>
@@ -660,7 +697,7 @@ export default function MarketAlertsPage() {
       <section className="market-watch-note warning" aria-label="Experimental feature notice">
         <ShieldAlert size={17} aria-hidden="true" />
         <span>
-          Market Watch is experimental. It is being trialed to see whether snapshot-based alerts are useful in normal play. If it proves unreliable or creates more confusion than value, it may be changed or removed later.
+          Market Watch is experimental. Treat matches as prompts to check IdleMMO listings, not as trade instructions.
         </span>
       </section>
 
@@ -687,13 +724,6 @@ export default function MarketAlertsPage() {
         </div>
       </section>
 
-      <section className="market-watch-note">
-        <LineChart size={17} aria-hidden="true" />
-        <span>
-          Alerts use generated market-history snapshots, not live listings. They can flag thresholds, but they cannot see private buyers, off-app trades, or bulk undercutting, so confirm official listings before buying, selling, or mass crafting.
-        </span>
-      </section>
-
       <section className="market-watch-layout">
         <div ref={builderRef} className="watch-builder">
           <div className="panel-heading">
@@ -705,15 +735,24 @@ export default function MarketAlertsPage() {
               <RefreshCcw size={16} />
             </button>
           </div>
+          <p className="builder-caveat">
+            <LineChart size={15} aria-hidden="true" />
+            <span>Uses saved market snapshots, not live listings. Confirm in game before trading or mass crafting.</span>
+          </p>
 
           <div className="watch-field">
             <label htmlFor="market-watch-search">Item</label>
-            <div className="watch-search" role="combobox" aria-expanded={showItemResults} aria-controls={showItemResults ? searchListboxId : undefined} aria-haspopup="listbox">
+            <div className="watch-search">
               <Search size={16} aria-hidden="true" />
               <input
                 id="market-watch-search"
                 type="text"
                 aria-label="Search item history"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={showItemResults}
+                aria-controls={showItemResults ? searchListboxId : undefined}
+                aria-haspopup="listbox"
                 aria-activedescendant={activeSearchOptionId}
                 ref={itemSearchInputRef}
                 value={searchTerm}
@@ -729,6 +768,12 @@ export default function MarketAlertsPage() {
                   } else if (event.key === 'ArrowUp') {
                     event.preventDefault();
                     setActiveSearchIndex((index) => Math.max(0, index - 1));
+                  } else if (event.key === 'Home') {
+                    event.preventDefault();
+                    setActiveSearchIndex(0);
+                  } else if (event.key === 'End') {
+                    event.preventDefault();
+                    setActiveSearchIndex(filteredItems.length - 1);
                   } else if (event.key === 'Enter') {
                     event.preventDefault();
                     const item = filteredItems[activeSearchIndex];
@@ -754,11 +799,10 @@ export default function MarketAlertsPage() {
                       id={`${searchListboxId}-option-${index}`}
                       className={active || index === activeSearchIndex ? 'active' : ''}
                       role="option"
-                      aria-selected={active || index === activeSearchIndex}
-                      onMouseEnter={() => setActiveSearchIndex(index)}
+                      aria-selected={index === activeSearchIndex}
                       onClick={() => selectSearchItem(item)}
                     >
-                      {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="item-pick-fallback" />}
+                      {item.imageUrl ? <img src={item.imageUrl} alt="" width={34} height={34} loading="lazy" decoding="async" /> : <span className="item-pick-fallback" />}
                       <span>
                         <strong>{item.name}</strong>
                         <small>{item.type || (item.quality ? <QualityText value={item.quality}>{item.quality}</QualityText> : 'Market item')}</small>
@@ -1038,10 +1082,58 @@ export default function MarketAlertsPage() {
           <span><strong>{vendorSummary.nearVendorRows.toLocaleString()}</strong> near vendor</span>
           <span><strong>{vendorSummary.pricedRows.toLocaleString()}</strong> priced rows</span>
         </div>
+        {vendorCandidates.length > 0 && (
+          <div className="vendor-controls" aria-label="Vendor candidate filters">
+            <div className="vendor-filter-group" role="group" aria-label="Vendor margin status">
+              {vendorStatusOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={vendorStatusFilter === option.value ? 'active' : ''}
+                  aria-pressed={vendorStatusFilter === option.value}
+                  onClick={() => setVendorStatusFilter(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="vendor-filter-group" role="group" aria-label="Vendor market volume">
+              {vendorLiquidityOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={vendorLiquidityFilter === option.value ? 'active' : ''}
+                  aria-pressed={vendorLiquidityFilter === option.value}
+                  onClick={() => setVendorLiquidityFilter(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <label className="vendor-search">
+              <Search size={15} aria-hidden="true" />
+              <input
+                type="text"
+                aria-label="Search vendor candidates"
+                value={vendorSearch}
+                onChange={(event) => setVendorSearch(event.target.value)}
+                placeholder="Search item or type..."
+              />
+            </label>
+            <span className="vendor-result-count" role="status">
+              {filteredVendorCandidates.length.toLocaleString()} of {vendorCandidates.length.toLocaleString()} shown
+            </span>
+          </div>
+        )}
         {vendorCandidates.length === 0 ? (
           <NoResultsState
             title="No vendor-margin candidates"
             description="No market-history averages are near your current profile-adjusted vendor value. Vendor checks compare market average against your active profile's vendor value; higher bartering profiles can reveal more rows to watch."
+          />
+        ) : filteredVendorCandidates.length === 0 ? (
+          <NoResultsState
+            title="No vendor candidates match"
+            description="Clear the vendor filters or search another item/type."
           />
         ) : (
           <>
@@ -1051,7 +1143,7 @@ export default function MarketAlertsPage() {
               return (
                 <article key={candidate.itemName} className={`vendor-card ${candidate.status === 'below_vendor' ? 'below-vendor' : 'near-vendor'}`}>
                   <div className="vendor-item">
-                    {imageUrl ? <img src={imageUrl} alt="" /> : <span className="item-pick-fallback" />}
+                    {imageUrl ? <img src={imageUrl} alt="" width={40} height={40} loading="lazy" decoding="async" /> : <span className="item-pick-fallback" />}
                     <div>
                       <strong>{candidate.itemName}</strong>
                       <span>{candidate.status === 'below_vendor' ? 'Below vendor' : 'Near vendor'} - {candidate.liquidity.label}</span>
@@ -1075,13 +1167,13 @@ export default function MarketAlertsPage() {
               );
             })}
           </div>
-          {visibleVendorCandidates.length < vendorCandidates.length && (
+          {visibleVendorCandidates.length < filteredVendorCandidates.length && (
             <button
               type="button"
               className="secondary-action vendor-more"
               onClick={() => setVisibleVendorCount((current) => current + 24)}
             >
-              Show more candidates ({visibleVendorCandidates.length} / {vendorCandidates.length})
+              Show more candidates ({visibleVendorCandidates.length} / {filteredVendorCandidates.length})
             </button>
           )}
           </>
@@ -1213,6 +1305,25 @@ export default function MarketAlertsPage() {
         }
         .market-watch-note.warning svg {
           color: #fbbf24;
+        }
+        .builder-caveat {
+          align-items: flex-start;
+          background: rgba(56,189,248,0.055);
+          border: 1px solid rgba(56,189,248,0.18);
+          border-radius: 7px;
+          color: var(--text-muted);
+          display: flex;
+          font-size: 0.8rem;
+          font-weight: 760;
+          gap: 0.55rem;
+          line-height: 1.42;
+          margin: -0.25rem 0 0.85rem;
+          padding: 0.65rem 0.75rem;
+        }
+        .builder-caveat svg {
+          color: var(--text-accent);
+          flex: 0 0 auto;
+          margin-top: 0.1rem;
         }
         .market-watch-layout {
           align-items: start;
@@ -1723,6 +1834,73 @@ export default function MarketAlertsPage() {
           border-color: var(--border-focus);
           box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
         }
+        .vendor-controls {
+          align-items: center;
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          display: grid;
+          gap: 0.65rem;
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(220px, 0.9fr) auto;
+          margin-top: 0.85rem;
+          padding: 0.55rem;
+        }
+        .vendor-filter-group {
+          display: flex;
+          gap: 0.3rem;
+          min-width: 0;
+          overflow-x: auto;
+          scrollbar-width: thin;
+        }
+        .vendor-filter-group button {
+          background: transparent;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          color: var(--text-muted);
+          flex: 0 0 auto;
+          min-height: 44px;
+          padding: 0 0.7rem;
+        }
+        .vendor-filter-group button.active {
+          background: rgba(56,189,248,0.14);
+          border-color: rgba(56,189,248,0.34);
+          color: #e0f2fe;
+        }
+        .vendor-search {
+          align-items: center;
+          background: rgba(0,0,0,0.22);
+          border: 1px solid var(--border-subtle);
+          border-radius: 7px;
+          display: flex;
+          gap: 0.5rem;
+          min-width: 0;
+          padding: 0 0.7rem;
+        }
+        .vendor-search svg {
+          color: var(--text-muted);
+          flex: 0 0 auto;
+        }
+        .vendor-search input {
+          background: transparent;
+          border: 0;
+          color: var(--text-main);
+          font: inherit;
+          font-weight: 760;
+          min-height: 42px;
+          min-width: 0;
+          outline: 0;
+          width: 100%;
+        }
+        .vendor-search:focus-within {
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+        }
+        .vendor-result-count {
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+          font-size: 0.78rem;
+          font-weight: 900;
+          white-space: nowrap;
+        }
         .watch-rule-grid {
           grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
         }
@@ -1913,6 +2091,9 @@ export default function MarketAlertsPage() {
           .watchlist-controls {
             grid-template-columns: 1fr;
           }
+          .vendor-controls {
+            grid-template-columns: 1fr;
+          }
           .rule-metrics,
           .vendor-card-grid,
           .vendor-summary {
@@ -1974,22 +2155,16 @@ export default function MarketAlertsPage() {
           position: relative;
           overflow: hidden;
           align-items: stretch;
-          border: 1px solid rgba(56, 189, 248, 0.18);
+          border: 1px solid rgba(56, 189, 248, 0.14);
           border-radius: 8px;
           background:
-            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(7, 12, 15, 0.88)),
-            radial-gradient(circle at 92% 0%, rgba(245, 176, 65, 0.16), transparent 34%);
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+            linear-gradient(145deg, rgba(56, 189, 248, 0.045), rgba(7, 12, 15, 0.88)),
+            var(--market-panel);
+          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
           padding: clamp(1rem, 2.2vw, 1.45rem);
         }
         .market-watch-page .market-hero::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            linear-gradient(115deg, rgba(245, 176, 65, 0.13), rgba(52, 211, 153, 0.055) 42%, transparent 68%),
-            radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.12), transparent 28%);
+          content: none;
         }
         .market-watch-page .market-hero > * {
           position: relative;
@@ -2069,15 +2244,13 @@ export default function MarketAlertsPage() {
           border-color: rgba(56, 189, 248, 0.38);
           background: rgba(56, 189, 248, 0.1);
           color: #e0f2fe;
-          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
-          transform: translateY(-1px);
         }
         .market-watch-page .market-hero-card {
-          border-color: rgba(56, 189, 248, 0.22);
+          border-color: rgba(56, 189, 248, 0.16);
           background:
-            linear-gradient(145deg, rgba(56, 189, 248, 0.1), rgba(0, 0, 0, 0.26)),
-            rgba(5, 10, 13, 0.54);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
+            linear-gradient(145deg, rgba(56, 189, 248, 0.055), rgba(0, 0, 0, 0.22)),
+            rgba(5, 10, 13, 0.64);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
         }
         .market-watch-page .market-hero-metrics {
           display: grid;
@@ -2114,6 +2287,10 @@ export default function MarketAlertsPage() {
           color: var(--text-main);
           font-size: 0.82rem;
           line-height: 1.15;
+          overflow: visible;
+          overflow-wrap: anywhere;
+          text-overflow: clip;
+          white-space: normal;
         }
         .market-watch-page .market-status-grid > div.alerting {
           border-color: rgba(245, 176, 65, 0.28);
@@ -2126,13 +2303,7 @@ export default function MarketAlertsPage() {
           overflow: hidden;
         }
         .market-watch-page .watch-rules-section::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            radial-gradient(circle at 96% 0%, rgba(56, 189, 248, 0.08), transparent 28%),
-            linear-gradient(140deg, transparent 0%, rgba(255, 255, 255, 0.025) 100%);
+          content: none;
         }
         .market-watch-page .watch-rules-section > * {
           position: relative;
@@ -2189,7 +2360,6 @@ export default function MarketAlertsPage() {
           border-color: rgba(56, 189, 248, 0.34);
           background: rgba(56, 189, 248, 0.14);
           color: #e0f2fe;
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
         }
         .market-watch-page .watchlist-search {
           justify-self: end;
@@ -2276,9 +2446,8 @@ export default function MarketAlertsPage() {
         .market-watch-page .alert-card,
         .market-watch-page .watch-preview {
           background:
-            linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.18)),
             var(--market-panel);
-          backdrop-filter: blur(16px);
         }
         .market-watch-page .market-hero-card,
         .market-watch-page .market-status-grid > div,
@@ -2293,16 +2462,14 @@ export default function MarketAlertsPage() {
         .market-watch-page :global(.market-select-trigger),
         .market-watch-page :global(.market-select-menu) {
           transition:
-            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
             border-color 180ms ease,
-            box-shadow 180ms ease,
             background-color 180ms ease,
             color 180ms ease;
         }
         .market-watch-page button:active:not(:disabled),
         .market-watch-page .vendor-card:active,
         .market-watch-page .watch-rule-card:active {
-          transform: scale(0.985);
+          transform: none;
         }
         .market-watch-page .watch-field input:focus-visible,
         .market-watch-page .watch-search input:focus-visible,
@@ -2322,7 +2489,6 @@ export default function MarketAlertsPage() {
           .market-watch-page .watch-rule-card:hover,
           .market-watch-page .vendor-card:hover,
           .market-watch-page .alert-card:hover {
-            transform: translateY(-1px);
             border-color: rgba(245, 176, 65, 0.2);
           }
         }
