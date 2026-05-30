@@ -20,12 +20,12 @@ function isPublicDataStatus(value: unknown): value is PublicDataStatus {
 }
 
 function titleForLevel(level: PublicDataFreshnessLevel) {
-  if (level === "running") return "Core public data refresh in progress";
-  if (level === "delayed") return "Core public data refresh is delayed";
-  if (level === "stale") return "Core public data may be stale";
-  if (level === "old") return "Core public data is old";
+  if (level === "running") return "Data refresh running";
+  if (level === "delayed") return "Data delayed";
+  if (level === "stale") return "Data stale";
+  if (level === "old") return "Data old";
   if (level === "unavailable") return "Freshness check unavailable";
-  return "Core public data is fresh";
+  return "Data fresh";
 }
 
 function copyForLevel(level: PublicDataFreshnessLevel, ageLabel: string) {
@@ -122,20 +122,28 @@ export default function DataFreshnessBanner() {
   const progressText = model.progress
     ? `${Math.min(model.progress.current, model.progress.total).toLocaleString()} / ${model.progress.total.toLocaleString()}${model.progress.item ? ` - ${model.progress.item}` : ""}`
     : null;
+  const statusTitle = titleForLevel(model.level);
+  const statusCopy = copyForLevel(model.level, model.ageLabel);
+  const metaText = model.level === "running" && progressText
+    ? `Progress ${progressText}`
+    : `Last sync ${model.ageLabel}`;
 
   return (
-    <aside className={styles.banner} data-level={model.level} role="status" aria-live="polite" aria-atomic="true">
+    <aside
+      className={styles.banner}
+      data-level={model.level}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label={`${statusTitle}. ${statusCopy} ${metaText}.`}
+      title={`${statusCopy} ${metaText}.`}
+    >
       <span className={styles.iconShell} aria-hidden="true">
         <Icon size={18} />
       </span>
       <span className={styles.copy}>
-        <strong>{titleForLevel(model.level)}</strong>
-        <span>{copyForLevel(model.level, model.ageLabel)}</span>
-        <span className={styles.meta}>
-          {model.level === "running" && progressText
-            ? `Progress ${progressText}`
-            : `Last core sync ${model.ageLabel}`}
-        </span>
+        <strong>{statusTitle}</strong>
+        <span className={styles.meta}>{metaText}</span>
       </span>
     </aside>
   );

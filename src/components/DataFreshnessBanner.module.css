@@ -12,8 +12,8 @@
   gap: 0.7rem;
   grid-template-columns: auto minmax(0, 1fr);
   inset-inline-start: 1rem;
-  max-width: min(430px, calc(100vw - 2rem));
-  padding: 0.78rem 0.9rem;
+  max-width: min(310px, calc(100vw - 2rem));
+  padding: 0.68rem 0.78rem;
   position: fixed;
   z-index: 1190;
 }
@@ -71,19 +71,19 @@
 
 .copy {
   display: grid;
-  gap: 0.18rem;
-  line-height: 1.35;
+  gap: 0.12rem;
+  line-height: 1.25;
   min-width: 0;
 }
 
 .copy strong {
   color: var(--text-primary, #f4f4f5);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
 }
 
 .copy span {
   color: var(--text-muted, #a1a1aa);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
 }
 
 .meta {
