@@ -307,14 +307,14 @@ export default function ForgePage() {
         : "Ready to forge";
 
   return (
-    <main className="forge-page">
+    <main className="forge-page" aria-labelledby="forge-page-title">
       <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
       <header className="forge-hero">
         <div className="hero-copy-stack">
           <p className="eyebrow"><ZenithIcon name="forge" size={16} /> Forge Planner</p>
-          <h1>Forge Planner</h1>
+          <h1 id="forge-page-title">Forge Planner</h1>
           <p className="hero-copy">
-            Plan saved legendary and mythic recipe sessions, count owned recipe copies, and see the exact missing materials before a bulk forge push.
+            Pick saved forge recipes, enter craft counts and owned copies, then check missing materials and sell-value assumptions before you craft.
           </p>
           <div className="forge-context-chips" aria-label="Forge planner context">
             <span><ShieldCheck size={14} aria-hidden="true" /> {activeProfile ? activeProfileName : "Global settings"}</span>
@@ -411,7 +411,14 @@ export default function ForgePage() {
                     onMouseEnter={() => setActiveOptionIndex(index)}
                     onClick={() => chooseRecipe(recipe)}
                   >
-                    <img src={recipe.resultImageUrl || recipe.imageUrl || "/favicon.ico"} alt="" />
+                    <img
+                      src={recipe.resultImageUrl || recipe.imageUrl || "/favicon.ico"}
+                      alt=""
+                      width={42}
+                      height={42}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <span>
                       <strong>{recipe.resultName}</strong>
                       <small><QualityText value={recipe.quality}>{recipe.quality}</QualityText> | Lv.{recipe.levelRequired} | {recipe.materials.length} materials</small>
@@ -459,7 +466,14 @@ export default function ForgePage() {
               onMouseEnter={() => prefetchItem(selectedRecipe.resultName)}
               onClick={() => openItemByName(selectedRecipe.resultName)}
             >
-              <img src={selectedRecipe.resultImageUrl || selectedRecipe.imageUrl || "/favicon.ico"} alt="" />
+              <img
+                src={selectedRecipe.resultImageUrl || selectedRecipe.imageUrl || "/favicon.ico"}
+                alt=""
+                width={48}
+                height={48}
+                loading="lazy"
+                decoding="async"
+              />
               <span>
                 <small>Ready to add</small>
                 <strong>{selectedRecipe.resultName}</strong>
@@ -517,7 +531,14 @@ export default function ForgePage() {
                     setFocusedEntryKey(entry.recipe.recipeName);
                     setStatusMessage(`${entry.recipe.resultName} details updated below.`);
                   }}>
-                    <img src={entry.recipe.resultImageUrl || entry.recipe.imageUrl || "/favicon.ico"} alt="" />
+                    <img
+                      src={entry.recipe.resultImageUrl || entry.recipe.imageUrl || "/favicon.ico"}
+                      alt=""
+                      width={42}
+                      height={42}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <span>
                       <strong>{entry.recipe.resultName}</strong>
                       <small><QualityText value={entry.recipe.quality}>{entry.recipe.quality}</QualityText> | Lv.{entry.recipe.levelRequired} | {entry.recipe.resultType || "Forge result"}</small>
@@ -567,7 +588,14 @@ export default function ForgePage() {
         {selectedEntry && (
           <aside className="plan-side" aria-label="Selected forge details">
             <div className="detail-card hero-detail">
-              <img src={selectedEntry.recipe.resultImageUrl || selectedEntry.recipe.imageUrl || "/favicon.ico"} alt="" />
+              <img
+                src={selectedEntry.recipe.resultImageUrl || selectedEntry.recipe.imageUrl || "/favicon.ico"}
+                alt=""
+                width={56}
+                height={56}
+                loading="lazy"
+                decoding="async"
+              />
               <div>
                 <p><QualityText value={selectedEntry.recipe.quality}>{selectedEntry.recipe.quality}</QualityText></p>
                 <h3>{selectedEntry.recipe.resultName}</h3>
@@ -2205,14 +2233,62 @@ export default function ForgePage() {
             transform: translateY(-1px);
           }
         }
+        .forge-page .forge-hero,
+        .forge-page .forge-builder,
+        .forge-page .plan-shell,
+        .forge-page .shopping-layout > section {
+          background: rgba(12, 11, 9, 0.86);
+          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22);
+        }
+        .forge-page .forge-hero:before {
+          display: none;
+        }
+        .forge-page .metric,
+        .forge-page .stat,
+        .forge-page .detail-card,
+        .forge-page .empty-panel,
+        .forge-page .plan-entry,
+        .forge-page .need-row,
+        .forge-page .selected-recipe-card {
+          background: rgba(255, 255, 255, 0.025);
+          transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+        }
+        .forge-page .combo-option,
+        .forge-page .filter-picker-button,
+        .forge-page .filter-picker-menu button,
+        .forge-page .segmented-options button,
+        .forge-page .primary-button,
+        .forge-page .ghost-button,
+        .forge-page .entry-actions button,
+        .forge-page .icon-clear,
+        .forge-page .need-name,
+        .forge-page .entry-title,
+        .forge-page .selected-recipe-title {
+          transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+        }
+        .forge-page .metric:hover,
+        .forge-page .plan-entry:hover,
+        .forge-page .need-row:hover,
+        .forge-page .selected-recipe-card:hover,
+        .forge-page .combo-option:hover,
+        .forge-page .segmented-options button:hover,
+        .forge-page .primary-button:hover:not(:disabled),
+        .forge-page .ghost-button:hover,
+        .forge-page .entry-actions button:hover,
+        .forge-page .icon-clear:hover,
+        .forge-page .need-name:hover,
+        .forge-page .entry-title:hover,
+        .forge-page .selected-recipe-title:hover {
+          transform: none;
+        }
         @media (prefers-reduced-motion: reduce) {
           .forge-page *,
           .forge-page *::before,
           .forge-page *::after {
             scroll-behavior: auto !important;
-            transition-duration: 0.01ms !important;
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
           }
         }
         @media (max-width: 1380px) {
@@ -2377,6 +2453,7 @@ function CustomPicker({
 }) {
   const pickerId = useId();
   const open = openPicker === pickerKey;
+  const listboxId = `${pickerId}-listbox`;
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((option) => option.id === value)));
   const selected = options.find((option) => option.id === value) || options[0] || { id: "", label: "Choose" };
   const renderOptionLabel = (option: { id: string; label: string; qualityTone?: string } | undefined) => {
@@ -2412,9 +2489,9 @@ function CustomPicker({
         id={`${pickerId}-button`}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={listboxId}
         aria-labelledby={`${pickerId}-label ${pickerId}-button`}
-        onPointerDown={(event) => {
-          event.preventDefault();
+        onClick={(event) => {
           onPointerToggle?.();
           if (!open && window.matchMedia("(max-width: 820px)").matches) {
             event.currentTarget.scrollIntoView({ block: "center", inline: "nearest" });
@@ -2426,6 +2503,18 @@ function CustomPicker({
             setOpenPicker("");
             return;
           }
+          if (event.key === "Home") {
+            event.preventDefault();
+            setOpenPicker(pickerKey);
+            setActiveIndex(0);
+            return;
+          }
+          if (event.key === "End") {
+            event.preventDefault();
+            setOpenPicker(pickerKey);
+            setActiveIndex(Math.max(0, options.length - 1));
+            return;
+          }
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
             setOpenPicker(pickerKey);
@@ -2435,7 +2524,7 @@ function CustomPicker({
             });
             return;
           }
-          if (event.key === "Enter" && open) {
+          if ((event.key === "Enter" || event.key === " ") && open) {
             event.preventDefault();
             choose(options[activeIndex] || selected);
           }
@@ -2445,11 +2534,12 @@ function CustomPicker({
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       {open && (
-        <div className="filter-picker-menu" role="listbox" aria-labelledby={`${pickerId}-label`}>
+        <div className="filter-picker-menu" id={listboxId} role="listbox" aria-labelledby={`${pickerId}-label`}>
         {options.map((option) => (
           <button
             type="button"
             key={option.id}
+              id={`${pickerId}-option-${option.id}`}
               role="option"
               aria-selected={value === option.id}
               className={`${value === option.id ? "selected" : ""} ${options[activeIndex]?.id === option.id ? "active" : ""}`}
@@ -2504,7 +2594,14 @@ function NeedTable({
         {rows.map((row) => (
           <div className="need-row" key={row.name}>
             <button type="button" className="need-name" aria-label={`Open item details for ${row.name}`} onClick={() => onOpenItem(row.name)}>
-              <img src={row.imageUrl || "/favicon.ico"} alt="" />
+              <img
+                src={row.imageUrl || "/favicon.ico"}
+                alt=""
+                width={40}
+                height={40}
+                loading="lazy"
+                decoding="async"
+              />
               <span>
                 <strong>{row.name}</strong>
                 <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
@@ -2557,7 +2654,14 @@ function RecipeNeedTable({
         {rows.map((row) => (
           <div className="need-row" key={row.recipeName}>
             <button type="button" className="need-name" aria-label={`Open item details for ${row.recipeName}`} onClick={() => onOpenItem(row.recipeName)}>
-              <img src={row.imageUrl || "/favicon.ico"} alt="" />
+              <img
+                src={row.imageUrl || "/favicon.ico"}
+                alt=""
+                width={40}
+                height={40}
+                loading="lazy"
+                decoding="async"
+              />
               <span>
                 <strong>{row.recipeName}</strong>
                 <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
