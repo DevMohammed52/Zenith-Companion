@@ -381,8 +381,8 @@ const formatGold = (value: number) => {
 
 const formatLabel = formatItemTypeLabel;
 const ITEM_DB_VIEW_STORAGE_KEY = 'zenith_items_view_mode';
-const DESKTOP_ITEM_BATCH_SIZE = 80;
-const MOBILE_ITEM_BATCH_SIZE = 48;
+const DESKTOP_ITEM_BATCH_SIZE = 48;
+const MOBILE_ITEM_BATCH_SIZE = 36;
 const COMPACT_BADGE_LIMIT = 4;
 
 function ItemsArchiveContent() {
@@ -878,7 +878,7 @@ function ItemsArchiveContent() {
           <strong>{stats.craftable.toLocaleString()}</strong>
         </div>
         <div>
-          <span className="summary-label">Used by recipes</span>
+          <span className="summary-label">Recipe uses</span>
           <strong>{stats.used.toLocaleString()}</strong>
         </div>
         <div>
@@ -886,7 +886,7 @@ function ItemsArchiveContent() {
           <strong>{stats.loreLinked.toLocaleString()}</strong>
         </div>
         <div>
-          <span className="summary-label">Visible results</span>
+          <span className="summary-label">Filtered items</span>
           <strong>{filteredItems.length.toLocaleString()}</strong>
         </div>
       </section>
@@ -910,7 +910,7 @@ function ItemsArchiveContent() {
           <ItemSearchBox
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Search items..."
+            placeholder="Search item, material, or source"
           />
         </div>
 
