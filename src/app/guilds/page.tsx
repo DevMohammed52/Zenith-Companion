@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
+import { GameImage } from "@/components/GameImage";
 import styles from "./page.module.css";
 import {
   compareGuilds,
@@ -37,6 +38,7 @@ import {
 } from "@/lib/guilds";
 import { useModalA11y } from "@/lib/use-modal-a11y";
 import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
+import { getTrustedCssImageUrl } from "@/lib/trusted-image";
 
 type TierFilter = "all" | GuildRefreshTier;
 type SearchableGuildRecord = GuildRecord & { searchText: string };
@@ -341,7 +343,16 @@ function GuildMobileCard({
     <article className={styles.guildCard}>
       <div className={styles.guildCardHeader}>
         <div className={styles.guildName}>
-          {guild.icon_url ? <img className={styles.guildIcon} src={guild.icon_url} alt="" loading="lazy" /> : <span className={styles.guildIcon} />}
+          <GameImage
+            src={guild.icon_url}
+            alt=""
+            width={40}
+            height={40}
+            sizes="40px"
+            className={styles.guildIcon}
+            loading="lazy"
+            fallback={<span className={styles.guildIcon} />}
+          />
           <div className={styles.nameBlock}>
             <strong>{guild.name}</strong>
             <span>
@@ -415,6 +426,8 @@ function GuildModal({
     };
   }, []);
 
+  const trustedBackgroundImage = getTrustedCssImageUrl(guild.background_url);
+
   const modal = (
     <div
       className={styles.modalBackdrop}
@@ -433,8 +446,8 @@ function GuildModal({
         <div
           className={styles.modalArt}
           style={{
-            backgroundImage: guild.background_url
-              ? `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.78)), url(${guild.background_url})`
+            backgroundImage: trustedBackgroundImage
+              ? `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.78)), ${trustedBackgroundImage}`
               : "linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(148, 163, 184, 0.1))",
           }}
         >
@@ -445,7 +458,14 @@ function GuildModal({
 
         <div className={styles.modalBody}>
           <header className={styles.modalHeader}>
-            {guild.icon_url ? <img src={guild.icon_url} alt="" /> : <span className={styles.guildIcon} />}
+            <GameImage
+              src={guild.icon_url}
+              alt=""
+              width={54}
+              height={54}
+              sizes="54px"
+              fallback={<span className={styles.guildIcon} />}
+            />
             <div>
               <h2 id="guild-modal-title">{guild.name}</h2>
               <p>
@@ -842,7 +862,16 @@ export default function GuildsPage() {
                     <tr key={guild.id}>
                       <td>
                         <div className={styles.guildName}>
-                          {guild.icon_url ? <img className={styles.guildIcon} src={guild.icon_url} alt="" loading="lazy" /> : <span className={styles.guildIcon} />}
+                          <GameImage
+                            src={guild.icon_url}
+                            alt=""
+                            width={40}
+                            height={40}
+                            sizes="40px"
+                            className={styles.guildIcon}
+                            loading="lazy"
+                            fallback={<span className={styles.guildIcon} />}
+                          />
                           <div className={styles.nameBlock}>
                             <strong>{guild.name}</strong>
                             <span>

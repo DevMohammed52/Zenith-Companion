@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useItemModal } from "@/context/ItemModalContext";
+import { GameImage } from "@/components/GameImage";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
 import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
@@ -690,12 +691,14 @@ function PetImage({ pet }: { pet: PetRecord }) {
   return (
     <div className="pet-avatar">
       {image ? (
-        <img
+        <GameImage
           src={image}
           alt=""
+          width={44}
+          height={44}
+          sizes="44px"
           className={pet.name === "Dead Wyrmshadow" ? "pet-image-upside-down" : undefined}
           loading="lazy"
-          decoding="async"
         />
       ) : (
         <PawPrint size={30} />
@@ -1405,7 +1408,14 @@ export default function PetsPage() {
                         else openItemByName(egg.name);
                       }}
                     >
-                      {selectedRow.pet.egg.imageUrl ? <img src={selectedRow.pet.egg.imageUrl} alt="" /> : <Egg size={18} />}
+                      <GameImage
+                        src={selectedRow.pet.egg.imageUrl}
+                        alt=""
+                        width={34}
+                        height={34}
+                        sizes="34px"
+                        fallback={<Egg size={18} />}
+                      />
                       <span>{selectedRow.pet.egg.name}</span>
                       <strong>{selectedRow.pet.egg.worldBosses?.map((boss) => boss.name).join(", ") || "Open item"}</strong>
                     </button>

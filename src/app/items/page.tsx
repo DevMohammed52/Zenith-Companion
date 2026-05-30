@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
+import { GameImage } from '@/components/GameImage';
 import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
 import ZenithIcon from '@/components/icons/ZenithIcon';
 import { getAllLoreForItem } from '@/data/lore';
@@ -1063,7 +1064,15 @@ function ItemsArchiveContent() {
                   >
                     <td className="item-cell">
                       <div className="item-cell-inner">
-                        <img src={item.image} alt="" loading="lazy" decoding="async" />
+                        <GameImage
+                          src={item.image}
+                          alt=""
+                          width={34}
+                          height={34}
+                          sizes="34px"
+                          loading="lazy"
+                          fallbackSrc="/favicon.ico"
+                        />
                         <div className="item-copy">
                           <strong>{item.name}</strong>
                           <small>{item.description || 'No description available'}</small>
@@ -1093,7 +1102,15 @@ function ItemsArchiveContent() {
             {visibleItems.map(item => (
               <button aria-label={`Open ${item.name} item details`} key={item.id} type="button" onClick={() => open(item)} className="item-card">
                 <div className="quality-strip" style={{ '--quality-color': getQualityColor(item.quality) } as React.CSSProperties} />
-                <img src={item.image} alt="" loading="lazy" decoding="async" />
+                <GameImage
+                  src={item.image}
+                  alt=""
+                  width={44}
+                  height={44}
+                  sizes="44px"
+                  loading="lazy"
+                  fallbackSrc="/favicon.ico"
+                />
                 <div className="item-card-body">
                   <div className="card-topline">
                     <span className="card-item-name">{item.name}</span>

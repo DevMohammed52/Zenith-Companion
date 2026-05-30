@@ -6,6 +6,7 @@ import {
   MapPin, Hammer, TrendingUp, Info, Target, Lock, Plus
 } from 'lucide-react';
 import { useItemModal } from '@/context/ItemModalContext';
+import { GameImage } from '@/components/GameImage';
 import { useRouter } from 'next/navigation';
 import { useCrafting } from '@/context/CraftingContext';
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
@@ -415,7 +416,16 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         <div className="modal-header-section" style={{ borderBottomColor: qColor + '33' }}>
           <div className="header-flex">
             <div className="header-left">
-              {item?.image_url && <img src={item.image_url} alt="" className="item-icon-large" />}
+              {item?.image_url && (
+                <GameImage
+                  src={item.image_url}
+                  alt=""
+                  width={64}
+                  height={64}
+                  sizes="64px"
+                  className="item-icon-large"
+                />
+              )}
               <div>
                 <h2 className="item-title" id="item-modal-title" style={{ color: qColor }}>
                   {item?.name || 'Loading...'}
@@ -437,7 +447,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <span className="meta-divider">/</span>
                       <span className="vendor-badge" title={`Vendor base price: ${formatGold(item.vendor_price || 0)}`} aria-label={`Vendor base price ${formatGold(item.vendor_price || 0)}`}>
                         <span>Vendor</span>
-                        <img src={GOLD_ICON} alt="" />
+                        <GameImage src={GOLD_ICON} alt="" width={14} height={14} sizes="14px" />
                         {(item.vendor_price || 0).toLocaleString()}
                       </span>
                     </>
