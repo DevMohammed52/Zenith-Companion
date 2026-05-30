@@ -14,7 +14,7 @@ export default function SiteFooter() {
         <div className="site-footer-copy">
           <strong>Zenith Companion</strong>
           <span>
-            Unofficial IdleMMO companion. Profiles, planners, and custom settings stay local to this browser unless you export them.
+            Local-first IdleMMO tools. Export profiles when you want a backup.
           </span>
         </div>
       </div>
