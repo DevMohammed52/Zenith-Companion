@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
-import { ErrorState, LoadingState, NoResultsState } from "@/components/StateBlock";
+import { ErrorState, NoResultsState } from "@/components/StateBlock";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   formatConquestAge,
@@ -50,8 +50,6 @@ const DETAIL_TABS: Array<{ key: DetailTab; label: string }> = [
   { key: "assaults", label: "Assaults" },
 ];
 
-const fallbackZoneBackground = "linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(20, 184, 166, 0.12))";
-
 function zoneMatchesFilter(zone: ConquestZone, filter: ZoneFilter) {
   if (filter === "active") return zone.active_assaults_count > 0;
   if (filter === "contested") return zone.status === "CONTESTED";
@@ -81,8 +79,6 @@ function zoneMatchesSearch(zone: ConquestZone, query: string) {
 
 function getZoneStyle(zone: ConquestZone): CSSProperties {
   return {
-    "--zone-image": zone.image_url ? `url(${zone.image_url})` : fallbackZoneBackground,
-    "--detail-image": zone.image_url ? `url(${zone.image_url})` : fallbackZoneBackground,
     "--zone-color": zone.colour || "#8b5cf6",
   } as CSSProperties;
 }
@@ -129,7 +125,7 @@ function getPressureTone(zone: ConquestZone) {
 
 function GuildIcon({ guild }: { guild: ConquestGuild | null }) {
   if (guild?.icon_url) {
-    return <img className={styles.guildIcon} src={guild.icon_url} alt="" loading="lazy" />;
+    return <img className={styles.guildIcon} src={guild.icon_url} alt="" width={38} height={38} loading="lazy" decoding="async" />;
   }
 
   return (
@@ -141,7 +137,7 @@ function GuildIcon({ guild }: { guild: ConquestGuild | null }) {
 
 function CharacterAvatar({ row }: { row: ConquestContributorRow }) {
   const image = row.character?.image_url;
-  if (image) return <img className={styles.avatar} src={image} alt="" loading="lazy" />;
+  if (image) return <img className={styles.avatar} src={image} alt="" width={38} height={38} loading="lazy" decoding="async" />;
 
   return (
     <div className={styles.avatar} aria-hidden="true">
@@ -337,7 +333,7 @@ export default function ConquestPage() {
 
   if (error) {
     return (
-      <main className={styles.page}>
+      <main className={styles.page} aria-label="Conquest">
         <section className={styles.panel}>
           <ErrorState
             title="Conquest data unavailable"
@@ -351,20 +347,35 @@ export default function ConquestPage() {
 
   if (!data || !selectedZone) {
     return (
-      <main className={styles.page}>
-        <section className={styles.panel}>
-          <LoadingState title="Loading conquest data" description="Preparing zone control, guild leaders, and active assault details." />
+      <main className={`${styles.page} ${styles.loadingPage}`} aria-labelledby="conquest-page-title" aria-busy="true">
+        <section className={styles.hero}>
+          <div>
+            <div className={styles.eyebrow}><ZenithIcon name="conquest" size={15} /> Guild Conquest</div>
+            <h1 id="conquest-page-title" className={styles.title}>Conquest</h1>
+            <p className={styles.subtitle}>
+              Loading zone control, guild leaders, and active assault rows from the latest conquest snapshot.
+            </p>
+          </div>
+          <div className={`${styles.freshness} ${styles.loadingFreshness}`} aria-hidden="true">
+            <span>Updated</span>
+            <strong>Loading</strong>
+            <span>Snapshot time</span>
+            <span>Current season</span>
+          </div>
         </section>
+
+        <div className={styles.loadingReserve} aria-hidden="true" />
+        <p className="sr-only" role="status" aria-live="polite">Loading conquest data.</p>
       </main>
     );
   }
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} aria-labelledby="conquest-page-title">
       <section className={styles.hero}>
         <div>
           <div className={styles.eyebrow}><ZenithIcon name="conquest" size={15} /> Guild Conquest</div>
-          <h1 className={styles.title}>Conquest</h1>
+          <h1 id="conquest-page-title" className={styles.title}>Conquest</h1>
           <p className={styles.subtitle}>
             See who controls each zone, where fights are active, and which players are carrying the season.
           </p>
@@ -377,7 +388,7 @@ export default function ConquestPage() {
         </div>
       </section>
 
-      <section className={styles.commandGrid} aria-label="Conquest highlights" tabIndex={0}>
+      <section className={styles.commandGrid} aria-label="Conquest highlights">
         <article className={styles.commandCard} data-tone={activeAssaults.length > 0 ? "hot" : "calm"}>
           <div className={styles.commandIcon}>
             <Flame size={18} />
@@ -469,7 +480,7 @@ export default function ConquestPage() {
       <p className="sr-only" role="status" aria-live="polite">{zoneStatus}</p>
 
       <section className={styles.layout}>
-        <div className={styles.zoneGrid} aria-label="Conquest zones">
+        <section className={styles.zoneGrid} aria-label="Conquest zones">
           {filteredZones.map((zone) => {
             const guild = getDominantGuild(zone);
             const leaderShare = getLeaderShare(zone);
@@ -490,6 +501,7 @@ export default function ConquestPage() {
                 <button
                   type="button"
                   className={styles.zoneSelectButton}
+                  aria-label={`Select ${zone.name}. ${getPressureLabel(zone)}. ${guild?.name ?? "No guild"} leads with ${formatConquestPercent(leaderShare)} control share.`}
                   aria-pressed={selectedZone.key === zone.key}
                   onClick={() => setSelectedZoneKey(zone.key)}
                 >
@@ -571,7 +583,7 @@ export default function ConquestPage() {
               ) : null}
             />
           )}
-        </div>
+        </section>
 
         {filteredZones.length > 0 && (
           <aside className={`${styles.panel} ${styles.detailPanel}`} aria-label={`${selectedZone.name} details`}>
