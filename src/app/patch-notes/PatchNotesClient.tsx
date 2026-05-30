@@ -219,13 +219,13 @@ export default function PatchNotesClient() {
   };
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} aria-labelledby="patch-notes-page-title">
       <section className={styles.hero}>
         <div>
           <span className={styles.eyebrow}><FileClock size={16} /> IdleMMO Archive</span>
-          <h1>IdleMMO Patch Notes</h1>
+          <h1 id="patch-notes-page-title">IdleMMO Patch Notes</h1>
           <p>
-            Search the official IdleMMO patch note history by feature, mechanic, keyword, or version.
+            Search Zenith&apos;s local archive of official IdleMMO notes by feature, mechanic, keyword, or version.
           </p>
         </div>
 
@@ -401,24 +401,22 @@ export default function PatchNotesClient() {
 
                 <p className={styles.excerpt}>{highlightText(note.excerpt, query)}</p>
 
-                {expanded && (
-                  <div id={bodyId} className={styles.noteBody}>
-                    {sections.map((section, sectionIndex) => (
-                      <section key={`${note.id}-${section.heading}-${sectionIndex}`}>
-                        {section.heading !== "Overview" && <h3>{section.heading}</h3>}
-                        {section.blocks.map((block, blockIndex) => {
-                          if (block.type === "listItem") {
-                            return <p key={blockIndex} className={styles.listItem}>{highlightText(block.text, query)}</p>;
-                          }
-                          if (block.type === "image") {
-                            return <p key={blockIndex} className={styles.imageAlt}>{block.text}</p>;
-                          }
-                          return <p key={blockIndex}>{highlightText(block.text, query)}</p>;
-                        })}
-                      </section>
-                    ))}
-                  </div>
-                )}
+                <div id={bodyId} className={styles.noteBody} hidden={!expanded}>
+                  {expanded && sections.map((section, sectionIndex) => (
+                    <section key={`${note.id}-${section.heading}-${sectionIndex}`}>
+                      {section.heading !== "Overview" && <h3>{section.heading}</h3>}
+                      {section.blocks.map((block, blockIndex) => {
+                        if (block.type === "listItem") {
+                          return <p key={blockIndex} className={styles.listItem}>{highlightText(block.text, query)}</p>;
+                        }
+                        if (block.type === "image") {
+                          return <p key={blockIndex} className={styles.imageAlt}>{block.text}</p>;
+                        }
+                        return <p key={blockIndex}>{highlightText(block.text, query)}</p>;
+                      })}
+                    </section>
+                  ))}
+                </div>
 
                 <button
                   className={styles.expandButton}
@@ -474,6 +472,7 @@ function FilterSelect({
 }) {
   const pickerId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value));
   const selected = options[selectedIndex] || options[0] || { value: "", label: "Select" };
@@ -495,6 +494,11 @@ function FilterSelect({
 
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    window.requestAnimationFrame(() => menuRef.current?.focus());
   }, [open]);
 
   const chooseOption = (option: FilterOption) => {
@@ -570,11 +574,13 @@ function FilterSelect({
 
       {open && (
         <div
+          ref={menuRef}
+          aria-activedescendant={options[activeIndex] ? `${pickerId}-option-${activeIndex}` : undefined}
           aria-label={ariaLabel}
           className={styles.filterMenu}
           id={`${pickerId}-menu`}
           role="listbox"
-          tabIndex={-1}
+          tabIndex={0}
         >
           {options.map((option, index) => {
             const active = index === activeIndex;
@@ -584,8 +590,9 @@ function FilterSelect({
                 key={option.value}
                 aria-selected={selectedOption}
                 className={`${styles.filterOption} ${active ? styles.filterOptionActive : ""}`}
-                id={`${pickerId}-option-${option.value}`}
+                id={`${pickerId}-option-${index}`}
                 role="option"
+                tabIndex={-1}
                 type="button"
                 onClick={() => chooseOption(option)}
                 onMouseEnter={() => setActiveIndex(index)}
