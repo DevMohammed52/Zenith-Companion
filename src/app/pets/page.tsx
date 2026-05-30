@@ -224,6 +224,7 @@ type StoredPetState = {
 type PetSelectOption<T extends string> = { value: T; label: string; qualityTone?: string };
 
 const PET_DATABASE_STORAGE_KEY = "zenith_pet_database_state_v1";
+const MOBILE_PET_BATCH_SIZE = 36;
 
 const isDisplayableBattleDrop = (drop: BattleDrop | null | undefined) => {
   const itemName = String(drop?.itemName || "").trim();
@@ -789,6 +790,7 @@ export default function PetsPage() {
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const [modalRootReady, setModalRootReady] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [visiblePetCount, setVisiblePetCount] = useState(MOBILE_PET_BATCH_SIZE);
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const { openItem, openItemByName } = useItemModal();
   const { activeProfile } = useProfiles();
@@ -1013,6 +1015,11 @@ export default function PetsPage() {
     () => (selectedPetName ? petRows.find((row) => row.pet.name === selectedPetName) || null : null),
     [petRows, selectedPetName],
   );
+  useEffect(() => {
+    setVisiblePetCount(MOBILE_PET_BATCH_SIZE);
+  }, [deferredSearchTerm, qualityFilter, sourceFilter, sortBy, sortDesc]);
+  const visiblePetRows = isCompactViewport ? petRows.slice(0, visiblePetCount) : petRows;
+  const hiddenPetCount = Math.max(0, petRows.length - visiblePetRows.length);
   const selectedBattleDrops = useMemo(
     () => selectedBattle?.zone.drops?.filter(isDisplayableBattleDrop) || [],
     [selectedBattle],
@@ -1049,7 +1056,9 @@ export default function PetsPage() {
     beastmaster;
   const scenarioLabel = `Scenario: Lv ${petLevel} / Mastery ${masteryLevel} / Evo ${evolutionStage}`;
   const resultAnnouncement = petRows.length
-    ? `${petRows.length} pet${petRows.length === 1 ? "" : "s"} shown.`
+    ? hiddenPetCount
+      ? `${visiblePetRows.length} of ${petRows.length} pets shown.`
+      : `${petRows.length} pet${petRows.length === 1 ? "" : "s"} shown.`
     : "No pets match the current filters.";
   const clearPetFilters = () => {
     setSearchTerm("");
@@ -1230,7 +1239,7 @@ export default function PetsPage() {
           <section className="pets-signal-row">
             <div>
               <Dumbbell size={18} />
-              <span>Visible</span>
+              <span>Filtered</span>
               <strong>{petRows.length}</strong>
             </div>
             <div>
@@ -1279,7 +1288,7 @@ export default function PetsPage() {
                 />
               ) : viewMode === "cards" ? (
                 <div className="pets-card-grid">
-                  {petRows.map((row) => (
+                  {visiblePetRows.map((row) => (
                     <PetCard
                       key={row.pet.name}
                       pet={row.pet}
@@ -1308,7 +1317,7 @@ export default function PetsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {petRows.map((row) => (
+                      {visiblePetRows.map((row) => (
                         <tr key={row.pet.name}>
                           <td>
                             <span className="table-pet-cell">
@@ -1335,6 +1344,16 @@ export default function PetsPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {hiddenPetCount > 0 && (
+                <div className="pet-load-more" role="status">
+                  <span>
+                    Showing {visiblePetRows.length.toLocaleString()} of {petRows.length.toLocaleString()} pets on mobile.
+                  </span>
+                  <button type="button" onClick={() => setVisiblePetCount((count) => count + MOBILE_PET_BATCH_SIZE)}>
+                    Show {Math.min(MOBILE_PET_BATCH_SIZE, hiddenPetCount).toLocaleString()} more
+                  </button>
                 </div>
               )}
             </section>
