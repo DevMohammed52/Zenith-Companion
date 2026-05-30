@@ -84,7 +84,7 @@
   font-weight: 850;
   text-decoration: none;
   cursor: pointer;
-  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), box-shadow 160ms var(--owned-ease), color 160ms var(--owned-ease), transform 160ms var(--owned-ease);
+  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), box-shadow 160ms var(--owned-ease), color 160ms var(--owned-ease);
 }
 
 .primaryAction {
@@ -99,16 +99,15 @@
 .cardActions button:hover,
 .cardActions button:focus-visible {
   border-color: color-mix(in srgb, var(--text-accent), transparent 48%);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.16);
   color: #fff;
   outline: none;
-  transform: translateY(-1px);
 }
 
 .secondaryAction:active,
 .primaryAction:active,
 .cardActions button:active {
-  transform: translateY(1px) scale(0.99);
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
 }
 
 .summaryGrid,
@@ -120,18 +119,6 @@
 .summaryGrid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 1rem;
-  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
-}
-
-.summaryGrid:focus,
-.importReadiness:focus {
-  outline: none;
-}
-
-.summaryGrid:focus-visible,
-.importReadiness:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--text-accent), transparent 28%);
-  outline-offset: 3px;
 }
 
 .summaryGrid div {
@@ -168,7 +155,6 @@
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), transparent 48%),
     rgba(255,255,255,0.025);
-  animation: ownedPetsRise 400ms var(--owned-ease-out) 40ms both;
 }
 
 .importReadiness div {
@@ -225,7 +211,6 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   background: rgba(255,255,255,0.03);
-  animation: ownedPetsRise 420ms var(--owned-ease-out) 80ms both;
   isolation: isolate;
 }
 
@@ -268,7 +253,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.38rem;
-  min-height: 2rem;
+  min-height: 2.75rem;
   margin-left: auto;
   padding: 0 0.62rem;
   border: 1px solid rgba(255,255,255,0.1);
@@ -279,7 +264,7 @@
   font: inherit;
   font-size: 0.78rem;
   font-weight: 900;
-  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), opacity 160ms var(--owned-ease), transform 160ms var(--owned-ease);
+  transition: background 160ms var(--owned-ease), border-color 160ms var(--owned-ease), opacity 160ms var(--owned-ease);
 }
 
 .controlsHeader button:disabled {
@@ -297,7 +282,7 @@
 
 .controlsHeader button:not(:disabled):active,
 .emptyAction:active {
-  transform: translateY(1px);
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
 }
 
 .searchBox {
@@ -394,21 +379,24 @@
   color: var(--text-muted);
   cursor: pointer;
   font-weight: 850;
-  transition: background 150ms var(--owned-ease), border-color 150ms var(--owned-ease), color 150ms var(--owned-ease), transform 150ms var(--owned-ease);
+  transition: background 150ms var(--owned-ease), border-color 150ms var(--owned-ease), color 150ms var(--owned-ease);
 }
 
 .segment button:hover,
+.segment button:focus-visible,
 .activeControl,
 .directionButton:hover,
+.directionButton:focus-visible,
 .directionButton[aria-pressed="true"] {
   border-color: var(--border-focus) !important;
   background: color-mix(in srgb, var(--text-accent), transparent 86%) !important;
   color: #fff !important;
+  outline: none;
 }
 
 .segment button:active,
 .directionButton:active {
-  transform: translateY(1px);
+  background: color-mix(in srgb, var(--text-accent), transparent 86%);
 }
 
 .resultHeader {
@@ -421,7 +409,6 @@
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   background: rgba(255,255,255,0.025);
-  animation: ownedPetsRise 360ms var(--owned-ease-out) 120ms both;
 }
 
 .resultHeader strong {
@@ -443,9 +430,8 @@
   padding: 0.9rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 14px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.035);
-  transition: background 180ms var(--owned-ease), border-color 180ms var(--owned-ease), box-shadow 180ms var(--owned-ease), transform 180ms var(--owned-ease);
-  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+  transition: background 180ms var(--owned-ease), border-color 180ms var(--owned-ease), box-shadow 180ms var(--owned-ease);
 }
 
 .card::before {
@@ -461,8 +447,7 @@
 .card:hover,
 .card:focus-within {
   border-color: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 48%);
-  box-shadow: 0 18px 44px rgba(0,0,0,0.24), 0 0 28px color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 88%);
-  transform: translateY(-2px);
+  box-shadow: inset 3px 0 0 var(--owned-pet-quality, var(--text-accent)), inset 0 1px 0 rgba(255,255,255,0.045);
 }
 
 .activeCard {
@@ -743,7 +728,6 @@
   min-height: 18rem;
   padding: 2rem;
   text-align: center;
-  animation: ownedPetsRise 360ms var(--owned-ease-out) both;
 }
 
 .empty h2 {
@@ -821,11 +805,17 @@
     overflow-x: auto;
     padding-bottom: 0.2rem;
     scroll-snap-type: x proximity;
-    scrollbar-width: none;
+    scrollbar-color: color-mix(in srgb, var(--text-accent), transparent 45%) transparent;
+    scrollbar-width: thin;
   }
 
   .summaryGrid::-webkit-scrollbar {
-    display: none;
+    height: 0.45rem;
+  }
+
+  .summaryGrid::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-accent), transparent 45%);
   }
 
   .summaryGrid div {
@@ -838,11 +828,17 @@
     overflow-x: auto;
     padding-bottom: 0.75rem;
     scroll-snap-type: x proximity;
-    scrollbar-width: none;
+    scrollbar-color: color-mix(in srgb, var(--text-accent), transparent 45%) transparent;
+    scrollbar-width: thin;
   }
 
   .importReadiness::-webkit-scrollbar {
-    display: none;
+    height: 0.45rem;
+  }
+
+  .importReadiness::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-accent), transparent 45%);
   }
 
   .importReadiness div {
@@ -906,11 +902,17 @@
     overflow-x: auto;
     padding-bottom: 0.1rem;
     scroll-snap-type: x proximity;
-    scrollbar-width: none;
+    scrollbar-color: color-mix(in srgb, var(--text-accent), transparent 45%) transparent;
+    scrollbar-width: thin;
   }
 
   .segment::-webkit-scrollbar {
-    display: none;
+    height: 0.4rem;
+  }
+
+  .segment::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-accent), transparent 45%);
   }
 
   .segment button,
