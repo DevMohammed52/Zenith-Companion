@@ -37,6 +37,12 @@ import {
   type MarketWatchMetric,
   type MarketWatchRule,
 } from '@/lib/market-alerts';
+import {
+  getBrowserNotificationState,
+  requestBrowserNotificationPermission,
+  showBrowserNotification,
+  type BrowserNotificationState,
+} from '@/lib/browser-notifications';
 import type { MarketPriceDatum } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
@@ -56,7 +62,6 @@ type ItemOption = {
   searchText: string;
 };
 
-type NotificationState = NotificationPermission | 'unsupported';
 type WatchFilter = 'all' | 'triggered' | 'enabled' | 'paused';
 
 const metricOptions: FilterOption<MarketWatchMetric>[] = MARKET_WATCH_METRIC_OPTIONS.map((option) => ({
@@ -301,7 +306,7 @@ export default function MarketAlertsPage() {
   const [comparator, setComparator] = useState<MarketWatchComparator>('lte');
   const [threshold, setThreshold] = useState('');
   const [notifyByDefault, setNotifyByDefault] = useState(false);
-  const [notificationState, setNotificationState] = useState<NotificationState>('unsupported');
+  const [notificationState, setNotificationState] = useState<BrowserNotificationState>('unsupported');
   const [manualMessage, setManualMessage] = useState('');
   const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [watchFilter, setWatchFilter] = useState<WatchFilter>('all');
@@ -312,12 +317,7 @@ export default function MarketAlertsPage() {
   const barteringBoost = getProfileBarteringBoost(activeProfile);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!('Notification' in window)) {
-      setNotificationState('unsupported');
-      return;
-    }
-    setNotificationState(Notification.permission);
+    setNotificationState(getBrowserNotificationState());
   }, []);
 
   useEffect(() => {
@@ -463,12 +463,11 @@ export default function MarketAlertsPage() {
       pendingNotifications
         .filter((evaluation) => evaluation.rule.notify)
         .forEach((evaluation) => {
-          try {
-            new Notification('Zenith market watch', {
-              body: `${evaluation.title}: ${evaluation.body}`,
-              tag: evaluation.rule.id,
-            });
-          } catch {}
+          showBrowserNotification({
+            title: 'Zenith market watch',
+            body: `${evaluation.title}: ${evaluation.body}`,
+            tag: evaluation.rule.id,
+          });
         });
     }
   }, [evaluations, notificationState, rules, rulesLoaded, typedMarketData]);
@@ -545,21 +544,19 @@ export default function MarketAlertsPage() {
   };
 
   const requestNotifications = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      setNotificationState('unsupported');
+    const result = await requestBrowserNotificationPermission();
+    setNotificationState(result);
+    if (result === 'unsupported') {
       setManualMessage('This browser does not support local notifications.');
       return;
     }
-    const result = await Notification.requestPermission();
-    setNotificationState(result);
     if (result === 'granted') {
       setNotifyByDefault(true);
-      try {
-        new Notification('Zenith market watch', {
-          body: 'Browser alerts are enabled while Zenith Companion can run in this browser.',
-          tag: 'zenith-market-watch-test',
-        });
-      } catch {}
+      showBrowserNotification({
+        title: 'Zenith market watch',
+        body: 'Browser alerts are enabled while Zenith Companion can run in this browser.',
+        tag: 'zenith-market-watch-test',
+      });
     } else {
       setManualMessage('Browser notifications are not enabled.');
     }
@@ -875,7 +872,7 @@ export default function MarketAlertsPage() {
             )}
           </div>
           <p className="notify-helper">
-            Runs locally while this browser has Zenith open. Your browser will ask for permission before notifications are enabled.
+            Runs locally while this browser has Zenith open. Zenith only asks after you press the permission button.
           </p>
 
           <button
