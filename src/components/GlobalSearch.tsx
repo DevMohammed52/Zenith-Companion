@@ -538,6 +538,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         className="global-search-trigger"
         type="button"
         onClick={() => setOpen(true)}
+        disabled={!mounted}
+        aria-busy={!mounted}
         aria-label="Open global search"
         aria-haspopup="dialog"
         aria-expanded={open}
