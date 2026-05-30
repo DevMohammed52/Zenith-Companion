@@ -848,7 +848,7 @@ function AlchemyContent() {
   return (
     <>
       <div className="header alchemy-header">
-        <h1 className="header-title">
+        <h1 className="header-title" id="alchemy-page-title">
           <ZenithIcon name="alchemy" size={24} style={{ color: "var(--text-accent)" }} /> ALCHEMY PROFIT FINDER
         </h1>
         <div className="header-status">
@@ -1085,19 +1085,13 @@ function AlchemyContent() {
           />
           <div className="mobile-card-grid">
             {rows.map((row) => (
-              <div
-                aria-disabled={row.status !== "ok"}
+              <button
                 aria-label={`Open ${row.name} alchemy strategy`}
                 key={row.name}
                 className="mobile-alchemy-card rich"
+                disabled={row.status !== "ok"}
                 onClick={() => row.status === "ok" && setSelectedRow(row)}
-                onKeyDown={(event) => {
-                  if (row.status !== "ok" || (event.key !== "Enter" && event.key !== " ")) return;
-                  event.preventDefault();
-                  setSelectedRow(row);
-                }}
-                role="button"
-                tabIndex={row.status === "ok" ? 0 : -1}
+                type="button"
               >
                 <div className="m-card-header">
                   <div className="m-card-title">
@@ -1135,7 +1129,7 @@ function AlchemyContent() {
                     )}
                   </>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -1471,7 +1465,7 @@ function AlchemyStrategyModal({
 
 export default function AlchemyPage() {
   return (
-    <main className="container alchemy-page-shell">
+    <main className="container alchemy-page-shell" aria-labelledby="alchemy-page-title">
       <Suspense fallback={<div className="loading-state">Loading Alchemy Data...</div>}>
         <AlchemyContent />
       </Suspense>
