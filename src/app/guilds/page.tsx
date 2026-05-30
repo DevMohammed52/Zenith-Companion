@@ -43,8 +43,9 @@ import { getTrustedCssImageUrl } from "@/lib/trusted-image";
 type TierFilter = "all" | GuildRefreshTier;
 type SearchableGuildRecord = GuildRecord & { searchText: string };
 
-const INITIAL_ROWS = 90;
-const ROW_INCREMENT = 90;
+const DESKTOP_GUILD_BATCH_SIZE = 60;
+const MOBILE_GUILD_BATCH_SIZE = 36;
+const GUILD_COMPACT_QUERY = "(max-width: 900px)";
 const GUILD_LIST_URL = "/guild-list.json";
 
 const SORT_OPTIONS: Array<{ id: GuildSortKey; label: string }> = [
@@ -599,11 +600,15 @@ export default function GuildsPage() {
   const [search, setSearch] = useState("");
   const [tier, setTier] = useState<TierFilter>("all");
   const [sortBy, setSortBy] = useState<GuildSortKey>("activity");
-  const [visibleLimit, setVisibleLimit] = useState(INITIAL_ROWS);
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(DESKTOP_GUILD_BATCH_SIZE);
   const [inspectingGuild, setInspectingGuild] = useState<GuildRecord | null>(null);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const initialQueryHandled = useRef(false);
   const deferredSearch = useDeferredValue(search);
+  const guildBatchSize = isCompactViewport ? MOBILE_GUILD_BATCH_SIZE : DESKTOP_GUILD_BATCH_SIZE;
+  const showCardLayout = isCompactViewport;
+  const showTableLayout = !isCompactViewport;
 
   useEffect(() => {
     let cancelled = false;
@@ -625,8 +630,16 @@ export default function GuildsPage() {
   }, []);
 
   useEffect(() => {
-    setVisibleLimit(INITIAL_ROWS);
-  }, [search, tier, sortBy]);
+    const media = window.matchMedia(GUILD_COMPACT_QUERY);
+    const syncViewport = () => setIsCompactViewport(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    setVisibleLimit(guildBatchSize);
+  }, [guildBatchSize, search, tier, sortBy]);
 
   const guilds = useMemo<SearchableGuildRecord[]>(
     () => (database?.guilds || []).map((guild) => ({ ...guild, searchText: getSearchText(guild) })),
@@ -639,7 +652,8 @@ export default function GuildsPage() {
       .filter((guild) => !normalizedSearch || guild.searchText.includes(normalizedSearch));
     return [...filtered].sort((a, b) => compareGuilds(a, b, sortBy));
   }, [deferredSearch, guilds, sortBy, tier]);
-  const visibleGuilds = filteredGuilds.slice(0, visibleLimit);
+  const visibleGuilds = useMemo(() => filteredGuilds.slice(0, visibleLimit), [filteredGuilds, visibleLimit]);
+  const hiddenGuildCount = Math.max(0, filteredGuilds.length - visibleGuilds.length);
   const tierCounts = database?.meta.totals.tiers || { hot: 0, warm: 0, cold: 0 };
   const currentSortLabel = SORT_OPTIONS.find((option) => option.id === sortBy)?.label || SORT_OPTIONS[0].label;
   const hasSearch = search.trim().length > 0;
@@ -700,11 +714,11 @@ export default function GuildsPage() {
     <main className={styles.page}>
       <section className={styles.hero}>
         <div>
-          <div className={styles.eyebrow}><ZenithIcon name="guild" size={15} /> Guild Intelligence</div>
+          <div className={styles.eyebrow}><ZenithIcon name="guild" size={15} /> Guild reference</div>
           <h1 className={styles.title}>Guild Database</h1>
           <p className={styles.subtitle}>
-            Search every discovered guild, compare activity signals, and open a focused inspection view for bios,
-            leadership, member rosters, and refresh freshness.
+            Search discovered guilds, compare refresh tiers and season ranks, then open a focused view for bios,
+            leaders, member rosters, zones, and snapshot freshness.
           </p>
         </div>
 
@@ -753,7 +767,7 @@ export default function GuildsPage() {
               </span>
               <div>
                 <div className={styles.statValue}>{formatGuildNumber(filteredGuilds.length)}</div>
-                <div className={styles.statLabel}>Visible results</div>
+                <div className={styles.statLabel}>Filtered guilds</div>
               </div>
             </div>
           </section>
@@ -840,109 +854,113 @@ export default function GuildsPage() {
           <p className="sr-only" role="status" aria-live="polite">{resultStatus}</p>
 
           <section className={styles.tableWrap}>
-            <p className={styles.tableHint}>Mobile view shows key fields as cards; open a guild for full details.</p>
-            <div className={styles.tableScroll} tabIndex={0} aria-label="Scrollable guild results table">
-              <table className={styles.table}>
-                <caption className="sr-only">Guild database results</caption>
-                <thead>
-                  <tr>
-                    <th>Guild</th>
-                    <th>Tier</th>
-                    <th>Season</th>
-                    <th>Level</th>
-                    <th>Members</th>
-                    <th>Marks</th>
-                    <th>Avg TL</th>
-                    <th title="Refresh-priority and activity heuristic">Activity signal</th>
-                    <th>Inspect</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleGuilds.map((guild) => (
-                    <tr key={guild.id}>
-                      <td>
-                        <div className={styles.guildName}>
-                          <GameImage
-                            src={guild.icon_url}
-                            alt=""
-                            width={40}
-                            height={40}
-                            sizes="40px"
-                            className={styles.guildIcon}
-                            loading="lazy"
-                            fallback={<span className={styles.guildIcon} />}
-                          />
-                          <div className={styles.nameBlock}>
-                            <strong>{guild.name}</strong>
-                            <span>
-                              #{guild.id}
-                              {guild.tag ? ` - ${guild.tag}` : ""}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={styles.pill} data-tier={guild.refresh_tier}>
-                          {GUILD_TIER_LABELS[guild.refresh_tier]}
-                        </span>
-                      </td>
-                      <td>{guild.season_position ? `#${guild.season_position}` : "-"}</td>
-                      <td>{formatGuildNumber(guild.level)}</td>
-                      <td>{formatGuildNumber(guild.member_count)}</td>
-                      <td>{formatGuildNumber(guild.marks)}</td>
-                      <td>{formatGuildNumber(guild.average_total_level)}</td>
-                      <td>{formatGuildNumber(guild.activity_score)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.inspectButton}
-                          onClick={() => loadDetails(guild)}
-                          aria-label={`View ${guild.name} guild details`}
-                        >
-                          <Eye size={15} aria-hidden="true" /> View
-                        </button>
-                      </td>
+            {showCardLayout && <p className={styles.tableHint}>Mobile view shows key fields as cards; open a guild for full details.</p>}
+            {showTableLayout && (
+              <div className={styles.tableScroll} tabIndex={0} aria-label="Scrollable guild results table">
+                <table className={styles.table}>
+                  <caption className="sr-only">Guild database results</caption>
+                  <thead>
+                    <tr>
+                      <th>Guild</th>
+                      <th>Tier</th>
+                      <th>Season</th>
+                      <th>Level</th>
+                      <th>Members</th>
+                      <th>Marks</th>
+                      <th>Avg TL</th>
+                      <th title="Refresh-priority and activity heuristic">Activity signal</th>
+                      <th>Inspect</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredGuilds.length === 0 && (
-                <NoResultsState
-                  compact
-                  title="No guilds match the current filters"
-                  description="Clear the search term or refresh-tier filter to widen the guild list."
-                  action={hasActiveFilters ? (
-                    <button type="button" className={styles.resetButton} onClick={resetFilters}>
-                      <RotateCcw size={15} aria-hidden="true" /> Reset filters
-                    </button>
-                  ) : null}
-                />
-              )}
-            </div>
-            <div className={styles.mobileGuildList} aria-label="Guild results">
-              {visibleGuilds.map((guild) => (
-                <GuildMobileCard guild={guild} key={`mobile-${guild.id}`} onInspect={loadDetails} />
-              ))}
-              {filteredGuilds.length === 0 && (
-                <NoResultsState
-                  compact
-                  title="No guilds match the current filters"
-                  description="Clear the search term or refresh-tier filter to widen the guild list."
-                  action={hasActiveFilters ? (
-                    <button type="button" className={styles.resetButton} onClick={resetFilters}>
-                      <RotateCcw size={15} aria-hidden="true" /> Reset filters
-                    </button>
-                  ) : null}
-                />
-              )}
-            </div>
+                  </thead>
+                  <tbody>
+                    {visibleGuilds.map((guild) => (
+                      <tr key={guild.id}>
+                        <td>
+                          <div className={styles.guildName}>
+                            <GameImage
+                              src={guild.icon_url}
+                              alt=""
+                              width={40}
+                              height={40}
+                              sizes="40px"
+                              className={styles.guildIcon}
+                              loading="lazy"
+                              fallback={<span className={styles.guildIcon} />}
+                            />
+                            <div className={styles.nameBlock}>
+                              <strong>{guild.name}</strong>
+                              <span>
+                                #{guild.id}
+                                {guild.tag ? ` - ${guild.tag}` : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={styles.pill} data-tier={guild.refresh_tier}>
+                            {GUILD_TIER_LABELS[guild.refresh_tier]}
+                          </span>
+                        </td>
+                        <td>{guild.season_position ? `#${guild.season_position}` : "-"}</td>
+                        <td>{formatGuildNumber(guild.level)}</td>
+                        <td>{formatGuildNumber(guild.member_count)}</td>
+                        <td>{formatGuildNumber(guild.marks)}</td>
+                        <td>{formatGuildNumber(guild.average_total_level)}</td>
+                        <td>{formatGuildNumber(guild.activity_score)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.inspectButton}
+                            onClick={() => loadDetails(guild)}
+                            aria-label={`View ${guild.name} guild details`}
+                          >
+                            <Eye size={15} aria-hidden="true" /> View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredGuilds.length === 0 && (
+                  <NoResultsState
+                    compact
+                    title="No guilds match the current filters"
+                    description="Clear the search term or refresh-tier filter to widen the guild list."
+                    action={hasActiveFilters ? (
+                      <button type="button" className={styles.resetButton} onClick={resetFilters}>
+                        <RotateCcw size={15} aria-hidden="true" /> Reset filters
+                      </button>
+                    ) : null}
+                  />
+                )}
+              </div>
+            )}
+            {showCardLayout && (
+              <div className={styles.mobileGuildList} aria-label="Guild results">
+                {visibleGuilds.map((guild) => (
+                  <GuildMobileCard guild={guild} key={`mobile-${guild.id}`} onInspect={loadDetails} />
+                ))}
+                {filteredGuilds.length === 0 && (
+                  <NoResultsState
+                    compact
+                    title="No guilds match the current filters"
+                    description="Clear the search term or refresh-tier filter to widen the guild list."
+                    action={hasActiveFilters ? (
+                      <button type="button" className={styles.resetButton} onClick={resetFilters}>
+                        <RotateCcw size={15} aria-hidden="true" /> Reset filters
+                      </button>
+                    ) : null}
+                  />
+                )}
+              </div>
+            )}
             {visibleGuilds.length < filteredGuilds.length && (
               <div className={styles.showMoreBar}>
                 <span>
                   Showing {formatGuildNumber(visibleGuilds.length)} of {formatGuildNumber(filteredGuilds.length)}
                 </span>
-                <button type="button" onClick={() => setVisibleLimit((current) => current + ROW_INCREMENT)}>
-                  Show more
+                <button type="button" onClick={() => setVisibleLimit((current) => current + guildBatchSize)}>
+                  Show {formatGuildNumber(Math.min(guildBatchSize, hiddenGuildCount))} more
                 </button>
               </div>
             )}
