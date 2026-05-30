@@ -541,13 +541,13 @@ export default function BisPage() {
   }, [currentProfileItem?.hashed_id, savedProfileTier, currentMaxTier]);
 
   return (
-    <main className="container bis-page">
+    <main className="container bis-page" aria-labelledby="bis-page-title">
       <div className="sr-only" role="status" aria-live="polite">{statusMessage}</div>
       <div className="header bis-hero">
         <div className="bis-hero-copy">
-          <div className="eyebrow"><ZenithIcon name="shield" size={15} /> Gear Recommender</div>
-          <h1 className="header-title">Gear Recommender</h1>
-          <p className="hero-copy">Profile-aware combat gear list with tier-by-tier stat comparison across every item stat.</p>
+          <div className="eyebrow"><ZenithIcon name="shield" size={15} /> IdleMMO loadouts</div>
+          <h1 id="bis-page-title" className="header-title">Combat Gear Recommender</h1>
+          <p className="hero-copy">Rank weapons and armor against your saved profile levels, tier assumptions, and stat priority.</p>
           <div className="bis-hero-chips" aria-label="Recommendation context">
             <span><Shield size={14} aria-hidden="true" /> {activeProfileName}</span>
             <span><Sword size={14} aria-hidden="true" /> {activeStyleLabel}</span>
@@ -733,7 +733,7 @@ export default function BisPage() {
                 onClick={() => selectGear(view)}
                 onMouseEnter={() => prefetchGearItem(view.item.name)}
               >
-                <img src={view.item.image_url || "/favicon.ico"} alt="" loading="lazy" decoding="async" />
+                <img src={view.item.image_url || "/favicon.ico"} alt="" width={48} height={48} loading="lazy" decoding="async" />
                 <span className="gear-main">
                   <strong>{view.item.name}</strong>
                   <small>
@@ -768,7 +768,7 @@ export default function BisPage() {
           {selected ? (
             <>
               <div className="compare-head">
-                <img src={selected.item.image_url || "/favicon.ico"} alt="" loading="eager" decoding="async" />
+                <img src={selected.item.image_url || "/favicon.ico"} alt="" width={48} height={48} loading="eager" decoding="async" />
                 <div>
                   <span style={getQualityTextStyle(selected.item.quality)}>{selected.item.quality}</span>
                   <h2>{selected.item.name}</h2>
@@ -916,7 +916,7 @@ export default function BisPage() {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: rgba(15, 15, 18, 0.78);
-          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.14);
         }
         .bis-toolbar {
           display: grid;
@@ -993,7 +993,7 @@ export default function BisPage() {
           gap: 0.45rem;
         }
         .bis-page button {
-          min-height: 40px;
+          min-height: 44px;
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: rgba(255, 255, 255, 0.035);
@@ -1001,7 +1001,7 @@ export default function BisPage() {
           font: inherit;
           font-weight: 800;
           cursor: pointer;
-          transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
         }
         .bis-page button:hover:not(:disabled) {
           border-color: rgba(168, 139, 250, 0.55);
@@ -1036,11 +1036,11 @@ export default function BisPage() {
           align-items: center;
         }
         .tier-control button {
-          width: 42px;
+          width: 44px;
           flex: 0 0 auto;
         }
         .tier-stepper button {
-          width: 42px;
+          width: 44px;
           flex: 0 0 auto;
         }
         .tier-control input {
@@ -1608,20 +1608,11 @@ export default function BisPage() {
           border: 1px solid rgba(56, 189, 248, 0.18);
           border-radius: 8px;
           background:
-            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(7, 12, 17, 0.88)),
-            radial-gradient(circle at 88% 0%, rgba(245, 176, 65, 0.16), transparent 34%);
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(7, 12, 17, 0.9)),
+            linear-gradient(90deg, rgba(245, 176, 65, 0.08), transparent 58%);
+          box-shadow: 0 16px 42px rgba(0, 0, 0, 0.2);
           margin-bottom: 1rem;
           padding: clamp(1rem, 2.2vw, 1.45rem);
-        }
-        .bis-page .bis-hero::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            linear-gradient(115deg, rgba(245, 176, 65, 0.13), rgba(52, 211, 153, 0.05) 42%, transparent 68%),
-            radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.13), transparent 28%);
         }
         .bis-page .bis-hero > * {
           position: relative;
@@ -1698,7 +1689,7 @@ export default function BisPage() {
           background:
             linear-gradient(145deg, rgba(56, 189, 248, 0.1), rgba(0, 0, 0, 0.26)),
             rgba(5, 10, 13, 0.54);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 30px rgba(0, 0, 0, 0.16);
         }
         .bis-page .hero-stat-grid {
           display: grid;
@@ -1720,7 +1711,6 @@ export default function BisPage() {
           min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
-          white-space: nowrap;
         }
         .bis-page .hero-stat-grid small {
           color: var(--text-muted);
@@ -1728,11 +1718,14 @@ export default function BisPage() {
           font-weight: 850;
           letter-spacing: 0;
           text-transform: uppercase;
+          white-space: nowrap;
         }
         .bis-page .hero-stat-grid b {
           color: var(--text-primary);
           font-size: 0.84rem;
           line-height: 1.15;
+          overflow-wrap: anywhere;
+          white-space: normal;
         }
         .bis-page .bis-toolbar,
         .bis-page .level-strip,
@@ -1742,7 +1735,6 @@ export default function BisPage() {
           background:
             linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
             var(--bis-panel);
-          backdrop-filter: blur(16px);
         }
         .bis-page .recommendation-summary {
           margin: -0.2rem 0 0.85rem;
@@ -1829,19 +1821,10 @@ export default function BisPage() {
         .bis-page .gear-row,
         .bis-page button {
           transition:
-            transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
             border-color 180ms ease,
             box-shadow 180ms ease,
             background-color 180ms ease,
             color 180ms ease;
-        }
-        .bis-page button:active:not(:disabled),
-        .bis-page .gear-row:active,
-        .bis-page .pick-card:active:not(:disabled) {
-          transform: scale(0.985);
-        }
-        .bis-page button:hover:not(:disabled) {
-          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
         }
         .bis-page .bis-quick-actions button:hover:not(:disabled) {
           border-color: rgba(56, 189, 248, 0.38);
@@ -1849,7 +1832,7 @@ export default function BisPage() {
           color: #e0f2fe;
         }
         .bis-page .gear-row.is-selected {
-          box-shadow: inset 3px 0 0 var(--bis-sky), 0 14px 34px rgba(0, 0, 0, 0.18);
+          box-shadow: inset 3px 0 0 var(--bis-sky);
         }
         .bis-page .gear-row img,
         .bis-page .compare-head img {
@@ -1866,13 +1849,10 @@ export default function BisPage() {
           box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.11);
         }
         @media (hover: hover) and (pointer: fine) {
-          .bis-page .recommendation-panel:hover,
-          .bis-page .gear-list-panel:hover,
-          .bis-page .compare-panel:hover,
           .bis-page .pick-card:hover:not(:disabled),
           .bis-page .gear-row:hover {
-            transform: translateY(-1px);
             border-color: rgba(245, 176, 65, 0.22);
+            background-color: rgba(245, 176, 65, 0.055);
           }
         }
         @media (prefers-reduced-motion: reduce) {
