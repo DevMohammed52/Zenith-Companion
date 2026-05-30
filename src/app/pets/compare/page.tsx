@@ -187,11 +187,15 @@ function PetImage({ pet }: { pet: PetRecord }) {
   const image = getPetImage(pet);
   return (
     <div className={styles.petAvatar}>
-      {(!image || failed || !loaded) && <PawPrint size={28} />}
+      {(!image || failed || !loaded) && <PawPrint size={28} aria-hidden="true" />}
       {image && !failed ? (
         <img
           src={image}
           alt=""
+          width={48}
+          height={48}
+          loading="lazy"
+          decoding="async"
           className={`${loaded ? styles.petImageLoaded : styles.petImageLoading} ${isUpsideDownPet(pet) ? styles.petImageUpsideDown : ""}`}
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
@@ -922,14 +926,14 @@ export default function PetComparisonPage() {
   const comparisonSummary = rows.length ? `${rows.length} selected / ${battleCoverage.comparedWithZone} with EV` : "No pets selected";
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} aria-labelledby="pet-compare-page-title">
       <section className={styles.hero}>
         <div>
           <span className={styles.kicker}>
             <ZenithIcon name="pets" size={17} /> Pet Comparison
           </span>
-          <h1>Compare Pets</h1>
-          <p>Pick pets, adjust the shared stat setup, and compare hunting speed, recorded battle EV, sources, and sale listings.</p>
+          <h1 id="pet-compare-page-title">Compare Pets</h1>
+          <p>Compare IdleMMO pet species and owned snapshots against the same level, mastery, food, and recorded battle sample.</p>
         </div>
         <div className={styles.heroActions}>
           <Link href="/pets" className={styles.secondaryLink}>
@@ -1254,7 +1258,8 @@ function MetricRow({
         const isBest = value > 0 && (lowerIsBetter ? value === bound.min : value === bound.max);
         return (
           <td key={row.id} className={isBest ? styles.bestCell : ""}>
-            {formatter(value)}
+            <span className={styles.metricValue}>{formatter(value)}</span>
+            {isBest && <span className={styles.bestBadge}>Best</span>}
           </td>
         );
       })}
