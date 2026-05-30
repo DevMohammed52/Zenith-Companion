@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Castle,
@@ -570,7 +570,10 @@ export default function HousingPage() {
   }, [idleRoomFamilies, profitPlannerFamily]);
 
   useEffect(() => {
-    tabButtonRefs.current[activeHousingTab]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const activeTab = tabButtonRefs.current[activeHousingTab];
+    if (!activeTab) return;
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    activeTab.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest", inline: "center" });
   }, [activeHousingTab]);
 
   useEffect(() => {
@@ -1046,14 +1049,33 @@ export default function HousingPage() {
     });
   };
 
+  const focusHousingTab = (tabId: HousingTab) => {
+    setActiveHousingTab(tabId);
+    window.requestAnimationFrame(() => tabButtonRefs.current[tabId]?.focus());
+  };
+
+  const handleHousingTabKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, tabIndex: number) => {
+    if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const lastIndex = HOUSING_TABS.length - 1;
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? lastIndex
+        : event.key === "ArrowRight" || event.key === "ArrowDown"
+          ? (tabIndex + 1) % HOUSING_TABS.length
+          : (tabIndex - 1 + HOUSING_TABS.length) % HOUSING_TABS.length;
+    focusHousingTab(HOUSING_TABS[nextIndex].id);
+  };
+
   return (
-    <main className="container housing-page">
+    <main className="container housing-page" aria-labelledby="housing-page-title">
       <section className="page-title-row">
         <div className="housing-hero-copy">
           <p className="eyebrow"><ZenithIcon name="housing" size={16} /> Housing Manager</p>
-          <h1>House Planner</h1>
+          <h1 id="housing-page-title">House Planner</h1>
           <p className="muted">
-            Profile-scoped construction planner for idle-time bonuses, guest buffs, and build cost estimates.
+            Save this character&apos;s own house, guest host, room tiers, repair condition, and ROI assumptions in one local profile.
           </p>
           <div className="housing-hero-chips" aria-label="Housing context">
             <span><Users size={14} aria-hidden="true" /> {activeProfileName}</span>
@@ -1062,13 +1084,17 @@ export default function HousingPage() {
           </div>
           {activeProfile && (
             <div className="housing-quick-actions" aria-label="Housing quick actions">
-              <button type="button" onClick={() => setActiveHousingTab("setup")}>
+              <button type="button" aria-pressed={activeHousingTab === "setup"} onClick={() => setActiveHousingTab("setup")}>
                 <Home size={15} aria-hidden="true" /> Setup
               </button>
-              <button type="button" onClick={() => setActiveHousingTab(housing.mode === "guest" ? "guest" : "components")}>
+              <button
+                type="button"
+                aria-pressed={activeHousingTab === (housing.mode === "guest" ? "guest" : "components")}
+                onClick={() => setActiveHousingTab(housing.mode === "guest" ? "guest" : "components")}
+              >
                 <Package size={15} aria-hidden="true" /> {housing.mode === "guest" ? "Guest" : "Rooms"}
               </button>
-              <button type="button" disabled={housing.mode !== "owner"} onClick={() => setActiveHousingTab("profit")}>
+              <button type="button" aria-pressed={activeHousingTab === "profit"} disabled={housing.mode !== "owner"} onClick={() => setActiveHousingTab("profit")}>
                 <TrendingUp size={15} aria-hidden="true" /> ROI
               </button>
             </div>
@@ -1094,17 +1120,23 @@ export default function HousingPage() {
         </section>
       ) : (
         <>
-          <nav className="housing-tabs" aria-label="Housing sections">
-            {HOUSING_TABS.map((tab) => (
+          <nav className="housing-tabs" aria-label="Housing sections" role="tablist" aria-orientation="horizontal">
+            {HOUSING_TABS.map((tab, tabIndex) => (
               <button
                 key={tab.id}
+                id={`housing-tab-${tab.id}`}
                 ref={(element) => {
                   tabButtonRefs.current[tab.id] = element;
                 }}
                 type="button"
+                role="tab"
                 className={activeHousingTab === tab.id ? "active" : ""}
                 aria-current={activeHousingTab === tab.id ? "page" : undefined}
+                aria-selected={activeHousingTab === tab.id}
+                aria-controls={`housing-tab-panel-${tab.id}`}
+                tabIndex={activeHousingTab === tab.id ? 0 : -1}
                 onClick={() => setActiveHousingTab(tab.id)}
+                onKeyDown={(event) => handleHousingTabKeyDown(event, tabIndex)}
               >
                 <span>{tab.label}</span>
                 <small>{tab.hint}</small>
@@ -1120,7 +1152,13 @@ export default function HousingPage() {
           )}
 
           {activeHousingTab === "overview" && (
-            <section className="housing-overview-grid" aria-label="Housing overview">
+            <section
+              id="housing-tab-panel-overview"
+              className="housing-overview-grid"
+              role="tabpanel"
+              aria-labelledby="housing-tab-overview"
+              aria-label="Housing overview"
+            >
               <article className="housing-panel overview-card overview-primary-card">
                 <div className="overview-card-head">
                   <div>
@@ -1213,7 +1251,12 @@ export default function HousingPage() {
             </section>
           )}
 
-          <section className={`housing-grid top-grid ${activeHousingTab !== "setup" ? "tab-hidden" : ""}`}>
+          <section
+            id="housing-tab-panel-setup"
+            className={`housing-grid top-grid ${activeHousingTab !== "setup" ? "tab-hidden" : ""}`}
+            role="tabpanel"
+            aria-labelledby="housing-tab-setup"
+          >
             <div className="housing-panel">
               <div className="panel-heading">
                 <div>
@@ -1579,7 +1622,12 @@ export default function HousingPage() {
           )}
 
           {housing.mode === "owner" && activeHousingTab === "profit" && (
-            <section className="housing-panel room-profit-panel">
+            <section
+              id="housing-tab-panel-profit"
+              className="housing-panel room-profit-panel"
+              role="tabpanel"
+              aria-labelledby="housing-tab-profit"
+            >
               <div className="panel-heading">
                 <div>
                   <p className="eyebrow"><TrendingUp size={15} /> Room Profit</p>
@@ -1839,7 +1887,12 @@ export default function HousingPage() {
           )}
 
           {activeHousingTab === "profit" && housing.mode !== "owner" && (
-            <section className="housing-panel guest-disabled-panel">
+            <section
+              id="housing-tab-panel-profit"
+              className="housing-panel guest-disabled-panel"
+              role="tabpanel"
+              aria-labelledby="housing-tab-profit"
+            >
               <div className="panel-heading">
                 <div>
                   <p className="eyebrow">Room Profit</p>
@@ -1854,7 +1907,12 @@ export default function HousingPage() {
           )}
 
           {activeHousingTab === "guest" && housing.mode !== "guest" && (
-            <section className="housing-panel guest-disabled-panel">
+            <section
+              id="housing-tab-panel-guest"
+              className="housing-panel guest-disabled-panel"
+              role="tabpanel"
+              aria-labelledby="housing-tab-guest"
+            >
               <div className="panel-heading">
                 <div>
                   <p className="eyebrow">Guest Setup</p>
@@ -1874,7 +1932,12 @@ export default function HousingPage() {
           )}
 
           {housing.mode === "guest" && activeHousingTab === "guest" && (
-            <section className="housing-panel">
+            <section
+              id="housing-tab-panel-guest"
+              className="housing-panel"
+              role="tabpanel"
+              aria-labelledby="housing-tab-guest"
+            >
               <div className="panel-heading">
                 <div>
                   <p className="eyebrow">Guest Setup</p>
@@ -2009,7 +2072,12 @@ export default function HousingPage() {
           )}
 
           {activeHousingTab === "components" && (
-          <section className={`housing-panel planner-panel ${housing.mode !== "owner" ? "planner-disabled" : ""}`}>
+          <section
+            id="housing-tab-panel-components"
+            className={`housing-panel planner-panel ${housing.mode !== "owner" ? "planner-disabled" : ""}`}
+            role="tabpanel"
+            aria-labelledby="housing-tab-components"
+          >
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Planner</p>
@@ -2254,14 +2322,14 @@ export default function HousingPage() {
         }
         .housing-tabs button:hover {
           transform: translateY(-1px);
-          border-color: rgba(56, 189, 248, 0.32);
+          border-color: color-mix(in srgb, var(--housing-sky), transparent 68%);
           color: #fff;
         }
         .housing-tabs button.active {
-          border-color: rgba(56, 189, 248, 0.68);
-          background: rgba(56, 189, 248, 0.13);
+          border-color: color-mix(in srgb, var(--housing-sky), transparent 36%);
+          background: color-mix(in srgb, var(--housing-sky), transparent 88%);
           color: #fff;
-          box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.08);
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--housing-sky), transparent 92%);
         }
         .housing-tabs span,
         .housing-tabs small {
@@ -2301,7 +2369,7 @@ export default function HousingPage() {
           border: 1px solid rgba(34, 211, 238, 0.38);
           border-radius: 8px;
           background: rgba(34, 211, 238, 0.1);
-          color: #67e8f9;
+          color: var(--housing-sky);
           cursor: pointer;
           font-weight: 900;
           min-height: 2.35rem;
@@ -2336,8 +2404,8 @@ export default function HousingPage() {
           font-size: 1.32rem;
         }
         .inline-link-button {
-          border: 1px solid rgba(56, 189, 248, 0.32);
-          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid color-mix(in srgb, var(--housing-sky), transparent 68%);
+          background: color-mix(in srgb, var(--housing-sky), transparent 92%);
           color: #fff;
           border-radius: 999px;
           padding: 0.45rem 0.72rem;
@@ -2637,7 +2705,7 @@ export default function HousingPage() {
           top: calc(100% + 0.45rem);
           left: 0;
           right: 0;
-          border: 1px solid rgba(56, 189, 248, 0.35);
+          border: 1px solid color-mix(in srgb, var(--housing-sky), transparent 65%);
           background: rgba(5, 10, 13, 0.98);
           border-radius: 8px;
           padding: 0.4rem;
@@ -3139,7 +3207,7 @@ export default function HousingPage() {
         }
         .condition-slider input[type="range"] {
           width: 100%;
-          accent-color: #38bdf8;
+          accent-color: var(--housing-sky);
           cursor: pointer;
         }
         .condition-number {
@@ -4085,10 +4153,10 @@ export default function HousingPage() {
           }
         }
         .housing-page {
-          --housing-gold: #f5b041;
-          --housing-mint: #34d399;
-          --housing-sky: #38bdf8;
-          --housing-panel: rgba(9, 14, 17, 0.76);
+          --housing-gold: var(--text-accent);
+          --housing-mint: var(--text-success);
+          --housing-sky: color-mix(in srgb, var(--text-accent), #38bdf8 35%);
+          --housing-panel: rgba(9, 14, 17, 0.82);
           -webkit-tap-highlight-color: transparent;
           padding-bottom: clamp(5rem, 8vh, 7.5rem);
         }
@@ -4102,23 +4170,17 @@ export default function HousingPage() {
           grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
           gap: clamp(1rem, 2vw, 1.5rem);
           align-items: stretch;
-          border: 1px solid rgba(245, 176, 65, 0.18);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
           border-radius: 8px;
           background:
-            linear-gradient(145deg, rgba(245, 176, 65, 0.07), rgba(10, 16, 20, 0.78)),
-            radial-gradient(circle at 92% 0%, rgba(56, 189, 248, 0.12), transparent 34%);
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+            linear-gradient(145deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(10, 16, 20, 0.78)),
+            rgba(5, 10, 13, 0.36);
+          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
           margin-bottom: 1rem;
           padding: clamp(1rem, 2.2vw, 1.45rem);
         }
         .housing-page .page-title-row::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background:
-            linear-gradient(115deg, rgba(245, 176, 65, 0.14), rgba(52, 211, 153, 0.06) 38%, transparent 66%),
-            radial-gradient(circle at 12% 0%, rgba(245, 176, 65, 0.12), transparent 28%);
+          display: none;
         }
         .housing-page .page-title-row > * {
           position: relative;
@@ -4133,6 +4195,7 @@ export default function HousingPage() {
         .housing-page .housing-hero-copy h1 {
           margin: 0;
           color: #fffdf8;
+          font-size: clamp(2rem, 3.3vw, 3.1rem);
         }
         .housing-page .housing-hero-copy .muted {
           max-width: 68ch;
@@ -4184,10 +4247,10 @@ export default function HousingPage() {
           align-items: center;
           justify-content: center;
           gap: 0.5rem;
-          border: 1px solid rgba(56, 189, 248, 0.22);
+          border: 1px solid color-mix(in srgb, var(--housing-sky), transparent 78%);
           border-radius: 8px;
-          background: rgba(56, 189, 248, 0.08);
-          color: #e0f2fe;
+          background: color-mix(in srgb, var(--housing-sky), transparent 93%);
+          color: color-mix(in srgb, var(--housing-sky), white 55%);
           cursor: pointer;
           font: inherit;
           font-size: 0.82rem;
@@ -4197,9 +4260,14 @@ export default function HousingPage() {
         }
         .housing-page .housing-quick-actions button:hover:not(:disabled) {
           transform: translateY(-1px);
-          border-color: rgba(245, 176, 65, 0.36);
-          background: rgba(245, 176, 65, 0.1);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 64%);
+          background: color-mix(in srgb, var(--text-accent), transparent 90%);
           box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+        }
+        .housing-page .housing-quick-actions button[aria-pressed="true"] {
+          border-color: color-mix(in srgb, var(--text-accent), transparent 54%);
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          color: #fff;
         }
         .housing-page .housing-quick-actions button:active:not(:disabled) {
           transform: scale(0.985);
@@ -4209,9 +4277,9 @@ export default function HousingPage() {
           opacity: 0.48;
         }
         .housing-page .housing-status-card {
-          border-color: rgba(56, 189, 248, 0.2);
+          border-color: color-mix(in srgb, var(--housing-sky), transparent 80%);
           background:
-            linear-gradient(145deg, rgba(56, 189, 248, 0.08), rgba(0, 0, 0, 0.24)),
+            linear-gradient(145deg, color-mix(in srgb, var(--housing-sky), transparent 92%), rgba(0, 0, 0, 0.24)),
             rgba(5, 10, 13, 0.5);
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
         }
@@ -4221,12 +4289,13 @@ export default function HousingPage() {
         .housing-page .housing-status-details span {
           width: 100%;
           justify-content: flex-start;
-          overflow: hidden;
+          overflow: visible;
           border-radius: 8px;
           background: rgba(255, 255, 255, 0.045);
           color: #e5e7eb;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          overflow-wrap: anywhere;
+          text-overflow: clip;
+          white-space: normal;
         }
         .housing-page .housing-status-details .needs-data {
           border-color: rgba(245, 158, 11, 0.32);
@@ -4250,14 +4319,13 @@ export default function HousingPage() {
         }
         .housing-page .housing-panel,
         .housing-page .component-card {
-          background:
-            linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(0, 0, 0, 0.2)),
-            var(--housing-panel);
+          background: var(--housing-panel);
         }
         .housing-page .housing-tabs {
           top: 0.65rem;
-          border-color: rgba(56, 189, 248, 0.16);
-          background: rgba(5, 10, 13, 0.84);
+          border-color: color-mix(in srgb, var(--housing-sky), transparent 84%);
+          background: rgba(5, 10, 13, 0.92);
+          backdrop-filter: none;
         }
         .housing-page .housing-tabs button:active,
         .housing-page .mode-card:active,
@@ -4288,14 +4356,12 @@ export default function HousingPage() {
         .housing-page :global(.choice-menu button:focus-visible) {
           outline: 2px solid color-mix(in srgb, var(--housing-sky), white 12%);
           outline-offset: 3px;
-          box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.11);
+          box-shadow: 0 0 0 5px color-mix(in srgb, var(--housing-sky), transparent 89%);
         }
         @media (hover: hover) and (pointer: fine) {
-          .housing-page .housing-panel:hover,
-          .housing-page .component-card:hover,
-          .housing-page .overview-card:hover {
+          .housing-page .component-card:hover {
             transform: translateY(-1px);
-            border-color: rgba(245, 176, 65, 0.2);
+            border-color: color-mix(in srgb, var(--text-accent), transparent 78%);
           }
         }
         @media (prefers-reduced-motion: reduce) {
