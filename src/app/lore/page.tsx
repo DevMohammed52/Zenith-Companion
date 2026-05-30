@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -106,6 +106,17 @@ const normalizeLoreText = (value: string) => value
   .replace(/[^a-z0-9]+/g, " ")
   .trim();
 
+const cleanLoreCopy = (value: string) => value
+  .replace(/\bA artifact record\b/g, "An artifact record")
+  .replace(/\bA npc record\b/g, "An NPC record")
+  .replace(/\bThe index frames this thread as '\.\s*/g, "The official index does not preserve a short framing note for this thread. ")
+  .replace(/\bIndex signal: '\./g, "Index signal unavailable.")
+  .replace(/\bThe index frames this thread as sirens Haunting creatures\b/g, "The index frames this thread as haunting creatures")
+  .replace(/\bThe index frames this thread as other Civilisations Diverse peoples\b/g, "The index frames this thread as diverse peoples")
+  .replace(/\bThe index frames this thread as old Gods\b/g, "The index frames this thread as old gods")
+  .replace(/\s{2,}/g, " ")
+  .trim();
+
 function LoreContent() {
   const searchParams = useSearchParams();
   const searchParamKey = searchParams.toString();
@@ -129,7 +140,9 @@ function LoreContent() {
   const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [boardPickerSearch, setBoardPickerSearch] = useState("");
   const [boardPickerCategory, setBoardPickerCategory] = useState<LoreFilter>("all");
+  const [activeBoardOptionIndex, setActiveBoardOptionIndex] = useState(0);
   const boardPickerRef = useRef<HTMLDivElement | null>(null);
+  const boardPickerTriggerRef = useRef<HTMLButtonElement | null>(null);
   const boardPickerListId = useId();
 
   useEffect(() => {
@@ -219,7 +232,7 @@ function LoreContent() {
         title: hub.title,
         category: CATEGORY_META[hub.category].label,
         tone: CATEGORY_META[hub.category].tone,
-        detail: hub.summary,
+        detail: cleanLoreCopy(hub.summary),
         characters,
       };
     }).filter((group) => group.characters.length > 0);
@@ -284,8 +297,23 @@ function LoreContent() {
     });
   }, [boardOptions, boardPickerCategory, boardPickerSearch]);
 
+  useEffect(() => {
+    if (!boardPickerOpen) {
+      setActiveBoardOptionIndex(0);
+      return;
+    }
+    setActiveBoardOptionIndex((current) => Math.min(Math.max(current, 0), Math.max(filteredBoardOptions.length - 1, 0)));
+  }, [boardPickerOpen, filteredBoardOptions.length]);
+
+  useEffect(() => {
+    if (boardPickerOpen) setActiveBoardOptionIndex(0);
+  }, [boardPickerCategory, boardPickerOpen, boardPickerSearch]);
+
   const activeViewLabel = VIEW_OPTIONS.find((view) => view.id === activeView)?.label || "Atlas";
-  const activeCategoryLabel = activeCategory === "all" ? "All categories" : CATEGORY_META[activeCategory].label;
+  const categoryFilterApplies = activeView === "atlas" || activeView === "characters" || activeView === "artifacts";
+  const activeCategoryLabel = categoryFilterApplies
+    ? activeCategory === "all" ? "All categories" : CATEGORY_META[activeCategory].label
+    : "Not used in this view";
   const visibleEntryCount = (() => {
     if (activeView === "timeline") return LORE_TIMELINE.length;
     if (activeView === "characters") return characterEntries.length;
@@ -308,6 +336,60 @@ function LoreContent() {
     setBoardPickerSearch("");
   };
 
+  const getBoardOptionId = (entryId: string) => `${boardPickerListId}-option-${entryId}`;
+  const activeBoardOption = filteredBoardOptions[activeBoardOptionIndex] || null;
+  const activeBoardOptionId = activeBoardOption ? getBoardOptionId(activeBoardOption.id) : undefined;
+
+  const toggleBoardPicker = () => {
+    setBoardPickerOpen((open) => {
+      const nextOpen = !open;
+      if (nextOpen) {
+        const currentIndex = filteredBoardOptions.findIndex((entry) => entry.id === boardEntry.id);
+        setActiveBoardOptionIndex(Math.max(currentIndex, 0));
+      }
+      return nextOpen;
+    });
+  };
+
+  const handleBoardPickerSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (!boardPickerOpen) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setBoardPickerOpen(false);
+      boardPickerTriggerRef.current?.focus();
+      return;
+    }
+    if (filteredBoardOptions.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveBoardOptionIndex((current) => (current + 1) % filteredBoardOptions.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveBoardOptionIndex((current) => (current - 1 + filteredBoardOptions.length) % filteredBoardOptions.length);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveBoardOptionIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveBoardOptionIndex(filteredBoardOptions.length - 1);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const option = filteredBoardOptions[activeBoardOptionIndex];
+      if (option) {
+        selectBoardEntry(option.id);
+        boardPickerTriggerRef.current?.focus();
+      }
+    }
+  };
+
   const resetLoreControls = () => {
     setActiveView("atlas");
     setActiveCategory("all");
@@ -319,13 +401,13 @@ function LoreContent() {
   };
 
   return (
-    <main className="lore-page">
+    <main className="lore-page" aria-labelledby="lore-page-title">
       <LoreCanvas />
       <div className="lore-shade" aria-hidden="true" />
 
       <section className="lore-hero">
         <span className="lore-eyebrow"><ZenithIcon name="archive" size={16} /> IdleMMO Lore Wiki</span>
-        <h1>Chronicles of Valaron</h1>
+        <h1 id="lore-page-title">Chronicles of Valaron</h1>
         <p>
           Edric&apos;s archive, rebuilt as a living atlas of civilizations, artifacts, gods, creatures,
           witnesses, and suspiciously convenient historical silences.
@@ -386,25 +468,27 @@ function LoreContent() {
         </div>
       </section>
 
-      <section className="category-rail" aria-label="Lore categories">
-        <button className={activeCategory === "all" ? "active" : ""} aria-pressed={activeCategory === "all"} onClick={() => setActiveCategory("all")} type="button">
-          <Filter size={15} /> All <span>{entries.length}</span>
-        </button>
-        {(Object.keys(CATEGORY_META) as LoreEntry["category"][]).map((category) => (
-          <button
-            key={category}
-            type="button"
-            style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
-            className={activeCategory === category ? "active" : ""}
-            aria-pressed={activeCategory === category}
-            onClick={() => setActiveCategory(category)}
-          >
-            {CATEGORY_META[category].icon}
-            {CATEGORY_META[category].label}
-            <span>{categoryCounts[category] || 0}</span>
+      {categoryFilterApplies && (
+        <section className="category-rail" aria-label="Lore categories">
+          <button className={activeCategory === "all" ? "active" : ""} aria-pressed={activeCategory === "all"} onClick={() => setActiveCategory("all")} type="button">
+            <Filter size={15} /> All <span>{entries.length}</span>
           </button>
-        ))}
-      </section>
+          {(Object.keys(CATEGORY_META) as LoreEntry["category"][]).map((category) => (
+            <button
+              key={category}
+              type="button"
+              style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
+              className={activeCategory === category ? "active" : ""}
+              aria-pressed={activeCategory === category}
+              onClick={() => setActiveCategory(category)}
+            >
+              {CATEGORY_META[category].icon}
+              {CATEGORY_META[category].label}
+              <span>{categoryCounts[category] || 0}</span>
+            </button>
+          ))}
+        </section>
+      )}
 
       {activeView === "atlas" && (
         <section className="lore-section">
@@ -514,10 +598,11 @@ function LoreContent() {
               <button
                 type="button"
                 className="board-picker-trigger"
-                onClick={() => setBoardPickerOpen((open) => !open)}
+                onClick={toggleBoardPicker}
                 aria-expanded={boardPickerOpen}
                 aria-controls={boardPickerListId}
                 aria-haspopup="listbox"
+                ref={boardPickerTriggerRef}
               >
                 <span className="board-picker-mark" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
                   {CATEGORY_META[boardEntry.category].icon}
@@ -534,8 +619,18 @@ function LoreContent() {
                   <label className="board-picker-search">
                     <Search size={15} />
                     <input
+                      aria-activedescendant={activeBoardOptionId}
+                      aria-autocomplete="list"
+                      aria-controls={boardPickerListId}
+                      aria-expanded={boardPickerOpen}
+                      aria-label="Search lore board threads"
+                      role="combobox"
                       value={boardPickerSearch}
-                      onChange={(event) => setBoardPickerSearch(event.target.value)}
+                      onChange={(event) => {
+                        setBoardPickerSearch(event.target.value);
+                        setActiveBoardOptionIndex(0);
+                      }}
+                      onKeyDown={handleBoardPickerSearchKeyDown}
                       placeholder="Search threads..."
                       autoFocus
                     />
@@ -545,7 +640,10 @@ function LoreContent() {
                       type="button"
                       className={boardPickerCategory === "all" ? "active" : ""}
                       aria-pressed={boardPickerCategory === "all"}
-                      onClick={() => setBoardPickerCategory("all")}
+                      onClick={() => {
+                        setBoardPickerCategory("all");
+                        setActiveBoardOptionIndex(0);
+                      }}
                     >
                       All
                     </button>
@@ -555,7 +653,10 @@ function LoreContent() {
                         type="button"
                         className={boardPickerCategory === category ? "active" : ""}
                         aria-pressed={boardPickerCategory === category}
-                        onClick={() => setBoardPickerCategory(category)}
+                        onClick={() => {
+                          setBoardPickerCategory(category);
+                          setActiveBoardOptionIndex(0);
+                        }}
                         style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
                       >
                         {CATEGORY_META[category].label}
@@ -563,16 +664,20 @@ function LoreContent() {
                     ))}
                   </div>
                   <div id={boardPickerListId} className="board-option-list custom-scrollbar" role="listbox" aria-label="Lore board threads">
-                    {filteredBoardOptions.length > 0 ? filteredBoardOptions.map((entry) => {
+                    {filteredBoardOptions.length > 0 ? filteredBoardOptions.map((entry, index) => {
                       const meta = CATEGORY_META[entry.category];
+                      const isActive = index === activeBoardOptionIndex;
+                      const isSelected = entry.id === boardEntry.id;
                       return (
                         <button
                           key={entry.id}
+                          id={getBoardOptionId(entry.id)}
                           type="button"
-                          className={entry.id === boardEntry.id ? "active" : ""}
+                          className={`${isActive ? "active" : ""} ${isSelected ? "selected" : ""}`.trim()}
                           role="option"
-                          aria-selected={entry.id === boardEntry.id}
+                          aria-selected={isActive}
                           onClick={() => selectBoardEntry(entry.id)}
+                          tabIndex={-1}
                           style={{ "--tone": meta.tone } as CSSProperties}
                         >
                           <span>{meta.icon}</span>
@@ -605,7 +710,7 @@ function LoreContent() {
             <article className="board-center" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
               <span>{CATEGORY_META[boardEntry.category].icon} {CATEGORY_META[boardEntry.category].label}</span>
               <h3>{boardEntry.title}</h3>
-              <p>{boardEntry.summary}</p>
+              <p>{cleanLoreCopy(boardEntry.summary)}</p>
               <div className="board-stat-row">
                 <span><strong>{boardStats.total}</strong> total</span>
                 <span><strong>{boardStats.canon}</strong> canon</span>
@@ -744,7 +849,6 @@ function LoreContent() {
 
         .lore-hero {
           padding: 3rem 0 2rem;
-          animation: loreRise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .lore-eyebrow {
@@ -811,9 +915,7 @@ function LoreContent() {
           position: sticky;
           top: 0.75rem;
           z-index: 20;
-          backdrop-filter: blur(18px);
-          box-shadow: 0 18px 54px rgba(0,0,0,0.24);
-          animation: loreRise 420ms 70ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.18);
         }
 
         .lore-search {
@@ -852,20 +954,18 @@ function LoreContent() {
           color: rgba(255,255,255,0.56);
           cursor: pointer;
           display: inline-flex;
-          height: 2rem;
+          height: 2.75rem;
           justify-content: center;
+          min-height: 2.75rem;
+          min-width: 2.75rem;
           padding: 0;
-          transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-          width: 2rem;
+          transition: color 0.16s ease, background 0.16s ease;
+          width: 2.75rem;
         }
 
         .lore-search-clear:hover {
           background: rgba(255,255,255,0.09);
           color: #fff;
-        }
-
-        .lore-search-clear:active {
-          transform: scale(0.94);
         }
 
         .lore-view-tabs,
@@ -898,7 +998,7 @@ function LoreContent() {
           min-width: 0;
           overflow: hidden;
           padding: 0.55rem 0.8rem;
-          transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+          transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
         }
 
         .lore-view-tabs button span {
@@ -916,7 +1016,6 @@ function LoreContent() {
         .lore-toolbar-status button:not(:disabled):hover {
           border-color: rgba(245,176,65,0.45);
           color: #fff;
-          transform: translateY(-1px);
         }
 
         .lore-view-tabs button:active,
@@ -925,7 +1024,7 @@ function LoreContent() {
         .thread-pills button:active,
         .board-center button:active,
         .lore-toolbar-status button:not(:disabled):active {
-          transform: scale(0.985);
+          transform: none;
         }
 
         .lore-view-tabs button.active,
@@ -992,7 +1091,6 @@ function LoreContent() {
 
         .category-rail {
           margin-top: 1rem;
-          animation: loreRise 420ms 110ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .category-rail button {
@@ -1006,7 +1104,6 @@ function LoreContent() {
 
         .lore-section {
           margin-top: 2rem;
-          animation: loreRise 420ms 150ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
         .section-heading {
@@ -1057,7 +1154,6 @@ function LoreContent() {
           background: var(--panel);
           border: 1px solid var(--line);
           border-radius: 8px;
-          backdrop-filter: blur(16px);
         }
 
         .lore-card,
@@ -1068,7 +1164,7 @@ function LoreContent() {
           cursor: pointer;
           font: inherit;
           text-align: left;
-          transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+          transition: border-color 0.18s ease, background 0.18s ease;
           width: 100%;
         }
 
@@ -1077,13 +1173,12 @@ function LoreContent() {
         .thread-card:hover {
           background: rgba(255,255,255,0.042);
           border-color: color-mix(in srgb, var(--tone, #f5b041), transparent 45%);
-          transform: translateY(-3px);
         }
 
         .lore-card:active,
         .compact-card:active,
         .thread-card:active {
-          transform: scale(0.992);
+          transform: none;
         }
 
         .lore-card {
@@ -1105,8 +1200,8 @@ function LoreContent() {
         }
 
         .lore-card::after {
-          background: radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--tone), transparent 72%), transparent 42%);
           content: "";
+          display: none;
           inset: 0;
           opacity: 0;
           pointer-events: none;
@@ -1115,7 +1210,7 @@ function LoreContent() {
         }
 
         .lore-card:hover::after {
-          opacity: 1;
+          opacity: 0;
         }
 
         .card-topline {
@@ -1186,15 +1281,13 @@ function LoreContent() {
         }
 
         .npc-network-panel {
-          background:
-            radial-gradient(circle at 0% 0%, rgba(245,176,65,0.12), transparent 34%),
-            rgba(255,255,255,0.018);
+          background: rgba(255,255,255,0.018);
           border: 1px solid var(--line);
           border-radius: 8px;
           margin-bottom: 1rem;
           overflow: hidden;
           padding: 1rem;
-          box-shadow: 0 18px 54px rgba(0,0,0,0.18);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.14);
         }
 
         .npc-network-header {
@@ -1281,13 +1374,12 @@ function LoreContent() {
           min-width: 0;
           padding: 0.55rem 0.65rem;
           text-align: left;
-          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+          transition: border-color 0.18s ease, background 0.18s ease;
         }
 
         .npc-chip-grid button:hover {
           background: rgba(255,255,255,0.06);
           border-color: color-mix(in srgb, var(--tone), transparent 52%);
-          transform: translateY(-2px);
         }
 
         .npc-chip-grid strong {
@@ -1362,7 +1454,7 @@ function LoreContent() {
           min-height: 58px;
           padding: 0.7rem 0.85rem;
           text-align: left;
-          transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+          transition: border-color 0.18s ease, background 0.18s ease;
           width: 100%;
         }
 
@@ -1371,7 +1463,6 @@ function LoreContent() {
             linear-gradient(135deg, rgba(245,176,65,0.16), transparent),
             rgba(0,0,0,0.52);
           border-color: rgba(245,176,65,0.45);
-          transform: translateY(-1px);
         }
 
         .board-picker-trigger svg.open {
@@ -1411,11 +1502,10 @@ function LoreContent() {
         }
 
         .board-picker-popover {
-          animation: boardMenuIn 0.16s ease-out;
           background: rgba(9,9,11,0.98);
           border: 1px solid rgba(245,176,65,0.26);
           border-radius: 10px;
-          box-shadow: 0 22px 70px rgba(0,0,0,0.45);
+          box-shadow: 0 14px 42px rgba(0,0,0,0.34);
           display: grid;
           gap: 0.65rem;
           left: 0;
@@ -1472,7 +1562,7 @@ function LoreContent() {
           font-weight: 900;
           min-height: 2rem;
           padding: 0.25rem 0.6rem;
-          transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
         }
 
         .board-picker-categories button:hover,
@@ -1485,7 +1575,7 @@ function LoreContent() {
         .board-picker-categories button:active,
         .board-option-list button:active,
         .board-node:active {
-          transform: scale(0.985);
+          transform: none;
         }
 
         .board-picker-search input {
@@ -1520,14 +1610,17 @@ function LoreContent() {
           grid-template-columns: auto minmax(0, 1fr);
           padding: 0.62rem 0.7rem;
           text-align: left;
-          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease;
         }
 
         .board-option-list button:hover,
         .board-option-list button.active {
           background: color-mix(in srgb, var(--tone), transparent 92%);
           border-color: color-mix(in srgb, var(--tone), transparent 55%);
-          transform: translateX(2px);
+        }
+
+        .board-option-list button.selected {
+          box-shadow: inset 3px 0 0 color-mix(in srgb, var(--tone), white 8%);
         }
 
         .board-option-list button > span {
@@ -1613,10 +1706,7 @@ function LoreContent() {
 
         .board-map {
           align-self: start;
-          background:
-            radial-gradient(circle at 50% 50%, rgba(245,176,65,0.14), transparent 34%),
-            repeating-linear-gradient(35deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 20px),
-            rgba(255,255,255,0.018);
+          background: rgba(255,255,255,0.018);
           border: 1px solid var(--line);
           border-radius: 8px;
           display: grid;
@@ -1635,6 +1725,7 @@ function LoreContent() {
           content: "";
           inset: 22%;
           pointer-events: none;
+          display: none;
           position: absolute;
         }
 
@@ -1693,7 +1784,7 @@ function LoreContent() {
           padding: 0.55rem 0.65rem;
           position: relative;
           text-align: left;
-          transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+          transition: border-color 0.18s ease, background 0.18s ease;
           width: 100%;
           z-index: 3;
         }
@@ -1701,7 +1792,6 @@ function LoreContent() {
         .board-node:hover {
           background: rgba(255,255,255,0.055);
           border-color: rgba(245,176,65,0.45);
-          transform: translateY(-2px);
         }
 
         .board-node strong {
@@ -1804,7 +1894,7 @@ function LoreContent() {
           font: inherit;
           font-size: 0.78rem;
           padding: 0.35rem 0.65rem;
-          transition: border-color 0.18s ease, background 0.18s ease, transform 0.16s ease;
+          transition: border-color 0.18s ease, background 0.18s ease;
         }
 
         .theory-evidence button:hover {
@@ -1813,7 +1903,7 @@ function LoreContent() {
         }
 
         .theory-evidence button:active {
-          transform: scale(0.985);
+          transform: none;
         }
 
         .counterpoint {
@@ -1976,8 +2066,14 @@ function LoreContent() {
             overflow: auto;
           }
 
+          .board-picker-categories {
+            max-height: 5.6rem;
+            overflow-y: auto;
+            padding-right: 0.15rem;
+          }
+
           .board-option-list {
-            max-height: calc(min(72dvh, 560px) - 82px);
+            max-height: calc(min(72dvh, 560px) - 150px);
           }
 
           .board-map {
@@ -2064,7 +2160,7 @@ function LoreCard({ entry, onOpen }: { entry: LoreEntry; onOpen: (entry: LoreEnt
     <button className="lore-card" style={{ "--tone": meta.tone } as CSSProperties} onClick={() => onOpen(entry)} type="button">
       <div className="card-topline">{meta.icon} {meta.label}</div>
       <h3>{entry.title}</h3>
-      <p>{entry.summary}</p>
+      <p>{cleanLoreCopy(entry.summary)}</p>
       <div className="fact-list">
         {entry.keyFacts.slice(0, 2).map((fact) => <span key={fact}>{fact}</span>)}
       </div>
@@ -2082,7 +2178,7 @@ function LoreCompactCard({ entry, onOpen }: { entry: LoreEntry; onOpen: (entry: 
     <button className="compact-card" style={{ "--tone": meta.tone } as CSSProperties} onClick={() => onOpen(entry)} type="button">
       <div className="card-topline">{meta.icon} {meta.label}</div>
       <h3>{entry.title}</h3>
-      <p>{entry.keyFacts[0] || entry.summary}</p>
+      <p>{cleanLoreCopy(entry.keyFacts[0] || entry.summary)}</p>
     </button>
   );
 }
@@ -2174,7 +2270,7 @@ function LoreEntryModal({
         <div className="modal-grid">
           <section className="modal-panel span-two">
             <h3>Official Archive Summary</h3>
-            <p>{entry.summary}</p>
+            <p>{cleanLoreCopy(entry.summary)}</p>
             <a href={entry.sourceUrl} target="_blank" rel="noreferrer">
               Read official source <ExternalLink size={14} />
             </a>
@@ -2536,7 +2632,8 @@ function LoreCanvas() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      particles = Array.from({ length: reducedMotion ? 20 : width < 700 ? 28 : 64 }, () => ({
+      const particleCount = width < 700 ? 0 : reducedMotion ? 18 : 56;
+      particles = Array.from({ length: particleCount }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.18,
@@ -2550,6 +2647,7 @@ function LoreCanvas() {
     const draw = () => {
       if (paused) return;
       ctx.clearRect(0, 0, width, height);
+      if (particles.length === 0) return;
       ctx.strokeStyle = "rgba(245,176,65,0.08)";
       ctx.lineWidth = 1;
       const linkDistance = width < 700 ? 0 : 110;
@@ -2593,7 +2691,7 @@ function LoreCanvas() {
       if (paused) {
         cancelAnimationFrame(animationFrame);
         animationFrame = 0;
-      } else if (!reducedMotion && !animationFrame) {
+      } else if (!reducedMotion && particles.length > 0 && !animationFrame) {
         animationFrame = requestAnimationFrame(draw);
       }
     };
