@@ -143,6 +143,24 @@ function getQualityColor(quality?: string) {
   return QUALITY_COLORS[normalized] || QUALITY_COLORS.UNKNOWN;
 }
 
+function OwnedPetImage({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) return <PawPrint size={24} aria-hidden="true" />;
+
+  return (
+    <img
+      src={src}
+      alt=""
+      width={51}
+      height={51}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function OwnedPetsPage() {
   const { activeProfile, updateProfile } = useProfiles();
   const [petDb, setPetDb] = useState<PetRecord[]>([]);
@@ -304,11 +322,11 @@ export default function OwnedPetsPage() {
   };
 
   return (
-    <main className={`container ${styles.page}`}>
+    <main className={`container ${styles.page}`} aria-labelledby="owned-pets-page-title">
       <section className={styles.header}>
         <div>
           <span className={styles.kicker}><ZenithIcon name="pets" size={17} /> Profile Pets</span>
-          <h1>Owned Pets</h1>
+          <h1 id="owned-pets-page-title">Owned Pets</h1>
           <p>Saved pets belong to the active local profile and stay in browser storage until imported, added, used, or removed.</p>
         </div>
         <div className={styles.actions}>
@@ -319,7 +337,7 @@ export default function OwnedPetsPage() {
         </div>
       </section>
 
-      <section className={styles.summaryGrid} aria-label="Owned pet summary" tabIndex={0}>
+      <section className={styles.summaryGrid} aria-label="Owned pet summary">
         <div><Database size={17} /><span>Total saved</span><strong>{ownedPets.length}</strong></div>
         <div><PawPrint size={17} /><span>Active/equipped</span><strong>{activeCount}</strong></div>
         <div><BadgeCheck size={17} /><span>Manual</span><strong>{manualCount}</strong></div>
@@ -327,7 +345,7 @@ export default function OwnedPetsPage() {
       </section>
 
       {activeProfile && (
-        <section className={styles.importReadiness} aria-label="Owned pet import readiness" tabIndex={0}>
+        <section className={styles.importReadiness} aria-label="Owned pet import readiness">
           <div>
             <Shield size={16} />
             <span>Profile source</span>
@@ -478,7 +496,7 @@ export default function OwnedPetsPage() {
               >
                 <div className={styles.cardTop}>
                   <div className={styles.petImage}>
-                    {ownedPet.imageUrl || databasePet?.imageUrl ? <img src={ownedPet.imageUrl || databasePet?.imageUrl || ""} alt="" /> : <PawPrint size={24} />}
+                    <OwnedPetImage src={ownedPet.imageUrl || databasePet?.imageUrl || ""} />
                   </div>
                   <div>
                     <h2>{displayName}</h2>
