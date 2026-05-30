@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Compass,
@@ -12,6 +12,7 @@ import {
   Keyboard,
   Palette,
   Plus,
+  RefreshCw,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -24,6 +25,7 @@ import { ThemeName, usePreferences } from "@/lib/preferences";
 import { playZenithSound } from "@/lib/audio";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import QualityText from "@/components/QualityText";
+import InstallAppHelper from "@/components/InstallAppHelper";
 import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
 import { SKILL_TOOLS, ToolSkill } from "@/lib/skill-profit";
@@ -45,6 +47,234 @@ function formatAge(value?: string) {
   const hours = Math.floor(minutes / 60);
   if (hours < 48) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
+}
+
+function formatBytes(value?: number) {
+  if (!Number.isFinite(value) || !value || value <= 0) return "Unavailable";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = value;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size >= 10 || unitIndex === 0 ? size.toFixed(0) : size.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function formatPercent(usage?: number, quota?: number) {
+  if (!usage || !quota || quota <= 0) return "Quota estimate unavailable";
+  return `${((usage / quota) * 100).toFixed(1)}% of available browser quota`;
+}
+
+type OfflineStorageState = {
+  cacheEntries: number | null;
+  cacheSupported: boolean;
+  error?: string;
+  manifestCount: number | null;
+  manifestGeneratedAt?: string;
+  manifestSize: number | null;
+  quota?: number;
+  serviceWorkerState: string;
+  storageSupported: boolean;
+  usage?: number;
+};
+
+const initialOfflineStorageState: OfflineStorageState = {
+  cacheEntries: null,
+  cacheSupported: false,
+  manifestCount: null,
+  manifestSize: null,
+  serviceWorkerState: "Checking",
+  storageSupported: false,
+};
+
+async function postServiceWorkerMessage(type: string) {
+  if (!("serviceWorker" in navigator)) {
+    throw new Error("Service worker is not supported in this browser.");
+  }
+
+  const registration = await navigator.serviceWorker.getRegistration();
+  const worker = registration?.active || registration?.waiting || registration?.installing;
+  if (!worker) {
+    throw new Error("Offline support is not active yet.");
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const channel = new MessageChannel();
+    const timeout = window.setTimeout(() => {
+      channel.port1.close();
+      reject(new Error("Offline cache action timed out."));
+    }, 45000);
+
+    channel.port1.onmessage = (event) => {
+      window.clearTimeout(timeout);
+      channel.port1.close();
+      if (event.data?.ok) {
+        resolve();
+        return;
+      }
+      reject(new Error(event.data?.error || "Offline cache action failed."));
+    };
+
+    worker.postMessage({ type }, [channel.port2]);
+  });
+}
+
+function OfflineStoragePanel() {
+  const [offlineStorage, setOfflineStorage] = useState<OfflineStorageState>(initialOfflineStorageState);
+  const [statusMessage, setStatusMessage] = useState("Checking offline storage.");
+  const [busyAction, setBusyAction] = useState<"refresh" | "clear" | "check" | null>(null);
+
+  const checkOfflineStorage = useCallback(async (message = "Offline storage checked.") => {
+    setBusyAction((current) => current || "check");
+
+    try {
+      const storageSupported = "storage" in navigator && typeof navigator.storage?.estimate === "function";
+      const estimate = storageSupported ? await navigator.storage.estimate() : {};
+      const cacheSupported = "caches" in window;
+      const cacheNames = cacheSupported ? await caches.keys() : [];
+      const offlineCacheNames = cacheNames.filter((name) => name.startsWith("zenith-offline-"));
+      let cacheEntries = 0;
+
+      for (const name of offlineCacheNames) {
+        const cache = await caches.open(name);
+        cacheEntries += (await cache.keys()).length;
+      }
+
+      let manifestCount: number | null = null;
+      let manifestSize: number | null = null;
+      let manifestGeneratedAt: string | undefined;
+
+      try {
+        const response = await fetch("/offline-cache-manifest.json", { cache: "no-cache" });
+        if (response.ok) {
+          const manifest = await response.json() as { count?: number; generatedAt?: string; totalBytes?: number };
+          manifestCount = Number.isFinite(manifest.count) ? Number(manifest.count) : null;
+          manifestSize = Number.isFinite(manifest.totalBytes) ? Number(manifest.totalBytes) : null;
+          manifestGeneratedAt = manifest.generatedAt;
+        }
+      } catch {
+        // Keep the rest of the storage status usable if the manifest cannot be fetched.
+      }
+
+      let serviceWorkerState = "Not registered";
+      if ("serviceWorker" in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        serviceWorkerState = registration?.active?.state || registration?.waiting?.state || registration?.installing?.state || "Not registered";
+      }
+
+      setOfflineStorage({
+        cacheEntries,
+        cacheSupported,
+        manifestCount,
+        manifestGeneratedAt,
+        manifestSize,
+        quota: estimate.quota,
+        serviceWorkerState,
+        storageSupported,
+        usage: estimate.usage,
+      });
+      setStatusMessage(message);
+    } catch (error) {
+      setOfflineStorage((current) => ({
+        ...current,
+        error: error instanceof Error ? error.message : "Could not inspect offline storage.",
+      }));
+      setStatusMessage("Could not inspect offline storage.");
+    } finally {
+      setBusyAction((current) => current === "check" ? null : current);
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkOfflineStorage();
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.ready
+        .then(() => checkOfflineStorage("Offline support is active."))
+        .catch(() => {});
+    }
+  }, [checkOfflineStorage]);
+
+  const runOfflineAction = async (action: "refresh" | "clear") => {
+    setBusyAction(action);
+    setStatusMessage(action === "refresh" ? "Refreshing public offline data." : "Clearing public offline cache.");
+
+    try {
+      await postServiceWorkerMessage(action === "refresh" ? "ZENITH_REFRESH_PUBLIC_DATA_CACHE" : "ZENITH_CLEAR_PUBLIC_DATA_CACHE");
+      await checkOfflineStorage(action === "refresh" ? "Public offline data refreshed." : "Public offline cache cleared.");
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : "Offline cache action failed.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const canUseOfflineCache = offlineStorage.cacheSupported && offlineStorage.serviceWorkerState !== "Not registered";
+  const storageUsageLabel = offlineStorage.storageSupported
+    ? `${formatBytes(offlineStorage.usage)} / ${formatBytes(offlineStorage.quota)}`
+    : "Unsupported";
+
+  return (
+    <div className="settings-offline-cache" aria-live="polite">
+      <div className="settings-summary-grid">
+        <div className="settings-summary-card">
+          <span>Offline bundle</span>
+          <strong>{formatBytes(offlineStorage.manifestSize ?? undefined)}</strong>
+          <small>
+            {offlineStorage.manifestCount !== null
+              ? `${offlineStorage.manifestCount.toLocaleString()} public files`
+              : "Manifest unavailable"}
+          </small>
+        </div>
+        <div className="settings-summary-card">
+          <span>Browser storage</span>
+          <strong>{storageUsageLabel}</strong>
+          <small>{formatPercent(offlineStorage.usage, offlineStorage.quota)}</small>
+        </div>
+        <div className="settings-summary-card">
+          <span>Cached entries</span>
+          <strong>{offlineStorage.cacheEntries === null ? "Checking" : offlineStorage.cacheEntries.toLocaleString()}</strong>
+          <small>Service worker: {offlineStorage.serviceWorkerState}</small>
+        </div>
+      </div>
+
+      <div className="settings-actions-row settings-offline-actions">
+        <button
+          type="button"
+          className="settings-link-button"
+          onClick={() => runOfflineAction("refresh")}
+          disabled={!canUseOfflineCache || busyAction !== null}
+        >
+          <RefreshCw size={14} /> Refresh offline data
+        </button>
+        <button
+          type="button"
+          className="settings-link-button settings-danger-link"
+          onClick={() => runOfflineAction("clear")}
+          disabled={!canUseOfflineCache || busyAction !== null}
+        >
+          <Trash2 size={14} /> Clear offline cache
+        </button>
+        <button
+          type="button"
+          className="settings-link-button settings-secondary-link"
+          onClick={() => checkOfflineStorage()}
+          disabled={busyAction !== null}
+        >
+          <Database size={14} /> Check storage
+        </button>
+      </div>
+
+      <p className="settings-panel-note settings-offline-note">
+        These controls manage only public app files and generated game data cached for offline use. They do not delete profiles, settings, custom prices, queues, or planner data stored in your browser.
+      </p>
+      <p className="settings-empty-note">{busyAction ? "Working..." : statusMessage}</p>
+      {offlineStorage.error && <p className="settings-warning-note">{offlineStorage.error}</p>}
+      {offlineStorage.manifestGeneratedAt && (
+        <p className="settings-empty-note">Offline manifest generated {formatAge(offlineStorage.manifestGeneratedAt)}.</p>
+      )}
+    </div>
+  );
 }
 
 function ToolPicker({
@@ -556,6 +786,9 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+              <p className="settings-panel-note">
+                These are in-app notices only. Browser notification permission is requested only from Market Watch after you press its permission button.
+              </p>
             </div>
           </div>
 
@@ -643,6 +876,10 @@ export default function SettingsPage() {
           <Link className="settings-link-button settings-profile-edit-link" href="/profiles#profile-transfer">
             Backup or manage profiles <ExternalLink size={14} />
           </Link>
+        </div>
+
+        <div className="settings-panel settings-install-panel">
+          <InstallAppHelper />
         </div>
 
         <div className="settings-panel settings-panel-wide">
@@ -767,6 +1004,7 @@ export default function SettingsPage() {
               <small>Enemies, dungeons, and world bosses.</small>
             </div>
           </div>
+          <OfflineStoragePanel />
         </div>
 
         <div className="settings-panel settings-panel-wide settings-desktop-only">

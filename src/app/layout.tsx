@@ -13,6 +13,7 @@ import UsageTracker from "@/components/UsageTracker";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
 import OfflineSupport from "@/components/OfflineSupport";
 import DataFreshnessBanner from "@/components/DataFreshnessBanner";
+import PwaInstallPromptCapture from "@/components/PwaInstallPromptCapture";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
@@ -125,6 +126,7 @@ export default function RootLayout({
                     <LocalBackupReminder />
                     <UsageTracker />
                     <WebVitalsReporter />
+                    <PwaInstallPromptCapture />
                     <OfflineSupport />
                     <DataFreshnessBanner />
                     <div className="main-content">

@@ -3960,6 +3960,11 @@ button.source-row {
   text-decoration: none;
 }
 
+.settings-link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .settings-panel-note {
   margin: 0.35rem 0 1rem;
   line-height: 1.55;
@@ -12177,9 +12182,106 @@ kbd {
   color: var(--text-danger);
 }
 
-.settings-danger-link:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
+.settings-secondary-link {
+  background: rgba(255,255,255,0.035);
+  border-color: rgba(255,255,255,0.09);
+  color: var(--text-muted);
+}
+
+.settings-offline-cache {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: grid;
+  gap: 0.78rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.settings-offline-actions {
+  margin-top: 0;
+}
+
+.settings-offline-actions .settings-link-button {
+  min-height: 38px;
+}
+
+.settings-offline-note {
+  margin-bottom: 0;
+}
+
+.settings-install-panel {
+  align-self: stretch;
+}
+
+.settings-install-state {
+  align-items: center;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 0.8rem;
+}
+
+.settings-install-state-ready {
+  background: color-mix(in srgb, var(--text-accent), transparent 92%);
+  border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
+}
+
+.settings-install-state-installed {
+  background: color-mix(in srgb, var(--text-success), transparent 92%);
+  border-color: color-mix(in srgb, var(--text-success), transparent 68%);
+}
+
+.settings-install-icon {
+  align-items: center;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: var(--text-accent);
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.settings-install-state-installed .settings-install-icon {
+  color: var(--text-success);
+}
+
+.settings-install-state strong,
+.settings-install-state small,
+.settings-install-guidance strong,
+.settings-install-guidance span {
+  display: block;
+}
+
+.settings-install-state strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.settings-install-state small,
+.settings-install-guidance span {
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.settings-install-actions {
+  margin-top: 0.85rem;
+}
+
+.settings-install-guidance {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+}
+
+.settings-install-guidance strong {
+  color: var(--text-main);
+  font-size: 0.82rem;
 }
 
 .settings-source-table {
@@ -19839,5 +19941,54 @@ kbd {
   .command-results button {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Mobile touch target guardrails ---- */
+@media (pointer: coarse), (max-width: 768px) {
+  :is(
+    button,
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea,
+    [role="button"],
+    [role="tab"],
+    [role="option"],
+    [role="menuitem"],
+    a[href]
+  ) {
+    min-height: 44px;
+  }
+
+  :is(
+    button,
+    [role="button"],
+    [role="tab"],
+    [role="option"],
+    [role="menuitem"],
+    .close-btn,
+    .pet-detail-close,
+    .pet-icon-button,
+    .recipe-combobox-clear,
+    .queue-icon-button,
+    .queue-remove-button,
+    .dropdown-close,
+    .search-clear,
+    .table-sort-button
+  ) {
+    min-width: 44px;
+  }
+
+  :is(
+    .close-btn,
+    .pet-detail-close,
+    .recipe-combobox-clear,
+    .queue-icon-button,
+    .queue-remove-button,
+    .dropdown-close,
+    .search-clear,
+    .table-sort-button
+  ) {
+    height: auto;
   }
 }
