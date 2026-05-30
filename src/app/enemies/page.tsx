@@ -367,7 +367,7 @@ function EnemyDetailModal({
       >
         <div className="enemy-modal-header">
           <div className="modal-title-row">
-            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={38} />}
+            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" width={56} height={56} loading="eager" decoding="async" /> : <Skull size={38} />}
             <div>
               <span>Enemy</span>
               <h2 id="enemy-detail-title">{enemy.name}</h2>
@@ -415,7 +415,7 @@ function EnemyDetailModal({
                   className="loot-button"
                   aria-label={`Open item details for ${drop.name}, ${drop.chance}% drop rate${Number(drop.quantity || 1) > 1 ? `, quantity ${drop.quantity}` : ""}`}
                 >
-                  {drop.image_url ? <img src={drop.image_url} alt="" loading="lazy" decoding="async" /> : <Package size={20} />}
+                  {drop.image_url ? <img src={drop.image_url} alt="" width={34} height={34} loading="lazy" decoding="async" /> : <Package size={20} />}
                   <span>
                     <strong>{drop.name}</strong>
                     <small>{drop.chance}% drop rate{Number(drop.quantity || 1) > 1 ? ` - x${drop.quantity}` : ""}</small>
@@ -525,12 +525,12 @@ function EnemiesContent() {
   };
 
   return (
-    <main className="enemy-db-page">
+    <main className="enemy-db-page" aria-labelledby="enemy-db-page-title">
       <div className="enemy-page-shell" inert={selectedEnemy ? true : undefined} aria-hidden={selectedEnemy ? true : undefined}>
         <header className="enemy-hero">
           <div>
-            <h1><ZenithIcon name="enemy" size={24} /> Enemy Database</h1>
-            <p>Search enemies by location, drops, levels, and current weather matchups.</p>
+            <h1 id="enemy-db-page-title"><ZenithIcon name="enemy" size={24} /> Enemy Database</h1>
+            <p>Find IdleMMO enemies by location, drops, level band, and current weather fit.</p>
           </div>
           <div className="hero-meta">
             <span>{stats.enemies.toLocaleString()} enemies</span>
@@ -580,7 +580,7 @@ function EnemiesContent() {
           </label>
           <details className="enemy-filter-panel" open={!isCompactViewport ? true : undefined}>
             <summary tabIndex={0}>
-              <span><SlidersHorizontal size={15} aria-hidden="true" /> Tactical filters</span>
+              <span><SlidersHorizontal size={15} aria-hidden="true" /> Filters and sort</span>
               <small>{activeFilterCount > 0 || hasCustomSort ? "Customized" : "Default"}</small>
               <ChevronDown size={16} aria-hidden="true" />
             </summary>
@@ -605,12 +605,12 @@ function EnemiesContent() {
 
         {loading && enemies.length === 0 ? (
           <LoadingState
-            title="Loading enemy intelligence"
+            title="Loading enemies"
             description="Preparing enemies, drops, locations, and current weather windows."
           />
         ) : (
           <section className="enemy-grid" aria-label="Enemy results">
-            {filteredEnemies.map((enemy) => (
+            {filteredEnemies.map((enemy, index) => (
               <button
                 key={`${enemy.locationKey}-${enemy.name}`}
                 type="button"
@@ -619,7 +619,7 @@ function EnemiesContent() {
                 aria-label={getEnemyCardLabel(enemy)}
               >
                 <span className="enemy-card-art">
-                  {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Skull size={28} />}
+                  {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" width={42} height={42} loading={index < 8 ? "eager" : "lazy"} decoding="async" /> : <Skull size={28} />}
                 </span>
                 <span className="enemy-card-main">
                   <span className="enemy-title-row">
@@ -675,8 +675,7 @@ function EnemiesContent() {
           overflow-x: hidden;
           isolation: isolate;
           background:
-            radial-gradient(circle at 80% 0%, rgba(45, 212, 191, 0.12), transparent 28rem),
-            radial-gradient(circle at 10% 12%, rgba(168, 85, 247, 0.1), transparent 24rem),
+            linear-gradient(180deg, rgba(45, 212, 191, 0.045), transparent 18rem),
             var(--bg-base);
         }
         .enemy-db-page,
@@ -696,7 +695,6 @@ function EnemiesContent() {
           margin: 0 auto 0.8rem;
           padding-bottom: 0.8rem;
           border-bottom: 1px solid rgba(255,255,255,0.08);
-          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
         }
         .enemy-hero h1 {
           display: flex;
@@ -723,14 +721,13 @@ function EnemiesContent() {
           border: 1px solid rgba(45, 212, 191, 0.22);
           border-radius: 999px;
           background: rgba(45, 212, 191, 0.08);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px rgba(0,0,0,0.24);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
           padding: 0.55rem 0.85rem;
-          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease;
         }
         .hero-meta:hover {
           border-color: rgba(45, 212, 191, 0.38);
           background: rgba(45, 212, 191, 0.12);
-          transform: translateY(-1px);
         }
         .hero-meta span {
           color: var(--text-accent);
@@ -753,14 +750,10 @@ function EnemiesContent() {
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(10, 10, 13, 0.76);
-          box-shadow: 0 18px 48px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04);
-          backdrop-filter: blur(18px) saturate(1.08);
-          -webkit-backdrop-filter: blur(18px) saturate(1.08);
+          box-shadow: 0 12px 30px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
           padding: 0.75rem;
           position: relative;
           z-index: 20;
-          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
-          animation-delay: 0.04s;
         }
         .controls-heading {
           grid-column: 1 / -1;
@@ -793,7 +786,7 @@ function EnemiesContent() {
           display: inline-flex;
           align-items: center;
           gap: 0.38rem;
-          min-height: 32px;
+          min-height: 44px;
           margin-left: auto;
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 7px;
@@ -804,7 +797,7 @@ function EnemiesContent() {
           font-size: 0.78rem;
           font-weight: 900;
           padding: 0 0.6rem;
-          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease, opacity 0.16s ease;
+          transition: background 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
         }
         .controls-heading button:disabled {
           cursor: default;
@@ -813,9 +806,6 @@ function EnemiesContent() {
         .controls-heading button:not(:disabled):hover {
           border-color: rgba(56,189,248,0.35);
           background: rgba(56,189,248,0.1);
-        }
-        .controls-heading button:not(:disabled):active {
-          transform: translateY(1px);
         }
         .enemy-filter-panel {
           grid-column: span 5;
@@ -851,7 +841,7 @@ function EnemiesContent() {
         .search-control div {
           display: flex;
           align-items: center;
-          min-height: 40px;
+          min-height: 44px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(0,0,0,0.42);
@@ -873,19 +863,19 @@ function EnemiesContent() {
         :global(.select-trigger),
         .sort-direction {
           width: 100%;
-          min-height: 40px;
+          min-height: 44px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 8px;
           background: rgba(0,0,0,0.42);
           color: #fff;
           font: inherit;
           font-weight: 850;
-          transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
         }
         .search-control input {
           min-width: 0;
           width: 100%;
-          min-height: 38px;
+          min-height: 42px;
           border: 0;
           background: transparent;
           color: #fff;
@@ -911,10 +901,6 @@ function EnemiesContent() {
         .sort-direction:hover {
           border-color: rgba(255,255,255,0.14);
           background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.018)), rgba(0,0,0,0.42);
-        }
-        :global(.select-trigger:active),
-        .sort-direction:active {
-          transform: translateY(1px);
         }
         :global(.custom-select.open .select-trigger),
         :global(.select-trigger:focus-visible),
@@ -951,7 +937,7 @@ function EnemiesContent() {
           border: 1px solid var(--border-focus);
           border-radius: 8px;
           background: color-mix(in srgb, var(--bg-base), black 18%);
-          box-shadow: 0 18px 46px rgba(0,0,0,0.5), 0 0 0 1px rgba(56,189,248,0.08);
+          box-shadow: 0 14px 34px rgba(0,0,0,0.38), 0 0 0 1px rgba(56,189,248,0.08);
           padding: 0.3rem;
           transform-origin: top center;
           animation: enemyMenuReveal 0.16s ease-out both;
@@ -966,7 +952,7 @@ function EnemiesContent() {
           align-items: center;
           justify-content: space-between;
           gap: 0.65rem;
-          min-height: 40px;
+          min-height: 44px;
           border: 1px solid transparent;
           border-radius: 6px;
           background: transparent;
@@ -976,7 +962,7 @@ function EnemiesContent() {
           font-weight: 850;
           text-align: left;
           padding: 0 0.6rem;
-          transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+          transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
         }
         :global(.select-menu button span) {
           min-width: 0;
@@ -995,9 +981,6 @@ function EnemiesContent() {
           border-color: rgba(56,189,248,0.24);
           color: #fff;
         }
-        :global(.select-menu button:active) {
-          transform: scale(0.99);
-        }
         .enemy-summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1006,8 +989,6 @@ function EnemiesContent() {
           margin: 0 auto 0.75rem;
           position: relative;
           z-index: 1;
-          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
-          animation-delay: 0.02s;
         }
         .enemy-summary div {
           display: grid;
@@ -1019,12 +1000,7 @@ function EnemiesContent() {
           background: rgba(255,255,255,0.035);
           padding: 0.62rem 0.7rem;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
-          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-        }
-        .enemy-summary div:hover {
-          border-color: rgba(56,189,248,0.18);
-          background: rgba(255,255,255,0.048);
-          transform: translateY(-1px);
+          transition: none;
         }
         .enemy-summary span {
           color: var(--text-muted);
@@ -1042,8 +1018,6 @@ function EnemiesContent() {
           margin: 0 auto;
           position: relative;
           z-index: 0;
-          animation: enemySurfaceIn 0.34s cubic-bezier(0.2, 0.72, 0.22, 1) both;
-          animation-delay: 0.08s;
         }
         .enemy-card {
           position: relative;
@@ -1062,8 +1036,8 @@ function EnemiesContent() {
           cursor: pointer;
           padding: 0.66rem;
           text-align: left;
-          box-shadow: 0 16px 38px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04);
-          transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          transition: border-color 0.18s ease, background 0.18s ease;
         }
         .enemy-card::before {
           content: "";
@@ -1076,11 +1050,9 @@ function EnemiesContent() {
         }
         .enemy-card.good::before {
           background: #5eead4;
-          box-shadow: 0 0 26px rgba(45, 212, 191, 0.38);
         }
         .enemy-card.bad::before {
           background: #f87171;
-          box-shadow: 0 0 26px rgba(248, 113, 113, 0.28);
         }
         .enemy-card.neutral::before {
           background: #d1d5db;
@@ -1088,33 +1060,11 @@ function EnemiesContent() {
         .enemy-card.muted::before {
           opacity: 0.28;
         }
-        .enemy-card::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          z-index: -2;
-          background: radial-gradient(circle at 18% 0%, rgba(56,189,248,0.08), transparent 16rem);
-          opacity: 0;
-          transition: opacity 0.18s ease;
-        }
         .enemy-card:hover,
         .enemy-card:focus-visible {
           border-color: var(--border-focus);
           background: color-mix(in srgb, var(--text-accent), transparent 92%);
-          box-shadow: 0 20px 48px rgba(0,0,0,0.24), 0 0 0 1px rgba(56,189,248,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
-        }
-        .enemy-card:hover::after,
-        .enemy-card:focus-visible::after {
-          opacity: 1;
-        }
-        .enemy-card:active {
-          transform: translateY(1px) scale(0.995);
-        }
-        @media (hover: hover) and (pointer: fine) {
-          .enemy-card:hover,
-          .enemy-card:focus-visible {
-            transform: translateY(-2px);
-          }
+          box-shadow: inset 3px 0 0 var(--border-focus), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .enemy-card-art {
           display: grid;
@@ -1247,14 +1197,11 @@ function EnemiesContent() {
           font-size: 0.82rem;
           font-weight: 900;
           padding: 0 0.75rem;
-          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+          transition: background 0.16s ease, border-color 0.16s ease;
         }
         .enemy-empty button:hover {
           border-color: rgba(56,189,248,0.42);
           background: rgba(56,189,248,0.16);
-        }
-        .enemy-empty button:active {
-          transform: translateY(1px);
         }
         .sr-only {
           position: absolute;
@@ -1274,8 +1221,6 @@ function EnemiesContent() {
           display: grid;
           place-items: center;
           background: rgba(0,0,0,0.84);
-          backdrop-filter: blur(16px) saturate(0.72);
-          -webkit-backdrop-filter: blur(16px) saturate(0.72);
           padding: 1rem;
           animation: enemyBackdropIn 0.18s ease-out both;
         }
@@ -1288,7 +1233,7 @@ function EnemiesContent() {
           background:
             radial-gradient(circle at 18% 0%, rgba(56,189,248,0.08), transparent 24rem),
             #10131a;
-          box-shadow: 0 28px 90px rgba(0,0,0,0.64), inset 0 1px 0 rgba(255,255,255,0.05);
+          box-shadow: 0 24px 64px rgba(0,0,0,0.56), inset 0 1px 0 rgba(255,255,255,0.05);
           animation: enemyModalIn 0.2s cubic-bezier(0.2, 0.72, 0.22, 1) both;
         }
         :global(.enemy-modal-header) {
@@ -1303,6 +1248,10 @@ function EnemiesContent() {
           display: flex;
           gap: 0.85rem;
           align-items: center;
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        :global(.modal-title-row > div) {
           min-width: 0;
         }
         :global(.modal-title-row img) {
@@ -1320,6 +1269,7 @@ function EnemiesContent() {
           color: #fff;
           font-size: 1.55rem;
           line-height: 1.1;
+          overflow-wrap: anywhere;
         }
         :global(.modal-title-row p) {
           margin-top: 0.15rem;
@@ -1328,21 +1278,19 @@ function EnemiesContent() {
         :global(.modal-close) {
           display: grid;
           place-items: center;
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
+          flex: 0 0 auto;
           border: 1px solid rgba(255,255,255,0.09);
           border-radius: 8px;
           background: rgba(255,255,255,0.04);
           color: #fff;
           cursor: pointer;
-          transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+          transition: background 0.16s ease, border-color 0.16s ease;
         }
         :global(.modal-close:hover) {
           border-color: rgba(255,255,255,0.18);
           background: rgba(255,255,255,0.08);
-        }
-        :global(.modal-close:active) {
-          transform: translateY(1px);
         }
         :global(.enemy-modal-body) {
           display: grid;
@@ -1413,12 +1361,15 @@ function EnemiesContent() {
         :global(.preference-pill) {
           display: inline-flex;
           gap: 0.4rem;
+          max-width: 100%;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 999px;
           background: rgba(255,255,255,0.04);
           color: var(--text-muted);
           font-size: 0.76rem;
           font-weight: 850;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
           padding: 0.34rem 0.58rem;
         }
         :global(.preference-pill strong) {
@@ -1450,15 +1401,12 @@ function EnemiesContent() {
           cursor: pointer;
           padding: 0.5rem;
           text-align: left;
-          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease;
         }
         :global(.loot-button:hover),
         :global(.loot-button:focus-visible) {
           border-color: var(--border-focus);
           background: rgba(56,189,248,0.08);
-        }
-        :global(.loot-button:active) {
-          transform: translateY(1px);
         }
         :global(.loot-button img) {
           width: 34px;
@@ -1498,29 +1446,16 @@ function EnemiesContent() {
           color: #fff;
           font-weight: 850;
           text-decoration: none;
-          transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+          transition: border-color 0.16s ease, background 0.16s ease;
         }
         :global(.detail-links a:hover),
         :global(.detail-links a:focus-visible) {
           border-color: var(--border-focus);
           background: rgba(56,189,248,0.08);
         }
-        :global(.detail-links a:active) {
-          transform: translateY(1px);
-        }
         .empty-inline {
           color: var(--text-muted);
           font-weight: 850;
-        }
-        @keyframes enemySurfaceIn {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
         }
         @keyframes enemyMenuReveal {
           from {
@@ -1569,7 +1504,6 @@ function EnemiesContent() {
           :global(.select-menu button),
           .enemy-summary div,
           .enemy-card,
-          .enemy-card::after,
           .enemy-empty button,
           :global(.modal-close),
           :global(.loot-button),
@@ -1577,18 +1511,9 @@ function EnemiesContent() {
             transition: none !important;
           }
           .hero-meta:hover,
-          .controls-heading button:active,
-          :global(.select-trigger:active),
-          .sort-direction:active,
-          :global(.select-menu button:active),
-          .enemy-summary div:hover,
           .enemy-card:hover,
           .enemy-card:focus-visible,
-          .enemy-card:active,
-          .enemy-empty button:active,
-          :global(.modal-close:active),
-          :global(.loot-button:active),
-          :global(.detail-links a:active) {
+          .enemy-summary div:hover {
             transform: none !important;
           }
         }
