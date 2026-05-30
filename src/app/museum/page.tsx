@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDownUp,
@@ -50,6 +50,8 @@ const SORT_OPTIONS: Array<{ key: MuseumSortKey; label: string }> = [
   { key: "name", label: "Name" },
   { key: "quantity", label: "Quantity" },
 ];
+
+const MUSEUM_RESULT_BATCH_SIZE = 120;
 
 function formatNumber(value: number) {
   return value.toLocaleString();
@@ -151,7 +153,7 @@ function museumEmptyState(status?: string) {
       return {
         icon: Database,
         title: "No museum snapshot for this profile",
-        body: "Museum data will appear here after a sanitized museum snapshot is saved for the active profile.",
+        body: "Museum items will appear here after you import or refresh this profile.",
       };
   }
 }
@@ -161,7 +163,11 @@ function MuseumItemCard({ item }: { item: MuseumItem }) {
   return (
     <article className={`museum-item tone-${categoryTone(item.category)}`} data-tone={categoryTone(item.category)}>
       <div className="museum-item-art">
-        {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <Icon size={28} aria-hidden="true" />}
+        {item.imageUrl ? (
+          <img src={item.imageUrl} alt="" width={60} height={60} loading="lazy" decoding="async" />
+        ) : (
+          <Icon size={28} aria-hidden="true" />
+        )}
       </div>
       <div className="museum-item-body">
         <div>
@@ -184,6 +190,7 @@ export default function MuseumPage() {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<MuseumSortKey>("category");
   const [sortDirection, setSortDirection] = useState<MuseumSortDirection>("asc");
+  const [visibleLimit, setVisibleLimit] = useState(MUSEUM_RESULT_BATCH_SIZE);
 
   const museum = activeProfile?.museum;
   const items = useMemo(() => museum?.items || [], [museum]);
@@ -194,6 +201,10 @@ export default function MuseumPage() {
     return sortMuseumItems(filtered, sortKey, sortDirection);
   }, [category, items, query, sortDirection, sortKey]);
 
+  useEffect(() => {
+    setVisibleLimit(MUSEUM_RESULT_BATCH_SIZE);
+  }, [category, items, query, sortDirection, sortKey]);
+
   const activeSummary = category === "ALL"
     ? { itemCount: items.length, totalQuantity }
     : summaries.find((summary) => summary.category === category) || { itemCount: 0, totalQuantity: 0 };
@@ -202,6 +213,8 @@ export default function MuseumPage() {
     [summaries],
   );
   const selectedQuantity = visibleItems.reduce((sum, item) => sum + item.quantity, 0);
+  const displayedItems = visibleItems.slice(0, visibleLimit);
+  const hasMoreItems = displayedItems.length < visibleItems.length;
 
   const hasMuseum = items.length > 0;
   const emptyState = museumEmptyState(museum?.status);
@@ -236,12 +249,17 @@ export default function MuseumPage() {
   };
 
   return (
-    <main className="container museum-page">
+    <main className="container museum-page" aria-labelledby="museum-page-title">
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {hasMuseum
+          ? `${formatNumber(visibleItems.length)} museum items match the current filters. ${formatNumber(displayedItems.length)} are rendered.`
+          : emptyState.title}
+      </div>
       <section className="museum-hero">
         <div className="museum-hero-copy">
           <span className="eyebrow"><ZenithIcon name="museum" size={14} /> Museum</span>
-          <h1>Museum Collection</h1>
-          <p>Browse the museum items saved from your active profile, with category counts, search, and collection quantity totals.</p>
+          <h1 id="museum-page-title">Museum Collection</h1>
+          <p>Search the museum items saved on your active profile, then filter by collection type, quantity, and import status.</p>
         </div>
         <div className="museum-profile-card" aria-label="Active profile museum source">
           <span>Active Profile</span>
@@ -260,7 +278,7 @@ export default function MuseumPage() {
         <section className="museum-empty" role="status">
           <Database size={28} aria-hidden="true" />
           <h2>Loading profiles</h2>
-          <p>Checking the local profile store for an imported museum snapshot.</p>
+          <p>Checking browser-saved profiles for museum items.</p>
         </section>
       ) : !hasMuseum ? (
         <section className="museum-empty">
@@ -352,10 +370,10 @@ export default function MuseumPage() {
               </button>
             </div>
 
-            <div className="museum-control-status" aria-live="polite">
+            <div className="museum-control-status">
               <div>
                 <span>Showing</span>
-                <strong>{formatNumber(visibleItems.length)} items</strong>
+                <strong>{formatNumber(displayedItems.length)} of {formatNumber(visibleItems.length)}</strong>
               </div>
               <div>
                 <span>Quantity</span>
@@ -466,10 +484,10 @@ export default function MuseumPage() {
             })}
           </section>
 
-          <section className="museum-results-header" aria-live="polite">
+          <section className="museum-results-header">
             <div>
               <span>{category === "ALL" ? "All categories" : museumCategoryLabel(category)}</span>
-              <strong>{formatNumber(visibleItems.length)} shown</strong>
+              <strong>{formatNumber(displayedItems.length)} of {formatNumber(visibleItems.length)} shown</strong>
             </div>
             <div>
               <span>Selected total</span>
@@ -478,11 +496,24 @@ export default function MuseumPage() {
           </section>
 
           {visibleItems.length ? (
-            <section className="museum-grid" aria-label="Museum items">
-              {visibleItems.map((item) => (
-                <MuseumItemCard key={`${item.category}-${String(item.id)}-${item.name}`} item={item} />
-              ))}
-            </section>
+            <>
+              <section className="museum-grid" aria-label="Museum items">
+                {displayedItems.map((item) => (
+                  <MuseumItemCard key={`${item.category}-${String(item.id)}-${item.name}`} item={item} />
+                ))}
+              </section>
+              {hasMoreItems && (
+                <div className="museum-more">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit((current) => current + MUSEUM_RESULT_BATCH_SIZE)}
+                    aria-label={`Show more museum items, currently showing ${formatNumber(displayedItems.length)} of ${formatNumber(visibleItems.length)}`}
+                  >
+                    Show {formatNumber(Math.min(MUSEUM_RESULT_BATCH_SIZE, visibleItems.length - displayedItems.length))} more
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <section className="museum-empty compact" role="status">
               <Search size={24} aria-hidden="true" />
@@ -540,6 +571,7 @@ export default function MuseumPage() {
         .museum-controls,
         .museum-filter-chips,
         .museum-results-header,
+        .museum-more,
         .museum-item {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
@@ -905,7 +937,7 @@ export default function MuseumPage() {
           min-height: 44px;
           min-width: 0;
           outline: none;
-          padding: 0 2.55rem 0 2.45rem;
+          padding: 0 3.15rem 0 2.45rem;
           width: 100%;
         }
 
@@ -917,13 +949,13 @@ export default function MuseumPage() {
           color: var(--text-muted);
           cursor: pointer;
           display: inline-flex;
-          height: 2rem;
+          height: 2.75rem;
           justify-content: center;
           position: absolute;
-          right: 0.45rem;
+          right: 0.25rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 2rem;
+          width: 2.75rem;
           transition: color 160ms ease, background 160ms ease, transform 160ms ease;
         }
 
@@ -1131,6 +1163,34 @@ export default function MuseumPage() {
           animation: museumRise 420ms 210ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
+        .museum-more {
+          display: flex;
+          justify-content: center;
+          padding: 0.85rem;
+        }
+
+        .museum-more button {
+          align-items: center;
+          background: rgba(255,255,255,0.055);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 7px;
+          color: #fff;
+          cursor: pointer;
+          display: inline-flex;
+          font: inherit;
+          font-weight: 800;
+          justify-content: center;
+          min-height: 44px;
+          min-width: min(100%, 14rem);
+          padding: 0 1rem;
+          transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
+        }
+
+        .museum-more button:hover {
+          border-color: var(--border-focus);
+          background: color-mix(in srgb, var(--text-accent), transparent 86%);
+        }
+
         .museum-item {
           align-items: center;
           display: grid;
@@ -1243,9 +1303,47 @@ export default function MuseumPage() {
         .museum-sort button:focus-visible,
         .museum-reset:focus-visible,
         .museum-filter-chips button:focus-visible,
+        .museum-more button:focus-visible,
         .museum-summary-card:focus-visible {
           outline: 2px solid color-mix(in srgb, var(--text-accent), white 8%);
           outline-offset: 2px;
+        }
+
+        .museum-hero,
+        .museum-profile-card,
+        .museum-source-strip,
+        .museum-empty,
+        .museum-summary-main,
+        .museum-summary-card,
+        .museum-controls,
+        .museum-filter-chips,
+        .museum-results-header,
+        .museum-more,
+        .museum-item {
+          background: rgba(12, 13, 15, 0.86);
+          box-shadow: 0 12px 34px rgba(0,0,0,0.18);
+          animation: none;
+        }
+
+        .museum-summary-card,
+        .museum-search > div,
+        .museum-search-clear,
+        .museum-segment button,
+        .museum-sort button,
+        .museum-reset,
+        .museum-filter-chips span,
+        .museum-filter-chips button,
+        .museum-more button,
+        .museum-item,
+        .museum-item-art {
+          transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .museum-summary-card:hover,
+        .museum-summary-card[data-active="true"],
+        .museum-item:hover {
+          transform: none;
+          box-shadow: 0 12px 34px rgba(0,0,0,0.18);
         }
 
         @keyframes museumRise {
@@ -1367,6 +1465,7 @@ export default function MuseumPage() {
           .museum-controls,
           .museum-filter-chips,
           .museum-results-header,
+          .museum-more,
           .museum-grid {
             animation: none;
           }
@@ -1381,6 +1480,7 @@ export default function MuseumPage() {
           .museum-reset,
           .museum-filter-chips span,
           .museum-filter-chips button,
+          .museum-more button,
           .museum-item,
           .museum-item-art {
             transition: none;
