@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, DollarSign, Hammer, Plus, Search, TrendingUp, X } from "lucide-react";
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from "@/lib/preferences";
 import ZenithIcon from "@/components/icons/ZenithIcon";
@@ -87,6 +87,7 @@ export default function MythicAlchemyPage() {
   const { activeProfile } = useProfiles();
   const { openItemByName } = useItemModal();
   const searchDropdownId = useId();
+  const searchListboxId = `${searchDropdownId}-results`;
   const [activeRecipeNames, setActiveRecipeNames] = useState<string[]>([]);
   const [customRecipePrices, setCustomRecipePrices] = useState<Record<string, number>>({});
   const [usesLeft, setUsesLeft] = useState<Record<string, number>>({});
@@ -95,9 +96,11 @@ export default function MythicAlchemyPage() {
   const [recipeCostMode, setRecipeCostMode] = useState<MythicRecipeCostMode>("full");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
   const [expandedProjectNames, setExpandedProjectNames] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
   const marketData = useMemo(() => (data || {}) as Record<string, MythicMarketItem>, [data]);
   const itemsByName = useMemo(() => (allItemsDb || {}) as Record<string, MythicDbItem>, [allItemsDb]);
@@ -246,12 +249,61 @@ export default function MythicAlchemyPage() {
     };
   }, [activeRows]);
   const recommendedPreview = recommendedRecipes.slice(0, activeRows.length > 0 ? 4 : 5);
+  const activeRecipe = availableMythics[activeRecipeIndex] || null;
+  const activeRecipeOptionId = activeRecipe
+    ? `mythic-recipe-option-${activeRecipe.resultName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+    : undefined;
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      setActiveRecipeIndex(0);
+      return;
+    }
+    setActiveRecipeIndex((current) => Math.min(Math.max(current, 0), Math.max(availableMythics.length - 1, 0)));
+  }, [availableMythics.length, isSearchOpen]);
 
   const addToLab = (recipe: MythicRecipe) => {
     setActiveRecipeNames((current) => (current.includes(recipe.resultName) ? current : [...current, recipe.resultName]));
     setUsesLeft((current) => ({ ...current, [recipe.resultName]: current[recipe.resultName] || recipe.maxUses }));
+    setExpandedProjectNames((current) => (current.includes(recipe.resultName) ? current : [...current, recipe.resultName]));
     setSearchTerm("");
     setIsSearchOpen(false);
+  };
+
+  const handleRecipeSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (!isSearchOpen) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setIsSearchOpen(false);
+      searchTriggerRef.current?.focus();
+      return;
+    }
+    if (availableMythics.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveRecipeIndex((current) => (current + 1) % availableMythics.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveRecipeIndex((current) => (current - 1 + availableMythics.length) % availableMythics.length);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveRecipeIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveRecipeIndex(availableMythics.length - 1);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const recipe = availableMythics[activeRecipeIndex];
+      if (recipe) addToLab(recipe);
+    }
   };
 
   const removeFromLab = (resultName: string) => {
@@ -325,14 +377,14 @@ export default function MythicAlchemyPage() {
   const taxNetPercent = Math.round(getMarketTaxMultiplier(preferences.membership) * 100);
 
   return (
-    <main className="container" aria-label="Mythic Lab">
+    <main className="container" aria-labelledby="mythic-lab-page-title">
       <div className="header">
         <div className="header-copy">
-          <div className="header-eyebrow">Alchemy Command Bench</div>
-          <h1 className="header-title">
+          <div className="header-eyebrow">Level 90 Recipe Planner</div>
+          <h1 className="header-title" id="mythic-lab-page-title">
             <ZenithIcon name="spark" size={24} style={{ color: "var(--text-accent)" }} /> Mythic Lab
           </h1>
-          <p className="header-subtitle">Workbench for level 90 alchemy recipe projects powered by the live item database.</p>
+          <p className="header-subtitle">Pin level 90 recipes, enter your copy costs and uses left, then compare market and vendor paths before crafting.</p>
           <div className="header-chips" aria-label="Current mythic lab context">
             <span>{activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}</span>
             <span>{taxNetPercent}% market net</span>
@@ -346,19 +398,28 @@ export default function MythicAlchemyPage() {
             className="search-trigger"
             aria-expanded={isSearchOpen}
             aria-controls={searchDropdownId}
-            aria-haspopup="dialog"
+            aria-haspopup="listbox"
             onClick={() => setIsSearchOpen((open) => !open)}
+            ref={searchTriggerRef}
           >
             <Plus size={16} /> Add Project
           </button>
           {isSearchOpen && (
-            <div className="search-dropdown custom-scrollbar" id={searchDropdownId} role="dialog" aria-label="Add mythic recipe project">
+            <div className="search-dropdown custom-scrollbar" id={searchDropdownId} aria-label="Add mythic recipe project">
               <div className="dropdown-head">
                 <div>
-                  <span>Project Intake</span>
+                  <span>Add Mythic Recipe</span>
                   <strong>{availableMythics.length.toLocaleString()} available</strong>
                 </div>
-                <button type="button" className="dropdown-close" aria-label="Close mythic recipe search" onClick={() => setIsSearchOpen(false)}>
+                <button
+                  type="button"
+                  className="dropdown-close"
+                  aria-label="Close mythic recipe search"
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    searchTriggerRef.current?.focus();
+                  }}
+                >
                   <X size={15} />
                 </button>
               </div>
@@ -366,10 +427,16 @@ export default function MythicAlchemyPage() {
                 <Search size={14} aria-hidden="true" />
                 <input
                   autoFocus
+                  aria-activedescendant={activeRecipeOptionId}
+                  aria-autocomplete="list"
+                  aria-controls={searchListboxId}
+                  aria-expanded={isSearchOpen}
                   aria-label="Search mythic recipe, result, or material"
                   placeholder="Search recipe, result, material..."
+                  role="combobox"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
+                  onKeyDown={handleRecipeSearchKeyDown}
                   spellCheck={false}
                 />
                 {searchTerm.trim().length > 0 && (
@@ -378,20 +445,29 @@ export default function MythicAlchemyPage() {
                   </button>
                 )}
               </div>
-              <div className="dropdown-results">
+              <div className="dropdown-results" id={searchListboxId} role="listbox" aria-label="Available mythic recipes">
                 {availableMythics.length > 0 ? (
-                  availableMythics.map((recipe) => (
+                  availableMythics.map((recipe, index) => {
+                    const optionId = `mythic-recipe-option-${recipe.resultName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+                    const isActive = index === activeRecipeIndex;
+                    return (
                     <button
                       key={recipe.resultName}
+                      id={optionId}
                       type="button"
-                      className="result-item"
+                      className={`result-item ${isActive ? "active" : ""}`}
                       aria-label={`Add ${recipe.resultName}. Level ${recipe.level}, ${recipe.maxUses} uses. Recipe: ${recipe.recipeName}`}
+                      aria-selected={isActive}
                       onClick={() => addToLab(recipe)}
+                      onMouseEnter={() => setActiveRecipeIndex(index)}
+                      role="option"
+                      tabIndex={-1}
                     >
                       <span>{recipe.resultName}</span>
                       <small>{recipe.recipeName} - Lvl {recipe.level} - {recipe.maxUses} uses</small>
                     </button>
-                  ))
+                  );
+                  })
                 ) : (
                   <div className="no-results">{mythicRecipes.length === 0 ? "Loading item database..." : "No matching mythic recipes"}</div>
                 )}
@@ -426,7 +502,7 @@ export default function MythicAlchemyPage() {
 
       <div className="lab-summary">
         <div className="summary-card">
-          <div className="summary-kicker"><CheckCircle2 size={15} /> Lab Position</div>
+          <div className="summary-kicker"><CheckCircle2 size={15} /> Projected Return</div>
           <div className="summary-content">
             <span className="summary-label">Combined Remaining Profit</span>
             <span className={`summary-value ${labSummary.totalPotentialProfit >= 0 ? "text-success" : "text-danger"}`}>
@@ -461,7 +537,7 @@ export default function MythicAlchemyPage() {
         <section className="quick-add-rail" aria-label="Recommended mythic projects">
           <div>
             <span>Recommended to review</span>
-            <strong>Add another project without leaving the bench</strong>
+            <strong>Add another recipe from current market data</strong>
           </div>
           <div className="quick-add-list">
             {recommendedPreview.map(({ recipe, missingInputs, liquidity, complete }) => (
@@ -503,7 +579,7 @@ export default function MythicAlchemyPage() {
                     onClick={() => addToLab(recipe)}
                     aria-label={`Pin ${recipe.resultName}. ${complete ? "Prices complete" : `${missingInputs} missing input prices`}. ${liquidity.label}.`}
                   >
-                    {recipe.imageUrl ? <img src={recipe.imageUrl} alt="" loading="lazy" decoding="async" /> : <span className="recipe-index-fallback" />}
+                    {recipe.imageUrl ? <img src={recipe.imageUrl} alt="" width={38} height={38} loading="lazy" decoding="async" /> : <span className="recipe-index-fallback" />}
                     <span>
                       <strong>{recipe.resultName}</strong>
                       <small>Lvl {recipe.level} - {recipe.maxUses} uses - {liquidity.label}</small>
@@ -526,7 +602,7 @@ export default function MythicAlchemyPage() {
               </button>
 
               <div className="card-header">
-                {row.recipe.imageUrl && <img className="result-art" src={row.recipe.imageUrl} alt="" loading="lazy" decoding="async" />}
+                {row.recipe.imageUrl && <img className="result-art" src={row.recipe.imageUrl} alt="" width={64} height={64} loading="lazy" decoding="async" />}
                 <div className="title-area">
                   <button type="button" className="title-button" onClick={() => openItemByName(row.recipe.resultName)}>
                     {row.recipe.resultName}
@@ -792,10 +868,10 @@ export default function MythicAlchemyPage() {
         .workbench-actions { flex: 0 0 auto; position: relative; z-index: 100; }
         .search-trigger, .empty-add-btn {
           align-items: center;
-          background: linear-gradient(135deg, var(--text-accent), #8de8ff);
-          border: 1px solid rgba(255,255,255,0.12);
+          background: color-mix(in srgb, var(--text-accent), #081014 12%);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 38%);
           border-radius: 8px;
-          box-shadow: 0 12px 28px rgba(56,189,248,0.18);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.18);
           color: #021015;
           cursor: pointer;
           display: inline-flex;
@@ -805,21 +881,18 @@ export default function MythicAlchemyPage() {
           justify-content: center;
           min-height: 44px;
           padding: 0.75rem 1.25rem;
-          transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+          transition: border-color 180ms ease, filter 180ms ease, box-shadow 180ms ease;
         }
         .search-trigger:hover, .empty-add-btn:hover {
-          box-shadow: 0 16px 36px rgba(56,189,248,0.25);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.22);
           filter: brightness(1.06);
-          transform: translateY(-1px);
         }
-        .search-trigger:active, .empty-add-btn:active { transform: translateY(0) scale(0.985); }
 
         .search-dropdown {
-          animation: dropdown-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
           background: rgba(9,13,15,0.96);
           border: 1px solid color-mix(in srgb, var(--text-accent), transparent 80%);
           border-radius: 8px;
-          box-shadow: 0 24px 70px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.025) inset;
+          box-shadow: 0 18px 48px rgba(0,0,0,0.54), 0 0 0 1px rgba(255,255,255,0.025) inset;
           overflow: hidden;
           position: absolute;
           right: 0;
@@ -827,11 +900,7 @@ export default function MythicAlchemyPage() {
           width: min(440px, calc(100vw - 2rem));
         }
         @supports (backdrop-filter: blur(16px)) {
-          .search-dropdown { backdrop-filter: blur(18px) saturate(1.2); }
-        }
-        @keyframes dropdown-in {
-          from { opacity: 0; transform: translateY(-6px) scale(0.985); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+          .search-dropdown { backdrop-filter: blur(10px); }
         }
         .dropdown-head {
           align-items: center;
@@ -860,17 +929,18 @@ export default function MythicAlchemyPage() {
           cursor: pointer;
           display: inline-flex;
           flex: 0 0 auto;
-          height: 34px;
+          height: 40px;
           justify-content: center;
-          transition: color 180ms ease, transform 180ms ease, border-color 180ms ease, background 180ms ease;
-          width: 34px;
+          min-height: 40px;
+          min-width: 40px;
+          transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+          width: 40px;
         }
         .dropdown-close:hover, .search-clear:hover {
           background: rgba(255,255,255,0.075);
           border-color: rgba(255,255,255,0.14);
           color: #fff;
         }
-        .dropdown-close:active, .search-clear:active { transform: scale(0.96); }
         .dropdown-input {
           align-items: center;
           background: rgba(255,255,255,0.026);
@@ -901,17 +971,15 @@ export default function MythicAlchemyPage() {
           min-height: 54px;
           padding: 0.82rem 0.9rem;
           text-align: left;
-          transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+          transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
           width: 100%;
         }
-        .result-item:hover, .result-item:focus-visible {
+        .result-item:hover, .result-item:focus-visible, .result-item.active {
           background: color-mix(in srgb, var(--text-accent), transparent 92%);
           border-color: color-mix(in srgb, var(--text-accent), transparent 74%);
           color: #fff;
           outline: none;
-          transform: translateX(2px);
         }
-        .result-item:active { transform: translateX(0) scale(0.99); }
         .result-item span { font-weight: 900; overflow-wrap: anywhere; }
         .result-item small { color: var(--text-muted); font-size: 0.72rem; line-height: 1.35; }
         .no-results { color: var(--text-muted); font-size: 0.8rem; padding: 2rem; text-align: center; }
@@ -965,10 +1033,10 @@ export default function MythicAlchemyPage() {
           grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
         }
         .summary-card, .mode-card {
-          background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(255,255,255,0.016));
+          background: rgba(255,255,255,0.024);
           border: 1px solid color-mix(in srgb, var(--text-accent), transparent 84%);
           border-radius: 8px;
-          box-shadow: 0 18px 46px rgba(0,0,0,0.2);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.16);
           padding: 1.25rem;
         }
         .summary-kicker {
@@ -1012,10 +1080,9 @@ export default function MythicAlchemyPage() {
           font-weight: 900;
           min-height: 40px;
           padding: 0.65rem 0.5rem;
-          transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+          transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
         }
         .mode-toggle button:hover { border-color: color-mix(in srgb, var(--text-accent), transparent 62%); color: #fff; }
-        .mode-toggle button:active { transform: scale(0.985); }
         .mode-toggle button.active { background: var(--text-accent); border-color: var(--text-accent); color: #031016; }
         .mode-helper { color: var(--text-muted); font-size: 0.78rem; font-weight: 750; line-height: 1.45; margin: 0.75rem 0 0; }
 
@@ -1053,15 +1120,13 @@ export default function MythicAlchemyPage() {
           min-height: 50px;
           padding: 0.58rem 0.68rem;
           text-align: left;
-          transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+          transition: background 180ms ease, border-color 180ms ease;
         }
         .quick-add-chip:hover, .quick-add-chip:focus-visible {
           background: color-mix(in srgb, var(--text-accent), transparent 92%);
           border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
           outline: none;
-          transform: translateY(-1px);
         }
-        .quick-add-chip:active { transform: scale(0.99); }
         .quick-add-chip span {
           color: #fff;
           font-size: 0.8rem;
@@ -1110,16 +1175,14 @@ export default function MythicAlchemyPage() {
           min-height: 54px;
           padding: 0.55rem 0.7rem;
           text-align: left;
-          transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+          transition: background 180ms ease, border-color 180ms ease;
           width: 100%;
         }
         .recipe-index-row:hover, .recipe-index-row:focus-visible {
           background: rgba(255,255,255,0.052);
           border-color: var(--text-accent);
           outline: none;
-          transform: translateY(-1px);
         }
-        .recipe-index-row:active { transform: scale(0.995); }
         .recipe-index-row img, .recipe-index-fallback {
           background: rgba(255,255,255,0.05);
           border-radius: 8px;
@@ -1133,23 +1196,17 @@ export default function MythicAlchemyPage() {
         .recipe-index-row em { color: var(--text-accent); font-size: 0.72rem; font-style: normal; font-weight: 900; white-space: nowrap; }
 
         .mythic-card {
-          animation: card-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
           background: linear-gradient(180deg, #0b0f11, #070809);
           border: 1px solid rgba(255,255,255,0.075);
           border-radius: 8px;
-          box-shadow: 0 18px 54px rgba(0,0,0,0.22);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.18);
           padding: 1.35rem;
           position: relative;
-          transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
+          transition: border-color 220ms ease, box-shadow 220ms ease;
         }
         .mythic-card:hover {
           border-color: color-mix(in srgb, var(--text-accent), transparent 76%);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          transform: translateY(-1px);
-        }
-        @keyframes card-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+          box-shadow: 0 12px 36px rgba(0,0,0,0.22);
         }
 
         .remove-btn {
@@ -1165,12 +1222,11 @@ export default function MythicAlchemyPage() {
           position: absolute;
           right: -10px;
           top: -10px;
-          transition: transform 180ms ease, filter 180ms ease;
+          transition: filter 180ms ease;
           width: 34px;
           z-index: 10;
         }
-        .remove-btn:hover { filter: brightness(1.08); transform: scale(1.06); }
-        .remove-btn:active { transform: scale(0.96); }
+        .remove-btn:hover { filter: brightness(1.08); }
 
         .card-header { align-items: flex-start; display: flex; gap: 1.25rem; justify-content: space-between; margin-bottom: 1.5rem; }
         .result-art {
