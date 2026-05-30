@@ -1,0 +1,55 @@
+{
+  "outputDir": "test-artifacts/lighthouse",
+  "retries": 1,
+  "routes": [
+    { "path": "/", "name": "Dashboard" },
+    { "path": "/items", "name": "Items database" },
+    { "path": "/guilds", "name": "Guilds" },
+    { "path": "/pets", "name": "Pets" },
+    { "path": "/skill-profit", "name": "Skill profit" },
+    { "path": "/profiles", "name": "Profiles" },
+    { "path": "/settings", "name": "Settings" }
+  ],
+  "defaultBudgets": {
+    "performanceScore": 0.8,
+    "largestContentfulPaintMs": 3500,
+    "cumulativeLayoutShift": 0.25,
+    "totalBlockingTimeMs": 500,
+    "speedIndexMs": 5000,
+    "totalByteWeightBytes": 1500000
+  },
+  "routeBudgets": {
+    "/": {
+      "performanceScore": 0.85
+    },
+    "/items": {
+      "performanceScore": 0.45,
+      "totalBlockingTimeMs": 950,
+      "totalByteWeightBytes": 2750000
+    },
+    "/guilds": {
+      "performanceScore": 0.85,
+      "totalByteWeightBytes": 2000000
+    },
+    "/pets": {
+      "performanceScore": 0.45,
+      "largestContentfulPaintMs": 6000,
+      "cumulativeLayoutShift": 0.85,
+      "totalBlockingTimeMs": 1000,
+      "totalByteWeightBytes": 5500000
+    },
+    "/skill-profit": {
+      "performanceScore": 0.5,
+      "totalBlockingTimeMs": 1600,
+      "speedIndexMs": 6000
+    },
+    "/profiles": {
+      "performanceScore": 0.35,
+      "cumulativeLayoutShift": 0.75,
+      "totalBlockingTimeMs": 1400
+    },
+    "/settings": {
+      "performanceScore": 0.75
+    }
+  }
+}

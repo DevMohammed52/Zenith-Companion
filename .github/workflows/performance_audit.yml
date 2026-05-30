@@ -1,0 +1,80 @@
+name: Performance Audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/performance_audit.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.*"
+      - "public/**"
+      - "scripts/audit-cache-headers.mjs"
+      - "scripts/lighthouse-budgets.json"
+      - "scripts/run-lighthouse-audit.mjs"
+      - "src/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      LH_BASE_URL: "http://127.0.0.1:3220"
+      LH_OUTPUT_DIR: "test-artifacts/lighthouse"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production app
+        run: npm run build
+
+      - name: Start production server
+        run: |
+          npm run start -- -p 3220 > next-performance-audit.log 2>&1 &
+          echo $! > next-performance-audit.pid
+
+      - name: Wait for production server
+        run: |
+          node - <<'NODE'
+          const url = process.env.LH_BASE_URL;
+          for (let attempt = 0; attempt < 60; attempt += 1) {
+            try {
+              const response = await fetch(url, { method: "HEAD" });
+              if (response.status < 500) process.exit(0);
+            } catch {}
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+          console.error(`Timed out waiting for ${url}`);
+          process.exit(1);
+          NODE
+
+      - name: Run cache header audit
+        run: npm run audit:cache-headers
+
+      - name: Run Lighthouse budgets
+        run: npm run audit:lighthouse
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: |
+            test-artifacts/cache-headers
+            test-artifacts/lighthouse
+            next-performance-audit.log
+          if-no-files-found: ignore
