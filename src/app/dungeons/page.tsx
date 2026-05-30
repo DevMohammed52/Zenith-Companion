@@ -785,7 +785,7 @@ function DungeonsContent() {
     ? "Top ready EV/run"
     : summary.bestProfit
       ? "Top visible EV/run"
-      : "Dungeon Planner";
+      : "Dungeon planning";
   const heroReason = summary.bestReady
     ? `Showing the highest expected-value dungeon that ${activeProfile?.name || "the active profile"} can enter in the current filters.`
     : summary.bestProfit
@@ -837,7 +837,7 @@ function DungeonsContent() {
     <main className="container dungeons-page">
       <div className="header">
         <h1 className="header-title">
-          <ZenithIcon name="castle" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH DUNGEONS
+          <ZenithIcon name="castle" size={24} style={{ color: "var(--text-accent)" }} /> Dungeon Planner
         </h1>
         <div className="header-status">
           <div className="status-dot"></div>
@@ -850,7 +850,7 @@ function DungeonsContent() {
           <span className="dungeon-eyebrow"><ShieldCheck size={14} /> {heroModeLabel}</span>
           <h2>{heroDungeon?.name || "Build a dungeon plan"}</h2>
           <p>
-            {heroReason} Compare entry readiness, run cost, speed-style dungeon efficiency, gold per shard, and magic-find adjusted EV.
+            {heroReason} Compare entry readiness, run cost, dungeon efficiency, gold per shard, and magic-find adjusted EV.
           </p>
           {summary.sensitiveDropCount > 0 && (
             <p className="dungeon-risk-note">
@@ -894,7 +894,7 @@ function DungeonsContent() {
             </div>
           </div>
           <div className="dungeon-planner-field dungeon-filter-field">
-            <span className="control-label">Profile Filter</span>
+            <span className="control-label">Entry Readiness</span>
             <div className="dungeon-segmented">
               {(["all", "ready", "blocked"] as ReadinessFilter[]).map((mode) => (
                 <button key={mode} type="button" className={readinessFilter === mode ? "active" : ""} onClick={() => setReadinessFilter(mode)}>
@@ -906,7 +906,7 @@ function DungeonsContent() {
         </div>
         <div className="dungeon-control-panel dungeon-limits-panel" aria-label="Dungeon profile limits">
           <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
-            <span className="control-label">Best Action Limit</span>
+            <span className="control-label">Action Limit</span>
             <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : formatHours(actionLimitSummary.base)}</strong>
             <small>
               {activeProfile
@@ -922,7 +922,7 @@ function DungeonsContent() {
             <small>Used for daily repeat capacity, not one queued action.</small>
           </div>
           <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
-            <span className="control-label">Completion MF</span>
+            <span className="control-label">Completion Magic Find</span>
             <strong>+{completionMagicFindBonus}%</strong>
             <small>{listedCompletionMagicFindBonus}% current list + {eventCompletionMagicFindBonus}% limited-time.</small>
           </div>
@@ -941,7 +941,7 @@ function DungeonsContent() {
             <input aria-label="Dungeon Magic Find" className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
           </label>
           <label className="dungeon-planner-field dungeon-event-completion-field">
-            <span className="control-label">Limited-Time Completions</span>
+            <span className="control-label">Event Completions</span>
             <input
               aria-label="Limited-time dungeon completions"
               className="control-input"
@@ -971,7 +971,7 @@ function DungeonsContent() {
       <div className="dungeon-advanced-row">
         <section className="dungeon-modifier-panel" aria-label="Dungeon item modifiers">
           <div className="dungeon-modifier-copy">
-            <span className="control-label">Confirmed Item Modifiers</span>
+            <span className="control-label">Dungeon Item Effects</span>
             <strong>
               {itemEfficiencyBonus > 0 || itemMagicFindBonus > 0 || equippedDungeonSpecialMagicFind > 0
                 ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} / ${itemMagicFindBonus + equippedDungeonSpecialMagicFind > 0 ? `+${itemMagicFindBonus + equippedDungeonSpecialMagicFind}% MF` : "No MF"}`
@@ -1004,7 +1004,7 @@ function DungeonsContent() {
 
         <section className="dungeon-valuation-panel" aria-label="Dungeon drop valuation">
           <div className="dungeon-valuation-copy">
-            <span className="control-label">Gear & Mythic Potion Value</span>
+            <span className="control-label">Sensitive Drop Value</span>
             <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
             <small>Uses safe market prices plus modeled chest/recipe paths for high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
           </div>
@@ -2441,11 +2441,11 @@ function DungeonsContent() {
         .header-status {
           border-color: color-mix(in srgb, var(--text-accent), transparent 64%);
           border-radius: 999px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 34px rgba(0,0,0,0.2);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
           min-height: 2.4rem;
         }
         .status-dot {
-          animation: dungeonPulse 1.8s ease-in-out infinite;
+          animation: none;
         }
         .dungeon-command,
         .dungeon-planner,
@@ -2455,15 +2455,14 @@ function DungeonsContent() {
         .dungeon-card,
         .dungeon-modal-panel,
         .dungeon-loot-row {
-          border-radius: 14px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          border-radius: 8px;
         }
         .dungeon-command {
           background:
-            radial-gradient(circle at 7% 12%, color-mix(in srgb, var(--text-accent), transparent 80%), transparent 35%),
-            linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.012)),
-            rgba(10, 13, 15, 0.74);
+            linear-gradient(180deg, rgba(255,255,255,0.034), rgba(255,255,255,0.012)),
+            rgba(10, 13, 15, 0.76);
           border-color: color-mix(in srgb, var(--text-accent), transparent 72%);
+          border-left: 3px solid color-mix(in srgb, var(--text-accent), transparent 36%);
           grid-template-columns: minmax(0, 1.12fr) minmax(20rem, 0.88fr);
           padding: 1.35rem;
         }
@@ -2477,44 +2476,32 @@ function DungeonsContent() {
           letter-spacing: 0;
         }
         .dungeon-risk-note {
-          border-radius: 10px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+          border-radius: 8px;
           max-width: 46rem;
         }
         .dungeon-command-stats div {
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.014)),
-            rgba(9, 10, 14, 0.72);
+          background: rgba(9, 10, 14, 0.72);
           border-color: rgba(255,255,255,0.075);
           min-height: 7.2rem;
           transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
         }
         .dungeon-command-stats div:hover {
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.018)),
-            rgba(12, 13, 18, 0.82);
+          background: rgba(12, 13, 18, 0.82);
           border-color: color-mix(in srgb, var(--text-accent), transparent 70%);
           transform: translateY(-1px);
         }
         .dungeon-planner {
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.032), rgba(255,255,255,0.01)),
-            color-mix(in srgb, var(--bg-panel), #05070b 22%);
+          background: color-mix(in srgb, var(--bg-panel), #05070b 18%);
           border-color: rgba(255,255,255,0.075);
           gap: 0.9rem;
           grid-template-areas: none;
           grid-template-columns: minmax(20rem, 0.82fr) minmax(18rem, 0.72fr) minmax(32rem, 1.36fr);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 18px 48px rgba(0,0,0,0.16);
           padding: 1rem;
         }
         .dungeon-control-panel {
-          background:
-            radial-gradient(circle at 15% 0%, rgba(255,255,255,0.055), transparent 34%),
-            linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)),
-            rgba(7, 9, 12, 0.64);
+          background: rgba(7, 9, 12, 0.64);
           border: 1px solid rgba(255,255,255,0.075);
-          border-radius: 12px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.045);
+          border-radius: 8px;
           display: grid;
           gap: 0.75rem;
           min-width: 0;
@@ -2584,7 +2571,7 @@ function DungeonsContent() {
         .dungeon-segmented,
         .dungeon-completed-input,
         .dungeon-mobile-completed input {
-          border-radius: 10px;
+          border-radius: 8px;
         }
         .dungeon-planner-field .control-input:focus,
         .dungeon-completed-input:focus,
@@ -2644,12 +2631,12 @@ function DungeonsContent() {
         .dungeon-card:focus-visible,
         .dungeon-insight:hover,
         .dungeon-insight:focus-visible {
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.055), 0 14px 30px rgba(0,0,0,0.18);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.16);
           transform: translateY(-1px);
         }
         .dungeon-insight.passive:focus-visible,
         .dungeon-insight.passive:hover {
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+          box-shadow: none;
           transform: none;
         }
         .dungeon-modifier-panel,
@@ -2720,9 +2707,7 @@ function DungeonsContent() {
         }
         .dungeon-card {
           animation: dungeonRise 220ms ease both;
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
-            rgba(8, 10, 13, 0.74);
+          background: rgba(8, 10, 13, 0.74);
         }
         .dungeon-card:nth-child(2) { animation-delay: 30ms; }
         .dungeon-card:nth-child(3) { animation-delay: 60ms; }
