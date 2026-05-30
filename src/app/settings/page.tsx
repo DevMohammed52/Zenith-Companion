@@ -68,6 +68,7 @@ function formatPercent(usage?: number, quota?: number) {
 
 type OfflineStorageState = {
   cacheEntries: number | null;
+  cacheEntriesChecked: boolean;
   cacheSupported: boolean;
   error?: string;
   manifestCount: number | null;
@@ -81,6 +82,7 @@ type OfflineStorageState = {
 
 const initialOfflineStorageState: OfflineStorageState = {
   cacheEntries: null,
+  cacheEntriesChecked: false,
   cacheSupported: false,
   manifestCount: null,
   manifestSize: null,
@@ -125,20 +127,30 @@ function OfflineStoragePanel() {
   const [statusMessage, setStatusMessage] = useState("Checking offline storage.");
   const [busyAction, setBusyAction] = useState<"refresh" | "clear" | "check" | null>(null);
 
-  const checkOfflineStorage = useCallback(async (message = "Offline storage checked.") => {
-    setBusyAction((current) => current || "check");
+  const checkOfflineStorage = useCallback(async (
+    message = "Offline storage checked.",
+    options: { countCacheEntries?: boolean } = {},
+  ) => {
+    const shouldCountCacheEntries = options.countCacheEntries === true;
+    if (shouldCountCacheEntries) {
+      setBusyAction((current) => current || "check");
+    }
 
     try {
       const storageSupported = "storage" in navigator && typeof navigator.storage?.estimate === "function";
       const estimate = storageSupported ? await navigator.storage.estimate() : {};
       const cacheSupported = "caches" in window;
-      const cacheNames = cacheSupported ? await caches.keys() : [];
-      const offlineCacheNames = cacheNames.filter((name) => name.startsWith("zenith-offline-"));
-      let cacheEntries = 0;
+      let cacheEntries: number | null = null;
 
-      for (const name of offlineCacheNames) {
-        const cache = await caches.open(name);
-        cacheEntries += (await cache.keys()).length;
+      if (shouldCountCacheEntries && cacheSupported) {
+        const cacheNames = await caches.keys();
+        const offlineCacheNames = cacheNames.filter((name) => name.startsWith("zenith-offline-"));
+        cacheEntries = 0;
+
+        for (const name of offlineCacheNames) {
+          const cache = await caches.open(name);
+          cacheEntries += (await cache.keys()).length;
+        }
       }
 
       let manifestCount: number | null = null;
@@ -163,9 +175,11 @@ function OfflineStoragePanel() {
         serviceWorkerState = registration?.active?.state || registration?.waiting?.state || registration?.installing?.state || "Not registered";
       }
 
-      setOfflineStorage({
-        cacheEntries,
+      setOfflineStorage((current) => ({
+        cacheEntries: shouldCountCacheEntries ? cacheEntries : current.cacheEntries,
+        cacheEntriesChecked: shouldCountCacheEntries ? true : current.cacheEntriesChecked,
         cacheSupported,
+        error: undefined,
         manifestCount,
         manifestGeneratedAt,
         manifestSize,
@@ -173,7 +187,7 @@ function OfflineStoragePanel() {
         serviceWorkerState,
         storageSupported,
         usage: estimate.usage,
-      });
+      }));
       setStatusMessage(message);
     } catch (error) {
       setOfflineStorage((current) => ({
@@ -182,12 +196,14 @@ function OfflineStoragePanel() {
       }));
       setStatusMessage("Could not inspect offline storage.");
     } finally {
-      setBusyAction((current) => current === "check" ? null : current);
+      if (shouldCountCacheEntries) {
+        setBusyAction((current) => current === "check" ? null : current);
+      }
     }
   }, []);
 
   useEffect(() => {
-    void checkOfflineStorage();
+    void checkOfflineStorage("Offline storage status loaded.");
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.ready
         .then(() => checkOfflineStorage("Offline support is active."))
@@ -201,7 +217,10 @@ function OfflineStoragePanel() {
 
     try {
       await postServiceWorkerMessage(action === "refresh" ? "ZENITH_REFRESH_PUBLIC_DATA_CACHE" : "ZENITH_CLEAR_PUBLIC_DATA_CACHE");
-      await checkOfflineStorage(action === "refresh" ? "Public offline data refreshed." : "Public offline cache cleared.");
+      await checkOfflineStorage(
+        action === "refresh" ? "Public offline data refreshed." : "Public offline cache cleared.",
+        { countCacheEntries: true },
+      );
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : "Offline cache action failed.");
     } finally {
@@ -213,6 +232,13 @@ function OfflineStoragePanel() {
   const storageUsageLabel = offlineStorage.storageSupported
     ? `${formatBytes(offlineStorage.usage)} / ${formatBytes(offlineStorage.quota)}`
     : "Unsupported";
+  const cachedEntriesLabel = !offlineStorage.cacheSupported
+    ? "Unsupported"
+    : busyAction === "check"
+      ? "Counting..."
+      : offlineStorage.cacheEntriesChecked
+        ? (offlineStorage.cacheEntries ?? 0).toLocaleString()
+        : "Run check";
 
   return (
     <div className="settings-offline-cache" aria-live="polite">
@@ -233,8 +259,8 @@ function OfflineStoragePanel() {
         </div>
         <div className="settings-summary-card">
           <span>Cached entries</span>
-          <strong>{offlineStorage.cacheEntries === null ? "Checking" : offlineStorage.cacheEntries.toLocaleString()}</strong>
-          <small>Service worker: {offlineStorage.serviceWorkerState}</small>
+          <strong>{cachedEntriesLabel}</strong>
+          <small>{offlineStorage.cacheEntriesChecked ? "Service worker" : "Count on demand"}: {offlineStorage.serviceWorkerState}</small>
         </div>
       </div>
 
@@ -258,10 +284,10 @@ function OfflineStoragePanel() {
         <button
           type="button"
           className="settings-link-button settings-secondary-link"
-          onClick={() => checkOfflineStorage()}
+          onClick={() => checkOfflineStorage("Offline cache entries counted.", { countCacheEntries: true })}
           disabled={busyAction !== null}
         >
-          <Database size={14} /> Check storage
+          <Database size={14} /> Count cached files
         </button>
       </div>
 
@@ -530,13 +556,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="container settings-page">
+    <main className="container settings-page" aria-labelledby="settings-page-title">
       <div className="header settings-header">
         <div>
-          <h1 className="header-title">
+          <h1 className="header-title" id="settings-page-title">
             <ZenithIcon name="settings" size={24} style={{ color: "var(--text-accent)" }} /> Settings
           </h1>
-          <p className="settings-header-copy">App defaults, theme, cache status, and global price overrides.</p>
+          <p className="settings-header-copy">Tune local profile defaults, IdleMMO calculator assumptions, theme, offline cache, and global price overrides.</p>
         </div>
         <Link className="settings-link-button settings-header-action" href="/profiles">
           Manage Profiles <ExternalLink size={14} />
@@ -648,11 +674,13 @@ export default function SettingsPage() {
 
             <div className="settings-panel">
               <h2><Palette size={17} /> Appearance</h2>
-              <div className="theme-grid">
+              <div className="theme-grid" role="radiogroup" aria-label="Color theme">
                 {themes.map((theme) => (
                   <button
                     type="button"
                     key={theme.value}
+                    role="radio"
+                    aria-checked={preferences.theme === theme.value}
                     className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
                     onClick={() => setPreferences({ theme: theme.value })}
                   >
