@@ -15,6 +15,7 @@ const BLOCKED_PUBLIC_PATHS = new Set([
   "/guild-details.json",
   "/guild-refresh-plan.json",
   "/items-map.json",
+  "/scraper-status.json",
   "/scraper-priority.json",
 ]);
 
