@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, UserRound, Users } from "lucide-react";
-import { type CharacterProfile, useProfiles } from "@/lib/profiles";
+import { DEFAULT_PROFILE_BACKGROUND_IMAGE_URL, type CharacterProfile, useProfiles } from "@/lib/profiles";
 
 type ProfileSwitcherProps = {
   compact?: boolean;
@@ -13,30 +13,29 @@ function profileInitial(profile?: Pick<CharacterProfile, "name"> | null) {
   return profile?.name?.slice(0, 1).toUpperCase() || "?";
 }
 
-function ProfileSwitcherArt({ profile, compact = false }: { profile?: CharacterProfile | null; compact?: boolean }) {
-  const hasImage = Boolean(profile?.imageUrl);
-  if (!hasImage) {
-    return (
-      <span className="profile-switcher-icon">
-        {profile ? profileInitial(profile) : <UserRound size={compact ? 16 : 17} />}
-      </span>
-    );
-  }
-
+function ProfileSwitcherArt({
+  profile,
+  compact = false,
+}: {
+  profile?: CharacterProfile | null;
+  compact?: boolean;
+}) {
   return (
-    <span className="profile-switcher-portrait" aria-hidden="true">
-      {profile?.backgroundUrl && <span className="profile-switcher-portrait-bg" style={{ backgroundImage: `url("${profile.backgroundUrl}")` }} />}
-      <img src={profile?.imageUrl} alt="" loading={compact ? "eager" : "lazy"} />
+    <span className="profile-switcher-icon">
+      {profile ? profileInitial(profile) : <UserRound size={compact ? 16 : 17} />}
     </span>
   );
 }
 
 function ProfileSwitcherOptionArt({ profile }: { profile: CharacterProfile }) {
-  if (!profile.backgroundUrl && !profile.imageUrl) return null;
+  const backgroundUrl = profile.backgroundUrl && profile.backgroundUrl !== DEFAULT_PROFILE_BACKGROUND_IMAGE_URL
+    ? profile.backgroundUrl
+    : "";
+  if (!backgroundUrl && !profile.imageUrl) return null;
   return (
     <span className="profile-switcher-option-art" aria-hidden="true">
-      {profile.backgroundUrl && <span style={{ backgroundImage: `url("${profile.backgroundUrl}")` }} />}
-      {profile.imageUrl && <img src={profile.imageUrl} alt="" loading="lazy" />}
+      {backgroundUrl && <span style={{ backgroundImage: `url("${backgroundUrl}")` }} />}
+      {profile.imageUrl && <img src={profile.imageUrl} alt="" loading="lazy" fetchPriority="low" />}
     </span>
   );
 }
@@ -182,7 +181,6 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
         aria-controls={menuId}
         aria-label={`Switch active profile. Current profile: ${activeLabel}`}
       >
-        {activeProfile?.backgroundUrl && <span className="profile-switcher-trigger-bg" style={{ backgroundImage: `url("${activeProfile.backgroundUrl}")` }} aria-hidden="true" />}
         <ProfileSwitcherArt profile={activeProfile} compact={compact} />
         <span className="profile-switcher-text">
           <strong>{activeLabel}</strong>
@@ -207,7 +205,8 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
           <div className="profile-switcher-list custom-scrollbar">
             {state.profiles.map((profile, index) => {
               const selected = profile.id === activeProfile?.id;
-              const hasArt = Boolean(profile.imageUrl || profile.backgroundUrl);
+              const hasCustomBackground = Boolean(profile.backgroundUrl && profile.backgroundUrl !== DEFAULT_PROFILE_BACKGROUND_IMAGE_URL);
+              const hasArt = Boolean(profile.imageUrl || hasCustomBackground);
               return (
                 <button
                   key={profile.id}
