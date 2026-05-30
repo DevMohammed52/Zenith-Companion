@@ -162,6 +162,32 @@ The app is intentionally preprocessing-first:
 - custom prices and assumptions are explicit
 - heavy pages are designed around filtering and memoized derived views rather than repeated work
 
+### Performance Audits
+
+Run Lighthouse budgets against a built app when route-level performance changes:
+
+```powershell
+npm run build
+npm run start -- -p 3220
+$env:LH_BASE_URL = "http://127.0.0.1:3220"
+npm run audit:lighthouse
+```
+
+The audited routes and practical regression budgets live in `scripts/lighthouse-budgets.json`. Reports and `summary.json` are written under `test-artifacts/lighthouse/`.
+
+### Cache Header Audits
+
+Run the cache/header audit against a built app when public data, API routes, service worker behavior, or Vercel headers change:
+
+```powershell
+npm run build
+npm run start -- -p 3220
+$env:CACHE_AUDIT_BASE_URL = "http://127.0.0.1:3220"
+npm run audit:cache-headers
+```
+
+The audit checks cache policy, noindex headers for public data, security headers, blocked raw-data files, service worker freshness, web manifest headers, and no-store behavior for sensitive local API routes. A JSON summary is written to `test-artifacts/cache-headers/summary.json`.
+
 ## Engineering Focus
 
 Zenith Companion is maintained like a product, not a one-off calculator.
