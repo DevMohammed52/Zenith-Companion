@@ -146,9 +146,10 @@ test.describe("core product flows", () => {
 
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
 
-    await page.getByRole("button", { name: "Arcane" }).click();
+    await page.getByRole("radio", { name: "Arcane" }).click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "arcane");
     await expect(page.locator(".theme-option.theme-option-active")).toContainText("Arcane");
+    await expect(page.getByRole("radio", { name: "Arcane" })).toHaveAttribute("aria-checked", "true");
     await expect.poll(async () => page.evaluate(() => JSON.parse(window.localStorage.getItem("zenith_preferences") || "{}").theme))
       .toBe("arcane");
 
@@ -175,10 +176,11 @@ test.describe("core product flows", () => {
     await expect(dataCachePanel.getByText("Offline bundle")).toBeVisible();
     await expect(dataCachePanel.getByText("Browser storage")).toBeVisible();
     await expect(dataCachePanel.getByText("Cached entries")).toBeVisible();
+    await expect(dataCachePanel.getByText("Run check")).toBeVisible();
     await expect(dataCachePanel.getByRole("button", { name: "Refresh offline data" })).toBeDisabled();
     await expect(dataCachePanel.getByRole("button", { name: "Clear offline cache" })).toBeDisabled();
-    await dataCachePanel.getByRole("button", { name: "Check storage" }).click();
-    await expect(dataCachePanel.getByText(/Offline storage checked\.|Offline support is active\./)).toBeVisible();
+    await dataCachePanel.getByRole("button", { name: "Count cached files" }).click();
+    await expect(dataCachePanel.getByText(/Offline cache entries counted\.|Offline support is active\./)).toBeVisible();
   });
 
   test("offline fallback document remains usable", async ({ page }) => {
