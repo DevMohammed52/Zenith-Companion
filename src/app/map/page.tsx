@@ -230,7 +230,7 @@ function ForecastEnemyGroup({
               href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
               key={`${tone}-${enemy.name}`}
             >
-              {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={13} />}
+              {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Swords size={13} />}
               <span>{enemy.name}</span>
             </Link>
           ))
@@ -399,7 +399,7 @@ function WeatherEnemyStrip({ title, enemies, empty }: { title: string; enemies: 
             href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
             className={`weather-enemy-chip ${isFavorableWeather(enemy.currentWeatherMatch) ? "good" : "bad"}`}
           >
-            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" /> : <Swords size={18} />}
+            {enemy.imageUrl ? <img src={enemy.imageUrl} alt="" loading="lazy" decoding="async" /> : <Swords size={18} />}
             <span>
               <strong>{enemy.name}</strong>
               <small>{getWeatherPreferenceLabel(enemy.currentWeatherMatch)}</small>
@@ -615,8 +615,8 @@ function MapPageContent() {
         <div className="atlas-panel">
           <div className="atlas-topbar">
             <div className="atlas-title">
-              <span><ZenithIcon name="map" size={16} /> Zenith Atlas</span>
-              <h1>Valaron Map</h1>
+              <span><ZenithIcon name="map" size={16} /> IdleMMO World</span>
+              <h1>World Map</h1>
               <div className="atlas-context-row" aria-label="Selected map context">
                 <span>{filteredLocations.length.toLocaleString()} visible</span>
                 <span>{weatherIcon(selectedWeatherKey, 13)} {selectedWeatherLabel}</span>
@@ -636,7 +636,7 @@ function MapPageContent() {
               </div>
 
               <div className="atlas-control-row">
-                <div className="atlas-actions" aria-label="World map quick actions">
+                <div className="atlas-actions" aria-label="World map quick actions" role="group">
                   <button type="button" onClick={() => scrollToSection(mapStageRef.current)}>
                     <MapIcon size={15} aria-hidden="true" />
                     Map
@@ -708,7 +708,7 @@ function MapPageContent() {
               <span>N</span>
             </div>
 
-            <div className="map-legend" aria-label="Map marker states">
+            <div className="map-legend" aria-label="Map marker states" role="group">
               <span><i className="legend-dot weather" aria-hidden="true" /> Weather</span>
               <span><i className="legend-dot active" aria-hidden="true" /> Active</span>
             </div>
@@ -726,6 +726,7 @@ function MapPageContent() {
                   data-active={active ? "true" : undefined}
                   className={active ? "active" : ""}
                   aria-pressed={active}
+                  aria-label={`${location.name}${location.level !== null ? `, Level ${location.level}` : ""}, ${location.currentWeather?.name || location.nextWeather?.name || "weather unknown"}`}
                   onClick={() => setSelectedKey(location.key)}
                 >
                   <span>{weatherIcon(weatherKey, 13)} {location.name}</span>
@@ -735,7 +736,7 @@ function MapPageContent() {
             })}
           </nav>
 
-          <div className="atlas-metrics" aria-label="Map totals">
+          <div className="atlas-metrics" aria-label="Map totals" role="group">
             <div><MapPin size={16} /><span>Locations</span><strong>{totals.locations}</strong></div>
             <div><Swords size={16} /><span>Enemies</span><strong>{totals.enemies}</strong></div>
             <div><Castle size={16} /><span>Dungeons</span><strong>{totals.dungeons}</strong></div>
@@ -746,7 +747,7 @@ function MapPageContent() {
         </div>
 
         {selectedLocation && (
-          <aside className="location-dossier" ref={dossierRef} aria-label={`${selectedLocation.name} details`}>
+          <section className="location-dossier" ref={dossierRef} aria-label={`${selectedLocation.name} details`}>
             <div className="location-image">
               {selectedLocation.image_url ? <img src={selectedLocation.image_url} alt={`${selectedLocation.name} location art`} /> : <MapPin size={42} />}
             </div>
@@ -826,7 +827,7 @@ function MapPageContent() {
               <Link href={`/dungeons?search=${encodeURIComponent(selectedLocation.name)}`}><Castle size={14} /> Dungeons <ExternalLink size={12} /></Link>
               <Link href={`/bosses?search=${encodeURIComponent(selectedLocation.name)}`}><Skull size={14} /> Bosses <ExternalLink size={12} /></Link>
             </div>
-          </aside>
+          </section>
         )}
       </section>
 
@@ -858,7 +859,7 @@ function MapPageContent() {
                   className="drop-chip"
                   aria-label={`${drop.name}, ${formatGold(drop.marketValue)}, ${formatCount(drop.count, "source")}${formatChance(drop.bestChance) ? `, ${formatChance(drop.bestChance)}` : ""}`}
                 >
-                  {drop.imageUrl ? <img src={drop.imageUrl} alt="" /> : <Package size={18} />}
+                  {drop.imageUrl ? <img src={drop.imageUrl} alt="" loading="lazy" decoding="async" /> : <Package size={18} />}
                   <span className="drop-copy">
                     <span className="drop-name">{drop.name}</span>
                     <small>{formatCount(drop.count, "source")}{formatChance(drop.bestChance) ? ` - ${formatChance(drop.bestChance)}` : ""}</small>
@@ -890,7 +891,7 @@ function MapPageContent() {
                   className="resource-chip"
                   aria-label={`${resource.name}, level ${resource.level}, ${resource.kind}${resource.marketValue > 0 ? `, ${formatGold(resource.marketValue)}` : ""}`}
                 >
-                  {resource.imageUrl ? <img src={resource.imageUrl} alt="" /> : <Package size={18} />}
+                  {resource.imageUrl ? <img src={resource.imageUrl} alt="" loading="lazy" decoding="async" /> : <Package size={18} />}
                   <span className="resource-copy">
                     <span className="resource-name">{resource.name}</span>
                     <small>{resource.kind}{resource.marketValue > 0 ? ` - ${formatGold(resource.marketValue)}` : ""}</small>
@@ -939,9 +940,13 @@ function MapPageContent() {
                       <ChevronDown className="forecast-chevron" aria-hidden="true" size={17} />
                     </button>
                     <div className="forecast-crosscheck" id={`forecast-crosscheck-${index}`} aria-hidden={!expanded}>
-                      <ForecastEnemyGroup label="Favored" enemies={crosscheck.favored} tone="favored" />
-                      <ForecastEnemyGroup label="Penalized" enemies={crosscheck.penalized} tone="penalized" />
-                      <ForecastEnemyGroup label="Neutral" enemies={crosscheck.neutral} tone="neutral" />
+                      {expanded && (
+                        <>
+                          <ForecastEnemyGroup label="Favored" enemies={crosscheck.favored} tone="favored" />
+                          <ForecastEnemyGroup label="Penalized" enemies={crosscheck.penalized} tone="penalized" />
+                          <ForecastEnemyGroup label="Neutral" enemies={crosscheck.neutral} tone="neutral" />
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -996,9 +1001,9 @@ function MapPageContent() {
         .location-dossier,
         .intel-section {
           border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(7, 9, 12, 0.72);
-          box-shadow: 0 24px 70px rgba(0,0,0,0.32);
-          backdrop-filter: blur(18px);
+          background: rgba(7, 9, 12, 0.88);
+          box-shadow: 0 14px 36px rgba(0,0,0,0.26);
+          backdrop-filter: none;
         }
         .atlas-panel {
           position: relative;
@@ -1014,9 +1019,7 @@ function MapPageContent() {
           position: absolute;
           inset: 0;
           z-index: -1;
-          background:
-            radial-gradient(circle at 16% 0%, rgba(57, 190, 255, 0.13), transparent 32%),
-            radial-gradient(circle at 86% 10%, rgba(255, 214, 128, 0.08), transparent 28%);
+          background: none;
           pointer-events: none;
         }
         .atlas-topbar {
@@ -1043,7 +1046,7 @@ function MapPageContent() {
         .atlas-title h1 {
           margin-top: 0.15rem;
           color: #fff;
-          font-size: clamp(2.25rem, 3vw, 3.3rem);
+          font-size: clamp(1.85rem, 2.45vw, 2.65rem);
           line-height: 1;
           letter-spacing: 0;
           max-width: 100%;
@@ -1273,7 +1276,7 @@ function MapPageContent() {
           border-radius: 8px;
           background: rgba(14, 22, 34, 0.78);
           box-shadow: 0 12px 34px rgba(0,0,0,0.34), 0 0 0 1px rgba(255,255,255,0.035);
-          backdrop-filter: blur(7px);
+          backdrop-filter: none;
           cursor: pointer;
           transform: translate(-50%, -50%);
           padding: 0.55rem 0.62rem 0.6rem;
@@ -1396,7 +1399,7 @@ function MapPageContent() {
           box-shadow: 0 14px 34px rgba(0,0,0,0.28);
           color: rgba(255,255,255,0.76);
           padding: 0.42rem 0.52rem;
-          backdrop-filter: blur(12px);
+          backdrop-filter: none;
         }
         .map-legend span {
           display: inline-flex;
@@ -2312,6 +2315,33 @@ function MapPageContent() {
           }
           .pin-level {
             display: none;
+          }
+          .map-pin.active {
+            width: min(156px, 42vw);
+            min-width: 118px;
+            height: auto;
+            border-radius: 8px;
+            padding: 0.42rem 0.5rem;
+          }
+          .map-pin.active .pin-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.35rem;
+            height: auto;
+            font-size: 0.72rem;
+          }
+          .map-pin.active .pin-name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .map-pin.active .pin-level {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.62rem;
+            line-height: 1;
           }
           .mobile-location-rail {
             position: relative;
