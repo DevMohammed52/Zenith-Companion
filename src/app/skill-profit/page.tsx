@@ -104,7 +104,7 @@ const DEFAULT_STATE: PersistedState = {
   essenceOpen: false,
 };
 
-const MOBILE_RESULT_BATCH_SIZE = 80;
+const MOBILE_RESULT_BATCH_SIZE = 48;
 
 const SORT_LABELS: Record<SkillProfitSortKey, string> = {
   name: "Item",
@@ -667,13 +667,13 @@ export default function SkillProfitPage() {
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>Skill Profit Finder</div>
             <h1 className={styles.title}>
-              Live Skill Profit <ZenithIcon name="skill" size={22} />
+              Skill Profit Routes <ZenithIcon name="skill" size={22} />
             </h1>
             <p className={styles.heroSubtitle}>
-              Compare market returns, vendor fallback, tools, buffs, housing windows, and essence costs in one route board.
+              Rank gathering routes with market tax, vendor fallback, tools, buffs, housing time, and essence costs.
             </p>
           </div>
-          <div className={styles.heroChips} aria-label="Current skill profit context">
+          <div className={styles.heroChips} aria-label="Current skill profit inputs">
             <span>{profileLabel}</span>
             <span>{scopeLabel}</span>
             <span>{saleModeLabel} sell</span>
@@ -706,8 +706,8 @@ export default function SkillProfitPage() {
           </span>
         </button>
         <div className={styles.heroStats}>
-          <Metric label="Market pulse" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
-          <Metric label="Buffs" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active total"} />
+          <Metric label="Market age" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
+          <Metric label="Buff totals" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active buffs"} />
           <Metric
             label="Housing window"
             value={activeSkill === "All"
