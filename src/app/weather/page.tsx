@@ -411,15 +411,13 @@ export default function WeatherPage() {
   return (
     <main className="weather-container" style={weatherAccent}>
       <WeatherCanvas weatherId={activeWeather.id} />
-      <div className="weather-glow" aria-hidden="true" />
-      <div className="weather-atmosphere" aria-hidden="true" />
       
       <div className="content-wrapper">
         <header className="page-header">
           <div className="header-text">
             <span className="eyebrow"><ZenithIcon name="weather" size={15} /> IdleMMO Weather Index</span>
             <h1>Weather Guide</h1>
-            <p>Track forecast windows, skill modifiers, and enemy reactions across IdleMMO regions.</p>
+            <p>Read current and next weather by region, then check skill modifiers and enemy reactions before choosing where to farm.</p>
             <div className="weather-snapshot-grid" aria-label={`${activeWeather.name} weather summary`}>
               <div className="weather-snapshot-card">
                 <Clock size={15} aria-hidden="true" />
@@ -629,10 +627,7 @@ export default function WeatherPage() {
           padding: 2rem;
           color: #fff;
           overflow-x: clip;
-          background:
-            radial-gradient(circle at 80% 6%, color-mix(in srgb, var(--accent), transparent 78%), transparent 34rem),
-            radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.1), transparent 25rem),
-            #020617;
+          background: #020617;
         }
         .weather-container, .weather-container * { box-sizing: border-box; }
         .weather-container {
@@ -643,49 +638,14 @@ export default function WeatherPage() {
         }
         .weather-container::before,
         .weather-container::after {
-          content: "";
-          position: fixed;
-          inset: auto auto 6% -12%;
-          z-index: 1;
-          width: min(48vw, 42rem);
-          height: min(48vw, 42rem);
-          border-radius: 999px;
-          pointer-events: none;
-          background: radial-gradient(circle, color-mix(in srgb, var(--accent), transparent 84%), transparent 68%);
-          filter: blur(8px);
-          opacity: 0.7;
-          animation: orbit-glow 13s ease-in-out infinite alternate;
-        }
-        .weather-container::after {
-          inset: 8% -16% auto auto;
-          width: min(38vw, 34rem);
-          height: min(38vw, 34rem);
-          background: radial-gradient(circle, color-mix(in srgb, var(--accent-2), transparent 86%), transparent 70%);
-          animation-duration: 16s;
-          animation-direction: alternate-reverse;
+          display: none;
         }
 
         .weather-glow {
-          position: fixed;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-          background:
-            linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 94%), transparent 45%),
-            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.06), transparent 36rem);
-          animation: breathe 7s ease-in-out infinite alternate;
+          display: none;
         }
         .weather-atmosphere {
-          position: fixed;
-          inset: 0;
-          z-index: 2;
-          pointer-events: none;
-          opacity: 0.45;
-          background:
-            linear-gradient(110deg, transparent 12%, color-mix(in srgb, var(--accent), transparent 94%) 28%, transparent 44%),
-            linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.025) 50%, transparent 56%);
-          mask-image: radial-gradient(circle at 50% 0%, black, transparent 72%);
-          animation: atmosphere-drift 18s ease-in-out infinite alternate;
+          display: none;
         }
 
         .content-wrapper {
@@ -704,12 +664,9 @@ export default function WeatherPage() {
           align-items: stretch;
           margin-bottom: 1.2rem;
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 28px;
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.016)),
-            rgba(8, 10, 18, 0.56);
-          box-shadow: 0 26px 70px rgba(0,0,0,0.28);
-          backdrop-filter: blur(18px);
+          border-left: 3px solid color-mix(in srgb, var(--accent), transparent 36%);
+          border-radius: 8px;
+          background: rgba(8, 10, 18, 0.74);
           padding: clamp(1rem, 1.6vw, 1.35rem);
           text-align: left;
           animation: rise-in 0.55s ease both;
@@ -721,7 +678,7 @@ export default function WeatherPage() {
           color: var(--accent);
           font-size: 0.72rem;
           font-weight: 900;
-          letter-spacing: 0.18em;
+          letter-spacing: 0.06em;
           margin-bottom: 0.75rem;
           text-transform: uppercase;
         }
@@ -831,14 +788,14 @@ export default function WeatherPage() {
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255,255,255,0.05);
           padding: 0.72rem 0.82rem;
-          border-radius: 12px;
+          border-radius: 8px;
           color: rgba(255,255,255,0.4);
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 0.5rem;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
           white-space: nowrap;
           font-weight: 700;
           font-size: 0.8rem;
@@ -848,17 +805,15 @@ export default function WeatherPage() {
           outline: 2px solid var(--accent);
           outline-offset: 4px;
         }
-        .weather-btn:hover { 
-          background: rgba(255,255,255,0.08); 
+        .weather-btn:hover {
+          background: rgba(255,255,255,0.08);
           color: #fff;
-          transform: translateY(-3px); 
-          box-shadow: 0 10px 25px -10px rgba(0,0,0,0.5);
+          transform: translateY(-1px);
         }
         .weather-btn.active {
           background: color-mix(in srgb, var(--accent), transparent 85%);
           border-color: color-mix(in srgb, var(--accent), transparent 30%);
           color: #fff;
-          box-shadow: 0 12px 30px -10px color-mix(in srgb, var(--accent), transparent 50%);
         }
 
         .main-grid {
@@ -871,26 +826,17 @@ export default function WeatherPage() {
         .active-info-panel {
           position: relative;
           background:
-            linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)),
+            linear-gradient(180deg, rgba(255,255,255,0.034), rgba(255,255,255,0.012)),
             rgba(9, 11, 20, 0.74);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
+          border-radius: 8px;
           padding: clamp(1.35rem, 2.2vw, 2.45rem);
-          box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
           animation: rise-in 0.65s 0.05s ease both;
           min-width: 0;
           overflow: hidden;
         }
         .active-info-panel::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          border-radius: inherit;
-          background:
-            linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 92%), transparent 38%),
-            radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--accent), transparent 86%), transparent 20rem);
-          opacity: 0.85;
+          display: none;
         }
         .active-info-panel > * {
           position: relative;
@@ -910,13 +856,8 @@ export default function WeatherPage() {
           position: absolute;
           inset: 0;
           border-radius: 999px;
-          background:
-            radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent), transparent 76%), transparent 58%),
-            conic-gradient(from 35deg, transparent 0 18%, color-mix(in srgb, var(--accent), transparent 58%) 20%, transparent 23% 48%, color-mix(in srgb, var(--accent-2), transparent 66%) 51%, transparent 55% 100%);
+          background: conic-gradient(from 35deg, transparent 0 18%, color-mix(in srgb, var(--accent), transparent 58%) 20%, transparent 23% 48%, color-mix(in srgb, var(--accent-2), transparent 66%) 51%, transparent 55% 100%);
           border: 1px solid color-mix(in srgb, var(--accent), transparent 72%);
-          box-shadow:
-            inset 0 0 28px color-mix(in srgb, var(--accent), transparent 84%),
-            0 0 44px color-mix(in srgb, var(--accent), transparent 84%);
           opacity: 0.82;
           animation: seal-drift 16s linear infinite;
         }
@@ -928,17 +869,16 @@ export default function WeatherPage() {
           height: 6.3rem;
           border-radius: 999px;
           background: rgba(0, 0, 0, 0.2);
-          filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent), transparent 45%));
           animation: float-icon 4.5s ease-in-out infinite;
         }
-        .hero-text h2 { font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 850; margin-bottom: 0.75rem; letter-spacing: 0; }
-        .hero-text .description { font-size: 1.18rem; color: rgba(255,255,255,0.66); line-height: 1.55; max-width: 650px; }
+        .hero-text h2 { font-size: clamp(2.4rem, 4.2vw, 3.6rem); font-weight: 850; margin-bottom: 0.75rem; letter-spacing: 0; }
+        .hero-text .description { font-size: 1rem; color: rgba(255,255,255,0.66); line-height: 1.55; max-width: 650px; }
 
         .impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 2rem; }
         .impact-card, .mf-card {
           background: rgba(255,255,255,0.02);
           border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 18px;
+          border-radius: 8px;
           padding: clamp(1.2rem, 1.8vw, 2rem);
           transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
           min-width: 0;
@@ -947,7 +887,7 @@ export default function WeatherPage() {
         .enemy-weather-card {
           margin-top: 2rem;
           border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 28px;
+          border-radius: 8px;
           background: rgba(255,255,255,0.02);
           padding: 2rem;
         }
@@ -955,10 +895,8 @@ export default function WeatherPage() {
           position: relative;
           margin-top: 2rem;
           border: 1px solid color-mix(in srgb, var(--accent), transparent 76%);
-          border-radius: 22px;
-          background:
-            linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 94%), rgba(255,255,255,0.018)),
-            rgba(0,0,0,0.18);
+          border-radius: 8px;
+          background: rgba(0,0,0,0.18);
           padding: 1rem;
           overflow: hidden;
         }
@@ -1020,7 +958,7 @@ export default function WeatherPage() {
           gap: 0.35rem;
           min-height: 6.2rem;
           padding: 0.85rem;
-          border-radius: 16px;
+          border-radius: 8px;
           color: inherit;
           text-decoration: none;
           scroll-snap-align: start;
@@ -1033,7 +971,7 @@ export default function WeatherPage() {
           position: absolute;
           inset: 0 auto 0 0;
           width: 3px;
-          border-radius: 16px 0 0 16px;
+          border-radius: 8px 0 0 8px;
           background: color-mix(in srgb, var(--accent), white 8%);
           opacity: 0.85;
         }
@@ -1051,7 +989,7 @@ export default function WeatherPage() {
         }
         :global(.forecast-pill:hover),
         :global(.forecast-pill:focus-visible) {
-          transform: translateY(-2px);
+          transform: translateY(-1px);
           border-color: color-mix(in srgb, var(--accent), transparent 45%);
           background: color-mix(in srgb, var(--accent), transparent 92%);
         }
@@ -1102,10 +1040,8 @@ export default function WeatherPage() {
         :global(.current-enemy-card) {
           min-width: 0;
           border: 1px solid rgba(255,255,255,0.055);
-          border-radius: 24px;
-          background:
-            linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018)),
-            color-mix(in srgb, var(--accent), transparent 96%);
+          border-radius: 8px;
+          background: color-mix(in srgb, var(--accent), transparent 96%);
           padding: 1.25rem;
         }
         :global(.card-header.compact) {
@@ -1152,7 +1088,7 @@ export default function WeatherPage() {
           color: inherit;
           text-decoration: none;
           border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 14px;
+          border-radius: 8px;
           background: rgba(0,0,0,0.18);
           transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
         }
@@ -1166,7 +1102,7 @@ export default function WeatherPage() {
         :global(.current-enemy-link:focus-visible) {
           border-color: color-mix(in srgb, var(--accent), transparent 35%);
           background: color-mix(in srgb, var(--accent), transparent 93%);
-          transform: translateY(-2px);
+          transform: translateY(-1px);
         }
         :global(.forecast-location-card div),
         :global(.current-enemy-link span) {
@@ -1267,21 +1203,17 @@ export default function WeatherPage() {
         :global(.enemy-pref-group) {
           min-width: 0;
           border: 1px solid rgba(255,255,255,0.045);
-          border-radius: 18px;
+          border-radius: 8px;
           background: rgba(0,0,0,0.16);
           padding: 0.85rem;
         }
         :global(.enemy-pref-group.good) {
           border-color: rgba(74, 222, 128, 0.14);
-          background:
-            linear-gradient(90deg, rgba(74, 222, 128, 0.08), transparent 42%),
-            rgba(74, 222, 128, 0.035);
+          background: rgba(74, 222, 128, 0.035);
         }
         :global(.enemy-pref-group.bad) {
           border-color: rgba(248, 113, 113, 0.14);
-          background:
-            linear-gradient(90deg, rgba(248, 113, 113, 0.08), transparent 42%),
-            rgba(248, 113, 113, 0.035);
+          background: rgba(248, 113, 113, 0.035);
         }
         :global(.enemy-pref-group h4) {
           color: #fff;
@@ -1321,7 +1253,7 @@ export default function WeatherPage() {
           align-items: center;
           min-height: 42px;
           border: 1px solid rgba(255,255,255,0.055);
-          border-radius: 10px;
+          border-radius: 8px;
           background: rgba(255,255,255,0.025);
           color: inherit;
           padding: 0.4rem;
@@ -1369,7 +1301,7 @@ export default function WeatherPage() {
           justify-content: center;
           gap: 0.4rem;
           min-height: 38px;
-          border-radius: 10px;
+          border-radius: 8px;
           color: #fff;
           background: color-mix(in srgb, var(--accent), transparent 86%);
           border: 1px solid color-mix(in srgb, var(--accent), transparent 65%);
@@ -1378,13 +1310,13 @@ export default function WeatherPage() {
           text-decoration: none;
         }
         .impact-card:hover, .mf-card:hover {
-          transform: translateY(-4px);
+          transform: translateY(-1px);
           border-color: color-mix(in srgb, var(--accent), transparent 70%);
           background: rgba(255,255,255,0.035);
         }
 
         .card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
-        .card-header h3 { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.9); }
+        .card-header h3 { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.9); }
 
         .stat-list { display: flex; flex-direction: column; gap: 1.25rem; }
         .stat-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
@@ -1409,7 +1341,7 @@ export default function WeatherPage() {
           min-width: 0;
           padding: 0.9rem 1rem;
           border: 1px solid rgba(255,255,255,0.04);
-          border-radius: 18px;
+          border-radius: 8px;
           background: rgba(255,255,255,0.02);
         }
         .modifier-skill {
@@ -1451,12 +1383,12 @@ export default function WeatherPage() {
         }
 
         .mf-stats { display: flex; flex-direction: column; gap: 0.85rem; }
-        .mf-stat { 
-          background: rgba(255,255,255,0.02); 
-          padding: 1rem 1.25rem; 
-          border-radius: 16px; 
-          display: flex; 
-          justify-content: space-between; 
+        .mf-stat {
+          background: rgba(255,255,255,0.02);
+          padding: 1rem 1.25rem;
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
           align-items: center;
           border: 1px solid rgba(255,255,255,0.02);
         }
@@ -1478,19 +1410,17 @@ export default function WeatherPage() {
         .mech-item strong { color: var(--text-accent); }
 
         .mechanics-card {
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)),
-            rgba(9, 11, 20, 0.66);
+          background: rgba(9, 11, 20, 0.66);
           border: 1px solid rgba(255,255,255,0.05);
-          border-radius: 30px;
+          border-radius: 8px;
           padding: 2rem;
         }
         .mechanics-content { display: flex; flex-direction: column; gap: 2rem; }
 
         .weather-tip {
-          background: linear-gradient(135deg, rgba(245, 176, 65, 0.08), rgba(245, 176, 65, 0.02));
+          background: rgba(245, 176, 65, 0.04);
           border: 1px solid rgba(245, 176, 65, 0.15);
-          border-radius: 20px;
+          border-radius: 8px;
           padding: 1.5rem;
           display: flex;
           gap: 1.25rem;
@@ -1499,7 +1429,7 @@ export default function WeatherPage() {
         .weather-tip p { font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
         .confidence-card {
           border: 1px solid rgba(255,255,255,0.055);
-          border-radius: 20px;
+          border-radius: 8px;
           background: rgba(255,255,255,0.025);
           padding: 1rem;
           display: grid;
@@ -1566,7 +1496,7 @@ export default function WeatherPage() {
           }
           .weather-hero { flex-direction: column; text-align: center; gap: 2rem; }
           .hero-text h2 { font-size: 3.5rem; }
-          .active-info-panel { padding: 2.5rem; border-radius: 30px; }
+          .active-info-panel { padding: 2.5rem; border-radius: 8px; }
           .impact-grid { grid-template-columns: 1fr; }
           .enemy-weather-groups { grid-template-columns: 1fr; }
         }
@@ -1578,7 +1508,7 @@ export default function WeatherPage() {
             padding: 1.25rem;
           }
           .page-header {
-            border-radius: 20px;
+            border-radius: 8px;
             padding: 1rem;
           }
           .content-wrapper,
@@ -1659,7 +1589,7 @@ export default function WeatherPage() {
           }
           .active-info-panel { padding: 1.5rem; overflow: hidden; }
           .weather-hero { gap: 1rem; }
-          .impact-card, .mf-card { padding: 1.5rem; border-radius: 20px; }
+          .impact-card, .mf-card { padding: 1.5rem; border-radius: 8px; }
           .weather-snapshot-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.5rem;
@@ -1701,7 +1631,7 @@ export default function WeatherPage() {
           :global(.forecast-context-card),
           :global(.current-enemy-card) {
             padding: 1rem;
-            border-radius: 20px;
+            border-radius: 8px;
           }
           :global(.forecast-location-card) {
             grid-template-columns: minmax(0, 1fr);
@@ -1717,8 +1647,8 @@ export default function WeatherPage() {
             width: fit-content;
             margin-left: 34px;
           }
-          .enemy-weather-card { padding: 1.25rem; border-radius: 20px; }
-          .mechanics-card { padding: 1.5rem; border-radius: 22px; }
+          .enemy-weather-card { padding: 1.25rem; border-radius: 8px; }
+          .mechanics-card { padding: 1.5rem; border-radius: 8px; }
           .stat-row { gap: 1rem; padding-right: 1rem; }
           .modifier-list { grid-template-columns: 1fr; }
           .modifier-row {
