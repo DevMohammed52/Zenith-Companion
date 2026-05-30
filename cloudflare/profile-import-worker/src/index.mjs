@@ -11,11 +11,9 @@ const DEFAULT_POLL_MS = 2000;
 const DEFAULT_BASELINE_REQUEST_CAP = 45;
 const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
 const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
-const USAGE_PING_RATE_LIMIT_TTL_SECONDS = 90;
 const DEFAULT_USAGE_VITALS_MAX_PER_MINUTE = 80;
-const USAGE_VITALS_RATE_LIMIT_TTL_SECONDS = 90;
 const DEFAULT_ERROR_REPORT_MAX_PER_MINUTE = 30;
-const ERROR_REPORT_RATE_LIMIT_TTL_SECONDS = 90;
+const RATE_LIMIT_COUNTER_RETENTION_MS = 2 * 60 * 60 * 1000;
 const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
@@ -162,6 +160,7 @@ async function handleAdminImportHealth(request, env, cors) {
     service: {
       worker: "zenith-profile-import",
       budgetMode: budget.mode,
+      rateLimitStore: "d1-minute-budgets",
       importRequestsPerMinute: budget.requestsPerMinute,
       pollAfterMs: budget.pollAfterMs,
       importDelayMs: importDelayMsForBudget(env, budget),
@@ -224,7 +223,7 @@ async function handleUsagePing(request, env, cors) {
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Usage ping is not available from this origin." } }, 403, cors);
   }
-  assertBindings(env);
+  assertUsageBindings(env);
 
   const rateLimit = await checkUsagePingRateLimit(request, env);
   if (!rateLimit.ok) {
@@ -278,7 +277,7 @@ async function handleUsageVitals(request, env, cors) {
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Usage vitals are not available from this origin." } }, 403, cors);
   }
-  assertBindings(env);
+  assertUsageBindings(env);
 
   const rateLimit = await checkUsageVitalsRateLimit(request, env);
   if (!rateLimit.ok) {
@@ -327,7 +326,7 @@ async function handleErrorReport(request, env, cors) {
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Error reporting is not available from this origin." } }, 403, cors);
   }
-  assertBindings(env);
+  assertUsageBindings(env);
 
   const rateLimit = await checkErrorReportRateLimit(request, env);
   if (!rateLimit.ok) {
@@ -1770,6 +1769,10 @@ async function cleanExpiredRows(env) {
   }
   await env.DB.prepare("DELETE FROM import_jobs WHERE expires_at <= ?").bind(now).run();
   await env.DB.prepare("DELETE FROM cooldowns WHERE until_at <= ?").bind(now).run();
+  await env.DB.prepare("DELETE FROM minute_budgets WHERE updated_at <= ?")
+    .bind(new Date(Date.now() - RATE_LIMIT_COUNTER_RETENTION_MS).toISOString())
+    .run()
+    .catch(() => null);
 }
 
 function assertBindings(env) {
@@ -1778,6 +1781,15 @@ function assertBindings(env) {
   if (!env.ZENITH_COORDINATOR) missing.push("ZENITH_COORDINATOR");
   if (!env.IMPORT_SIGNING_SECRET) missing.push("IMPORT_SIGNING_SECRET");
   if (!env.IMPORT_ENCRYPTION_SECRET) missing.push("IMPORT_ENCRYPTION_SECRET");
+  if (missing.length) {
+    throw new Error(`Missing Worker binding/secret: ${missing.join(", ")}`);
+  }
+}
+
+function assertUsageBindings(env) {
+  const missing = [];
+  if (!env.DB) missing.push("DB");
+  if (!env.IMPORT_SIGNING_SECRET) missing.push("IMPORT_SIGNING_SECRET");
   if (missing.length) {
     throw new Error(`Missing Worker binding/secret: ${missing.join(", ")}`);
   }
@@ -2003,96 +2015,43 @@ function errorReportSecret(env) {
 
 async function checkUsagePingRateLimit(request, env) {
   const maxPerMinute = readPositiveInt(env.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
-  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
-
-  const now = Date.now();
-  const bucket = Math.floor(now / 60000);
   const requesterFingerprint = await fingerprint(`usage:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  const key = `usage-ping:${bucket}:${requesterFingerprint.slice(0, 32)}`;
-  let current = 0;
-
-  try {
-    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
-  } catch {
-    return { ok: true };
-  }
-
-  if (Number.isFinite(current) && current >= maxPerMinute) {
-    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
-  }
-
-  try {
-    await env.ZENITH_COORDINATOR.put(
-      key,
-      String((Number.isFinite(current) ? current : 0) + 1),
-      { expirationTtl: USAGE_PING_RATE_LIMIT_TTL_SECONDS },
-    );
-  } catch {
-    return { ok: true };
-  }
-
-  return { ok: true };
+  return await checkD1MinuteRateLimit(env, `usage-ping:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
 }
 
 async function checkUsageVitalsRateLimit(request, env) {
   const maxPerMinute = readPositiveInt(env.USAGE_VITALS_MAX_PER_MINUTE, DEFAULT_USAGE_VITALS_MAX_PER_MINUTE);
-  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
-
-  const now = Date.now();
-  const bucket = Math.floor(now / 60000);
   const requesterFingerprint = await fingerprint(`vitals:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  const key = `usage-vitals:${bucket}:${requesterFingerprint.slice(0, 32)}`;
-  let current = 0;
-
-  try {
-    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
-  } catch {
-    return { ok: true };
-  }
-
-  if (Number.isFinite(current) && current >= maxPerMinute) {
-    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
-  }
-
-  try {
-    await env.ZENITH_COORDINATOR.put(
-      key,
-      String((Number.isFinite(current) ? current : 0) + 1),
-      { expirationTtl: USAGE_VITALS_RATE_LIMIT_TTL_SECONDS },
-    );
-  } catch {
-    return { ok: true };
-  }
-
-  return { ok: true };
+  return await checkD1MinuteRateLimit(env, `usage-vitals:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
 }
 
 async function checkErrorReportRateLimit(request, env) {
   const maxPerMinute = readPositiveInt(env.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
-  if (!maxPerMinute || !env.ZENITH_COORDINATOR) return { ok: true };
+  const requesterFingerprint = await fingerprint(`error:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
+  return await checkD1MinuteRateLimit(env, `error-report:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
+}
+
+async function checkD1MinuteRateLimit(env, source, maxPerMinute) {
+  if (!maxPerMinute || !env.DB) return { ok: true };
 
   const now = Date.now();
-  const bucket = Math.floor(now / 60000);
-  const requesterFingerprint = await fingerprint(`error:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  const key = `error-report:${bucket}:${requesterFingerprint.slice(0, 32)}`;
-  let current = 0;
-
+  const minuteKey = String(Math.floor(now / 60000));
+  const updatedAt = new Date(now).toISOString();
   try {
-    current = Number(await env.ZENITH_COORDINATOR.get(key) || 0);
-  } catch {
-    return { ok: true };
-  }
+    const row = await env.DB.prepare(`
+      INSERT INTO minute_budgets (minute_key, source, used_requests, mode, updated_at)
+      VALUES (?, ?, 1, 'rate_limit', ?)
+      ON CONFLICT(minute_key, source) DO UPDATE SET
+        used_requests = minute_budgets.used_requests + 1,
+        mode = excluded.mode,
+        updated_at = excluded.updated_at
+      WHERE minute_budgets.used_requests < ?
+      RETURNING used_requests
+    `).bind(minuteKey, cleanString(source, 96), updatedAt, maxPerMinute).first();
 
-  if (Number.isFinite(current) && current >= maxPerMinute) {
-    return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
-  }
-
-  try {
-    await env.ZENITH_COORDINATOR.put(
-      key,
-      String((Number.isFinite(current) ? current : 0) + 1),
-      { expirationTtl: ERROR_REPORT_RATE_LIMIT_TTL_SECONDS },
-    );
+    if (!row) {
+      return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
+    }
   } catch {
     return { ok: true };
   }

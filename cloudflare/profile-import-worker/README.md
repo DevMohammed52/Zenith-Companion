@@ -21,6 +21,7 @@ Implemented:
 - coordinator bearer-secret check
 - D1-backed import job creation
 - D1 cooldown checks
+- D1-backed usage/vitals/error rate limits
 - queue caps
 - KV-backed GitHub scraper/guild active-state detection
 - encrypted short-lived target hash storage
@@ -106,6 +107,10 @@ reads those known KV keys directly instead of using KV `list()`, which keeps the
 public import path inside Cloudflare free-plan limits. Do not reduce the delay
 or raise these caps in production unless the Cloudflare coordinator is already
 protecting the GitHub workflows.
+
+Usage pings, Web Vitals, and app error reports use D1 `minute_budgets` counters
+for per-requester rate limits. They do not write rate-limit keys to KV; KV
+should stay reserved for the low-volume GitHub scraper coordinator state.
 
 `USAGE_VITALS_MAX_PER_MINUTE` defaults to `80` per requester. Web Vitals events
 are expected to be a few small pings per page load, so keep this separate from

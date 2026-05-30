@@ -4,11 +4,15 @@ import { handleRequest } from "../src/index.mjs";
 class MemoryKV {
   constructor() {
     this.map = new Map();
+    this.gets = 0;
+    this.puts = 0;
   }
   async put(key, value) {
+    this.puts += 1;
     this.map.set(key, value);
   }
   async get(key) {
+    this.gets += 1;
     return this.map.get(key) || null;
   }
   async list({ prefix = "" } = {}) {
@@ -54,6 +58,7 @@ class MemoryD1 {
     this.usageEvents = new Map();
     this.appErrorEvents = new Map();
     this.webVitalEvents = new Map();
+    this.minuteBudgets = new Map();
   }
   prepare(sql) {
     return new Statement(this, sql);
@@ -132,6 +137,12 @@ class MemoryD1 {
         if (cooldown.until_at <= now) this.cooldowns.delete(key);
       }
     }
+    if (sql.includes("DELETE FROM minute_budgets")) {
+      const [updatedBefore] = args;
+      for (const [key, budget] of this.minuteBudgets) {
+        if (budget.updated_at <= updatedBefore) this.minuteBudgets.delete(key);
+      }
+    }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'complete'")) {
       const [resultJson, requestCount, retryCount, updatedAt, id] = args;
       Object.assign(this.jobs.get(id), {
@@ -192,6 +203,24 @@ class MemoryD1 {
     return { success: true };
   }
   async first(sql, args) {
+    if (sql.includes("INSERT INTO minute_budgets")) {
+      const [minuteKey, source, updatedAt, maxPerMinute] = args;
+      const key = `${minuteKey}:${source}`;
+      const existing = this.minuteBudgets.get(key);
+      if (existing && Number(existing.used_requests || 0) >= Number(maxPerMinute || 0)) {
+        return null;
+      }
+      const usedRequests = existing ? Number(existing.used_requests || 0) + 1 : 1;
+      const row = {
+        minute_key: minuteKey,
+        source,
+        used_requests: usedRequests,
+        mode: "rate_limit",
+        updated_at: updatedAt,
+      };
+      this.minuteBudgets.set(key, row);
+      return { used_requests: usedRequests };
+    }
     if (sql.includes("FROM cooldowns")) {
       const [scope, fingerprint, now] = args;
       const cooldown = this.cooldowns.get(`${scope}:${fingerprint}`);
@@ -796,6 +825,9 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.usageEvents.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.ZENITH_COORDINATOR.gets, 0);
+  assert.equal(e.ZENITH_COORDINATOR.puts, 0);
 }
 
 {
@@ -820,6 +852,9 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.webVitalEvents.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.ZENITH_COORDINATOR.gets, 0);
+  assert.equal(e.ZENITH_COORDINATOR.puts, 0);
 }
 
 {
@@ -844,6 +879,30 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.appErrorEvents.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.ZENITH_COORDINATOR.gets, 0);
+  assert.equal(e.ZENITH_COORDINATOR.puts, 0);
+}
+
+{
+  const e = env({ ZENITH_COORDINATOR: null });
+  const response = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.30",
+    },
+    body: JSON.stringify({
+      visitorId: "visitor-no-kv",
+      sessionId: "session-no-kv",
+      eventType: "pageview",
+      path: "/settings",
+    }),
+  }), e);
+  assert.equal(response.status, 202);
+  assert.equal(e.DB.usageEvents.size, 1);
 }
 
 {
