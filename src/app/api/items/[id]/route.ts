@@ -15,7 +15,9 @@ type ItemNameCacheEntry = CacheEntry & {
 
 const ITEM_ID_PATTERN = /^[A-Za-z0-9_-]{1,160}$/;
 const ITEM_RESPONSE_HEADERS = {
-  "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+  "cache-control": "public, max-age=3600",
+  "cdn-cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+  "vercel-cdn-cache-control": "public, max-age=86400, stale-while-revalidate=604800",
   "x-robots-tag": "noindex, nofollow",
 };
 const ITEM_ERROR_HEADERS = {

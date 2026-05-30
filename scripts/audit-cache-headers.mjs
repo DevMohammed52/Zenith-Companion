@@ -25,6 +25,8 @@ const COMMON_HEADER_EXPECTATIONS = {
 };
 
 const publicDataCache = ["public", "max-age=3600", "s-maxage=86400", "stale-while-revalidate=604800"];
+const publicApiBrowserCache = ["public", "max-age=3600"];
+const publicApiCdnCache = ["public", "max-age=86400", "stale-while-revalidate=604800"];
 const marketCache = ["public", "max-age=60", "s-maxage=300", "must-revalidate"];
 const noStore = ["no-store"];
 const noCache = ["no-cache", "max-age=0", "must-revalidate"];
@@ -187,8 +189,11 @@ const audits = [
     path: "/api/items/Rv5g4z1dQnqlLqy32jpG",
     status: 200,
     expect: {
-      cacheControl: publicDataCache,
-      headerContains: [["x-robots-tag", noIndex]],
+      cacheControl: publicApiBrowserCache,
+      headerContains: [
+        ["cdn-cache-control", publicApiCdnCache],
+        ["x-robots-tag", noIndex],
+      ],
       security: true,
       ...COMMON_HEADER_EXPECTATIONS,
     },
@@ -455,6 +460,7 @@ async function writeSummary(results, failed) {
       failures,
       headers: {
         "cache-control": response.headers.get("cache-control") || "",
+        "cdn-cache-control": response.headers.get("cdn-cache-control") || "",
         "content-security-policy": response.headers.get("content-security-policy") || "",
         "referrer-policy": response.headers.get("referrer-policy") || "",
         "x-content-type-options": response.headers.get("x-content-type-options") || "",
