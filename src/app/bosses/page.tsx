@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { AriaAttributes, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
     AlertTriangle,
     Check,
@@ -890,6 +890,23 @@ function BossesContent() {
         return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
     };
 
+    const getSortDirection = (col: string): AriaAttributes["aria-sort"] => {
+        if (sortCol !== col) return "none";
+        return sortDesc ? "descending" : "ascending";
+    };
+
+    const renderSortButton = (col: string, label: string) => (
+        <button
+            aria-label={`Sort by ${label}`}
+            className="boss-sort-button"
+            onClick={() => handleSort(col)}
+            type="button"
+        >
+            <span>{label}</span>
+            {renderSortIcon(col)}
+        </button>
+    );
+
     return (
         <main className="container bosses-page">
             <div className="header">
@@ -1243,11 +1260,11 @@ function BossesContent() {
                         <table>
                             <thead>
                                 <tr>
-                                    <th className="sortable left-align" onClick={() => handleSort("name")}>Boss {renderSortIcon("name")}</th>
-                                    <th className="sortable left-align" onClick={() => handleSort("location")}>Location {renderSortIcon("location")}</th>
-                                    <th className="sortable" onClick={() => handleSort("level")}>Level {renderSortIcon("level")}</th>
-                                    <th className="sortable" onClick={() => handleSort("nextSpawnTime")}>Status / Timer {renderSortIcon("nextSpawnTime")}</th>
-                                    <th className="sortable" onClick={() => handleSort("ev")}>EV / Boss {renderSortIcon("ev")}</th>
+                                    <th aria-sort={getSortDirection("name")} className="sortable left-align">{renderSortButton("name", "Boss")}</th>
+                                    <th aria-sort={getSortDirection("location")} className="sortable left-align">{renderSortButton("location", "Location")}</th>
+                                    <th aria-sort={getSortDirection("level")} className="sortable">{renderSortButton("level", "Level")}</th>
+                                    <th aria-sort={getSortDirection("nextSpawnTime")} className="sortable">{renderSortButton("nextSpawnTime", "Status / Timer")}</th>
+                                    <th aria-sort={getSortDirection("ev")} className="sortable">{renderSortButton("ev", "EV / Boss")}</th>
                                     <th>Market note</th>
                                 </tr>
                             </thead>
@@ -1554,6 +1571,35 @@ function BossesContent() {
                 .boss-item-modifier-panel {
                     max-width: 100%;
                     min-width: 0;
+                }
+                :global(.boss-sort-button) {
+                    align-items: center;
+                    background: transparent;
+                    border: 0;
+                    color: inherit;
+                    cursor: pointer;
+                    display: inline-flex;
+                    font: inherit;
+                    font-weight: 900;
+                    gap: 0.35rem;
+                    justify-content: center;
+                    letter-spacing: inherit;
+                    min-height: 2.25rem;
+                    padding: 0;
+                    text-align: inherit;
+                    text-transform: inherit;
+                    width: 100%;
+                }
+                th.left-align :global(.boss-sort-button) {
+                    justify-content: flex-start;
+                }
+                :global(.boss-sort-button) svg {
+                    flex: 0 0 auto;
+                }
+                :global(.boss-sort-button):focus-visible {
+                    border-radius: 6px;
+                    outline: 2px solid var(--text-accent);
+                    outline-offset: 3px;
                 }
                 .boss-radar {
                     display: grid;
@@ -2035,8 +2081,7 @@ function BossesContent() {
                     transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
                 }
                 @media (hover: hover) {
-                    .boss-radar-stats div:hover,
-                    .boss-routine-summary div:hover {
+                    .boss-radar-stats div:hover {
                         border-color: rgba(56,189,248,0.28);
                         background: rgba(255,255,255,0.045);
                         transform: translateY(-1px);
@@ -2370,6 +2415,14 @@ function BossesContent() {
                 }
                 .boss-mobile-card {
                     cursor: pointer;
+                    border-radius: 8px;
+                    box-shadow: none;
+                    transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+                }
+                @media (hover: hover) and (pointer: fine) {
+                    .boss-mobile-card:hover {
+                        transform: translateY(-1px);
+                    }
                 }
                 .boss-mobile-card .m-roi {
                     display: flex;
@@ -2381,7 +2434,7 @@ function BossesContent() {
                 .boss-loot-row:focus-visible,
                 tr.clickable-row:focus-visible {
                     outline: 2px solid var(--text-accent);
-                    outline-offset: -2px;
+                    outline-offset: 2px;
                 }
                 .boss-mobile-name {
                     display: flex;
@@ -2702,14 +2755,10 @@ function BossesContent() {
                         font-size: 0.86rem;
                     }
                     .boss-routine-summary {
-                        position: sticky;
-                        top: 0.5rem;
-                        z-index: 6;
                         padding: 0.35rem;
                         border: 1px solid rgba(74,222,128,0.14);
                         border-radius: 8px;
                         background: rgba(8, 13, 13, 0.94);
-                        backdrop-filter: blur(10px);
                     }
                     .boss-routine-summary div {
                         padding: 0.58rem 0.5rem;
@@ -2798,10 +2847,15 @@ function BossesContent() {
                     .routine-boss-picker button,
                     :global(.world-boss-effect-trigger),
                     :global(.world-boss-effect-option),
+                    :global(.boss-sort-button),
+                    .boss-mobile-card,
+                    .boss-routine-summary div,
                     .boss-loot-row {
                         animation: none;
                         transition: none;
                     }
+                    .boss-mobile-card:hover,
+                    .boss-routine-summary div:hover,
                     .routine-boss-picker button:hover,
                     .boss-loot-row:hover {
                         transform: none;
