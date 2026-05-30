@@ -42,6 +42,10 @@
   color: #86efac;
 }
 
+.banner[data-status="update"] {
+  border-color: color-mix(in srgb, var(--text-accent, #f5b041), transparent 48%);
+}
+
 .iconShell {
   align-items: center;
   align-self: start;
@@ -72,11 +76,66 @@
   font-size: 0.78rem;
 }
 
+.actions {
+  align-items: center;
+  display: flex;
+  gap: 0.42rem;
+  grid-column: 2;
+}
+
+.primaryAction,
+.secondaryAction {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--text-accent, #f5b041), transparent 58%);
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 32px;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.primaryAction {
+  background: color-mix(in srgb, var(--text-accent, #f5b041), transparent 82%);
+  color: var(--text-primary, #f4f4f5);
+  padding: 0 0.72rem;
+}
+
+.secondaryAction {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #a1a1aa);
+  width: 32px;
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  border-color: color-mix(in srgb, var(--text-accent, #f5b041), transparent 32%);
+  color: var(--text-primary, #f4f4f5);
+  transform: translateY(-1px);
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--text-accent, #f5b041), transparent 20%);
+  outline-offset: 2px;
+}
+
 @media (max-width: 520px) {
   .banner {
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
     inset-inline: 0.75rem;
     max-width: none;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
   }
 }
 

@@ -12,6 +12,7 @@ const BYPASS_PREFIXES = [
   "/api/usage/",
   "/error-preview",
   "/loading-preview",
+  "/scraper-status.json",
   "/sw.js",
 ];
 
@@ -21,8 +22,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cacheUrls(cache, CORE_URLS, { cache: "reload" }))
-      .then(() => self.skipWaiting()),
+      .then((cache) => cacheUrls(cache, CORE_URLS, { cache: "reload" })),
   );
 });
 
@@ -43,8 +43,19 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data?.type !== "ZENITH_REFRESH_PUBLIC_DATA_CACHE") return;
-  event.waitUntil(refreshPublicDataCache());
+  if (event.data?.type === "ZENITH_REFRESH_PUBLIC_DATA_CACHE") {
+    event.waitUntil(replyToClient(event, refreshPublicDataCache()));
+    return;
+  }
+
+  if (event.data?.type === "ZENITH_CLEAR_PUBLIC_DATA_CACHE") {
+    event.waitUntil(replyToClient(event, clearPublicDataCache()));
+    return;
+  }
+
+  if (event.data?.type === "ZENITH_ACTIVATE_WAITING_WORKER") {
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
 self.addEventListener("fetch", (event) => {
@@ -185,6 +196,31 @@ async function refreshPublicDataCache() {
   });
 
   return manifestRefreshPromise;
+}
+
+async function clearPublicDataCache() {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys
+      .filter((key) => key.startsWith("zenith-offline-"))
+      .map((key) => caches.delete(key)),
+  );
+
+  const cache = await caches.open(CACHE_NAME);
+  await cacheUrls(cache, CORE_URLS, { cache: "reload" });
+}
+
+async function replyToClient(event, promise) {
+  try {
+    await promise;
+    event.ports?.[0]?.postMessage({ ok: true });
+  } catch (error) {
+    event.ports?.[0]?.postMessage({
+      ok: false,
+      error: error instanceof Error ? error.message : "Offline cache action failed.",
+    });
+    throw error;
+  }
 }
 
 async function readCachedManifest(cache) {
