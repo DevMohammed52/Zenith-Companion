@@ -1,45 +1,330 @@
 {
   "meta": {
-    "generatedAt": "2026-06-01T10:30:14.389Z",
+    "generatedAt": "2026-06-01T16:46:18.955Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 253,
-    "totalFetched": 253,
+    "totalAvailable": 256,
+    "totalFetched": 256,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 256,
+    "latestPatchId": 259,
     "oldestPatchId": 1,
-    "latestVersion": "0.72.2-PB",
+    "latestVersion": "0.73.2-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "translations": 10,
+      "public-api": 17,
+      "guilds": 69,
+      "combat": 127,
+      "hunting": 64,
+      "world-bosses": 42,
+      "pets": 102,
+      "conquest": 24,
+      "items": 146,
+      "weather": 4,
+      "bug-fixes": 188,
+      "economy": 118,
+      "skills": 150,
+      "tavern": 29,
+      "translations": 11,
       "quests": 10,
-      "bug-fixes": 187,
       "mobile-ui": 98,
-      "public-api": 15,
-      "combat": 125,
-      "pets": 101,
-      "guilds": 67,
       "housing": 25,
-      "items": 145,
-      "weather": 3,
       "map": 64,
-      "tavern": 28,
       "membership": 63,
-      "skills": 149,
-      "hunting": 63,
-      "world-bosses": 41,
-      "economy": 117,
       "forge": 42,
       "seasonal": 76,
       "dungeons": 57,
-      "conquest": 22,
       "alchemy": 41
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 259,
+      "version": "0.73.2-PB",
+      "title": "Public API Changes",
+      "headline": "Version 0.73.2-PB - Public API Changes",
+      "releasedAt": "2026-06-01T15:34:54",
+      "releaseLabel": "1 hour ago",
+      "releaseDateLabel": "Jun 01 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=259",
+      "categories": [
+        "public-api",
+        "guilds"
+      ],
+      "excerpt": "[Public API Breaking Change] We've changed how /v1/guild/{id}/activity , /v1/guild/{id}/energizing-pool/information , and /v1/guild/{id}/hall are scoped. These endpoints now require both their guild endpoint scope and...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "[Public API Breaking Change]"
+        },
+        {
+          "type": "paragraph",
+          "text": "We've changed how /v1/guild/{id}/activity , /v1/guild/{id}/energizing-pool/information , and /v1/guild/{id}/hall are scoped. These endpoints now require both their guild endpoint scope and the v1.character.characters scope, because guild permissions are checked across every character owned by the API key user rather than only the currently selected character."
+        },
+        {
+          "type": "paragraph",
+          "text": "This also means /v1/guild/{id}/hall can no longer be used to fetch public guild halls with only the guild hall scope, since the same account-wide character visibility rules are needed."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "[Public API Breaking Change]"
+            },
+            {
+              "type": "paragraph",
+              "text": "We've changed how /v1/guild/{id}/activity , /v1/guild/{id}/energizing-pool/information , and /v1/guild/{id}/hall are scoped. These endpoints now require both their guild endpoint scope and the v1.character.characters scope, because guild permissions are checked across every character owned by the API key user rather than only the currently selected character."
+            },
+            {
+              "type": "paragraph",
+              "text": "This also means /v1/guild/{id}/hall can no longer be used to fetch public guild halls with only the guild hall scope, since the same account-wide character visibility rules are needed."
+            }
+          ]
+        }
+      ],
+      "bodyText": "[Public API Breaking Change]\nWe've changed how /v1/guild/{id}/activity , /v1/guild/{id}/energizing-pool/information , and /v1/guild/{id}/hall are scoped. These endpoints now require both their guild endpoint scope and the v1.character.characters scope, because guild permissions are checked across every character owned by the API key user rather than only the currently selected character.\nThis also means /v1/guild/{id}/hall can no longer be used to fetch public guild halls with only the guild hall scope, since the same account-wide character visibility rules are needed.",
+      "searchText": "version 0.73.2-pb - public api changes [public api breaking change] we've changed how /v1/guild/{id}/activity , /v1/guild/{id}/energizing-pool/information , and /v1/guild/{id}/hall are scoped. these endpoints now require both their guild endpoint scope and the v1.character.characters scope, because guild permissions are checked across every character owned by the api key user rather than only the currently selected character. this also means /v1/guild/{id}/hall can no longer be used to fetch public guild halls with only the guild hall scope, since the same account-wide character visibility rules are needed."
+    },
+    {
+      "id": 258,
+      "version": "0.73.1-PB",
+      "title": "Wiki Updates",
+      "headline": "Version 0.73.1-PB - Wiki Updates",
+      "releasedAt": "2026-06-01T14:28:42",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Jun 01 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=258",
+      "categories": [
+        "combat",
+        "hunting",
+        "world-bosses",
+        "pets",
+        "conquest",
+        "items",
+        "weather",
+        "bug-fixes"
+      ],
+      "excerpt": "We've updated a lot of pages due to them containing outdated information. Here is a quick breakdown on those changes: Added a new weather page with the full list of weather effects. Updated hunting info to match the c...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We've updated a lot of pages due to them containing outdated information. Here is a quick breakdown on those changes:"
+        },
+        {
+          "type": "listItem",
+          "text": "Added a new weather page with the full list of weather effects."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated hunting info to match the current hunt speed, loot, and power hunting behavior."
+        },
+        {
+          "type": "listItem",
+          "text": "Added notes for how hunting loot works."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated pet hunting with current timing, stamina use, and loot wording."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated battle page to match the current values."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated world boss page to include current queue timing."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated conquest rewards to include the new combat bonus reward during the 2 week cooldown period."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated league rewards and scaling examples."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed broken banners across the wiki."
+        },
+        {
+          "type": "listItem",
+          "text": "Clarified how negative efficiency works, including that -100% means twice as long."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We've updated a lot of pages due to them containing outdated information. Here is a quick breakdown on those changes:"
+            },
+            {
+              "type": "listItem",
+              "text": "Added a new weather page with the full list of weather effects."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated hunting info to match the current hunt speed, loot, and power hunting behavior."
+            },
+            {
+              "type": "listItem",
+              "text": "Added notes for how hunting loot works."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated pet hunting with current timing, stamina use, and loot wording."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated battle page to match the current values."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated world boss page to include current queue timing."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated conquest rewards to include the new combat bonus reward during the 2 week cooldown period."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated league rewards and scaling examples."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed broken banners across the wiki."
+            },
+            {
+              "type": "listItem",
+              "text": "Clarified how negative efficiency works, including that -100% means twice as long."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We've updated a lot of pages due to them containing outdated information. Here is a quick breakdown on those changes:\nAdded a new weather page with the full list of weather effects.\nUpdated hunting info to match the current hunt speed, loot, and power hunting behavior.\nAdded notes for how hunting loot works.\nUpdated pet hunting with current timing, stamina use, and loot wording.\nUpdated battle page to match the current values.\nUpdated world boss page to include current queue timing.\nUpdated conquest rewards to include the new combat bonus reward during the 2 week cooldown period.\nUpdated league rewards and scaling examples.\nFixed broken banners across the wiki.\nClarified how negative efficiency works, including that -100% means twice as long.",
+      "searchText": "version 0.73.1-pb - wiki updates we've updated a lot of pages due to them containing outdated information. here is a quick breakdown on those changes: added a new weather page with the full list of weather effects. updated hunting info to match the current hunt speed, loot, and power hunting behavior. added notes for how hunting loot works. updated pet hunting with current timing, stamina use, and loot wording. updated battle page to match the current values. updated world boss page to include current queue timing. updated conquest rewards to include the new combat bonus reward during the 2 week cooldown period. updated league rewards and scaling examples. fixed broken banners across the wiki. clarified how negative efficiency works, including that -100% means twice as long."
+    },
+    {
+      "id": 257,
+      "version": "0.73.0",
+      "title": "Guild Conquest Changes, French and German Translation, + More",
+      "headline": "Version 0.73.0 - Guild Conquest Changes, French and German Translation, + More",
+      "releasedAt": "2026-06-01T13:42:55",
+      "releaseLabel": "3 hours ago",
+      "releaseDateLabel": "Jun 01 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=257",
+      "categories": [
+        "public-api",
+        "combat",
+        "guilds",
+        "conquest",
+        "economy",
+        "skills",
+        "tavern",
+        "translations"
+      ],
+      "excerpt": "Guild Conquest Rewards To reduce the pressure surrounding Guild Conquests, and to give players a way to earn combat rewards without directly affecting the outcome of a season, we're introducing a short two-week grace...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Guild Conquest Rewards To reduce the pressure surrounding Guild Conquests, and to give players a way to earn combat rewards without directly affecting the outcome of a season, we're introducing a short two-week grace period at the start of every season."
+        },
+        {
+          "type": "paragraph",
+          "text": "During this period, the previous season's winners will receive a combat experience boost , and Guild Assaults will be disabled. This should give everyone a chance to enjoy the rewards without immediately feeling the need to defend or attack."
+        },
+        {
+          "type": "paragraph",
+          "text": "This change will take effect starting from Season 11."
+        },
+        {
+          "type": "paragraph",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "Increased the maximum number of enemies you can queue in a battle to 6."
+        },
+        {
+          "type": "listItem",
+          "text": "Updated the AI model used for Tavern spam detection, which should improve overall accuracy."
+        },
+        {
+          "type": "listItem",
+          "text": "Market filters now persist when refreshing the page, so you won't need to reapply them each time."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] Added a new endpoint for tracking guild activity."
+        },
+        {
+          "type": "paragraph",
+          "text": "Translation"
+        },
+        {
+          "type": "listItem",
+          "text": "Added support for French and German. As with our other translations, these are AI-generated, so you may come across the occasional mistake, particularly where context is important. We're also planning to open-source the translation files soon, which will allow the community to help spot and correct any issues they find."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Guild Conquest Rewards To reduce the pressure surrounding Guild Conquests, and to give players a way to earn combat rewards without directly affecting the outcome of a season, we're introducing a short two-week grace period at the start of every season."
+            },
+            {
+              "type": "paragraph",
+              "text": "During this period, the previous season's winners will receive a combat experience boost , and Guild Assaults will be disabled. This should give everyone a chance to enjoy the rewards without immediately feeling the need to defend or attack."
+            },
+            {
+              "type": "paragraph",
+              "text": "This change will take effect starting from Season 11."
+            },
+            {
+              "type": "paragraph",
+              "text": "More"
+            },
+            {
+              "type": "listItem",
+              "text": "Increased the maximum number of enemies you can queue in a battle to 6."
+            },
+            {
+              "type": "listItem",
+              "text": "Updated the AI model used for Tavern spam detection, which should improve overall accuracy."
+            },
+            {
+              "type": "listItem",
+              "text": "Market filters now persist when refreshing the page, so you won't need to reapply them each time."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] Added a new endpoint for tracking guild activity."
+            },
+            {
+              "type": "paragraph",
+              "text": "Translation"
+            },
+            {
+              "type": "listItem",
+              "text": "Added support for French and German. As with our other translations, these are AI-generated, so you may come across the occasional mistake, particularly where context is important. We're also planning to open-source the translation files soon, which will allow the community to help spot and correct any issues they find."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Guild Conquest Rewards To reduce the pressure surrounding Guild Conquests, and to give players a way to earn combat rewards without directly affecting the outcome of a season, we're introducing a short two-week grace period at the start of every season.\nDuring this period, the previous season's winners will receive a combat experience boost , and Guild Assaults will be disabled. This should give everyone a chance to enjoy the rewards without immediately feeling the need to defend or attack.\nThis change will take effect starting from Season 11.\nMore\nIncreased the maximum number of enemies you can queue in a battle to 6.\nUpdated the AI model used for Tavern spam detection, which should improve overall accuracy.\nMarket filters now persist when refreshing the page, so you won't need to reapply them each time.\n[Public API] Added a new endpoint for tracking guild activity.\nTranslation\nAdded support for French and German. As with our other translations, these are AI-generated, so you may come across the occasional mistake, particularly where context is important. We're also planning to open-source the translation files soon, which will allow the community to help spot and correct any issues they find.",
+      "searchText": "version 0.73.0 - guild conquest changes, french and german translation, + more guild conquest rewards to reduce the pressure surrounding guild conquests, and to give players a way to earn combat rewards without directly affecting the outcome of a season, we're introducing a short two-week grace period at the start of every season. during this period, the previous season's winners will receive a combat experience boost , and guild assaults will be disabled. this should give everyone a chance to enjoy the rewards without immediately feeling the need to defend or attack. this change will take effect starting from season 11. more increased the maximum number of enemies you can queue in a battle to 6. updated the ai model used for tavern spam detection, which should improve overall accuracy. market filters now persist when refreshing the page, so you won't need to reapply them each time. [public api] added a new endpoint for tracking guild activity. translation added support for french and german. as with our other translations, these are ai-generated, so you may come across the occasional mistake, particularly where context is important. we're also planning to open-source the translation files soon, which will allow the community to help spot and correct any issues they find."
+    },
     {
       "id": 256,
       "version": "0.72.2-PB",
@@ -200,7 +485,7 @@
       "title": "Small Adjustments",
       "headline": "Version 0.71.0-PB - Small Adjustments",
       "releasedAt": "2026-05-11T12:56:19",
-      "releaseLabel": "2 weeks ago",
+      "releaseLabel": "3 weeks ago",
       "releaseDateLabel": "May 11 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=253",
@@ -387,7 +672,7 @@
       "title": "Translation Notice",
       "headline": "Version 0.70.4-PB - Translation Notice",
       "releasedAt": "2026-05-01T12:39:55",
-      "releaseLabel": "4 weeks ago",
+      "releaseLabel": "1 month ago",
       "releaseDateLabel": "May 01 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=252",
