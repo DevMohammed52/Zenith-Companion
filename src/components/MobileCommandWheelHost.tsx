@@ -32,7 +32,7 @@ export default function MobileCommandWheelHost() {
         id="app-mobile-menu-button"
         className={`command-wheel-trigger command-wheel-trigger-${triggerSide} ${mobileOpen ? "command-wheel-trigger-open" : ""}`}
         type="button"
-        aria-label={mobileOpen ? "Close command wheel" : "Open command wheel"}
+        aria-label={mobileOpen ? "Close quick navigation" : "Open quick navigation"}
         aria-controls="app-command-wheel"
         aria-expanded={mobileOpen}
         onClick={() => {

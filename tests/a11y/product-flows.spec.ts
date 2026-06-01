@@ -90,7 +90,9 @@ test.describe("core product flows", () => {
     });
     await expect(searchInput).toBeFocused();
     await searchInput.fill("Skill Profit Finder");
-    await palette.getByRole("option", { name: /^Skill Profit Finder\. Live skill route planner\. Page\.$/ }).click();
+    await palette
+      .getByRole("option", { name: /^Skill Profit Finder\. Skill routes, tools, buffs, and prices\. Page\.$/ })
+      .click();
 
     await expect(page).toHaveURL(/\/skill-profit$/);
     await expect(page.getByRole("main", { name: "Skill Profit Finder" })).toBeVisible();
@@ -192,8 +194,8 @@ test.describe("core product flows", () => {
     await expect(page.getByRole("link", { name: "Open dashboard" })).toHaveAttribute("href", "/");
   });
 
-  test("mobile command wheel navigates to item database", async ({ page }, testInfo) => {
-    test.skip(!/mobile/i.test(testInfo.project.name), "Command wheel smoke runs in the mobile project.");
+  test("mobile quick navigation opens the item database", async ({ page }, testInfo) => {
+    test.skip(!/mobile/i.test(testInfo.project.name), "Quick navigation smoke runs in the mobile project.");
     await page.addInitScript(() => {
       window.localStorage.setItem("zenith_preferences", JSON.stringify({
         ...JSON.parse(window.localStorage.getItem("zenith_preferences") || "{}"),
@@ -203,7 +205,7 @@ test.describe("core product flows", () => {
     });
 
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Open command wheel" }).click();
+    await page.getByRole("button", { name: "Open quick navigation" }).click();
 
     const wheel = page.getByRole("dialog", { name: "Navigation menu" });
     await expect(wheel).toBeVisible();

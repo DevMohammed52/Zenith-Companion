@@ -136,7 +136,7 @@ export default function MobileCommandWheel({
       <button
         className="command-wheel-backdrop"
         type="button"
-        aria-label="Close command wheel"
+        aria-label="Close quick navigation"
         onClick={() => {
           playZenithSound("close");
           onClose();
@@ -160,13 +160,13 @@ export default function MobileCommandWheel({
 
         <div className="command-wheel-header">
           <span>
-            <small>Command</small>
+            <small>Menu</small>
             <strong>{selectedGroup.label}</strong>
           </span>
           <button
             className="command-wheel-close"
             type="button"
-            aria-label="Close command wheel"
+            aria-label="Close quick navigation"
             onClick={() => {
               playZenithSound("close");
               onClose();
