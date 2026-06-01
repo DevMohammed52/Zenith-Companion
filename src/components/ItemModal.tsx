@@ -552,7 +552,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
               {descriptionLoreLinks.length > 0 && (
                 <div className="bento-card lore-thread-card description-lore-card full-width">
-                  <div className="card-label"><BookOpen size={14} /> Description Lore Signals</div>
+                  <div className="card-label"><BookOpen size={14} /> Lore Links From Description</div>
                   <div className="lore-thread-list">
                     {descriptionLoreLinks.map((link) => {
                       const primary = getLoreEntry(link.entryIds[0]);
@@ -583,7 +583,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
               {showMarket && (
                 <div className="bento-card market-card">
-                  <div className="card-label"><TrendingUp size={14} /> Market Overview</div>
+                  <div className="card-label"><TrendingUp size={14} /> Market Snapshot</div>
                   {modalMarketValue ? (
                     <>
                       <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>

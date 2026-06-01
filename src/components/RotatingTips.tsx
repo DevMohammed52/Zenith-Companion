@@ -71,8 +71,8 @@ const tips: ZenithNotification[] = [
 
 const pageNotices: Record<string, ZenithNotification> = {
   "/": {
-    title: "Dashboard tip",
-    body: "Use the dashboard cards or Ctrl K to jump directly into the tool you need.",
+    title: "Daily check tip",
+    body: "Use the quick cards or Ctrl K to jump straight to prices, profiles, bosses, routes, or cached data.",
   },
   "/profiles": {
     title: "Profile tip",
