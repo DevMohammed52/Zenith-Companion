@@ -3,7 +3,7 @@ import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
   title: "Weather",
-  description: "Review IdleMMO weather data, location effects, enemy preferences, and planning context in Zenith Companion.",
+  description: "Review IdleMMO weather forecasts, location effects, and favored or penalized enemies in Zenith Companion.",
   path: "/weather",
   keywords: ["IdleMMO weather", "IdleMMO locations", "Zenith Companion weather"],
 });

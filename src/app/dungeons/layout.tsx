@@ -3,7 +3,7 @@ import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
   title: "Dungeons",
-  description: "Explore IdleMMO dungeon references, requirements, monsters, drops, and planning signals in Zenith Companion.",
+  description: "Explore IdleMMO dungeon requirements, monsters, drops, entry costs, shards, and EV in Zenith Companion.",
   path: "/dungeons",
   keywords: ["IdleMMO dungeons", "IdleMMO dungeon drops", "Zenith Companion dungeons"],
 });

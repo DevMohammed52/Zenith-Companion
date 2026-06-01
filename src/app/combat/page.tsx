@@ -504,7 +504,7 @@ function CombatContent() {
                 </div>
             </div>
 
-            <section className="combat-overview-grid" aria-label="Combat overview">
+            <section className="combat-overview-grid" aria-label="Combat summary">
                 <article className="combat-overview-card">
                     <Swords size={17} aria-hidden="true" />
                     <span>Enemies</span>

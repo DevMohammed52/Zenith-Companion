@@ -3,7 +3,7 @@ import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
   title: "Combat Planner",
-  description: "Review IdleMMO enemies, drops, food, hunt context, and combat planning signals in a profile-friendly combat workspace.",
+  description: "Review IdleMMO enemies, drops, food, kills per hour, and profile-aware combat EV in Zenith Companion.",
   path: "/combat",
   keywords: ["IdleMMO combat", "IdleMMO enemies", "Zenith Companion combat"],
 });
