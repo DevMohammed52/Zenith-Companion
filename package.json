@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test:unit": "vitest run",
     "test:a11y": "playwright test tests/a11y",
+    "test:prod": "npm run build && playwright test --config=playwright.production.config.ts",
+    "test:prod:routes": "playwright test --config=playwright.production.config.ts",
     "audit:deadcode": "knip --exclude exports,types",
     "audit:cache-headers": "node scripts/audit-cache-headers.mjs",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
