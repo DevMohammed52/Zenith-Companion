@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-05-31T22:16:59.843Z",
+    "generatedAt": "2026-05-31T23:39:12.813Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
@@ -16552,21 +16552,26 @@
       },
       "exchange": {
         "petId": 7,
-        "listingCount": 3,
-        "minPrice": 690000,
+        "listingCount": 4,
+        "minPrice": 600000,
         "maxPrice": 1550000,
         "byQuality": {
           "EPIC": {
-            "count": 3,
-            "min_price": 690000,
+            "count": 4,
+            "min_price": 600000,
             "max_price": 1550000,
-            "total_price": 3739999,
-            "average_price": 1246666
+            "total_price": 4339999,
+            "average_price": 1085000
           }
         },
-        "averagePrice": 1246666,
-        "medianPrice": 1499999,
+        "averagePrice": 1085000,
+        "medianPrice": 1095000,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 600000
+          },
           {
             "level": 1,
             "quality": "EPIC",
@@ -19549,19 +19554,19 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 118,
+        "listingCount": 117,
         "minPrice": 5000,
         "maxPrice": 40000,
         "byQuality": {
           "STANDARD": {
-            "count": 118,
+            "count": 117,
             "min_price": 5000,
             "max_price": 40000,
-            "total_price": 740681,
-            "average_price": 6277
+            "total_price": 735681,
+            "average_price": 6288
           }
         },
-        "averagePrice": 6277,
+        "averagePrice": 6288,
         "medianPrice": 5000,
         "sampleListings": [
           {
@@ -78296,12 +78301,12 @@
             "count": 43,
             "min_price": 5000,
             "max_price": 70030,
-            "total_price": 370313,
-            "average_price": 8612
+            "total_price": 370346,
+            "average_price": 8613
           }
         },
-        "averagePrice": 8612,
-        "medianPrice": 5000,
+        "averagePrice": 8613,
+        "medianPrice": 5033,
         "sampleListings": [
           {
             "level": 1,
@@ -100432,7 +100437,7 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-05-31T22:16:59.824Z",
+    "fetchedAt": "2026-05-31T23:39:12.791Z",
     "listingCount": 1041,
     "speciesCount": 39,
     "pageCount": 42
