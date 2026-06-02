@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-06-02T22:25:37.242Z",
-    "fetched_at": "2026-06-02T22:25:20.661Z",
+    "generated_at": "2026-06-02T23:11:00.152Z",
+    "fetched_at": "2026-06-02T23:10:43.478Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-06-02T22:30:22+00:00",
+    "endpoint_updates_at": "2026-06-02T23:15:45+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16581
+      "elapsed_ms": 16674
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 0,
-      "leaderboard_rows": 50,
-      "contribution_rows": 410,
-      "guilds_observed": 21
+      "active_assaults": 1,
+      "leaderboard_rows": 51,
+      "contribution_rows": 411,
+      "guilds_observed": 22
     }
   },
   "zones": [
@@ -27,13 +27,25 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/XAo5lbIDq0CmH2M9LYWpre41Pta3MX-metaZmFybS5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#ffff00",
-      "kills": 602099,
-      "experience": 2026394,
-      "guilds_count": 5,
-      "active_assaults_count": 0,
-      "leaderboard_count": 5,
-      "contribution_count": 46,
-      "active_assaults": [],
+      "kills": 602101,
+      "experience": 2026396,
+      "guilds_count": 6,
+      "active_assaults_count": 1,
+      "leaderboard_count": 6,
+      "contribution_count": 47,
+      "active_assaults": [
+        {
+          "kills": 2,
+          "experience": 2,
+          "guild": {
+            "id": 922,
+            "name": "Australia",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -92,6 +104,18 @@
             "name": "Starlight",
             "tag": null,
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+          }
+        },
+        {
+          "position": 6,
+          "kills": 2,
+          "experience": 2,
+          "guild": {
+            "id": 922,
+            "name": "Australia",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
           }
         }
@@ -316,7 +340,7 @@
           "character": {
             "hashed_id": "98bO5w1QP14R6N3xkREV",
             "name": "Fluxsage",
-            "total_level": 1303,
+            "total_level": 1304,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAFWEEXP7GZKMYMHQ0PX60.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CQBKPGZQPAS76RWDWM4A2.png"
           }
@@ -739,6 +763,20 @@
             "total_level": 406,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CE4FZ9JHQ8DWKVC9YY1R1.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+          }
+        },
+        {
+          "id": 127223,
+          "guild_conquest_progress_id": 127093,
+          "kills": 2,
+          "experience": 2,
+          "guild": null,
+          "character": {
+            "hashed_id": "aJydnOmQWagz9YbgRe5M",
+            "name": "FabAsianZung",
+            "total_level": 1618,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JK15M37QZD72KEKCGXWE.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/STHyTT3MCBybquPmVj6x19PVRudw8z-metabW91bnRhaW5zLTEuanBn-.jpg"
           }
         }
       ]
@@ -1906,7 +1944,7 @@
           "character": {
             "hashed_id": "98bO5w1QP14R6N3xkREV",
             "name": "Fluxsage",
-            "total_level": 1303,
+            "total_level": 1304,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAFWEEXP7GZKMYMHQ0PX60.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CQBKPGZQPAS76RWDWM4A2.png"
           }
@@ -5314,7 +5352,7 @@
           "character": {
             "hashed_id": "GXBy7a4LbdPx9N0Pw6Vd",
             "name": "Grimaslayer",
-            "total_level": 1359,
+            "total_level": 1360,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg"
           }
@@ -6884,7 +6922,7 @@
       "character": {
         "hashed_id": "GXBy7a4LbdPx9N0Pw6Vd",
         "name": "Grimaslayer",
-        "total_level": 1359,
+        "total_level": 1360,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg"
       },
