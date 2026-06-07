@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-06-07T09:41:42.549Z",
-    "fetched_at": "2026-06-07T09:41:26.062Z",
+    "generated_at": "2026-06-07T10:19:28.585Z",
+    "fetched_at": "2026-06-07T10:19:11.783Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-06-07T09:46:27+00:00",
+    "endpoint_updates_at": "2026-06-07T10:24:13+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16487
+      "elapsed_ms": 16802
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 2,
+      "active_assaults": 5,
       "leaderboard_rows": 57,
       "contribution_rows": 443,
       "guilds_observed": 22
@@ -202,7 +202,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -606,7 +606,7 @@
           "character": {
             "hashed_id": "rz9RZnWN7vKrBQKAp0Md",
             "name": "Bored2000",
-            "total_level": 793,
+            "total_level": 794,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPFXF560XSDQCKXX53PT4.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
@@ -979,7 +979,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -1932,7 +1932,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -2597,7 +2597,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -3057,13 +3057,24 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/WCZ3FCmF0VvI5OlivHWx9WR5dFfmYL-metac2t5cmVhY2ggcGVhay5wbmc=-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 699833,
-      "experience": 3376922,
+      "kills": 699840,
+      "experience": 3376941,
       "guilds_count": 5,
-      "active_assaults_count": 1,
+      "active_assaults_count": 2,
       "leaderboard_count": 5,
       "contribution_count": 23,
       "active_assaults": [
+        {
+          "kills": 7,
+          "experience": 19,
+          "guild": {
+            "id": 189,
+            "name": "France",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        },
         {
           "kills": 943,
           "experience": 3772,
@@ -3091,8 +3102,8 @@
         },
         {
           "position": 2,
-          "kills": 112176,
-          "experience": 364046,
+          "kills": 112183,
+          "experience": 364065,
           "guild": {
             "id": 189,
             "name": "France",
@@ -3226,8 +3237,8 @@
         {
           "id": 119522,
           "guild_conquest_progress_id": 119391,
-          "kills": 26335,
-          "experience": 109809,
+          "kills": 26337,
+          "experience": 109823,
           "guild": null,
           "character": {
             "hashed_id": "VrBKlPdNdKMpgQWG8xJe",
@@ -3290,7 +3301,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -3310,13 +3321,13 @@
         {
           "id": 119521,
           "guild_conquest_progress_id": 119391,
-          "kills": 25913,
-          "experience": 41261,
+          "kills": 25918,
+          "experience": 41266,
           "guild": null,
           "character": {
             "hashed_id": "98bO5w1QPbGD9Y3xkREV",
             "name": "Menan",
-            "total_level": 1760,
+            "total_level": 1761,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072R5ZQC2R2Q5V57DGA2272.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png"
           }
@@ -3943,7 +3954,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -4084,10 +4095,22 @@
       "kills": 1679079,
       "experience": 8632532,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 50,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 2,
+            "name": "END",
+            "tag": "END",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK15QV6WQCDERQ80S07DZY.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -4300,7 +4323,7 @@
           "character": {
             "hashed_id": "BngxedVYJWl8ZLX64wW8",
             "name": "Woulus",
-            "total_level": 1913,
+            "total_level": 1914,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CQ1RW371FZWV7VJHGN95X.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
@@ -4698,6 +4721,20 @@
           }
         },
         {
+          "id": 124199,
+          "guild_conquest_progress_id": 118620,
+          "kills": 10739,
+          "experience": 28036,
+          "guild": null,
+          "character": {
+            "hashed_id": "rZXlwg5Yv8mjQk9joDmG",
+            "name": "AffanSix",
+            "total_level": 1973,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP3ZRQVCE172ARQFBNNQ67.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCSPNDT0XQ8AAC8616QGRM7T.jpg"
+          }
+        },
+        {
           "id": 123648,
           "guild_conquest_progress_id": 123518,
           "kills": 4643,
@@ -4708,7 +4745,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -4723,20 +4760,6 @@
             "total_level": 1947,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ZApiuHan6dbS7UKVKlznKWHD3mNRMK-metaZmVuZHJhbC5wbmc=-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
-          }
-        },
-        {
-          "id": 124199,
-          "guild_conquest_progress_id": 118620,
-          "kills": 10706,
-          "experience": 27838,
-          "guild": null,
-          "character": {
-            "hashed_id": "rZXlwg5Yv8mjQk9joDmG",
-            "name": "AffanSix",
-            "total_level": 1973,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP3ZRQVCE172ARQFBNNQ67.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCSPNDT0XQ8AAC8616QGRM7T.jpg"
           }
         },
         {
@@ -4863,10 +4886,22 @@
       "kills": 2099229,
       "experience": 12293283,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 50,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 1034,
+            "name": "Black Bulls",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJYNQJC9TGDRFCFR7T5HYW.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -5359,7 +5394,7 @@
           "character": {
             "hashed_id": "GXBy7a4Lb6O2KL0Pw6Vd",
             "name": "Reafexus",
-            "total_level": 1347,
+            "total_level": 1348,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -5515,7 +5550,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -6266,7 +6301,7 @@
             "name": "GeekVax",
             "total_level": 1966,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -6987,7 +7022,7 @@
           "character": {
             "hashed_id": "BngxedVYJWl8ZLX64wW8",
             "name": "Woulus",
-            "total_level": 1913,
+            "total_level": 1914,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CQ1RW371FZWV7VJHGN95X.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
