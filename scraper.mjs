@@ -750,7 +750,7 @@ function normalizeWorldLocationPayload(payload) {
             image_url: location.image_url ?? null,
             x: Number(location.x),
             y: Number(location.y),
-            forecast: Array.isArray(location.forecast) ? location.forecast : [],
+            forecast: normalizeWorldLocationForecast(location.forecast),
         }))
         : [];
 
@@ -764,6 +764,115 @@ function normalizeWorldLocationPayload(payload) {
         endpoint_updates_at: payload?.endpoint_updates_at ?? null,
         locations,
     };
+}
+
+const WEATHER_FORECAST_BUFFS = {
+    CLEAR: [
+        "+10% Hunt Efficiency",
+        "+10% Fishing Efficiency",
+        "+10% Woodcutting Efficiency",
+        "+5% Mining Efficiency",
+        "+5% Construction Efficiency",
+    ],
+    FOG: [
+        "-10% Hunt Efficiency",
+        "+20% Hunting Mastery EXP",
+        "-10% Fishing Efficiency",
+        "+20% Fishing EXP",
+        "-10% Woodcutting Efficiency",
+        "+20% Woodcutting EXP",
+        "-5% Mining Efficiency",
+        "+10% Mining EXP",
+        "-5% Construction Efficiency",
+        "+10% Construction EXP",
+    ],
+    HEATWAVE: [
+        "-5% Hunt Efficiency",
+        "+15% Hunting Mastery EXP",
+        "-15% Fishing Efficiency",
+        "+30% Fishing EXP",
+        "-10% Woodcutting Efficiency",
+        "+25% Woodcutting EXP",
+        "-15% Mining Efficiency",
+        "+30% Mining EXP",
+        "-15% Construction Efficiency",
+        "+30% Construction EXP",
+    ],
+    MAGIC_STORM: [
+        "+25% Battle Magic Find",
+        "+20% Dungeon Magic Find",
+        "+20% World Boss Magic Find",
+    ],
+    OVERCAST: [],
+    RAIN: [
+        "-5% Hunt Efficiency",
+        "+10% Hunting Mastery EXP",
+        "-5% Fishing Efficiency",
+        "+10% Fishing EXP",
+        "-5% Woodcutting Efficiency",
+        "+10% Woodcutting EXP",
+        "-5% Mining Efficiency",
+        "+10% Mining EXP",
+        "-5% Construction Efficiency",
+        "+10% Construction EXP",
+    ],
+    SNOW: [
+        "-10% Hunt Efficiency",
+        "+20% Hunting Mastery EXP",
+        "-15% Fishing Efficiency",
+        "+30% Fishing EXP",
+        "-15% Woodcutting Efficiency",
+        "+30% Woodcutting EXP",
+        "-10% Mining Efficiency",
+        "+20% Mining EXP",
+        "-10% Construction Efficiency",
+        "+20% Construction EXP",
+    ],
+    STORM: [
+        "-15% Hunt Efficiency",
+        "+35% Hunting Mastery EXP",
+        "-20% Fishing Efficiency",
+        "+40% Fishing EXP",
+        "-20% Woodcutting Efficiency",
+        "+40% Woodcutting EXP",
+        "-10% Mining Efficiency",
+        "+25% Mining EXP",
+        "-10% Construction Efficiency",
+        "+25% Construction EXP",
+    ],
+    WINDY: [
+        "+15% Hunt Efficiency",
+        "-10% Fishing Efficiency",
+        "+20% Fishing EXP",
+        "-10% Woodcutting Efficiency",
+        "+25% Woodcutting EXP",
+        "-5% Construction Efficiency",
+        "+10% Construction EXP",
+    ],
+};
+
+function getWeatherBuffKey(weather) {
+    const rawKey = weather?.key || weather?.name || weather?.icon || "";
+    return String(rawKey)
+        .trim()
+        .toUpperCase()
+        .replace(/[-\s]+/g, "_");
+}
+
+function normalizeWorldLocationForecast(forecast) {
+    if (!Array.isArray(forecast)) return [];
+
+    return forecast.map(day => ({
+        ...day,
+        weathers: Array.isArray(day?.weathers)
+            ? day.weathers.map(weather => ({
+                ...weather,
+                buffs: Object.hasOwn(WEATHER_FORECAST_BUFFS, getWeatherBuffKey(weather))
+                    ? [...WEATHER_FORECAST_BUFFS[getWeatherBuffKey(weather)]]
+                    : Array.isArray(weather?.buffs) ? weather.buffs : [],
+            }))
+            : [],
+    }));
 }
 
 async function fetchWorldLocations() {

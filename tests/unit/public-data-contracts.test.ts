@@ -2,6 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { WEATHER_DATA } from "../../src/constants/weatherData";
+
 const publicDir = path.join(process.cwd(), "public");
 
 const reviewedPublicJsonFiles: Record<string, { maxBytes: number; whyPublic: string }> = {
@@ -140,6 +142,71 @@ describe("public JSON data contract", () => {
       for (const secretPattern of secretPatterns) {
         expect(secretPattern.pattern.test(raw), `${fileName} includes ${secretPattern.name}`).toBe(false);
       }
+    }
+  });
+
+  it("keeps world-location weather modifiers aligned with the reviewed weather table", () => {
+    const { raw } = readPublicJson("world-locations.json");
+    const payload = JSON.parse(raw) as {
+      locations?: Array<{
+        name?: string;
+        forecast?: Array<{
+          weathers?: Array<{
+            key?: string;
+            name?: string;
+            icon?: string;
+            buffs?: string[];
+          }>;
+        }>;
+      }>;
+    };
+
+    const expectedWeatherBuffs = new Map(
+      WEATHER_DATA.map((weather) => [
+        weather.id,
+        [
+          ...weather.impacts.flatMap((impact) => {
+            const buffs: string[] = [];
+            const efficiencyLabel = impact.skill === "Hunting" ? "Hunt Efficiency" : `${impact.skill} Efficiency`;
+            const experienceLabel = impact.skill === "Hunting" ? "Hunting Mastery EXP" : `${impact.skill} EXP`;
+
+            if (impact.efficiency) buffs.push(`${impact.efficiency > 0 ? "+" : ""}${impact.efficiency}% ${efficiencyLabel}`);
+            if (impact.experience) buffs.push(`${impact.experience > 0 ? "+" : ""}${impact.experience}% ${experienceLabel}`);
+
+            return buffs;
+          }),
+          ...(weather.magicFind
+            ? [
+                `+${weather.magicFind.battle}% Battle Magic Find`,
+                `+${weather.magicFind.dungeon}% Dungeon Magic Find`,
+                `+${weather.magicFind.worldBoss}% World Boss Magic Find`,
+              ]
+            : []),
+        ],
+      ]),
+    );
+
+    const weatherWindows =
+      payload.locations?.flatMap((location) =>
+        (location.forecast || []).flatMap((day) =>
+          (day.weathers || [])
+            .map((weather) => ({
+              location: location.name || "Unknown location",
+              id: String(weather.key || weather.name || weather.icon || "")
+                .trim()
+                .toLowerCase()
+                .replace(/[_\s]+/g, "-"),
+              name: weather.name || weather.key || "Unknown weather",
+              buffs: weather.buffs || [],
+            }))
+            .filter((weather) => expectedWeatherBuffs.has(weather.id)),
+        ),
+      ) || [];
+
+    expect(weatherWindows.length, "world-locations.json should include reviewed forecast windows").toBeGreaterThan(0);
+
+    for (const weather of weatherWindows) {
+      expect(weather.buffs, `${weather.location} ${weather.name} should match reviewed weather modifiers`).toEqual(expectedWeatherBuffs.get(weather.id));
     }
   });
 });
