@@ -260,6 +260,7 @@ export default function MobileCommandWheel({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`command-wheel-link ${highlighted ? "command-wheel-link-active" : ""}`}
                   aria-current={active ? "page" : undefined}
                   style={{ ["--link-index" as string]: index }}

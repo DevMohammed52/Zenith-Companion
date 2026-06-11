@@ -196,6 +196,7 @@ export default function DesktopDock() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`desktop-dock-link ${active ? "desktop-dock-link-active" : ""} ${stretchTail ? "desktop-dock-link-span" : ""}`}
                 aria-current={active ? "page" : undefined}
                 onClick={(event) => {

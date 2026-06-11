@@ -16,6 +16,7 @@ const manifest = JSON.parse(
 ) as OfflineCacheManifest;
 const manifestUrls = manifest.urls;
 const serviceWorkerSource = readFileSync(path.join(publicDir, "sw.js"), "utf8");
+const guildPageSource = readFileSync(path.join(process.cwd(), "src/app/guilds/page.tsx"), "utf8");
 
 const essentialPublicData = [
   "/all-items-db.json",
@@ -23,6 +24,8 @@ const essentialPublicData = [
   "/gear-data.json",
   "/global-search-index.json",
   "/guild-list.json",
+  "/guild-search-index.json",
+  "/idlemmo-patch-notes.json",
   "/market-data.json",
   "/pet-database.json",
   "/search-index.json",
@@ -72,10 +75,11 @@ describe("offline cache contract", () => {
       expect(manifestUrls, `${url} should be part of the offline public-data bundle`).toContain(url);
     }
 
+    expect(manifestUrls.length, "Default offline install should stay below the large guild-detail shard count").toBeLessThan(75);
     expect(
       manifestUrls.some((url) => /^\/guild-details\/\d+\.json$/.test(url)),
-      "Guild detail shards should stay available offline once generated.",
-    ).toBe(true);
+      "Guild detail shards should not be auto pre-cached; they remain runtime network-first cache entries when opened.",
+    ).toBe(false);
   });
 
   it("does not pre-cache sensitive runtime routes or intentionally blocked raw files", () => {
@@ -109,5 +113,16 @@ describe("offline cache contract", () => {
     const publicApiPrefixes = serviceWorkerSource.match(/const PUBLIC_API_PREFIXES = \[([^\]]*)\];/);
     expect(publicApiPrefixes?.[1]).toContain('"/api/items/"');
     expect(publicApiPrefixes?.[1]).not.toContain('"/api/"');
+  });
+
+  it("keeps large guild detail shards behind an explicit offline cache action", () => {
+    expect(serviceWorkerSource).toContain("ZENITH_CACHE_GUILD_DETAILS");
+    expect(serviceWorkerSource).toContain("GUILD_DETAIL_URL_PATTERN");
+    expect(serviceWorkerSource).toContain("cacheGuildDetailUrls");
+    expect(serviceWorkerSource).toContain("GUILD_DETAIL_URL_PATTERN.test(requestUrl.pathname)");
+
+    expect(guildPageSource).toContain("OfflineGuildDetailsCache");
+    expect(guildPageSource).toContain("Cache shown");
+    expect(guildPageSource).toContain("Cache all");
   });
 });

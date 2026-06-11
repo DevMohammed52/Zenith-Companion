@@ -18,6 +18,9 @@ const BLOCKED_PUBLIC_PATHS = new Set([
   "/scraper-status.json",
   "/scraper-priority.json",
 ]);
+const BLOCKED_PUBLIC_PREFIXES = [
+  "/guild-details/",
+];
 
 async function main() {
   const entries = await collectEntries(PUBLIC_DIR);
@@ -111,6 +114,7 @@ async function collectEntries(directory) {
     const relativePath = path.relative(PUBLIC_DIR, filePath).split(path.sep).join("/");
     const url = `/${relativePath}`;
     if (BLOCKED_PUBLIC_PATHS.has(url)) continue;
+    if (BLOCKED_PUBLIC_PREFIXES.some((prefix) => url.startsWith(prefix))) continue;
 
     const bytes = await fs.readFile(filePath);
     entries.push({

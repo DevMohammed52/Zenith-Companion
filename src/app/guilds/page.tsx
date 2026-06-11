@@ -42,11 +42,21 @@ import { getTrustedCssImageUrl } from "@/lib/trusted-image";
 
 type TierFilter = "all" | GuildRefreshTier;
 type SearchableGuildRecord = GuildRecord & { searchText: string };
+type GuildCacheMode = "shown" | "all";
+type GuildCacheProgress = {
+  cached: number;
+  failed: number;
+  total: number;
+};
 
 const DESKTOP_GUILD_BATCH_SIZE = 60;
 const MOBILE_GUILD_BATCH_SIZE = 36;
 const GUILD_COMPACT_QUERY = "(max-width: 900px)";
 const GUILD_LIST_URL = "/guild-list.json";
+const GUILD_DETAILS_CACHE_MESSAGE = "ZENITH_CACHE_GUILD_DETAILS";
+const GUILD_DETAILS_CACHE_PROGRESS_MESSAGE = "ZENITH_GUILD_DETAILS_CACHE_PROGRESS";
+const GUILD_DETAILS_CACHE_DONE_MESSAGE = "ZENITH_GUILD_DETAILS_CACHE_DONE";
+const GUILD_DETAILS_CACHE_TIMEOUT_MS = 10 * 60 * 1000;
 
 const SORT_OPTIONS: Array<{ id: GuildSortKey; label: string }> = [
   { id: "activity", label: "Activity" },
@@ -79,6 +89,70 @@ function getSearchText(guild: GuildRecord) {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+}
+
+function getGuildDetailUrls(guilds: Array<Pick<GuildRecord, "id">>) {
+  return [...new Set(guilds.map((guild) => `/guild-details/${guild.id}.json`))];
+}
+
+function readCacheProgress(value: unknown): GuildCacheProgress {
+  const progress = value as Partial<GuildCacheProgress>;
+  return {
+    cached: Number(progress.cached) || 0,
+    failed: Number(progress.failed) || 0,
+    total: Number(progress.total) || 0,
+  };
+}
+
+async function requestGuildDetailCache(
+  urls: string[],
+  onProgress: (progress: GuildCacheProgress) => void,
+): Promise<GuildCacheProgress> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    throw new Error("Offline cache is not available in this browser.");
+  }
+
+  const registration = await navigator.serviceWorker.getRegistration();
+  const worker = registration?.active ?? navigator.serviceWorker.controller ?? registration?.waiting ?? registration?.installing;
+  if (!worker) {
+    throw new Error("Offline cache is not ready yet. Reload after the app finishes installing offline support.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const channel = new MessageChannel();
+    let settled = false;
+    const timeout = window.setTimeout(() => {
+      settle(() => reject(new Error("Guild detail offline cache timed out.")));
+    }, GUILD_DETAILS_CACHE_TIMEOUT_MS);
+
+    function settle(callback: () => void) {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      channel.port1.close();
+      callback();
+    }
+
+    channel.port1.onmessage = (event) => {
+      const payload = event.data as { type?: string; ok?: boolean; error?: string } & Partial<GuildCacheProgress>;
+
+      if (payload?.type === GUILD_DETAILS_CACHE_PROGRESS_MESSAGE) {
+        onProgress(readCacheProgress(payload));
+        return;
+      }
+
+      if (payload?.type === GUILD_DETAILS_CACHE_DONE_MESSAGE) {
+        const progress = readCacheProgress(payload);
+        if (payload.ok) {
+          settle(() => resolve(progress));
+        } else {
+          settle(() => reject(new Error(payload.error || "Guild detail offline cache failed.")));
+        }
+      }
+    };
+
+    worker.postMessage({ type: GUILD_DETAILS_CACHE_MESSAGE, urls }, [channel.port2]);
+  });
 }
 
 function InlineMarkdown({ text }: { text: string }) {
@@ -181,6 +255,152 @@ function GuildMarkdown({ text }: { text: string | null }) {
 
   flushList();
   return <div className={styles.markdown}>{blocks}</div>;
+}
+
+function OfflineGuildDetailsCache({
+  shownGuilds,
+  allGuilds,
+}: {
+  shownGuilds: Array<Pick<GuildRecord, "id">>;
+  allGuilds: Array<Pick<GuildRecord, "id">>;
+}) {
+  const [supportChecked, setSupportChecked] = useState(false);
+  const [cacheSupported, setCacheSupported] = useState(false);
+  const [activeMode, setActiveMode] = useState<GuildCacheMode | null>(null);
+  const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [message, setMessage] = useState("Details stay network-first until you cache them.");
+  const [progress, setProgress] = useState<GuildCacheProgress>({ cached: 0, failed: 0, total: 0 });
+  const shownUrls = useMemo(() => getGuildDetailUrls(shownGuilds), [shownGuilds]);
+  const allUrls = useMemo(() => getGuildDetailUrls(allGuilds), [allGuilds]);
+  const completed = Math.min(progress.total, progress.cached + progress.failed);
+  const percent = progress.total > 0 ? Math.round((completed / progress.total) * 100) : 0;
+  const isBusy = activeMode !== null;
+  const canCache = supportChecked && cacheSupported && !isBusy;
+
+  useEffect(() => {
+    let active = true;
+
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+      setSupportChecked(true);
+      setCacheSupported(false);
+      return;
+    }
+
+    const markSupported = (registration?: ServiceWorkerRegistration | null) => {
+      if (!active) return;
+      setCacheSupported(Boolean(registration?.active || navigator.serviceWorker.controller));
+      setSupportChecked(true);
+    };
+
+    const markUnsupported = () => {
+      if (!active) return;
+      setCacheSupported(false);
+      setSupportChecked(true);
+    };
+
+    const handleControllerChange = () => {
+      markSupported();
+    };
+
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+    navigator.serviceWorker
+      .getRegistration()
+      .then(markSupported)
+      .catch(markUnsupported);
+
+    navigator.serviceWorker.ready.then(markSupported).catch(markUnsupported);
+
+    return () => {
+      active = false;
+      navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+    };
+  }, []);
+
+  const cacheGuilds = useCallback(async (mode: GuildCacheMode, urls: string[]) => {
+    if (!urls.length) return;
+
+    setActiveMode(mode);
+    setStatus("running");
+    setProgress({ cached: 0, failed: 0, total: urls.length });
+    setMessage(mode === "shown" ? "Caching shown guild detail files..." : "Caching every guild detail file...");
+
+    try {
+      const result = await requestGuildDetailCache(urls, setProgress);
+      const failedText = result.failed > 0 ? ` ${formatGuildNumber(result.failed)} failed.` : "";
+      setProgress(result);
+      setStatus("done");
+      setMessage(`Cached ${formatGuildNumber(result.cached)} guild detail files.${failedText}`);
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Guild detail offline cache failed.");
+    } finally {
+      setActiveMode(null);
+    }
+  }, []);
+
+  const statusLabel = !supportChecked
+    ? "Checking support"
+    : !cacheSupported
+      ? "Offline cache unavailable"
+      : status === "running"
+        ? `Caching ${formatGuildNumber(completed)}/${formatGuildNumber(progress.total)}`
+        : status === "done"
+          ? "Ready offline"
+          : status === "error"
+            ? "Needs retry"
+            : "Opt-in cache";
+  const displayMessage =
+    supportChecked && !cacheSupported
+      ? "Reload after offline support finishes installing, or use this from the deployed app."
+      : message;
+
+  return (
+    <div className={styles.offlineCachePanel} data-state={status} aria-live="polite">
+      <div className={styles.offlineCacheCopy}>
+        <span>Offline guild details</span>
+        <strong>{statusLabel}</strong>
+        <small>{displayMessage}</small>
+      </div>
+
+      <div className={styles.offlineCacheActions}>
+        <button
+          type="button"
+          className={styles.offlineCacheButton}
+          disabled={!canCache || shownUrls.length === 0}
+          onClick={() => cacheGuilds("shown", shownUrls)}
+          aria-label={`Cache ${shownUrls.length} shown guild detail files offline`}
+        >
+          <Database size={15} aria-hidden="true" />
+          <span>Cache shown</span>
+          <small>{formatGuildNumber(shownUrls.length)}</small>
+        </button>
+        <button
+          type="button"
+          className={styles.offlineCacheButton}
+          disabled={!canCache || allUrls.length === 0}
+          onClick={() => cacheGuilds("all", allUrls)}
+          aria-label={`Cache all ${allUrls.length} guild detail files offline`}
+        >
+          <Database size={15} aria-hidden="true" />
+          <span>Cache all</span>
+          <small>{formatGuildNumber(allUrls.length)}</small>
+        </button>
+      </div>
+
+      {status === "running" && (
+        <div
+          className={styles.offlineCacheProgress}
+          role="progressbar"
+          aria-label="Guild detail offline cache progress"
+          aria-valuemin={0}
+          aria-valuemax={progress.total || 1}
+          aria-valuenow={completed}
+        >
+          <span style={{ width: `${percent}%` }} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function SortPicker({
@@ -833,6 +1053,8 @@ export default function GuildsPage() {
                 <RotateCcw size={15} aria-hidden="true" /> Reset
               </button>
             </div>
+
+            <OfflineGuildDetailsCache shownGuilds={visibleGuilds} allGuilds={guilds} />
           </section>
           <div className={styles.utilityNotes} aria-label="Guild database help">
             <p>Searches guild names, tags, leaders, top members, and IDs.</p>

@@ -4,6 +4,7 @@ const MANIFEST_URL = "/offline-cache-manifest.json";
 const CORE_URLS = ["/", OFFLINE_URL, MANIFEST_URL];
 const OFFLINE_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Offline image"><rect width="96" height="96" rx="14" fill="#141416"/><rect x="1" y="1" width="94" height="94" rx="13" fill="none" stroke="#f5b041" stroke-opacity=".42" stroke-width="2"/><circle cx="48" cy="48" r="22" fill="#f5b041" fill-opacity=".12" stroke="#f5b041" stroke-width="4"/><path d="M42 58l5-13 13-5-5 13-13 5z" fill="none" stroke="#f5b041" stroke-width="4" stroke-linejoin="round"/></svg>`;
 const PUBLIC_API_PREFIXES = ["/api/items/"];
+const GUILD_DETAIL_URL_PATTERN = /^\/guild-details\/\d+\.json$/;
 const BYPASS_PREFIXES = [
   "/admin/",
   "/api/admin/",
@@ -50,6 +51,11 @@ self.addEventListener("message", (event) => {
 
   if (event.data?.type === "ZENITH_CLEAR_PUBLIC_DATA_CACHE") {
     event.waitUntil(replyToClient(event, clearPublicDataCache()));
+    return;
+  }
+
+  if (event.data?.type === "ZENITH_CACHE_GUILD_DETAILS") {
+    event.waitUntil(cacheGuildDetailUrls(event.data.urls, event.ports?.[0]));
     return;
   }
 
@@ -191,6 +197,7 @@ async function refreshPublicDataCache() {
 
     const urls = Array.isArray(manifest.urls) ? manifest.urls : [];
     await cacheUrls(cache, urls, { cache: "no-cache" });
+    await pruneRemovedManifestUrls(cache, previousManifest?.urls, urls);
   })().finally(() => {
     manifestRefreshPromise = null;
   });
@@ -210,6 +217,51 @@ async function clearPublicDataCache() {
   await cacheUrls(cache, CORE_URLS, { cache: "reload" });
 }
 
+async function cacheGuildDetailUrls(urls, port) {
+  try {
+    const guildDetailUrls = getValidGuildDetailUrls(urls);
+    const cache = await caches.open(CACHE_NAME);
+    const total = guildDetailUrls.length;
+    const chunkSize = 8;
+    let cached = 0;
+    let failed = 0;
+
+    port?.postMessage({ type: "ZENITH_GUILD_DETAILS_CACHE_PROGRESS", cached, failed, total });
+
+    for (let index = 0; index < guildDetailUrls.length; index += chunkSize) {
+      const chunk = guildDetailUrls.slice(index, index + chunkSize);
+      await Promise.all(
+        chunk.map(async (url) => {
+          const requestUrl = new URL(url, self.location.origin);
+          try {
+            const request = new Request(requestUrl, { cache: "no-cache" });
+            const response = await fetch(request);
+            if (response.ok) {
+              await cache.put(normalizeCacheRequest(requestUrl), response);
+              cached += 1;
+            } else {
+              failed += 1;
+            }
+          } catch {
+            failed += 1;
+          }
+        }),
+      );
+
+      port?.postMessage({ type: "ZENITH_GUILD_DETAILS_CACHE_PROGRESS", cached, failed, total });
+    }
+
+    port?.postMessage({ type: "ZENITH_GUILD_DETAILS_CACHE_DONE", ok: true, cached, failed, total });
+  } catch (error) {
+    port?.postMessage({
+      type: "ZENITH_GUILD_DETAILS_CACHE_DONE",
+      ok: false,
+      error: error instanceof Error ? error.message : "Guild detail offline cache failed.",
+    });
+    throw error;
+  }
+}
+
 async function replyToClient(event, promise) {
   try {
     await promise;
@@ -221,6 +273,26 @@ async function replyToClient(event, promise) {
     });
     throw error;
   }
+}
+
+function getValidGuildDetailUrls(urls) {
+  if (!Array.isArray(urls)) return [];
+
+  const validUrls = new Set();
+  for (const url of urls) {
+    if (typeof url !== "string") continue;
+
+    try {
+      const requestUrl = new URL(url, self.location.origin);
+      if (requestUrl.origin === self.location.origin && GUILD_DETAIL_URL_PATTERN.test(requestUrl.pathname)) {
+        validUrls.add(requestUrl.pathname);
+      }
+    } catch {
+      // Ignore malformed cache requests from older clients.
+    }
+  }
+
+  return [...validUrls];
 }
 
 async function readCachedManifest(cache) {
@@ -252,6 +324,24 @@ async function cacheUrls(cache, urls, requestInit = {}) {
       }),
     );
   }
+}
+
+async function pruneRemovedManifestUrls(cache, previousUrls, nextUrls) {
+  if (!Array.isArray(previousUrls)) return;
+
+  const nextUrlSet = new Set(Array.isArray(nextUrls) ? nextUrls : []);
+  const urlsToDelete = previousUrls.filter((url) => typeof url === "string" && !CORE_URLS.includes(url) && !nextUrlSet.has(url));
+
+  await Promise.all(
+    urlsToDelete.map(async (url) => {
+      try {
+        const requestUrl = new URL(url, self.location.origin);
+        await cache.delete(normalizeCacheRequest(requestUrl));
+      } catch {
+        // Ignore malformed stale manifest entries.
+      }
+    }),
+  );
 }
 
 function normalizeCacheRequest(url) {
