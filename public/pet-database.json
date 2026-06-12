@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-06-12T08:13:23.426Z",
+    "generatedAt": "2026-06-12T09:05:04.007Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
-      "petsWithExchangeListings": 37,
-      "exchangeListings": 1102,
-      "exchangeSpecies": 39
+      "petsWithExchangeListings": 36,
+      "exchangeListings": 1098,
+      "exchangeSpecies": 38
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -10455,20 +10455,20 @@
       },
       "exchange": {
         "petId": 5,
-        "listingCount": 6,
+        "listingCount": 5,
         "minPrice": 200000,
         "maxPrice": 799999,
         "byQuality": {
           "EPIC": {
-            "count": 6,
+            "count": 5,
             "min_price": 200000,
             "max_price": 799999,
-            "total_price": 1939998,
-            "average_price": 323333
+            "total_price": 1739998,
+            "average_price": 348000
           }
         },
-        "averagePrice": 323333,
-        "medianPrice": 215000,
+        "averagePrice": 348000,
+        "medianPrice": 230000,
         "sampleListings": [
           {
             "level": 67,
@@ -10477,11 +10477,6 @@
           },
           {
             "level": 67,
-            "quality": "EPIC",
-            "price": 200000
-          },
-          {
-            "level": 1,
             "quality": "EPIC",
             "price": 200000
           },
@@ -41436,30 +41431,7 @@
         "eggPrice": null,
         "level100Bonus": 900000
       },
-      "exchange": {
-        "petId": 11,
-        "listingCount": 1,
-        "minPrice": 200000,
-        "maxPrice": 200000,
-        "byQuality": {
-          "EPIC": {
-            "count": 1,
-            "min_price": 200000,
-            "max_price": 200000,
-            "total_price": 200000,
-            "average_price": 200000
-          }
-        },
-        "averagePrice": 200000,
-        "medianPrice": 200000,
-        "sampleListings": [
-          {
-            "level": 1,
-            "quality": "EPIC",
-            "price": 200000
-          }
-        ]
-      },
+      "exchange": null,
       "battle": {
         "zones": [
           {
@@ -87420,20 +87392,20 @@
       },
       "exchange": {
         "petId": 21,
-        "listingCount": 20,
+        "listingCount": 18,
         "minPrice": 50000,
         "maxPrice": 355000,
         "byQuality": {
           "PREMIUM": {
-            "count": 20,
+            "count": 18,
             "min_price": 50000,
             "max_price": 355000,
-            "total_price": 3381185,
-            "average_price": 169059
+            "total_price": 3233439,
+            "average_price": 179636
           }
         },
-        "averagePrice": 169059,
-        "medianPrice": 137354,
+        "averagePrice": 179636,
+        "medianPrice": 212500,
         "sampleListings": [
           {
             "level": 1,
@@ -87476,16 +87448,6 @@
             "price": 72037
           },
           {
-            "level": 70,
-            "quality": "PREMIUM",
-            "price": 73038
-          },
-          {
-            "level": 75,
-            "quality": "PREMIUM",
-            "price": 74708
-          },
-          {
             "level": 71,
             "quality": "PREMIUM",
             "price": 200000
@@ -87494,6 +87456,16 @@
             "level": 73,
             "quality": "PREMIUM",
             "price": 225000
+          },
+          {
+            "level": 79,
+            "quality": "PREMIUM",
+            "price": 250000
+          },
+          {
+            "level": 76,
+            "quality": "PREMIUM",
+            "price": 275000
           }
         ]
       },
@@ -100349,9 +100321,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-06-12T08:13:23.403Z",
-    "listingCount": 1102,
-    "speciesCount": 39,
-    "pageCount": 45
+    "fetchedAt": "2026-06-12T09:05:03.985Z",
+    "listingCount": 1098,
+    "speciesCount": 38,
+    "pageCount": 44
   }
 }
