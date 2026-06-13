@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-06-13T10:14:14.622Z",
-    "fetched_at": "2026-06-13T10:13:58.132Z",
+    "generated_at": "2026-06-13T11:02:51.484Z",
+    "fetched_at": "2026-06-13T11:02:34.977Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-06-13T10:18:59+00:00",
+    "endpoint_updates_at": "2026-06-13T11:07:36+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16490
+      "elapsed_ms": 16507
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 4,
+      "active_assaults": 7,
       "leaderboard_rows": 61,
       "contribution_rows": 471,
       "guilds_observed": 23
@@ -2731,7 +2731,7 @@
           "character": {
             "hashed_id": "ZvrGV8RQp6mbwY2wgA5j",
             "name": "elgaem",
-            "total_level": 1184,
+            "total_level": 1185,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG5YS186XDBVA91SN2X6RJ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
           }
@@ -4385,7 +4385,7 @@
           "character": {
             "hashed_id": "3R0qXalLl0DKdLAbn8DB",
             "name": "Goul123",
-            "total_level": 1003,
+            "total_level": 1004,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CJV4WGGP4E7ACCSQ9P4C3.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -4632,7 +4632,7 @@
           "character": {
             "hashed_id": "jEaOeBkLagJVrNlGwxVP",
             "name": "Nomodon",
-            "total_level": 1932,
+            "total_level": 1933,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
@@ -4968,7 +4968,7 @@
           "character": {
             "hashed_id": "7Do6jgkY0O430N8BAdKX",
             "name": "Sycoe",
-            "total_level": 1950,
+            "total_level": 1951,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EVQcyT1TOGMeOJgQxJIPiZ8SwQAwfv-metaR2VycmluLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
           }
@@ -5209,10 +5209,22 @@
       "kills": 2185388,
       "experience": 12714719,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 50,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 381,
+            "name": "Memento Mortem",
+            "tag": "MTM",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -5425,7 +5437,7 @@
           "character": {
             "hashed_id": "jEaOeBkLagJVrNlGwxVP",
             "name": "Nomodon",
-            "total_level": 1932,
+            "total_level": 1933,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
@@ -5881,8 +5893,8 @@
         {
           "id": 124161,
           "guild_conquest_progress_id": 124028,
-          "kills": 4640,
-          "experience": 27840,
+          "kills": 4641,
+          "experience": 27846,
           "guild": null,
           "character": {
             "hashed_id": "7Do6jgkY0O4eoN8BAdKX",
@@ -5988,7 +6000,7 @@
       "kills": 3055600,
       "experience": 13410105,
       "guilds_count": 6,
-      "active_assaults_count": 2,
+      "active_assaults_count": 3,
       "leaderboard_count": 6,
       "contribution_count": 50,
       "active_assaults": [
@@ -6011,6 +6023,17 @@
             "name": "France",
             "tag": null,
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        },
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 265,
+            "name": "Mystic Vanguard",
+            "tag": "MYS",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
             "background_url": null
           }
         }
@@ -6802,10 +6825,22 @@
       "kills": 1584551,
       "experience": 11596509,
       "guilds_count": 6,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 6,
       "contribution_count": 50,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 697,
+            "name": "You Rising",
+            "tag": "YUR",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -8487,7 +8522,7 @@
       "character": {
         "hashed_id": "jEaOeBkLagJVrNlGwxVP",
         "name": "Nomodon",
-        "total_level": 1932,
+        "total_level": 1933,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
       },
@@ -8848,7 +8883,7 @@
       "character": {
         "hashed_id": "jEaOeBkLagJVrNlGwxVP",
         "name": "Nomodon",
-        "total_level": 1932,
+        "total_level": 1933,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
       },
