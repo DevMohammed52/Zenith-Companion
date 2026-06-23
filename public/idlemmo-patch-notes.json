@@ -1,35 +1,35 @@
 {
   "meta": {
-    "generatedAt": "2026-06-23T10:00:17.692Z",
+    "generatedAt": "2026-06-23T12:44:37.268Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 256,
-    "totalFetched": 256,
+    "totalAvailable": 257,
+    "totalFetched": 257,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 259,
+    "latestPatchId": 260,
     "oldestPatchId": 1,
-    "latestVersion": "0.73.2-PB",
+    "latestVersion": "0.74.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "public-api": 17,
-      "guilds": 69,
-      "combat": 127,
-      "hunting": 64,
+      "public-api": 18,
+      "combat": 128,
+      "hunting": 65,
+      "pets": 103,
+      "guilds": 70,
+      "conquest": 25,
+      "housing": 26,
+      "economy": 119,
+      "skills": 151,
+      "items": 147,
+      "translations": 12,
+      "mobile-ui": 99,
+      "bug-fixes": 189,
       "world-bosses": 42,
-      "pets": 102,
-      "conquest": 24,
-      "items": 146,
       "weather": 4,
-      "bug-fixes": 188,
-      "economy": 118,
-      "skills": 150,
       "tavern": 29,
-      "translations": 11,
       "quests": 10,
-      "mobile-ui": 98,
-      "housing": 25,
       "map": 64,
       "membership": 63,
       "forge": 42,
@@ -40,6 +40,314 @@
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 260,
+      "version": "0.74.0-PB",
+      "title": "Village Mastery + More",
+      "headline": "Version 0.74.0-PB - Village Mastery + More",
+      "releasedAt": "2026-06-23T12:38:50",
+      "releaseLabel": "5 minutes ago",
+      "releaseDateLabel": "Jun 23 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=260",
+      "categories": [
+        "public-api",
+        "combat",
+        "hunting",
+        "pets",
+        "guilds",
+        "conquest",
+        "housing",
+        "economy",
+        "skills",
+        "items",
+        "translations",
+        "mobile-ui",
+        "bug-fixes"
+      ],
+      "excerpt": "Village Mastery We're happy to the Village Mastery skill. Village Mastery is a skill for building and running your own village. Your village produces Village Resources , which are used to build more village upgrades,...",
+      "contentBlocks": [
+        {
+          "type": "heading",
+          "text": "Village Mastery"
+        },
+        {
+          "type": "paragraph",
+          "text": "We're happy to the Village Mastery skill."
+        },
+        {
+          "type": "paragraph",
+          "text": "Village Mastery is a skill for building and running your own village. Your village produces Village Resources , which are used to build more village upgrades, repair buildings, trade for gold, and take part in warfare."
+        },
+        {
+          "type": "paragraph",
+          "text": "This skill is about balance. A strong village needs workers, food, storage, repairs, and sometimes defence. If you only build production buildings, you may run out of storage. If you add too many citizens without enough food, happiness drops. If you raise taxes too high, your village earns more VR for a while, but the citizens work less efficiently."
+        },
+        {
+          "type": "paragraph",
+          "text": "Village Mastery is a more advanced skill than most. It takes more planning, but a well-built end-level village can be very rewarding because it keeps generating passive VR, which can then be traded for gold, while your character works on other skills."
+        },
+        {
+          "type": "paragraph",
+          "text": "The basic village loop is:"
+        },
+        {
+          "type": "listItem",
+          "text": "Press \"Gather\" to obtain VR manually."
+        },
+        {
+          "type": "listItem",
+          "text": "Build dwellings to get more citizens."
+        },
+        {
+          "type": "listItem",
+          "text": "Build food buildings so those citizens stay happy."
+        },
+        {
+          "type": "listItem",
+          "text": "Build gathering houses and assign citizens to them."
+        },
+        {
+          "type": "listItem",
+          "text": "Collect passive VR as your gathering houses work in the background."
+        },
+        {
+          "type": "listItem",
+          "text": "Use that VR to build more buildings, repair your village, trade for gold, or prepare for Warfare."
+        },
+        {
+          "type": "paragraph",
+          "text": "Villages can be used across all characters. Village Mastery is separate from normal character actions, so it is unaffected by the action limit and can be used while your character is performing another action."
+        },
+        {
+          "type": "paragraph",
+          "text": "However, to prevent future issues with gold generation across multiple characters, we have implemented a safety net when selling VR for gold. Selling VR in large quantities temporarily affects the exchange rate across your whole account. This means that if you sell 1,000,000 VR on one character for 1,000 gold, as a simple example, a second character may receive only 500 gold for the same amount during that temporary rate adjustment."
+        },
+        {
+          "type": "paragraph",
+          "text": "Please note that while it is normal for us to introduce balancing changes to new features, especially new skills, Village Mastery may be subject to heavier than usual changes in the future. Due to its experimental nature and more advanced internal economy, we may need to adjust parts of the system more significantly as we monitor how it performs."
+        },
+        {
+          "type": "paragraph",
+          "text": "We highly recommend reading the Village Mastery wiki here: https://wiki.idle-mmo.com/skills/village-mastery"
+        },
+        {
+          "type": "paragraph",
+          "text": "Village Mastery currently does not have a full tutorial or onboarding flow, so the wiki is the best place to learn how the system works. We have plans to improve the overall tutorial system in the future, so a dedicated Village Mastery tutorial may arrive after that system has been overhauled."
+        },
+        {
+          "type": "paragraph",
+          "text": "Village Mastery will be accessible within a few hours of this patch note"
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "Added a confirmation screen when attempting to start a new action while another action is already running, helping prevent accidental cancellations."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved skill refresh with a new confirmation and breakdown screen. You can now choose whether or not to auto-purchase required items when refreshing."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved toast notifications, which are the small pop-ups shown at the bottom of your screen. They can now also be dismissed or swiped away."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a new setting that lets you customise where toast notifications appear on your screen. This should help if they are appearing over buttons or other important UI elements."
+        },
+        {
+          "type": "listItem",
+          "text": "Starting from Season 12, Conquest Banners will no longer be required for guilds. All guilds will be able to participate in assaults."
+        },
+        {
+          "type": "listItem",
+          "text": "Power Hunting is now disabled when the screen is too small."
+        },
+        {
+          "type": "listItem",
+          "text": "Added Portuguese language support."
+        },
+        {
+          "type": "heading",
+          "text": "Bugs"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the construction \"Add\" button disappearing when switching between components."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that only allowed you to queue up to 6 or 8 hours of the same enemy in a single battle."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that caused pet battle sleep, hunt, and battle actions to be processed sporadically."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that could occur when refreshing the Meditation action while writing a scroll."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that caused the game to crash for a very small number of users when returning after an action was complete."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed missing translations in various areas of the game."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] Fixed the guild hall endpoint showing stockpile quantities based on your currently selected character. Stockpile requirement quantities are now shown when at least one character on your account can view that guild stockpile."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Village Mastery",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We're happy to the Village Mastery skill."
+            },
+            {
+              "type": "paragraph",
+              "text": "Village Mastery is a skill for building and running your own village. Your village produces Village Resources , which are used to build more village upgrades, repair buildings, trade for gold, and take part in warfare."
+            },
+            {
+              "type": "paragraph",
+              "text": "This skill is about balance. A strong village needs workers, food, storage, repairs, and sometimes defence. If you only build production buildings, you may run out of storage. If you add too many citizens without enough food, happiness drops. If you raise taxes too high, your village earns more VR for a while, but the citizens work less efficiently."
+            },
+            {
+              "type": "paragraph",
+              "text": "Village Mastery is a more advanced skill than most. It takes more planning, but a well-built end-level village can be very rewarding because it keeps generating passive VR, which can then be traded for gold, while your character works on other skills."
+            },
+            {
+              "type": "paragraph",
+              "text": "The basic village loop is:"
+            },
+            {
+              "type": "listItem",
+              "text": "Press \"Gather\" to obtain VR manually."
+            },
+            {
+              "type": "listItem",
+              "text": "Build dwellings to get more citizens."
+            },
+            {
+              "type": "listItem",
+              "text": "Build food buildings so those citizens stay happy."
+            },
+            {
+              "type": "listItem",
+              "text": "Build gathering houses and assign citizens to them."
+            },
+            {
+              "type": "listItem",
+              "text": "Collect passive VR as your gathering houses work in the background."
+            },
+            {
+              "type": "listItem",
+              "text": "Use that VR to build more buildings, repair your village, trade for gold, or prepare for Warfare."
+            },
+            {
+              "type": "paragraph",
+              "text": "Villages can be used across all characters. Village Mastery is separate from normal character actions, so it is unaffected by the action limit and can be used while your character is performing another action."
+            },
+            {
+              "type": "paragraph",
+              "text": "However, to prevent future issues with gold generation across multiple characters, we have implemented a safety net when selling VR for gold. Selling VR in large quantities temporarily affects the exchange rate across your whole account. This means that if you sell 1,000,000 VR on one character for 1,000 gold, as a simple example, a second character may receive only 500 gold for the same amount during that temporary rate adjustment."
+            },
+            {
+              "type": "paragraph",
+              "text": "Please note that while it is normal for us to introduce balancing changes to new features, especially new skills, Village Mastery may be subject to heavier than usual changes in the future. Due to its experimental nature and more advanced internal economy, we may need to adjust parts of the system more significantly as we monitor how it performs."
+            },
+            {
+              "type": "paragraph",
+              "text": "We highly recommend reading the Village Mastery wiki here: https://wiki.idle-mmo.com/skills/village-mastery"
+            },
+            {
+              "type": "paragraph",
+              "text": "Village Mastery currently does not have a full tutorial or onboarding flow, so the wiki is the best place to learn how the system works. We have plans to improve the overall tutorial system in the future, so a dedicated Village Mastery tutorial may arrive after that system has been overhauled."
+            },
+            {
+              "type": "paragraph",
+              "text": "Village Mastery will be accessible within a few hours of this patch note"
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Added a confirmation screen when attempting to start a new action while another action is already running, helping prevent accidental cancellations."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved skill refresh with a new confirmation and breakdown screen. You can now choose whether or not to auto-purchase required items when refreshing."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved toast notifications, which are the small pop-ups shown at the bottom of your screen. They can now also be dismissed or swiped away."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a new setting that lets you customise where toast notifications appear on your screen. This should help if they are appearing over buttons or other important UI elements."
+            },
+            {
+              "type": "listItem",
+              "text": "Starting from Season 12, Conquest Banners will no longer be required for guilds. All guilds will be able to participate in assaults."
+            },
+            {
+              "type": "listItem",
+              "text": "Power Hunting is now disabled when the screen is too small."
+            },
+            {
+              "type": "listItem",
+              "text": "Added Portuguese language support."
+            }
+          ]
+        },
+        {
+          "heading": "Bugs",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed the construction \"Add\" button disappearing when switching between components."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that only allowed you to queue up to 6 or 8 hours of the same enemy in a single battle."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that caused pet battle sleep, hunt, and battle actions to be processed sporadically."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that could occur when refreshing the Meditation action while writing a scroll."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that caused the game to crash for a very small number of users when returning after an action was complete."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed missing translations in various areas of the game."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] Fixed the guild hall endpoint showing stockpile quantities based on your currently selected character. Stockpile requirement quantities are now shown when at least one character on your account can view that guild stockpile."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Village Mastery\nWe're happy to the Village Mastery skill.\nVillage Mastery is a skill for building and running your own village. Your village produces Village Resources , which are used to build more village upgrades, repair buildings, trade for gold, and take part in warfare.\nThis skill is about balance. A strong village needs workers, food, storage, repairs, and sometimes defence. If you only build production buildings, you may run out of storage. If you add too many citizens without enough food, happiness drops. If you raise taxes too high, your village earns more VR for a while, but the citizens work less efficiently.\nVillage Mastery is a more advanced skill than most. It takes more planning, but a well-built end-level village can be very rewarding because it keeps generating passive VR, which can then be traded for gold, while your character works on other skills.\nThe basic village loop is:\nPress \"Gather\" to obtain VR manually.\nBuild dwellings to get more citizens.\nBuild food buildings so those citizens stay happy.\nBuild gathering houses and assign citizens to them.\nCollect passive VR as your gathering houses work in the background.\nUse that VR to build more buildings, repair your village, trade for gold, or prepare for Warfare.\nVillages can be used across all characters. Village Mastery is separate from normal character actions, so it is unaffected by the action limit and can be used while your character is performing another action.\nHowever, to prevent future issues with gold generation across multiple characters, we have implemented a safety net when selling VR for gold. Selling VR in large quantities temporarily affects the exchange rate across your whole account. This means that if you sell 1,000,000 VR on one character for 1,000 gold, as a simple example, a second character may receive only 500 gold for the same amount during that temporary rate adjustment.\nPlease note that while it is normal for us to introduce balancing changes to new features, especially new skills, Village Mastery may be subject to heavier than usual changes in the future. Due to its experimental nature and more advanced internal economy, we may need to adjust parts of the system more significantly as we monitor how it performs.\nWe highly recommend reading the Village Mastery wiki here: https://wiki.idle-mmo.com/skills/village-mastery\nVillage Mastery currently does not have a full tutorial or onboarding flow, so the wiki is the best place to learn how the system works. We have plans to improve the overall tutorial system in the future, so a dedicated Village Mastery tutorial may arrive after that system has been overhauled.\nVillage Mastery will be accessible within a few hours of this patch note\nMore\nAdded a confirmation screen when attempting to start a new action while another action is already running, helping prevent accidental cancellations.\nImproved skill refresh with a new confirmation and breakdown screen. You can now choose whether or not to auto-purchase required items when refreshing.\nImproved toast notifications, which are the small pop-ups shown at the bottom of your screen. They can now also be dismissed or swiped away.\nAdded a new setting that lets you customise where toast notifications appear on your screen. This should help if they are appearing over buttons or other important UI elements.\nStarting from Season 12, Conquest Banners will no longer be required for guilds. All guilds will be able to participate in assaults.\nPower Hunting is now disabled when the screen is too small.\nAdded Portuguese language support.\nBugs\nFixed the construction \"Add\" button disappearing when switching between components.\nFixed a bug that only allowed you to queue up to 6 or 8 hours of the same enemy in a single battle.\nFixed a bug that caused pet battle sleep, hunt, and battle actions to be processed sporadically.\nFixed a bug that could occur when refreshing the Meditation action while writing a scroll.\nFixed a bug that caused the game to crash for a very small number of users when returning after an action was complete.\nFixed missing translations in various areas of the game.\n[Public API] Fixed the guild hall endpoint showing stockpile quantities based on your currently selected character. Stockpile requirement quantities are now shown when at least one character on your account can view that guild stockpile.",
+      "searchText": "version 0.74.0-pb - village mastery + more village mastery we're happy to the village mastery skill. village mastery is a skill for building and running your own village. your village produces village resources , which are used to build more village upgrades, repair buildings, trade for gold, and take part in warfare. this skill is about balance. a strong village needs workers, food, storage, repairs, and sometimes defence. if you only build production buildings, you may run out of storage. if you add too many citizens without enough food, happiness drops. if you raise taxes too high, your village earns more vr for a while, but the citizens work less efficiently. village mastery is a more advanced skill than most. it takes more planning, but a well-built end-level village can be very rewarding because it keeps generating passive vr, which can then be traded for gold, while your character works on other skills. the basic village loop is: press \"gather\" to obtain vr manually. build dwellings to get more citizens. build food buildings so those citizens stay happy. build gathering houses and assign citizens to them. collect passive vr as your gathering houses work in the background. use that vr to build more buildings, repair your village, trade for gold, or prepare for warfare. villages can be used across all characters. village mastery is separate from normal character actions, so it is unaffected by the action limit and can be used while your character is performing another action. however, to prevent future issues with gold generation across multiple characters, we have implemented a safety net when selling vr for gold. selling vr in large quantities temporarily affects the exchange rate across your whole account. this means that if you sell 1,000,000 vr on one character for 1,000 gold, as a simple example, a second character may receive only 500 gold for the same amount during that temporary rate adjustment. please note that while it is normal for us to introduce balancing changes to new features, especially new skills, village mastery may be subject to heavier than usual changes in the future. due to its experimental nature and more advanced internal economy, we may need to adjust parts of the system more significantly as we monitor how it performs. we highly recommend reading the village mastery wiki here: https://wiki.idle-mmo.com/skills/village-mastery village mastery currently does not have a full tutorial or onboarding flow, so the wiki is the best place to learn how the system works. we have plans to improve the overall tutorial system in the future, so a dedicated village mastery tutorial may arrive after that system has been overhauled. village mastery will be accessible within a few hours of this patch note more added a confirmation screen when attempting to start a new action while another action is already running, helping prevent accidental cancellations. improved skill refresh with a new confirmation and breakdown screen. you can now choose whether or not to auto-purchase required items when refreshing. improved toast notifications, which are the small pop-ups shown at the bottom of your screen. they can now also be dismissed or swiped away. added a new setting that lets you customise where toast notifications appear on your screen. this should help if they are appearing over buttons or other important ui elements. starting from season 12, conquest banners will no longer be required for guilds. all guilds will be able to participate in assaults. power hunting is now disabled when the screen is too small. added portuguese language support. bugs fixed the construction \"add\" button disappearing when switching between components. fixed a bug that only allowed you to queue up to 6 or 8 hours of the same enemy in a single battle. fixed a bug that caused pet battle sleep, hunt, and battle actions to be processed sporadically. fixed a bug that could occur when refreshing the meditation action while writing a scroll. fixed a bug that caused the game to crash for a very small number of users when returning after an action was complete. fixed missing translations in various areas of the game. [public api] fixed the guild hall endpoint showing stockpile quantities based on your currently selected character. stockpile requirement quantities are now shown when at least one character on your account can view that guild stockpile."
+    },
     {
       "id": 259,
       "version": "0.73.2-PB",
