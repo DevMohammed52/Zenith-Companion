@@ -1,18 +1,22 @@
 {
   "meta": {
-    "generatedAt": "2026-06-23T22:21:00.572Z",
+    "generatedAt": "2026-06-24T00:07:43.072Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 258,
-    "totalFetched": 258,
+    "totalAvailable": 259,
+    "totalFetched": 259,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 261,
+    "latestPatchId": 262,
     "oldestPatchId": 1,
-    "latestVersion": "0.74.1",
+    "latestVersion": "0.75.2",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "economy": 120,
+      "skills": 152,
+      "items": 148,
+      "tavern": 30,
       "forge": 43,
       "public-api": 18,
       "combat": 128,
@@ -21,15 +25,11 @@
       "guilds": 70,
       "conquest": 25,
       "housing": 26,
-      "economy": 119,
-      "skills": 151,
-      "items": 147,
       "translations": 12,
       "mobile-ui": 99,
       "bug-fixes": 189,
       "world-bosses": 42,
       "weather": 4,
-      "tavern": 29,
       "quests": 10,
       "map": 64,
       "membership": 63,
@@ -41,12 +41,81 @@
   },
   "patchNotes": [
     {
+      "id": 262,
+      "version": "0.75.2",
+      "title": "Village Balancing Update",
+      "headline": "Version 0.75.2 - Village Balancing Update",
+      "releasedAt": "2026-06-23T23:06:41",
+      "releaseLabel": "1 hour ago",
+      "releaseDateLabel": "Jun 23 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=262",
+      "categories": [
+        "economy",
+        "skills",
+        "items",
+        "tavern"
+      ],
+      "excerpt": "We just want to make it really clear that Village Mastery is an experimental skill . It works a little differently from most other skills and is a bit more advanced under the hood, so it may go through heavier-than-us...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We just want to make it really clear that Village Mastery is an experimental skill . It works a little differently from most other skills and is a bit more advanced under the hood, so it may go through heavier-than-usual changes while we get it into the right place."
+        },
+        {
+          "type": "paragraph",
+          "text": "Because of that, any balancing changes made to the system over the next couple of months, no matter how big, will not come with refunds . It's important that you don’t invest external resources (such as items using the trade depot) into your village unless you’re comfortable with that risk. For example, if Village Resources is diluted in the future (meaning 1 VR is worth less), any Village Resources gained from exchanged items may end up being worth less than it was at the time you exchanged them."
+        },
+        {
+          "type": "paragraph",
+          "text": "We want to be upfront about this now. It’s very unlikely that Village Mastery will be a perfect fit straight away, and it will take some time, testing, and probably a few “well, that didn’t work” moments before it properly settles."
+        },
+        {
+          "type": "paragraph",
+          "text": "We’re aware of a few issues around slots, dismantling buildings, and upgrading them. The slot limit was intentionally set quite low to begin with, mostly to play it safe, which is our usual approach with new systems. That said, we’re already looking at ways to rebalance the numbers across the board so the system feels a bit less restrictive. Ideally, you should have more freedom to pick and choose which buildings you want to build, without feeling like you constantly need to shuffle slots around or dismantle things just to make progress."
+        },
+        {
+          "type": "paragraph",
+          "text": "With all that said, we’re very open to feedback. Since this feature is experimental, we have a bit more room to be creative with it. Feel free to send over your ideas, concerns, or improvement suggestions in the Discord suggestions channel or in the Tavern."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We just want to make it really clear that Village Mastery is an experimental skill . It works a little differently from most other skills and is a bit more advanced under the hood, so it may go through heavier-than-usual changes while we get it into the right place."
+            },
+            {
+              "type": "paragraph",
+              "text": "Because of that, any balancing changes made to the system over the next couple of months, no matter how big, will not come with refunds . It's important that you don’t invest external resources (such as items using the trade depot) into your village unless you’re comfortable with that risk. For example, if Village Resources is diluted in the future (meaning 1 VR is worth less), any Village Resources gained from exchanged items may end up being worth less than it was at the time you exchanged them."
+            },
+            {
+              "type": "paragraph",
+              "text": "We want to be upfront about this now. It’s very unlikely that Village Mastery will be a perfect fit straight away, and it will take some time, testing, and probably a few “well, that didn’t work” moments before it properly settles."
+            },
+            {
+              "type": "paragraph",
+              "text": "We’re aware of a few issues around slots, dismantling buildings, and upgrading them. The slot limit was intentionally set quite low to begin with, mostly to play it safe, which is our usual approach with new systems. That said, we’re already looking at ways to rebalance the numbers across the board so the system feels a bit less restrictive. Ideally, you should have more freedom to pick and choose which buildings you want to build, without feeling like you constantly need to shuffle slots around or dismantle things just to make progress."
+            },
+            {
+              "type": "paragraph",
+              "text": "With all that said, we’re very open to feedback. Since this feature is experimental, we have a bit more room to be creative with it. Feel free to send over your ideas, concerns, or improvement suggestions in the Discord suggestions channel or in the Tavern."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We just want to make it really clear that Village Mastery is an experimental skill . It works a little differently from most other skills and is a bit more advanced under the hood, so it may go through heavier-than-usual changes while we get it into the right place.\nBecause of that, any balancing changes made to the system over the next couple of months, no matter how big, will not come with refunds . It's important that you don’t invest external resources (such as items using the trade depot) into your village unless you’re comfortable with that risk. For example, if Village Resources is diluted in the future (meaning 1 VR is worth less), any Village Resources gained from exchanged items may end up being worth less than it was at the time you exchanged them.\nWe want to be upfront about this now. It’s very unlikely that Village Mastery will be a perfect fit straight away, and it will take some time, testing, and probably a few “well, that didn’t work” moments before it properly settles.\nWe’re aware of a few issues around slots, dismantling buildings, and upgrading them. The slot limit was intentionally set quite low to begin with, mostly to play it safe, which is our usual approach with new systems. That said, we’re already looking at ways to rebalance the numbers across the board so the system feels a bit less restrictive. Ideally, you should have more freedom to pick and choose which buildings you want to build, without feeling like you constantly need to shuffle slots around or dismantle things just to make progress.\nWith all that said, we’re very open to feedback. Since this feature is experimental, we have a bit more room to be creative with it. Feel free to send over your ideas, concerns, or improvement suggestions in the Discord suggestions channel or in the Tavern.",
+      "searchText": "version 0.75.2 - village balancing update we just want to make it really clear that village mastery is an experimental skill . it works a little differently from most other skills and is a bit more advanced under the hood, so it may go through heavier-than-usual changes while we get it into the right place. because of that, any balancing changes made to the system over the next couple of months, no matter how big, will not come with refunds . it's important that you don’t invest external resources (such as items using the trade depot) into your village unless you’re comfortable with that risk. for example, if village resources is diluted in the future (meaning 1 vr is worth less), any village resources gained from exchanged items may end up being worth less than it was at the time you exchanged them. we want to be upfront about this now. it’s very unlikely that village mastery will be a perfect fit straight away, and it will take some time, testing, and probably a few “well, that didn’t work” moments before it properly settles. we’re aware of a few issues around slots, dismantling buildings, and upgrading them. the slot limit was intentionally set quite low to begin with, mostly to play it safe, which is our usual approach with new systems. that said, we’re already looking at ways to rebalance the numbers across the board so the system feels a bit less restrictive. ideally, you should have more freedom to pick and choose which buildings you want to build, without feeling like you constantly need to shuffle slots around or dismantle things just to make progress. with all that said, we’re very open to feedback. since this feature is experimental, we have a bit more room to be creative with it. feel free to send over your ideas, concerns, or improvement suggestions in the discord suggestions channel or in the tavern."
+    },
+    {
       "id": 261,
       "version": "0.74.1",
       "title": "No cheaters!",
       "headline": "Version 0.74.1 - No cheaters!",
       "releasedAt": "2026-06-23T17:13:49",
-      "releaseLabel": "5 hours ago",
+      "releaseLabel": "6 hours ago",
       "releaseDateLabel": "Jun 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=261",
@@ -112,7 +181,7 @@
       "title": "Village Mastery + More",
       "headline": "Version 0.74.0-PB - Village Mastery + More",
       "releasedAt": "2026-06-23T12:38:50",
-      "releaseLabel": "9 hours ago",
+      "releaseLabel": "11 hours ago",
       "releaseDateLabel": "Jun 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=260",
