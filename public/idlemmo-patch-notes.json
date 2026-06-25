@@ -1,27 +1,28 @@
 {
   "meta": {
-    "generatedAt": "2026-06-25T11:48:14.372Z",
+    "generatedAt": "2026-06-25T14:54:13.149Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 261,
-    "totalFetched": 261,
+    "totalAvailable": 262,
+    "totalFetched": 262,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 264,
+    "latestPatchId": 265,
     "oldestPatchId": 1,
-    "latestVersion": "0.77.0-PB",
+    "latestVersion": "0.77.1-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "housing": 28,
-      "economy": 122,
+      "housing": 29,
+      "economy": 123,
+      "skills": 154,
+      "mobile-ui": 102,
+      "membership": 64,
+      "bug-fixes": 192,
       "items": 149,
-      "mobile-ui": 101,
-      "bug-fixes": 191,
       "hunting": 66,
       "guilds": 71,
       "forge": 44,
-      "skills": 153,
       "tavern": 30,
       "public-api": 18,
       "combat": 128,
@@ -32,7 +33,6 @@
       "weather": 4,
       "quests": 10,
       "map": 64,
-      "membership": 63,
       "seasonal": 76,
       "dungeons": 57,
       "alchemy": 41
@@ -41,12 +41,99 @@
   },
   "patchNotes": [
     {
+      "id": 265,
+      "version": "0.77.1-PB",
+      "title": "Village Improvements",
+      "headline": "Version 0.77.1-PB - Village Improvements",
+      "releasedAt": "2026-06-25T12:32:00",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Jun 25 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=265",
+      "categories": [
+        "housing",
+        "economy",
+        "skills",
+        "mobile-ui",
+        "membership",
+        "bug-fixes"
+      ],
+      "excerpt": "Added the ability to delete a village. Fixed village EXP not correctly displaying on the UI when effects are active. Fixed Village Happiness sometimes recovering too slowly while manually gathering resources. Fixed th...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Added the ability to delete a village."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed village EXP not correctly displaying on the UI when effects are active."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed Village Happiness sometimes recovering too slowly while manually gathering resources."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the Assign Workers pop-up showing the wrong number of pending citizens."
+        },
+        {
+          "type": "listItem",
+          "text": "We've adjusted the VR to Gold calculations so that selling very large amounts in a short period will now give much less gold. Selling small to moderate amounts of Village Resources should feel mostly the same. This is mainly aimed at accounts using multiple characters to sell huge amounts of Village Resources at once. One village can still sell normally, but repeatedly selling large amounts across several characters will become significantly less effective."
+        },
+        {
+          "type": "listItem",
+          "text": "Villages don’t translate perfectly from housing decay, mainly because villages can eventually become partly, or even fully, self-sustaining depending on your setup, play style, and buildings. Because of that, the previous decay rate was a bit too generous for this system. Village buildings now decay quickly. They decay in 45/60 days depending on your membership status. This applies to buildings only made/upgraded after this patch note."
+        },
+        {
+          "type": "listItem",
+          "text": "When directly upgrading village buildings, the building being upgraded no longer temporarily loses its benefits."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Added the ability to delete a village."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed village EXP not correctly displaying on the UI when effects are active."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed Village Happiness sometimes recovering too slowly while manually gathering resources."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the Assign Workers pop-up showing the wrong number of pending citizens."
+            },
+            {
+              "type": "listItem",
+              "text": "We've adjusted the VR to Gold calculations so that selling very large amounts in a short period will now give much less gold. Selling small to moderate amounts of Village Resources should feel mostly the same. This is mainly aimed at accounts using multiple characters to sell huge amounts of Village Resources at once. One village can still sell normally, but repeatedly selling large amounts across several characters will become significantly less effective."
+            },
+            {
+              "type": "listItem",
+              "text": "Villages don’t translate perfectly from housing decay, mainly because villages can eventually become partly, or even fully, self-sustaining depending on your setup, play style, and buildings. Because of that, the previous decay rate was a bit too generous for this system. Village buildings now decay quickly. They decay in 45/60 days depending on your membership status. This applies to buildings only made/upgraded after this patch note."
+            },
+            {
+              "type": "listItem",
+              "text": "When directly upgrading village buildings, the building being upgraded no longer temporarily loses its benefits."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Added the ability to delete a village.\nFixed village EXP not correctly displaying on the UI when effects are active.\nFixed Village Happiness sometimes recovering too slowly while manually gathering resources.\nFixed the Assign Workers pop-up showing the wrong number of pending citizens.\nWe've adjusted the VR to Gold calculations so that selling very large amounts in a short period will now give much less gold. Selling small to moderate amounts of Village Resources should feel mostly the same. This is mainly aimed at accounts using multiple characters to sell huge amounts of Village Resources at once. One village can still sell normally, but repeatedly selling large amounts across several characters will become significantly less effective.\nVillages don’t translate perfectly from housing decay, mainly because villages can eventually become partly, or even fully, self-sustaining depending on your setup, play style, and buildings. Because of that, the previous decay rate was a bit too generous for this system. Village buildings now decay quickly. They decay in 45/60 days depending on your membership status. This applies to buildings only made/upgraded after this patch note.\nWhen directly upgrading village buildings, the building being upgraded no longer temporarily loses its benefits.",
+      "searchText": "version 0.77.1-pb - village improvements added the ability to delete a village. fixed village exp not correctly displaying on the ui when effects are active. fixed village happiness sometimes recovering too slowly while manually gathering resources. fixed the assign workers pop-up showing the wrong number of pending citizens. we've adjusted the vr to gold calculations so that selling very large amounts in a short period will now give much less gold. selling small to moderate amounts of village resources should feel mostly the same. this is mainly aimed at accounts using multiple characters to sell huge amounts of village resources at once. one village can still sell normally, but repeatedly selling large amounts across several characters will become significantly less effective. villages don’t translate perfectly from housing decay, mainly because villages can eventually become partly, or even fully, self-sustaining depending on your setup, play style, and buildings. because of that, the previous decay rate was a bit too generous for this system. village buildings now decay quickly. they decay in 45/60 days depending on your membership status. this applies to buildings only made/upgraded after this patch note. when directly upgrading village buildings, the building being upgraded no longer temporarily loses its benefits."
+    },
+    {
       "id": 264,
       "version": "0.77.0-PB",
       "title": "Village Improvements",
       "headline": "Version 0.77.0-PB - Village Improvements",
       "releasedAt": "2026-06-24T18:55:38",
-      "releaseLabel": "16 hours ago",
+      "releaseLabel": "19 hours ago",
       "releaseDateLabel": "Jun 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=264",
@@ -132,7 +219,7 @@
       "title": "Village Changes",
       "headline": "Version 0.76.0-PB - Village Changes",
       "releasedAt": "2026-06-24T15:42:38",
-      "releaseLabel": "20 hours ago",
+      "releaseLabel": "23 hours ago",
       "releaseDateLabel": "Jun 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=263",
@@ -571,7 +658,7 @@
       "title": "Village Mastery + More",
       "headline": "Version 0.74.0-PB - Village Mastery + More",
       "releasedAt": "2026-06-23T12:38:50",
-      "releaseLabel": "1 day ago",
+      "releaseLabel": "2 days ago",
       "releaseDateLabel": "Jun 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=260",
