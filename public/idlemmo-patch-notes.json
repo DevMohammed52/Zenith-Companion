@@ -1,24 +1,24 @@
 {
   "meta": {
-    "generatedAt": "2026-06-26T15:30:22.865Z",
+    "generatedAt": "2026-06-26T18:01:51.487Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 262,
-    "totalFetched": 262,
+    "totalAvailable": 263,
+    "totalFetched": 263,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 265,
+    "latestPatchId": 266,
     "oldestPatchId": 1,
-    "latestVersion": "0.77.1-PB",
+    "latestVersion": "0.77.2-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "housing": 29,
+      "housing": 30,
+      "bug-fixes": 193,
       "economy": 123,
       "skills": 154,
       "mobile-ui": 102,
       "membership": 64,
-      "bug-fixes": 192,
       "items": 149,
       "hunting": 66,
       "guilds": 71,
@@ -40,6 +40,73 @@
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 266,
+      "version": "0.77.2-PB",
+      "title": "Updates",
+      "headline": "Version 0.77.2-PB - Updates",
+      "releasedAt": "2026-06-26T15:54:53",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Jun 26 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=266",
+      "categories": [
+        "housing",
+        "bug-fixes"
+      ],
+      "excerpt": "Fixed the build queue in Village Mastery not correctly showing buildings that are currently being upgraded. Added character metrics for villages. These will only be tracked from this update onward. Fixed toast pop-ups...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Fixed the build queue in Village Mastery not correctly showing buildings that are currently being upgraded."
+        },
+        {
+          "type": "listItem",
+          "text": "Added character metrics for villages. These will only be tracked from this update onward."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed toast pop-ups when “top centre” is selected."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that prevented users from deleting certain buildings during construction."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that allowed users to unintentionally build a previous tier of a building."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed the build queue in Village Mastery not correctly showing buildings that are currently being upgraded."
+            },
+            {
+              "type": "listItem",
+              "text": "Added character metrics for villages. These will only be tracked from this update onward."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed toast pop-ups when “top centre” is selected."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that prevented users from deleting certain buildings during construction."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that allowed users to unintentionally build a previous tier of a building."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Fixed the build queue in Village Mastery not correctly showing buildings that are currently being upgraded.\nAdded character metrics for villages. These will only be tracked from this update onward.\nFixed toast pop-ups when “top centre” is selected.\nFixed a bug that prevented users from deleting certain buildings during construction.\nFixed a bug that allowed users to unintentionally build a previous tier of a building.",
+      "searchText": "version 0.77.2-pb - updates fixed the build queue in village mastery not correctly showing buildings that are currently being upgraded. added character metrics for villages. these will only be tracked from this update onward. fixed toast pop-ups when “top centre” is selected. fixed a bug that prevented users from deleting certain buildings during construction. fixed a bug that allowed users to unintentionally build a previous tier of a building."
+    },
     {
       "id": 265,
       "version": "0.77.1-PB",
@@ -219,7 +286,7 @@
       "title": "Village Changes",
       "headline": "Version 0.76.0-PB - Village Changes",
       "releasedAt": "2026-06-24T15:42:38",
-      "releaseLabel": "1 day ago",
+      "releaseLabel": "2 days ago",
       "releaseDateLabel": "Jun 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=263",
@@ -592,7 +659,7 @@
       "title": "No cheaters!",
       "headline": "Version 0.74.1-PB - No cheaters!",
       "releasedAt": "2026-06-23T17:13:49",
-      "releaseLabel": "2 days ago",
+      "releaseLabel": "3 days ago",
       "releaseDateLabel": "Jun 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=261",
