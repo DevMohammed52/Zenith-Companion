@@ -1,11 +1,11 @@
 {
   "_meta": {
     "source": "/v1/world/locations/list",
-    "fetched_at": "2026-07-06T16:45:07.670Z",
-    "endpoint_updates_at": "2026-07-06T16:46:03+00:00",
+    "fetched_at": "2026-07-06T17:47:52.705Z",
+    "endpoint_updates_at": "2026-07-06T17:48:52+00:00",
     "location_count": 10
   },
-  "endpoint_updates_at": "2026-07-06T16:46:03+00:00",
+  "endpoint_updates_at": "2026-07-06T17:48:52+00:00",
   "locations": [
     {
       "id": 1,
@@ -609,20 +609,6 @@
           "day_name": "Monday",
           "date": "6 Jul",
           "weathers": [
-            {
-              "key": "MAGIC_STORM",
-              "icon": "magic_storm",
-              "name": "Magic Storm",
-              "window": "Mon 6 Jul, 05:43 to Mon 6 Jul, 17:43",
-              "starts_at": "2026-07-06T05:43:28+00:00",
-              "starts_at_time": "05:43",
-              "ends_at": "2026-07-06T17:43:28+00:00",
-              "buffs": [
-                "+25% Battle Magic Find",
-                "+20% Dungeon Magic Find",
-                "+20% World Boss Magic Find"
-              ]
-            },
             {
               "key": "WINDY",
               "icon": "windy",
@@ -1983,22 +1969,6 @@
           "date": "6 Jul",
           "weathers": [
             {
-              "key": "CLEAR",
-              "icon": "clear",
-              "name": "Clear",
-              "window": "Mon 6 Jul, 06:43 to Mon 6 Jul, 17:43",
-              "starts_at": "2026-07-06T06:43:28+00:00",
-              "starts_at_time": "06:43",
-              "ends_at": "2026-07-06T17:43:28+00:00",
-              "buffs": [
-                "+10% Hunt Efficiency",
-                "+10% Fishing Efficiency",
-                "+10% Woodcutting Efficiency",
-                "+5% Mining Efficiency",
-                "+5% Construction Efficiency"
-              ]
-            },
-            {
               "key": "OVERCAST",
               "icon": "overcast",
               "name": "Overcast",
@@ -2941,27 +2911,6 @@
           "day_name": "Monday",
           "date": "6 Jul",
           "weathers": [
-            {
-              "key": "STORM",
-              "icon": "storm",
-              "name": "Storm",
-              "window": "Mon 6 Jul, 10:43 to Mon 6 Jul, 17:43",
-              "starts_at": "2026-07-06T10:43:28+00:00",
-              "starts_at_time": "10:43",
-              "ends_at": "2026-07-06T17:43:28+00:00",
-              "buffs": [
-                "-15% Hunt Efficiency",
-                "+35% Hunting Mastery EXP",
-                "-20% Fishing Efficiency",
-                "+40% Fishing EXP",
-                "-20% Woodcutting Efficiency",
-                "+40% Woodcutting EXP",
-                "-10% Mining Efficiency",
-                "+25% Mining EXP",
-                "-10% Construction Efficiency",
-                "+25% Construction EXP"
-              ]
-            },
             {
               "key": "WINDY",
               "icon": "windy",
