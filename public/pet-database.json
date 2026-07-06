@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-07-06T14:39:42.118Z",
+    "generatedAt": "2026-07-06T16:00:53.932Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
-      "petsWithExchangeListings": 35,
-      "exchangeListings": 1061,
-      "exchangeSpecies": 39
+      "petsWithExchangeListings": 36,
+      "exchangeListings": 1064,
+      "exchangeSpecies": 40
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -866,7 +866,30 @@
           }
         ]
       },
-      "exchange": null,
+      "exchange": {
+        "petId": 30,
+        "listingCount": 1,
+        "minPrice": 270000,
+        "maxPrice": 270000,
+        "byQuality": {
+          "EPIC": {
+            "count": 1,
+            "min_price": 270000,
+            "max_price": 270000,
+            "total_price": 270000,
+            "average_price": 270000
+          }
+        },
+        "averagePrice": 270000,
+        "medianPrice": 270000,
+        "sampleListings": [
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 270000
+          }
+        ]
+      },
       "battle": {
         "zones": [
           {
@@ -19546,20 +19569,20 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 162,
+        "listingCount": 164,
         "minPrice": 5000,
         "maxPrice": 40000,
         "byQuality": {
           "STANDARD": {
-            "count": 162,
+            "count": 164,
             "min_price": 5000,
             "max_price": 40000,
-            "total_price": 941870,
-            "average_price": 5814
+            "total_price": 951970,
+            "average_price": 5805
           }
         },
-        "averagePrice": 5814,
-        "medianPrice": 5017,
+        "averagePrice": 5805,
+        "medianPrice": 5033,
         "sampleListings": [
           {
             "level": 1,
@@ -100313,9 +100336,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-07-06T14:39:42.095Z",
-    "listingCount": 1061,
-    "speciesCount": 39,
+    "fetchedAt": "2026-07-06T16:00:53.909Z",
+    "listingCount": 1064,
+    "speciesCount": 40,
     "pageCount": 43
   }
 }
