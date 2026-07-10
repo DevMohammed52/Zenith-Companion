@@ -42,8 +42,9 @@ export type SafeMarketPrice = {
   anchor?: number;
 };
 
-const SPIKE_MULTIPLIER = 5;
-const MIN_SPIKE_DELTA = 100;
+const SPIKE_MULTIPLIER = 3;
+const MIN_SPIKE_DELTA = 25;
+const MIN_SPIKE_DELTA_RATIO = 1.5;
 
 function asPositiveNumber(value: unknown) {
   const parsed = Number(value || 0);
@@ -60,6 +61,13 @@ function median(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function spikeThreshold(anchor: number) {
+  return Math.max(
+    anchor * SPIKE_MULTIPLIER,
+    anchor + Math.max(MIN_SPIKE_DELTA, anchor * MIN_SPIKE_DELTA_RATIO),
+  );
 }
 
 export function getSafeMarketPrice(item?: MarketPriceDatum | null): SafeMarketPrice {
@@ -99,8 +107,7 @@ export function getSafeMarketPrice(item?: MarketPriceDatum | null): SafeMarketPr
   if (
     avg3 > 0
     && anchor > 0
-    && avg3 >= anchor * SPIKE_MULTIPLIER
-    && avg3 - anchor >= MIN_SPIKE_DELTA
+    && avg3 >= spikeThreshold(anchor)
   ) {
     return {
       value: anchor,

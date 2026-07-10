@@ -19,8 +19,9 @@ const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
 const WORLD_LOCATIONS_FILE = path.join(__dirname, 'public', 'world-locations.json');
 const CONQUEST_DATA_FILE = path.join(__dirname, 'public', 'conquest-data.json');
-const MARKET_SPIKE_MULTIPLIER = 5;
-const MARKET_SPIKE_MIN_DELTA = 100;
+const MARKET_SPIKE_MULTIPLIER = 3;
+const MARKET_SPIKE_MIN_DELTA = 25;
+const MARKET_SPIKE_MIN_RATIO = 1.5;
 
 function readPositiveNumber(value, fallback) {
     const parsed = Number(value);
@@ -245,8 +246,10 @@ function recentRows(history, days) {
 function isMarketSpike(value, anchor) {
     return value > 0
         && anchor > 0
-        && value >= anchor * MARKET_SPIKE_MULTIPLIER
-        && value - anchor >= MARKET_SPIKE_MIN_DELTA;
+        && value >= Math.max(
+            anchor * MARKET_SPIKE_MULTIPLIER,
+            anchor + Math.max(MARKET_SPIKE_MIN_DELTA, anchor * MARKET_SPIKE_MIN_RATIO),
+        );
 }
 
 function latestSoldMedian(latestSold) {

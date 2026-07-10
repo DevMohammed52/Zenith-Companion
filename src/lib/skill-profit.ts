@@ -394,6 +394,7 @@ const gatheringRecipes: SkillRecipe[] = [
   })),
   ...[
     ["Coal Ore", 1, 12, 3],
+    ["Limestone", 1, 12, 3, "Mined via Mining"],
     ["Tin Ore", 1, 12, 3],
     ["Copper Ore", 5, 15, 5],
     ["Iron Ore", 10, 23, 10],
@@ -403,13 +404,14 @@ const gatheringRecipes: SkillRecipe[] = [
     ["Chromite Ore", 60, 40, 35],
     ["Uranium Ore", 70, 44, 40],
     ["Mystic Ore", 90, 55, 55],
-  ].map(([name, level, baseDuration, experience]) => ({
+  ].map(([name, level, baseDuration, experience, note]) => ({
     skill: "Mining" as const,
     name: String(name),
     level: Number(level),
     baseDuration: Number(baseDuration),
     experience: Number(experience),
     ingredients: [],
+    note: note ? String(note) : undefined,
   })),
   ...[
     ["Cod", 1, 7, 2, "Cheap Bait"],
