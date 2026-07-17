@@ -1,32 +1,32 @@
 {
   "meta": {
-    "generatedAt": "2026-07-17T13:59:04.120Z",
+    "generatedAt": "2026-07-17T15:24:43.456Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 264,
-    "totalFetched": 264,
+    "totalAvailable": 265,
+    "totalFetched": 265,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 267,
+    "latestPatchId": 268,
     "oldestPatchId": 1,
-    "latestVersion": "0.77.3",
+    "latestVersion": "0.78.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "housing": 30,
-      "bug-fixes": 193,
-      "economy": 123,
-      "skills": 154,
-      "mobile-ui": 102,
+      "combat": 129,
+      "hunting": 67,
+      "pets": 104,
+      "housing": 31,
+      "economy": 124,
+      "skills": 155,
+      "items": 150,
+      "mobile-ui": 103,
+      "bug-fixes": 194,
       "membership": 64,
-      "items": 149,
-      "hunting": 66,
       "guilds": 71,
       "forge": 44,
       "tavern": 30,
       "public-api": 18,
-      "combat": 128,
-      "pets": 103,
       "conquest": 25,
       "translations": 12,
       "world-bosses": 42,
@@ -40,6 +40,208 @@
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 268,
+      "version": "0.78.0-PB",
+      "title": "Bug Fixes and Improvements",
+      "headline": "Version 0.78.0-PB - Bug Fixes and Improvements",
+      "releasedAt": "2026-07-17T14:49:07",
+      "releaseLabel": "35 minutes ago",
+      "releaseDateLabel": "Jul 17 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=268",
+      "categories": [
+        "combat",
+        "hunting",
+        "pets",
+        "housing",
+        "economy",
+        "skills",
+        "items",
+        "mobile-ui",
+        "bug-fixes"
+      ],
+      "excerpt": "Added missing construction league. This league will be generated in the next cycle. Fixed a bug that prevented items from being sold to the vendor when completing a captcha. Village Mastery EXP is no longer affected b...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Added missing construction league. This league will be generated in the next cycle."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that prevented items from being sold to the vendor when completing a captcha."
+        },
+        {
+          "type": "listItem",
+          "text": "Village Mastery EXP is no longer affected by EXP boosts. Villages produce resources all the time, unlike other skills that have a clear start and end, so there is no fair point to lock in a boost. This meant players could collect several days of village XP after activating a short boost and receive the bonus for all of it."
+        },
+        {
+          "type": "paragraph",
+          "text": "After reviewing it, we found that supporting EXP boosts for Village Mastery would require a major overhaul of our boost system, as it was designed specifically for skills with a clear start and end. This is out of scope, so village mastery will be excluded from all EXP boosts."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the option to disable the refresh action confirmation on a per-character basis."
+        },
+        {
+          "type": "listItem",
+          "text": "Scout Power now displays correctly in the Village Mastery Warfare tab."
+        },
+        {
+          "type": "listItem",
+          "text": "Added clarification for scout reports lasting 30 minutes."
+        },
+        {
+          "type": "listItem",
+          "text": "Village happiness now drops slowly over time instead of falling heavily right away."
+        },
+        {
+          "type": "listItem",
+          "text": "Raising villages taxes, reducing food, or making similar changes will only cause a small immediate happiness loss."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a UI bug on the village building condition bar."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue that caused the captcha to be stuck in an infinite loop."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that caused a small number of enemies to go missing after completing a pet hunt."
+        },
+        {
+          "type": "paragraph",
+          "text": "Village PvP Changes"
+        },
+        {
+          "type": "listItem",
+          "text": "Villages now receive 24 hours of PvP protection after being attacked by another player."
+        },
+        {
+          "type": "listItem",
+          "text": "Protected villages cannot be attacked by other players."
+        },
+        {
+          "type": "listItem",
+          "text": "Attacking another player’s village will remove your protection."
+        },
+        {
+          "type": "listItem",
+          "text": "Attacking NPC villages will not remove protection."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved Village PvP Targets"
+        },
+        {
+          "type": "listItem",
+          "text": "User Targets are now randomized to provide more variety."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a Refresh User Targets button."
+        },
+        {
+          "type": "listItem",
+          "text": "Refreshing PvP targets will show different players when other suitable targets are available."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Added missing construction league. This league will be generated in the next cycle."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that prevented items from being sold to the vendor when completing a captcha."
+            },
+            {
+              "type": "listItem",
+              "text": "Village Mastery EXP is no longer affected by EXP boosts. Villages produce resources all the time, unlike other skills that have a clear start and end, so there is no fair point to lock in a boost. This meant players could collect several days of village XP after activating a short boost and receive the bonus for all of it."
+            },
+            {
+              "type": "paragraph",
+              "text": "After reviewing it, we found that supporting EXP boosts for Village Mastery would require a major overhaul of our boost system, as it was designed specifically for skills with a clear start and end. This is out of scope, so village mastery will be excluded from all EXP boosts."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the option to disable the refresh action confirmation on a per-character basis."
+            },
+            {
+              "type": "listItem",
+              "text": "Scout Power now displays correctly in the Village Mastery Warfare tab."
+            },
+            {
+              "type": "listItem",
+              "text": "Added clarification for scout reports lasting 30 minutes."
+            },
+            {
+              "type": "listItem",
+              "text": "Village happiness now drops slowly over time instead of falling heavily right away."
+            },
+            {
+              "type": "listItem",
+              "text": "Raising villages taxes, reducing food, or making similar changes will only cause a small immediate happiness loss."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a UI bug on the village building condition bar."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue that caused the captcha to be stuck in an infinite loop."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that caused a small number of enemies to go missing after completing a pet hunt."
+            },
+            {
+              "type": "paragraph",
+              "text": "Village PvP Changes"
+            },
+            {
+              "type": "listItem",
+              "text": "Villages now receive 24 hours of PvP protection after being attacked by another player."
+            },
+            {
+              "type": "listItem",
+              "text": "Protected villages cannot be attacked by other players."
+            },
+            {
+              "type": "listItem",
+              "text": "Attacking another player’s village will remove your protection."
+            },
+            {
+              "type": "listItem",
+              "text": "Attacking NPC villages will not remove protection."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved Village PvP Targets"
+            },
+            {
+              "type": "listItem",
+              "text": "User Targets are now randomized to provide more variety."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a Refresh User Targets button."
+            },
+            {
+              "type": "listItem",
+              "text": "Refreshing PvP targets will show different players when other suitable targets are available."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Added missing construction league. This league will be generated in the next cycle.\nFixed a bug that prevented items from being sold to the vendor when completing a captcha.\nVillage Mastery EXP is no longer affected by EXP boosts. Villages produce resources all the time, unlike other skills that have a clear start and end, so there is no fair point to lock in a boost. This meant players could collect several days of village XP after activating a short boost and receive the bonus for all of it.\nAfter reviewing it, we found that supporting EXP boosts for Village Mastery would require a major overhaul of our boost system, as it was designed specifically for skills with a clear start and end. This is out of scope, so village mastery will be excluded from all EXP boosts.\nAdded the option to disable the refresh action confirmation on a per-character basis.\nScout Power now displays correctly in the Village Mastery Warfare tab.\nAdded clarification for scout reports lasting 30 minutes.\nVillage happiness now drops slowly over time instead of falling heavily right away.\nRaising villages taxes, reducing food, or making similar changes will only cause a small immediate happiness loss.\nFixed a UI bug on the village building condition bar.\nFixed an issue that caused the captcha to be stuck in an infinite loop.\nFixed a bug that caused a small number of enemies to go missing after completing a pet hunt.\nVillage PvP Changes\nVillages now receive 24 hours of PvP protection after being attacked by another player.\nProtected villages cannot be attacked by other players.\nAttacking another player’s village will remove your protection.\nAttacking NPC villages will not remove protection.\nImproved Village PvP Targets\nUser Targets are now randomized to provide more variety.\nAdded a Refresh User Targets button.\nRefreshing PvP targets will show different players when other suitable targets are available.",
+      "searchText": "version 0.78.0-pb - bug fixes and improvements added missing construction league. this league will be generated in the next cycle. fixed a bug that prevented items from being sold to the vendor when completing a captcha. village mastery exp is no longer affected by exp boosts. villages produce resources all the time, unlike other skills that have a clear start and end, so there is no fair point to lock in a boost. this meant players could collect several days of village xp after activating a short boost and receive the bonus for all of it. after reviewing it, we found that supporting exp boosts for village mastery would require a major overhaul of our boost system, as it was designed specifically for skills with a clear start and end. this is out of scope, so village mastery will be excluded from all exp boosts. added the option to disable the refresh action confirmation on a per-character basis. scout power now displays correctly in the village mastery warfare tab. added clarification for scout reports lasting 30 minutes. village happiness now drops slowly over time instead of falling heavily right away. raising villages taxes, reducing food, or making similar changes will only cause a small immediate happiness loss. fixed a ui bug on the village building condition bar. fixed an issue that caused the captcha to be stuck in an infinite loop. fixed a bug that caused a small number of enemies to go missing after completing a pet hunt. village pvp changes villages now receive 24 hours of pvp protection after being attacked by another player. protected villages cannot be attacked by other players. attacking another player’s village will remove your protection. attacking npc villages will not remove protection. improved village pvp targets user targets are now randomized to provide more variety. added a refresh user targets button. refreshing pvp targets will show different players when other suitable targets are available."
+    },
     {
       "id": 267,
       "version": "0.77.3",
