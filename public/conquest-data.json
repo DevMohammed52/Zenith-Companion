@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-07-20T18:21:58.752Z",
-    "fetched_at": "2026-07-20T18:21:42.283Z",
+    "generated_at": "2026-07-20T19:13:21.955Z",
+    "fetched_at": "2026-07-20T19:13:05.517Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-20T18:26:43+00:00",
+    "endpoint_updates_at": "2026-07-20T19:18:06+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16469
+      "elapsed_ms": 16438
     },
     "totals": {
       "zones": 10,
       "active_assaults": 2,
       "leaderboard_rows": 2,
-      "contribution_rows": 3,
+      "contribution_rows": 4,
       "guilds_observed": 2
     }
   },
@@ -78,12 +78,12 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": "#1383fb",
-      "kills": 1772,
-      "experience": 11232,
+      "kills": 2524,
+      "experience": 16499,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
-      "contribution_count": 3,
+      "contribution_count": 4,
       "active_assaults": [
         {
           "kills": 1598,
@@ -97,8 +97,8 @@
           }
         },
         {
-          "kills": 174,
-          "experience": 1044,
+          "kills": 926,
+          "experience": 6311,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -123,8 +123,8 @@
         },
         {
           "position": 2,
-          "kills": 174,
-          "experience": 1044,
+          "kills": 926,
+          "experience": 6311,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -150,6 +150,20 @@
           }
         },
         {
+          "id": 140053,
+          "guild_conquest_progress_id": 139929,
+          "kills": 925,
+          "experience": 6301,
+          "guild": null,
+          "character": {
+            "hashed_id": "rz9RZnWN7exP2LKAp0Md",
+            "name": "Littlechozy",
+            "total_level": 1910,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+          }
+        },
+        {
           "id": 140049,
           "guild_conquest_progress_id": 139925,
           "kills": 499,
@@ -164,17 +178,17 @@
           }
         },
         {
-          "id": 140053,
+          "id": 140054,
           "guild_conquest_progress_id": 139929,
-          "kills": 174,
-          "experience": 1044,
+          "kills": 1,
+          "experience": 10,
           "guild": null,
           "character": {
-            "hashed_id": "rz9RZnWN7exP2LKAp0Md",
-            "name": "Littlechozy",
-            "total_level": 1910,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+            "hashed_id": "7gw0k38L41y5ZQWevJxy",
+            "name": "ILGIN",
+            "total_level": 1670,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
         }
       ]
@@ -303,6 +317,25 @@
       }
     },
     {
+      "id": 140053,
+      "guild_conquest_progress_id": 139929,
+      "kills": 925,
+      "experience": 6301,
+      "guild": null,
+      "character": {
+        "hashed_id": "rz9RZnWN7exP2LKAp0Md",
+        "name": "Littlechozy",
+        "total_level": 1910,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
       "id": 140049,
       "guild_conquest_progress_id": 139925,
       "kills": 499,
@@ -322,17 +355,17 @@
       }
     },
     {
-      "id": 140053,
+      "id": 140054,
       "guild_conquest_progress_id": 139929,
-      "kills": 174,
-      "experience": 1044,
+      "kills": 1,
+      "experience": 10,
       "guild": null,
       "character": {
-        "hashed_id": "rz9RZnWN7exP2LKAp0Md",
-        "name": "Littlechozy",
-        "total_level": 1910,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+        "hashed_id": "7gw0k38L41y5ZQWevJxy",
+        "name": "ILGIN",
+        "total_level": 1670,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
       },
       "zone": {
         "id": 4,
