@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-07-20T20:12:42.895Z",
-    "fetched_at": "2026-07-20T20:12:26.404Z",
+    "generated_at": "2026-07-20T21:16:28.703Z",
+    "fetched_at": "2026-07-20T21:16:12.198Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-20T20:17:27+00:00",
+    "endpoint_updates_at": "2026-07-20T21:21:13+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16491
+      "elapsed_ms": 16505
     },
     "totals": {
       "zones": 10,
       "active_assaults": 2,
       "leaderboard_rows": 2,
-      "contribution_rows": 4,
+      "contribution_rows": 5,
       "guilds_observed": 2
     }
   },
@@ -77,17 +77,17 @@
       "name": "Crystal Caverns",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
-      "colour": null,
-      "kills": 3414,
-      "experience": 25399,
+      "colour": "#1383fb",
+      "kills": 9779,
+      "experience": 57224,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
-      "contribution_count": 4,
+      "contribution_count": 5,
       "active_assaults": [
         {
-          "kills": 1598,
-          "experience": 10188,
+          "kills": 7959,
+          "experience": 41993,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -97,8 +97,8 @@
           }
         },
         {
-          "kills": 1816,
-          "experience": 15211,
+          "kills": 1820,
+          "experience": 15231,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -111,20 +111,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 1816,
-          "experience": 15211,
-          "guild": {
-            "id": 161,
-            "name": "You Unyielding",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
-          }
-        },
-        {
-          "position": 2,
-          "kills": 1598,
-          "experience": 10188,
+          "kills": 7959,
+          "experience": 41993,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -132,9 +120,35 @@
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
+        },
+        {
+          "position": 2,
+          "kills": 1820,
+          "experience": 15231,
+          "guild": {
+            "id": 161,
+            "name": "You Unyielding",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
+          }
         }
       ],
       "top_contributors": [
+        {
+          "id": 140049,
+          "guild_conquest_progress_id": 139925,
+          "kills": 6860,
+          "experience": 34300,
+          "guild": null,
+          "character": {
+            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+            "name": "Jasper",
+            "total_level": 1505,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
         {
           "id": 140054,
           "guild_conquest_progress_id": 139929,
@@ -178,17 +192,17 @@
           }
         },
         {
-          "id": 140049,
-          "guild_conquest_progress_id": 139925,
-          "kills": 499,
-          "experience": 2495,
+          "id": 140059,
+          "guild_conquest_progress_id": 139929,
+          "kills": 4,
+          "experience": 20,
           "guild": null,
           "character": {
-            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-            "name": "Jasper",
-            "total_level": 1503,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+            "hashed_id": "GZ2J71yYK1JEeQMmjbow",
+            "name": "JC001",
+            "total_level": 1687,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
         }
       ]
@@ -298,6 +312,25 @@
   ],
   "top_contributors": [
     {
+      "id": 140049,
+      "guild_conquest_progress_id": 139925,
+      "kills": 6860,
+      "experience": 34300,
+      "guild": null,
+      "character": {
+        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+        "name": "Jasper",
+        "total_level": 1505,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
       "id": 140054,
       "guild_conquest_progress_id": 139929,
       "kills": 891,
@@ -355,17 +388,17 @@
       }
     },
     {
-      "id": 140049,
-      "guild_conquest_progress_id": 139925,
-      "kills": 499,
-      "experience": 2495,
+      "id": 140059,
+      "guild_conquest_progress_id": 139929,
+      "kills": 4,
+      "experience": 20,
       "guild": null,
       "character": {
-        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-        "name": "Jasper",
-        "total_level": 1503,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+        "hashed_id": "GZ2J71yYK1JEeQMmjbow",
+        "name": "JC001",
+        "total_level": 1687,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
       },
       "zone": {
         "id": 4,
