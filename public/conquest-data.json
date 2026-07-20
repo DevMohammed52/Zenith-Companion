@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-07-20T12:20:48.072Z",
-    "fetched_at": "2026-07-20T12:20:31.611Z",
+    "generated_at": "2026-07-20T13:18:36.749Z",
+    "fetched_at": "2026-07-20T13:18:20.348Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-20T12:25:33+00:00",
+    "endpoint_updates_at": "2026-07-20T13:23:21+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16461
+      "elapsed_ms": 16401
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 0,
-      "leaderboard_rows": 0,
-      "contribution_rows": 0,
-      "guilds_observed": 0
+      "active_assaults": 1,
+      "leaderboard_rows": 1,
+      "contribution_rows": 1,
+      "guilds_observed": 1
     }
   },
   "zones": [
@@ -76,17 +76,57 @@
       "key": "crystal-caverns",
       "name": "Crystal Caverns",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
-      "status": "DORMANT",
-      "colour": null,
-      "kills": 0,
-      "experience": 0,
-      "guilds_count": 0,
-      "active_assaults_count": 0,
-      "leaderboard_count": 0,
-      "contribution_count": 0,
-      "active_assaults": [],
-      "guild_leaderboard": [],
-      "top_contributors": []
+      "status": "DOMINATED",
+      "colour": "#1383fb",
+      "kills": 499,
+      "experience": 2495,
+      "guilds_count": 1,
+      "active_assaults_count": 1,
+      "leaderboard_count": 1,
+      "contribution_count": 1,
+      "active_assaults": [
+        {
+          "kills": 499,
+          "experience": 2495,
+          "guild": {
+            "id": 129,
+            "name": "Ore Bros",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        }
+      ],
+      "guild_leaderboard": [
+        {
+          "position": 1,
+          "kills": 499,
+          "experience": 2495,
+          "guild": {
+            "id": 129,
+            "name": "Ore Bros",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
+          }
+        }
+      ],
+      "top_contributors": [
+        {
+          "id": 140049,
+          "guild_conquest_progress_id": 139925,
+          "kills": 499,
+          "experience": 2495,
+          "guild": null,
+          "character": {
+            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+            "name": "Jasper",
+            "total_level": 1503,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 5,
@@ -191,5 +231,25 @@
       "top_contributors": []
     }
   ],
-  "top_contributors": []
+  "top_contributors": [
+    {
+      "id": 140049,
+      "guild_conquest_progress_id": 139925,
+      "kills": 499,
+      "experience": 2495,
+      "guild": null,
+      "character": {
+        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+        "name": "Jasper",
+        "total_level": 1503,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    }
+  ]
 }
