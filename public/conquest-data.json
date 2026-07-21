@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-07-21T10:49:36.252Z",
-    "fetched_at": "2026-07-21T10:49:19.789Z",
+    "generated_at": "2026-07-21T11:51:15.805Z",
+    "fetched_at": "2026-07-21T11:50:59.307Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-21T10:54:21+00:00",
+    "endpoint_updates_at": "2026-07-21T11:56:00+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16463
+      "elapsed_ms": 16498
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 4,
-      "leaderboard_rows": 5,
-      "contribution_rows": 31,
-      "guilds_observed": 5
+      "active_assaults": 7,
+      "leaderboard_rows": 8,
+      "contribution_rows": 38,
+      "guilds_observed": 8
     }
   },
   "zones": [
@@ -25,17 +25,57 @@
       "key": "bluebell-hollow",
       "name": "Bluebell Hollow",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/XAo5lbIDq0CmH2M9LYWpre41Pta3MX-metaZmFybS5wbmc=-.png",
-      "status": "DORMANT",
-      "colour": null,
-      "kills": 0,
-      "experience": 0,
-      "guilds_count": 0,
-      "active_assaults_count": 0,
-      "leaderboard_count": 0,
-      "contribution_count": 0,
-      "active_assaults": [],
-      "guild_leaderboard": [],
-      "top_contributors": []
+      "status": "DOMINATED",
+      "colour": "#ffff00",
+      "kills": 128,
+      "experience": 128,
+      "guilds_count": 1,
+      "active_assaults_count": 1,
+      "leaderboard_count": 1,
+      "contribution_count": 1,
+      "active_assaults": [
+        {
+          "kills": 128,
+          "experience": 128,
+          "guild": {
+            "id": 994,
+            "name": "Starlight",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
+            "background_url": null
+          }
+        }
+      ],
+      "guild_leaderboard": [
+        {
+          "position": 1,
+          "kills": 128,
+          "experience": 128,
+          "guild": {
+            "id": 994,
+            "name": "Starlight",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+          }
+        }
+      ],
+      "top_contributors": [
+        {
+          "id": 140216,
+          "guild_conquest_progress_id": 140092,
+          "kills": 128,
+          "experience": 128,
+          "guild": null,
+          "character": {
+            "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
+            "name": "CJ0227",
+            "total_level": 451,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 2,
@@ -78,16 +118,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 79953,
-      "experience": 473616,
+      "kills": 88265,
+      "experience": 508699,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
       "contribution_count": 8,
       "active_assaults": [
         {
-          "kills": 1118,
-          "experience": 8932,
+          "kills": 9430,
+          "experience": 44015,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -123,8 +163,8 @@
         },
         {
           "position": 2,
-          "kills": 23477,
-          "experience": 151725,
+          "kills": 31789,
+          "experience": 186808,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -178,6 +218,20 @@
           }
         },
         {
+          "id": 140049,
+          "guild_conquest_progress_id": 139925,
+          "kills": 13013,
+          "experience": 65065,
+          "guild": null,
+          "character": {
+            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+            "name": "Jasper",
+            "total_level": 1508,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
+        {
           "id": 140059,
           "guild_conquest_progress_id": 139929,
           "kills": 9208,
@@ -189,20 +243,6 @@
             "total_level": 1688,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-          }
-        },
-        {
-          "id": 140049,
-          "guild_conquest_progress_id": 139925,
-          "kills": 6860,
-          "experience": 34300,
-          "guild": null,
-          "character": {
-            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-            "name": "Jasper",
-            "total_level": 1506,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -236,13 +276,13 @@
         {
           "id": 140085,
           "guild_conquest_progress_id": 139925,
-          "kills": 2,
-          "experience": 4,
+          "kills": 2161,
+          "experience": 4322,
           "guild": null,
           "character": {
             "hashed_id": "oyA279pNzKDbxYKRDEWm",
             "name": "Huska",
-            "total_level": 979,
+            "total_level": 982,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -330,17 +370,150 @@
       "key": "floating-gardens-of-aetheria",
       "name": "Floating Gardens of Aetheria",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
-      "status": "DORMANT",
-      "colour": null,
-      "kills": 0,
-      "experience": 0,
-      "guilds_count": 0,
-      "active_assaults_count": 0,
-      "leaderboard_count": 0,
-      "contribution_count": 0,
-      "active_assaults": [],
-      "guild_leaderboard": [],
-      "top_contributors": []
+      "status": "DOMINATED",
+      "colour": "#960b0b",
+      "kills": 75,
+      "experience": 422,
+      "guilds_count": 2,
+      "active_assaults_count": 2,
+      "leaderboard_count": 2,
+      "contribution_count": 6,
+      "active_assaults": [
+        {
+          "kills": 3,
+          "experience": 20,
+          "guild": {
+            "id": 697,
+            "name": "You Rising",
+            "tag": "YUR",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        },
+        {
+          "kills": 72,
+          "experience": 402,
+          "guild": {
+            "id": 381,
+            "name": "Memento Mortem",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
+      "guild_leaderboard": [
+        {
+          "position": 1,
+          "kills": 72,
+          "experience": 402,
+          "guild": {
+            "id": 381,
+            "name": "Memento Mortem",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
+          }
+        },
+        {
+          "position": 2,
+          "kills": 3,
+          "experience": 20,
+          "guild": {
+            "id": 697,
+            "name": "You Rising",
+            "tag": "YUR",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01J30AEMNKX77DWRVD2N24MXQ6.jpg"
+          }
+        }
+      ],
+      "top_contributors": [
+        {
+          "id": 140172,
+          "guild_conquest_progress_id": 140046,
+          "kills": 52,
+          "experience": 286,
+          "guild": null,
+          "character": {
+            "hashed_id": "3R0qXalLlWjjjYAbn8DB",
+            "name": "Skuttlespike",
+            "total_level": 1808,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG53B5NNN8C3JG0CZR1WJZ.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
+        {
+          "id": 140177,
+          "guild_conquest_progress_id": 140046,
+          "kills": 14,
+          "experience": 98,
+          "guild": null,
+          "character": {
+            "hashed_id": "Rn3x72JQ2b4KrQzOMok4",
+            "name": "GeekVax",
+            "total_level": 2072,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
+        {
+          "id": 140180,
+          "guild_conquest_progress_id": 140056,
+          "kills": 2,
+          "experience": 15,
+          "guild": null,
+          "character": {
+            "hashed_id": "7gw0k38L420eENWevJxy",
+            "name": "Gretos",
+            "total_level": 1926,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
+          }
+        },
+        {
+          "id": 140175,
+          "guild_conquest_progress_id": 140046,
+          "kills": 3,
+          "experience": 12,
+          "guild": null,
+          "character": {
+            "hashed_id": "7Do6jgkY0O4eoN8BAdKX",
+            "name": "Tsudaiy",
+            "total_level": 2051,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ZApiuHan6dbS7UKVKlznKWHD3mNRMK-metaZmVuZHJhbC5wbmc=-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+          }
+        },
+        {
+          "id": 140170,
+          "guild_conquest_progress_id": 140046,
+          "kills": 3,
+          "experience": 6,
+          "guild": null,
+          "character": {
+            "hashed_id": "ZvrGV8RQp6BEwY2wgA5j",
+            "name": "AngelXi",
+            "total_level": 1472,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CKB6A1W2DXZWGKFFA52PA.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
+          }
+        },
+        {
+          "id": 140207,
+          "guild_conquest_progress_id": 140056,
+          "kills": 1,
+          "experience": 5,
+          "guild": null,
+          "character": {
+            "hashed_id": "BngxedVYJKy1nLX64wW8",
+            "name": "ElSchu",
+            "total_level": 2094,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 8,
@@ -349,16 +522,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/V2WNALoiwiVIfOe3HiEFPNaZKTPsur-metaQ2VsZXN0aWFsIG9ic2VydmF0b3J5LnBuZw==-.png",
       "status": "DOMINATED",
       "colour": "#be1600",
-      "kills": 2955,
-      "experience": 27134,
+      "kills": 3521,
+      "experience": 31096,
       "guilds_count": 1,
       "active_assaults_count": 1,
       "leaderboard_count": 1,
       "contribution_count": 12,
       "active_assaults": [
         {
-          "kills": 2955,
-          "experience": 27134,
+          "kills": 3521,
+          "experience": 31096,
           "guild": {
             "id": 9,
             "name": "Sacred Assault",
@@ -371,8 +544,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 2955,
-          "experience": 27134,
+          "kills": 3521,
+          "experience": 31096,
           "guild": {
             "id": 9,
             "name": "Sacred Assault",
@@ -409,6 +582,20 @@
             "total_level": 1256,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKA8TSMYQPSHX8V8NMXWXZQ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+          }
+        },
+        {
+          "id": 140164,
+          "guild_conquest_progress_id": 139969,
+          "kills": 569,
+          "experience": 3983,
+          "guild": null,
+          "character": {
+            "hashed_id": "BngxedVYJyqzbNX64wW8",
+            "name": "SoHay99",
+            "total_level": 1925,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG43SHXB7AXE9TMA2365TTN.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg"
           }
         },
         {
@@ -479,20 +666,6 @@
             "total_level": 2029,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-          }
-        },
-        {
-          "id": 140164,
-          "guild_conquest_progress_id": 139969,
-          "kills": 3,
-          "experience": 21,
-          "guild": null,
-          "character": {
-            "hashed_id": "BngxedVYJyqzbNX64wW8",
-            "name": "SoHay99",
-            "total_level": 1925,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG43SHXB7AXE9TMA2365TTN.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg"
           }
         },
         {
@@ -799,6 +972,25 @@
       }
     },
     {
+      "id": 140049,
+      "guild_conquest_progress_id": 139925,
+      "kills": 13013,
+      "experience": 65065,
+      "guild": null,
+      "character": {
+        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+        "name": "Jasper",
+        "total_level": 1508,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
       "id": 140059,
       "guild_conquest_progress_id": 139929,
       "kills": 9208,
@@ -810,25 +1002,6 @@
         "total_level": 1688,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-      },
-      "zone": {
-        "id": 4,
-        "key": "crystal-caverns",
-        "name": "Crystal Caverns"
-      }
-    },
-    {
-      "id": 140049,
-      "guild_conquest_progress_id": 139925,
-      "kills": 6860,
-      "experience": 34300,
-      "guild": null,
-      "character": {
-        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-        "name": "Jasper",
-        "total_level": 1506,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
       },
       "zone": {
         "id": 4,
@@ -989,6 +1162,25 @@
       }
     },
     {
+      "id": 140085,
+      "guild_conquest_progress_id": 139925,
+      "kills": 2161,
+      "experience": 4322,
+      "guild": null,
+      "character": {
+        "hashed_id": "oyA279pNzKDbxYKRDEWm",
+        "name": "Huska",
+        "total_level": 982,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
       "id": 140092,
       "guild_conquest_progress_id": 139965,
       "kills": 720,
@@ -1024,6 +1216,25 @@
         "id": 9,
         "key": "isle-of-whispers",
         "name": "Isle of Whispers"
+      }
+    },
+    {
+      "id": 140164,
+      "guild_conquest_progress_id": 139969,
+      "kills": 569,
+      "experience": 3983,
+      "guild": null,
+      "character": {
+        "hashed_id": "BngxedVYJyqzbNX64wW8",
+        "name": "SoHay99",
+        "total_level": 1925,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG43SHXB7AXE9TMA2365TTN.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg"
+      },
+      "zone": {
+        "id": 8,
+        "key": "celestial-observatory",
+        "name": "Celestial Observatory"
       }
     },
     {
@@ -1160,6 +1371,44 @@
       }
     },
     {
+      "id": 140172,
+      "guild_conquest_progress_id": 140046,
+      "kills": 52,
+      "experience": 286,
+      "guild": null,
+      "character": {
+        "hashed_id": "3R0qXalLlWjjjYAbn8DB",
+        "name": "Skuttlespike",
+        "total_level": 1808,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG53B5NNN8C3JG0CZR1WJZ.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
+      "id": 140216,
+      "guild_conquest_progress_id": 140092,
+      "kills": 128,
+      "experience": 128,
+      "guild": null,
+      "character": {
+        "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
+        "name": "CJ0227",
+        "total_level": 451,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+      },
+      "zone": {
+        "id": 1,
+        "key": "bluebell-hollow",
+        "name": "Bluebell Hollow"
+      }
+    },
+    {
       "id": 140097,
       "guild_conquest_progress_id": 139969,
       "kills": 14,
@@ -1198,6 +1447,25 @@
       }
     },
     {
+      "id": 140177,
+      "guild_conquest_progress_id": 140046,
+      "kills": 14,
+      "experience": 98,
+      "guild": null,
+      "character": {
+        "hashed_id": "Rn3x72JQ2b4KrQzOMok4",
+        "name": "GeekVax",
+        "total_level": 2072,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6JBFPEDCXFEMVB6EGEG0T.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 140140,
       "guild_conquest_progress_id": 139965,
       "kills": 9,
@@ -1214,25 +1482,6 @@
         "id": 9,
         "key": "isle-of-whispers",
         "name": "Isle of Whispers"
-      }
-    },
-    {
-      "id": 140164,
-      "guild_conquest_progress_id": 139969,
-      "kills": 3,
-      "experience": 21,
-      "guild": null,
-      "character": {
-        "hashed_id": "BngxedVYJyqzbNX64wW8",
-        "name": "SoHay99",
-        "total_level": 1925,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG43SHXB7AXE9TMA2365TTN.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg"
-      },
-      "zone": {
-        "id": 8,
-        "key": "celestial-observatory",
-        "name": "Celestial Observatory"
       }
     },
     {
@@ -1255,6 +1504,44 @@
       }
     },
     {
+      "id": 140180,
+      "guild_conquest_progress_id": 140056,
+      "kills": 2,
+      "experience": 15,
+      "guild": null,
+      "character": {
+        "hashed_id": "7gw0k38L420eENWevJxy",
+        "name": "Gretos",
+        "total_level": 1926,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
+      "id": 140175,
+      "guild_conquest_progress_id": 140046,
+      "kills": 3,
+      "experience": 12,
+      "guild": null,
+      "character": {
+        "hashed_id": "7Do6jgkY0O4eoN8BAdKX",
+        "name": "Tsudaiy",
+        "total_level": 2051,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ZApiuHan6dbS7UKVKlznKWHD3mNRMK-metaZmVuZHJhbC5wbmc=-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 140153,
       "guild_conquest_progress_id": 139969,
       "kills": 2,
@@ -1274,22 +1561,41 @@
       }
     },
     {
-      "id": 140085,
-      "guild_conquest_progress_id": 139925,
-      "kills": 2,
-      "experience": 4,
+      "id": 140170,
+      "guild_conquest_progress_id": 140046,
+      "kills": 3,
+      "experience": 6,
       "guild": null,
       "character": {
-        "hashed_id": "oyA279pNzKDbxYKRDEWm",
-        "name": "Huska",
-        "total_level": 979,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "hashed_id": "ZvrGV8RQp6BEwY2wgA5j",
+        "name": "AngelXi",
+        "total_level": 1472,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CKB6A1W2DXZWGKFFA52PA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
       },
       "zone": {
-        "id": 4,
-        "key": "crystal-caverns",
-        "name": "Crystal Caverns"
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
+      "id": 140207,
+      "guild_conquest_progress_id": 140056,
+      "kills": 1,
+      "experience": 5,
+      "guild": null,
+      "character": {
+        "hashed_id": "BngxedVYJKy1nLX64wW8",
+        "name": "ElSchu",
+        "total_level": 2094,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
       }
     },
     {
