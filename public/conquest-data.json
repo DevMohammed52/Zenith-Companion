@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-07-21T03:19:24.545Z",
-    "fetched_at": "2026-07-21T03:19:08.064Z",
+    "generated_at": "2026-07-21T04:34:47.116Z",
+    "fetched_at": "2026-07-21T04:34:30.635Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-21T03:24:09+00:00",
+    "endpoint_updates_at": "2026-07-21T04:39:32+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
@@ -15,7 +15,7 @@
       "zones": 10,
       "active_assaults": 2,
       "leaderboard_rows": 2,
-      "contribution_rows": 5,
+      "contribution_rows": 7,
       "guilds_observed": 2
     }
   },
@@ -78,16 +78,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": "#1383fb",
-      "kills": 26471,
-      "experience": 172832,
+      "kills": 45671,
+      "experience": 211232,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
-      "contribution_count": 5,
+      "contribution_count": 7,
       "active_assaults": [
         {
-          "kills": 2996,
-          "experience": 21111,
+          "kills": 22196,
+          "experience": 59511,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -123,8 +123,8 @@
         },
         {
           "position": 2,
-          "kills": 2996,
-          "experience": 21111,
+          "kills": 22196,
+          "experience": 59511,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -161,6 +161,34 @@
             "total_level": 1506,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
+        {
+          "id": 140074,
+          "guild_conquest_progress_id": 139929,
+          "kills": 9600,
+          "experience": 19200,
+          "guild": null,
+          "character": {
+            "hashed_id": "GXBy7a4Lby2KY0Pw6Vdg",
+            "name": "Limez2",
+            "total_level": 2138,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
+          }
+        },
+        {
+          "id": 140071,
+          "guild_conquest_progress_id": 139929,
+          "kills": 9600,
+          "experience": 19200,
+          "guild": null,
+          "character": {
+            "hashed_id": "GZ2J71yYK1dKQMmjbown",
+            "name": "Limez3",
+            "total_level": 2131,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
           }
         },
         {
@@ -342,6 +370,44 @@
         "total_level": 1506,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
+      "id": 140074,
+      "guild_conquest_progress_id": 139929,
+      "kills": 9600,
+      "experience": 19200,
+      "guild": null,
+      "character": {
+        "hashed_id": "GXBy7a4Lby2KY0Pw6Vdg",
+        "name": "Limez2",
+        "total_level": 2138,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
+      "id": 140071,
+      "guild_conquest_progress_id": 139929,
+      "kills": 9600,
+      "experience": 19200,
+      "guild": null,
+      "character": {
+        "hashed_id": "GZ2J71yYK1dKQMmjbown",
+        "name": "Limez3",
+        "total_level": 2131,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAG435VEA5DBC2PEAFC3XR4H.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
       },
       "zone": {
         "id": 4,
