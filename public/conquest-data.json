@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-07-21T15:25:50.502Z",
-    "fetched_at": "2026-07-21T15:25:34.023Z",
+    "generated_at": "2026-07-21T16:26:42.968Z",
+    "fetched_at": "2026-07-21T16:26:26.303Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-21T15:30:35+00:00",
+    "endpoint_updates_at": "2026-07-21T16:31:27+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16479
+      "elapsed_ms": 16665
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 6,
+      "active_assaults": 5,
       "leaderboard_rows": 8,
-      "contribution_rows": 46,
+      "contribution_rows": 48,
       "guilds_observed": 8
     }
   },
@@ -27,30 +27,18 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/XAo5lbIDq0CmH2M9LYWpre41Pta3MX-metaZmFybS5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#ffff00",
-      "kills": 4398,
-      "experience": 4398,
+      "kills": 11763,
+      "experience": 13508,
       "guilds_count": 1,
-      "active_assaults_count": 1,
+      "active_assaults_count": 0,
       "leaderboard_count": 1,
-      "contribution_count": 3,
-      "active_assaults": [
-        {
-          "kills": 4398,
-          "experience": 4398,
-          "guild": {
-            "id": 994,
-            "name": "Starlight",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
-            "background_url": null
-          }
-        }
-      ],
+      "contribution_count": 5,
+      "active_assaults": [],
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 4398,
-          "experience": 4398,
+          "kills": 11763,
+          "experience": 13508,
           "guild": {
             "id": 994,
             "name": "Starlight",
@@ -62,10 +50,38 @@
       ],
       "top_contributors": [
         {
+          "id": 140251,
+          "guild_conquest_progress_id": 140092,
+          "kills": 4555,
+          "experience": 4555,
+          "guild": null,
+          "character": {
+            "hashed_id": "VrBKlPdNdxGwVNWG8xJe",
+            "name": "Maranne",
+            "total_level": 717,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2BWZSH537R9RB9C0Y56TDW.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+          }
+        },
+        {
+          "id": 140248,
+          "guild_conquest_progress_id": 140092,
+          "kills": 1745,
+          "experience": 3490,
+          "guild": null,
+          "character": {
+            "hashed_id": "9pwa0kxLBk7XJQgVj136",
+            "name": "EphemeriS",
+            "total_level": 1551,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJQS2J9RHH6CN5DYY8SP8.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png"
+          }
+        },
+        {
           "id": 140229,
           "guild_conquest_progress_id": 140092,
-          "kills": 2089,
-          "experience": 2089,
+          "kills": 2766,
+          "experience": 2766,
           "guild": null,
           "character": {
             "hashed_id": "Zdg5V3PQoyEn1YEyWq0z",
@@ -92,13 +108,13 @@
         {
           "id": 140216,
           "guild_conquest_progress_id": 140092,
-          "kills": 714,
-          "experience": 714,
+          "kills": 1102,
+          "experience": 1102,
           "guild": null,
           "character": {
             "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
             "name": "CJ0227",
-            "total_level": 455,
+            "total_level": 456,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -553,7 +569,7 @@
           "character": {
             "hashed_id": "ZvrGV8RQp6BEwY2wgA5j",
             "name": "AngelXi",
-            "total_level": 1472,
+            "total_level": 1473,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CKB6A1W2DXZWGKFFA52PA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -1301,6 +1317,25 @@
       }
     },
     {
+      "id": 140251,
+      "guild_conquest_progress_id": 140092,
+      "kills": 4555,
+      "experience": 4555,
+      "guild": null,
+      "character": {
+        "hashed_id": "VrBKlPdNdxGwVNWG8xJe",
+        "name": "Maranne",
+        "total_level": 717,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2BWZSH537R9RB9C0Y56TDW.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+      },
+      "zone": {
+        "id": 1,
+        "key": "bluebell-hollow",
+        "name": "Bluebell Hollow"
+      }
+    },
+    {
       "id": 140085,
       "guild_conquest_progress_id": 139925,
       "kills": 2161,
@@ -1472,6 +1507,25 @@
       }
     },
     {
+      "id": 140248,
+      "guild_conquest_progress_id": 140092,
+      "kills": 1745,
+      "experience": 3490,
+      "guild": null,
+      "character": {
+        "hashed_id": "9pwa0kxLBk7XJQgVj136",
+        "name": "EphemeriS",
+        "total_level": 1551,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJQS2J9RHH6CN5DYY8SP8.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png"
+      },
+      "zone": {
+        "id": 1,
+        "key": "bluebell-hollow",
+        "name": "Bluebell Hollow"
+      }
+    },
+    {
       "id": 140224,
       "guild_conquest_progress_id": 140056,
       "kills": 544,
@@ -1491,6 +1545,25 @@
       }
     },
     {
+      "id": 140229,
+      "guild_conquest_progress_id": 140092,
+      "kills": 2766,
+      "experience": 2766,
+      "guild": null,
+      "character": {
+        "hashed_id": "Zdg5V3PQoyEn1YEyWq0z",
+        "name": "Bazzo",
+        "total_level": 935,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP2211VMCKN780M6RM60775H.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
+      },
+      "zone": {
+        "id": 1,
+        "key": "bluebell-hollow",
+        "name": "Bluebell Hollow"
+      }
+    },
+    {
       "id": 140161,
       "guild_conquest_progress_id": 139965,
       "kills": 566,
@@ -1507,25 +1580,6 @@
         "id": 9,
         "key": "isle-of-whispers",
         "name": "Isle of Whispers"
-      }
-    },
-    {
-      "id": 140229,
-      "guild_conquest_progress_id": 140092,
-      "kills": 2089,
-      "experience": 2089,
-      "guild": null,
-      "character": {
-        "hashed_id": "Zdg5V3PQoyEn1YEyWq0z",
-        "name": "Bazzo",
-        "total_level": 935,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP2211VMCKN780M6RM60775H.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
-      },
-      "zone": {
-        "id": 1,
-        "key": "bluebell-hollow",
-        "name": "Bluebell Hollow"
       }
     },
     {
@@ -1569,13 +1623,13 @@
     {
       "id": 140216,
       "guild_conquest_progress_id": 140092,
-      "kills": 714,
-      "experience": 714,
+      "kills": 1102,
+      "experience": 1102,
       "guild": null,
       "character": {
         "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
         "name": "CJ0227",
-        "total_level": 455,
+        "total_level": 456,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
       },
@@ -1822,7 +1876,7 @@
       "character": {
         "hashed_id": "ZvrGV8RQp6BEwY2wgA5j",
         "name": "AngelXi",
-        "total_level": 1472,
+        "total_level": 1473,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CKB6A1W2DXZWGKFFA52PA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
       },
