@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-07-21T06:16:49.197Z",
-    "fetched_at": "2026-07-21T06:16:32.697Z",
+    "generated_at": "2026-07-21T07:35:19.390Z",
+    "fetched_at": "2026-07-21T07:35:02.908Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-21T06:21:34+00:00",
+    "endpoint_updates_at": "2026-07-21T07:40:04+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16500
+      "elapsed_ms": 16482
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 1,
+      "active_assaults": 2,
       "leaderboard_rows": 2,
-      "contribution_rows": 7,
-      "guilds_observed": 2
+      "contribution_rows": 8,
+      "guilds_observed": 3
     }
   },
   "zones": [
@@ -76,18 +76,18 @@
       "key": "crystal-caverns",
       "name": "Crystal Caverns",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
-      "status": "CONTESTED",
+      "status": "DOMINATED",
       "colour": null,
-      "kills": 59096,
-      "experience": 305207,
+      "kills": 71924,
+      "experience": 433471,
       "guilds_count": 2,
       "active_assaults_count": 1,
       "leaderboard_count": 2,
-      "contribution_count": 7,
+      "contribution_count": 8,
       "active_assaults": [
         {
-          "kills": 1116,
-          "experience": 8928,
+          "kills": 1118,
+          "experience": 8932,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -100,8 +100,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 35621,
-          "experience": 153486,
+          "kills": 48447,
+          "experience": 281746,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -112,8 +112,8 @@
         },
         {
           "position": 2,
-          "kills": 23475,
-          "experience": 151721,
+          "kills": 23477,
+          "experience": 151725,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -124,6 +124,20 @@
         }
       ],
       "top_contributors": [
+        {
+          "id": 140054,
+          "guild_conquest_progress_id": 139929,
+          "kills": 13717,
+          "experience": 137170,
+          "guild": null,
+          "character": {
+            "hashed_id": "7gw0k38L41y5ZQWevJxy",
+            "name": "ILGIN",
+            "total_level": 1671,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+          }
+        },
         {
           "id": 140052,
           "guild_conquest_progress_id": 139925,
@@ -195,20 +209,6 @@
           }
         },
         {
-          "id": 140054,
-          "guild_conquest_progress_id": 139929,
-          "kills": 891,
-          "experience": 8910,
-          "guild": null,
-          "character": {
-            "hashed_id": "7gw0k38L41y5ZQWevJxy",
-            "name": "ILGIN",
-            "total_level": 1670,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
-          }
-        },
-        {
           "id": 140059,
           "guild_conquest_progress_id": 139929,
           "kills": 1180,
@@ -220,6 +220,20 @@
             "total_level": 1687,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+          }
+        },
+        {
+          "id": 140085,
+          "guild_conquest_progress_id": 139925,
+          "kills": 2,
+          "experience": 4,
+          "guild": null,
+          "character": {
+            "hashed_id": "oyA279pNzKDbxYKRDEWm",
+            "name": "Huska",
+            "total_level": 979,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
         }
       ]
@@ -234,10 +248,22 @@
       "kills": 0,
       "experience": 0,
       "guilds_count": 0,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 0,
       "contribution_count": 0,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 441,
+            "name": "Accursed",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [],
       "top_contributors": []
     },
@@ -328,6 +354,25 @@
     }
   ],
   "top_contributors": [
+    {
+      "id": 140054,
+      "guild_conquest_progress_id": 139929,
+      "kills": 13717,
+      "experience": 137170,
+      "guild": null,
+      "character": {
+        "hashed_id": "7gw0k38L41y5ZQWevJxy",
+        "name": "ILGIN",
+        "total_level": 1671,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
     {
       "id": 140052,
       "guild_conquest_progress_id": 139925,
@@ -424,25 +469,6 @@
       }
     },
     {
-      "id": 140054,
-      "guild_conquest_progress_id": 139929,
-      "kills": 891,
-      "experience": 8910,
-      "guild": null,
-      "character": {
-        "hashed_id": "7gw0k38L41y5ZQWevJxy",
-        "name": "ILGIN",
-        "total_level": 1670,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
-      },
-      "zone": {
-        "id": 4,
-        "key": "crystal-caverns",
-        "name": "Crystal Caverns"
-      }
-    },
-    {
       "id": 140059,
       "guild_conquest_progress_id": 139929,
       "kills": 1180,
@@ -454,6 +480,25 @@
         "total_level": 1687,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A1AWG8HN1DDWM0PEQW1HV.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+      },
+      "zone": {
+        "id": 4,
+        "key": "crystal-caverns",
+        "name": "Crystal Caverns"
+      }
+    },
+    {
+      "id": 140085,
+      "guild_conquest_progress_id": 139925,
+      "kills": 2,
+      "experience": 4,
+      "guild": null,
+      "character": {
+        "hashed_id": "oyA279pNzKDbxYKRDEWm",
+        "name": "Huska",
+        "total_level": 979,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
       },
       "zone": {
         "id": 4,
