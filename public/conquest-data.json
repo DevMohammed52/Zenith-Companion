@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-07-22T06:15:24.821Z",
-    "fetched_at": "2026-07-22T06:15:08.334Z",
+    "generated_at": "2026-07-22T07:38:16.657Z",
+    "fetched_at": "2026-07-22T07:38:00.183Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-22T06:20:09+00:00",
+    "endpoint_updates_at": "2026-07-22T07:43:01+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16487
+      "elapsed_ms": 16474
     },
     "totals": {
       "zones": 10,
       "active_assaults": 2,
-      "leaderboard_rows": 8,
-      "contribution_rows": 78,
-      "guilds_observed": 9
+      "leaderboard_rows": 10,
+      "contribution_rows": 80,
+      "guilds_observed": 10
     }
   },
   "zones": [
@@ -156,7 +156,7 @@
           "character": {
             "hashed_id": "rz9RZnWN7vRz4QKAp0Md",
             "name": "Boarner",
-            "total_level": 1161,
+            "total_level": 1165,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/wpLOXlwbLIc0TjaZk4eLAqS6MoSRh5-metaY291bnR5IGdpcmwgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
@@ -182,17 +182,57 @@
       "key": "whispering-woods",
       "name": "Whispering Woods",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/dVBDrBxJSjTtJXNWifhVyA5h5lAmJ1-metaV2hpc3BlcmluZyB3b29kcy5wbmc=-.png",
-      "status": "DORMANT",
+      "status": "DOMINATED",
       "colour": null,
-      "kills": 0,
-      "experience": 0,
-      "guilds_count": 0,
-      "active_assaults_count": 0,
-      "leaderboard_count": 0,
-      "contribution_count": 0,
-      "active_assaults": [],
-      "guild_leaderboard": [],
-      "top_contributors": []
+      "kills": 13,
+      "experience": 39,
+      "guilds_count": 1,
+      "active_assaults_count": 1,
+      "leaderboard_count": 1,
+      "contribution_count": 1,
+      "active_assaults": [
+        {
+          "kills": 13,
+          "experience": 39,
+          "guild": {
+            "id": 230,
+            "name": "Sacred Monsters",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK07B9XMN51V5RBKX23K74.png",
+            "background_url": null
+          }
+        }
+      ],
+      "guild_leaderboard": [
+        {
+          "position": 1,
+          "kills": 13,
+          "experience": 39,
+          "guild": {
+            "id": 230,
+            "name": "Sacred Monsters",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK07B9XMN51V5RBKX23K74.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01JRG82ZNK5GNQBH57027S3V7N.jpg"
+          }
+        }
+      ],
+      "top_contributors": [
+        {
+          "id": 140466,
+          "guild_conquest_progress_id": 140342,
+          "kills": 13,
+          "experience": 39,
+          "guild": null,
+          "character": {
+            "hashed_id": "6aDoyRnLyo2mMNpV5AGX",
+            "name": "MortBlanc",
+            "total_level": 1768,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAE5NZF0X1MG48C8QQ95DX.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 3,
@@ -218,16 +258,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 112364,
-      "experience": 669175,
+      "kills": 112366,
+      "experience": 669185,
       "guilds_count": 2,
       "active_assaults_count": 1,
       "leaderboard_count": 2,
       "contribution_count": 8,
       "active_assaults": [
         {
-          "kills": 12,
-          "experience": 132,
+          "kills": 14,
+          "experience": 142,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -240,8 +280,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 67272,
-          "experience": 375943,
+          "kills": 67274,
+          "experience": 375953,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -281,8 +321,8 @@
         {
           "id": 140053,
           "guild_conquest_progress_id": 139929,
-          "kills": 25135,
-          "experience": 154201,
+          "kills": 25137,
+          "experience": 154211,
           "guild": null,
           "character": {
             "hashed_id": "rz9RZnWN7exP2LKAp0Md",
@@ -461,25 +501,13 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#aaf200",
-      "kills": 130834,
-      "experience": 658083,
-      "guilds_count": 2,
-      "active_assaults_count": 1,
-      "leaderboard_count": 2,
-      "contribution_count": 18,
-      "active_assaults": [
-        {
-          "kills": 0,
-          "experience": 0,
-          "guild": {
-            "id": 1290,
-            "name": "Forgotten Horde",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-            "background_url": null
-          }
-        }
-      ],
+      "kills": 138763,
+      "experience": 705657,
+      "guilds_count": 3,
+      "active_assaults_count": 0,
+      "leaderboard_count": 3,
+      "contribution_count": 19,
+      "active_assaults": [],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -503,6 +531,18 @@
             "tag": "MTM",
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg"
+          }
+        },
+        {
+          "position": 3,
+          "kills": 7929,
+          "experience": 47574,
+          "guild": {
+            "id": 1290,
+            "name": "Forgotten Horde",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
           }
         }
       ],
@@ -561,6 +601,20 @@
             "total_level": 2094,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
+          }
+        },
+        {
+          "id": 140463,
+          "guild_conquest_progress_id": 140339,
+          "kills": 7929,
+          "experience": 47574,
+          "guild": null,
+          "character": {
+            "hashed_id": "3R0qXalLl6l2mNAbn8DB",
+            "name": "Mephitos",
+            "total_level": 1949,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAQE3WPXEVBAGHNHEPN3BBW2.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
         },
         {
@@ -1009,7 +1063,7 @@
           "character": {
             "hashed_id": "Zbym56qLxXbM5LBRp7Ee",
             "name": "BoretsSumo",
-            "total_level": 1812,
+            "total_level": 1813,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/yqO9fADxr1vaH8qHdY3ze31fNEdUXK-metaYmFuZGFnZS1ib2IucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
@@ -1320,7 +1374,7 @@
           "character": {
             "hashed_id": "jVDJez3LDzo0ONKWO08G",
             "name": "Taruf",
-            "total_level": 1928,
+            "total_level": 1929,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP3FQVKKM9TV56JEQX77W3.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/lbl2Nn9vYtlRCFzrzqGqpRxFnP0upQ-metaNi5wbmc=-.png"
           }
@@ -1438,8 +1492,8 @@
     {
       "id": 140053,
       "guild_conquest_progress_id": 139929,
-      "kills": 25135,
-      "experience": 154201,
+      "kills": 25137,
+      "experience": 154211,
       "guild": null,
       "character": {
         "hashed_id": "rz9RZnWN7exP2LKAp0Md",
@@ -1892,6 +1946,25 @@
       }
     },
     {
+      "id": 140463,
+      "guild_conquest_progress_id": 140339,
+      "kills": 7929,
+      "experience": 47574,
+      "guild": null,
+      "character": {
+        "hashed_id": "3R0qXalLl6l2mNAbn8DB",
+        "name": "Mephitos",
+        "total_level": 1949,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAQE3WPXEVBAGHNHEPN3BBW2.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 140059,
       "guild_conquest_progress_id": 139929,
       "kills": 9208,
@@ -2052,7 +2125,7 @@
       "character": {
         "hashed_id": "jVDJez3LDzo0ONKWO08G",
         "name": "Taruf",
-        "total_level": 1928,
+        "total_level": 1929,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP3FQVKKM9TV56JEQX77W3.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/lbl2Nn9vYtlRCFzrzqGqpRxFnP0upQ-metaNi5wbmc=-.png"
       },
@@ -2413,7 +2486,7 @@
       "character": {
         "hashed_id": "Zbym56qLxXbM5LBRp7Ee",
         "name": "BoretsSumo",
-        "total_level": 1812,
+        "total_level": 1813,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/yqO9fADxr1vaH8qHdY3ze31fNEdUXK-metaYmFuZGFnZS1ib2IucG5n-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
       },
@@ -2815,25 +2888,6 @@
         "total_level": 1553,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJQS2J9RHH6CN5DYY8SP8.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png"
-      },
-      "zone": {
-        "id": 1,
-        "key": "bluebell-hollow",
-        "name": "Bluebell Hollow"
-      }
-    },
-    {
-      "id": 140386,
-      "guild_conquest_progress_id": 140092,
-      "kills": 2789,
-      "experience": 2789,
-      "guild": null,
-      "character": {
-        "hashed_id": "Zwey82VNAyvy6ND0dXM3",
-        "name": "RasengaN",
-        "total_level": 1283,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PAB8DTMVJ5B6GHT6H5D4TK.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCSPNDT0XQ8AAC8616QGRM7T.jpg"
       },
       "zone": {
         "id": 1,
