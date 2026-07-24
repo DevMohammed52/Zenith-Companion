@@ -1848,6 +1848,110 @@
           "chance": 75.9
         }
       ]
+    },
+    {
+      "id": 54,
+      "name": "Gnarur",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30JCM90C9SPWAZJ4ATZ7PCB.png",
+      "level": 1,
+      "experience": 3,
+      "health": 23,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "joPWKDkLXjqMN06ZOX79",
+          "name": "Ancient Parchment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30CA49KTAY88AKKFKAVTPP3.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "7eA59WrBQRVrQzb62qKv",
+          "name": "Fossil",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCN2MDRDHWTKSDG253PAP2.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        }
+      ],
+      "_source": "live_enemies_api"
+    },
+    {
+      "id": 55,
+      "name": "Hazel",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30JC4AP8PFFM606BXYBRKQP.png",
+      "level": 30,
+      "experience": 17,
+      "health": 259,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "v5g4z1dQnkrzNqy32jpG",
+          "name": "Starlight Gem",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30CDE8XEVDVB91FHT7HQR7Z.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "VrBKlPdNd7KOQWG8xJe9",
+          "name": "Ethereal Gem",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30CB0A8GSCTNN57DBQQ0KHR.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "Ro31P7kZL6OJQveGxXOy",
+          "name": "Magnifying Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCNYGPWERYJYRB659CD42M.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 50
+        }
+      ],
+      "_source": "live_enemies_api"
+    },
+    {
+      "id": 56,
+      "name": "Ragruth",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J3CWBKEKAV3EGWDFJ8ZBV9GR.png",
+      "level": 65,
+      "experience": 35,
+      "health": 544,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "leApVoENk1kpL7nRPy2D",
+          "name": "Lunar Stone",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30CBA0B2JF8Y6BEEYWCBE9S.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 25
+        },
+        {
+          "hashed_item_id": "ZjlPA8v9NMkpLEyMe2Oa",
+          "name": "Rolix Shell",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J7NCPXE5VZPXWQSSTBQYJJ1R.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 75
+        }
+      ],
+      "_source": "live_enemies_api"
     }
   ],
   "dungeons": [
@@ -4442,6 +4546,106 @@
           "dungeoneering": 105084
         }
       }
+    },
+    {
+      "id": 21,
+      "name": "Silverleaf Enclave",
+      "description": "",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30H9GCWTSAD4MTNDRFC60R4.png",
+      "level_required": 25,
+      "difficulty": 100,
+      "length": 7200000,
+      "cost": 2500,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 79.98
+        },
+        {
+          "hashed_item_id": "eA59WrBQRpa4Yzb62qKv",
+          "name": "Moon Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z7SGQCYSCFNQ572GTN1SJ.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.02
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 828,
+          "dungeoneering": 5400,
+          "lunar-mastery": 828
+        }
+      },
+      "_source": "live_dungeons_api"
+    },
+    {
+      "id": 26,
+      "name": "Stone Hollow",
+      "description": "",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0C2B2DNQZ2DY6TDRSP787Z0.png",
+      "level_required": 50,
+      "difficulty": 350,
+      "length": 7200000,
+      "cost": 10000,
+      "shards": 40,
+      "completion_requirement": 50,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 69.9
+        },
+        {
+          "hashed_item_id": "eA59WrBQRpa4Yzb62qKv",
+          "name": "Moon Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z7SGQCYSCFNQ572GTN1SJ.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1800,
+          "dungeoneering": 15120,
+          "lunar-mastery": 1800
+        }
+      },
+      "_source": "live_dungeons_api"
     }
   ],
   "world_bosses": [
@@ -4895,7 +5099,7 @@
           "chance": 1.5
         }
       ],
-      "status": "READY_FOR_LOBBY",
+      "status": "IN_PROGRESS",
       "battle_starts_at": "2026-07-24T14:07:50+00:00",
       "battle_ends_at": "2026-07-24T14:36:10+00:00"
     },
@@ -4953,6 +5157,86 @@
       "status": "READY_FOR_LOBBY",
       "battle_starts_at": "2026-07-24T14:41:10+00:00",
       "battle_ends_at": "2026-07-24T15:06:10+00:00"
+    },
+    {
+      "id": 14,
+      "name": "Noctarok",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30JBT4V0N1HJADQ01RKFB08.png",
+      "level": 10,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 10,
+          "chance": 19.95
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 10,
+          "chance": 80
+        },
+        {
+          "hashed_item_id": "gBq1boWYedqaNkJ3rXaD",
+          "name": "Jar of Stardust",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z6TC791B226K21XNXTNGA.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.05
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-07-24T15:23:50+00:00",
+      "battle_ends_at": "2026-07-24T15:25:10+00:00",
+      "_source": "live_world_boss_api"
+    },
+    {
+      "id": 19,
+      "name": "Mistcaller",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAFG7XZVKMKMRSDMRB3BQQ.png",
+      "level": 60,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 25,
+          "chance": 29.8
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 25,
+          "chance": 70
+        },
+        {
+          "hashed_item_id": "gBq1boWYedqaNkJ3rXaD",
+          "name": "Jar of Stardust",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z6TC791B226K21XNXTNGA.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.2
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-07-24T15:23:50+00:00",
+      "battle_ends_at": "2026-07-24T15:25:10+00:00",
+      "_source": "live_world_boss_api"
     }
   ]
 }
