@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-07-24T08:44:43.531Z",
-    "fetched_at": "2026-07-24T08:44:27.064Z",
+    "generated_at": "2026-07-24T09:44:18.842Z",
+    "fetched_at": "2026-07-24T09:44:02.679Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-07-24T08:49:28+00:00",
+    "endpoint_updates_at": "2026-07-24T09:49:03+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16467
+      "elapsed_ms": 16163
     },
     "totals": {
       "zones": 10,
       "active_assaults": 1,
-      "leaderboard_rows": 13,
-      "contribution_rows": 104,
+      "leaderboard_rows": 14,
+      "contribution_rows": 110,
       "guilds_observed": 13
     }
   },
@@ -198,30 +198,18 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/dVBDrBxJSjTtJXNWifhVyA5h5lAmJ1-metaV2hpc3BlcmluZyB3b29kcy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 3234,
-      "experience": 9695,
+      "kills": 6705,
+      "experience": 20108,
       "guilds_count": 1,
-      "active_assaults_count": 1,
+      "active_assaults_count": 0,
       "leaderboard_count": 1,
       "contribution_count": 3,
-      "active_assaults": [
-        {
-          "kills": 7,
-          "experience": 14,
-          "guild": {
-            "id": 230,
-            "name": "Sacred Monsters",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK07B9XMN51V5RBKX23K74.png",
-            "background_url": null
-          }
-        }
-      ],
+      "active_assaults": [],
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 3234,
-          "experience": 9695,
+          "kills": 6705,
+          "experience": 20108,
           "guild": {
             "id": 230,
             "name": "Sacred Monsters",
@@ -235,8 +223,8 @@
         {
           "id": 140479,
           "guild_conquest_progress_id": 140342,
-          "kills": 1158,
-          "experience": 3474,
+          "kills": 2898,
+          "experience": 8694,
           "guild": null,
           "character": {
             "hashed_id": "VrBKlPdNdJPJVLWG8xJe",
@@ -249,8 +237,8 @@
         {
           "id": 140466,
           "guild_conquest_progress_id": 140342,
-          "kills": 1081,
-          "experience": 3243,
+          "kills": 2812,
+          "experience": 8436,
           "guild": null,
           "character": {
             "hashed_id": "6aDoyRnLyo2mMNpV5AGX",
@@ -1511,13 +1499,25 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/Cn7Ao8XuRSVGONfoi1hoVBf0b1YU9c-metaSXNsZSBvZiB3aGlzcGVycy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#b3d40c",
-      "kills": 413942,
-      "experience": 1884014,
-      "guilds_count": 2,
-      "active_assaults_count": 0,
-      "leaderboard_count": 2,
-      "contribution_count": 19,
-      "active_assaults": [],
+      "kills": 414073,
+      "experience": 1885527,
+      "guilds_count": 3,
+      "active_assaults_count": 1,
+      "leaderboard_count": 3,
+      "contribution_count": 25,
+      "active_assaults": [
+        {
+          "kills": 131,
+          "experience": 1513,
+          "guild": {
+            "id": 9,
+            "name": "Sacred Assault",
+            "tag": "SAC",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -1533,6 +1533,18 @@
         },
         {
           "position": 2,
+          "kills": 131,
+          "experience": 1513,
+          "guild": {
+            "id": 9,
+            "name": "Sacred Assault",
+            "tag": "SAC",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png"
+          }
+        },
+        {
+          "position": 3,
           "kills": 192,
           "experience": 384,
           "guild": {
@@ -1708,7 +1720,7 @@
           "character": {
             "hashed_id": "6aDoyRnLyo0oJNpV5AGX",
             "name": "Bipolar",
-            "total_level": 1994,
+            "total_level": 1995,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/oKKyU1ukyeIKN4pQ06YKHqQjJUTx4k-metaRWxmaXJtYSAocmVwbGFjZSB0aGUgb2xkIG9uZSkucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
           }
@@ -1798,6 +1810,20 @@
           }
         },
         {
+          "id": 141021,
+          "guild_conquest_progress_id": 140885,
+          "kills": 117,
+          "experience": 1404,
+          "guild": null,
+          "character": {
+            "hashed_id": "2xMjGdBN52lpxY9P1nyr",
+            "name": "simon",
+            "total_level": 1137,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP76BKP9DE5018AMJNHCA9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
+          }
+        },
+        {
           "id": 140612,
           "guild_conquest_progress_id": 140488,
           "kills": 192,
@@ -1809,6 +1835,76 @@
             "total_level": 2118,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AF8JKNB1149BDQJ01DX68.jpg"
+          }
+        },
+        {
+          "id": 141014,
+          "guild_conquest_progress_id": 140885,
+          "kills": 6,
+          "experience": 52,
+          "guild": null,
+          "character": {
+            "hashed_id": "jEaOeBkLagJVrNlGwxVP",
+            "name": "Nomodon",
+            "total_level": 2030,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/ecYIFRH5uwQMOj7yXhchIfRJSEtndQ-metadGhvcmdhcnIucG5n-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+          }
+        },
+        {
+          "id": 141009,
+          "guild_conquest_progress_id": 140885,
+          "kills": 6,
+          "experience": 39,
+          "guild": null,
+          "character": {
+            "hashed_id": "1rZXlwg5YvWwLk9joDmG",
+            "name": "Mados",
+            "total_level": 1963,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg"
+          }
+        },
+        {
+          "id": 141028,
+          "guild_conquest_progress_id": 140885,
+          "kills": 1,
+          "experience": 10,
+          "guild": null,
+          "character": {
+            "hashed_id": "ZvrGV8RQp6BkmY2wgA5j",
+            "name": "insane",
+            "total_level": 1259,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKA8TSMYQPSHX8V8NMXWXZQ.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+          }
+        },
+        {
+          "id": 141023,
+          "guild_conquest_progress_id": 140885,
+          "kills": 1,
+          "experience": 8,
+          "guild": null,
+          "character": {
+            "hashed_id": "rx463VdQgRGo7L5w1zWK",
+            "name": "wanthons",
+            "total_level": 1892,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072SMTQJM4XSXJFX6WM87XY.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+          }
+        },
+        {
+          "id": 141012,
+          "guild_conquest_progress_id": 140885,
+          "kills": 0,
+          "experience": 0,
+          "guild": null,
+          "character": {
+            "hashed_id": "rz9RZnWN7RDWeQKAp0Md",
+            "name": "x7tech",
+            "total_level": 1946,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP57FF6HP63CHVMJPV05SB.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
           }
         }
       ]
@@ -2544,7 +2640,7 @@
       "character": {
         "hashed_id": "6aDoyRnLyo0oJNpV5AGX",
         "name": "Bipolar",
-        "total_level": 1994,
+        "total_level": 1995,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/oKKyU1ukyeIKN4pQ06YKHqQjJUTx4k-metaRWxmaXJtYSAocmVwbGFjZSB0aGUgb2xkIG9uZSkucG5n-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
       },
