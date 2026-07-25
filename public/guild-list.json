@@ -1,16 +1,16 @@
 {
   "meta": {
-    "generated_at": "2026-07-24T23:18:17.095Z",
-    "source_fetched_at": "2026-07-24T23:06:25.670Z",
+    "generated_at": "2026-07-25T23:01:54.060Z",
+    "source_fetched_at": "2026-07-25T22:50:08.683Z",
     "source": "local_data/guild_intelligence_refresh/derived",
     "strategy": "Trimmed registry for the guild table, search, and sort UI. Per-guild details are loaded from guild-details/{guild_id}.json on demand.",
     "totals": {
-      "guilds": 1484,
-      "members": 12052,
+      "guilds": 1486,
+      "members": 12040,
       "tiers": {
-        "hot": 196,
-        "warm": 740,
-        "cold": 548
+        "hot": 194,
+        "warm": 742,
+        "cold": 550
       }
     }
   },
@@ -20,14 +20,14 @@
       "name": "Buffalo Grill",
       "tag": null,
       "level": 100,
-      "marks": 620,
+      "marks": 629,
       "season_position": 2,
-      "member_count": 24,
+      "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJYNQJC9TGDRFCFR7T5HYW.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/STHyTT3MCBybquPmVj6x19PVRudw8z-metabW91bnRhaW5zLTEuanBn-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 1036,
-      "average_total_level": 1739,
+      "activity_score": 1029,
+      "average_total_level": 1758,
       "leader_names": [
         "Grimaslayer",
         "Savyus",
@@ -46,14 +46,14 @@
       "name": "Kingdom",
       "tag": "KNG",
       "level": 100,
-      "marks": 596,
+      "marks": 601,
       "season_position": 62,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
       "activity_score": 969,
-      "average_total_level": 1959,
+      "average_total_level": 1961,
       "leader_names": [
         "Balberith",
         "Dotoricus",
@@ -69,44 +69,18 @@
       ]
     },
     {
-      "id": 138,
-      "name": "Dream Invaders",
-      "tag": null,
-      "level": 100,
-      "marks": 754,
-      "season_position": 70,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 954,
-      "average_total_level": 1487,
-      "leader_names": [
-        "DocRusty",
-        "NewlDaTarjan",
-        "DefiasBandit",
-        "Spark89",
-        "Papanca"
-      ],
-      "top_member_names": [
-        "Jester",
-        "Elasek",
-        "Spark89"
-      ]
-    },
-    {
       "id": 4,
       "name": "You",
       "tag": "YOU",
       "level": 100,
-      "marks": 477,
-      "season_position": 60,
-      "member_count": 23,
+      "marks": 475,
+      "season_position": 59,
+      "member_count": 25,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AEMNKX77DWRVD2N24MXQ6.jpg",
       "refresh_tier": "hot",
-      "activity_score": 953,
-      "average_total_level": 2034,
+      "activity_score": 966,
+      "average_total_level": 2017,
       "leader_names": [
         "KeleK",
         "Zvako",
@@ -127,14 +101,14 @@
       "name": "AETERNITAS",
       "tag": "AE",
       "level": 87,
-      "marks": 535,
-      "season_position": 35,
+      "marks": 540,
+      "season_position": 33,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg",
       "refresh_tier": "hot",
-      "activity_score": 950,
-      "average_total_level": 1315,
+      "activity_score": 952,
+      "average_total_level": 1326,
       "leader_names": [
         "Gepard",
         "Kenichi",
@@ -147,18 +121,44 @@
       ]
     },
     {
+      "id": 138,
+      "name": "Dream Invaders",
+      "tag": null,
+      "level": 100,
+      "marks": 753,
+      "season_position": 76,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 948,
+      "average_total_level": 1494,
+      "leader_names": [
+        "DocRusty",
+        "NewlDaTarjan",
+        "DefiasBandit",
+        "Spark89",
+        "Papanca"
+      ],
+      "top_member_names": [
+        "Jester",
+        "Elasek",
+        "Spark89"
+      ]
+    },
+    {
       "id": 994,
       "name": "Starlight",
       "tag": null,
       "level": 80,
       "marks": 666,
-      "season_position": 38,
+      "season_position": 39,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 943,
-      "average_total_level": 1142,
+      "activity_score": 942,
+      "average_total_level": 1158,
       "leader_names": [
         "Chaoskazua",
         "Chaosrika",
@@ -174,81 +174,26 @@
       ]
     },
     {
-      "id": 189,
-      "name": "France",
-      "tag": null,
-      "level": 100,
-      "marks": 593,
-      "season_position": 138,
-      "member_count": 25,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 907,
-      "average_total_level": 1256,
-      "leader_names": [
-        "Eiivix"
-      ],
-      "top_member_names": [
-        "Eiivix",
-        "Kolgram",
-        "Blam"
-      ]
-    },
-    {
-      "id": 777,
-      "name": "Taiga",
-      "tag": null,
-      "level": 86,
-      "marks": 615,
-      "season_position": 90,
-      "member_count": 20,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 885,
-      "average_total_level": 1284,
-      "leader_names": [
-        "Prizmatron",
-        "Egorka",
-        "MCTUTEJI",
-        "OctoberTide",
-        "Melodica",
-        "Buriwuh",
-        "Izgoy",
-        "DonHuan",
-        "monocular",
-        "GoshaSlangLiy",
-        "Aivengo",
-        "SmileVita"
-      ],
-      "top_member_names": [
-        "Prizmatron",
-        "Egorka",
-        "MCTUTEJI"
-      ]
-    },
-    {
       "id": 922,
       "name": "Australia",
       "tag": null,
       "level": 85,
-      "marks": 514,
-      "season_position": 82,
-      "member_count": 19,
+      "marks": 521,
+      "season_position": 77,
+      "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
       "refresh_tier": "hot",
-      "activity_score": 884,
-      "average_total_level": 1486,
+      "activity_score": 910,
+      "average_total_level": 1436,
       "leader_names": [
         "FabAsianZung",
         "Fuzzsoth",
-        "RuntHunter",
         "Drafiks",
+        "XBind",
+        "RuntHunter",
         "VillagerA",
         "VillagerB",
-        "XBind",
         "VillagerD",
         "VillagerC",
         "Djonni",
@@ -260,8 +205,8 @@
       ],
       "top_member_names": [
         "Fuzzsoth",
-        "RuntHunter",
-        "Drafiks"
+        "Drafiks",
+        "XBind"
       ]
     },
     {
@@ -269,19 +214,19 @@
       "name": "Astrajingga",
       "tag": null,
       "level": 95,
-      "marks": 470,
-      "season_position": 110,
+      "marks": 473,
+      "season_position": 88,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HP21XF49331HVQMBKEVF8Q2X.png",
       "refresh_tier": "hot",
-      "activity_score": 878,
-      "average_total_level": 1254,
+      "activity_score": 902,
+      "average_total_level": 1259,
       "leader_names": [
         "Renaru",
         "xAlmost",
-        "Slarkkyz",
         "Fean",
+        "Slarkkyz",
         "Yurin",
         "Ezon",
         "LuffyKun",
@@ -299,59 +244,25 @@
       ]
     },
     {
-      "id": 129,
-      "name": "Ore Bros",
+      "id": 189,
+      "name": "France",
       "tag": null,
       "level": 100,
-      "marks": 355,
-      "season_position": 18,
-      "member_count": 20,
+      "marks": 591,
+      "season_position": 127,
+      "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
       "refresh_tier": "hot",
-      "activity_score": 876,
-      "average_total_level": 1245,
+      "activity_score": 897,
+      "average_total_level": 1335,
       "leader_names": [
-        "Nemis",
-        "Donutman",
-        "Mewys",
-        "Mikla",
-        "Mogs",
-        "Eluzath",
-        "sobolanu",
-        "Daylicieux",
-        "Nyst"
+        "Eiivix"
       ],
       "top_member_names": [
-        "Donutman",
-        "Mewys",
-        "Mikla"
-      ]
-    },
-    {
-      "id": 1379,
-      "name": "Nameless",
-      "tag": null,
-      "level": 79,
-      "marks": 620,
-      "season_position": 74,
-      "member_count": 17,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJX5ZRT45AZ8R1VY5JH5SN.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 863,
-      "average_total_level": 700,
-      "leader_names": [
-        "MlZONE",
-        "Aquaaa",
-        "MllZONE",
-        "ZAYE",
-        "ZAYYE"
-      ],
-      "top_member_names": [
-        "Sejun",
-        "Aquaaa",
-        "MlZONE"
+        "Eiivix",
+        "Kolgram",
+        "Blam"
       ]
     },
     {
@@ -360,13 +271,13 @@
       "tag": null,
       "level": 75,
       "marks": 820,
-      "season_position": 99,
+      "season_position": 84,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
-      "activity_score": 856,
-      "average_total_level": 890,
+      "activity_score": 871,
+      "average_total_level": 903,
       "leader_names": [
         "BootyGuard",
         "B00TYGUARD",
@@ -383,77 +294,33 @@
       ]
     },
     {
-      "id": 1286,
-      "name": "Just Enjoy Game",
+      "id": 777,
+      "name": "Taiga",
       "tag": null,
-      "level": 64,
-      "marks": 579,
-      "season_position": 80,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
+      "level": 86,
+      "marks": 618,
+      "season_position": 79,
+      "member_count": 16,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
       "refresh_tier": "hot",
-      "activity_score": 854,
-      "average_total_level": 939,
+      "activity_score": 868,
+      "average_total_level": 1412,
       "leader_names": [
-        "CajunGator",
-        "TrashPanda3D",
-        "Dagger",
-        "StoicSage"
+        "Prizmatron",
+        "Egorka",
+        "OctoberTide",
+        "Melodica",
+        "Buriwuh",
+        "Izgoy",
+        "IIPOD",
+        "DonHuan",
+        "GoshaSlangLiy"
       ],
       "top_member_names": [
-        "sleepybasti",
-        "TrashPanda3D",
-        "Dagger"
-      ]
-    },
-    {
-      "id": 1034,
-      "name": "Black Bulls",
-      "tag": null,
-      "level": 94,
-      "marks": 352,
-      "season_position": 48,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZ4HF1V9DR8DWDZHZN64P.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
-      "refresh_tier": "hot",
-      "activity_score": 850,
-      "average_total_level": 1145,
-      "leader_names": [
-        "Curester",
-        "Owly",
-        "deamouse"
-      ],
-      "top_member_names": [
-        "Reangelic",
-        "Curester",
-        "Owly"
-      ]
-    },
-    {
-      "id": 381,
-      "name": "Memento Mortem",
-      "tag": "MTM",
-      "level": 100,
-      "marks": 284,
-      "season_position": 15,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 843,
-      "average_total_level": 1602,
-      "leader_names": [
-        "GeekVax",
-        "Tsudaiy",
-        "Blenderman",
-        "Derogard"
-      ],
-      "top_member_names": [
-        "Santa40k",
-        "GeekVax",
-        "Tsudaiy"
+        "Prizmatron",
+        "Egorka",
+        "MCTUTEJI"
       ]
     },
     {
@@ -461,17 +328,16 @@
       "name": "Mystic Ore Bros",
       "tag": null,
       "level": 97,
-      "marks": 343,
-      "season_position": 46,
-      "member_count": 20,
+      "marks": 353,
+      "season_position": 41,
+      "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
-      "activity_score": 831,
-      "average_total_level": 1214,
+      "activity_score": 865,
+      "average_total_level": 1203,
       "leader_names": [
         "Spirito",
-        "Jasper",
         "iMogs",
         "Mogz",
         "Fluxsage",
@@ -488,18 +354,173 @@
       ]
     },
     {
+      "id": 129,
+      "name": "Ore Bros",
+      "tag": null,
+      "level": 100,
+      "marks": 355,
+      "season_position": 12,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 861,
+      "average_total_level": 1292,
+      "leader_names": [
+        "Nemis",
+        "Donutman",
+        "Mewys",
+        "Mikla",
+        "Eluzath",
+        "Mogs",
+        "Jasper",
+        "sobolanu",
+        "Daylicieux",
+        "Nyst"
+      ],
+      "top_member_names": [
+        "Donutman",
+        "Mewys",
+        "Mikla"
+      ]
+    },
+    {
+      "id": 1034,
+      "name": "Black Bulls",
+      "tag": null,
+      "level": 94,
+      "marks": 358,
+      "season_position": 45,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZ4HF1V9DR8DWDZHZN64P.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
+      "refresh_tier": "hot",
+      "activity_score": 857,
+      "average_total_level": 1159,
+      "leader_names": [
+        "Curester",
+        "Owly",
+        "deamouse"
+      ],
+      "top_member_names": [
+        "Reangelic",
+        "Owly",
+        "Curester"
+      ]
+    },
+    {
+      "id": 1379,
+      "name": "Nameless",
+      "tag": null,
+      "level": 79,
+      "marks": 628,
+      "season_position": 80,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJX5ZRT45AZ8R1VY5JH5SN.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 857,
+      "average_total_level": 701,
+      "leader_names": [
+        "MlZONE",
+        "Aquaaa",
+        "MllZONE",
+        "ZAYE",
+        "ZAYYE"
+      ],
+      "top_member_names": [
+        "Sejun",
+        "Aquaaa",
+        "MlZONE"
+      ]
+    },
+    {
+      "id": 381,
+      "name": "Memento Mortem",
+      "tag": "MTM",
+      "level": 100,
+      "marks": 292,
+      "season_position": 16,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 849,
+      "average_total_level": 1608,
+      "leader_names": [
+        "GeekVax",
+        "Tsudaiy",
+        "Blenderman",
+        "Derogard"
+      ],
+      "top_member_names": [
+        "Santa40k",
+        "GeekVax",
+        "Tsudaiy"
+      ]
+    },
+    {
+      "id": 1286,
+      "name": "Just Enjoy Game",
+      "tag": null,
+      "level": 64,
+      "marks": 587,
+      "season_position": 86,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 848,
+      "average_total_level": 951,
+      "leader_names": [
+        "CajunGator",
+        "TrashPanda3D",
+        "Dagger",
+        "StoicSage"
+      ],
+      "top_member_names": [
+        "TrashPanda3D",
+        "sleepybasti",
+        "Dagger"
+      ]
+    },
+    {
+      "id": 111,
+      "name": "Dream Team",
+      "tag": null,
+      "level": 100,
+      "marks": 254,
+      "season_position": 5,
+      "member_count": 24,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
+      "refresh_tier": "hot",
+      "activity_score": 836,
+      "average_total_level": 1578,
+      "leader_names": [
+        "DefiasPirate",
+        "Borsing",
+        "Broldesev"
+      ],
+      "top_member_names": [
+        "Snuggles",
+        "AndreiR",
+        "ElMac"
+      ]
+    },
+    {
       "id": 1061,
       "name": "Depth",
       "tag": "DTH",
       "level": 100,
-      "marks": 273,
-      "season_position": 31,
-      "member_count": 24,
+      "marks": 268,
+      "season_position": 28,
+      "member_count": 25,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
-      "activity_score": 825,
-      "average_total_level": 1595,
+      "activity_score": 831,
+      "average_total_level": 1589,
       "leader_names": [
         "Riotz",
         "Ugniusi",
@@ -515,67 +536,18 @@
       ]
     },
     {
-      "id": 111,
-      "name": "Dream Team",
-      "tag": null,
-      "level": 100,
-      "marks": 247,
-      "season_position": 5,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
-      "refresh_tier": "hot",
-      "activity_score": 824,
-      "average_total_level": 1565,
-      "leader_names": [
-        "DefiasPirate",
-        "Borsing",
-        "Broldesev"
-      ],
-      "top_member_names": [
-        "Snuggles",
-        "AndreiR",
-        "ElMac"
-      ]
-    },
-    {
-      "id": 1412,
-      "name": "Command",
-      "tag": null,
-      "level": 58,
-      "marks": 593,
-      "season_position": 85,
-      "member_count": 20,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 820,
-      "average_total_level": 897,
-      "leader_names": [
-        "Gunhacker",
-        "WhizK",
-        "Dragolyte",
-        "Cylorian"
-      ],
-      "top_member_names": [
-        "Cylorian",
-        "WhizK",
-        "Gunhacker"
-      ]
-    },
-    {
       "id": 190,
       "name": "Veni Vidi Vici",
       "tag": null,
       "level": 100,
-      "marks": 262,
-      "season_position": 30,
+      "marks": 270,
+      "season_position": 31,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KCSPNDT0XQ8AAC8616QGRM7T.jpg",
       "refresh_tier": "hot",
-      "activity_score": 818,
-      "average_total_level": 1161,
+      "activity_score": 823,
+      "average_total_level": 1170,
       "leader_names": [
         "HunterXYZ",
         "IfThenElse",
@@ -597,45 +569,18 @@
       ]
     },
     {
-      "id": 161,
-      "name": "You Unyielding",
-      "tag": null,
-      "level": 100,
-      "marks": 285,
-      "season_position": 8,
-      "member_count": 18,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png",
-      "refresh_tier": "hot",
-      "activity_score": 816,
-      "average_total_level": 1430,
-      "leader_names": [
-        "Marvic",
-        "jesquin",
-        "Limez2",
-        "Limez3",
-        "LuciaK",
-        "Obsi"
-      ],
-      "top_member_names": [
-        "jesquin",
-        "Limez2",
-        "Limez3"
-      ]
-    },
-    {
       "id": 117,
       "name": "GermanRednecks",
       "tag": null,
       "level": 97,
       "marks": 300,
-      "season_position": 36,
+      "season_position": 35,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZ4HF1V9DR8DWDZHZN64P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
-      "activity_score": 814,
-      "average_total_level": 1621,
+      "activity_score": 815,
+      "average_total_level": 1626,
       "leader_names": [
         "Zumaxer",
         "Barthog",
@@ -651,30 +596,56 @@
       ]
     },
     {
-      "id": 1413,
-      "name": "POWER RANGERS",
+      "id": 1412,
+      "name": "Command",
       "tag": null,
-      "level": 75,
-      "marks": 563,
-      "season_position": 78,
-      "member_count": 9,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
+      "level": 58,
+      "marks": 600,
+      "season_position": 93,
+      "member_count": 20,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
       "refresh_tier": "hot",
-      "activity_score": 793,
-      "average_total_level": 768,
+      "activity_score": 812,
+      "average_total_level": 908,
       "leader_names": [
-        "RangerRED",
-        "RangerGREEN",
-        "RangerBLUE",
-        "RangerYELLOW",
-        "TwoTouch",
-        "RangerPink"
+        "Gunhacker",
+        "WhizK",
+        "Dragolyte",
+        "Cylorian"
       ],
       "top_member_names": [
-        "RangerRED",
-        "RangerYELLOW",
-        "TwoTouch"
+        "Cylorian",
+        "WhizK",
+        "Gunhacker"
+      ]
+    },
+    {
+      "id": 161,
+      "name": "You Unyielding",
+      "tag": null,
+      "level": 100,
+      "marks": 291,
+      "season_position": 9,
+      "member_count": 16,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png",
+      "refresh_tier": "hot",
+      "activity_score": 806,
+      "average_total_level": 1427,
+      "leader_names": [
+        "Marvic",
+        "jesquin",
+        "Limez2",
+        "Limez3",
+        "LuciaK",
+        "JC002",
+        "Obsi"
+      ],
+      "top_member_names": [
+        "jesquin",
+        "Limez2",
+        "Limez3"
       ]
     },
     {
@@ -682,14 +653,14 @@
       "name": "Depth 1",
       "tag": null,
       "level": 89,
-      "marks": 309,
-      "season_position": 71,
+      "marks": 314,
+      "season_position": 63,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg",
       "refresh_tier": "hot",
-      "activity_score": 787,
-      "average_total_level": 1002,
+      "activity_score": 799,
+      "average_total_level": 1027,
       "leader_names": [
         "Mantaz",
         "Tiklr",
@@ -706,18 +677,119 @@
       ]
     },
     {
+      "id": 242,
+      "name": "Idle Brasil",
+      "tag": null,
+      "level": 100,
+      "marks": 513,
+      "season_position": 206,
+      "member_count": 18,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 790,
+      "average_total_level": 1542,
+      "leader_names": [
+        "Mist1c",
+        "Broladino",
+        "LaxusD"
+      ],
+      "top_member_names": [
+        "Rodriguera",
+        "K1ngArthur",
+        "Joana"
+      ]
+    },
+    {
+      "id": 1114,
+      "name": "Calmshore",
+      "tag": null,
+      "level": 84,
+      "marks": 270,
+      "season_position": 22,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 785,
+      "average_total_level": 1367,
+      "leader_names": [
+        "Coral",
+        "Wrenidall",
+        "Radiumgirl",
+        "Minutiae"
+      ],
+      "top_member_names": [
+        "Ankewelt",
+        "zerokai",
+        "Wrenidall"
+      ]
+    },
+    {
+      "id": 937,
+      "name": "Lacuna",
+      "tag": null,
+      "level": 100,
+      "marks": 235,
+      "season_position": 50,
+      "member_count": 25,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 783,
+      "average_total_level": 1651,
+      "leader_names": [
+        "Ativa",
+        "Gruff",
+        "Vioz",
+        "Hercules98"
+      ],
+      "top_member_names": [
+        "Teebee",
+        "Gruff",
+        "AutumnLeaf"
+      ]
+    },
+    {
+      "id": 1413,
+      "name": "POWER RANGERS",
+      "tag": null,
+      "level": 75,
+      "marks": 565,
+      "season_position": 88,
+      "member_count": 9,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 783,
+      "average_total_level": 768,
+      "leader_names": [
+        "RangerRED",
+        "RangerGREEN",
+        "RangerBLUE",
+        "RangerYELLOW",
+        "TwoTouch",
+        "RangerPink"
+      ],
+      "top_member_names": [
+        "RangerRED",
+        "RangerYELLOW",
+        "TwoTouch"
+      ]
+    },
+    {
       "id": 9,
       "name": "Sacred Assault",
       "tag": "SAC",
       "level": 100,
-      "marks": 170,
+      "marks": 172,
       "season_position": 1,
       "member_count": 25,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png",
       "refresh_tier": "hot",
-      "activity_score": 780,
-      "average_total_level": 1747,
+      "activity_score": 782,
+      "average_total_level": 1748,
       "leader_names": [
         "simon",
         "Najadum",
@@ -737,18 +809,42 @@
       ]
     },
     {
+      "id": 19,
+      "name": "Guild",
+      "tag": null,
+      "level": 97,
+      "marks": 224,
+      "season_position": 23,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 780,
+      "average_total_level": 1464,
+      "leader_names": [
+        "Brofie",
+        "Hironi",
+        "MikezMG"
+      ],
+      "top_member_names": [
+        "Smolthing",
+        "Hironi",
+        "Drogarius"
+      ]
+    },
+    {
       "id": 230,
       "name": "Sacred Monsters",
       "tag": null,
       "level": 85,
-      "marks": 344,
-      "season_position": 75,
+      "marks": 349,
+      "season_position": 82,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
       "refresh_tier": "hot",
-      "activity_score": 780,
-      "average_total_level": 1047,
+      "activity_score": 777,
+      "average_total_level": 1053,
       "leader_names": [
         "MortBlanc",
         "Renji",
@@ -762,67 +858,18 @@
       ]
     },
     {
-      "id": 19,
-      "name": "Guild",
-      "tag": null,
-      "level": 97,
-      "marks": 223,
-      "season_position": 23,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 779,
-      "average_total_level": 1463,
-      "leader_names": [
-        "Brofie",
-        "Hironi",
-        "MikezMG"
-      ],
-      "top_member_names": [
-        "Smolthing",
-        "Hironi",
-        "Drogarius"
-      ]
-    },
-    {
-      "id": 1114,
-      "name": "Calmshore",
-      "tag": null,
-      "level": 84,
-      "marks": 263,
-      "season_position": 22,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 779,
-      "average_total_level": 1356,
-      "leader_names": [
-        "Coral",
-        "Wrenidall",
-        "Radiumgirl",
-        "Minutiae"
-      ],
-      "top_member_names": [
-        "Ankewelt",
-        "zerokai",
-        "Wrenidall"
-      ]
-    },
-    {
       "id": 265,
       "name": "Mystic Vanguard",
       "tag": null,
       "level": 100,
-      "marks": 271,
-      "season_position": 77,
+      "marks": 268,
+      "season_position": 83,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kfo5kuMkgOPacAgS5aOeEWR1gl8UgU-metaNC5wbmc=-.png",
       "refresh_tier": "hot",
-      "activity_score": 778,
-      "average_total_level": 1868,
+      "activity_score": 769,
+      "average_total_level": 1871,
       "leader_names": [
         "ShuraBlack",
         "MiniMetal",
@@ -838,67 +885,18 @@
       ]
     },
     {
-      "id": 937,
-      "name": "Lacuna",
-      "tag": null,
-      "level": 100,
-      "marks": 231,
-      "season_position": 53,
-      "member_count": 25,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 777,
-      "average_total_level": 1643,
-      "leader_names": [
-        "Ativa",
-        "Gruff",
-        "Vioz",
-        "Hercules98"
-      ],
-      "top_member_names": [
-        "Teebee",
-        "Gruff",
-        "AutumnLeaf"
-      ]
-    },
-    {
-      "id": 242,
-      "name": "Idle Brasil",
-      "tag": null,
-      "level": 100,
-      "marks": 509,
-      "season_position": 239,
-      "member_count": 18,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 776,
-      "average_total_level": 1513,
-      "leader_names": [
-        "Lucashmg3",
-        "Broladino",
-        "LaxusD"
-      ],
-      "top_member_names": [
-        "Rodriguera",
-        "K1ngArthur",
-        "Joana"
-      ]
-    },
-    {
       "id": 186,
       "name": "GARUDA",
       "tag": null,
       "level": 100,
-      "marks": 343,
-      "season_position": 135,
+      "marks": 340,
+      "season_position": 128,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 756,
-      "average_total_level": 1465,
+      "activity_score": 761,
+      "average_total_level": 1468,
       "leader_names": [
         "Kitsuname",
         "Baraaaa",
@@ -913,18 +911,49 @@
       ]
     },
     {
+      "id": 1027,
+      "name": "VietNam",
+      "tag": null,
+      "level": 100,
+      "marks": 197,
+      "season_position": 52,
+      "member_count": 25,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AF8JKNB1149BDQJ01DX68.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 751,
+      "average_total_level": 1223,
+      "leader_names": [
+        "LeeLongQua",
+        "HongDieu",
+        "Sinthori",
+        "BachHop",
+        "ThGhost",
+        "Valna",
+        "ALegend",
+        "Haingonese",
+        "SpoilR",
+        "GloriousHoliday"
+      ],
+      "top_member_names": [
+        "HongDieu",
+        "Cowsy",
+        "LeeLongQua"
+      ]
+    },
+    {
       "id": 448,
       "name": "ArthurianLegend",
       "tag": null,
       "level": 83,
       "marks": 1044,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
       "activity_score": 748,
-      "average_total_level": 964,
+      "average_total_level": 966,
       "leader_names": [
         "RedHood92",
         "Acidytrox",
@@ -941,14 +970,14 @@
       "name": "Souls Hub",
       "tag": "SLS",
       "level": 90,
-      "marks": 186,
+      "marks": 185,
       "season_position": 14,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
       "refresh_tier": "hot",
-      "activity_score": 748,
-      "average_total_level": 1367,
+      "activity_score": 747,
+      "average_total_level": 1378,
       "leader_names": [
         "ReaperOfSouls",
         "makoCzaisz",
@@ -989,71 +1018,18 @@
       ]
     },
     {
-      "id": 1027,
-      "name": "VietNam",
-      "tag": null,
-      "level": 100,
-      "marks": 188,
-      "season_position": 52,
-      "member_count": 24,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AF8JKNB1149BDQJ01DX68.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 736,
-      "average_total_level": 1254,
-      "leader_names": [
-        "LeeLongQua",
-        "HongDieu",
-        "Sinthori",
-        "BachHop",
-        "Valna",
-        "ThGhost",
-        "ALegend",
-        "Haingonese",
-        "SpoilR",
-        "GloriousHoliday"
-      ],
-      "top_member_names": [
-        "HongDieu",
-        "Cowsy",
-        "LeeLongQua"
-      ]
-    },
-    {
-      "id": 1131,
-      "name": "maum",
-      "tag": null,
-      "level": 60,
-      "marks": 743,
-      "season_position": 83,
-      "member_count": 7,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 736,
-      "average_total_level": 865,
-      "leader_names": [
-        "khj9581"
-      ],
-      "top_member_names": [
-        "khj9581",
-        "Voidgg",
-        "khj9582"
-      ]
-    },
-    {
       "id": 153,
       "name": "Kingdom II",
       "tag": null,
       "level": 100,
-      "marks": 153,
+      "marks": 162,
       "season_position": 21,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 732,
-      "average_total_level": 1305,
+      "activity_score": 740,
+      "average_total_level": 1308,
       "leader_names": [
         "DotoRica",
         "BalberithMelter",
@@ -1072,14 +1048,14 @@
       "name": "IDN",
       "tag": null,
       "level": 97,
-      "marks": 178,
+      "marks": 179,
       "season_position": 43,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
       "refresh_tier": "hot",
-      "activity_score": 730,
-      "average_total_level": 629,
+      "activity_score": 731,
+      "average_total_level": 642,
       "leader_names": [
         "Kentaro",
         "MMTAZ"
@@ -1096,7 +1072,7 @@
       "tag": null,
       "level": 98,
       "marks": 439,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 19,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KCSPNSEH12947SNYQSF7GSN2.jpg",
@@ -1117,24 +1093,45 @@
       ]
     },
     {
+      "id": 1131,
+      "name": "maum",
+      "tag": null,
+      "level": 60,
+      "marks": 748,
+      "season_position": 91,
+      "member_count": 7,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 728,
+      "average_total_level": 872,
+      "leader_names": [
+        "khj9581"
+      ],
+      "top_member_names": [
+        "khj9581",
+        "khj9582",
+        "Voidgg"
+      ]
+    },
+    {
       "id": 697,
       "name": "You Rising",
       "tag": "YUR",
       "level": 100,
-      "marks": 134,
+      "marks": 130,
       "season_position": 3,
-      "member_count": 22,
+      "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AEMNKX77DWRVD2N24MXQ6.jpg",
       "refresh_tier": "hot",
-      "activity_score": 728,
-      "average_total_level": 2015,
+      "activity_score": 718,
+      "average_total_level": 2016,
       "leader_names": [
         "CairdeCruan",
         "Limez",
         "SilverRevlis",
         "gamesVandal",
-        "Lucashmg",
         "01xCEE",
         "Zodd",
         "Germa",
@@ -1149,44 +1146,18 @@
       ]
     },
     {
-      "id": 347,
-      "name": "Forgotten Watch",
-      "tag": null,
-      "level": 100,
-      "marks": 101,
-      "season_position": 4,
-      "member_count": 24,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 715,
-      "average_total_level": 1531,
-      "leader_names": [
-        "Fortune",
-        "Kazaad",
-        "Tselia",
-        "MegaFia",
-        "EventHorizon22"
-      ],
-      "top_member_names": [
-        "BeastScar",
-        "Maegloth",
-        "CarlettoI"
-      ]
-    },
-    {
       "id": 5,
       "name": "UVPowered",
       "tag": null,
       "level": 100,
       "marks": 401,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJY63PA1F7MNBAHQPE3C37.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/lbl2Nn9vYtlRCFzrzqGqpRxFnP0upQ-metaNi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 711,
-      "average_total_level": 1529,
+      "average_total_level": 1530,
       "leader_names": [
         "UVSoaked",
         "Marshmellowi",
@@ -1231,14 +1202,14 @@
       "name": "Brotherhood",
       "tag": null,
       "level": 100,
-      "marks": 103,
-      "season_position": 12,
+      "marks": 104,
+      "season_position": 13,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
       "refresh_tier": "hot",
       "activity_score": 708,
-      "average_total_level": 1359,
+      "average_total_level": 1370,
       "leader_names": [
         "Akazawa",
         "Chilleane",
@@ -1255,14 +1226,14 @@
       "name": "Friendly",
       "tag": null,
       "level": 100,
-      "marks": 82,
+      "marks": 85,
       "season_position": 7,
       "member_count": 25,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HT2CNHFWJ4FQFNTWGPMPQTS0.png",
       "refresh_tier": "hot",
-      "activity_score": 704,
-      "average_total_level": 1618,
+      "activity_score": 706,
+      "average_total_level": 1619,
       "leader_names": [
         "Sunny",
         "Feeds",
@@ -1286,6 +1257,32 @@
         "Feeds",
         "Veradrithia",
         "Kemo"
+      ]
+    },
+    {
+      "id": 347,
+      "name": "Forgotten Watch",
+      "tag": null,
+      "level": 100,
+      "marks": 108,
+      "season_position": 4,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 706,
+      "average_total_level": 1549,
+      "leader_names": [
+        "Fortune",
+        "Kazaad",
+        "Tselia",
+        "MegaFia",
+        "EventHorizon22"
+      ],
+      "top_member_names": [
+        "BeastScar",
+        "Maegloth",
+        "CarlettoI"
       ]
     },
     {
@@ -1317,7 +1314,7 @@
       "tag": null,
       "level": 100,
       "marks": 583,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 4,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZ4HF1V9DR8DWDZHZN64P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
@@ -1334,38 +1331,12 @@
       ]
     },
     {
-      "id": 2,
-      "name": "END",
-      "tag": null,
-      "level": 100,
-      "marks": 77,
-      "season_position": 33,
-      "member_count": 25,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK15QV6WQCDERQ80S07DZY.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 674,
-      "average_total_level": 1915,
-      "leader_names": [
-        "Codes",
-        "AdArtes",
-        "Yasashiku",
-        "Nordicwisdom",
-        "Thready"
-      ],
-      "top_member_names": [
-        "JohnGroham",
-        "AdArtes",
-        "Daddy"
-      ]
-    },
-    {
       "id": 157,
       "name": "Hive",
       "tag": null,
       "level": 100,
       "marks": 320,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg",
@@ -1383,6 +1354,91 @@
         "TKBer",
         "Vicila",
         "Damacian"
+      ]
+    },
+    {
+      "id": 398,
+      "name": "Anime Lovers",
+      "tag": null,
+      "level": 99,
+      "marks": 194,
+      "season_position": 97,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 673,
+      "average_total_level": 1485,
+      "leader_names": [
+        "Thalguth",
+        "Dravilea",
+        "DiegoPKVigo",
+        "Ebden",
+        "Escanor",
+        "Dfglethal",
+        "Veronica217",
+        "Wyrmshadow",
+        "Thunderhoof"
+      ],
+      "top_member_names": [
+        "DancingRacoon",
+        "Dravilea",
+        "DiegoPKVigo"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "END",
+      "tag": null,
+      "level": 100,
+      "marks": 77,
+      "season_position": 35,
+      "member_count": 25,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK15QV6WQCDERQ80S07DZY.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 672,
+      "average_total_level": 1916,
+      "leader_names": [
+        "Codes",
+        "AdArtes",
+        "Yasashiku",
+        "Nordicwisdom",
+        "Thready"
+      ],
+      "top_member_names": [
+        "JohnGroham",
+        "AdArtes",
+        "Daddy"
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Celestial",
+      "tag": null,
+      "level": 74,
+      "marks": 354,
+      "season_position": 178,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK15QV6WQCDERQ80S07DZY.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 671,
+      "average_total_level": 964,
+      "leader_names": [
+        "Riptide6801",
+        "KorbenDallas",
+        "Xania",
+        "Plopi",
+        "Lynru",
+        "Yeww",
+        "Astralyn",
+        "Viviteal"
+      ],
+      "top_member_names": [
+        "Riptide6801",
+        "Plopi",
+        "Xzaga"
       ]
     },
     {
@@ -1414,63 +1470,6 @@
       ]
     },
     {
-      "id": 398,
-      "name": "Anime Lovers",
-      "tag": null,
-      "level": 99,
-      "marks": 182,
-      "season_position": 91,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 669,
-      "average_total_level": 1483,
-      "leader_names": [
-        "Thalguth",
-        "Dravilea",
-        "DiegoPKVigo",
-        "Ebden",
-        "Escanor",
-        "Dfglethal",
-        "Veronica217",
-        "Wyrmshadow",
-        "Thunderhoof"
-      ],
-      "top_member_names": [
-        "DancingRacoon",
-        "Dravilea",
-        "DiegoPKVigo"
-      ]
-    },
-    {
-      "id": 352,
-      "name": "Monkeybusiness",
-      "tag": null,
-      "level": 100,
-      "marks": 363,
-      "season_position": 159,
-      "member_count": 9,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 664,
-      "average_total_level": 1104,
-      "leader_names": [
-        "IIINXA",
-        "NekoYusef",
-        "IINXA",
-        "ApeMonkey",
-        "PicaStones",
-        "PescaFish"
-      ],
-      "top_member_names": [
-        "IIINXA",
-        "NekoYusef",
-        "IINXA"
-      ]
-    },
-    {
       "id": 611,
       "name": "Los Toxicos",
       "tag": null,
@@ -1495,99 +1494,18 @@
       ]
     },
     {
-      "id": 1115,
-      "name": "Lacunae Echo",
-      "tag": null,
-      "level": 90,
-      "marks": 62,
-      "season_position": 11,
-      "member_count": 24,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 652,
-      "average_total_level": 1407,
-      "leader_names": [
-        "Quenya",
-        "Coalmans",
-        "Silverguard"
-      ],
-      "top_member_names": [
-        "Jounaji",
-        "KaelthusTheGr8t",
-        "Emanuele"
-      ]
-    },
-    {
-      "id": 45,
-      "name": "Celestial",
-      "tag": null,
-      "level": 74,
-      "marks": 350,
-      "season_position": 197,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK15QV6WQCDERQ80S07DZY.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 649,
-      "average_total_level": 962,
-      "leader_names": [
-        "Riptide6801",
-        "KorbenDallas",
-        "Xania",
-        "Plopi",
-        "Lynru",
-        "Yeww",
-        "Astralyn",
-        "Viviteal"
-      ],
-      "top_member_names": [
-        "Riptide6801",
-        "Plopi",
-        "Xzaga"
-      ]
-    },
-    {
-      "id": 229,
-      "name": "Sacred Titans",
-      "tag": null,
-      "level": 95,
-      "marks": 160,
-      "season_position": 63,
-      "member_count": 17,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 642,
-      "average_total_level": 1323,
-      "leader_names": [
-        "crazy",
-        "Bendor",
-        "Rikache",
-        "JoeyMS",
-        "PraiseMothman",
-        "GwenDodgebye",
-        "SerSergio"
-      ],
-      "top_member_names": [
-        "warmeens",
-        "Bendor",
-        "Rikache"
-      ]
-    },
-    {
       "id": 751,
       "name": "Dream Warriors",
       "tag": null,
       "level": 97,
-      "marks": 65,
+      "marks": 69,
       "season_position": 10,
-      "member_count": 19,
+      "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
       "refresh_tier": "hot",
-      "activity_score": 638,
-      "average_total_level": 1060,
+      "activity_score": 655,
+      "average_total_level": 1011,
       "leader_names": [
         "xeionX",
         "GrymChef",
@@ -1600,18 +1518,42 @@
       ]
     },
     {
+      "id": 1115,
+      "name": "Lacunae Echo",
+      "tag": null,
+      "level": 90,
+      "marks": 65,
+      "season_position": 11,
+      "member_count": 24,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 654,
+      "average_total_level": 1417,
+      "leader_names": [
+        "Quenya",
+        "Coalmans",
+        "Silverguard"
+      ],
+      "top_member_names": [
+        "Jounaji",
+        "KaelthusTheGr8t",
+        "Emanuele"
+      ]
+    },
+    {
       "id": 136,
       "name": "Mystic Dawn",
       "tag": null,
       "level": 96,
-      "marks": 314,
+      "marks": 316,
       "season_position": 144,
-      "member_count": 10,
+      "member_count": 12,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kfo5kuMkgOPacAgS5aOeEWR1gl8UgU-metaNC5wbmc=-.png",
       "refresh_tier": "hot",
-      "activity_score": 637,
-      "average_total_level": 1095,
+      "activity_score": 653,
+      "average_total_level": 988,
       "leader_names": [
         "Afishyonadishy",
         "Kyogre",
@@ -1627,18 +1569,99 @@
       ]
     },
     {
+      "id": 352,
+      "name": "Monkeybusiness",
+      "tag": null,
+      "level": 100,
+      "marks": 363,
+      "season_position": 167,
+      "member_count": 8,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 649,
+      "average_total_level": 1183,
+      "leader_names": [
+        "IIINXA",
+        "NekoYusef",
+        "IINXA",
+        "PicaStones",
+        "PescaFish"
+      ],
+      "top_member_names": [
+        "IIINXA",
+        "NekoYusef",
+        "IINXA"
+      ]
+    },
+    {
+      "id": 229,
+      "name": "Sacred Titans",
+      "tag": null,
+      "level": 95,
+      "marks": 163,
+      "season_position": 67,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 640,
+      "average_total_level": 1329,
+      "leader_names": [
+        "crazy",
+        "Bendor",
+        "JoeyMS",
+        "Rikache",
+        "PraiseMothman",
+        "GwenDodgebye",
+        "SerSergio"
+      ],
+      "top_member_names": [
+        "warmeens",
+        "Bendor",
+        "JoeyMS"
+      ]
+    },
+    {
+      "id": 1173,
+      "name": "Masters of None",
+      "tag": "MXN",
+      "level": 94,
+      "marks": 22,
+      "season_position": 6,
+      "member_count": 24,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/sZtiOi7YgNv8DhtCjUVwP6eEv28vSF-metaOC5wbmc=-.png",
+      "refresh_tier": "hot",
+      "activity_score": 635,
+      "average_total_level": 1411,
+      "leader_names": [
+        "Valkorion",
+        "Sanitox",
+        "dogdiddle",
+        "TempestVeldo",
+        "Trick",
+        "KenpachiRese"
+      ],
+      "top_member_names": [
+        "Hulm",
+        "Brer",
+        "Parv"
+      ]
+    },
+    {
       "id": 561,
       "name": "Inferno 666",
       "tag": "666",
       "level": 82,
       "marks": 131,
-      "season_position": 57,
+      "season_position": 58,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/sZtiOi7YgNv8DhtCjUVwP6eEv28vSF-metaOC5wbmc=-.png",
       "refresh_tier": "hot",
-      "activity_score": 634,
-      "average_total_level": 782,
+      "activity_score": 633,
+      "average_total_level": 784,
       "leader_names": [
         "Fire666",
         "Goddess1",
@@ -1687,27 +1710,51 @@
       ]
     },
     {
-      "id": 59,
-      "name": "Stay Frosty",
-      "tag": null,
-      "level": 98,
-      "marks": 203,
-      "season_position": 65,
-      "member_count": 10,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EET1B90T8GYGRTW9B4YF1.jpg",
+      "id": 57,
+      "name": "Jupiter",
+      "tag": "JPT",
+      "level": 100,
+      "marks": 56,
+      "season_position": 60,
+      "member_count": 25,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
       "refresh_tier": "hot",
-      "activity_score": 632,
-      "average_total_level": 1009,
+      "activity_score": 630,
+      "average_total_level": 1900,
       "leader_names": [
-        "WastedPKK",
-        "Ra1nBank",
-        "Yapa"
+        "Exogor",
+        "Marka"
       ],
       "top_member_names": [
-        "Pelops",
-        "Yapa",
-        "boodabooda"
+        "Exogor",
+        "Aoden",
+        "Want"
+      ]
+    },
+    {
+      "id": 576,
+      "name": "Cursed Dreamers",
+      "tag": null,
+      "level": 92,
+      "marks": 74,
+      "season_position": 26,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 630,
+      "average_total_level": 1244,
+      "leader_names": [
+        "Bashion",
+        "Smythe4",
+        "CursedSpark",
+        "Smythe5"
+      ],
+      "top_member_names": [
+        "IronVitli",
+        "Jongleur",
+        "CursedElasek"
       ]
     },
     {
@@ -1737,81 +1784,6 @@
       ]
     },
     {
-      "id": 57,
-      "name": "Jupiter",
-      "tag": "JPT",
-      "level": 100,
-      "marks": 56,
-      "season_position": 61,
-      "member_count": 25,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 629,
-      "average_total_level": 1898,
-      "leader_names": [
-        "Exogor",
-        "Marka"
-      ],
-      "top_member_names": [
-        "Exogor",
-        "Want",
-        "Aoden"
-      ]
-    },
-    {
-      "id": 576,
-      "name": "Cursed Dreamers",
-      "tag": null,
-      "level": 92,
-      "marks": 71,
-      "season_position": 26,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EF2B7W1ZSSV9W0A9CZKKP.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 628,
-      "average_total_level": 1239,
-      "leader_names": [
-        "Bashion",
-        "Smythe4",
-        "CursedSpark",
-        "Smythe5"
-      ],
-      "top_member_names": [
-        "IronVitli",
-        "Jongleur",
-        "CursedElasek"
-      ]
-    },
-    {
-      "id": 1173,
-      "name": "Masters of None",
-      "tag": "MXN",
-      "level": 94,
-      "marks": 14,
-      "season_position": 6,
-      "member_count": 24,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/sZtiOi7YgNv8DhtCjUVwP6eEv28vSF-metaOC5wbmc=-.png",
-      "refresh_tier": "hot",
-      "activity_score": 628,
-      "average_total_level": 1392,
-      "leader_names": [
-        "Valkorion",
-        "Sanitox",
-        "dogdiddle",
-        "TempestVeldo",
-        "Trick",
-        "KenpachiRese"
-      ],
-      "top_member_names": [
-        "Hulm",
-        "Brer",
-        "Parv"
-      ]
-    },
-    {
       "id": 390,
       "name": "MagicsOfTheSkye",
       "tag": null,
@@ -1835,18 +1807,90 @@
       ]
     },
     {
+      "id": 59,
+      "name": "Stay Frosty",
+      "tag": null,
+      "level": 98,
+      "marks": 203,
+      "season_position": 71,
+      "member_count": 10,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EET1B90T8GYGRTW9B4YF1.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 626,
+      "average_total_level": 1011,
+      "leader_names": [
+        "WastedPKK",
+        "Ra1nBank",
+        "Yapa"
+      ],
+      "top_member_names": [
+        "Pelops",
+        "Yapa",
+        "boodabooda"
+      ]
+    },
+    {
+      "id": 378,
+      "name": "Forgotten Vanguard",
+      "tag": null,
+      "level": 99,
+      "marks": 29,
+      "season_position": 19,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 626,
+      "average_total_level": 1389,
+      "leader_names": [
+        "Forgotten",
+        "P0sit1ve",
+        "Pur1ty"
+      ],
+      "top_member_names": [
+        "BLlTZ",
+        "ZeWolf",
+        "LuvNoobies"
+      ]
+    },
+    {
+      "id": 195,
+      "name": "France2",
+      "tag": null,
+      "level": 100,
+      "marks": 264,
+      "season_position": 94,
+      "member_count": 5,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 622,
+      "average_total_level": 894,
+      "leader_names": [
+        "Smelt",
+        "Fanthasar",
+        "Goldoroth"
+      ],
+      "top_member_names": [
+        "Fanthasar",
+        "Jobalia",
+        "Smelt"
+      ]
+    },
+    {
       "id": 113,
       "name": "Forgotten",
       "tag": "FGN",
       "level": 100,
-      "marks": 68,
-      "season_position": 66,
+      "marks": 67,
+      "season_position": 71,
       "member_count": 24,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
-      "activity_score": 626,
-      "average_total_level": 1909,
+      "activity_score": 621,
+      "average_total_level": 1912,
       "leader_names": [
         "Mxrk",
         "CMEN",
@@ -1866,42 +1910,18 @@
       ]
     },
     {
-      "id": 95,
-      "name": "Samsara",
-      "tag": null,
-      "level": 77,
-      "marks": 148,
-      "season_position": 69,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG82NN4F4Z3KM2W73MRCAQQ.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 623,
-      "average_total_level": 482,
-      "leader_names": [
-        "LexAurum",
-        "NewbieGamers",
-        "Yoshii"
-      ],
-      "top_member_names": [
-        "NewbieGamers",
-        "LexAurum",
-        "Maxvier"
-      ]
-    },
-    {
       "id": 1322,
       "name": "DarkSide",
       "tag": null,
       "level": 52,
-      "marks": 343,
-      "season_position": 148,
+      "marks": 344,
+      "season_position": 151,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
       "refresh_tier": "hot",
-      "activity_score": 623,
-      "average_total_level": 698,
+      "activity_score": 621,
+      "average_total_level": 714,
       "leader_names": [
         "PsyManTV",
         "PsyManGames",
@@ -1911,30 +1931,6 @@
         "PsyManTV",
         "Kainaan",
         "KadetheKat"
-      ]
-    },
-    {
-      "id": 378,
-      "name": "Forgotten Vanguard",
-      "tag": null,
-      "level": 99,
-      "marks": 21,
-      "season_position": 16,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 622,
-      "average_total_level": 1380,
-      "leader_names": [
-        "Forgotten",
-        "P0sit1ve",
-        "Pur1ty"
-      ],
-      "top_member_names": [
-        "BLlTZ",
-        "ZeWolf",
-        "LuvNoobies"
       ]
     },
     {
@@ -1970,50 +1966,27 @@
       ]
     },
     {
-      "id": 195,
-      "name": "France2",
+      "id": 95,
+      "name": "Samsara",
       "tag": null,
-      "level": 100,
-      "marks": 260,
-      "season_position": 95,
-      "member_count": 5,
+      "level": 77,
+      "marks": 152,
+      "season_position": 70,
+      "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG82NN4F4Z3KM2W73MRCAQQ.jpg",
       "refresh_tier": "hot",
       "activity_score": 618,
-      "average_total_level": 889,
+      "average_total_level": 495,
       "leader_names": [
-        "Smelt",
-        "Fanthasar",
-        "Goldoroth"
+        "LexAurum",
+        "NewbieGamers",
+        "Yoshii"
       ],
       "top_member_names": [
-        "Fanthasar",
-        "Jobalia",
-        "Smelt"
-      ]
-    },
-    {
-      "id": 292,
-      "name": "Dream Guardians",
-      "tag": null,
-      "level": 100,
-      "marks": 51,
-      "season_position": 13,
-      "member_count": 17,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 617,
-      "average_total_level": 1222,
-      "leader_names": [
-        "DefiasWorker",
-        "Tatsugiri"
-      ],
-      "top_member_names": [
-        "Kimizuka",
-        "FarmingKings",
-        "BadboyMC"
+        "NewbieGamers",
+        "LexAurum",
+        "Maxvier"
       ]
     },
     {
@@ -2028,7 +2001,7 @@
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
       "refresh_tier": "hot",
       "activity_score": 617,
-      "average_total_level": 1227,
+      "average_total_level": 1230,
       "leader_names": [
         "SomeGypsy",
         "TheSantaClaus",
@@ -2044,24 +2017,47 @@
       ]
     },
     {
+      "id": 292,
+      "name": "Dream Guardians",
+      "tag": null,
+      "level": 100,
+      "marks": 52,
+      "season_position": 15,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 616,
+      "average_total_level": 1234,
+      "leader_names": [
+        "DefiasWorker",
+        "Tatsugiri"
+      ],
+      "top_member_names": [
+        "Kimizuka",
+        "BadboyMC",
+        "FarmingKings"
+      ]
+    },
+    {
       "id": 498,
       "name": "Death Wish",
       "tag": null,
       "level": 71,
-      "marks": 231,
-      "season_position": 72,
+      "marks": 233,
+      "season_position": 78,
       "member_count": 15,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
       "refresh_tier": "hot",
-      "activity_score": 615,
-      "average_total_level": 968,
+      "activity_score": 611,
+      "average_total_level": 972,
       "leader_names": [
         "Geryon",
         "chadgirth",
         "BARATHEON",
-        "Chirth",
         "Umakitsune",
+        "Chirth",
         "Devilishstrada",
         "ST4RRK"
       ],
@@ -2076,14 +2072,14 @@
       "name": "Hunger Strikers",
       "tag": null,
       "level": 97,
-      "marks": 40,
-      "season_position": 42,
+      "marks": 46,
+      "season_position": 46,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 607,
-      "average_total_level": 1052,
+      "average_total_level": 1059,
       "leader_names": [
         "Lilukalani",
         "Gamffe",
@@ -2103,14 +2099,14 @@
       "name": "Dream Raiders",
       "tag": null,
       "level": 100,
-      "marks": 145,
-      "season_position": 45,
+      "marks": 149,
+      "season_position": 48,
       "member_count": 9,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
       "activity_score": 604,
-      "average_total_level": 1480,
+      "average_total_level": 1481,
       "leader_names": [
         "Heldrea",
         "Ulvurul"
@@ -2127,13 +2123,13 @@
       "tag": null,
       "level": 75,
       "marks": 201,
-      "season_position": 94,
+      "season_position": 102,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 600,
-      "average_total_level": 1081,
+      "refresh_tier": "warm",
+      "activity_score": 592,
+      "average_total_level": 1084,
       "leader_names": [
         "Repent4Jesus",
         "PlaguedWolf",
@@ -2148,36 +2144,6 @@
         "Repent4Jesus",
         "PlaguedWolf",
         "LegionzZz"
-      ]
-    },
-    {
-      "id": 441,
-      "name": "Accursed",
-      "tag": null,
-      "level": 97,
-      "marks": 117,
-      "season_position": 68,
-      "member_count": 15,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 593,
-      "average_total_level": 1370,
-      "leader_names": [
-        "Strategist",
-        "MereSlave108",
-        "Merethyuu",
-        "Merethyu",
-        "StrategicShrine",
-        "Gildor",
-        "StrategicMiner",
-        "StrategicChef",
-        "StrategicBars"
-      ],
-      "top_member_names": [
-        "Lyitost",
-        "Strategist",
-        "MereSlave108"
       ]
     },
     {
@@ -2212,7 +2178,7 @@
       "tag": null,
       "level": 69,
       "marks": 345,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
@@ -2236,57 +2202,66 @@
       ]
     },
     {
-      "id": 618,
-      "name": "Idle Legion",
+      "id": 1082,
+      "name": "Remembered",
       "tag": null,
-      "level": 96,
-      "marks": 103,
-      "season_position": 109,
+      "level": 88,
+      "marks": 54,
+      "season_position": 49,
       "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2BGSDM0CN3C7BX1P61EV.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
-      "activity_score": 587,
-      "average_total_level": 1201,
+      "activity_score": 588,
+      "average_total_level": 1304,
       "leader_names": [
-        "ShinigamiEran",
-        "DrSleepy"
+        "WastedPK",
+        "Ra1n",
+        "MankindEmperor",
+        "DarkRa1n",
+        "Cptcrunchza",
+        "Nemico2",
+        "Eniena",
+        "Twil",
+        "Tennzor",
+        "19TsSharks",
+        "DeeJus",
+        "Breathe"
       ],
       "top_member_names": [
-        "ShinigamiEran",
-        "Silvabullet",
-        "Thegreaternest"
+        "Twil",
+        "Ra1n",
+        "WastedPK"
       ]
     },
     {
-      "id": 786,
-      "name": "Stargate",
+      "id": 441,
+      "name": "Accursed",
       "tag": null,
-      "level": 85,
-      "marks": 276,
-      "season_position": 209,
-      "member_count": 20,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "level": 97,
+      "marks": 117,
+      "season_position": 75,
+      "member_count": 15,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
       "refresh_tier": "hot",
-      "activity_score": 584,
-      "average_total_level": 1436,
+      "activity_score": 586,
+      "average_total_level": 1372,
       "leader_names": [
-        "Wesk",
-        "BirdieNight",
-        "Wes2",
-        "Wes3",
-        "Dimitrious",
-        "Mitri2",
-        "Mitri",
-        "Birdie2",
-        "Wes4",
-        "Wes1"
+        "Strategist",
+        "MereSlave108",
+        "Merethyuu",
+        "Merethyu",
+        "StrategicShrine",
+        "Gildor",
+        "StrategicMiner",
+        "StrategicChef",
+        "StrategicBars"
       ],
       "top_member_names": [
-        "Wesk",
-        "Kermiit",
-        "BirdieNight"
+        "Lyitost",
+        "Strategist",
+        "MereSlave108"
       ]
     },
     {
@@ -2324,36 +2299,26 @@
       ]
     },
     {
-      "id": 1082,
-      "name": "Remembered",
+      "id": 618,
+      "name": "Idle Legion",
       "tag": null,
-      "level": 88,
-      "marks": 54,
-      "season_position": 49,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
+      "level": 96,
+      "marks": 103,
+      "season_position": 115,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2BGSDM0CN3C7BX1P61EV.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
       "refresh_tier": "hot",
       "activity_score": 581,
-      "average_total_level": 1305,
+      "average_total_level": 1209,
       "leader_names": [
-        "WastedPK",
-        "Ra1n",
-        "MankindEmperor",
-        "DarkRa1n",
-        "Cptcrunchza",
-        "Nemico2",
-        "Eniena",
-        "Twil",
-        "Tennzor",
-        "19TsSharks",
-        "DeeJus",
-        "Breathe"
+        "ShinigamiEran",
+        "DrSleepy"
       ],
       "top_member_names": [
-        "Twil",
-        "Ra1n",
-        "WastedPK"
+        "ShinigamiEran",
+        "Silvabullet",
+        "Thegreaternest"
       ]
     },
     {
@@ -2385,8 +2350,8 @@
       "name": "fun",
       "tag": null,
       "level": 85,
-      "marks": 71,
-      "season_position": 19,
+      "marks": 68,
+      "season_position": 17,
       "member_count": 15,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
@@ -2417,6 +2382,60 @@
       ]
     },
     {
+      "id": 786,
+      "name": "Stargate",
+      "tag": null,
+      "level": 85,
+      "marks": 276,
+      "season_position": 219,
+      "member_count": 20,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 574,
+      "average_total_level": 1437,
+      "leader_names": [
+        "Wesk",
+        "BirdieNight",
+        "Wes2",
+        "Wes3",
+        "Dimitrious",
+        "Mitri2",
+        "Mitri",
+        "Birdie2",
+        "Wes4",
+        "Wes1"
+      ],
+      "top_member_names": [
+        "Wesk",
+        "Kermiit",
+        "BirdieNight"
+      ]
+    },
+    {
+      "id": 1442,
+      "name": "Tiny Lacunas",
+      "tag": null,
+      "level": 79,
+      "marks": 32,
+      "season_position": 24,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXHP5B1AG4AQSZ60SVXSPW.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 573,
+      "average_total_level": 1041,
+      "leader_names": [
+        "Gualtair",
+        "Aqualesca"
+      ],
+      "top_member_names": [
+        "SmilingJack",
+        "PlushieWarrior",
+        "PentexDoomed"
+      ]
+    },
+    {
       "id": 997,
       "name": "Azh",
       "tag": null,
@@ -2436,78 +2455,6 @@
       "top_member_names": [
         "Azhacurse",
         "AzhaE"
-      ]
-    },
-    {
-      "id": 1081,
-      "name": "Buffalo Alts",
-      "tag": null,
-      "level": 96,
-      "marks": 14,
-      "season_position": 25,
-      "member_count": 18,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 572,
-      "average_total_level": 1127,
-      "leader_names": [
-        "LeCharbonDeDio",
-        "Taruf2",
-        "chocofish",
-        "KyrbAngler"
-      ],
-      "top_member_names": [
-        "Taruf2",
-        "Sydi",
-        "Corinthien"
-      ]
-    },
-    {
-      "id": 1442,
-      "name": "Tiny Lacunas",
-      "tag": null,
-      "level": 79,
-      "marks": 31,
-      "season_position": 24,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXHP5B1AG4AQSZ60SVXSPW.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 572,
-      "average_total_level": 1031,
-      "leader_names": [
-        "Gualtair",
-        "Aqualesca"
-      ],
-      "top_member_names": [
-        "SmilingJack",
-        "PlushieWarrior",
-        "PentexDoomed"
-      ]
-    },
-    {
-      "id": 410,
-      "name": "Sacred",
-      "tag": null,
-      "level": 97,
-      "marks": 116,
-      "season_position": 89,
-      "member_count": 15,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 571,
-      "average_total_level": 1636,
-      "leader_names": [
-        "NomoChef",
-        "C0ffee",
-        "BromStorm"
-      ],
-      "top_member_names": [
-        "myxxlayptlik",
-        "C0ffee",
-        "BromStorm"
       ]
     },
     {
@@ -2536,6 +2483,30 @@
       ]
     },
     {
+      "id": 410,
+      "name": "Sacred",
+      "tag": null,
+      "level": 97,
+      "marks": 120,
+      "season_position": 95,
+      "member_count": 15,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 569,
+      "average_total_level": 1638,
+      "leader_names": [
+        "NomoChef",
+        "C0ffee",
+        "BromStorm"
+      ],
+      "top_member_names": [
+        "myxxlayptlik",
+        "C0ffee",
+        "BromStorm"
+      ]
+    },
+    {
       "id": 285,
       "name": "Czech Alliance",
       "tag": null,
@@ -2560,18 +2531,47 @@
       ]
     },
     {
+      "id": 1081,
+      "name": "Buffalo Alts",
+      "tag": null,
+      "level": 96,
+      "marks": 11,
+      "season_position": 25,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 563,
+      "average_total_level": 1128,
+      "leader_names": [
+        "LeCharbonDeDio",
+        "Taruf2",
+        "Sydi",
+        "Corinthien",
+        "Hizia",
+        "chocofish",
+        "KyrbAngler",
+        "Tabarnak"
+      ],
+      "top_member_names": [
+        "Taruf2",
+        "Sydi",
+        "Corinthien"
+      ]
+    },
+    {
       "id": 346,
       "name": "Forgotten Knights",
       "tag": null,
       "level": 94,
       "marks": 154,
-      "season_position": 141,
+      "season_position": 147,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
-      "activity_score": 563,
-      "average_total_level": 1053,
+      "activity_score": 557,
+      "average_total_level": 1055,
       "leader_names": [
         "Mashle",
         "Layne",
@@ -2588,65 +2588,18 @@
       ]
     },
     {
-      "id": 1345,
-      "name": "The Laboratory",
-      "tag": null,
-      "level": 73,
-      "marks": 33,
-      "season_position": 28,
-      "member_count": 23,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EET1B90T8GYGRTW9B4YF1.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 562,
-      "average_total_level": 890,
-      "leader_names": [
-        "M3talH3d",
-        "Aelira"
-      ],
-      "top_member_names": [
-        "RoepiR",
-        "Soulside",
-        "Bohica"
-      ]
-    },
-    {
-      "id": 735,
-      "name": "Dream Undead",
-      "tag": null,
-      "level": 100,
-      "marks": 20,
-      "season_position": 37,
-      "member_count": 15,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 554,
-      "average_total_level": 902,
-      "leader_names": [
-        "Heldruna",
-        "Raline",
-        "Asami222"
-      ],
-      "top_member_names": [
-        "Raline",
-        "UnfazedAries",
-        "xxxATTILAxxx"
-      ]
-    },
-    {
       "id": 1540,
       "name": "Elites of None",
       "tag": null,
       "level": 69,
-      "marks": 101,
+      "marks": 106,
       "season_position": 34,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 551,
-      "average_total_level": 1001,
+      "activity_score": 555,
+      "average_total_level": 1013,
       "leader_names": [
         "MOSFET",
         "Pawelandbajer",
@@ -2655,7 +2608,32 @@
       "top_member_names": [
         "Strandelle",
         "Nightwisha",
-        "phyte"
+        "Mycoda"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Erattic Snow",
+      "tag": null,
+      "level": 90,
+      "marks": 231,
+      "season_position": 184,
+      "member_count": 15,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png",
+      "refresh_tier": "hot",
+      "activity_score": 551,
+      "average_total_level": 1676,
+      "leader_names": [
+        "MisterMarvelous",
+        "Bernie",
+        "Chibighost",
+        "DimKodo"
+      ],
+      "top_member_names": [
+        "Freedom85",
+        "MisterMarvelous",
+        "Oxidan"
       ]
     },
     {
@@ -2663,16 +2641,17 @@
       "name": "Forgotten Dawn",
       "tag": null,
       "level": 89,
-      "marks": 9,
+      "marks": 12,
       "season_position": 55,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
-      "activity_score": 549,
-      "average_total_level": 1047,
+      "activity_score": 551,
+      "average_total_level": 1056,
       "leader_names": [
         "FisherCMEN",
+        "Nlarg",
         "HorizonChef",
         "HorizonMiner",
         "Gh0st"
@@ -2684,30 +2663,27 @@
       ]
     },
     {
-      "id": 763,
-      "name": "YaSaiJiN",
+      "id": 735,
+      "name": "Dream Undead",
       "tag": null,
       "level": 100,
-      "marks": 84,
-      "season_position": 50,
-      "member_count": 8,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "marks": 14,
+      "season_position": 37,
+      "member_count": 15,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
-      "activity_score": 543,
-      "average_total_level": 870,
+      "activity_score": 549,
+      "average_total_level": 913,
       "leader_names": [
-        "KaiJiF",
-        "KaiJiW",
-        "KaiJiSubAka",
-        "KaiJiSubAka2",
-        "FILE",
-        "Panzwasem"
+        "Heldruna",
+        "Raline",
+        "Asami222"
       ],
       "top_member_names": [
-        "Invaser",
-        "KaiJiF",
-        "KaiJiW"
+        "Raline",
+        "UnfazedAries",
+        "xxxATTILAxxx"
       ]
     },
     {
@@ -2722,7 +2698,7 @@
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
       "refresh_tier": "hot",
       "activity_score": 543,
-      "average_total_level": 1074,
+      "average_total_level": 1076,
       "leader_names": [
         "Sociopata",
         "Aztron",
@@ -2738,17 +2714,44 @@
       ]
     },
     {
+      "id": 763,
+      "name": "YaSaiJiN",
+      "tag": null,
+      "level": 100,
+      "marks": 84,
+      "season_position": 53,
+      "member_count": 8,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 540,
+      "average_total_level": 873,
+      "leader_names": [
+        "KaiJiF",
+        "KaiJiW",
+        "KaiJiSubAka",
+        "KaiJiSubAka2",
+        "FILE",
+        "Panzwasem"
+      ],
+      "top_member_names": [
+        "Invaser",
+        "KaiJiF",
+        "KaiJiW"
+      ]
+    },
+    {
       "id": 215,
       "name": "Legard",
       "tag": null,
       "level": 100,
       "marks": 50,
-      "season_position": 115,
+      "season_position": 118,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK07B9XMN51V5RBKX23K74.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
-      "activity_score": 542,
+      "activity_score": 539,
       "average_total_level": 1486,
       "leader_names": [
         "FuTuRe",
@@ -2767,13 +2770,13 @@
       "tag": null,
       "level": 73,
       "marks": 68,
-      "season_position": 41,
+      "season_position": 44,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWHWABR02S7SKBMFH45R0.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG82ZNK5GNQBH57027S3V7N.jpg",
       "refresh_tier": "hot",
-      "activity_score": 542,
-      "average_total_level": 873,
+      "activity_score": 539,
+      "average_total_level": 879,
       "leader_names": [
         "Jarmer",
         "Vyper",
@@ -2788,6 +2791,29 @@
         "LilyOfTheWater",
         "TheLibrarian",
         "Shinryuu"
+      ]
+    },
+    {
+      "id": 1345,
+      "name": "The Laboratory",
+      "tag": null,
+      "level": 73,
+      "marks": 5,
+      "season_position": 30,
+      "member_count": 23,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EET1B90T8GYGRTW9B4YF1.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 538,
+      "average_total_level": 896,
+      "leader_names": [
+        "M3talH3d",
+        "Aelira"
+      ],
+      "top_member_names": [
+        "RoepiR",
+        "Soulside",
+        "Bohica"
       ]
     },
     {
@@ -2820,14 +2846,14 @@
       "name": "MONARCH",
       "tag": "MON",
       "level": 96,
-      "marks": 80,
-      "season_position": 73,
+      "marks": 83,
+      "season_position": 74,
       "member_count": 12,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
       "refresh_tier": "hot",
-      "activity_score": 535,
-      "average_total_level": 1013,
+      "activity_score": 536,
+      "average_total_level": 1019,
       "leader_names": [
         "JonathanWick",
         "KenmaPet",
@@ -2841,68 +2867,18 @@
       ]
     },
     {
-      "id": 11,
-      "name": "Erattic Snow",
-      "tag": null,
-      "level": 90,
-      "marks": 227,
-      "season_position": 200,
-      "member_count": 15,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png",
-      "refresh_tier": "hot",
-      "activity_score": 532,
-      "average_total_level": 1674,
-      "leader_names": [
-        "MisterMarvelous",
-        "Bernie",
-        "Chibighost",
-        "DimKodo"
-      ],
-      "top_member_names": [
-        "Freedom85",
-        "MisterMarvelous",
-        "Oxidan"
-      ]
-    },
-    {
-      "id": 340,
-      "name": "Kingdom V",
-      "tag": null,
-      "level": 90,
-      "marks": 123,
-      "season_position": 131,
-      "member_count": 17,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
-      "refresh_tier": "hot",
-      "activity_score": 531,
-      "average_total_level": 1486,
-      "leader_names": [
-        "Dotoroni",
-        "Tych",
-        "WhatisIronman",
-        "Asuraae"
-      ],
-      "top_member_names": [
-        "Dotoroni",
-        "WhatisIronman",
-        "Kyylo"
-      ]
-    },
-    {
       "id": 1476,
       "name": "Vitiis Exilii",
       "tag": "HEX",
-      "level": 79,
-      "marks": 23,
-      "season_position": 17,
+      "level": 80,
+      "marks": 27,
+      "season_position": 18,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJYNQJC9TGDRFCFR7T5HYW.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
       "refresh_tier": "hot",
-      "activity_score": 531,
-      "average_total_level": 1269,
+      "activity_score": 536,
+      "average_total_level": 1276,
       "leader_names": [
         "Fauxibles",
         "Foibles",
@@ -2921,6 +2897,54 @@
       ]
     },
     {
+      "id": 340,
+      "name": "Kingdom V",
+      "tag": null,
+      "level": 90,
+      "marks": 122,
+      "season_position": 130,
+      "member_count": 17,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
+      "refresh_tier": "hot",
+      "activity_score": 532,
+      "average_total_level": 1490,
+      "leader_names": [
+        "Dotoroni",
+        "Tych",
+        "WhatisIronman",
+        "Asuraae"
+      ],
+      "top_member_names": [
+        "Dotoroni",
+        "WhatisIronman",
+        "Kyylo"
+      ]
+    },
+    {
+      "id": 1542,
+      "name": "Adepts of None",
+      "tag": null,
+      "level": 66,
+      "marks": 36,
+      "season_position": 38,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 530,
+      "average_total_level": 779,
+      "leader_names": [
+        "Thexann",
+        "Sanester"
+      ],
+      "top_member_names": [
+        "Thexann",
+        "DireWolf",
+        "Silenthorn"
+      ]
+    },
+    {
       "id": 126,
       "name": "Excalibur Rework",
       "tag": null,
@@ -2932,7 +2956,7 @@
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
       "activity_score": 529,
-      "average_total_level": 555,
+      "average_total_level": 556,
       "leader_names": [
         "Excalibur",
         "Ashwelle",
@@ -2971,41 +2995,18 @@
       ]
     },
     {
-      "id": 1542,
-      "name": "Adepts of None",
-      "tag": null,
-      "level": 66,
-      "marks": 34,
-      "season_position": 40,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 526,
-      "average_total_level": 766,
-      "leader_names": [
-        "Thexann",
-        "Sanester"
-      ],
-      "top_member_names": [
-        "Thexann",
-        "DireWolf",
-        "Silenthorn"
-      ]
-    },
-    {
       "id": 30,
       "name": "Fishing Guild",
       "tag": null,
       "level": 72,
       "marks": 248,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK1S7PVSQKNDZPY5E9574R.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/xNSSZyIwYmwQLx1MHE2TlyEgkJslZZ-metaOS5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 525,
-      "average_total_level": 875,
+      "average_total_level": 876,
       "leader_names": [
         "Moist",
         "Mist",
@@ -3020,38 +3021,6 @@
         "Mist",
         "Styxblight",
         "Schwer"
-      ]
-    },
-    {
-      "id": 92,
-      "name": "Forgotten Tavern",
-      "tag": null,
-      "level": 91,
-      "marks": 39,
-      "season_position": 81,
-      "member_count": 18,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 524,
-      "average_total_level": 1546,
-      "leader_names": [
-        "SuessideMiner",
-        "RockyCMEN",
-        "ChoppyCMEN",
-        "OGDrSuesside",
-        "Zabernat",
-        "Dirella",
-        "MashyPoo",
-        "RordonGamsay",
-        "TavernBarkeep",
-        "Chibb",
-        "Birdfeed"
-      ],
-      "top_member_names": [
-        "Chibb",
-        "VioSxS",
-        "Jepo"
       ]
     },
     {
@@ -3114,13 +3083,13 @@
       "tag": null,
       "level": 67,
       "marks": 251,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
       "refresh_tier": "hot",
       "activity_score": 522,
-      "average_total_level": 1119,
+      "average_total_level": 1121,
       "leader_names": [
         "madbs",
         "Nmls",
@@ -3140,13 +3109,13 @@
       "tag": null,
       "level": 93,
       "marks": 231,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 15,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 522,
-      "average_total_level": 922,
+      "average_total_level": 924,
       "leader_names": [
         "berbakat",
         "Tempoyak",
@@ -3166,14 +3135,14 @@
       "name": "MYTHICAL",
       "tag": null,
       "level": 64,
-      "marks": 223,
-      "season_position": 179,
+      "marks": 225,
+      "season_position": 178,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
-      "activity_score": 519,
-      "average_total_level": 1013,
+      "activity_score": 522,
+      "average_total_level": 1022,
       "leader_names": [
         "ACENIXZ",
         "DRDRiP",
@@ -3186,7 +3155,39 @@
       "top_member_names": [
         "DRDRiP",
         "ACENIXZ",
-        "Melophobix"
+        "MaxHuntWar"
+      ]
+    },
+    {
+      "id": 92,
+      "name": "Forgotten Tavern",
+      "tag": null,
+      "level": 91,
+      "marks": 38,
+      "season_position": 90,
+      "member_count": 18,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 514,
+      "average_total_level": 1550,
+      "leader_names": [
+        "SuessideMiner",
+        "RockyCMEN",
+        "ChoppyCMEN",
+        "OGDrSuesside",
+        "Zabernat",
+        "Dirella",
+        "MashyPoo",
+        "RordonGamsay",
+        "TavernBarkeep",
+        "Chibb",
+        "Birdfeed"
+      ],
+      "top_member_names": [
+        "Chibb",
+        "VioSxS",
+        "Jepo"
       ]
     },
     {
@@ -3242,14 +3243,14 @@
       "name": "Dss Rework",
       "tag": null,
       "level": 96,
-      "marks": 57,
-      "season_position": 39,
+      "marks": 59,
+      "season_position": 40,
       "member_count": 5,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2Y0R6CRKKWBC98JJHZSS.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg",
       "refresh_tier": "hot",
       "activity_score": 502,
-      "average_total_level": 685,
+      "average_total_level": 686,
       "leader_names": [
         "Scalethorn",
         "Lunesce",
@@ -3288,6 +3289,31 @@
       ]
     },
     {
+      "id": 554,
+      "name": "Dream Bandits",
+      "tag": null,
+      "level": 93,
+      "marks": 47,
+      "season_position": 51,
+      "member_count": 8,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 495,
+      "average_total_level": 797,
+      "leader_names": [
+        "LukiCreature",
+        "SarcasperAlt2",
+        "Ziibez",
+        "Lexor"
+      ],
+      "top_member_names": [
+        "Ziibez",
+        "Medika",
+        "WOLFFalt"
+      ]
+    },
+    {
       "id": 632,
       "name": "Buffalo Bans",
       "tag": null,
@@ -3315,66 +3341,18 @@
       ]
     },
     {
-      "id": 554,
-      "name": "Dream Bandits",
-      "tag": null,
-      "level": 92,
-      "marks": 44,
-      "season_position": 51,
-      "member_count": 8,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 490,
-      "average_total_level": 784,
-      "leader_names": [
-        "LukiCreature",
-        "SarcasperAlt2",
-        "Ziibez",
-        "Lexor"
-      ],
-      "top_member_names": [
-        "Ziibez",
-        "Medika",
-        "WOLFFalt"
-      ]
-    },
-    {
-      "id": 1541,
-      "name": "Seekers of None",
-      "tag": null,
-      "level": 61,
-      "marks": 32,
-      "season_position": 64,
-      "member_count": 22,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
-      "refresh_tier": "hot",
-      "activity_score": 488,
-      "average_total_level": 505,
-      "leader_names": [
-        "Arcann",
-        "Sanestar"
-      ],
-      "top_member_names": [
-        "Arcann",
-        "Sanestar",
-        "Merlin"
-      ]
-    },
-    {
       "id": 1571,
       "name": "HaRash",
       "tag": null,
       "level": 79,
-      "marks": 8,
-      "season_position": 9,
+      "marks": 11,
+      "season_position": 8,
       "member_count": 10,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4KJEJCR6H8DX9B8XZGFR.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
-      "activity_score": 485,
-      "average_total_level": 726,
+      "activity_score": 488,
+      "average_total_level": 737,
       "leader_names": [
         "Soft"
       ],
@@ -3385,18 +3363,43 @@
       ]
     },
     {
+      "id": 785,
+      "name": "Dream Chasers",
+      "tag": null,
+      "level": 91,
+      "marks": 49,
+      "season_position": 57,
+      "member_count": 8,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 486,
+      "average_total_level": 1193,
+      "leader_names": [
+        "NewlDaFisher",
+        "Stundi",
+        "NewlDaToon",
+        "Malzor"
+      ],
+      "top_member_names": [
+        "Stundi",
+        "Kyllsyn",
+        "Mistmantle"
+      ]
+    },
+    {
       "id": 960,
       "name": "Sol Invictus",
       "tag": null,
       "level": 74,
-      "marks": 78,
+      "marks": 80,
       "season_position": 144,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJY63PA1F7MNBAHQPE3C37.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
-      "activity_score": 484,
-      "average_total_level": 1139,
+      "activity_score": 486,
+      "average_total_level": 1141,
       "leader_names": [
         "TheThracian",
         "ThracianMiner",
@@ -3409,12 +3412,35 @@
       ]
     },
     {
+      "id": 1541,
+      "name": "Seekers of None",
+      "tag": null,
+      "level": 61,
+      "marks": 32,
+      "season_position": 66,
+      "member_count": 22,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
+      "refresh_tier": "hot",
+      "activity_score": 486,
+      "average_total_level": 520,
+      "leader_names": [
+        "Arcann",
+        "Sanestar"
+      ],
+      "top_member_names": [
+        "Arcann",
+        "Sanestar",
+        "Merlin"
+      ]
+    },
+    {
       "id": 35,
       "name": "Couch Cat",
       "tag": null,
       "level": 100,
       "marks": 139,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 17,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
@@ -3534,13 +3560,13 @@
       "tag": null,
       "level": 93,
       "marks": 233,
-      "season_position": 223,
+      "season_position": 233,
       "member_count": 8,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWANY8M303VVRQBA25E8E.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/xNSSZyIwYmwQLx1MHE2TlyEgkJslZZ-metaOS5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 475,
-      "average_total_level": 1422,
+      "average_total_level": 1426,
       "leader_names": [
         "MDT5000",
         "MightyPancake"
@@ -3577,57 +3603,6 @@
       ]
     },
     {
-      "id": 728,
-      "name": "Idle Brasil IV",
-      "tag": null,
-      "level": 95,
-      "marks": 39,
-      "season_position": 113,
-      "member_count": 14,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 474,
-      "average_total_level": 908,
-      "leader_names": [
-        "Musculo",
-        "Brooklyn",
-        "Brolamining",
-        "Brolafishing",
-        "AnglerZ"
-      ],
-      "top_member_names": [
-        "Brooklyn",
-        "Brolamining",
-        "MatheusRupp"
-      ]
-    },
-    {
-      "id": 785,
-      "name": "Dream Chasers",
-      "tag": null,
-      "level": 91,
-      "marks": 44,
-      "season_position": 59,
-      "member_count": 7,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 473,
-      "average_total_level": 1184,
-      "leader_names": [
-        "NewlDaFisher",
-        "Stundi",
-        "NewlDaToon",
-        "Malzor"
-      ],
-      "top_member_names": [
-        "Stundi",
-        "Kyllsyn",
-        "Mistmantle"
-      ]
-    },
-    {
       "id": 969,
       "name": "Sacred Wolves",
       "tag": null,
@@ -3657,14 +3632,14 @@
       "name": "Idle Bandits",
       "tag": null,
       "level": 60,
-      "marks": 37,
+      "marks": 46,
       "season_position": 47,
-      "member_count": 17,
+      "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 472,
-      "average_total_level": 812,
+      "average_total_level": 842,
       "leader_names": [
         "Facecaker",
         "TheBreezyBard",
@@ -3726,56 +3701,24 @@
       ]
     },
     {
-      "id": 1214,
-      "name": "Bowlcrew",
+      "id": 184,
+      "name": "FenixBR",
       "tag": null,
-      "level": 54,
-      "marks": 157,
-      "season_position": 159,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "level": 100,
+      "marks": 60,
+      "season_position": 64,
+      "member_count": 2,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg",
       "refresh_tier": "hot",
-      "activity_score": 469,
-      "average_total_level": 754,
+      "activity_score": 468,
+      "average_total_level": 673,
       "leader_names": [
-        "Bowlsniper",
-        "Bowlsnipe",
-        "Bowlfarmer",
-        "3V1L5P1K3",
-        "SerpentvalorIV",
-        "Valarony",
-        "Wakacrew",
-        "Dragonhunter"
+        "W3lbert"
       ],
       "top_member_names": [
-        "3V1L5P1K3",
-        "Bowlsniper",
-        "Bowlsnipe"
-      ]
-    },
-    {
-      "id": 151,
-      "name": "BERANDAL",
-      "tag": null,
-      "level": 94,
-      "marks": 81,
-      "season_position": 138,
-      "member_count": 12,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 466,
-      "average_total_level": 1048,
-      "leader_names": [
-        "Amamiya",
-        "Volta4",
-        "Kitsura"
-      ],
-      "top_member_names": [
-        "Zerxc",
-        "Khaiden",
-        "Nov4"
+        "W3lbert",
+        "Theoler"
       ]
     },
     {
@@ -3810,46 +3753,18 @@
       ]
     },
     {
-      "id": 260,
-      "name": "Lightborne",
-      "tag": null,
-      "level": 100,
-      "marks": 113,
-      "season_position": 209,
-      "member_count": 16,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 463,
-      "average_total_level": 1516,
-      "leader_names": [
-        "PKSSylveonCurse",
-        "AbyssalStorm",
-        "Sepura",
-        "PKSAlt2",
-        "Kuwii",
-        "Fr0z3nW1ngs",
-        "iAmRed"
-      ],
-      "top_member_names": [
-        "Kuwii",
-        "Fr0z3nW1ngs",
-        "iAmRed"
-      ]
-    },
-    {
       "id": 154,
       "name": "T RUS T",
       "tag": null,
       "level": 96,
       "marks": 120,
-      "season_position": 223,
+      "season_position": 233,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
       "refresh_tier": "hot",
       "activity_score": 462,
-      "average_total_level": 1389,
+      "average_total_level": 1390,
       "leader_names": [
         "AloneA",
         "Bushido",
@@ -3890,6 +3805,35 @@
         "TheHouse",
         "RiddledAardvark",
         "Intent"
+      ]
+    },
+    {
+      "id": 1214,
+      "name": "Bowlcrew",
+      "tag": null,
+      "level": 54,
+      "marks": 157,
+      "season_position": 167,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 461,
+      "average_total_level": 760,
+      "leader_names": [
+        "Bowlsniper",
+        "Bowlsnipe",
+        "Bowlfarmer",
+        "3V1L5P1K3",
+        "SerpentvalorIV",
+        "Valarony",
+        "Wakacrew",
+        "Dragonhunter"
+      ],
+      "top_member_names": [
+        "3V1L5P1K3",
+        "Bowlsniper",
+        "Bowlsnipe"
       ]
     },
     {
@@ -3947,17 +3891,69 @@
       ]
     },
     {
+      "id": 151,
+      "name": "BERANDAL",
+      "tag": null,
+      "level": 94,
+      "marks": 81,
+      "season_position": 144,
+      "member_count": 11,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 453,
+      "average_total_level": 997,
+      "leader_names": [
+        "Amamiya",
+        "Volta4",
+        "Kitsura"
+      ],
+      "top_member_names": [
+        "Zerxc",
+        "Nov4",
+        "Amamiya"
+      ]
+    },
+    {
+      "id": 260,
+      "name": "Lightborne",
+      "tag": null,
+      "level": 100,
+      "marks": 113,
+      "season_position": 219,
+      "member_count": 16,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 453,
+      "average_total_level": 1517,
+      "leader_names": [
+        "PKSSylveonCurse",
+        "AbyssalStorm",
+        "Sepura",
+        "PKSAlt2",
+        "Kuwii",
+        "Fr0z3nW1ngs",
+        "iAmRed"
+      ],
+      "top_member_names": [
+        "Kuwii",
+        "Fr0z3nW1ngs",
+        "iAmRed"
+      ]
+    },
+    {
       "id": 124,
       "name": "Dude kissers",
       "tag": null,
       "level": 84,
       "marks": 78,
-      "season_position": 58,
+      "season_position": 61,
       "member_count": 3,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
-      "activity_score": 455,
+      "activity_score": 452,
       "average_total_level": 332,
       "leader_names": [
         "Integrall",
@@ -3968,6 +3964,53 @@
         "Nightlooool",
         "Integrall",
         "Storywis"
+      ]
+    },
+    {
+      "id": 899,
+      "name": "Sacred Bears",
+      "tag": null,
+      "level": 60,
+      "marks": 99,
+      "season_position": 137,
+      "member_count": 20,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 452,
+      "average_total_level": 679,
+      "leader_names": [
+        "Chronocide",
+        "Walk"
+      ],
+      "top_member_names": [
+        "Ekilin",
+        "Chronocide",
+        "AbrahamMolina"
+      ]
+    },
+    {
+      "id": 728,
+      "name": "Idle Brasil IV",
+      "tag": null,
+      "level": 95,
+      "marks": 40,
+      "season_position": 81,
+      "member_count": 6,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 451,
+      "average_total_level": 929,
+      "leader_names": [
+        "Musculo",
+        "Brooklyn",
+        "Brolamining"
+      ],
+      "top_member_names": [
+        "Brooklyn",
+        "Brolamining",
+        "Fujii"
       ]
     },
     {
@@ -4014,31 +4057,6 @@
         "nositore",
         "Jakwtosiegra",
         "stupi"
-      ]
-    },
-    {
-      "id": 1188,
-      "name": "Inventory Full",
-      "tag": null,
-      "level": 72,
-      "marks": 41,
-      "season_position": 84,
-      "member_count": 14,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 447,
-      "average_total_level": 826,
-      "leader_names": [
-        "J3ff",
-        "Beule94",
-        "Jan3k3y",
-        "J6ff"
-      ],
-      "top_member_names": [
-        "J3ff",
-        "Beule94",
-        "EtrixOg"
       ]
     },
     {
@@ -4141,29 +4159,6 @@
       ]
     },
     {
-      "id": 899,
-      "name": "Sacred Bears",
-      "tag": null,
-      "level": 60,
-      "marks": 99,
-      "season_position": 156,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 440,
-      "average_total_level": 735,
-      "leader_names": [
-        "WinterSorrow",
-        "Walk"
-      ],
-      "top_member_names": [
-        "WinterSorrow",
-        "Ekilin",
-        "Chronocide"
-      ]
-    },
-    {
       "id": 1362,
       "name": "VnChillPlayer",
       "tag": null,
@@ -4234,33 +4229,12 @@
       ]
     },
     {
-      "id": 184,
-      "name": "FenixBR",
-      "tag": null,
-      "level": 100,
-      "marks": 57,
-      "season_position": 92,
-      "member_count": 2,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 438,
-      "average_total_level": 673,
-      "leader_names": [
-        "W3lbert"
-      ],
-      "top_member_names": [
-        "W3lbert",
-        "Theoler"
-      ]
-    },
-    {
       "id": 684,
       "name": "Litterbox",
       "tag": null,
       "level": 93,
       "marks": 115,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2BGSDM0CN3C7BX1P61EV.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
@@ -4328,6 +4302,28 @@
       ]
     },
     {
+      "id": 890,
+      "name": "Entei",
+      "tag": "BAN",
+      "level": 74,
+      "marks": 126,
+      "season_position": 101,
+      "member_count": 4,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/sZtiOi7YgNv8DhtCjUVwP6eEv28vSF-metaOC5wbmc=-.png",
+      "refresh_tier": "warm",
+      "activity_score": 433,
+      "average_total_level": 1268,
+      "leader_names": [
+        "Koalagon"
+      ],
+      "top_member_names": [
+        "Koalagon",
+        "Oreos",
+        "Lumbre"
+      ]
+    },
+    {
       "id": 1135,
       "name": "ForEveryone",
       "tag": null,
@@ -4379,13 +4375,13 @@
       "tag": null,
       "level": 100,
       "marks": 174,
-      "season_position": 223,
+      "season_position": 233,
       "member_count": 6,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kfo5kuMkgOPacAgS5aOeEWR1gl8UgU-metaNC5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 431,
-      "average_total_level": 1673,
+      "average_total_level": 1674,
       "leader_names": [
         "NC16",
         "Raven434",
@@ -4395,28 +4391,6 @@
         "cephied0",
         "SynthSlash",
         "starfish2054"
-      ]
-    },
-    {
-      "id": 890,
-      "name": "Entei",
-      "tag": "BAN",
-      "level": 74,
-      "marks": 118,
-      "season_position": 98,
-      "member_count": 4,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 429,
-      "average_total_level": 1267,
-      "leader_names": [
-        "Koalagon"
-      ],
-      "top_member_names": [
-        "Koalagon",
-        "Oreos",
-        "Lumbre"
       ]
     },
     {
@@ -4521,7 +4495,7 @@
       "tag": null,
       "level": 93,
       "marks": 226,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 2,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
@@ -4543,7 +4517,7 @@
       "tag": null,
       "level": 69,
       "marks": 143,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
@@ -4568,13 +4542,13 @@
       "tag": null,
       "level": 100,
       "marks": 167,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 6,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2Y0R6CRKKWBC98JJHZSS.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
       "activity_score": 426,
-      "average_total_level": 1621,
+      "average_total_level": 1622,
       "leader_names": [
         "Muninn",
         "Saqr",
@@ -4592,13 +4566,13 @@
       "tag": null,
       "level": 100,
       "marks": 80,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
       "activity_score": 426,
-      "average_total_level": 1372,
+      "average_total_level": 1373,
       "leader_names": [
         "Greton",
         "Upex",
@@ -4613,6 +4587,31 @@
         "Lumije",
         "Stanre",
         "Fluscha"
+      ]
+    },
+    {
+      "id": 1188,
+      "name": "Inventory Full",
+      "tag": null,
+      "level": 72,
+      "marks": 37,
+      "season_position": 92,
+      "member_count": 12,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 422,
+      "average_total_level": 828,
+      "leader_names": [
+        "J3ff",
+        "Beule94",
+        "Jan3k3y",
+        "J6ff"
+      ],
+      "top_member_names": [
+        "J3ff",
+        "Beule94",
+        "Athryellor"
       ]
     },
     {
@@ -4643,7 +4642,7 @@
       "tag": null,
       "level": 100,
       "marks": 99,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 13,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30AEMNKX77DWRVD2N24MXQ6.jpg",
@@ -4717,29 +4716,6 @@
       ]
     },
     {
-      "id": 322,
-      "name": "Hospital",
-      "tag": null,
-      "level": 96,
-      "marks": 49,
-      "season_position": 144,
-      "member_count": 9,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 418,
-      "average_total_level": 1495,
-      "leader_names": [
-        "BlackLiSS",
-        "Lika"
-      ],
-      "top_member_names": [
-        "BlackLiSS",
-        "WhiteLiSS",
-        "LiSSka"
-      ]
-    },
-    {
       "id": 733,
       "name": "Wolf Garden",
       "tag": null,
@@ -4796,7 +4772,7 @@
       "tag": null,
       "level": 78,
       "marks": 71,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 23,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2Y0R6CRKKWBC98JJHZSS.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/xNSSZyIwYmwQLx1MHE2TlyEgkJslZZ-metaOS5wbmc=-.png",
@@ -4819,6 +4795,29 @@
         "heiyujun",
         "woolkeeper",
         "chaoshead07"
+      ]
+    },
+    {
+      "id": 322,
+      "name": "Hospital",
+      "tag": null,
+      "level": 96,
+      "marks": 49,
+      "season_position": 151,
+      "member_count": 9,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 411,
+      "average_total_level": 1495,
+      "leader_names": [
+        "BlackLiSS",
+        "Lika"
+      ],
+      "top_member_names": [
+        "BlackLiSS",
+        "WhiteLiSS",
+        "LiSSka"
       ]
     },
     {
@@ -4876,13 +4875,13 @@
       "tag": null,
       "level": 100,
       "marks": 148,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 6,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWVPT7X8D7MMWMRRNRSTH.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg",
       "refresh_tier": "hot",
       "activity_score": 410,
-      "average_total_level": 1117,
+      "average_total_level": 1118,
       "leader_names": [
         "Ricus",
         "TychuAlt"
@@ -4923,13 +4922,13 @@
       "tag": null,
       "level": 100,
       "marks": 32,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 19,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01KCSPNSEH12947SNYQSF7GSN2.jpg",
       "refresh_tier": "hot",
       "activity_score": 409,
-      "average_total_level": 1530,
+      "average_total_level": 1533,
       "leader_names": [
         "Terrus",
         "DeviousVendetta",
@@ -4949,13 +4948,13 @@
       "tag": null,
       "level": 57,
       "marks": 149,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXHP5B1AG4AQSZ60SVXSPW.jpg",
       "refresh_tier": "hot",
       "activity_score": 409,
-      "average_total_level": 917,
+      "average_total_level": 919,
       "leader_names": [
         "flaza",
         "Chosen1",
@@ -4974,7 +4973,7 @@
       "tag": null,
       "level": 90,
       "marks": 89,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
@@ -4989,6 +4988,29 @@
         "Gundang",
         "six0451",
         "Deedlit"
+      ]
+    },
+    {
+      "id": 1187,
+      "name": "Palm Paradise",
+      "tag": null,
+      "level": 51,
+      "marks": 148,
+      "season_position": 206,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HP21YQ25MD3WHWS8VMHNSDHM.png",
+      "refresh_tier": "hot",
+      "activity_score": 407,
+      "average_total_level": 656,
+      "leader_names": [
+        "Pyrax",
+        "Sylphide"
+      ],
+      "top_member_names": [
+        "Pyrax",
+        "Sylphide",
+        "HuntingAlthea"
       ]
     },
     {
@@ -5022,7 +5044,7 @@
       "tag": null,
       "level": 100,
       "marks": 184,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 1,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
@@ -5042,7 +5064,7 @@
       "tag": null,
       "level": 90,
       "marks": 65,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJY63PA1F7MNBAHQPE3C37.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/lbl2Nn9vYtlRCFzrzqGqpRxFnP0upQ-metaNi5wbmc=-.png",
@@ -5117,13 +5139,13 @@
       "tag": null,
       "level": 97,
       "marks": 56,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 16,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
       "activity_score": 399,
-      "average_total_level": 1445,
+      "average_total_level": 1446,
       "leader_names": [
         "BalberithDaily",
         "Markidjani"
@@ -5162,42 +5184,18 @@
       ]
     },
     {
-      "id": 88,
-      "name": "Dragoon",
-      "tag": null,
-      "level": 91,
-      "marks": 31,
-      "season_position": 104,
-      "member_count": 4,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 396,
-      "average_total_level": 1894,
-      "leader_names": [
-        "Katville",
-        "Median",
-        "Mellivora"
-      ],
-      "top_member_names": [
-        "Median",
-        "Katville",
-        "Mellivora"
-      ]
-    },
-    {
       "id": 26,
       "name": "Bankers of Valor",
       "tag": null,
       "level": 100,
       "marks": 128,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 6,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2Y0R6CRKKWBC98JJHZSS.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JRG836PV4T682KVS1CD2EJFQ.jpg",
       "refresh_tier": "hot",
       "activity_score": 394,
-      "average_total_level": 1771,
+      "average_total_level": 1779,
       "leader_names": [
         "Phreakdrive"
       ],
@@ -5213,7 +5211,7 @@
       "tag": null,
       "level": 96,
       "marks": 174,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 2,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZ4HF1V9DR8DWDZHZN64P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
@@ -5279,6 +5277,30 @@
       ]
     },
     {
+      "id": 88,
+      "name": "Dragoon",
+      "tag": null,
+      "level": 91,
+      "marks": 31,
+      "season_position": 112,
+      "member_count": 4,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 388,
+      "average_total_level": 1895,
+      "leader_names": [
+        "Katville",
+        "Median",
+        "Mellivora"
+      ],
+      "top_member_names": [
+        "Median",
+        "Katville",
+        "Mellivora"
+      ]
+    },
+    {
       "id": 358,
       "name": "YUKI",
       "tag": null,
@@ -5333,14 +5355,14 @@
       "name": "Kaas",
       "tag": "K4S",
       "level": 70,
-      "marks": 30,
-      "season_position": 67,
+      "marks": 31,
+      "season_position": 73,
       "member_count": 5,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJX5ZRT45AZ8R1VY5JH5SN.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg",
       "refresh_tier": "hot",
-      "activity_score": 387,
-      "average_total_level": 1193,
+      "activity_score": 382,
+      "average_total_level": 1207,
       "leader_names": [
         "syanos",
         "ArisuAscending",
@@ -5350,28 +5372,6 @@
         "syanos",
         "Rymo",
         "ArisuAscending"
-      ]
-    },
-    {
-      "id": 1187,
-      "name": "Palm Paradise",
-      "tag": null,
-      "level": 51,
-      "marks": 149,
-      "season_position": 239,
-      "member_count": 20,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HP21YQ25MD3WHWS8VMHNSDHM.png",
-      "refresh_tier": "hot",
-      "activity_score": 387,
-      "average_total_level": 633,
-      "leader_names": [
-        "Pyrax"
-      ],
-      "top_member_names": [
-        "Pyrax",
-        "HuntingAlthea",
-        "FinalTrojan"
       ]
     },
     {
@@ -5598,30 +5598,6 @@
       ]
     },
     {
-      "id": 259,
-      "name": "Magdom",
-      "tag": null,
-      "level": 95,
-      "marks": 3,
-      "season_position": 200,
-      "member_count": 16,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 372,
-      "average_total_level": 1378,
-      "leader_names": [
-        "CallMeMagssss",
-        "North83",
-        "CallMeMagsII"
-      ],
-      "top_member_names": [
-        "North83",
-        "Jumbs",
-        "RonMcDonn"
-      ]
-    },
-    {
       "id": 844,
       "name": "Critical Miss",
       "tag": null,
@@ -5728,7 +5704,7 @@
       "tag": null,
       "level": 82,
       "marks": 14,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HT2CM5B6N8A87HD3QCGQ7BZD.png",
@@ -5753,7 +5729,7 @@
       "tag": null,
       "level": 100,
       "marks": 0,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 17,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg",
@@ -5826,31 +5802,6 @@
       ]
     },
     {
-      "id": 1226,
-      "name": "Templarios",
-      "tag": null,
-      "level": 41,
-      "marks": 104,
-      "season_position": 185,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 368,
-      "average_total_level": 562,
-      "leader_names": [
-        "Fenomeno",
-        "Toupeira",
-        "campino",
-        "Lichflame"
-      ],
-      "top_member_names": [
-        "Fenomeno",
-        "Escamado",
-        "PeachIce"
-      ]
-    },
-    {
       "id": 715,
       "name": "Tempest",
       "tag": null,
@@ -5879,7 +5830,7 @@
       "tag": null,
       "level": 87,
       "marks": 3,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/xNSSZyIwYmwQLx1MHE2TlyEgkJslZZ-metaOS5wbmc=-.png",
@@ -5929,31 +5880,6 @@
       ]
     },
     {
-      "id": 433,
-      "name": "Cursed",
-      "tag": null,
-      "level": 52,
-      "marks": 120,
-      "season_position": 239,
-      "member_count": 20,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png",
-      "refresh_tier": "hot",
-      "activity_score": 366,
-      "average_total_level": 898,
-      "leader_names": [
-        "tteokinou",
-        "tteoktteok",
-        "Grobelix",
-        "LuminousGrace"
-      ],
-      "top_member_names": [
-        "Farfetchd",
-        "LeonCursed",
-        "tteokinou"
-      ]
-    },
-    {
       "id": 671,
       "name": "Bestie Central",
       "tag": null,
@@ -5983,12 +5909,37 @@
       ]
     },
     {
+      "id": 433,
+      "name": "Cursed",
+      "tag": null,
+      "level": 52,
+      "marks": 120,
+      "season_position": 252,
+      "member_count": 20,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png",
+      "refresh_tier": "hot",
+      "activity_score": 366,
+      "average_total_level": 898,
+      "leader_names": [
+        "tteokinou",
+        "tteoktteok",
+        "Grobelix",
+        "LuminousGrace"
+      ],
+      "top_member_names": [
+        "Farfetchd",
+        "LeonCursed",
+        "tteokinou"
+      ]
+    },
+    {
       "id": 10,
       "name": "Terminal",
       "tag": null,
       "level": 90,
       "marks": 18,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 18,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
@@ -6109,7 +6060,7 @@
       "tag": null,
       "level": 87,
       "marks": 4,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
@@ -6130,18 +6081,42 @@
       ]
     },
     {
+      "id": 259,
+      "name": "Magdom",
+      "tag": null,
+      "level": 95,
+      "marks": 3,
+      "season_position": 211,
+      "member_count": 16,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 361,
+      "average_total_level": 1379,
+      "leader_names": [
+        "CallMeMagssss",
+        "North83",
+        "CallMeMagsII"
+      ],
+      "top_member_names": [
+        "North83",
+        "Jumbs",
+        "RonMcDonn"
+      ]
+    },
+    {
       "id": 713,
       "name": "Nightmare II",
       "tag": null,
       "level": 72,
       "marks": 43,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
       "activity_score": 361,
-      "average_total_level": 944,
+      "average_total_level": 945,
       "leader_names": [
         "Menzel",
         "Unbanished",
@@ -6152,6 +6127,31 @@
         "Ithr",
         "Unbanished",
         "N3koripper"
+      ]
+    },
+    {
+      "id": 1226,
+      "name": "Templarios",
+      "tag": null,
+      "level": 41,
+      "marks": 104,
+      "season_position": 192,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 361,
+      "average_total_level": 562,
+      "leader_names": [
+        "Fenomeno",
+        "Toupeira",
+        "campino",
+        "Lichflame"
+      ],
+      "top_member_names": [
+        "Fenomeno",
+        "Escamado",
+        "PeachIce"
       ]
     },
     {
@@ -6236,13 +6236,13 @@
       "tag": null,
       "level": 71,
       "marks": 51,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJW0AJQMA46KR09QE7220B.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png",
       "refresh_tier": "hot",
       "activity_score": 358,
-      "average_total_level": 1212,
+      "average_total_level": 1213,
       "leader_names": [
         "M3nzel",
         "AlMandragoran",
@@ -6310,7 +6310,7 @@
       "tag": null,
       "level": 92,
       "marks": 76,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 9,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
@@ -6358,7 +6358,7 @@
       "tag": null,
       "level": 57,
       "marks": 88,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK1S7PVSQKNDZPY5E9574R.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXHP5B1AG4AQSZ60SVXSPW.jpg",
@@ -6417,7 +6417,7 @@
       "tag": null,
       "level": 82,
       "marks": 8,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
@@ -6465,7 +6465,7 @@
       "tag": null,
       "level": 100,
       "marks": 72,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 6,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWANY8M303VVRQBA25E8E.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png",
@@ -6579,7 +6579,7 @@
       "tag": null,
       "level": 56,
       "marks": 75,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJXXGRYKS0WXJVT3QNMY3D.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
@@ -6656,7 +6656,7 @@
       "tag": null,
       "level": 94,
       "marks": 51,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 10,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
@@ -6679,7 +6679,7 @@
       "tag": null,
       "level": 67,
       "marks": 48,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
@@ -6767,32 +6767,6 @@
       ]
     },
     {
-      "id": 1550,
-      "name": "Tokyo ghouls",
-      "tag": null,
-      "level": 42,
-      "marks": 34,
-      "season_position": 159,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 340,
-      "average_total_level": 618,
-      "leader_names": [
-        "UnDeadGhost",
-        "CMDRPAIN",
-        "Vadlersgangs",
-        "Cobra997",
-        "SOAT"
-      ],
-      "top_member_names": [
-        "RivenLT",
-        "LadyKiara",
-        "CMDRPAIN"
-      ]
-    },
-    {
       "id": 240,
       "name": "RUSSO TURISTO",
       "tag": null,
@@ -6822,7 +6796,7 @@
       "tag": null,
       "level": 62,
       "marks": 55,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
@@ -6850,32 +6824,6 @@
         "galaxyau",
         "Cereloran",
         "Revev"
-      ]
-    },
-    {
-      "id": 1401,
-      "name": "Exiles of None",
-      "tag": null,
-      "level": 37,
-      "marks": 81,
-      "season_position": 185,
-      "member_count": 21,
-      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
-      "refresh_tier": "hot",
-      "activity_score": 339,
-      "average_total_level": 704,
-      "leader_names": [
-        "Vitiate",
-        "NihiIus",
-        "Voltmeter",
-        "CSanitox",
-        "QPSK"
-      ],
-      "top_member_names": [
-        "Vitiate",
-        "NihiIus",
-        "BlindMelon"
       ]
     },
     {
@@ -6937,13 +6885,13 @@
       "tag": null,
       "level": 93,
       "marks": 36,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 11,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 338,
-      "average_total_level": 941,
+      "average_total_level": 945,
       "leader_names": [
         "BadGirlUwU",
         "Miyumi"
@@ -6984,13 +6932,13 @@
       "tag": null,
       "level": 72,
       "marks": 12,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
       "refresh_tier": "hot",
       "activity_score": 337,
-      "average_total_level": 1069,
+      "average_total_level": 1070,
       "leader_names": [
         "Magic",
         "Grimren",
@@ -7013,13 +6961,13 @@
       "tag": null,
       "level": 62,
       "marks": 44,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
       "refresh_tier": "hot",
       "activity_score": 337,
-      "average_total_level": 704,
+      "average_total_level": 705,
       "leader_names": [
         "XL3RY",
         "Pikaweed",
@@ -7065,7 +7013,7 @@
       "tag": null,
       "level": 60,
       "marks": 57,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
@@ -7105,6 +7053,32 @@
         "Kaineth",
         "Joey",
         "Baio"
+      ]
+    },
+    {
+      "id": 1550,
+      "name": "Tokyo ghouls",
+      "tag": null,
+      "level": 42,
+      "marks": 35,
+      "season_position": 165,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 335,
+      "average_total_level": 621,
+      "leader_names": [
+        "UnDeadGhost",
+        "CMDRPAIN",
+        "Vadlersgangs",
+        "Cobra997",
+        "SOAT"
+      ],
+      "top_member_names": [
+        "RivenLT",
+        "LadyKiara",
+        "YOUNGMASTERXIX"
       ]
     },
     {
@@ -7231,7 +7205,7 @@
       "tag": null,
       "level": 77,
       "marks": 0,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
@@ -7251,6 +7225,32 @@
         "RosyidA",
         "Delii",
         "JunaZard"
+      ]
+    },
+    {
+      "id": 1401,
+      "name": "Exiles of None",
+      "tag": null,
+      "level": 37,
+      "marks": 81,
+      "season_position": 192,
+      "member_count": 21,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+      "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg",
+      "refresh_tier": "hot",
+      "activity_score": 332,
+      "average_total_level": 713,
+      "leader_names": [
+        "Vitiate",
+        "NihiIus",
+        "Voltmeter",
+        "CSanitox",
+        "QPSK"
+      ],
+      "top_member_names": [
+        "Vitiate",
+        "NihiIus",
+        "BlindMelon"
       ]
     },
     {
@@ -7369,7 +7369,7 @@
       "tag": null,
       "level": 64,
       "marks": 17,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 22,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
@@ -7660,7 +7660,7 @@
       "tag": null,
       "level": 60,
       "marks": 41,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
@@ -7762,7 +7762,7 @@
       "tag": null,
       "level": 94,
       "marks": 47,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 7,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
@@ -7814,7 +7814,7 @@
       "tag": null,
       "level": 92,
       "marks": 17,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 11,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK231B3MCE1CJ1E7NEJ7GZ.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
@@ -7860,7 +7860,7 @@
       "tag": null,
       "level": 68,
       "marks": 3,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWANY8M303VVRQBA25E8E.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg",
@@ -7883,13 +7883,13 @@
       "tag": null,
       "level": 67,
       "marks": 5,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK4W4DV4S9YCNDNJVP4SAC.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 319,
-      "average_total_level": 757,
+      "average_total_level": 758,
       "leader_names": [
         "Daavindell"
       ],
@@ -7952,7 +7952,7 @@
       "tag": null,
       "level": 45,
       "marks": 81,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/NXKsQKU0gJIHEUWoTwWLDZpjwyIPiD-metaYmFja2dyb3VuZDMucG5n-.png",
@@ -8662,7 +8662,7 @@
       "tag": null,
       "level": 44,
       "marks": 56,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK00JCZV7J2947MN1M2YM9.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
@@ -8860,13 +8860,13 @@
       "tag": null,
       "level": 63,
       "marks": 1,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK1S7PVSQKNDZPY5E9574R.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/xNSSZyIwYmwQLx1MHE2TlyEgkJslZZ-metaOS5wbmc=-.png",
       "refresh_tier": "hot",
       "activity_score": 298,
-      "average_total_level": 783,
+      "average_total_level": 784,
       "leader_names": [
         "Twardowski",
         "Badger"
@@ -8933,13 +8933,13 @@
       "tag": null,
       "level": 40,
       "marks": 61,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
       "refresh_tier": "hot",
       "activity_score": 296,
-      "average_total_level": 653,
+      "average_total_level": 654,
       "leader_names": [
         "Pokoli1998",
         "Tobicyclette"
@@ -9004,7 +9004,7 @@
       "tag": null,
       "level": 91,
       "marks": 14,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 8,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK2Y0R6CRKKWBC98JJHZSS.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg",
@@ -9365,7 +9365,7 @@
       "tag": null,
       "level": 39,
       "marks": 58,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK3P8VBF5WH6Z7WKVKX2KF.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/0u0ve05bgPPuH2omPfkQ5XtAmeHgDn-metaaGFsbG93ZWVuLnBuZw==-.png",
@@ -9461,7 +9461,7 @@
       "tag": null,
       "level": 96,
       "marks": 1,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 7,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK5DGBY4AHXNT8S46NZ2V1.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/FQA0KxPLa9IIBHfLFYuTkGDNHTloco-metacG9ydGFsLTEuanBn-.jpg",
@@ -9684,7 +9684,7 @@
       "tag": null,
       "level": 51,
       "marks": 15,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg",
@@ -9925,7 +9925,7 @@
       "tag": null,
       "level": 54,
       "marks": 3,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
@@ -10905,7 +10905,7 @@
       "tag": null,
       "level": 91,
       "marks": 21,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 3,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJWHWABR02S7SKBMFH45R0.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0BXK2BBGGRG5WTC8N5B3Q45.jpg",
@@ -11075,7 +11075,7 @@
       "tag": null,
       "level": 44,
       "marks": 8,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 21,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png",
@@ -11255,13 +11255,13 @@
       "tag": null,
       "level": 46,
       "marks": 8,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
       "refresh_tier": "hot",
       "activity_score": 261,
-      "average_total_level": 581,
+      "average_total_level": 582,
       "leader_names": [
         "Queost",
         "Shirina"
@@ -11708,7 +11708,7 @@
       "tag": null,
       "level": 32,
       "marks": 45,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg",
@@ -12496,7 +12496,7 @@
       "tag": null,
       "level": 34,
       "marks": 21,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
@@ -13757,7 +13757,7 @@
       "tag": null,
       "level": 35,
       "marks": 2,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQK1E8J17Q9XEFTQ3AESK7Z.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg",
@@ -17420,7 +17420,7 @@
       "tag": null,
       "level": 16,
       "marks": 8,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg",
@@ -17599,7 +17599,7 @@
       "tag": null,
       "level": 17,
       "marks": 0,
-      "season_position": 239,
+      "season_position": 252,
       "member_count": 20,
       "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
       "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
@@ -26178,6 +26178,46 @@
       ],
       "top_member_names": [
         "Nobledream"
+      ]
+    },
+    {
+      "id": 1719,
+      "name": "Akebono",
+      "tag": null,
+      "level": 11,
+      "marks": 5,
+      "season_position": 192,
+      "member_count": 1,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "cold",
+      "activity_score": 67,
+      "average_total_level": 319,
+      "leader_names": [
+        "Natsume"
+      ],
+      "top_member_names": [
+        "Natsume"
+      ]
+    },
+    {
+      "id": 1720,
+      "name": "Fujimori",
+      "tag": null,
+      "level": 11,
+      "marks": 5,
+      "season_position": 192,
+      "member_count": 1,
+      "icon_url": "https://cdn.idle-mmo.com/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+      "background_url": "https://cdn.idle-mmo.com/skins/backgrounds/default.jpg",
+      "refresh_tier": "cold",
+      "activity_score": 67,
+      "average_total_level": 326,
+      "leader_names": [
+        "Shion"
+      ],
+      "top_member_names": [
+        "Shion"
       ]
     },
     {
