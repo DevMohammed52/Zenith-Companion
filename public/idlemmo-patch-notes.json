@@ -1,37 +1,37 @@
 {
   "meta": {
-    "generatedAt": "2026-07-30T12:00:48.686Z",
+    "generatedAt": "2026-07-30T14:27:33.607Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 266,
-    "totalFetched": 266,
+    "totalAvailable": 267,
+    "totalFetched": 267,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 269,
+    "latestPatchId": 270,
     "oldestPatchId": 1,
-    "latestVersion": "0.79.0-PB",
+    "latestVersion": "0.80.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "combat": 130,
+      "combat": 131,
+      "world-bosses": 43,
+      "guilds": 72,
+      "conquest": 26,
+      "housing": 32,
+      "economy": 125,
+      "skills": 156,
+      "items": 151,
+      "translations": 13,
+      "mobile-ui": 104,
+      "seasonal": 78,
+      "bug-fixes": 195,
       "dungeons": 58,
-      "seasonal": 77,
       "hunting": 67,
       "pets": 104,
-      "housing": 31,
-      "economy": 124,
-      "skills": 155,
-      "items": 150,
-      "mobile-ui": 103,
-      "bug-fixes": 194,
       "membership": 64,
-      "guilds": 71,
       "forge": 44,
       "tavern": 30,
       "public-api": 18,
-      "conquest": 25,
-      "translations": 12,
-      "world-bosses": 42,
       "weather": 4,
       "quests": 10,
       "map": 64,
@@ -41,12 +41,385 @@
   },
   "patchNotes": [
     {
+      "id": 270,
+      "version": "0.80.0-PB",
+      "title": "Market Improvements, Russian Language, and More",
+      "headline": "Version 0.80.0-PB - Market Improvements, Russian Language, and More",
+      "releasedAt": "2026-07-30T13:28:10",
+      "releaseLabel": "59 minutes ago",
+      "releaseDateLabel": "Jul 30 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=270",
+      "categories": [
+        "combat",
+        "world-bosses",
+        "guilds",
+        "conquest",
+        "housing",
+        "economy",
+        "skills",
+        "items",
+        "translations",
+        "mobile-ui",
+        "seasonal",
+        "bug-fixes"
+      ],
+      "excerpt": "Market changes We've removed all purchase order fees. All purchase orders now expire after 30 days automatically. We've improved the market UI and UX. We are introducing a simple market landing page, which allows you...",
+      "contentBlocks": [
+        {
+          "type": "heading",
+          "text": "Market changes"
+        },
+        {
+          "type": "listItem",
+          "text": "We've removed all purchase order fees."
+        },
+        {
+          "type": "listItem",
+          "text": "All purchase orders now expire after 30 days automatically."
+        },
+        {
+          "type": "listItem",
+          "text": "We've improved the market UI and UX. We are introducing a simple market landing page, which allows you to quickly buy an item. And pin your most frequently purchased items too. This is basically a simple way to create a PO or fulfill existing listings."
+        },
+        {
+          "type": "listItem",
+          "text": "When several players offer the same price, available items are now shared between them in turns. This means one large Purchase Order cannot take every incoming item while other matching orders receive nothing."
+        },
+        {
+          "type": "heading",
+          "text": "Translation"
+        },
+        {
+          "type": "listItem",
+          "text": "We now support Russian language."
+        },
+        {
+          "type": "heading",
+          "text": "Village Management"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed notifications for NPC village battles."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue where both players could appear to gain resources during a Village War. Resource gains, losses, and totals are now shown correctly for both attackers and defenders."
+        },
+        {
+          "type": "listItem",
+          "text": "Village citizens assigned to buildings under repair will remain reserved."
+        },
+        {
+          "type": "listItem",
+          "text": "Citizens assigned to buildings that fully decay will automatically return to the available citizen pool."
+        },
+        {
+          "type": "listItem",
+          "text": "Previously stuck citizens in already-decayed buildings will also be released."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed village war rewards sometimes going backwards while a war was still in progress."
+        },
+        {
+          "type": "listItem",
+          "text": "The “Cost to attack” is paid now immediately when a raid begins."
+        },
+        {
+          "type": "listItem",
+          "text": "This cost is non-refundable, even if you leave the war early."
+        },
+        {
+          "type": "listItem",
+          "text": "Leaving early only grants the resources earned so far."
+        },
+        {
+          "type": "listItem",
+          "text": "Early withdrawal also applies a minimum amount of battle losses."
+        },
+        {
+          "type": "listItem",
+          "text": "The withdrawal screen now shows exactly what you will gain or lose before confirming."
+        },
+        {
+          "type": "heading",
+          "text": "Village Warfare"
+        },
+        {
+          "type": "listItem",
+          "text": "Reduced warfare opt-in length from 30 days to 7 days."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the attack page incorrectly showing progress."
+        },
+        {
+          "type": "listItem",
+          "text": "Scouting now gives a clearer picture of the risks and rewards before you attack."
+        },
+        {
+          "type": "listItem",
+          "text": "Scout reports show estimated ranges instead of exact numbers."
+        },
+        {
+          "type": "listItem",
+          "text": "Reports can be Rough, Fair, or Good. Better scouts provide more reliable information."
+        },
+        {
+          "type": "listItem",
+          "text": "Enemy scouts and defences can make reports less accurate."
+        },
+        {
+          "type": "listItem",
+          "text": "Attack previews now show what you could gain or lose if you win."
+        },
+        {
+          "type": "listItem",
+          "text": "You can also see how much you could lose if the attack fails."
+        },
+        {
+          "type": "listItem",
+          "text": "Enemies may destroy additional resources when they fight back."
+        },
+        {
+          "type": "listItem",
+          "text": "If your scouts cannot discover an enemy’s attack strength, the possible danger remains unknown."
+        },
+        {
+          "type": "listItem",
+          "text": "Scout reports remain uncertain, and battles can still surprise you."
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "Guild seasons now have a 24-hour grace period after they end. During this time, players can log in and have contributions from completed actions counted toward the previous season. Final rankings, rewards, and Conquest bonuses will become available once the grace period ends."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that caused some world bosses to be skipped."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue where removing a battle from the middle of the queue could incorrectly show “Insufficient enemies to re-queue battles.”"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue where scaled enemies could lose their selected level when battles were automatically rearranged."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a UI bug where village happiness would be displayed incorrectly."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed purchase orders failing when an alt’s listing was among otherwise valid listings."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed guild mastery effect not working correctly from guild energizing pool."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed cross translation issue on the shrine and leaderboards."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed \"Collect all\" button on the campaign page."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue that caused some guild raids to be stuck indefinitely."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Market changes",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "We've removed all purchase order fees."
+            },
+            {
+              "type": "listItem",
+              "text": "All purchase orders now expire after 30 days automatically."
+            },
+            {
+              "type": "listItem",
+              "text": "We've improved the market UI and UX. We are introducing a simple market landing page, which allows you to quickly buy an item. And pin your most frequently purchased items too. This is basically a simple way to create a PO or fulfill existing listings."
+            },
+            {
+              "type": "listItem",
+              "text": "When several players offer the same price, available items are now shared between them in turns. This means one large Purchase Order cannot take every incoming item while other matching orders receive nothing."
+            }
+          ]
+        },
+        {
+          "heading": "Translation",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "We now support Russian language."
+            }
+          ]
+        },
+        {
+          "heading": "Village Management",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed notifications for NPC village battles."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue where both players could appear to gain resources during a Village War. Resource gains, losses, and totals are now shown correctly for both attackers and defenders."
+            },
+            {
+              "type": "listItem",
+              "text": "Village citizens assigned to buildings under repair will remain reserved."
+            },
+            {
+              "type": "listItem",
+              "text": "Citizens assigned to buildings that fully decay will automatically return to the available citizen pool."
+            },
+            {
+              "type": "listItem",
+              "text": "Previously stuck citizens in already-decayed buildings will also be released."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed village war rewards sometimes going backwards while a war was still in progress."
+            },
+            {
+              "type": "listItem",
+              "text": "The “Cost to attack” is paid now immediately when a raid begins."
+            },
+            {
+              "type": "listItem",
+              "text": "This cost is non-refundable, even if you leave the war early."
+            },
+            {
+              "type": "listItem",
+              "text": "Leaving early only grants the resources earned so far."
+            },
+            {
+              "type": "listItem",
+              "text": "Early withdrawal also applies a minimum amount of battle losses."
+            },
+            {
+              "type": "listItem",
+              "text": "The withdrawal screen now shows exactly what you will gain or lose before confirming."
+            }
+          ]
+        },
+        {
+          "heading": "Village Warfare",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Reduced warfare opt-in length from 30 days to 7 days."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the attack page incorrectly showing progress."
+            },
+            {
+              "type": "listItem",
+              "text": "Scouting now gives a clearer picture of the risks and rewards before you attack."
+            },
+            {
+              "type": "listItem",
+              "text": "Scout reports show estimated ranges instead of exact numbers."
+            },
+            {
+              "type": "listItem",
+              "text": "Reports can be Rough, Fair, or Good. Better scouts provide more reliable information."
+            },
+            {
+              "type": "listItem",
+              "text": "Enemy scouts and defences can make reports less accurate."
+            },
+            {
+              "type": "listItem",
+              "text": "Attack previews now show what you could gain or lose if you win."
+            },
+            {
+              "type": "listItem",
+              "text": "You can also see how much you could lose if the attack fails."
+            },
+            {
+              "type": "listItem",
+              "text": "Enemies may destroy additional resources when they fight back."
+            },
+            {
+              "type": "listItem",
+              "text": "If your scouts cannot discover an enemy’s attack strength, the possible danger remains unknown."
+            },
+            {
+              "type": "listItem",
+              "text": "Scout reports remain uncertain, and battles can still surprise you."
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Guild seasons now have a 24-hour grace period after they end. During this time, players can log in and have contributions from completed actions counted toward the previous season. Final rankings, rewards, and Conquest bonuses will become available once the grace period ends."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that caused some world bosses to be skipped."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue where removing a battle from the middle of the queue could incorrectly show “Insufficient enemies to re-queue battles.”"
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue where scaled enemies could lose their selected level when battles were automatically rearranged."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a UI bug where village happiness would be displayed incorrectly."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed purchase orders failing when an alt’s listing was among otherwise valid listings."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed guild mastery effect not working correctly from guild energizing pool."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed cross translation issue on the shrine and leaderboards."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed \"Collect all\" button on the campaign page."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue that caused some guild raids to be stuck indefinitely."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Market changes\nWe've removed all purchase order fees.\nAll purchase orders now expire after 30 days automatically.\nWe've improved the market UI and UX. We are introducing a simple market landing page, which allows you to quickly buy an item. And pin your most frequently purchased items too. This is basically a simple way to create a PO or fulfill existing listings.\nWhen several players offer the same price, available items are now shared between them in turns. This means one large Purchase Order cannot take every incoming item while other matching orders receive nothing.\nTranslation\nWe now support Russian language.\nVillage Management\nFixed notifications for NPC village battles.\nFixed an issue where both players could appear to gain resources during a Village War. Resource gains, losses, and totals are now shown correctly for both attackers and defenders.\nVillage citizens assigned to buildings under repair will remain reserved.\nCitizens assigned to buildings that fully decay will automatically return to the available citizen pool.\nPreviously stuck citizens in already-decayed buildings will also be released.\nFixed village war rewards sometimes going backwards while a war was still in progress.\nThe “Cost to attack” is paid now immediately when a raid begins.\nThis cost is non-refundable, even if you leave the war early.\nLeaving early only grants the resources earned so far.\nEarly withdrawal also applies a minimum amount of battle losses.\nThe withdrawal screen now shows exactly what you will gain or lose before confirming.\nVillage Warfare\nReduced warfare opt-in length from 30 days to 7 days.\nFixed the attack page incorrectly showing progress.\nScouting now gives a clearer picture of the risks and rewards before you attack.\nScout reports show estimated ranges instead of exact numbers.\nReports can be Rough, Fair, or Good. Better scouts provide more reliable information.\nEnemy scouts and defences can make reports less accurate.\nAttack previews now show what you could gain or lose if you win.\nYou can also see how much you could lose if the attack fails.\nEnemies may destroy additional resources when they fight back.\nIf your scouts cannot discover an enemy’s attack strength, the possible danger remains unknown.\nScout reports remain uncertain, and battles can still surprise you.\nMore\nGuild seasons now have a 24-hour grace period after they end. During this time, players can log in and have contributions from completed actions counted toward the previous season. Final rankings, rewards, and Conquest bonuses will become available once the grace period ends.\nFixed a bug that caused some world bosses to be skipped.\nFixed an issue where removing a battle from the middle of the queue could incorrectly show “Insufficient enemies to re-queue battles.”\nFixed an issue where scaled enemies could lose their selected level when battles were automatically rearranged.\nFixed a UI bug where village happiness would be displayed incorrectly.\nFixed purchase orders failing when an alt’s listing was among otherwise valid listings.\nFixed guild mastery effect not working correctly from guild energizing pool.\nFixed cross translation issue on the shrine and leaderboards.\nFixed \"Collect all\" button on the campaign page.\nFixed an issue that caused some guild raids to be stuck indefinitely.",
+      "searchText": "version 0.80.0-pb - market improvements, russian language, and more market changes we've removed all purchase order fees. all purchase orders now expire after 30 days automatically. we've improved the market ui and ux. we are introducing a simple market landing page, which allows you to quickly buy an item. and pin your most frequently purchased items too. this is basically a simple way to create a po or fulfill existing listings. when several players offer the same price, available items are now shared between them in turns. this means one large purchase order cannot take every incoming item while other matching orders receive nothing. translation we now support russian language. village management fixed notifications for npc village battles. fixed an issue where both players could appear to gain resources during a village war. resource gains, losses, and totals are now shown correctly for both attackers and defenders. village citizens assigned to buildings under repair will remain reserved. citizens assigned to buildings that fully decay will automatically return to the available citizen pool. previously stuck citizens in already-decayed buildings will also be released. fixed village war rewards sometimes going backwards while a war was still in progress. the “cost to attack” is paid now immediately when a raid begins. this cost is non-refundable, even if you leave the war early. leaving early only grants the resources earned so far. early withdrawal also applies a minimum amount of battle losses. the withdrawal screen now shows exactly what you will gain or lose before confirming. village warfare reduced warfare opt-in length from 30 days to 7 days. fixed the attack page incorrectly showing progress. scouting now gives a clearer picture of the risks and rewards before you attack. scout reports show estimated ranges instead of exact numbers. reports can be rough, fair, or good. better scouts provide more reliable information. enemy scouts and defences can make reports less accurate. attack previews now show what you could gain or lose if you win. you can also see how much you could lose if the attack fails. enemies may destroy additional resources when they fight back. if your scouts cannot discover an enemy’s attack strength, the possible danger remains unknown. scout reports remain uncertain, and battles can still surprise you. more guild seasons now have a 24-hour grace period after they end. during this time, players can log in and have contributions from completed actions counted toward the previous season. final rankings, rewards, and conquest bonuses will become available once the grace period ends. fixed a bug that caused some world bosses to be skipped. fixed an issue where removing a battle from the middle of the queue could incorrectly show “insufficient enemies to re-queue battles.” fixed an issue where scaled enemies could lose their selected level when battles were automatically rearranged. fixed a ui bug where village happiness would be displayed incorrectly. fixed purchase orders failing when an alt’s listing was among otherwise valid listings. fixed guild mastery effect not working correctly from guild energizing pool. fixed cross translation issue on the shrine and leaderboards. fixed \"collect all\" button on the campaign page. fixed an issue that caused some guild raids to be stuck indefinitely."
+    },
+    {
       "id": 269,
       "version": "0.79.0-PB",
       "title": "Moonlit Festival",
       "headline": "Version 0.79.0-PB - Moonlit Festival",
       "releasedAt": "2026-07-24T13:57:34",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Jul 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=269",
