@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-08-02T17:18:31.921Z",
-    "fetched_at": "2026-08-02T17:18:15.437Z",
+    "generated_at": "2026-08-02T18:29:56.058Z",
+    "fetched_at": "2026-08-02T18:29:39.575Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-08-02T17:23:16+00:00",
+    "endpoint_updates_at": "2026-08-02T18:34:41+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16484
+      "elapsed_ms": 16483
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 2,
+      "active_assaults": 1,
       "leaderboard_rows": 17,
       "contribution_rows": 136,
       "guilds_observed": 15
@@ -84,7 +84,7 @@
           "character": {
             "hashed_id": "gBq1boWYeJ0zzLkJ3rXa",
             "name": "Chaosrika",
-            "total_level": 1933,
+            "total_level": 1934,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKA8TSMYQPSHX8V8NMXWXZQ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
@@ -154,7 +154,7 @@
           "character": {
             "hashed_id": "Zdg5V3PQoyEn1YEyWq0z",
             "name": "Bazzo",
-            "total_level": 1037,
+            "total_level": 1038,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP2211VMCKN780M6RM60775H.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
           }
@@ -846,30 +846,18 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/a8Xp6OHN2vO1xY0vlJiUKsOaeQGfQ4-metaT2FzaXMucG5n-.png",
       "status": "DOMINATED",
       "colour": "#1c71d8",
-      "kills": 9639,
-      "experience": 12813,
+      "kills": 12265,
+      "experience": 15936,
       "guilds_count": 2,
-      "active_assaults_count": 1,
+      "active_assaults_count": 0,
       "leaderboard_count": 2,
       "contribution_count": 7,
-      "active_assaults": [
-        {
-          "kills": 0,
-          "experience": 0,
-          "guild": {
-            "id": 1461,
-            "name": "The Library",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJWHWABR02S7SKBMFH45R0.png",
-            "background_url": null
-          }
-        }
-      ],
+      "active_assaults": [],
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 9638,
-          "experience": 12812,
+          "kills": 12264,
+          "experience": 15935,
           "guild": {
             "id": 1461,
             "name": "The Library",
@@ -895,15 +883,29 @@
         {
           "id": 141237,
           "guild_conquest_progress_id": 141108,
-          "kills": 4730,
-          "experience": 7904,
+          "kills": 5971,
+          "experience": 9295,
           "guild": null,
           "character": {
             "hashed_id": "Zdg5V3PQojmb1LEyWq0z",
             "name": "Shinryuu",
-            "total_level": 1328,
+            "total_level": 1329,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKA8TSMYQPSHX8V8NMXWXZQ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21YQ25MD3WHWS8VMHNSDHM.png"
+          }
+        },
+        {
+          "id": 141236,
+          "guild_conquest_progress_id": 141108,
+          "kills": 2091,
+          "experience": 2438,
+          "guild": null,
+          "character": {
+            "hashed_id": "98bO5w1QP1d7aN3xkREV",
+            "name": "Jarmer",
+            "total_level": 1258,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XTY7W6RX0EK2EFFPM3118.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
           }
         },
         {
@@ -949,20 +951,6 @@
           }
         },
         {
-          "id": 141236,
-          "guild_conquest_progress_id": 141108,
-          "kills": 706,
-          "experience": 706,
-          "guild": null,
-          "character": {
-            "hashed_id": "98bO5w1QP1d7aN3xkREV",
-            "name": "Jarmer",
-            "total_level": 1256,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XTY7W6RX0EK2EFFPM3118.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
-          }
-        },
-        {
           "id": 141443,
           "guild_conquest_progress_id": 141108,
           "kills": 90,
@@ -985,7 +973,7 @@
           "character": {
             "hashed_id": "eA59WrBQRoPqJNzb62qK",
             "name": "Orechild",
-            "total_level": 1102,
+            "total_level": 1103,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EET1B90T8GYGRTW9B4YF1.jpg"
           }
@@ -1701,7 +1689,7 @@
           "character": {
             "hashed_id": "eA59WrBQRebjjLzb62qK",
             "name": "Unknown1",
-            "total_level": 1866,
+            "total_level": 1867,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -1715,7 +1703,7 @@
           "character": {
             "hashed_id": "lzPeorXNVA1gpQaW0kv5",
             "name": "LeadCenobite",
-            "total_level": 1922,
+            "total_level": 1924,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EVQcyT1TOGMeOJgQxJIPiZ8SwQAwfv-metaR2VycmluLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
           }
@@ -1938,7 +1926,7 @@
           "character": {
             "hashed_id": "6aDoyRnLyG3jrNpV5AGX",
             "name": "LudoDrago",
-            "total_level": 1994,
+            "total_level": 1995,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PA33JS5KRWNF7SFRG79W6Y.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
           }
@@ -2274,7 +2262,7 @@
           "character": {
             "hashed_id": "lzPeorXNVA1gpQaW0kv5",
             "name": "LeadCenobite",
-            "total_level": 1922,
+            "total_level": 1924,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EVQcyT1TOGMeOJgQxJIPiZ8SwQAwfv-metaR2VycmluLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
           }
@@ -2598,7 +2586,7 @@
       "character": {
         "hashed_id": "6aDoyRnLyG3jrNpV5AGX",
         "name": "LudoDrago",
-        "total_level": 1994,
+        "total_level": 1995,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PA33JS5KRWNF7SFRG79W6Y.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
       },
