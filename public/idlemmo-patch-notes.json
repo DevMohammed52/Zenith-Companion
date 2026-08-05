@@ -1,31 +1,31 @@
 {
   "meta": {
-    "generatedAt": "2026-08-05T10:44:49.256Z",
+    "generatedAt": "2026-08-05T13:00:40.127Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 267,
-    "totalFetched": 267,
+    "totalAvailable": 268,
+    "totalFetched": 268,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 270,
+    "latestPatchId": 271,
     "oldestPatchId": 1,
-    "latestVersion": "0.80.0-PB",
+    "latestVersion": "0.80.1-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "dungeons": 59,
+      "economy": 126,
+      "items": 152,
+      "bug-fixes": 196,
       "combat": 131,
       "world-bosses": 43,
       "guilds": 72,
       "conquest": 26,
       "housing": 32,
-      "economy": 125,
       "skills": 156,
-      "items": 151,
       "translations": 13,
       "mobile-ui": 104,
       "seasonal": 78,
-      "bug-fixes": 195,
-      "dungeons": 58,
       "hunting": 67,
       "pets": 104,
       "membership": 64,
@@ -40,6 +40,67 @@
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 271,
+      "version": "0.80.1-PB",
+      "title": "Market QoL Improvements",
+      "headline": "Version 0.80.1-PB - Market QoL Improvements",
+      "releasedAt": "2026-08-05T12:35:32",
+      "releaseLabel": "25 minutes ago",
+      "releaseDateLabel": "Aug 05 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=271",
+      "categories": [
+        "dungeons",
+        "economy",
+        "items",
+        "bug-fixes"
+      ],
+      "excerpt": "Market recent searches are now tied to the character rather than the account. All existing pinned searches have been cleared. Please re-pin your searches. Added \"View Listings\" button on the PO creation window. Added...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Market recent searches are now tied to the character rather than the account. All existing pinned searches have been cleared. Please re-pin your searches."
+        },
+        {
+          "type": "listItem",
+          "text": "Added \"View Listings\" button on the PO creation window."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a way to quickly sell items on the market homepage."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that caused dungeons runs to process refunds incorrectly when traveling."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Market recent searches are now tied to the character rather than the account. All existing pinned searches have been cleared. Please re-pin your searches."
+            },
+            {
+              "type": "listItem",
+              "text": "Added \"View Listings\" button on the PO creation window."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a way to quickly sell items on the market homepage."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that caused dungeons runs to process refunds incorrectly when traveling."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Market recent searches are now tied to the character rather than the account. All existing pinned searches have been cleared. Please re-pin your searches.\nAdded \"View Listings\" button on the PO creation window.\nAdded a way to quickly sell items on the market homepage.\nFixed a bug that caused dungeons runs to process refunds incorrectly when traveling.",
+      "searchText": "version 0.80.1-pb - market qol improvements market recent searches are now tied to the character rather than the account. all existing pinned searches have been cleared. please re-pin your searches. added \"view listings\" button on the po creation window. added a way to quickly sell items on the market homepage. fixed a bug that caused dungeons runs to process refunds incorrectly when traveling."
+    },
     {
       "id": 270,
       "version": "0.80.0-PB",
