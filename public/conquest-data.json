@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-08-09T13:31:04.661Z",
-    "fetched_at": "2026-08-09T13:30:48.198Z",
+    "generated_at": "2026-08-09T14:20:09.023Z",
+    "fetched_at": "2026-08-09T14:19:52.546Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-08-09T13:35:49+00:00",
+    "endpoint_updates_at": "2026-08-09T14:24:53+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16463
+      "elapsed_ms": 16477
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 5,
+      "active_assaults": 4,
       "leaderboard_rows": 21,
       "contribution_rows": 158,
       "guilds_observed": 17
@@ -182,7 +182,7 @@
           "character": {
             "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
             "name": "CJ0227",
-            "total_level": 735,
+            "total_level": 736,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png"
           }
@@ -222,26 +222,15 @@
       "key": "whispering-woods",
       "name": "Whispering Woods",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/dVBDrBxJSjTtJXNWifhVyA5h5lAmJ1-metaV2hpc3BlcmluZyB3b29kcy5wbmc=-.png",
-      "status": "DOMINATED",
+      "status": "CONTESTED",
       "colour": null,
-      "kills": 132347,
-      "experience": 966388,
+      "kills": 146747,
+      "experience": 1095988,
       "guilds_count": 4,
-      "active_assaults_count": 2,
+      "active_assaults_count": 1,
       "leaderboard_count": 4,
       "contribution_count": 12,
       "active_assaults": [
-        {
-          "kills": 1065,
-          "experience": 9585,
-          "guild": {
-            "id": 129,
-            "name": "Ore Bros",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-            "background_url": null
-          }
-        },
         {
           "kills": 2205,
           "experience": 17537,
@@ -269,8 +258,8 @@
         },
         {
           "position": 2,
-          "kills": 42932,
-          "experience": 386388,
+          "kills": 57332,
+          "experience": 515988,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -308,8 +297,8 @@
         {
           "id": 142139,
           "guild_conquest_progress_id": 142015,
-          "kills": 42932,
-          "experience": 386388,
+          "kills": 57332,
+          "experience": 515988,
           "guild": null,
           "character": {
             "hashed_id": "Zwey82VNAD5mRQD0dXM3",
@@ -1477,7 +1466,7 @@
           "character": {
             "hashed_id": "jVDJez3LD9DeVQKWO08G",
             "name": "Centurion1",
-            "total_level": 2127,
+            "total_level": 2128,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XNPH2XRCQ1X4E21ZW767N.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -1505,7 +1494,7 @@
           "character": {
             "hashed_id": "2xMjGdBN5dMB3Q9P1nyr",
             "name": "Wolfssskin",
-            "total_level": 1090,
+            "total_level": 1091,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -3056,6 +3045,25 @@
       }
     },
     {
+      "id": 142139,
+      "guild_conquest_progress_id": 142015,
+      "kills": 57332,
+      "experience": 515988,
+      "guild": null,
+      "character": {
+        "hashed_id": "Zwey82VNAD5mRQD0dXM3",
+        "name": "Mogs",
+        "total_level": 1779,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+      },
+      "zone": {
+        "id": 2,
+        "key": "whispering-woods",
+        "name": "Whispering Woods"
+      }
+    },
+    {
       "id": 140161,
       "guild_conquest_progress_id": 139965,
       "kills": 92936,
@@ -3072,25 +3080,6 @@
         "id": 9,
         "key": "isle-of-whispers",
         "name": "Isle of Whispers"
-      }
-    },
-    {
-      "id": 142139,
-      "guild_conquest_progress_id": 142015,
-      "kills": 42932,
-      "experience": 386388,
-      "guild": null,
-      "character": {
-        "hashed_id": "Zwey82VNAD5mRQD0dXM3",
-        "name": "Mogs",
-        "total_level": 1779,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-      },
-      "zone": {
-        "id": 2,
-        "key": "whispering-woods",
-        "name": "Whispering Woods"
       }
     },
     {
@@ -3976,7 +3965,7 @@
       "character": {
         "hashed_id": "jVDJez3LD9DeVQKWO08G",
         "name": "Centurion1",
-        "total_level": 2127,
+        "total_level": 2128,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XNPH2XRCQ1X4E21ZW767N.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
       },
@@ -4033,7 +4022,7 @@
       "character": {
         "hashed_id": "2xMjGdBN5dMB3Q9P1nyr",
         "name": "Wolfssskin",
-        "total_level": 1090,
+        "total_level": 1091,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
       },
