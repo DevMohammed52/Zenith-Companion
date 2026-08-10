@@ -1821,14 +1821,6 @@
         "location": "Whispering Woods",
         "location_id": 2,
         "location_key": "whispering-woods"
-      },
-      {
-        "type": "ENEMY",
-        "name": "Gnarur",
-        "chance": 75,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
       }
     ],
     "required_for": [],
@@ -2960,14 +2952,6 @@
         "location": "Crystal Caverns",
         "location_id": 4,
         "location_key": "crystal-caverns"
-      },
-      {
-        "type": "ENEMY",
-        "name": "Hazel",
-        "chance": 50,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
       }
     ],
     "required_for": [],
@@ -4921,14 +4905,6 @@
         "location": "Enchanted Oasis",
         "location_id": 6,
         "location_key": "enchanted-oasis"
-      },
-      {
-        "type": "ENEMY",
-        "name": "Ragruth",
-        "chance": 75,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
       }
     ],
     "required_for": [],
@@ -6548,62 +6524,6 @@
         "location": "The Citadel",
         "location_id": 10,
         "location_key": "the-citadel"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Ancient Parchment": {
-    "dropped_by": [
-      {
-        "type": "ENEMY",
-        "name": "Gnarur",
-        "chance": 25,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Starlight Gem": {
-    "dropped_by": [
-      {
-        "type": "ENEMY",
-        "name": "Hazel",
-        "chance": 25,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Ethereal Gem": {
-    "dropped_by": [
-      {
-        "type": "ENEMY",
-        "name": "Hazel",
-        "chance": 25,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Lunar Stone": {
-    "dropped_by": [
-      {
-        "type": "ENEMY",
-        "name": "Ragruth",
-        "chance": 25,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
       }
     ],
     "required_for": [],
@@ -11890,104 +11810,6 @@
       }
     ]
   },
-  "Lunar Ticket": {
-    "dropped_by": [
-      {
-        "type": "DUNGEON",
-        "name": "Silverleaf Enclave",
-        "chance": 20,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "DUNGEON",
-        "name": "Stone Hollow",
-        "chance": 30,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "BOSS",
-        "name": "Noctarok",
-        "chance": 19.95,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "BOSS",
-        "name": "Mistcaller",
-        "chance": 29.8,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Lunar Ticket (Untradable)": {
-    "dropped_by": [
-      {
-        "type": "DUNGEON",
-        "name": "Silverleaf Enclave",
-        "chance": 79.98,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "DUNGEON",
-        "name": "Stone Hollow",
-        "chance": 69.9,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "BOSS",
-        "name": "Noctarok",
-        "chance": 80,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "BOSS",
-        "name": "Mistcaller",
-        "chance": 70,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Moon Fragment": {
-    "dropped_by": [
-      {
-        "type": "DUNGEON",
-        "name": "Silverleaf Enclave",
-        "chance": 0.02,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "DUNGEON",
-        "name": "Stone Hollow",
-        "chance": 0.1,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
   "Fluffy Egg": {
     "dropped_by": [
       {
@@ -12562,28 +12384,6 @@
         "location": "The Citadel",
         "location_id": 10,
         "location_key": "the-citadel"
-      }
-    ],
-    "required_for": [],
-    "shops": []
-  },
-  "Jar of Stardust": {
-    "dropped_by": [
-      {
-        "type": "BOSS",
-        "name": "Noctarok",
-        "chance": 0.05,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
-      },
-      {
-        "type": "BOSS",
-        "name": "Mistcaller",
-        "chance": 0.2,
-        "location": "Moonlit Valley",
-        "location_id": 14,
-        "location_key": "moonlit-valley"
       }
     ],
     "required_for": [],
@@ -24799,6 +24599,11 @@
     ],
     "shops": []
   },
+  "Ancient Parchment": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
   "Ancient Parchment (2024)": {
     "dropped_by": [],
     "required_for": [],
@@ -24924,6 +24729,11 @@
     "required_for": [],
     "shops": []
   },
+  "Ethereal Gem": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
   "Ethereal Gem (2024)": {
     "dropped_by": [],
     "required_for": [],
@@ -24969,12 +24779,27 @@
     "required_for": [],
     "shops": []
   },
+  "Lunar Stone": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
   "Lunar Stone (2024)": {
     "dropped_by": [],
     "required_for": [],
     "shops": []
   },
+  "Lunar Ticket": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
   "Lunar Ticket (2024)": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
+  "Lunar Ticket (Untradable)": {
     "dropped_by": [],
     "required_for": [],
     "shops": []
@@ -25145,6 +24970,11 @@
     "shops": []
   },
   "Springtide Token (Untradable)": {
+    "dropped_by": [],
+    "required_for": [],
+    "shops": []
+  },
+  "Starlight Gem": {
     "dropped_by": [],
     "required_for": [],
     "shops": []
