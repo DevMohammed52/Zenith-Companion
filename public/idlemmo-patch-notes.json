@@ -1,28 +1,28 @@
 {
   "meta": {
-    "generatedAt": "2026-08-11T11:53:13.290Z",
+    "generatedAt": "2026-08-11T13:35:37.997Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 268,
-    "totalFetched": 268,
+    "totalAvailable": 269,
+    "totalFetched": 269,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 271,
+    "latestPatchId": 272,
     "oldestPatchId": 1,
-    "latestVersion": "0.80.1-PB",
+    "latestVersion": "0.80.2-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "skills": 157,
+      "bug-fixes": 197,
       "dungeons": 59,
       "economy": 126,
       "items": 152,
-      "bug-fixes": 196,
       "combat": 131,
       "world-bosses": 43,
       "guilds": 72,
       "conquest": 26,
       "housing": 32,
-      "skills": 156,
       "translations": 13,
       "mobile-ui": 104,
       "seasonal": 78,
@@ -41,12 +41,137 @@
   },
   "patchNotes": [
     {
+      "id": 272,
+      "version": "0.80.2-PB",
+      "title": "Village Mastery Leagues",
+      "headline": "Version 0.80.2-PB - Village Mastery Leagues",
+      "releasedAt": "2026-08-11T12:45:44",
+      "releaseLabel": "49 minutes ago",
+      "releaseDateLabel": "Aug 11 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=272",
+      "categories": [
+        "skills",
+        "bug-fixes"
+      ],
+      "excerpt": "We identified an issue that allowed passive Village Mastery EXP earned before a league began, or before a party joined, to be contributed later. This gave players who had stored large amounts of passive EXP an unfair...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We identified an issue that allowed passive Village Mastery EXP earned before a league began, or before a party joined, to be contributed later. This gave players who had stored large amounts of passive EXP an unfair advantage."
+        },
+        {
+          "type": "heading",
+          "text": "What has changed"
+        },
+        {
+          "type": "listItem",
+          "text": "Only passive Village Mastery EXP earned after the league has started and your party has joined will count."
+        },
+        {
+          "type": "listItem",
+          "text": "Leaving and rejoining a league will reset your eligibility. EXP earned while outside the league will not count."
+        },
+        {
+          "type": "listItem",
+          "text": "A maximum of 750,000 passive EXP can be contributed during one visit."
+        },
+        {
+          "type": "listItem",
+          "text": "EXP above this limit will still be awarded to your character, but it will not count toward the league. Manual Village Mastery EXP is unaffected. Due to the 750,000 EXP cap, we strongly recommend checking your village regularly to avoid missing eligible league contributions."
+        },
+        {
+          "type": "heading",
+          "text": "Current League"
+        },
+        {
+          "type": "paragraph",
+          "text": "Because the current Village Mastery league was affected by this issue:"
+        },
+        {
+          "type": "listItem",
+          "text": "It will end early."
+        },
+        {
+          "type": "listItem",
+          "text": "Its rewards will be significantly reduced based on how long it was active."
+        },
+        {
+          "type": "listItem",
+          "text": "A replacement league will begin 24 hours later."
+        },
+        {
+          "type": "listItem",
+          "text": "The replacement will run for the full 21-day duration with the normal rewards."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We identified an issue that allowed passive Village Mastery EXP earned before a league began, or before a party joined, to be contributed later. This gave players who had stored large amounts of passive EXP an unfair advantage."
+            }
+          ]
+        },
+        {
+          "heading": "What has changed",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Only passive Village Mastery EXP earned after the league has started and your party has joined will count."
+            },
+            {
+              "type": "listItem",
+              "text": "Leaving and rejoining a league will reset your eligibility. EXP earned while outside the league will not count."
+            },
+            {
+              "type": "listItem",
+              "text": "A maximum of 750,000 passive EXP can be contributed during one visit."
+            },
+            {
+              "type": "listItem",
+              "text": "EXP above this limit will still be awarded to your character, but it will not count toward the league. Manual Village Mastery EXP is unaffected. Due to the 750,000 EXP cap, we strongly recommend checking your village regularly to avoid missing eligible league contributions."
+            }
+          ]
+        },
+        {
+          "heading": "Current League",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Because the current Village Mastery league was affected by this issue:"
+            },
+            {
+              "type": "listItem",
+              "text": "It will end early."
+            },
+            {
+              "type": "listItem",
+              "text": "Its rewards will be significantly reduced based on how long it was active."
+            },
+            {
+              "type": "listItem",
+              "text": "A replacement league will begin 24 hours later."
+            },
+            {
+              "type": "listItem",
+              "text": "The replacement will run for the full 21-day duration with the normal rewards."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We identified an issue that allowed passive Village Mastery EXP earned before a league began, or before a party joined, to be contributed later. This gave players who had stored large amounts of passive EXP an unfair advantage.\nWhat has changed\nOnly passive Village Mastery EXP earned after the league has started and your party has joined will count.\nLeaving and rejoining a league will reset your eligibility. EXP earned while outside the league will not count.\nA maximum of 750,000 passive EXP can be contributed during one visit.\nEXP above this limit will still be awarded to your character, but it will not count toward the league. Manual Village Mastery EXP is unaffected. Due to the 750,000 EXP cap, we strongly recommend checking your village regularly to avoid missing eligible league contributions.\nCurrent League\nBecause the current Village Mastery league was affected by this issue:\nIt will end early.\nIts rewards will be significantly reduced based on how long it was active.\nA replacement league will begin 24 hours later.\nThe replacement will run for the full 21-day duration with the normal rewards.",
+      "searchText": "version 0.80.2-pb - village mastery leagues we identified an issue that allowed passive village mastery exp earned before a league began, or before a party joined, to be contributed later. this gave players who had stored large amounts of passive exp an unfair advantage. what has changed only passive village mastery exp earned after the league has started and your party has joined will count. leaving and rejoining a league will reset your eligibility. exp earned while outside the league will not count. a maximum of 750,000 passive exp can be contributed during one visit. exp above this limit will still be awarded to your character, but it will not count toward the league. manual village mastery exp is unaffected. due to the 750,000 exp cap, we strongly recommend checking your village regularly to avoid missing eligible league contributions. current league because the current village mastery league was affected by this issue: it will end early. its rewards will be significantly reduced based on how long it was active. a replacement league will begin 24 hours later. the replacement will run for the full 21-day duration with the normal rewards."
+    },
+    {
       "id": 271,
       "version": "0.80.1-PB",
       "title": "Market QoL Improvements",
       "headline": "Version 0.80.1-PB - Market QoL Improvements",
       "releasedAt": "2026-08-05T12:35:32",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Aug 05 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=271",
@@ -746,9 +871,9 @@
     },
     {
       "id": 267,
-      "version": "0.77.3",
+      "version": "0.77.3-PB",
       "title": "Improvements",
-      "headline": "Version 0.77.3 - Improvements",
+      "headline": "Version 0.77.3-PB - Improvements",
       "releasedAt": "2026-07-01T15:53:56",
       "releaseLabel": "1 month ago",
       "releaseDateLabel": "Jul 01 2026",
@@ -774,7 +899,7 @@
         }
       ],
       "bodyText": "Improved captcha so it should appear less often during normal gameplay.",
-      "searchText": "version 0.77.3 - improvements improved captcha so it should appear less often during normal gameplay."
+      "searchText": "version 0.77.3-pb - improvements improved captcha so it should appear less often during normal gameplay."
     },
     {
       "id": 266,
