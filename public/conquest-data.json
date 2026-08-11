@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-08-11T10:54:57.105Z",
-    "fetched_at": "2026-08-11T10:54:40.572Z",
+    "generated_at": "2026-08-11T11:59:55.890Z",
+    "fetched_at": "2026-08-11T11:59:39.415Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-08-11T10:59:42+00:00",
+    "endpoint_updates_at": "2026-08-11T12:04:40+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16533
+      "elapsed_ms": 16475
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 2,
+      "active_assaults": 4,
       "leaderboard_rows": 23,
       "contribution_rows": 182,
       "guilds_observed": 18
@@ -30,10 +30,22 @@
       "kills": 29078,
       "experience": 30907,
       "guilds_count": 2,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 2,
       "contribution_count": 11,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 994,
+            "name": "Starlight",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK2K53M9ZPFSBFPS8WGV8P.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -182,7 +194,7 @@
           "character": {
             "hashed_id": "GXBy7a4LbD38eN0Pw6Vd",
             "name": "CJ0227",
-            "total_level": 768,
+            "total_level": 770,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png"
           }
@@ -934,7 +946,7 @@
           "character": {
             "hashed_id": "oyA279pNzvJwxNKRDEWm",
             "name": "Chillyne",
-            "total_level": 1454,
+            "total_level": 1455,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP222B3P18PKEBS5TCQFF4AC.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
@@ -1004,7 +1016,7 @@
           "character": {
             "hashed_id": "7gw0k38L4vyp5NWevJxy",
             "name": "PartaDude",
-            "total_level": 1094,
+            "total_level": 1096,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP76BKP9DE5018AMJNHCA9.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
@@ -2810,18 +2822,30 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/6XeJDSdtW0RI2bKGwSYULkBLwJUEEz-metaY2l0YWRlbC5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#00ffff",
-      "kills": 65554,
-      "experience": 501538,
+      "kills": 65603,
+      "experience": 501864,
       "guilds_count": 1,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 1,
       "contribution_count": 16,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 49,
+          "experience": 326,
+          "guild": {
+            "id": 146,
+            "name": "Kingdom",
+            "tag": "KNG",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK403DGF1F0QNZQ2MCBCT1.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 65554,
-          "experience": 501538,
+          "kills": 65603,
+          "experience": 501864,
           "guild": {
             "id": 146,
             "name": "Kingdom",
@@ -2835,8 +2859,8 @@
         {
           "id": 142814,
           "guild_conquest_progress_id": 142690,
-          "kills": 9555,
-          "experience": 95553,
+          "kills": 9557,
+          "experience": 95571,
           "guild": null,
           "character": {
             "hashed_id": "ZvrGV8RQpn548Y2wgA5j",
@@ -2877,8 +2901,8 @@
         {
           "id": 142898,
           "guild_conquest_progress_id": 142690,
-          "kills": 6353,
-          "experience": 50824,
+          "kills": 6359,
+          "experience": 50866,
           "guild": null,
           "character": {
             "hashed_id": "7gw0k38L42909NWevJxy",
@@ -2905,8 +2929,8 @@
         {
           "id": 142820,
           "guild_conquest_progress_id": 142690,
-          "kills": 6319,
-          "experience": 49629,
+          "kills": 6352,
+          "experience": 49859,
           "guild": null,
           "character": {
             "hashed_id": "3R0qXalLlvB7jNAbn8DB",
@@ -2975,8 +2999,8 @@
         {
           "id": 142878,
           "guild_conquest_progress_id": 142690,
-          "kills": 2390,
-          "experience": 25455,
+          "kills": 2392,
+          "experience": 25467,
           "guild": null,
           "character": {
             "hashed_id": "6aDoyRnLyGO0kNpV5AGX",
@@ -3017,8 +3041,8 @@
         {
           "id": 142832,
           "guild_conquest_progress_id": 142690,
-          "kills": 3921,
-          "experience": 18731,
+          "kills": 3927,
+          "experience": 18755,
           "guild": null,
           "character": {
             "hashed_id": "rx463VdQgrOVAL5w1zWK",
@@ -4070,8 +4094,8 @@
     {
       "id": 142814,
       "guild_conquest_progress_id": 142690,
-      "kills": 9555,
-      "experience": 95553,
+      "kills": 9557,
+      "experience": 95571,
       "guild": null,
       "character": {
         "hashed_id": "ZvrGV8RQpn548Y2wgA5j",
