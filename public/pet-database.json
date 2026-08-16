@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-08-16T11:37:41.437Z",
+    "generatedAt": "2026-08-16T13:10:31.753Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 34,
-      "exchangeListings": 764,
+      "exchangeListings": 763,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -71980,20 +71980,20 @@
       },
       "exchange": {
         "petId": 18,
-        "listingCount": 12,
+        "listingCount": 10,
         "minPrice": 50000,
         "maxPrice": 125000,
         "byQuality": {
           "PREMIUM": {
-            "count": 12,
+            "count": 10,
             "min_price": 50000,
             "max_price": 125000,
-            "total_price": 1060742,
-            "average_price": 88395
+            "total_price": 825744,
+            "average_price": 82574
           }
         },
-        "averagePrice": 88395,
-        "medianPrice": 88749,
+        "averagePrice": 82574,
+        "medianPrice": 88499,
         "sampleListings": [
           {
             "level": 1,
@@ -72039,16 +72039,6 @@
             "level": 85,
             "quality": "PREMIUM",
             "price": 101249
-          },
-          {
-            "level": 87,
-            "quality": "PREMIUM",
-            "price": 114999
-          },
-          {
-            "level": 93,
-            "quality": "PREMIUM",
-            "price": 119999
           },
           {
             "level": 67,
@@ -78041,20 +78031,20 @@
       "valuation": null,
       "exchange": {
         "petId": 20,
-        "listingCount": 30,
+        "listingCount": 31,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 30,
+            "count": 31,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 204447,
-            "average_price": 6815
+            "total_price": 209447,
+            "average_price": 6756
           }
         },
-        "averagePrice": 6815,
-        "medianPrice": 5017,
+        "averagePrice": 6756,
+        "medianPrice": 5000,
         "sampleListings": [
           {
             "level": 1,
@@ -100170,8 +100160,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-08-16T11:37:41.413Z",
-    "listingCount": 764,
+    "fetchedAt": "2026-08-16T13:10:31.728Z",
+    "listingCount": 763,
     "speciesCount": 38,
     "pageCount": 31
   }
