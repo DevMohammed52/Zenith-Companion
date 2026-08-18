@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-08-18T10:34:55.696Z",
+    "generatedAt": "2026-08-18T11:44:30.770Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 34,
-      "exchangeListings": 745,
+      "exchangeListings": 747,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -3840,19 +3840,19 @@
       "valuation": null,
       "exchange": {
         "petId": 1,
-        "listingCount": 44,
+        "listingCount": 45,
         "minPrice": 15000,
         "maxPrice": 245000,
         "byQuality": {
           "REFINED": {
-            "count": 44,
+            "count": 45,
             "min_price": 15000,
             "max_price": 245000,
-            "total_price": 1356048,
-            "average_price": 30819
+            "total_price": 1381048,
+            "average_price": 30690
           }
         },
-        "averagePrice": 30819,
+        "averagePrice": 30690,
         "medianPrice": 19608,
         "sampleListings": [
           {
@@ -71950,21 +71950,26 @@
       },
       "exchange": {
         "petId": 18,
-        "listingCount": 9,
+        "listingCount": 10,
         "minPrice": 50000,
         "maxPrice": 125000,
         "byQuality": {
           "PREMIUM": {
-            "count": 9,
+            "count": 10,
             "min_price": 50000,
             "max_price": 125000,
-            "total_price": 652495,
-            "average_price": 72499
+            "total_price": 702495,
+            "average_price": 70250
           }
         },
-        "averagePrice": 72499,
+        "averagePrice": 70250,
         "medianPrice": 74499,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "PREMIUM",
+            "price": 50000
+          },
           {
             "level": 1,
             "quality": "PREMIUM",
@@ -100110,8 +100115,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-08-18T10:34:55.672Z",
-    "listingCount": 745,
+    "fetchedAt": "2026-08-18T11:44:30.746Z",
+    "listingCount": 747,
     "speciesCount": 38,
     "pageCount": 30
   }
