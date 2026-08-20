@@ -1,45 +1,260 @@
 {
   "meta": {
-    "generatedAt": "2026-08-20T13:07:19.476Z",
+    "generatedAt": "2026-08-20T13:54:51.039Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 270,
-    "totalFetched": 270,
+    "totalAvailable": 271,
+    "totalFetched": 271,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 273,
+    "latestPatchId": 274,
     "oldestPatchId": 1,
-    "latestVersion": "0.80.3-PB",
+    "latestVersion": "0.81.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "skills": 157,
-      "bug-fixes": 197,
+      "public-api": 19,
+      "world-bosses": 44,
+      "pets": 105,
+      "guilds": 73,
+      "housing": 33,
+      "economy": 127,
+      "skills": 158,
+      "items": 153,
+      "map": 65,
+      "translations": 14,
+      "mobile-ui": 105,
+      "seasonal": 79,
+      "membership": 65,
+      "bug-fixes": 198,
       "dungeons": 59,
-      "economy": 126,
-      "items": 152,
       "combat": 131,
-      "world-bosses": 43,
-      "guilds": 72,
       "conquest": 26,
-      "housing": 32,
-      "translations": 13,
-      "mobile-ui": 104,
-      "seasonal": 78,
       "hunting": 67,
-      "pets": 104,
-      "membership": 64,
       "forge": 44,
       "tavern": 30,
-      "public-api": 18,
       "weather": 4,
       "quests": 10,
-      "map": 64,
       "alchemy": 41
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 274,
+      "version": "0.81.0-PB",
+      "title": "Improvements",
+      "headline": "Version 0.81.0-PB - Improvements",
+      "releasedAt": "2026-08-20T13:53:48",
+      "releaseLabel": "1 minute ago",
+      "releaseDateLabel": "Aug 20 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=274",
+      "categories": [
+        "public-api",
+        "world-bosses",
+        "pets",
+        "guilds",
+        "housing",
+        "economy",
+        "skills",
+        "items",
+        "map",
+        "translations",
+        "mobile-ui",
+        "seasonal",
+        "membership",
+        "bug-fixes"
+      ],
+      "excerpt": "Added additional market filters, including the ability to filter recipes. Inventory no longer deselects an item after using it if you still have quantities remaining. Added the ability to open multiple chests at once,...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Added additional market filters, including the ability to filter recipes."
+        },
+        {
+          "type": "listItem",
+          "text": "Inventory no longer deselects an item after using it if you still have quantities remaining."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to open multiple chests at once, up to a maximum of 100."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the boss name to in-game notifications."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a notification when your in-game membership ends."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved the ascension UI."
+        },
+        {
+          "type": "listItem",
+          "text": "The bank has been added to all future event locations."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to schedule guild Energizing Pools."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to reorder skill items."
+        },
+        {
+          "type": "listItem",
+          "text": "Visual UI improvements for Excalibur and Corruption."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to reset skills to level 1 using the Reset Stone item. This can be purchased from merchants."
+        },
+        {
+          "type": "listItem",
+          "text": "Profile UI improvements."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a server error when filtering items via an item."
+        },
+        {
+          "type": "listItem",
+          "text": "Pets can now be renamed back to their original name."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a quick market button to the guild challenge page."
+        },
+        {
+          "type": "listItem",
+          "text": "Received Guidance Scrolls are now items and can be used at any time. You can only hold one Received Guidance Scroll in your inventory at a time."
+        },
+        {
+          "type": "listItem",
+          "text": "You can now press requirements in the building pop-up to go straight to the market."
+        },
+        {
+          "type": "listItem",
+          "text": "World bosses that would otherwise overlap will now receive a random additional delay of between 10 minutes and 12 hours. This prevents the same bosses from repeatedly appearing back-to-back while still ensuring no world boss battles overlap."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the link to the merchant page from the meditation page."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed missing translation areas across all languages."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] The character information endpoint now includes the equipped pet’s base name, custom name, pet ID, quality, and evolution progress."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] The pets endpoint now correctly returns the base pet name separately from its custom name."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Added additional market filters, including the ability to filter recipes."
+            },
+            {
+              "type": "listItem",
+              "text": "Inventory no longer deselects an item after using it if you still have quantities remaining."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to open multiple chests at once, up to a maximum of 100."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the boss name to in-game notifications."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a notification when your in-game membership ends."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved the ascension UI."
+            },
+            {
+              "type": "listItem",
+              "text": "The bank has been added to all future event locations."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to schedule guild Energizing Pools."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to reorder skill items."
+            },
+            {
+              "type": "listItem",
+              "text": "Visual UI improvements for Excalibur and Corruption."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to reset skills to level 1 using the Reset Stone item. This can be purchased from merchants."
+            },
+            {
+              "type": "listItem",
+              "text": "Profile UI improvements."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a server error when filtering items via an item."
+            },
+            {
+              "type": "listItem",
+              "text": "Pets can now be renamed back to their original name."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a quick market button to the guild challenge page."
+            },
+            {
+              "type": "listItem",
+              "text": "Received Guidance Scrolls are now items and can be used at any time. You can only hold one Received Guidance Scroll in your inventory at a time."
+            },
+            {
+              "type": "listItem",
+              "text": "You can now press requirements in the building pop-up to go straight to the market."
+            },
+            {
+              "type": "listItem",
+              "text": "World bosses that would otherwise overlap will now receive a random additional delay of between 10 minutes and 12 hours. This prevents the same bosses from repeatedly appearing back-to-back while still ensuring no world boss battles overlap."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the link to the merchant page from the meditation page."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed missing translation areas across all languages."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] The character information endpoint now includes the equipped pet’s base name, custom name, pet ID, quality, and evolution progress."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] The pets endpoint now correctly returns the base pet name separately from its custom name."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Added additional market filters, including the ability to filter recipes.\nInventory no longer deselects an item after using it if you still have quantities remaining.\nAdded the ability to open multiple chests at once, up to a maximum of 100.\nAdded the boss name to in-game notifications.\nAdded a notification when your in-game membership ends.\nImproved the ascension UI.\nThe bank has been added to all future event locations.\nAdded the ability to schedule guild Energizing Pools.\nAdded the ability to reorder skill items.\nVisual UI improvements for Excalibur and Corruption.\nAdded the ability to reset skills to level 1 using the Reset Stone item. This can be purchased from merchants.\nProfile UI improvements.\nFixed a server error when filtering items via an item.\nPets can now be renamed back to their original name.\nAdded a quick market button to the guild challenge page.\nReceived Guidance Scrolls are now items and can be used at any time. You can only hold one Received Guidance Scroll in your inventory at a time.\nYou can now press requirements in the building pop-up to go straight to the market.\nWorld bosses that would otherwise overlap will now receive a random additional delay of between 10 minutes and 12 hours. This prevents the same bosses from repeatedly appearing back-to-back while still ensuring no world boss battles overlap.\nFixed the link to the merchant page from the meditation page.\nFixed missing translation areas across all languages.\n[Public API] The character information endpoint now includes the equipped pet’s base name, custom name, pet ID, quality, and evolution progress.\n[Public API] The pets endpoint now correctly returns the base pet name separately from its custom name.",
+      "searchText": "version 0.81.0-pb - improvements added additional market filters, including the ability to filter recipes. inventory no longer deselects an item after using it if you still have quantities remaining. added the ability to open multiple chests at once, up to a maximum of 100. added the boss name to in-game notifications. added a notification when your in-game membership ends. improved the ascension ui. the bank has been added to all future event locations. added the ability to schedule guild energizing pools. added the ability to reorder skill items. visual ui improvements for excalibur and corruption. added the ability to reset skills to level 1 using the reset stone item. this can be purchased from merchants. profile ui improvements. fixed a server error when filtering items via an item. pets can now be renamed back to their original name. added a quick market button to the guild challenge page. received guidance scrolls are now items and can be used at any time. you can only hold one received guidance scroll in your inventory at a time. you can now press requirements in the building pop-up to go straight to the market. world bosses that would otherwise overlap will now receive a random additional delay of between 10 minutes and 12 hours. this prevents the same bosses from repeatedly appearing back-to-back while still ensuring no world boss battles overlap. fixed the link to the merchant page from the meditation page. fixed missing translation areas across all languages. [public api] the character information endpoint now includes the equipped pet’s base name, custom name, pet id, quality, and evolution progress. [public api] the pets endpoint now correctly returns the base pet name separately from its custom name."
+    },
     {
       "id": 273,
       "version": "0.80.3-PB",
@@ -264,7 +479,7 @@
       "title": "Market Improvements, Russian Language, and More",
       "headline": "Version 0.80.0-PB - Market Improvements, Russian Language, and More",
       "releasedAt": "2026-07-30T13:28:10",
-      "releaseLabel": "2 weeks ago",
+      "releaseLabel": "3 weeks ago",
       "releaseDateLabel": "Jul 30 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=270",
