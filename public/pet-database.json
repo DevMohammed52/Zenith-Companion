@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-08-21T02:38:52.681Z",
+    "generatedAt": "2026-08-21T03:31:06.038Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 34,
-      "exchangeListings": 789,
+      "exchangeListings": 792,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -3883,21 +3883,26 @@
       "valuation": null,
       "exchange": {
         "petId": 1,
-        "listingCount": 42,
+        "listingCount": 44,
         "minPrice": 15000,
         "maxPrice": 180000,
         "byQuality": {
           "REFINED": {
-            "count": 42,
+            "count": 44,
             "min_price": 15000,
             "max_price": 180000,
-            "total_price": 1250159,
-            "average_price": 29766
+            "total_price": 1286570,
+            "average_price": 29240
           }
         },
-        "averagePrice": 29766,
+        "averagePrice": 29240,
         "medianPrice": 19608,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "REFINED",
+            "price": 15000
+          },
           {
             "level": 1,
             "quality": "REFINED",
@@ -3952,11 +3957,6 @@
             "level": 23,
             "quality": "REFINED",
             "price": 17204
-          },
-          {
-            "level": 27,
-            "quality": "REFINED",
-            "price": 17604
           }
         ]
       },
@@ -59427,15 +59427,15 @@
       "valuation": null,
       "exchange": {
         "petId": 22,
-        "listingCount": 72,
+        "listingCount": 73,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 72,
+            "count": 73,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 433665,
+            "total_price": 439667,
             "average_price": 6023
           }
         },
@@ -100140,8 +100140,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-08-21T02:38:52.656Z",
-    "listingCount": 789,
+    "fetchedAt": "2026-08-21T03:31:06.016Z",
+    "listingCount": 792,
     "speciesCount": 38,
     "pageCount": 32
   }
