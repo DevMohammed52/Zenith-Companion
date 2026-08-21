@@ -1,34 +1,34 @@
 {
   "meta": {
-    "generatedAt": "2026-08-21T11:36:16.326Z",
+    "generatedAt": "2026-08-21T13:54:22.465Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 271,
-    "totalFetched": 271,
+    "totalAvailable": 272,
+    "totalFetched": 272,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 274,
+    "latestPatchId": 275,
     "oldestPatchId": 1,
     "latestVersion": "0.81.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "combat": 132,
+      "pets": 106,
+      "economy": 128,
+      "skills": 159,
+      "items": 154,
+      "bug-fixes": 199,
       "public-api": 19,
       "world-bosses": 44,
-      "pets": 105,
       "guilds": 73,
       "housing": 33,
-      "economy": 127,
-      "skills": 158,
-      "items": 153,
       "map": 65,
       "translations": 14,
       "mobile-ui": 105,
       "seasonal": 79,
       "membership": 65,
-      "bug-fixes": 198,
       "dungeons": 59,
-      "combat": 131,
       "conquest": 26,
       "hunting": 67,
       "forge": 44,
@@ -41,12 +41,91 @@
   },
   "patchNotes": [
     {
+      "id": 275,
+      "version": "0.81.0-PB",
+      "title": "Bug Fixes",
+      "headline": "Version 0.81.0-PB - Bug Fixes",
+      "releasedAt": "2026-08-21T12:00:32",
+      "releaseLabel": "1 hour ago",
+      "releaseDateLabel": "Aug 21 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=275",
+      "categories": [
+        "combat",
+        "pets",
+        "economy",
+        "skills",
+        "items",
+        "bug-fixes"
+      ],
+      "excerpt": "Fixed issues preventing certain skills from being reset (such as Village Mastery). Fixed server error that occurred under certain conditions when filtering the market. Fixed a bug that allowed alt characters under TL...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Fixed issues preventing certain skills from being reset (such as Village Mastery)."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed server error that occurred under certain conditions when filtering the market."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that allowed alt characters under TL 150 to trade on the pet exchange."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug that allowed you to select more than 10 pets."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the link to item listings market on the item inspection page."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue where food used during combat was not always counted in your character metrics."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed issues preventing certain skills from being reset (such as Village Mastery)."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed server error that occurred under certain conditions when filtering the market."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that allowed alt characters under TL 150 to trade on the pet exchange."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug that allowed you to select more than 10 pets."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the link to item listings market on the item inspection page."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue where food used during combat was not always counted in your character metrics."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Fixed issues preventing certain skills from being reset (such as Village Mastery).\nFixed server error that occurred under certain conditions when filtering the market.\nFixed a bug that allowed alt characters under TL 150 to trade on the pet exchange.\nFixed a bug that allowed you to select more than 10 pets.\nFixed the link to item listings market on the item inspection page.\nFixed an issue where food used during combat was not always counted in your character metrics.",
+      "searchText": "version 0.81.0-pb - bug fixes fixed issues preventing certain skills from being reset (such as village mastery). fixed server error that occurred under certain conditions when filtering the market. fixed a bug that allowed alt characters under tl 150 to trade on the pet exchange. fixed a bug that allowed you to select more than 10 pets. fixed the link to item listings market on the item inspection page. fixed an issue where food used during combat was not always counted in your character metrics."
+    },
+    {
       "id": 274,
       "version": "0.81.0-PB",
       "title": "Improvements",
       "headline": "Version 0.81.0-PB - Improvements",
       "releasedAt": "2026-08-20T13:53:48",
-      "releaseLabel": "21 hours ago",
+      "releaseLabel": "1 day ago",
       "releaseDateLabel": "Aug 20 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=274",
