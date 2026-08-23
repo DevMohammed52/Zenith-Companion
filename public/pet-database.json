@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-08-23T10:30:26.039Z",
+    "generatedAt": "2026-08-23T11:39:15.136Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
-      "petsWithExchangeListings": 33,
-      "exchangeListings": 787,
-      "exchangeSpecies": 37
+      "petsWithExchangeListings": 34,
+      "exchangeListings": 788,
+      "exchangeSpecies": 38
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -22765,19 +22765,19 @@
       "valuation": null,
       "exchange": {
         "petId": 9,
-        "listingCount": 74,
+        "listingCount": 73,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 74,
+            "count": 73,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 538372,
-            "average_price": 7275
+            "total_price": 488372,
+            "average_price": 6690
           }
         },
-        "averagePrice": 7275,
+        "averagePrice": 6690,
         "medianPrice": 5000,
         "sampleListings": [
           {
@@ -41318,7 +41318,35 @@
         "eggPrice": null,
         "level100Bonus": 900000
       },
-      "exchange": null,
+      "exchange": {
+        "petId": 11,
+        "listingCount": 2,
+        "minPrice": 150000,
+        "maxPrice": 150000,
+        "byQuality": {
+          "EPIC": {
+            "count": 2,
+            "min_price": 150000,
+            "max_price": 150000,
+            "total_price": 300000,
+            "average_price": 150000
+          }
+        },
+        "averagePrice": 150000,
+        "medianPrice": 150000,
+        "sampleListings": [
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 150000
+          },
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 150000
+          }
+        ]
+      },
       "battle": {
         "zones": [
           {
@@ -100167,9 +100195,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-08-23T10:30:26.015Z",
-    "listingCount": 787,
-    "speciesCount": 37,
+    "fetchedAt": "2026-08-23T11:39:15.112Z",
+    "listingCount": 788,
+    "speciesCount": 38,
     "pageCount": 32
   }
 }
