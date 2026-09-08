@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-09-08T19:28:14.519Z",
+    "generatedAt": "2026-09-08T20:06:14.858Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 32,
-      "exchangeListings": 675,
+      "exchangeListings": 674,
       "exchangeSpecies": 35
     },
     "sources": [
@@ -4009,20 +4009,20 @@
       "valuation": null,
       "exchange": {
         "petId": 2,
-        "listingCount": 53,
+        "listingCount": 52,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 53,
+            "count": 52,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 382182,
-            "average_price": 7211
+            "total_price": 376614,
+            "average_price": 7243
           }
         },
-        "averagePrice": 7211,
-        "medianPrice": 5167,
+        "averagePrice": 7243,
+        "medianPrice": 5117,
         "sampleListings": [
           {
             "level": 1,
@@ -59648,29 +59648,29 @@
       "exchange": {
         "petId": 16,
         "listingCount": 3,
-        "minPrice": 312345,
+        "minPrice": 300000,
         "maxPrice": 1000000,
         "byQuality": {
           "EPIC": {
             "count": 3,
-            "min_price": 312345,
+            "min_price": 300000,
             "max_price": 1000000,
-            "total_price": 1624690,
-            "average_price": 541563
+            "total_price": 1600000,
+            "average_price": 533333
           }
         },
-        "averagePrice": 541563,
-        "medianPrice": 312345,
+        "averagePrice": 533333,
+        "medianPrice": 300000,
         "sampleListings": [
           {
             "level": 1,
             "quality": "EPIC",
-            "price": 312345
+            "price": 300000
           },
           {
             "level": 1,
             "quality": "EPIC",
-            "price": 312345
+            "price": 300000
           },
           {
             "level": 94,
@@ -100089,8 +100089,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-09-08T19:28:14.494Z",
-    "listingCount": 675,
+    "fetchedAt": "2026-09-08T20:06:14.835Z",
+    "listingCount": 674,
     "speciesCount": 35,
     "pageCount": 27
   }
