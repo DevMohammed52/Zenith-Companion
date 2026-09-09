@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-09-09T16:51:44.064Z",
+    "generatedAt": "2026-09-09T17:29:28.044Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 32,
-      "exchangeListings": 634,
+      "exchangeListings": 635,
       "exchangeSpecies": 35
     },
     "sources": [
@@ -7257,21 +7257,26 @@
       "valuation": null,
       "exchange": {
         "petId": 3,
-        "listingCount": 16,
+        "listingCount": 17,
         "minPrice": 15000,
         "maxPrice": 650000,
         "byQuality": {
           "REFINED": {
-            "count": 16,
+            "count": 17,
             "min_price": 15000,
             "max_price": 650000,
-            "total_price": 917421,
-            "average_price": 57339
+            "total_price": 932421,
+            "average_price": 54848
           }
         },
-        "averagePrice": 57339,
+        "averagePrice": 54848,
         "medianPrice": 15000,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "REFINED",
+            "price": 15000
+          },
           {
             "level": 1,
             "quality": "REFINED",
@@ -7326,11 +7331,6 @@
             "level": 36,
             "quality": "REFINED",
             "price": 18506
-          },
-          {
-            "level": 38,
-            "quality": "REFINED",
-            "price": 18706
           }
         ]
       },
@@ -19461,19 +19461,19 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 125,
+        "listingCount": 126,
         "minPrice": 5000,
         "maxPrice": 55000,
         "byQuality": {
           "STANDARD": {
-            "count": 125,
+            "count": 126,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 769847,
-            "average_price": 6159
+            "total_price": 774847,
+            "average_price": 6150
           }
         },
-        "averagePrice": 6159,
+        "averagePrice": 6150,
         "medianPrice": 5033,
         "sampleListings": [
           {
@@ -74926,24 +74926,24 @@
       "exchange": {
         "petId": 19,
         "listingCount": 1,
-        "minPrice": 780000,
-        "maxPrice": 780000,
+        "minPrice": 850000,
+        "maxPrice": 850000,
         "byQuality": {
           "EPIC": {
             "count": 1,
-            "min_price": 780000,
-            "max_price": 780000,
-            "total_price": 780000,
-            "average_price": 780000
+            "min_price": 850000,
+            "max_price": 850000,
+            "total_price": 850000,
+            "average_price": 850000
           }
         },
-        "averagePrice": 780000,
-        "medianPrice": 780000,
+        "averagePrice": 850000,
+        "medianPrice": 850000,
         "sampleListings": [
           {
             "level": 76,
             "quality": "EPIC",
-            "price": 780000
+            "price": 850000
           }
         ]
       },
@@ -77920,20 +77920,20 @@
       "valuation": null,
       "exchange": {
         "petId": 20,
-        "listingCount": 27,
+        "listingCount": 26,
         "minPrice": 5000,
         "maxPrice": 55000,
         "byQuality": {
           "STANDARD": {
-            "count": 27,
+            "count": 26,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 212685,
-            "average_price": 7877
+            "total_price": 206116,
+            "average_price": 7928
           }
         },
-        "averagePrice": 7877,
-        "medianPrice": 5401,
+        "averagePrice": 7928,
+        "medianPrice": 5368,
         "sampleListings": [
           {
             "level": 1,
@@ -100024,8 +100024,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-09-09T16:51:44.040Z",
-    "listingCount": 634,
+    "fetchedAt": "2026-09-09T17:29:28.019Z",
+    "listingCount": 635,
     "speciesCount": 35,
     "pageCount": 26
   }
