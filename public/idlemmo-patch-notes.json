@@ -1,45 +1,330 @@
 {
   "meta": {
-    "generatedAt": "2026-09-10T09:37:20.772Z",
+    "generatedAt": "2026-09-10T14:21:31.293Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 272,
-    "totalFetched": 272,
+    "totalAvailable": 273,
+    "totalFetched": 273,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 275,
+    "latestPatchId": 276,
     "oldestPatchId": 1,
-    "latestVersion": "0.81.0-PB",
+    "latestVersion": "0.82.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "combat": 132,
+      "public-api": 20,
+      "combat": 133,
+      "world-bosses": 45,
+      "guilds": 74,
+      "housing": 34,
+      "economy": 129,
+      "alchemy": 42,
+      "skills": 160,
+      "weather": 5,
+      "tavern": 31,
+      "translations": 15,
+      "seasonal": 80,
+      "membership": 66,
+      "bug-fixes": 200,
       "pets": 106,
-      "economy": 128,
-      "skills": 159,
       "items": 154,
-      "bug-fixes": 199,
-      "public-api": 19,
-      "world-bosses": 44,
-      "guilds": 73,
-      "housing": 33,
       "map": 65,
-      "translations": 14,
       "mobile-ui": 105,
-      "seasonal": 79,
-      "membership": 65,
       "dungeons": 59,
       "conquest": 26,
       "hunting": 67,
       "forge": 44,
-      "tavern": 30,
-      "weather": 4,
-      "quests": 10,
-      "alchemy": 41
+      "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 276,
+      "version": "0.82.0-PB",
+      "title": "Slayer Skill, Tavern Changes, and more",
+      "headline": "Version 0.82.0-PB - Slayer Skill, Tavern Changes, and more",
+      "releasedAt": "2026-09-10T11:23:31",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Sep 10 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=276",
+      "categories": [
+        "public-api",
+        "combat",
+        "world-bosses",
+        "guilds",
+        "housing",
+        "economy",
+        "alchemy",
+        "skills",
+        "weather",
+        "tavern",
+        "translations",
+        "seasonal",
+        "membership",
+        "bug-fixes"
+      ],
+      "excerpt": "Slayer Skill Slayer is a combat skill trained through contracts. Generate a contract for an enemy. Each qualifying kill awards Slayer XP and Rank Points for that enemy. Milestones in each contract award shards. Higher...",
+      "contentBlocks": [
+        {
+          "type": "heading",
+          "text": "Slayer Skill"
+        },
+        {
+          "type": "listItem",
+          "text": "Slayer is a combat skill trained through contracts. Generate a contract for an enemy. Each qualifying kill awards Slayer XP and Rank Points for that enemy. Milestones in each contract award shards. Higher Slayer levels increase shard rewards and maximum health, and unlock more enemies for personal contracts."
+        },
+        {
+          "type": "listItem",
+          "text": "Every enemy has its own ranking according to how many points you've obtained for that enemy. As you rank up your enemy, you can gain a permanent damage boost to that specific enemy."
+        },
+        {
+          "type": "listItem",
+          "text": "You can join up with other players and complete contracts as a party. The milestone rewards are shared across all characters in the party."
+        },
+        {
+          "type": "listItem",
+          "text": "When a contract is active, the party becomes locked, meaning it cannot change until there are no active contracts available."
+        },
+        {
+          "type": "listItem",
+          "text": "Contracts last for 24 hours."
+        },
+        {
+          "type": "listItem",
+          "text": "You are allowed a maximum of 3 personal contracts, and 3 party contracts. 6 in total."
+        },
+        {
+          "type": "listItem",
+          "text": "You can generate random contracts for free, or generate specific enemy contracts for a gold fee."
+        },
+        {
+          "type": "listItem",
+          "text": "The enemies you can generate for depends on your slayer level. You cannot generate a contract for a level 100 enemy if your slayer level is 1."
+        },
+        {
+          "type": "listItem",
+          "text": "The amount of enemies you need to defeat to complete the contract depends on the enemies target level. Higher target level = higher requirement = higher reward. Increasing your slayer level also increases the reward."
+        },
+        {
+          "type": "heading",
+          "text": "Tavern"
+        },
+        {
+          "type": "listItem",
+          "text": "We're transitioning the tavern to a hybrid approach."
+        },
+        {
+          "type": "listItem",
+          "text": "The Tavern now combines familiar forum discussions with a more casual way to discuss with other players."
+        },
+        {
+          "type": "listItem",
+          "text": "General and Off-topic have merged into one shared conversation, and Support works the same way. Simply post a message without starting a new topic."
+        },
+        {
+          "type": "listItem",
+          "text": "New messages appear as the conversation refreshes, making it easier to follow along and join in."
+        },
+        {
+          "type": "listItem",
+          "text": "Reply directly to someone, with a preview showing which message you’re responding to."
+        },
+        {
+          "type": "listItem",
+          "text": "Guilds, Trades, Games, LFG, and Suggestions still use separate topics."
+        },
+        {
+          "type": "listItem",
+          "text": "The home page continues to highlight recent forum posts. Existing posting limits remain in place."
+        },
+        {
+          "type": "listItem",
+          "text": "This is in an experimental phase, and if this makes no meaningful changes or if it incites more spam, we will revert and go back to the drawing board."
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "We've added ascension to primary stats."
+        },
+        {
+          "type": "listItem",
+          "text": "We've also added ascension to meditation."
+        },
+        {
+          "type": "listItem",
+          "text": "We've added the ability to pin pages on the Web App for quick access."
+        },
+        {
+          "type": "listItem",
+          "text": "Added \"Recipe Owned\" filter to alchemy."
+        },
+        {
+          "type": "listItem",
+          "text": "Added Vietnamese language."
+        },
+        {
+          "type": "listItem",
+          "text": "Added Spanish language."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug on Village Mastery that caused the storage repair cost to not be deducted correctly."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed world boss completion notifications and last activity showing XP without bonuses included."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed incorrect weather icon."
+        },
+        {
+          "type": "listItem",
+          "text": "Clarified on membership page that EXP bonus applies to primary skills."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] Removed deprecated last_activity response."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Slayer Skill",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Slayer is a combat skill trained through contracts. Generate a contract for an enemy. Each qualifying kill awards Slayer XP and Rank Points for that enemy. Milestones in each contract award shards. Higher Slayer levels increase shard rewards and maximum health, and unlock more enemies for personal contracts."
+            },
+            {
+              "type": "listItem",
+              "text": "Every enemy has its own ranking according to how many points you've obtained for that enemy. As you rank up your enemy, you can gain a permanent damage boost to that specific enemy."
+            },
+            {
+              "type": "listItem",
+              "text": "You can join up with other players and complete contracts as a party. The milestone rewards are shared across all characters in the party."
+            },
+            {
+              "type": "listItem",
+              "text": "When a contract is active, the party becomes locked, meaning it cannot change until there are no active contracts available."
+            },
+            {
+              "type": "listItem",
+              "text": "Contracts last for 24 hours."
+            },
+            {
+              "type": "listItem",
+              "text": "You are allowed a maximum of 3 personal contracts, and 3 party contracts. 6 in total."
+            },
+            {
+              "type": "listItem",
+              "text": "You can generate random contracts for free, or generate specific enemy contracts for a gold fee."
+            },
+            {
+              "type": "listItem",
+              "text": "The enemies you can generate for depends on your slayer level. You cannot generate a contract for a level 100 enemy if your slayer level is 1."
+            },
+            {
+              "type": "listItem",
+              "text": "The amount of enemies you need to defeat to complete the contract depends on the enemies target level. Higher target level = higher requirement = higher reward. Increasing your slayer level also increases the reward."
+            }
+          ]
+        },
+        {
+          "heading": "Tavern",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "We're transitioning the tavern to a hybrid approach."
+            },
+            {
+              "type": "listItem",
+              "text": "The Tavern now combines familiar forum discussions with a more casual way to discuss with other players."
+            },
+            {
+              "type": "listItem",
+              "text": "General and Off-topic have merged into one shared conversation, and Support works the same way. Simply post a message without starting a new topic."
+            },
+            {
+              "type": "listItem",
+              "text": "New messages appear as the conversation refreshes, making it easier to follow along and join in."
+            },
+            {
+              "type": "listItem",
+              "text": "Reply directly to someone, with a preview showing which message you’re responding to."
+            },
+            {
+              "type": "listItem",
+              "text": "Guilds, Trades, Games, LFG, and Suggestions still use separate topics."
+            },
+            {
+              "type": "listItem",
+              "text": "The home page continues to highlight recent forum posts. Existing posting limits remain in place."
+            },
+            {
+              "type": "listItem",
+              "text": "This is in an experimental phase, and if this makes no meaningful changes or if it incites more spam, we will revert and go back to the drawing board."
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "We've added ascension to primary stats."
+            },
+            {
+              "type": "listItem",
+              "text": "We've also added ascension to meditation."
+            },
+            {
+              "type": "listItem",
+              "text": "We've added the ability to pin pages on the Web App for quick access."
+            },
+            {
+              "type": "listItem",
+              "text": "Added \"Recipe Owned\" filter to alchemy."
+            },
+            {
+              "type": "listItem",
+              "text": "Added Vietnamese language."
+            },
+            {
+              "type": "listItem",
+              "text": "Added Spanish language."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug on Village Mastery that caused the storage repair cost to not be deducted correctly."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed world boss completion notifications and last activity showing XP without bonuses included."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed incorrect weather icon."
+            },
+            {
+              "type": "listItem",
+              "text": "Clarified on membership page that EXP bonus applies to primary skills."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] Removed deprecated last_activity response."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Slayer Skill\nSlayer is a combat skill trained through contracts. Generate a contract for an enemy. Each qualifying kill awards Slayer XP and Rank Points for that enemy. Milestones in each contract award shards. Higher Slayer levels increase shard rewards and maximum health, and unlock more enemies for personal contracts.\nEvery enemy has its own ranking according to how many points you've obtained for that enemy. As you rank up your enemy, you can gain a permanent damage boost to that specific enemy.\nYou can join up with other players and complete contracts as a party. The milestone rewards are shared across all characters in the party.\nWhen a contract is active, the party becomes locked, meaning it cannot change until there are no active contracts available.\nContracts last for 24 hours.\nYou are allowed a maximum of 3 personal contracts, and 3 party contracts. 6 in total.\nYou can generate random contracts for free, or generate specific enemy contracts for a gold fee.\nThe enemies you can generate for depends on your slayer level. You cannot generate a contract for a level 100 enemy if your slayer level is 1.\nThe amount of enemies you need to defeat to complete the contract depends on the enemies target level. Higher target level = higher requirement = higher reward. Increasing your slayer level also increases the reward.\nTavern\nWe're transitioning the tavern to a hybrid approach.\nThe Tavern now combines familiar forum discussions with a more casual way to discuss with other players.\nGeneral and Off-topic have merged into one shared conversation, and Support works the same way. Simply post a message without starting a new topic.\nNew messages appear as the conversation refreshes, making it easier to follow along and join in.\nReply directly to someone, with a preview showing which message you’re responding to.\nGuilds, Trades, Games, LFG, and Suggestions still use separate topics.\nThe home page continues to highlight recent forum posts. Existing posting limits remain in place.\nThis is in an experimental phase, and if this makes no meaningful changes or if it incites more spam, we will revert and go back to the drawing board.\nMore\nWe've added ascension to primary stats.\nWe've also added ascension to meditation.\nWe've added the ability to pin pages on the Web App for quick access.\nAdded \"Recipe Owned\" filter to alchemy.\nAdded Vietnamese language.\nAdded Spanish language.\nFixed a bug on Village Mastery that caused the storage repair cost to not be deducted correctly.\nFixed world boss completion notifications and last activity showing XP without bonuses included.\nFixed incorrect weather icon.\nClarified on membership page that EXP bonus applies to primary skills.\n[Public API] Removed deprecated last_activity response.",
+      "searchText": "version 0.82.0-pb - slayer skill, tavern changes, and more slayer skill slayer is a combat skill trained through contracts. generate a contract for an enemy. each qualifying kill awards slayer xp and rank points for that enemy. milestones in each contract award shards. higher slayer levels increase shard rewards and maximum health, and unlock more enemies for personal contracts. every enemy has its own ranking according to how many points you've obtained for that enemy. as you rank up your enemy, you can gain a permanent damage boost to that specific enemy. you can join up with other players and complete contracts as a party. the milestone rewards are shared across all characters in the party. when a contract is active, the party becomes locked, meaning it cannot change until there are no active contracts available. contracts last for 24 hours. you are allowed a maximum of 3 personal contracts, and 3 party contracts. 6 in total. you can generate random contracts for free, or generate specific enemy contracts for a gold fee. the enemies you can generate for depends on your slayer level. you cannot generate a contract for a level 100 enemy if your slayer level is 1. the amount of enemies you need to defeat to complete the contract depends on the enemies target level. higher target level = higher requirement = higher reward. increasing your slayer level also increases the reward. tavern we're transitioning the tavern to a hybrid approach. the tavern now combines familiar forum discussions with a more casual way to discuss with other players. general and off-topic have merged into one shared conversation, and support works the same way. simply post a message without starting a new topic. new messages appear as the conversation refreshes, making it easier to follow along and join in. reply directly to someone, with a preview showing which message you’re responding to. guilds, trades, games, lfg, and suggestions still use separate topics. the home page continues to highlight recent forum posts. existing posting limits remain in place. this is in an experimental phase, and if this makes no meaningful changes or if it incites more spam, we will revert and go back to the drawing board. more we've added ascension to primary stats. we've also added ascension to meditation. we've added the ability to pin pages on the web app for quick access. added \"recipe owned\" filter to alchemy. added vietnamese language. added spanish language. fixed a bug on village mastery that caused the storage repair cost to not be deducted correctly. fixed world boss completion notifications and last activity showing xp without bonuses included. fixed incorrect weather icon. clarified on membership page that exp bonus applies to primary skills. [public api] removed deprecated last_activity response."
+    },
     {
       "id": 275,
       "version": "0.81.0-PB",
@@ -125,7 +410,7 @@
       "title": "Improvements",
       "headline": "Version 0.81.0-PB - Improvements",
       "releasedAt": "2026-08-20T13:53:48",
-      "releaseLabel": "2 weeks ago",
+      "releaseLabel": "3 weeks ago",
       "releaseDateLabel": "Aug 20 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=274",
