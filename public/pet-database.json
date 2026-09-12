@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-09-12T17:44:52.631Z",
+    "generatedAt": "2026-09-12T18:27:32.186Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 32,
-      "exchangeListings": 741,
+      "exchangeListings": 736,
       "exchangeSpecies": 35
     },
     "sources": [
@@ -3840,20 +3840,20 @@
       "valuation": null,
       "exchange": {
         "petId": 1,
-        "listingCount": 27,
+        "listingCount": 26,
         "minPrice": 15000,
         "maxPrice": 80000,
         "byQuality": {
           "REFINED": {
-            "count": 27,
+            "count": 26,
             "min_price": 15000,
             "max_price": 80000,
-            "total_price": 645156,
-            "average_price": 23895
+            "total_price": 595156,
+            "average_price": 22891
           }
         },
-        "averagePrice": 23895,
-        "medianPrice": 18606,
+        "averagePrice": 22891,
+        "medianPrice": 18306,
         "sampleListings": [
           {
             "level": 1,
@@ -32146,20 +32146,20 @@
       "valuation": null,
       "exchange": {
         "petId": 23,
-        "listingCount": 15,
+        "listingCount": 13,
         "minPrice": 15000,
-        "maxPrice": 40000,
+        "maxPrice": 35000,
         "byQuality": {
           "REFINED": {
-            "count": 15,
+            "count": 13,
             "min_price": 15000,
-            "max_price": 40000,
-            "total_price": 310548,
-            "average_price": 20703
+            "max_price": 35000,
+            "total_price": 250239,
+            "average_price": 19249
           }
         },
-        "averagePrice": 20703,
-        "medianPrice": 18205,
+        "averagePrice": 19249,
+        "medianPrice": 17000,
         "sampleListings": [
           {
             "level": 1,
@@ -32202,11 +32202,6 @@
             "price": 18205
           },
           {
-            "level": 54,
-            "quality": "REFINED",
-            "price": 20309
-          },
-          {
             "level": 58,
             "quality": "REFINED",
             "price": 20710
@@ -32220,6 +32215,11 @@
             "level": 67,
             "quality": "REFINED",
             "price": 21611
+          },
+          {
+            "level": 53,
+            "quality": "REFINED",
+            "price": 25000
           }
         ]
       },
@@ -56374,19 +56374,19 @@
       "valuation": null,
       "exchange": {
         "petId": 25,
-        "listingCount": 21,
+        "listingCount": 20,
         "minPrice": 15000,
         "maxPrice": 35000,
         "byQuality": {
           "REFINED": {
-            "count": 21,
+            "count": 20,
             "min_price": 15000,
             "max_price": 35000,
-            "total_price": 428351,
-            "average_price": 20398
+            "total_price": 408042,
+            "average_price": 20402
           }
         },
-        "averagePrice": 20398,
+        "averagePrice": 20402,
         "medianPrice": 18105,
         "sampleListings": [
           {
@@ -62816,19 +62816,19 @@
       "valuation": null,
       "exchange": {
         "petId": 17,
-        "listingCount": 16,
+        "listingCount": 15,
         "minPrice": 15000,
         "maxPrice": 21511,
         "byQuality": {
           "REFINED": {
-            "count": 16,
+            "count": 15,
             "min_price": 15000,
             "max_price": 21511,
-            "total_price": 267145,
-            "average_price": 16697
+            "total_price": 246936,
+            "average_price": 16462
           }
         },
-        "averagePrice": 16697,
+        "averagePrice": 16462,
         "medianPrice": 15000,
         "sampleListings": [
           {
@@ -100104,8 +100104,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-09-12T17:44:52.607Z",
-    "listingCount": 741,
+    "fetchedAt": "2026-09-12T18:27:32.163Z",
+    "listingCount": 736,
     "speciesCount": 35,
     "pageCount": 30
   }
