@@ -1,32 +1,32 @@
 {
   "meta": {
-    "generatedAt": "2026-09-12T13:34:07.496Z",
+    "generatedAt": "2026-09-12T17:02:39.691Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 273,
-    "totalFetched": 273,
+    "totalAvailable": 274,
+    "totalFetched": 274,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 276,
+    "latestPatchId": 277,
     "oldestPatchId": 1,
-    "latestVersion": "0.82.0-PB",
+    "latestVersion": "0.82.1-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "combat": 134,
+      "skills": 161,
+      "bug-fixes": 201,
       "public-api": 20,
-      "combat": 133,
       "world-bosses": 45,
       "guilds": 74,
       "housing": 34,
       "economy": 129,
       "alchemy": 42,
-      "skills": 160,
       "weather": 5,
       "tavern": 31,
       "translations": 15,
       "seasonal": 80,
       "membership": 66,
-      "bug-fixes": 200,
       "pets": 106,
       "items": 154,
       "map": 65,
@@ -40,6 +40,58 @@
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 277,
+      "version": "0.82.1-PB",
+      "title": "Bug Fixes",
+      "headline": "Version 0.82.1-PB - Bug Fixes",
+      "releasedAt": "2026-09-12T15:25:13",
+      "releaseLabel": "1 hour ago",
+      "releaseDateLabel": "Sep 12 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=277",
+      "categories": [
+        "combat",
+        "skills",
+        "bug-fixes"
+      ],
+      "excerpt": "Fixed ability to see primary stats ascension level on profile Fixed enemy slayer ranking point distribution on party contracts. Added Slayer leaderboards.",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Fixed ability to see primary stats ascension level on profile"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed enemy slayer ranking point distribution on party contracts."
+        },
+        {
+          "type": "listItem",
+          "text": "Added Slayer leaderboards."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed ability to see primary stats ascension level on profile"
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed enemy slayer ranking point distribution on party contracts."
+            },
+            {
+              "type": "listItem",
+              "text": "Added Slayer leaderboards."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Fixed ability to see primary stats ascension level on profile\nFixed enemy slayer ranking point distribution on party contracts.\nAdded Slayer leaderboards.",
+      "searchText": "version 0.82.1-pb - bug fixes fixed ability to see primary stats ascension level on profile fixed enemy slayer ranking point distribution on party contracts. added slayer leaderboards."
+    },
     {
       "id": 276,
       "version": "0.82.0-PB",
