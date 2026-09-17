@@ -1,21 +1,22 @@
 {
   "meta": {
-    "generatedAt": "2026-09-17T07:34:31.591Z",
+    "generatedAt": "2026-09-17T13:23:19.693Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 275,
-    "totalFetched": 275,
+    "totalAvailable": 276,
+    "totalFetched": 276,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 278,
+    "latestPatchId": 279,
     "oldestPatchId": 1,
-    "latestVersion": "0.82.2-PB",
+    "latestVersion": "0.82.03-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "pets": 107,
-      "economy": 130,
-      "items": 155,
+      "pets": 108,
+      "economy": 131,
+      "forge": 45,
+      "items": 156,
       "combat": 134,
       "skills": 161,
       "bug-fixes": 201,
@@ -34,19 +35,151 @@
       "dungeons": 59,
       "conquest": 26,
       "hunting": 67,
-      "forge": 44,
       "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
     {
+      "id": 279,
+      "version": "0.82.03-PB",
+      "title": "Market Changes",
+      "headline": "Version 0.82.03-PB - Market Changes",
+      "releasedAt": "2026-09-17T10:23:59",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Sep 17 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=279",
+      "categories": [
+        "pets",
+        "economy",
+        "forge",
+        "items"
+      ],
+      "excerpt": "Over the coming days, we’ll be introducing a number of changes to trading and the market: How balanced a trade needs to be will depend on a risk analysis factor. This will look at things like your account, market and...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "Over the coming days, we’ll be introducing a number of changes to trading and the market:"
+        },
+        {
+          "type": "listItem",
+          "text": "How balanced a trade needs to be will depend on a risk analysis factor. This will look at things like your account, market and trading history, and any other relevant flags. The higher the risk associated with a trade, the closer the values on both sides will need to be."
+        },
+        {
+          "type": "listItem",
+          "text": "These requirements will not apply when trading between your own alts. Alt trading will continue to work as normal."
+        },
+        {
+          "type": "listItem",
+          "text": "The tier of equipment involved in a trade will also affect the requirements."
+        },
+        {
+          "type": "listItem",
+          "text": "Individual market listings will no longer be directly purchasable. Instead, purchases will go through the PO system. You’ll simply enter what you want, how much you want, and how much you’re willing to pay, and the system will handle the rest."
+        },
+        {
+          "type": "listItem",
+          "text": "We’ll also be introducing a proper loan system over the coming days. This will allow you to directly loan equipment to another player for a fee, with the item automatically returning once the loan ends."
+        },
+        {
+          "type": "listItem",
+          "text": "Our goal is to make the risk analysis system fairly seamless. Ideally, we want to get it to a point where the vast majority of legitimate players barely notice it’s there. The loan system should also remove a lot of the need for heavily one-sided trades in the first place."
+        },
+        {
+          "type": "paragraph",
+          "text": "On top of this, the market values of pets will be updated over the coming days. This means the minimum amount of gold required to sell certain pets will change depending on what that pet is actually worth."
+        },
+        {
+          "type": "paragraph",
+          "text": "The value assigned to items during trades, and the pets, will be based on their actual market value. This will matter when determining the requirements for trades that are considered higher risk. We’ll be analysing the game’s full market and trading history to build as accurate a picture as possible of what each item is actually worth."
+        },
+        {
+          "type": "paragraph",
+          "text": "As a gesture of good faith while these changes are being prepared, all trade taxes and minimum trade requirements will be removed for the next 12 hours for accounts that are not currently marked as high risk. Taxes between alts are also not covered, because the upcoming patch will not affect alt trades."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you have paid more than 1 million in trade taxes since the last update, create a support ticket with a breakdown. You will be reimbursed."
+        },
+        {
+          "type": "paragraph",
+          "text": "This gives everyone a bit of time to move or reorganise items between players before the new systems begin coming into effect."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also, as mentioned previously, if you’re currently loaning an item to somebody through the existing trade system, we’d recommend having it returned for now. Once the proper loan system is live, you’ll be able to loan it back to them through that instead."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Over the coming days, we’ll be introducing a number of changes to trading and the market:"
+            },
+            {
+              "type": "listItem",
+              "text": "How balanced a trade needs to be will depend on a risk analysis factor. This will look at things like your account, market and trading history, and any other relevant flags. The higher the risk associated with a trade, the closer the values on both sides will need to be."
+            },
+            {
+              "type": "listItem",
+              "text": "These requirements will not apply when trading between your own alts. Alt trading will continue to work as normal."
+            },
+            {
+              "type": "listItem",
+              "text": "The tier of equipment involved in a trade will also affect the requirements."
+            },
+            {
+              "type": "listItem",
+              "text": "Individual market listings will no longer be directly purchasable. Instead, purchases will go through the PO system. You’ll simply enter what you want, how much you want, and how much you’re willing to pay, and the system will handle the rest."
+            },
+            {
+              "type": "listItem",
+              "text": "We’ll also be introducing a proper loan system over the coming days. This will allow you to directly loan equipment to another player for a fee, with the item automatically returning once the loan ends."
+            },
+            {
+              "type": "listItem",
+              "text": "Our goal is to make the risk analysis system fairly seamless. Ideally, we want to get it to a point where the vast majority of legitimate players barely notice it’s there. The loan system should also remove a lot of the need for heavily one-sided trades in the first place."
+            },
+            {
+              "type": "paragraph",
+              "text": "On top of this, the market values of pets will be updated over the coming days. This means the minimum amount of gold required to sell certain pets will change depending on what that pet is actually worth."
+            },
+            {
+              "type": "paragraph",
+              "text": "The value assigned to items during trades, and the pets, will be based on their actual market value. This will matter when determining the requirements for trades that are considered higher risk. We’ll be analysing the game’s full market and trading history to build as accurate a picture as possible of what each item is actually worth."
+            },
+            {
+              "type": "paragraph",
+              "text": "As a gesture of good faith while these changes are being prepared, all trade taxes and minimum trade requirements will be removed for the next 12 hours for accounts that are not currently marked as high risk. Taxes between alts are also not covered, because the upcoming patch will not affect alt trades."
+            },
+            {
+              "type": "paragraph",
+              "text": "If you have paid more than 1 million in trade taxes since the last update, create a support ticket with a breakdown. You will be reimbursed."
+            },
+            {
+              "type": "paragraph",
+              "text": "This gives everyone a bit of time to move or reorganise items between players before the new systems begin coming into effect."
+            },
+            {
+              "type": "paragraph",
+              "text": "Also, as mentioned previously, if you’re currently loaning an item to somebody through the existing trade system, we’d recommend having it returned for now. Once the proper loan system is live, you’ll be able to loan it back to them through that instead."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Over the coming days, we’ll be introducing a number of changes to trading and the market:\nHow balanced a trade needs to be will depend on a risk analysis factor. This will look at things like your account, market and trading history, and any other relevant flags. The higher the risk associated with a trade, the closer the values on both sides will need to be.\nThese requirements will not apply when trading between your own alts. Alt trading will continue to work as normal.\nThe tier of equipment involved in a trade will also affect the requirements.\nIndividual market listings will no longer be directly purchasable. Instead, purchases will go through the PO system. You’ll simply enter what you want, how much you want, and how much you’re willing to pay, and the system will handle the rest.\nWe’ll also be introducing a proper loan system over the coming days. This will allow you to directly loan equipment to another player for a fee, with the item automatically returning once the loan ends.\nOur goal is to make the risk analysis system fairly seamless. Ideally, we want to get it to a point where the vast majority of legitimate players barely notice it’s there. The loan system should also remove a lot of the need for heavily one-sided trades in the first place.\nOn top of this, the market values of pets will be updated over the coming days. This means the minimum amount of gold required to sell certain pets will change depending on what that pet is actually worth.\nThe value assigned to items during trades, and the pets, will be based on their actual market value. This will matter when determining the requirements for trades that are considered higher risk. We’ll be analysing the game’s full market and trading history to build as accurate a picture as possible of what each item is actually worth.\nAs a gesture of good faith while these changes are being prepared, all trade taxes and minimum trade requirements will be removed for the next 12 hours for accounts that are not currently marked as high risk. Taxes between alts are also not covered, because the upcoming patch will not affect alt trades.\nIf you have paid more than 1 million in trade taxes since the last update, create a support ticket with a breakdown. You will be reimbursed.\nThis gives everyone a bit of time to move or reorganise items between players before the new systems begin coming into effect.\nAlso, as mentioned previously, if you’re currently loaning an item to somebody through the existing trade system, we’d recommend having it returned for now. Once the proper loan system is live, you’ll be able to loan it back to them through that instead.",
+      "searchText": "version 0.82.03-pb - market changes over the coming days, we’ll be introducing a number of changes to trading and the market: how balanced a trade needs to be will depend on a risk analysis factor. this will look at things like your account, market and trading history, and any other relevant flags. the higher the risk associated with a trade, the closer the values on both sides will need to be. these requirements will not apply when trading between your own alts. alt trading will continue to work as normal. the tier of equipment involved in a trade will also affect the requirements. individual market listings will no longer be directly purchasable. instead, purchases will go through the po system. you’ll simply enter what you want, how much you want, and how much you’re willing to pay, and the system will handle the rest. we’ll also be introducing a proper loan system over the coming days. this will allow you to directly loan equipment to another player for a fee, with the item automatically returning once the loan ends. our goal is to make the risk analysis system fairly seamless. ideally, we want to get it to a point where the vast majority of legitimate players barely notice it’s there. the loan system should also remove a lot of the need for heavily one-sided trades in the first place. on top of this, the market values of pets will be updated over the coming days. this means the minimum amount of gold required to sell certain pets will change depending on what that pet is actually worth. the value assigned to items during trades, and the pets, will be based on their actual market value. this will matter when determining the requirements for trades that are considered higher risk. we’ll be analysing the game’s full market and trading history to build as accurate a picture as possible of what each item is actually worth. as a gesture of good faith while these changes are being prepared, all trade taxes and minimum trade requirements will be removed for the next 12 hours for accounts that are not currently marked as high risk. taxes between alts are also not covered, because the upcoming patch will not affect alt trades. if you have paid more than 1 million in trade taxes since the last update, create a support ticket with a breakdown. you will be reimbursed. this gives everyone a bit of time to move or reorganise items between players before the new systems begin coming into effect. also, as mentioned previously, if you’re currently loaning an item to somebody through the existing trade system, we’d recommend having it returned for now. once the proper loan system is live, you’ll be able to loan it back to them through that instead."
+    },
+    {
       "id": 278,
       "version": "0.82.2-PB",
       "title": "Trade Changes",
       "headline": "Version 0.82.2-PB - Trade Changes",
       "releasedAt": "2026-09-15T13:21:58",
-      "releaseLabel": "1 day ago",
+      "releaseLabel": "2 days ago",
       "releaseDateLabel": "Sep 15 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=278",
@@ -182,7 +315,7 @@
       "title": "Slayer Skill, Tavern Changes, and more",
       "headline": "Version 0.82.0-PB - Slayer Skill, Tavern Changes, and more",
       "releasedAt": "2026-09-10T11:23:31",
-      "releaseLabel": "6 days ago",
+      "releaseLabel": "1 week ago",
       "releaseDateLabel": "Sep 10 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=276",
