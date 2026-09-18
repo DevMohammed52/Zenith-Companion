@@ -1,15 +1,15 @@
 {
   "meta": {
-    "generated_at": "2026-09-18T22:25:56.510Z",
-    "fetched_at": "2026-09-18T22:25:40.020Z",
+    "generated_at": "2026-09-18T23:20:55.296Z",
+    "fetched_at": "2026-09-18T23:20:38.810Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-18T22:30:41+00:00",
+    "endpoint_updates_at": "2026-09-18T23:25:40+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16490
+      "elapsed_ms": 16486
     },
     "totals": {
       "zones": 10,
@@ -61,8 +61,8 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 48795,
-      "experience": 107382,
+      "kills": 59597,
+      "experience": 182989,
       "guilds_count": 3,
       "active_assaults_count": 3,
       "leaderboard_count": 3,
@@ -80,8 +80,8 @@
           }
         },
         {
-          "kills": 12034,
-          "experience": 52866,
+          "kills": 22836,
+          "experience": 128473,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -105,8 +105,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 12034,
-          "experience": 52866,
+          "kills": 22836,
+          "experience": 128473,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -141,6 +141,20 @@
         }
       ],
       "top_contributors": [
+        {
+          "id": 154953,
+          "guild_conquest_progress_id": 154797,
+          "kills": 11604,
+          "experience": 81221,
+          "guild": null,
+          "character": {
+            "hashed_id": "1vlVrzjLrPZnbNao8mGK",
+            "name": "Obsidikar",
+            "total_level": 2100,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+          }
+        },
         {
           "id": 154927,
           "guild_conquest_progress_id": 154797,
@@ -195,20 +209,6 @@
             "total_level": 1861,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-          }
-        },
-        {
-          "id": 154953,
-          "guild_conquest_progress_id": 154797,
-          "kills": 802,
-          "experience": 5614,
-          "guild": null,
-          "character": {
-            "hashed_id": "1vlVrzjLrPZnbNao8mGK",
-            "name": "Obsidikar",
-            "total_level": 2097,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
           }
         },
         {
@@ -374,7 +374,7 @@
           "character": {
             "hashed_id": "AB1E9poQqmPEVQnakeJj",
             "name": "Mance",
-            "total_level": 722,
+            "total_level": 723,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -559,6 +559,25 @@
   ],
   "top_contributors": [
     {
+      "id": 154953,
+      "guild_conquest_progress_id": 154797,
+      "kills": 11604,
+      "experience": 81221,
+      "guild": null,
+      "character": {
+        "hashed_id": "1vlVrzjLrPZnbNao8mGK",
+        "name": "Obsidikar",
+        "total_level": 2100,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
       "id": 154927,
       "guild_conquest_progress_id": 154797,
       "kills": 8365,
@@ -665,25 +684,6 @@
         "total_level": 1861,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
-      "id": 154953,
-      "guild_conquest_progress_id": 154797,
-      "kills": 802,
-      "experience": 5614,
-      "guild": null,
-      "character": {
-        "hashed_id": "1vlVrzjLrPZnbNao8mGK",
-        "name": "Obsidikar",
-        "total_level": 2097,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
       },
       "zone": {
         "id": 3,
@@ -909,7 +909,7 @@
       "character": {
         "hashed_id": "AB1E9poQqmPEVQnakeJj",
         "name": "Mance",
-        "total_level": 722,
+        "total_level": 723,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
       },
