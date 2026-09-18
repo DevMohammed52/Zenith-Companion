@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-09-18T16:38:18.420Z",
-    "fetched_at": "2026-09-18T16:38:01.955Z",
+    "generated_at": "2026-09-18T17:16:01.970Z",
+    "fetched_at": "2026-09-18T17:15:45.499Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-18T16:43:03+00:00",
+    "endpoint_updates_at": "2026-09-18T17:20:46+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16465
+      "elapsed_ms": 16471
     },
     "totals": {
       "zones": 10,
       "active_assaults": 4,
       "leaderboard_rows": 4,
-      "contribution_rows": 14,
+      "contribution_rows": 17,
       "guilds_observed": 4
     }
   },
@@ -60,13 +60,13 @@
       "name": "Eldoria",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
       "status": "DOMINATED",
-      "colour": null,
-      "kills": 15359,
-      "experience": 44616,
+      "colour": "#ff0000",
+      "kills": 25706,
+      "experience": 54963,
       "guilds_count": 3,
       "active_assaults_count": 3,
       "leaderboard_count": 3,
-      "contribution_count": 13,
+      "contribution_count": 16,
       "active_assaults": [
         {
           "kills": 1717,
@@ -91,8 +91,8 @@
           }
         },
         {
-          "kills": 9970,
-          "experience": 14128,
+          "kills": 20317,
+          "experience": 24475,
           "guild": {
             "id": 1027,
             "name": "VietNam",
@@ -105,6 +105,18 @@
       "guild_leaderboard": [
         {
           "position": 1,
+          "kills": 20317,
+          "experience": 24475,
+          "guild": {
+            "id": 1027,
+            "name": "VietNam",
+            "tag": "VN",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJXXGRYKS0WXJVT3QNMY3D.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
+          }
+        },
+        {
+          "position": 2,
           "kills": 3672,
           "experience": 17094,
           "guild": {
@@ -113,18 +125,6 @@
             "tag": null,
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
-          }
-        },
-        {
-          "position": 2,
-          "kills": 9970,
-          "experience": 14128,
-          "guild": {
-            "id": 1027,
-            "name": "VietNam",
-            "tag": "VN",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJXXGRYKS0WXJVT3QNMY3D.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
         },
         {
@@ -226,6 +226,62 @@
           }
         },
         {
+          "id": 155012,
+          "guild_conquest_progress_id": 154793,
+          "kills": 2845,
+          "experience": 2845,
+          "guild": null,
+          "character": {
+            "hashed_id": "9pwa0kxLBRByvLgVj136",
+            "name": "Kombatant",
+            "total_level": 586,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V9XKB94GPWE6DQS2TKH0Q.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
+          }
+        },
+        {
+          "id": 155006,
+          "guild_conquest_progress_id": 154793,
+          "kills": 2595,
+          "experience": 2595,
+          "guild": null,
+          "character": {
+            "hashed_id": "jEaOeBkLapEZMYlGwxVP",
+            "name": "GloriousMonday",
+            "total_level": 1558,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+          }
+        },
+        {
+          "id": 154958,
+          "guild_conquest_progress_id": 154793,
+          "kills": 2561,
+          "experience": 2561,
+          "guild": null,
+          "character": {
+            "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
+            "name": "GloriousTuesday",
+            "total_level": 1544,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+          }
+        },
+        {
+          "id": 154995,
+          "guild_conquest_progress_id": 154793,
+          "kills": 2453,
+          "experience": 2453,
+          "guild": null,
+          "character": {
+            "hashed_id": "oyA279pNzKOwjYKRDEWm",
+            "name": "GloriousFriday",
+            "total_level": 1554,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+          }
+        },
+        {
           "id": 154983,
           "guild_conquest_progress_id": 154793,
           "kills": 2179,
@@ -293,20 +349,6 @@
             "total_level": 2166,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30A36E73F6GCCBB3BQGEK0S.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG83HC8SNJBZKZNGV2V1HD8.jpg"
-          }
-        },
-        {
-          "id": 154958,
-          "guild_conquest_progress_id": 154793,
-          "kills": 107,
-          "experience": 107,
-          "guild": null,
-          "character": {
-            "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
-            "name": "GloriousTuesday",
-            "total_level": 1542,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
           }
         },
         {
@@ -601,6 +643,82 @@
       }
     },
     {
+      "id": 155012,
+      "guild_conquest_progress_id": 154793,
+      "kills": 2845,
+      "experience": 2845,
+      "guild": null,
+      "character": {
+        "hashed_id": "9pwa0kxLBRByvLgVj136",
+        "name": "Kombatant",
+        "total_level": 586,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V9XKB94GPWE6DQS2TKH0Q.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 155006,
+      "guild_conquest_progress_id": 154793,
+      "kills": 2595,
+      "experience": 2595,
+      "guild": null,
+      "character": {
+        "hashed_id": "jEaOeBkLapEZMYlGwxVP",
+        "name": "GloriousMonday",
+        "total_level": 1558,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 154958,
+      "guild_conquest_progress_id": 154793,
+      "kills": 2561,
+      "experience": 2561,
+      "guild": null,
+      "character": {
+        "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
+        "name": "GloriousTuesday",
+        "total_level": 1544,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 154995,
+      "guild_conquest_progress_id": 154793,
+      "kills": 2453,
+      "experience": 2453,
+      "guild": null,
+      "character": {
+        "hashed_id": "oyA279pNzKOwjYKRDEWm",
+        "name": "GloriousFriday",
+        "total_level": 1554,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
       "id": 154983,
       "guild_conquest_progress_id": 154793,
       "kills": 2179,
@@ -712,25 +830,6 @@
         "id": 4,
         "key": "crystal-caverns",
         "name": "Crystal Caverns"
-      }
-    },
-    {
-      "id": 154958,
-      "guild_conquest_progress_id": 154793,
-      "kills": 107,
-      "experience": 107,
-      "guild": null,
-      "character": {
-        "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
-        "name": "GloriousTuesday",
-        "total_level": 1542,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
       }
     },
     {
