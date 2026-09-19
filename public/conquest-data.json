@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-09-19T09:19:17.165Z",
-    "fetched_at": "2026-09-19T09:19:00.681Z",
+    "generated_at": "2026-09-19T11:04:49.628Z",
+    "fetched_at": "2026-09-19T11:04:33.153Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-19T09:24:02+00:00",
+    "endpoint_updates_at": "2026-09-19T11:09:34+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16484
+      "elapsed_ms": 16475
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 0,
+      "active_assaults": 4,
       "leaderboard_rows": 4,
-      "contribution_rows": 21,
-      "guilds_observed": 4
+      "contribution_rows": 23,
+      "guilds_observed": 7
     }
   },
   "zones": [
@@ -256,7 +256,7 @@
           "character": {
             "hashed_id": "7Do6jgkY0BW5zQ8BAdKX",
             "name": "MadDuck",
-            "total_level": 764,
+            "total_level": 765,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/nZcbuggMyooaD5Q7RAQ01uSrkEqjp3-metaU2hpZXJhIChyZXBsYWNlIHRoZSBvbGQgb25lKS5wbmc=-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -284,7 +284,7 @@
           "character": {
             "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
             "name": "Hoorne",
-            "total_level": 937,
+            "total_level": 938,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
@@ -298,7 +298,7 @@
           "character": {
             "hashed_id": "9pwa0kxLBRByvLgVj136",
             "name": "Kombatant",
-            "total_level": 590,
+            "total_level": 591,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V9XKB94GPWE6DQS2TKH0Q.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
           }
@@ -312,7 +312,7 @@
           "character": {
             "hashed_id": "jEaOeBkLapEZMYlGwxVP",
             "name": "GloriousMonday",
-            "total_level": 1560,
+            "total_level": 1561,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
           }
@@ -340,7 +340,7 @@
           "character": {
             "hashed_id": "oyA279pNzKOwjYKRDEWm",
             "name": "GloriousFriday",
-            "total_level": 1555,
+            "total_level": 1556,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
           }
@@ -354,7 +354,7 @@
           "character": {
             "hashed_id": "AB1E9poQqmPEVQnakeJj",
             "name": "Mance",
-            "total_level": 729,
+            "total_level": 730,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -385,10 +385,22 @@
       "kills": 6726,
       "experience": 33513,
       "guilds_count": 1,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 1,
       "contribution_count": 2,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 381,
+            "name": "Memento Mortem",
+            "tag": "MTM",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -474,16 +486,57 @@
       "name": "Floating Gardens of Aetheria",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
       "status": "DORMANT",
-      "colour": null,
+      "colour": "#0088ff",
       "kills": 0,
       "experience": 0,
       "guilds_count": 0,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 0,
-      "contribution_count": 0,
-      "active_assaults": [],
+      "contribution_count": 2,
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 265,
+            "name": "Mystic Vanguard",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK3B42HY0PKJKKW878JDZZ.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [],
-      "top_contributors": []
+      "top_contributors": [
+        {
+          "id": 155107,
+          "guild_conquest_progress_id": 154977,
+          "kills": 36,
+          "experience": 144,
+          "guild": null,
+          "character": {
+            "hashed_id": "Rn3x72JQ2pB4lYzOMok4",
+            "name": "MiniMetal",
+            "total_level": 2352,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAEHKS299V4X5WJD00CX4Q.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg"
+          }
+        },
+        {
+          "id": 155108,
+          "guild_conquest_progress_id": 154977,
+          "kills": 20,
+          "experience": 140,
+          "guild": null,
+          "character": {
+            "hashed_id": "Zdg5V3PQokk5rQEyWq0z",
+            "name": "NatsuLucy",
+            "total_level": 2092,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 8,
@@ -495,10 +548,22 @@
       "kills": 0,
       "experience": 0,
       "guilds_count": 0,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 0,
       "contribution_count": 0,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 9,
+            "name": "Sacred Assault",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [],
       "top_contributors": []
     },
@@ -512,10 +577,22 @@
       "kills": 0,
       "experience": 0,
       "guilds_count": 0,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 0,
       "contribution_count": 0,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 189,
+            "name": "France",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [],
       "top_contributors": []
     },
@@ -775,7 +852,7 @@
       "character": {
         "hashed_id": "7Do6jgkY0BW5zQ8BAdKX",
         "name": "MadDuck",
-        "total_level": 764,
+        "total_level": 765,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/nZcbuggMyooaD5Q7RAQ01uSrkEqjp3-metaU2hpZXJhIChyZXBsYWNlIHRoZSBvbGQgb25lKS5wbmc=-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
       },
@@ -813,7 +890,7 @@
       "character": {
         "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
         "name": "Hoorne",
-        "total_level": 937,
+        "total_level": 938,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
       },
@@ -832,7 +909,7 @@
       "character": {
         "hashed_id": "9pwa0kxLBRByvLgVj136",
         "name": "Kombatant",
-        "total_level": 590,
+        "total_level": 591,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V9XKB94GPWE6DQS2TKH0Q.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AGCZXXMFS49GBCZZSY7BZ.jpg"
       },
@@ -851,7 +928,7 @@
       "character": {
         "hashed_id": "jEaOeBkLapEZMYlGwxVP",
         "name": "GloriousMonday",
-        "total_level": 1560,
+        "total_level": 1561,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
       },
@@ -889,7 +966,7 @@
       "character": {
         "hashed_id": "oyA279pNzKOwjYKRDEWm",
         "name": "GloriousFriday",
-        "total_level": 1555,
+        "total_level": 1556,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
       },
@@ -908,7 +985,7 @@
       "character": {
         "hashed_id": "AB1E9poQqmPEVQnakeJj",
         "name": "Mance",
-        "total_level": 729,
+        "total_level": 730,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
       },
@@ -935,6 +1012,44 @@
         "id": 3,
         "key": "eldoria",
         "name": "Eldoria"
+      }
+    },
+    {
+      "id": 155107,
+      "guild_conquest_progress_id": 154977,
+      "kills": 36,
+      "experience": 144,
+      "guild": null,
+      "character": {
+        "hashed_id": "Rn3x72JQ2pB4lYzOMok4",
+        "name": "MiniMetal",
+        "total_level": 2352,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAEHKS299V4X5WJD00CX4Q.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
+      "id": 155108,
+      "guild_conquest_progress_id": 154977,
+      "kills": 20,
+      "experience": 140,
+      "guild": null,
+      "character": {
+        "hashed_id": "Zdg5V3PQokk5rQEyWq0z",
+        "name": "NatsuLucy",
+        "total_level": 2092,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
       }
     }
   ]
