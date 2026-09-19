@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-09-19T21:02:26.396Z",
-    "fetched_at": "2026-09-19T21:02:10.032Z",
+    "generated_at": "2026-09-19T22:16:33.266Z",
+    "fetched_at": "2026-09-19T22:16:16.812Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-19T21:07:11+00:00",
+    "endpoint_updates_at": "2026-09-19T22:21:18+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16364
+      "elapsed_ms": 16454
     },
     "totals": {
       "zones": 10,
       "active_assaults": 3,
-      "leaderboard_rows": 8,
-      "contribution_rows": 45,
-      "guilds_observed": 8
+      "leaderboard_rows": 9,
+      "contribution_rows": 47,
+      "guilds_observed": 9
     }
   },
   "zones": [
@@ -512,16 +512,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/a8Xp6OHN2vO1xY0vlJiUKsOaeQGfQ4-metaT2FzaXMucG5n-.png",
       "status": "DOMINATED",
       "colour": "#ffff00",
-      "kills": 6824,
-      "experience": 34143,
+      "kills": 22501,
+      "experience": 89478,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
-      "contribution_count": 14,
+      "contribution_count": 15,
       "active_assaults": [
         {
-          "kills": 2106,
-          "experience": 4364,
+          "kills": 12923,
+          "experience": 36815,
           "guild": {
             "id": 1115,
             "name": "Lacunae Echo",
@@ -531,8 +531,8 @@
           }
         },
         {
-          "kills": 4718,
-          "experience": 29779,
+          "kills": 9578,
+          "experience": 52663,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -545,8 +545,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 4718,
-          "experience": 29779,
+          "kills": 9578,
+          "experience": 52663,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -557,8 +557,8 @@
         },
         {
           "position": 2,
-          "kills": 2106,
-          "experience": 4364,
+          "kills": 12923,
+          "experience": 36815,
           "guild": {
             "id": 1115,
             "name": "Lacunae Echo",
@@ -569,6 +569,20 @@
         }
       ],
       "top_contributors": [
+        {
+          "id": 155142,
+          "guild_conquest_progress_id": 155003,
+          "kills": 4916,
+          "experience": 23164,
+          "guild": null,
+          "character": {
+            "hashed_id": "jEaOeBkLagkwrNlGwxVP",
+            "name": "Pentexx",
+            "total_level": 1821,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+          }
+        },
         {
           "id": 155138,
           "guild_conquest_progress_id": 155003,
@@ -581,6 +595,34 @@
             "total_level": 2188,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAQE3WPXEVBAGHNHEPN3BBW2.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CM5B6N8A87HD3QCGQ7BZD.png"
+          }
+        },
+        {
+          "id": 155137,
+          "guild_conquest_progress_id": 155007,
+          "kills": 6546,
+          "experience": 19638,
+          "guild": null,
+          "character": {
+            "hashed_id": "Zwey82VNAeyA0ND0dXM3",
+            "name": "LordofPan",
+            "total_level": 1391,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
+          }
+        },
+        {
+          "id": 155220,
+          "guild_conquest_progress_id": 155007,
+          "kills": 4276,
+          "experience": 12828,
+          "guild": null,
+          "character": {
+            "hashed_id": "AB1E9poQq708kYnakeJj",
+            "name": "VThunder",
+            "total_level": 1635,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAFWEEXP7GZKMYMHQ0PX60.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
           }
         },
         {
@@ -668,20 +710,6 @@
           }
         },
         {
-          "id": 155142,
-          "guild_conquest_progress_id": 155003,
-          "kills": 56,
-          "experience": 280,
-          "guild": null,
-          "character": {
-            "hashed_id": "jEaOeBkLagkwrNlGwxVP",
-            "name": "Pentexx",
-            "total_level": 1818,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
-          }
-        },
-        {
           "id": 155140,
           "guild_conquest_progress_id": 155003,
           "kills": 50,
@@ -735,20 +763,6 @@
             "total_level": 2104,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CNS3XD8BA7ZQJ7JQE797F.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
-          }
-        },
-        {
-          "id": 155137,
-          "guild_conquest_progress_id": 155007,
-          "kills": 5,
-          "experience": 15,
-          "guild": null,
-          "character": {
-            "hashed_id": "Zwey82VNAeyA0ND0dXM3",
-            "name": "LordofPan",
-            "total_level": 1388,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
           }
         },
         {
@@ -887,17 +901,45 @@
       "key": "celestial-observatory",
       "name": "Celestial Observatory",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/V2WNALoiwiVIfOe3HiEFPNaZKTPsur-metaQ2VsZXN0aWFsIG9ic2VydmF0b3J5LnBuZw==-.png",
-      "status": "DORMANT",
-      "colour": null,
-      "kills": 0,
-      "experience": 0,
-      "guilds_count": 0,
+      "status": "DOMINATED",
+      "colour": "#be1600",
+      "kills": 11993,
+      "experience": 155909,
+      "guilds_count": 1,
       "active_assaults_count": 0,
-      "leaderboard_count": 0,
-      "contribution_count": 0,
+      "leaderboard_count": 1,
+      "contribution_count": 1,
       "active_assaults": [],
-      "guild_leaderboard": [],
-      "top_contributors": []
+      "guild_leaderboard": [
+        {
+          "position": 1,
+          "kills": 11993,
+          "experience": 155909,
+          "guild": {
+            "id": 9,
+            "name": "Sacred Assault",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/NMiEeMQ4KWm0R8cUOVfUIJ9rb1GRWK-metaMS5wbmc=-.png"
+          }
+        }
+      ],
+      "top_contributors": [
+        {
+          "id": 155215,
+          "guild_conquest_progress_id": 155085,
+          "kills": 11993,
+          "experience": 155909,
+          "guild": null,
+          "character": {
+            "hashed_id": "2xMjGdBN52lpxY9P1nyr",
+            "name": "simon",
+            "total_level": 1188,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP76BKP9DE5018AMJNHCA9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
+          }
+        }
+      ]
     },
     {
       "id": 9,
@@ -963,6 +1005,25 @@
     }
   ],
   "top_contributors": [
+    {
+      "id": 155215,
+      "guild_conquest_progress_id": 155085,
+      "kills": 11993,
+      "experience": 155909,
+      "guild": null,
+      "character": {
+        "hashed_id": "2xMjGdBN52lpxY9P1nyr",
+        "name": "simon",
+        "total_level": 1188,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP76BKP9DE5018AMJNHCA9.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
+      },
+      "zone": {
+        "id": 8,
+        "key": "celestial-observatory",
+        "name": "Celestial Observatory"
+      }
+    },
     {
       "id": 154919,
       "guild_conquest_progress_id": 154789,
@@ -1268,6 +1329,25 @@
       }
     },
     {
+      "id": 155142,
+      "guild_conquest_progress_id": 155003,
+      "kills": 4916,
+      "experience": 23164,
+      "guild": null,
+      "character": {
+        "hashed_id": "jEaOeBkLagkwrNlGwxVP",
+        "name": "Pentexx",
+        "total_level": 1821,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
+      },
+      "zone": {
+        "id": 6,
+        "key": "enchanted-oasis",
+        "name": "Enchanted Oasis"
+      }
+    },
+    {
       "id": 155138,
       "guild_conquest_progress_id": 155003,
       "kills": 3433,
@@ -1279,6 +1359,25 @@
         "total_level": 2188,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JAQE3WPXEVBAGHNHEPN3BBW2.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CM5B6N8A87HD3QCGQ7BZD.png"
+      },
+      "zone": {
+        "id": 6,
+        "key": "enchanted-oasis",
+        "name": "Enchanted Oasis"
+      }
+    },
+    {
+      "id": 155137,
+      "guild_conquest_progress_id": 155007,
+      "kills": 6546,
+      "experience": 19638,
+      "guild": null,
+      "character": {
+        "hashed_id": "Zwey82VNAeyA0ND0dXM3",
+        "name": "LordofPan",
+        "total_level": 1391,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
       },
       "zone": {
         "id": 6,
@@ -1322,6 +1421,25 @@
         "id": 4,
         "key": "crystal-caverns",
         "name": "Crystal Caverns"
+      }
+    },
+    {
+      "id": 155220,
+      "guild_conquest_progress_id": 155007,
+      "kills": 4276,
+      "experience": 12828,
+      "guild": null,
+      "character": {
+        "hashed_id": "AB1E9poQq708kYnakeJj",
+        "name": "VThunder",
+        "total_level": 1635,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAFWEEXP7GZKMYMHQ0PX60.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
+      },
+      "zone": {
+        "id": 6,
+        "key": "enchanted-oasis",
+        "name": "Enchanted Oasis"
       }
     },
     {
@@ -1686,25 +1804,6 @@
       }
     },
     {
-      "id": 155142,
-      "guild_conquest_progress_id": 155003,
-      "kills": 56,
-      "experience": 280,
-      "guild": null,
-      "character": {
-        "hashed_id": "jEaOeBkLagkwrNlGwxVP",
-        "name": "Pentexx",
-        "total_level": 1818,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VC21Y0F3TXA88HAHEQTYF.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
-      },
-      "zone": {
-        "id": 6,
-        "key": "enchanted-oasis",
-        "name": "Enchanted Oasis"
-      }
-    },
-    {
       "id": 155140,
       "guild_conquest_progress_id": 155003,
       "kills": 50,
@@ -1773,25 +1872,6 @@
         "total_level": 2104,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CNS3XD8BA7ZQJ7JQE797F.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
-      },
-      "zone": {
-        "id": 6,
-        "key": "enchanted-oasis",
-        "name": "Enchanted Oasis"
-      }
-    },
-    {
-      "id": 155137,
-      "guild_conquest_progress_id": 155007,
-      "kills": 5,
-      "experience": 15,
-      "guild": null,
-      "character": {
-        "hashed_id": "Zwey82VNAeyA0ND0dXM3",
-        "name": "LordofPan",
-        "total_level": 1388,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/EHqJ1Cl0lM0YnXQt3lv7itNCtIfU9K-metaMi5wbmc=-.png"
       },
       "zone": {
         "id": 6,
