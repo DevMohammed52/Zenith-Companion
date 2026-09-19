@@ -1,15 +1,15 @@
 {
   "meta": {
-    "generated_at": "2026-09-19T07:29:03.214Z",
-    "fetched_at": "2026-09-19T07:28:46.750Z",
+    "generated_at": "2026-09-19T08:18:31.002Z",
+    "fetched_at": "2026-09-19T08:18:14.523Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-19T07:33:48+00:00",
+    "endpoint_updates_at": "2026-09-19T08:23:15+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16464
+      "elapsed_ms": 16479
     },
     "totals": {
       "zones": 10,
@@ -61,8 +61,8 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": null,
-      "kills": 132606,
-      "experience": 659382,
+      "kills": 141737,
+      "experience": 695906,
       "guilds_count": 3,
       "active_assaults_count": 0,
       "leaderboard_count": 3,
@@ -71,8 +71,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 45657,
-          "experience": 245529,
+          "kills": 54788,
+          "experience": 282053,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -122,6 +122,20 @@
           }
         },
         {
+          "id": 154953,
+          "guild_conquest_progress_id": 154797,
+          "kills": 20735,
+          "experience": 117745,
+          "guild": null,
+          "character": {
+            "hashed_id": "1vlVrzjLrPZnbNao8mGK",
+            "name": "Obsidikar",
+            "total_level": 2102,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+          }
+        },
+        {
           "id": 154927,
           "guild_conquest_progress_id": 154797,
           "kills": 21251,
@@ -147,20 +161,6 @@
             "total_level": 2160,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
-          }
-        },
-        {
-          "id": 154953,
-          "guild_conquest_progress_id": 154797,
-          "kills": 11604,
-          "experience": 81221,
-          "guild": null,
-          "character": {
-            "hashed_id": "1vlVrzjLrPZnbNao8mGK",
-            "name": "Obsidikar",
-            "total_level": 2100,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
           }
         },
         {
@@ -558,6 +558,25 @@
       }
     },
     {
+      "id": 154953,
+      "guild_conquest_progress_id": 154797,
+      "kills": 20735,
+      "experience": 117745,
+      "guild": null,
+      "character": {
+        "hashed_id": "1vlVrzjLrPZnbNao8mGK",
+        "name": "Obsidikar",
+        "total_level": 2102,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
       "id": 154927,
       "guild_conquest_progress_id": 154797,
       "kills": 21251,
@@ -588,25 +607,6 @@
         "total_level": 2160,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
-      "id": 154953,
-      "guild_conquest_progress_id": 154797,
-      "kills": 11604,
-      "experience": 81221,
-      "guild": null,
-      "character": {
-        "hashed_id": "1vlVrzjLrPZnbNao8mGK",
-        "name": "Obsidikar",
-        "total_level": 2100,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
       },
       "zone": {
         "id": 3,
