@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-09-19T00:30:14.689Z",
-    "fetched_at": "2026-09-19T00:29:58.482Z",
+    "generated_at": "2026-09-19T04:03:28.439Z",
+    "fetched_at": "2026-09-19T04:03:11.967Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-19T00:34:59+00:00",
+    "endpoint_updates_at": "2026-09-19T04:08:13+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16207
+      "elapsed_ms": 16472
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 3,
+      "active_assaults": 1,
       "leaderboard_rows": 4,
-      "contribution_rows": 20,
+      "contribution_rows": 21,
       "guilds_observed": 4
     }
   },
@@ -59,26 +59,15 @@
       "key": "eldoria",
       "name": "Eldoria",
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
-      "status": "DOMINATED",
+      "status": "CONTESTED",
       "colour": null,
-      "kills": 77857,
-      "experience": 259574,
+      "kills": 119720,
+      "experience": 582066,
       "guilds_count": 3,
-      "active_assaults_count": 3,
+      "active_assaults_count": 1,
       "leaderboard_count": 3,
-      "contribution_count": 18,
+      "contribution_count": 19,
       "active_assaults": [
-        {
-          "kills": 1717,
-          "experience": 13394,
-          "guild": {
-            "id": 129,
-            "name": "Ore Bros",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
-            "background_url": null
-          }
-        },
         {
           "kills": 32771,
           "experience": 168213,
@@ -87,17 +76,6 @@
             "name": "You Unyielding",
             "tag": null,
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-            "background_url": null
-          }
-        },
-        {
-          "kills": 43369,
-          "experience": 77967,
-          "guild": {
-            "id": 1027,
-            "name": "VietNam",
-            "tag": "VN",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJXXGRYKS0WXJVT3QNMY3D.png",
             "background_url": null
           }
         }
@@ -105,20 +83,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 32771,
-          "experience": 168213,
-          "guild": {
-            "id": 161,
-            "name": "You Unyielding",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
-          }
-        },
-        {
-          "position": 2,
-          "kills": 43369,
-          "experience": 77967,
+          "kills": 61800,
+          "experience": 208187,
           "guild": {
             "id": 1027,
             "name": "VietNam",
@@ -128,9 +94,9 @@
           }
         },
         {
-          "position": 3,
-          "kills": 1717,
-          "experience": 13394,
+          "position": 2,
+          "kills": 25149,
+          "experience": 205666,
           "guild": {
             "id": 129,
             "name": "Ore Bros",
@@ -138,9 +104,49 @@
             "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJQD8BME4JCHG9H879XM0Q.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/skins/backgrounds/default.jpg"
           }
+        },
+        {
+          "position": 3,
+          "kills": 32771,
+          "experience": 168213,
+          "guild": {
+            "id": 161,
+            "name": "You Unyielding",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/KKMmT6cHVHtBJRQEmhCjevv4TT0PwH-metaNS5wbmc=-.png"
+          }
         }
       ],
       "top_contributors": [
+        {
+          "id": 154919,
+          "guild_conquest_progress_id": 154789,
+          "kills": 15159,
+          "experience": 136409,
+          "guild": null,
+          "character": {
+            "hashed_id": "Zwey82VNAD5mRQD0dXM3",
+            "name": "Mogs",
+            "total_level": 1862,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+          }
+        },
+        {
+          "id": 154923,
+          "guild_conquest_progress_id": 154793,
+          "kills": 10620,
+          "experience": 106201,
+          "guild": null,
+          "character": {
+            "hashed_id": "aJydnOmQW6DbvLbgRe5M",
+            "name": "LeeLongQua",
+            "total_level": 2160,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
+          }
+        },
         {
           "id": 154953,
           "guild_conquest_progress_id": 154797,
@@ -153,6 +159,20 @@
             "total_level": 2100,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+          }
+        },
+        {
+          "id": 154922,
+          "guild_conquest_progress_id": 154789,
+          "kills": 9990,
+          "experience": 69257,
+          "guild": null,
+          "character": {
+            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+            "name": "Jasper",
+            "total_level": 1704,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -198,6 +218,20 @@
           }
         },
         {
+          "id": 155090,
+          "guild_conquest_progress_id": 154793,
+          "kills": 6408,
+          "experience": 25632,
+          "guild": null,
+          "character": {
+            "hashed_id": "7Do6jgkY0XOb0Y8BAdKX",
+            "name": "Sinthori",
+            "total_level": 2088,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MKGCMFNRTYAFK4MH16SBV.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+          }
+        },
+        {
           "id": 155035,
           "guild_conquest_progress_id": 154793,
           "kills": 9600,
@@ -212,20 +246,6 @@
           }
         },
         {
-          "id": 154919,
-          "guild_conquest_progress_id": 154789,
-          "kills": 1035,
-          "experience": 9293,
-          "guild": null,
-          "character": {
-            "hashed_id": "Zwey82VNAD5mRQD0dXM3",
-            "name": "Mogs",
-            "total_level": 1861,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-          }
-        },
-        {
           "id": 155029,
           "guild_conquest_progress_id": 154793,
           "kills": 5127,
@@ -234,23 +254,9 @@
           "character": {
             "hashed_id": "1vlVrzjLr1ZdbYao8mGK",
             "name": "MeoMuMap",
-            "total_level": 731,
+            "total_level": 732,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XNXWMXMGGTQD957449BNA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
-          }
-        },
-        {
-          "id": 154922,
-          "guild_conquest_progress_id": 154789,
-          "kills": 682,
-          "experience": 4101,
-          "guild": null,
-          "character": {
-            "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-            "name": "Jasper",
-            "total_level": 1700,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
         },
         {
@@ -262,23 +268,9 @@
           "character": {
             "hashed_id": "7Do6jgkY0BW5zQ8BAdKX",
             "name": "MadDuck",
-            "total_level": 763,
+            "total_level": 764,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/nZcbuggMyooaD5Q7RAQ01uSrkEqjp3-metaU2hpZXJhIChyZXBsYWNlIHRoZSBvbGQgb25lKS5wbmc=-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
-          }
-        },
-        {
-          "id": 154923,
-          "guild_conquest_progress_id": 154793,
-          "kills": 335,
-          "experience": 3351,
-          "guild": null,
-          "character": {
-            "hashed_id": "aJydnOmQW6DbvLbgRe5M",
-            "name": "LeeLongQua",
-            "total_level": 2159,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
           }
         },
         {
@@ -290,9 +282,23 @@
           "character": {
             "hashed_id": "rZXlwg5Yv7BBbLk9joDm",
             "name": "Ndkh",
-            "total_level": 975,
+            "total_level": 977,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
+          }
+        },
+        {
+          "id": 154926,
+          "guild_conquest_progress_id": 154793,
+          "kills": 2876,
+          "experience": 2876,
+          "guild": null,
+          "character": {
+            "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
+            "name": "Hoorne",
+            "total_level": 934,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
         },
         {
@@ -332,7 +338,7 @@
           "character": {
             "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
             "name": "GloriousTuesday",
-            "total_level": 1544,
+            "total_level": 1545,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
           }
@@ -352,17 +358,17 @@
           }
         },
         {
-          "id": 154926,
+          "id": 154954,
           "guild_conquest_progress_id": 154793,
-          "kills": 1798,
-          "experience": 1798,
+          "kills": 1853,
+          "experience": 1853,
           "guild": null,
           "character": {
-            "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
-            "name": "Hoorne",
-            "total_level": 927,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+            "hashed_id": "AB1E9poQqmPEVQnakeJj",
+            "name": "Mance",
+            "total_level": 725,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
         },
         {
@@ -374,22 +380,8 @@
           "character": {
             "hashed_id": "oyA279pNzOX3XYKRDEWm",
             "name": "Frontkelli",
-            "total_level": 734,
+            "total_level": 736,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPT51C83JRC7DN1CE5WDM.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
-          }
-        },
-        {
-          "id": 154954,
-          "guild_conquest_progress_id": 154793,
-          "kills": 1193,
-          "experience": 1193,
-          "guild": null,
-          "character": {
-            "hashed_id": "AB1E9poQqmPEVQnakeJj",
-            "name": "Mance",
-            "total_level": 723,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
         }
@@ -559,6 +551,44 @@
   ],
   "top_contributors": [
     {
+      "id": 154919,
+      "guild_conquest_progress_id": 154789,
+      "kills": 15159,
+      "experience": 136409,
+      "guild": null,
+      "character": {
+        "hashed_id": "Zwey82VNAD5mRQD0dXM3",
+        "name": "Mogs",
+        "total_level": 1862,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 154923,
+      "guild_conquest_progress_id": 154793,
+      "kills": 10620,
+      "experience": 106201,
+      "guild": null,
+      "character": {
+        "hashed_id": "aJydnOmQW6DbvLbgRe5M",
+        "name": "LeeLongQua",
+        "total_level": 2160,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
       "id": 154953,
       "guild_conquest_progress_id": 154797,
       "kills": 11604,
@@ -570,6 +600,25 @@
         "total_level": 2100,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6NJGPFS1MS7A187XQJ9RQ.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPV3WKY3T2YEE89ZTQVC6.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 154922,
+      "guild_conquest_progress_id": 154789,
+      "kills": 9990,
+      "experience": 69257,
+      "guild": null,
+      "character": {
+        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
+        "name": "Jasper",
+        "total_level": 1704,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
       },
       "zone": {
         "id": 3,
@@ -635,6 +684,25 @@
       }
     },
     {
+      "id": 155090,
+      "guild_conquest_progress_id": 154793,
+      "kills": 6408,
+      "experience": 25632,
+      "guild": null,
+      "character": {
+        "hashed_id": "7Do6jgkY0XOb0Y8BAdKX",
+        "name": "Sinthori",
+        "total_level": 2088,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MKGCMFNRTYAFK4MH16SBV.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
       "id": 154933,
       "guild_conquest_progress_id": 154803,
       "kills": 3469,
@@ -692,25 +760,6 @@
       }
     },
     {
-      "id": 154919,
-      "guild_conquest_progress_id": 154789,
-      "kills": 1035,
-      "experience": 9293,
-      "guild": null,
-      "character": {
-        "hashed_id": "Zwey82VNAD5mRQD0dXM3",
-        "name": "Mogs",
-        "total_level": 1861,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
       "id": 155029,
       "guild_conquest_progress_id": 154793,
       "kills": 5127,
@@ -719,28 +768,9 @@
       "character": {
         "hashed_id": "1vlVrzjLr1ZdbYao8mGK",
         "name": "MeoMuMap",
-        "total_level": 731,
+        "total_level": 732,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XNXWMXMGGTQD957449BNA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
-      "id": 154922,
-      "guild_conquest_progress_id": 154789,
-      "kills": 682,
-      "experience": 4101,
-      "guild": null,
-      "character": {
-        "hashed_id": "yeZRGx9Yj6BEDYB80gWl",
-        "name": "Jasper",
-        "total_level": 1700,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K072TPGNPBRDA4ZFCH5T8MWB.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
       },
       "zone": {
         "id": 3,
@@ -757,28 +787,9 @@
       "character": {
         "hashed_id": "7Do6jgkY0BW5zQ8BAdKX",
         "name": "MadDuck",
-        "total_level": 763,
+        "total_level": 764,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/nZcbuggMyooaD5Q7RAQ01uSrkEqjp3-metaU2hpZXJhIChyZXBsYWNlIHRoZSBvbGQgb25lKS5wbmc=-.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
-      "id": 154923,
-      "guild_conquest_progress_id": 154793,
-      "kills": 335,
-      "experience": 3351,
-      "guild": null,
-      "character": {
-        "hashed_id": "aJydnOmQW6DbvLbgRe5M",
-        "name": "LeeLongQua",
-        "total_level": 2159,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VDA6RHDWNR3AAD9PDEY6W.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XT3E69RZCXVVW76P0JKM.png"
       },
       "zone": {
         "id": 3,
@@ -795,9 +806,28 @@
       "character": {
         "hashed_id": "rZXlwg5Yv7BBbLk9joDm",
         "name": "Ndkh",
-        "total_level": 975,
+        "total_level": 977,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
+      },
+      "zone": {
+        "id": 3,
+        "key": "eldoria",
+        "name": "Eldoria"
+      }
+    },
+    {
+      "id": 154926,
+      "guild_conquest_progress_id": 154793,
+      "kills": 2876,
+      "experience": 2876,
+      "guild": null,
+      "character": {
+        "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
+        "name": "Hoorne",
+        "total_level": 934,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
       },
       "zone": {
         "id": 3,
@@ -852,7 +882,7 @@
       "character": {
         "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
         "name": "GloriousTuesday",
-        "total_level": 1544,
+        "total_level": 1545,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
       },
@@ -882,17 +912,17 @@
       }
     },
     {
-      "id": 154926,
+      "id": 154954,
       "guild_conquest_progress_id": 154793,
-      "kills": 1798,
-      "experience": 1798,
+      "kills": 1853,
+      "experience": 1853,
       "guild": null,
       "character": {
-        "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
-        "name": "Hoorne",
-        "total_level": 927,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG42DB4D07SDG7Y4XH77JF.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
+        "hashed_id": "AB1E9poQqmPEVQnakeJj",
+        "name": "Mance",
+        "total_level": 725,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
       },
       "zone": {
         "id": 3,
@@ -909,27 +939,8 @@
       "character": {
         "hashed_id": "oyA279pNzOX3XYKRDEWm",
         "name": "Frontkelli",
-        "total_level": 734,
+        "total_level": 736,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPT51C83JRC7DN1CE5WDM.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
-      },
-      "zone": {
-        "id": 3,
-        "key": "eldoria",
-        "name": "Eldoria"
-      }
-    },
-    {
-      "id": 154954,
-      "guild_conquest_progress_id": 154793,
-      "kills": 1193,
-      "experience": 1193,
-      "guild": null,
-      "character": {
-        "hashed_id": "AB1E9poQqmPEVQnakeJj",
-        "name": "Mance",
-        "total_level": 723,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
       },
       "zone": {
