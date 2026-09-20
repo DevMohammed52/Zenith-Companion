@@ -77,11 +77,17 @@ const nextConfig: NextConfig = {
   /* config options here */
   devIndicators: false,
   poweredByHeader: false,
-  allowedDevOrigins: ["192.168.31.72", "127.0.0.1"],
+  outputFileTracingExcludes: {
+    '*': [
+      './public/guild-details/**',
+      './public/audio/**',
+      './test-artifacts/**',
+    ],
+  },
   images: {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 86400,
+    minimumCacheTTL: 2592000,
     remotePatterns: [
       {
         protocol: "https",

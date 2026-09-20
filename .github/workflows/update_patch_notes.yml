@@ -2,7 +2,7 @@ name: Update IdleMMO Patch Notes
 
 on:
   schedule:
-    - cron: '12 * * * *'
+    - cron: '12 4,16 * * *'
   workflow_dispatch:
     inputs:
       refresh_scope:
