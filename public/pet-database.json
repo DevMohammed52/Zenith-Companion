@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-09-20T18:10:19.488Z",
+    "generatedAt": "2026-09-20T18:51:57.830Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 32,
-      "exchangeListings": 601,
-      "exchangeSpecies": 35
+      "exchangeListings": 599,
+      "exchangeSpecies": 34
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -87105,26 +87105,21 @@
       },
       "exchange": {
         "petId": 21,
-        "listingCount": 33,
-        "minPrice": 40000,
+        "listingCount": 32,
+        "minPrice": 65359,
         "maxPrice": 482387,
         "byQuality": {
           "PREMIUM": {
-            "count": 33,
-            "min_price": 40000,
+            "count": 32,
+            "min_price": 65359,
             "max_price": 482387,
-            "total_price": 4837805,
-            "average_price": 146600
+            "total_price": 4797805,
+            "average_price": 149931
           }
         },
-        "averagePrice": 146600,
-        "medianPrice": 71369,
+        "averagePrice": 149931,
+        "medianPrice": 72396,
         "sampleListings": [
-          {
-            "level": 1,
-            "quality": "PREMIUM",
-            "price": 40000
-          },
           {
             "level": 47,
             "quality": "PREMIUM",
@@ -87179,6 +87174,11 @@
             "level": 60,
             "quality": "PREMIUM",
             "price": 69699
+          },
+          {
+            "level": 61,
+            "quality": "PREMIUM",
+            "price": 70033
           }
         ]
       },
@@ -100034,9 +100034,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-09-20T18:10:19.466Z",
-    "listingCount": 601,
-    "speciesCount": 35,
-    "pageCount": 25
+    "fetchedAt": "2026-09-20T18:51:57.805Z",
+    "listingCount": 599,
+    "speciesCount": 34,
+    "pageCount": 24
   }
 }

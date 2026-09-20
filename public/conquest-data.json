@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generated_at": "2026-09-20T18:09:41.718Z",
-    "fetched_at": "2026-09-20T18:09:25.236Z",
+    "generated_at": "2026-09-20T18:51:21.826Z",
+    "fetched_at": "2026-09-20T18:51:05.311Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-20T18:14:26+00:00",
+    "endpoint_updates_at": "2026-09-20T18:56:06+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16482
+      "elapsed_ms": 16515
     },
     "totals": {
       "zones": 10,
       "active_assaults": 5,
       "leaderboard_rows": 14,
-      "contribution_rows": 85,
+      "contribution_rows": 86,
       "guilds_observed": 13
     }
   },
@@ -577,8 +577,8 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/WCZ3FCmF0VvI5OlivHWx9WR5dFfmYL-metac2t5cmVhY2ggcGVhay5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#0032ff",
-      "kills": 26135,
-      "experience": 78170,
+      "kills": 26310,
+      "experience": 79220,
       "guilds_count": 2,
       "active_assaults_count": 2,
       "leaderboard_count": 2,
@@ -596,8 +596,8 @@
           }
         },
         {
-          "kills": 3049,
-          "experience": 3403,
+          "kills": 3224,
+          "experience": 4453,
           "guild": {
             "id": 1034,
             "name": "Black Bulls",
@@ -622,8 +622,8 @@
         },
         {
           "position": 2,
-          "kills": 3049,
-          "experience": 3403,
+          "kills": 3224,
+          "experience": 4453,
           "guild": {
             "id": 1034,
             "name": "Black Bulls",
@@ -1148,16 +1148,16 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#0088ff",
-      "kills": 51780,
-      "experience": 279906,
+      "kills": 61036,
+      "experience": 344698,
       "guilds_count": 2,
       "active_assaults_count": 1,
       "leaderboard_count": 2,
-      "contribution_count": 9,
+      "contribution_count": 10,
       "active_assaults": [
         {
-          "kills": 13196,
-          "experience": 42245,
+          "kills": 22452,
+          "experience": 107037,
           "guild": {
             "id": 2,
             "name": "END",
@@ -1182,8 +1182,8 @@
         },
         {
           "position": 2,
-          "kills": 13196,
-          "experience": 42245,
+          "kills": 22452,
+          "experience": 107037,
           "guild": {
             "id": 2,
             "name": "END",
@@ -1194,6 +1194,20 @@
         }
       ],
       "top_contributors": [
+        {
+          "id": 155631,
+          "guild_conquest_progress_id": 155397,
+          "kills": 9256,
+          "experience": 64792,
+          "guild": null,
+          "character": {
+            "hashed_id": "lzPeorXNV1PjQaW0kv53",
+            "name": "JohnGroham",
+            "total_level": 2401,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CE4FZ9JHQ8DWKVC9YY1R1.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+          }
+        },
         {
           "id": 155121,
           "guild_conquest_progress_id": 154977,
@@ -1231,7 +1245,7 @@
           "character": {
             "hashed_id": "Zdg5V3PQokk5rQEyWq0z",
             "name": "NatsuLucy",
-            "total_level": 2094,
+            "total_level": 2095,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
           }
@@ -1873,6 +1887,25 @@
       }
     },
     {
+      "id": 155631,
+      "guild_conquest_progress_id": 155397,
+      "kills": 9256,
+      "experience": 64792,
+      "guild": null,
+      "character": {
+        "hashed_id": "lzPeorXNV1PjQaW0kv53",
+        "name": "JohnGroham",
+        "total_level": 2401,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CE4FZ9JHQ8DWKVC9YY1R1.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 155148,
       "guild_conquest_progress_id": 155003,
       "kills": 14380,
@@ -2128,7 +2161,7 @@
       "character": {
         "hashed_id": "Zdg5V3PQokk5rQEyWq0z",
         "name": "NatsuLucy",
-        "total_level": 2094,
+        "total_level": 2095,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
       },
@@ -3029,25 +3062,6 @@
         "id": 10,
         "key": "the-citadel",
         "name": "The Citadel"
-      }
-    },
-    {
-      "id": 155609,
-      "guild_conquest_progress_id": 155471,
-      "kills": 827,
-      "experience": 827,
-      "guild": null,
-      "character": {
-        "hashed_id": "7gw0k38L4vqrrNWevJxy",
-        "name": "TheHolyStick",
-        "total_level": 1400,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PA9839DPRDV26D1WSZAK7Z.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
-      },
-      "zone": {
-        "id": 5,
-        "key": "skyreach-peak",
-        "name": "Skyreach Peak"
       }
     }
   ]
