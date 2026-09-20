@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-09-20T21:05:18.578Z",
+    "generatedAt": "2026-09-20T22:19:58.110Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
-      "petsWithExchangeListings": 35,
-      "exchangeListings": 621,
-      "exchangeSpecies": 37
+      "petsWithExchangeListings": 33,
+      "exchangeListings": 618,
+      "exchangeSpecies": 35
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -4072,20 +4072,20 @@
       "valuation": null,
       "exchange": {
         "petId": 2,
-        "listingCount": 58,
+        "listingCount": 57,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 58,
+            "count": 57,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 425064,
-            "average_price": 7329
+            "total_price": 420064,
+            "average_price": 7370
           }
         },
-        "averagePrice": 7329,
-        "medianPrice": 5151,
+        "averagePrice": 7370,
+        "medianPrice": 5167,
         "sampleListings": [
           {
             "level": 1,
@@ -41273,30 +41273,7 @@
         "eggPrice": null,
         "level100Bonus": 900000
       },
-      "exchange": {
-        "petId": 11,
-        "listingCount": 1,
-        "minPrice": 135000,
-        "maxPrice": 135000,
-        "byQuality": {
-          "EPIC": {
-            "count": 1,
-            "min_price": 135000,
-            "max_price": 135000,
-            "total_price": 135000,
-            "average_price": 135000
-          }
-        },
-        "averagePrice": 135000,
-        "medianPrice": 135000,
-        "sampleListings": [
-          {
-            "level": 1,
-            "quality": "EPIC",
-            "price": 135000
-          }
-        ]
-      },
+      "exchange": null,
       "battle": {
         "zones": [
           {
@@ -65908,30 +65885,7 @@
         "eggPrice": null,
         "level100Bonus": 900000
       },
-      "exchange": {
-        "petId": 28,
-        "listingCount": 1,
-        "minPrice": 125000,
-        "maxPrice": 125000,
-        "byQuality": {
-          "EPIC": {
-            "count": 1,
-            "min_price": 125000,
-            "max_price": 125000,
-            "total_price": 125000,
-            "average_price": 125000
-          }
-        },
-        "averagePrice": 125000,
-        "medianPrice": 125000,
-        "sampleListings": [
-          {
-            "level": 1,
-            "quality": "EPIC",
-            "price": 125000
-          }
-        ]
-      },
+      "exchange": null,
       "battle": {
         "zones": [
           {
@@ -100153,9 +100107,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-09-20T21:05:18.555Z",
-    "listingCount": 621,
-    "speciesCount": 37,
+    "fetchedAt": "2026-09-20T22:19:58.086Z",
+    "listingCount": 618,
+    "speciesCount": 35,
     "pageCount": 25
   }
 }
