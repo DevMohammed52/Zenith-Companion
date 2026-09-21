@@ -22,7 +22,7 @@ const petCharacterHashes = toArray(args["pet-character-hash"] || args["character
 const includeZoneInspect = args["zone-inspect"] !== false;
 const maxExchangePages = Number(args["max-exchange-pages"] || 0);
 const itemTier = Number(args["item-tier"] || 0);
-const marketHistoryTypes = toArray(args["market-history-type"] || "listings");
+const marketHistoryTypes = toArray(args["market-history-type"] || "orders");
 const seasonNumber = args["season-number"] || args.season;
 const includeGuildDetails = Boolean(args["guild-details"] || args["all-guild-data"]);
 

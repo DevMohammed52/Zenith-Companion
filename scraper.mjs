@@ -1098,11 +1098,24 @@ async function fetchItem(itemName, cycleHistoryCache) {
             return cycleHistoryCache.get(itemRecord.hashed_id);
         }
 
-        const histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
-        if (!histRes.ok) return null;
-        
-        const histData = await histRes.json();
-        const history = histData.history_data || [];
+        // Since Patch 279 (0.82.03-PB, Sep 17 2026), direct listing purchases are disabled.
+        // All active market transactions execute via Purchase Orders (type=orders).
+        // We query type=orders primarily, and fallback to type=listings if an item has 0 order history.
+        let histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=orders`, { headers });
+        let histData = histRes.ok ? await histRes.json() : null;
+        let history = histData?.history_data || [];
+
+        if (history.length === 0) {
+            const fallbackRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
+            if (fallbackRes.ok) {
+                const fallbackData = await fallbackRes.json();
+                if (fallbackData?.history_data?.length > 0) {
+                    histData = fallbackData;
+                    history = fallbackData.history_data;
+                }
+            }
+        }
+
         if (history.length === 0) return null;
 
         const safeMarket = buildSafeMarketAverages(history, histData.latest_sold || []);
