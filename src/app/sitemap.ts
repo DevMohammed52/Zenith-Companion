@@ -25,6 +25,7 @@ const routes = [
   "/map",
   "/housing",
   "/lore",
+  "/patch-notes",
   "/settings",
 ];
 

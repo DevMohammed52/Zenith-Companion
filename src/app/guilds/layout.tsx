@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
-  title: "Guild Registry",
+  title: "IdleMMO Guild Database",
   description: "Browse and search public IdleMMO guild data, member counts, refresh status, and guild reference details.",
   path: "/guilds",
-  keywords: ["IdleMMO guilds", "IdleMMO guild registry", "Zenith Companion guilds"],
+  keywords: ["IdleMMO guilds", "IdleMMO guild registry", "Zenith Companion guilds", "IdleMMO guild leaderboard"],
 });
 
 export default function GuildsLayout({ children }: { children: ReactNode }) {

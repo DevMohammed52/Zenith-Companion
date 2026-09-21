@@ -220,7 +220,7 @@ export default function DashboardPage() {
     <main className="container dashboard dashboard-command">
       <section className="command-hero">
         <div className="command-hero-copy">
-          <h1>Today's IdleMMO Checks</h1>
+          <h1>IdleMMO Companion &amp; Market Tools</h1>
           <p>Check market age, profile setup, saved projects, and the next routes worth opening.</p>
         </div>
         <div className="command-status-grid" aria-label="App status">

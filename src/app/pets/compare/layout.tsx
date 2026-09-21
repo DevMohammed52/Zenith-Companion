@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
-  title: "Pet Compare",
+  title: "IdleMMO Pet Compare",
   description: "Compare IdleMMO pet bonuses and sources side by side with Zenith Companion reference data.",
   path: "/pets/compare",
   keywords: ["IdleMMO pet compare", "IdleMMO pets", "Zenith Companion pets"],

@@ -102,6 +102,52 @@ import MobileMenuBtn from "@/components/MobileMenuBtn";
 import MobileCommandWheelHost from "@/components/MobileCommandWheelHost";
 import DesktopDock from "@/components/DesktopDock";
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://zenith-companion.vercel.app/#website",
+      "url": "https://zenith-companion.vercel.app",
+      "name": "Zenith Companion",
+      "alternateName": ["IdleMMO Companion", "Zenith IdleMMO"],
+      "description":
+        "Profile-aware IdleMMO companion for live market prices, alchemy profit calculations, world boss timers, combat simulation, and character planning.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://zenith-companion.vercel.app/items?q={search_term_string}",
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://zenith-companion.vercel.app/#webapp",
+      "url": "https://zenith-companion.vercel.app",
+      "name": "Zenith Companion",
+      "applicationCategory": "GameApplication, UtilityApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "description":
+        "Comprehensive web companion and market analytics toolkit for IdleMMO players.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+      },
+      "featureList": [
+        "IdleMMO Alchemy Profit Calculator",
+        "IdleMMO Item Market Prices and Volume Analytics",
+        "IdleMMO World Boss Timers and Respawn Trackers",
+        "IdleMMO Combat Simulator",
+        "IdleMMO Skill Profit Optimizers",
+      ],
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -110,6 +156,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <DataProvider>
           <ProfileProvider>
             <CraftingProvider>

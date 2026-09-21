@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createRouteMetadata } from "@/lib/route-metadata";
 
 export const metadata = createRouteMetadata({
-  title: "Crafting Queue",
+  title: "IdleMMO Crafting Queue",
   description: "Build IdleMMO crafting queues with material requirements, market prices, time estimates, and local profile settings.",
   path: "/crafting",
   keywords: ["IdleMMO crafting", "IdleMMO crafting queue", "Zenith Companion crafting"],

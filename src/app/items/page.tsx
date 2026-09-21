@@ -440,7 +440,7 @@ function ItemsArchiveContent() {
         setUsageMap(usageData);
         setLoadError(null);
 
-        const nameParam = searchParams.get('name');
+        const nameParam = searchParams.get('name') || searchParams.get('q');
         const idParam = searchParams.get('id');
 
         if (idParam) {
