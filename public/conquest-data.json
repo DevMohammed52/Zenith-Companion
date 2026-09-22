@@ -1,19 +1,19 @@
 {
   "meta": {
-    "generated_at": "2026-09-22T17:09:04.207Z",
-    "fetched_at": "2026-09-22T17:08:47.651Z",
+    "generated_at": "2026-09-22T18:05:06.668Z",
+    "fetched_at": "2026-09-22T18:04:50.205Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-22T17:13:49+00:00",
+    "endpoint_updates_at": "2026-09-22T18:09:51+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16556
+      "elapsed_ms": 16463
     },
     "totals": {
       "zones": 10,
-      "active_assaults": 0,
+      "active_assaults": 2,
       "leaderboard_rows": 20,
       "contribution_rows": 166,
       "guilds_observed": 19
@@ -27,8 +27,8 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/XAo5lbIDq0CmH2M9LYWpre41Pta3MX-metaZmFybS5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#ffff00",
-      "kills": 19521,
-      "experience": 23451,
+      "kills": 19996,
+      "experience": 23926,
       "guilds_count": 1,
       "active_assaults_count": 0,
       "leaderboard_count": 1,
@@ -37,8 +37,8 @@
       "guild_leaderboard": [
         {
           "position": 1,
-          "kills": 19521,
-          "experience": 23451,
+          "kills": 19996,
+          "experience": 23926,
           "guild": {
             "id": 994,
             "name": "Starlight",
@@ -106,6 +106,20 @@
           }
         },
         {
+          "id": 156353,
+          "guild_conquest_progress_id": 156218,
+          "kills": 1796,
+          "experience": 1796,
+          "guild": null,
+          "character": {
+            "hashed_id": "vjoJW96Y8XVA5Y3RaAyl",
+            "name": "Abby0910",
+            "total_level": 569,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CK26WE54S8RRE1ND7JHXS.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
+          }
+        },
+        {
           "id": 156374,
           "guild_conquest_progress_id": 156218,
           "kills": 1768,
@@ -134,20 +148,6 @@
           }
         },
         {
-          "id": 156353,
-          "guild_conquest_progress_id": 156218,
-          "kills": 1321,
-          "experience": 1321,
-          "guild": null,
-          "character": {
-            "hashed_id": "vjoJW96Y8XVA5Y3RaAyl",
-            "name": "Abby0910",
-            "total_level": 568,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CK26WE54S8RRE1ND7JHXS.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
-          }
-        },
-        {
           "id": 156348,
           "guild_conquest_progress_id": 156218,
           "kills": 701,
@@ -170,7 +170,7 @@
           "character": {
             "hashed_id": "jEaOeBkLaEpoELlGwxVP",
             "name": "LeDax",
-            "total_level": 245,
+            "total_level": 247,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/2h65o3Ag4fa8xWGt1n4ik3xbe0nET7-metaRWltaXIgKHJlcGxhY2UgdGhlIG9sZCBvbmUpLnBuZw==-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -201,13 +201,25 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/q53DUrvYxv4t7KrMgP4Lao3Pc3A1Lw-metaYXJraGFuLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": "#1383fb",
-      "kills": 501040,
-      "experience": 2530061,
+      "kills": 501053,
+      "experience": 2530126,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 32,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 13,
+          "experience": 65,
+          "guild": {
+            "id": 161,
+            "name": "You Unyielding",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJZMCMJXSM243EETN15GK9.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -235,8 +247,8 @@
         },
         {
           "position": 3,
-          "kills": 141934,
-          "experience": 712710,
+          "kills": 141947,
+          "experience": 712775,
           "guild": {
             "id": 161,
             "name": "You Unyielding",
@@ -714,7 +726,7 @@
           "character": {
             "hashed_id": "K5jqPopYGqDObQrOzDRG",
             "name": "MaxHuntWar",
-            "total_level": 1523,
+            "total_level": 1524,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EYZWT4RJFBTDY90V89CV5.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
           }
@@ -731,10 +743,22 @@
       "kills": 79348,
       "experience": 241276,
       "guilds_count": 2,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 2,
       "contribution_count": 9,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 1170,
+            "name": "765 Killas",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -841,7 +865,7 @@
           "character": {
             "hashed_id": "rz9RZnWN7vpB4QKAp0Md",
             "name": "Miniduck",
-            "total_level": 1253,
+            "total_level": 1256,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP221ZTCDN3HBQVR766G9XTX.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
@@ -982,7 +1006,7 @@
           "character": {
             "hashed_id": "lzPeorXNVAnkBQaW0kv5",
             "name": "deamouse",
-            "total_level": 1746,
+            "total_level": 1748,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
           }
@@ -2709,7 +2733,7 @@
           "character": {
             "hashed_id": "kK49j1VN9v9drYq6B2do",
             "name": "Ful0n",
-            "total_level": 1573,
+            "total_level": 1576,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
           }
@@ -3524,7 +3548,7 @@
       "character": {
         "hashed_id": "lzPeorXNVAnkBQaW0kv5",
         "name": "deamouse",
-        "total_level": 1746,
+        "total_level": 1748,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KCRP0ZMFHFSNJFSRSKMXM6C3.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
       },
