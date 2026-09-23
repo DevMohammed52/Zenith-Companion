@@ -1,52 +1,429 @@
 {
   "meta": {
-    "generatedAt": "2026-09-23T09:16:29.561Z",
+    "generatedAt": "2026-09-23T19:39:27.123Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 276,
-    "totalFetched": 276,
+    "totalAvailable": 278,
+    "totalFetched": 278,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 279,
+    "latestPatchId": 281,
     "oldestPatchId": 1,
-    "latestVersion": "0.82.03-PB",
+    "latestVersion": "0.83.1-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "pets": 108,
-      "economy": 131,
+      "economy": 133,
+      "items": 158,
+      "tavern": 33,
+      "combat": 135,
+      "hunting": 68,
+      "pets": 109,
+      "guilds": 75,
+      "alchemy": 43,
+      "skills": 162,
+      "map": 66,
+      "seasonal": 81,
+      "membership": 67,
       "forge": 45,
-      "items": 156,
-      "combat": 134,
-      "skills": 161,
       "bug-fixes": 201,
       "public-api": 20,
       "world-bosses": 45,
-      "guilds": 74,
       "housing": 34,
-      "alchemy": 42,
       "weather": 5,
-      "tavern": 31,
       "translations": 15,
-      "seasonal": 80,
-      "membership": 66,
-      "map": 65,
       "mobile-ui": 105,
       "dungeons": 59,
       "conquest": 26,
-      "hunting": 67,
       "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
     {
+      "id": 281,
+      "version": "0.83.1-PB",
+      "title": "Tavern Improvements",
+      "headline": "Version 0.83.1-PB - Tavern Improvements",
+      "releasedAt": "2026-09-23T17:06:54",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Sep 23 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=281",
+      "categories": [
+        "economy",
+        "items",
+        "tavern"
+      ],
+      "excerpt": "Tavern auctions now have anti-sniping protection. Any bid in the last 30 minutes resets the timer to 30 minutes. Added ability to create 1 day giveaways. Fix giveaways limit being incorrectly set to 200k (set to 50k n...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Tavern auctions now have anti-sniping protection. Any bid in the last 30 minutes resets the timer to 30 minutes."
+        },
+        {
+          "type": "listItem",
+          "text": "Added ability to create 1 day giveaways."
+        },
+        {
+          "type": "listItem",
+          "text": "Fix giveaways limit being incorrectly set to 200k (set to 50k now)"
+        },
+        {
+          "type": "listItem",
+          "text": "New bids below an auction’s reserve price will now have their gold and items refunded immediately. Gold and items from existing bids (before this update) will remain held until they are outbid, or until the auction ends without meeting the reserve price."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Tavern auctions now have anti-sniping protection. Any bid in the last 30 minutes resets the timer to 30 minutes."
+            },
+            {
+              "type": "listItem",
+              "text": "Added ability to create 1 day giveaways."
+            },
+            {
+              "type": "listItem",
+              "text": "Fix giveaways limit being incorrectly set to 200k (set to 50k now)"
+            },
+            {
+              "type": "listItem",
+              "text": "New bids below an auction’s reserve price will now have their gold and items refunded immediately. Gold and items from existing bids (before this update) will remain held until they are outbid, or until the auction ends without meeting the reserve price."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Tavern auctions now have anti-sniping protection. Any bid in the last 30 minutes resets the timer to 30 minutes.\nAdded ability to create 1 day giveaways.\nFix giveaways limit being incorrectly set to 200k (set to 50k now)\nNew bids below an auction’s reserve price will now have their gold and items refunded immediately. Gold and items from existing bids (before this update) will remain held until they are outbid, or until the auction ends without meeting the reserve price.",
+      "searchText": "version 0.83.1-pb - tavern improvements tavern auctions now have anti-sniping protection. any bid in the last 30 minutes resets the timer to 30 minutes. added ability to create 1 day giveaways. fix giveaways limit being incorrectly set to 200k (set to 50k now) new bids below an auction’s reserve price will now have their gold and items refunded immediately. gold and items from existing bids (before this update) will remain held until they are outbid, or until the auction ends without meeting the reserve price."
+    },
+    {
+      "id": 280,
+      "version": "0.83.0-PB",
+      "title": "Auctions, Giveaways, Teleportation Costs + More",
+      "headline": "Version 0.83.0-PB - Auctions, Giveaways, Teleportation Costs + More",
+      "releasedAt": "2026-09-22T13:05:32",
+      "releaseLabel": "1 day ago",
+      "releaseDateLabel": "Sep 22 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=280",
+      "categories": [
+        "combat",
+        "hunting",
+        "pets",
+        "guilds",
+        "economy",
+        "alchemy",
+        "skills",
+        "items",
+        "map",
+        "tavern",
+        "seasonal",
+        "membership"
+      ],
+      "excerpt": "Auctions You can now auction off high value items within the tavern directly in the game. When starting an auction, the item is removed from your inventory and will automatically go to the winning player. An auction c...",
+      "contentBlocks": [
+        {
+          "type": "heading",
+          "text": "Auctions"
+        },
+        {
+          "type": "listItem",
+          "text": "You can now auction off high value items within the tavern directly in the game."
+        },
+        {
+          "type": "listItem",
+          "text": "When starting an auction, the item is removed from your inventory and will automatically go to the winning player."
+        },
+        {
+          "type": "listItem",
+          "text": "An auction can last between 3 and 14 days."
+        },
+        {
+          "type": "listItem",
+          "text": "Sellers can choose to accept only gold, or also items as part of their payment."
+        },
+        {
+          "type": "listItem",
+          "text": "The seller can choose which items they wish to accept as part of their payment (a max of 5 different items). Only items that are plentiful in the market can be used to prevent it from becoming a de facto trade system."
+        },
+        {
+          "type": "listItem",
+          "text": "The value of the items is based off the approximate market value."
+        },
+        {
+          "type": "listItem",
+          "text": "The tax is based on the overall market value of the bid, not the vendor value of the items."
+        },
+        {
+          "type": "listItem",
+          "text": "Tax is set to 12% for free players, 8% for members."
+        },
+        {
+          "type": "listItem",
+          "text": "The tax is only paid by the seller."
+        },
+        {
+          "type": "listItem",
+          "text": "If only items are sent, then the tax must be paid when the seller claims the items."
+        },
+        {
+          "type": "listItem",
+          "text": "Only items that are worth more than 50,000 in est. market value can be auctioned off."
+        },
+        {
+          "type": "listItem",
+          "text": "Items can be sold for more via an auction than via the market."
+        },
+        {
+          "type": "listItem",
+          "text": "Accounts flagged as high risk can not yet participate in auctions."
+        },
+        {
+          "type": "heading",
+          "text": "Giveaways"
+        },
+        {
+          "type": "listItem",
+          "text": "You can now giveaway items on the tavern."
+        },
+        {
+          "type": "listItem",
+          "text": "Just select an item, select the length, and the game will handle the rest."
+        },
+        {
+          "type": "listItem",
+          "text": "Any character in the game can enter the giveaway."
+        },
+        {
+          "type": "paragraph",
+          "text": "These two systems lay out the groundwork for further extension such as support for pets and guidance scrolls."
+        },
+        {
+          "type": "heading",
+          "text": "Market"
+        },
+        {
+          "type": "paragraph",
+          "text": "We're aware that the recent trading changes have introduced some pain points for legitimate activities such as forging services, guild transfers, loans, and similar transactions. These are already on our radar, and we'll be introducing solutions for them in due time as the system continues to be refined. The risk system is still extremely new, so we'd ask for a little patience while we monitor how it behaves and make adjustments where needed."
+        },
+        {
+          "type": "paragraph",
+          "text": "We've also made further adjustments to further reduce its impact on smaller trades."
+        },
+        {
+          "type": "heading",
+          "text": "Teleportation Costs"
+        },
+        {
+          "type": "paragraph",
+          "text": "When we introduced Slayer, we didn’t make our usual adjustment to teleportation costs to account for an additional skill. We planned to address that in this update, but decided to take a closer look at the system as a whole."
+        },
+        {
+          "type": "paragraph",
+          "text": "We know teleportation costs have been a recurring frustration. Some players even avoid levelling certain skills because doing so makes every teleport more expensive. That’s not a particularly satisfying decision to make in a game built around progressing your character."
+        },
+        {
+          "type": "paragraph",
+          "text": "The reasoning behind the original system was fairly straightforward. Generally, a higher total level means access to better ways of earning gold, so teleportation costs increase alongside it. As a rough assumption, that makes sense. In practice, though, it gets messy. Someone specialising in one profitable skill can earn plenty of gold while keeping their total level relatively low. Meanwhile, someone exploring several skills pays more, even if those extra levels haven’t meaningfully improved their income."
+        },
+        {
+          "type": "paragraph",
+          "text": "_ _ Before (Bluebell Hollow → Crystal Caverns) TL 100 — 162 Gold TL 200 — 219 Gold TL 500 — 584 Gold TL 800 — 1,222 Gold TL 1,000 — 1,792 Gold TL 1,200 — 2,476 Gold TL 1,500 — 3,708 Gold TL 1,800 — 5,184 Gold"
+        },
+        {
+          "type": "paragraph",
+          "text": "After (Bluebell Hollow → Crystal Caverns) TL 100 — 50 Gold TL 200 — 50 Gold TL 500 — 414 Gold TL 800 — 1,052 Gold TL 1,000 — 1,492 Gold TL 1,200 — 1,785 Gold TL 1,500 — 1,950 Gold (1,758 gold reduction) TL 1,800 — 1,950 Gold (3,234 gold reduction)"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teleportation costs still only use the skills that contribute to the economy. Skills like Guild Mastery, and seasonal skills are still exempt."
+        },
+        {
+          "type": "paragraph",
+          "text": "Costs can still rise between the beginner range and the cap, but they won’t keep accelerating. Once you reach that cap, you can level Slayer, or anything else, without making the same journey more expensive."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ultimately, teleportation is still a useful gold sink, but we don’t really feel like it justifies making every extra skill level more expensive anymore. There are quite a few more ways gold leaves the economy these days, with things like Slayer contracts being one example, so we’re comfortable easing up on it a bit. We’ll keep an eye on how it affects things, but we think this is a nicer balance between keeping the economy healthy and actually making skill levels feel rewarding."
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "Completing a bot verification screen will now automatically start your action upon completion so you don't have to do it again."
+        },
+        {
+          "type": "listItem",
+          "text": "Verification screen immediately appears without having to press on the pop-up, making it much easier to see."
+        },
+        {
+          "type": "listItem",
+          "text": "Ranking up an enemy now also offers a % hunting efficiency boost from 0% to 10% for that specific enemy. This effect will be applied to your character anytime you are awarded with rank points."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Auctions",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "You can now auction off high value items within the tavern directly in the game."
+            },
+            {
+              "type": "listItem",
+              "text": "When starting an auction, the item is removed from your inventory and will automatically go to the winning player."
+            },
+            {
+              "type": "listItem",
+              "text": "An auction can last between 3 and 14 days."
+            },
+            {
+              "type": "listItem",
+              "text": "Sellers can choose to accept only gold, or also items as part of their payment."
+            },
+            {
+              "type": "listItem",
+              "text": "The seller can choose which items they wish to accept as part of their payment (a max of 5 different items). Only items that are plentiful in the market can be used to prevent it from becoming a de facto trade system."
+            },
+            {
+              "type": "listItem",
+              "text": "The value of the items is based off the approximate market value."
+            },
+            {
+              "type": "listItem",
+              "text": "The tax is based on the overall market value of the bid, not the vendor value of the items."
+            },
+            {
+              "type": "listItem",
+              "text": "Tax is set to 12% for free players, 8% for members."
+            },
+            {
+              "type": "listItem",
+              "text": "The tax is only paid by the seller."
+            },
+            {
+              "type": "listItem",
+              "text": "If only items are sent, then the tax must be paid when the seller claims the items."
+            },
+            {
+              "type": "listItem",
+              "text": "Only items that are worth more than 50,000 in est. market value can be auctioned off."
+            },
+            {
+              "type": "listItem",
+              "text": "Items can be sold for more via an auction than via the market."
+            },
+            {
+              "type": "listItem",
+              "text": "Accounts flagged as high risk can not yet participate in auctions."
+            }
+          ]
+        },
+        {
+          "heading": "Giveaways",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "You can now giveaway items on the tavern."
+            },
+            {
+              "type": "listItem",
+              "text": "Just select an item, select the length, and the game will handle the rest."
+            },
+            {
+              "type": "listItem",
+              "text": "Any character in the game can enter the giveaway."
+            },
+            {
+              "type": "paragraph",
+              "text": "These two systems lay out the groundwork for further extension such as support for pets and guidance scrolls."
+            }
+          ]
+        },
+        {
+          "heading": "Market",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We're aware that the recent trading changes have introduced some pain points for legitimate activities such as forging services, guild transfers, loans, and similar transactions. These are already on our radar, and we'll be introducing solutions for them in due time as the system continues to be refined. The risk system is still extremely new, so we'd ask for a little patience while we monitor how it behaves and make adjustments where needed."
+            },
+            {
+              "type": "paragraph",
+              "text": "We've also made further adjustments to further reduce its impact on smaller trades."
+            }
+          ]
+        },
+        {
+          "heading": "Teleportation Costs",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "When we introduced Slayer, we didn’t make our usual adjustment to teleportation costs to account for an additional skill. We planned to address that in this update, but decided to take a closer look at the system as a whole."
+            },
+            {
+              "type": "paragraph",
+              "text": "We know teleportation costs have been a recurring frustration. Some players even avoid levelling certain skills because doing so makes every teleport more expensive. That’s not a particularly satisfying decision to make in a game built around progressing your character."
+            },
+            {
+              "type": "paragraph",
+              "text": "The reasoning behind the original system was fairly straightforward. Generally, a higher total level means access to better ways of earning gold, so teleportation costs increase alongside it. As a rough assumption, that makes sense. In practice, though, it gets messy. Someone specialising in one profitable skill can earn plenty of gold while keeping their total level relatively low. Meanwhile, someone exploring several skills pays more, even if those extra levels haven’t meaningfully improved their income."
+            },
+            {
+              "type": "paragraph",
+              "text": "_ _ Before (Bluebell Hollow → Crystal Caverns) TL 100 — 162 Gold TL 200 — 219 Gold TL 500 — 584 Gold TL 800 — 1,222 Gold TL 1,000 — 1,792 Gold TL 1,200 — 2,476 Gold TL 1,500 — 3,708 Gold TL 1,800 — 5,184 Gold"
+            },
+            {
+              "type": "paragraph",
+              "text": "After (Bluebell Hollow → Crystal Caverns) TL 100 — 50 Gold TL 200 — 50 Gold TL 500 — 414 Gold TL 800 — 1,052 Gold TL 1,000 — 1,492 Gold TL 1,200 — 1,785 Gold TL 1,500 — 1,950 Gold (1,758 gold reduction) TL 1,800 — 1,950 Gold (3,234 gold reduction)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Teleportation costs still only use the skills that contribute to the economy. Skills like Guild Mastery, and seasonal skills are still exempt."
+            },
+            {
+              "type": "paragraph",
+              "text": "Costs can still rise between the beginner range and the cap, but they won’t keep accelerating. Once you reach that cap, you can level Slayer, or anything else, without making the same journey more expensive."
+            },
+            {
+              "type": "paragraph",
+              "text": "Ultimately, teleportation is still a useful gold sink, but we don’t really feel like it justifies making every extra skill level more expensive anymore. There are quite a few more ways gold leaves the economy these days, with things like Slayer contracts being one example, so we’re comfortable easing up on it a bit. We’ll keep an eye on how it affects things, but we think this is a nicer balance between keeping the economy healthy and actually making skill levels feel rewarding."
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Completing a bot verification screen will now automatically start your action upon completion so you don't have to do it again."
+            },
+            {
+              "type": "listItem",
+              "text": "Verification screen immediately appears without having to press on the pop-up, making it much easier to see."
+            },
+            {
+              "type": "listItem",
+              "text": "Ranking up an enemy now also offers a % hunting efficiency boost from 0% to 10% for that specific enemy. This effect will be applied to your character anytime you are awarded with rank points."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Auctions\nYou can now auction off high value items within the tavern directly in the game.\nWhen starting an auction, the item is removed from your inventory and will automatically go to the winning player.\nAn auction can last between 3 and 14 days.\nSellers can choose to accept only gold, or also items as part of their payment.\nThe seller can choose which items they wish to accept as part of their payment (a max of 5 different items). Only items that are plentiful in the market can be used to prevent it from becoming a de facto trade system.\nThe value of the items is based off the approximate market value.\nThe tax is based on the overall market value of the bid, not the vendor value of the items.\nTax is set to 12% for free players, 8% for members.\nThe tax is only paid by the seller.\nIf only items are sent, then the tax must be paid when the seller claims the items.\nOnly items that are worth more than 50,000 in est. market value can be auctioned off.\nItems can be sold for more via an auction than via the market.\nAccounts flagged as high risk can not yet participate in auctions.\nGiveaways\nYou can now giveaway items on the tavern.\nJust select an item, select the length, and the game will handle the rest.\nAny character in the game can enter the giveaway.\nThese two systems lay out the groundwork for further extension such as support for pets and guidance scrolls.\nMarket\nWe're aware that the recent trading changes have introduced some pain points for legitimate activities such as forging services, guild transfers, loans, and similar transactions. These are already on our radar, and we'll be introducing solutions for them in due time as the system continues to be refined. The risk system is still extremely new, so we'd ask for a little patience while we monitor how it behaves and make adjustments where needed.\nWe've also made further adjustments to further reduce its impact on smaller trades.\nTeleportation Costs\nWhen we introduced Slayer, we didn’t make our usual adjustment to teleportation costs to account for an additional skill. We planned to address that in this update, but decided to take a closer look at the system as a whole.\nWe know teleportation costs have been a recurring frustration. Some players even avoid levelling certain skills because doing so makes every teleport more expensive. That’s not a particularly satisfying decision to make in a game built around progressing your character.\nThe reasoning behind the original system was fairly straightforward. Generally, a higher total level means access to better ways of earning gold, so teleportation costs increase alongside it. As a rough assumption, that makes sense. In practice, though, it gets messy. Someone specialising in one profitable skill can earn plenty of gold while keeping their total level relatively low. Meanwhile, someone exploring several skills pays more, even if those extra levels haven’t meaningfully improved their income.\n_ _ Before (Bluebell Hollow → Crystal Caverns) TL 100 — 162 Gold TL 200 — 219 Gold TL 500 — 584 Gold TL 800 — 1,222 Gold TL 1,000 — 1,792 Gold TL 1,200 — 2,476 Gold TL 1,500 — 3,708 Gold TL 1,800 — 5,184 Gold\nAfter (Bluebell Hollow → Crystal Caverns) TL 100 — 50 Gold TL 200 — 50 Gold TL 500 — 414 Gold TL 800 — 1,052 Gold TL 1,000 — 1,492 Gold TL 1,200 — 1,785 Gold TL 1,500 — 1,950 Gold (1,758 gold reduction) TL 1,800 — 1,950 Gold (3,234 gold reduction)\nTeleportation costs still only use the skills that contribute to the economy. Skills like Guild Mastery, and seasonal skills are still exempt.\nCosts can still rise between the beginner range and the cap, but they won’t keep accelerating. Once you reach that cap, you can level Slayer, or anything else, without making the same journey more expensive.\nUltimately, teleportation is still a useful gold sink, but we don’t really feel like it justifies making every extra skill level more expensive anymore. There are quite a few more ways gold leaves the economy these days, with things like Slayer contracts being one example, so we’re comfortable easing up on it a bit. We’ll keep an eye on how it affects things, but we think this is a nicer balance between keeping the economy healthy and actually making skill levels feel rewarding.\nMore\nCompleting a bot verification screen will now automatically start your action upon completion so you don't have to do it again.\nVerification screen immediately appears without having to press on the pop-up, making it much easier to see.\nRanking up an enemy now also offers a % hunting efficiency boost from 0% to 10% for that specific enemy. This effect will be applied to your character anytime you are awarded with rank points.",
+      "searchText": "version 0.83.0-pb - auctions, giveaways, teleportation costs + more auctions you can now auction off high value items within the tavern directly in the game. when starting an auction, the item is removed from your inventory and will automatically go to the winning player. an auction can last between 3 and 14 days. sellers can choose to accept only gold, or also items as part of their payment. the seller can choose which items they wish to accept as part of their payment (a max of 5 different items). only items that are plentiful in the market can be used to prevent it from becoming a de facto trade system. the value of the items is based off the approximate market value. the tax is based on the overall market value of the bid, not the vendor value of the items. tax is set to 12% for free players, 8% for members. the tax is only paid by the seller. if only items are sent, then the tax must be paid when the seller claims the items. only items that are worth more than 50,000 in est. market value can be auctioned off. items can be sold for more via an auction than via the market. accounts flagged as high risk can not yet participate in auctions. giveaways you can now giveaway items on the tavern. just select an item, select the length, and the game will handle the rest. any character in the game can enter the giveaway. these two systems lay out the groundwork for further extension such as support for pets and guidance scrolls. market we're aware that the recent trading changes have introduced some pain points for legitimate activities such as forging services, guild transfers, loans, and similar transactions. these are already on our radar, and we'll be introducing solutions for them in due time as the system continues to be refined. the risk system is still extremely new, so we'd ask for a little patience while we monitor how it behaves and make adjustments where needed. we've also made further adjustments to further reduce its impact on smaller trades. teleportation costs when we introduced slayer, we didn’t make our usual adjustment to teleportation costs to account for an additional skill. we planned to address that in this update, but decided to take a closer look at the system as a whole. we know teleportation costs have been a recurring frustration. some players even avoid levelling certain skills because doing so makes every teleport more expensive. that’s not a particularly satisfying decision to make in a game built around progressing your character. the reasoning behind the original system was fairly straightforward. generally, a higher total level means access to better ways of earning gold, so teleportation costs increase alongside it. as a rough assumption, that makes sense. in practice, though, it gets messy. someone specialising in one profitable skill can earn plenty of gold while keeping their total level relatively low. meanwhile, someone exploring several skills pays more, even if those extra levels haven’t meaningfully improved their income. _ _ before (bluebell hollow → crystal caverns) tl 100 — 162 gold tl 200 — 219 gold tl 500 — 584 gold tl 800 — 1,222 gold tl 1,000 — 1,792 gold tl 1,200 — 2,476 gold tl 1,500 — 3,708 gold tl 1,800 — 5,184 gold after (bluebell hollow → crystal caverns) tl 100 — 50 gold tl 200 — 50 gold tl 500 — 414 gold tl 800 — 1,052 gold tl 1,000 — 1,492 gold tl 1,200 — 1,785 gold tl 1,500 — 1,950 gold (1,758 gold reduction) tl 1,800 — 1,950 gold (3,234 gold reduction) teleportation costs still only use the skills that contribute to the economy. skills like guild mastery, and seasonal skills are still exempt. costs can still rise between the beginner range and the cap, but they won’t keep accelerating. once you reach that cap, you can level slayer, or anything else, without making the same journey more expensive. ultimately, teleportation is still a useful gold sink, but we don’t really feel like it justifies making every extra skill level more expensive anymore. there are quite a few more ways gold leaves the economy these days, with things like slayer contracts being one example, so we’re comfortable easing up on it a bit. we’ll keep an eye on how it affects things, but we think this is a nicer balance between keeping the economy healthy and actually making skill levels feel rewarding. more completing a bot verification screen will now automatically start your action upon completion so you don't have to do it again. verification screen immediately appears without having to press on the pop-up, making it much easier to see. ranking up an enemy now also offers a % hunting efficiency boost from 0% to 10% for that specific enemy. this effect will be applied to your character anytime you are awarded with rank points."
+    },
+    {
       "id": 279,
       "version": "0.82.03-PB",
       "title": "Market Changes",
       "headline": "Version 0.82.03-PB - Market Changes",
       "releasedAt": "2026-09-17T10:23:59",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Sep 17 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=279",
