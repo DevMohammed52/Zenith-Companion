@@ -1,15 +1,15 @@
 {
   "meta": {
-    "generated_at": "2026-09-22T23:51:32.896Z",
-    "fetched_at": "2026-09-22T23:51:16.425Z",
+    "generated_at": "2026-09-23T01:00:19.457Z",
+    "fetched_at": "2026-09-23T01:00:02.997Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-09-22T23:56:17+00:00",
+    "endpoint_updates_at": "2026-09-23T01:05:04+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16471
+      "elapsed_ms": 16460
     },
     "totals": {
       "zones": 10,
@@ -128,7 +128,7 @@
           "character": {
             "hashed_id": "vjoJW96Y8XVA5Y3RaAyl",
             "name": "Abby0910",
-            "total_level": 573,
+            "total_level": 574,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HT2CK26WE54S8RRE1ND7JHXS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/skins/backgrounds/default.jpg"
           }
@@ -218,10 +218,21 @@
       "kills": 503491,
       "experience": 2540318,
       "guilds_count": 5,
-      "active_assaults_count": 1,
+      "active_assaults_count": 2,
       "leaderboard_count": 5,
       "contribution_count": 32,
       "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "guild": {
+            "id": 1027,
+            "name": "VietNam",
+            "tag": "VN",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJXXGRYKS0WXJVT3QNMY3D.png",
+            "background_url": null
+          }
+        },
         {
           "kills": 2451,
           "experience": 10257,
@@ -488,7 +499,7 @@
           "character": {
             "hashed_id": "VrBKlPdNdxEZVNWG8xJe",
             "name": "GloriousTuesday",
-            "total_level": 1559,
+            "total_level": 1560,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J305RMSBRAVGVFD51CK509PE.jpg"
           }
@@ -628,7 +639,7 @@
           "character": {
             "hashed_id": "jlPA8v9NMBgAXYEyMe2O",
             "name": "Hoorne",
-            "total_level": 967,
+            "total_level": 968,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYK1KSCYB21WK1AWN80BQ1AH.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG8AMV6P44CMZE4WA6VM9C.jpg"
           }
@@ -656,7 +667,7 @@
           "character": {
             "hashed_id": "rz9RZnWN7RPy9QKAp0Md",
             "name": "Drafiks",
-            "total_level": 2010,
+            "total_level": 2011,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVFPD6BHAKSDRS7ZRZE9KFS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/5p1aFSRbwd5k1xOvqpa2ksIQOxH2i0-metac3Vuc2V0LTEuanBn-.jpg"
           }
@@ -754,25 +765,13 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/SSMYLSreVgzcGbJBcoxf640c41Wqwp-metaQ3J5c3RhbCBjYXZlcm5zLnBuZw==-.png",
       "status": "DOMINATED",
       "colour": "#960b0b",
-      "kills": 83358,
-      "experience": 245286,
+      "kills": 87579,
+      "experience": 253679,
       "guilds_count": 2,
-      "active_assaults_count": 1,
+      "active_assaults_count": 0,
       "leaderboard_count": 2,
       "contribution_count": 9,
-      "active_assaults": [
-        {
-          "kills": 4010,
-          "experience": 4010,
-          "guild": {
-            "id": 1170,
-            "name": "765 Killas",
-            "tag": null,
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-            "background_url": null
-          }
-        }
-      ],
+      "active_assaults": [],
       "guild_leaderboard": [
         {
           "position": 1,
@@ -788,8 +787,8 @@
         },
         {
           "position": 2,
-          "kills": 16004,
-          "experience": 19234,
+          "kills": 20225,
+          "experience": 27627,
           "guild": {
             "id": 1170,
             "name": "765 Killas",
@@ -843,6 +842,20 @@
           }
         },
         {
+          "id": 156009,
+          "guild_conquest_progress_id": 155879,
+          "kills": 11036,
+          "experience": 18438,
+          "guild": null,
+          "character": {
+            "hashed_id": "6aDoyRnLyE4q6LpV5AGX",
+            "name": "TheHouse",
+            "total_level": 1624,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/te6SzhXRNb8rJDyRoMmLepZZ1gWr6D-metaMy5wbmc=-.png"
+          }
+        },
+        {
           "id": 155660,
           "guild_conquest_progress_id": 154803,
           "kills": 9574,
@@ -882,20 +895,6 @@
             "total_level": 1256,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP221ZTCDN3HBQVR766G9XTX.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
-          }
-        },
-        {
-          "id": 156009,
-          "guild_conquest_progress_id": 155879,
-          "kills": 6815,
-          "experience": 10045,
-          "guild": null,
-          "character": {
-            "hashed_id": "6aDoyRnLyE4q6LpV5AGX",
-            "name": "TheHouse",
-            "total_level": 1623,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAGJ0MD5GQF5JZNM2A3RVS.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/te6SzhXRNb8rJDyRoMmLepZZ1gWr6D-metaMy5wbmc=-.png"
           }
         },
         {
@@ -1397,7 +1396,7 @@
           "character": {
             "hashed_id": "jVDJez3LDO4goYKWO08G",
             "name": "Ativa",
-            "total_level": 1896,
+            "total_level": 1897,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYZXFCAJHGAK1ZN715ZMWRC4.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
           }
@@ -1635,7 +1634,7 @@
           "character": {
             "hashed_id": "AB1E9poQq708kYnakeJj",
             "name": "VThunder",
-            "total_level": 1645,
+            "total_level": 1646,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAFWEEXP7GZKMYMHQ0PX60.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVG90BR3FWZWW9VFQ29NH0X.jpg"
           }
@@ -1788,7 +1787,7 @@
           "character": {
             "hashed_id": "2xMjGdBN528n3Y9P1nyr",
             "name": "TopaZ",
-            "total_level": 1458,
+            "total_level": 1459,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VA4RVGFMQ7CR8XVJBWQXB.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
           }
@@ -1858,7 +1857,7 @@
           "character": {
             "hashed_id": "aJydnOmQWy6bzYbgRe5M",
             "name": "Tiklz",
-            "total_level": 1801,
+            "total_level": 1802,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
           }
@@ -3068,7 +3067,7 @@
       "character": {
         "hashed_id": "2xMjGdBN528n3Y9P1nyr",
         "name": "TopaZ",
-        "total_level": 1458,
+        "total_level": 1459,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VA4RVGFMQ7CR8XVJBWQXB.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9V98XF6WM0BRKDGE9VS7GW.png"
       },
@@ -3201,7 +3200,7 @@
       "character": {
         "hashed_id": "aJydnOmQWy6bzYbgRe5M",
         "name": "Tiklz",
-        "total_level": 1801,
+        "total_level": 1802,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30ADWZTQ5W4W9K1DYKF7EW7.jpg"
       },
@@ -3600,7 +3599,7 @@
       "character": {
         "hashed_id": "jVDJez3LDO4goYKWO08G",
         "name": "Ativa",
-        "total_level": 1896,
+        "total_level": 1897,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HYZXFCAJHGAK1ZN715ZMWRC4.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KMKAPGARMG47N8M0Z6RDT4ZR.jpg"
       },
