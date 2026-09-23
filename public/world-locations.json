@@ -1,11 +1,11 @@
 {
   "_meta": {
     "source": "/v1/world/locations/list",
-    "fetched_at": "2026-09-23T21:04:43.174Z",
-    "endpoint_updates_at": "2026-09-23T21:05:02+00:00",
+    "fetched_at": "2026-09-23T22:00:04.103Z",
+    "endpoint_updates_at": "2026-09-23T22:00:23+00:00",
     "location_count": 10
   },
-  "endpoint_updates_at": "2026-09-23T21:05:02+00:00",
+  "endpoint_updates_at": "2026-09-23T22:00:23+00:00",
   "locations": [
     {
       "id": 1,
@@ -636,16 +636,6 @@
           "day_name": "Wednesday",
           "date": "23 Sep",
           "weathers": [
-            {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Wed 23 Sep, 12:43 to Wed 23 Sep, 21:43",
-              "starts_at": "2026-09-23T12:43:28+00:00",
-              "starts_at_time": "12:43",
-              "ends_at": "2026-09-23T21:43:28+00:00",
-              "buffs": []
-            },
             {
               "key": "CLEAR",
               "icon": "clear",
@@ -2477,24 +2467,6 @@
           "day_name": "Wednesday",
           "date": "23 Sep",
           "weathers": [
-            {
-              "key": "WINDY",
-              "icon": "windy",
-              "name": "Windy",
-              "window": "Wed 23 Sep, 12:43 to Wed 23 Sep, 21:43",
-              "starts_at": "2026-09-23T12:43:28+00:00",
-              "starts_at_time": "12:43",
-              "ends_at": "2026-09-23T21:43:28+00:00",
-              "buffs": [
-                "+15% Hunt Efficiency",
-                "-10% Fishing Efficiency",
-                "+20% Fishing EXP",
-                "-10% Woodcutting Efficiency",
-                "+25% Woodcutting EXP",
-                "-5% Construction Efficiency",
-                "+10% Construction EXP"
-              ]
-            },
             {
               "key": "FOG",
               "icon": "fog",
