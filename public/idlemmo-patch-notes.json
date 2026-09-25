@@ -1,21 +1,23 @@
 {
   "meta": {
-    "generatedAt": "2026-09-25T09:34:01.196Z",
+    "generatedAt": "2026-09-25T20:00:28.103Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 279,
-    "totalFetched": 279,
+    "totalAvailable": 280,
+    "totalFetched": 280,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 282,
+    "latestPatchId": 283,
     "oldestPatchId": 1,
-    "latestVersion": "0.83.2-PB",
+    "latestVersion": "0.83.3-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "world-bosses": 46,
+      "economy": 134,
+      "items": 159,
+      "bug-fixes": 202,
       "tavern": 34,
-      "economy": 133,
-      "items": 158,
       "combat": 135,
       "hunting": 68,
       "pets": 109,
@@ -26,9 +28,7 @@
       "seasonal": 81,
       "membership": 67,
       "forge": 45,
-      "bug-fixes": 201,
       "public-api": 20,
-      "world-bosses": 45,
       "housing": 34,
       "weather": 5,
       "translations": 15,
@@ -41,12 +41,89 @@
   },
   "patchNotes": [
     {
+      "id": 283,
+      "version": "0.83.3-PB",
+      "title": "Improvements",
+      "headline": "Version 0.83.3-PB - Improvements",
+      "releasedAt": "2026-09-25T14:44:54",
+      "releaseLabel": "5 hours ago",
+      "releaseDateLabel": "Sep 25 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=283",
+      "categories": [
+        "world-bosses",
+        "economy",
+        "items",
+        "bug-fixes"
+      ],
+      "excerpt": "Auction reserve prices can now be set up to 5% below the cheapest current market listing for the same item and tier. For example, if the cheapest listing is 1,000,000 gold, the maximum reserve is 950,000 gold. Improve...",
+      "contentBlocks": [
+        {
+          "type": "listItem",
+          "text": "Auction reserve prices can now be set up to 5% below the cheapest current market listing for the same item and tier. For example, if the cheapest listing is 1,000,000 gold, the maximum reserve is 950,000 gold."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved accuracy of estimated market pricing."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to report inaccurate market pricing."
+        },
+        {
+          "type": "listItem",
+          "text": "Auction reserved prices are now visible by default. When creating an auction, the seller can opt to hide it themselves if they don't wish for it to be known. All existing auctions will remain hidden. If the seller of an existing auction wishes to make the reserve price known, they can list it in the comments."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed an issue where the Getting Started checklist was incorrectly displayed for alternative characters."
+        },
+        {
+          "type": "listItem",
+          "text": "World boss time overlap reduced from 12 hours to 3 hours"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Auction reserve prices can now be set up to 5% below the cheapest current market listing for the same item and tier. For example, if the cheapest listing is 1,000,000 gold, the maximum reserve is 950,000 gold."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved accuracy of estimated market pricing."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to report inaccurate market pricing."
+            },
+            {
+              "type": "listItem",
+              "text": "Auction reserved prices are now visible by default. When creating an auction, the seller can opt to hide it themselves if they don't wish for it to be known. All existing auctions will remain hidden. If the seller of an existing auction wishes to make the reserve price known, they can list it in the comments."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed an issue where the Getting Started checklist was incorrectly displayed for alternative characters."
+            },
+            {
+              "type": "listItem",
+              "text": "World boss time overlap reduced from 12 hours to 3 hours"
+            }
+          ]
+        }
+      ],
+      "bodyText": "Auction reserve prices can now be set up to 5% below the cheapest current market listing for the same item and tier. For example, if the cheapest listing is 1,000,000 gold, the maximum reserve is 950,000 gold.\nImproved accuracy of estimated market pricing.\nAdded the ability to report inaccurate market pricing.\nAuction reserved prices are now visible by default. When creating an auction, the seller can opt to hide it themselves if they don't wish for it to be known. All existing auctions will remain hidden. If the seller of an existing auction wishes to make the reserve price known, they can list it in the comments.\nFixed an issue where the Getting Started checklist was incorrectly displayed for alternative characters.\nWorld boss time overlap reduced from 12 hours to 3 hours",
+      "searchText": "version 0.83.3-pb - improvements auction reserve prices can now be set up to 5% below the cheapest current market listing for the same item and tier. for example, if the cheapest listing is 1,000,000 gold, the maximum reserve is 950,000 gold. improved accuracy of estimated market pricing. added the ability to report inaccurate market pricing. auction reserved prices are now visible by default. when creating an auction, the seller can opt to hide it themselves if they don't wish for it to be known. all existing auctions will remain hidden. if the seller of an existing auction wishes to make the reserve price known, they can list it in the comments. fixed an issue where the getting started checklist was incorrectly displayed for alternative characters. world boss time overlap reduced from 12 hours to 3 hours"
+    },
+    {
       "id": 282,
       "version": "0.83.2-PB",
       "title": "Tavern Improvements",
       "headline": "Version 0.83.2-PB - Tavern Improvements",
       "releasedAt": "2026-09-24T12:02:15",
-      "releaseLabel": "21 hours ago",
+      "releaseLabel": "1 day ago",
       "releaseDateLabel": "Sep 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=282",
@@ -80,7 +157,7 @@
       "title": "Tavern Improvements",
       "headline": "Version 0.83.1-PB - Tavern Improvements",
       "releasedAt": "2026-09-23T17:06:54",
-      "releaseLabel": "1 day ago",
+      "releaseLabel": "2 days ago",
       "releaseDateLabel": "Sep 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=281",
@@ -140,7 +217,7 @@
       "title": "Auctions, Giveaways, Teleportation Costs + More",
       "headline": "Version 0.83.0-PB - Auctions, Giveaways, Teleportation Costs + More",
       "releasedAt": "2026-09-22T13:05:32",
-      "releaseLabel": "2 days ago",
+      "releaseLabel": "3 days ago",
       "releaseDateLabel": "Sep 22 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=280",
