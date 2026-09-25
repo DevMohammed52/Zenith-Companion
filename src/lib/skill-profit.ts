@@ -394,7 +394,7 @@ const gatheringRecipes: SkillRecipe[] = [
   })),
   ...[
     ["Coal Ore", 1, 12, 3],
-    ["Limestone", 1, 12, 3, "Mined via Mining"],
+    ["Limestone", 10, 50, 20, "Mined via Mining"],
     ["Tin Ore", 1, 12, 3],
     ["Copper Ore", 5, 15, 5],
     ["Iron Ore", 10, 23, 10],
