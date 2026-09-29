@@ -1,21 +1,24 @@
 {
   "meta": {
-    "generatedAt": "2026-09-29T10:37:36.577Z",
+    "generatedAt": "2026-09-29T20:42:27.671Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 280,
-    "totalFetched": 280,
+    "totalAvailable": 281,
+    "totalFetched": 281,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 283,
+    "latestPatchId": 284,
     "oldestPatchId": 1,
-    "latestVersion": "0.83.3-PB",
+    "latestVersion": "0.83.4-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "economy": 135,
+      "forge": 46,
+      "items": 160,
+      "mobile-ui": 106,
+      "seasonal": 82,
       "world-bosses": 46,
-      "economy": 134,
-      "items": 159,
       "bug-fixes": 202,
       "tavern": 34,
       "combat": 135,
@@ -25,14 +28,11 @@
       "alchemy": 43,
       "skills": 162,
       "map": 66,
-      "seasonal": 81,
       "membership": 67,
-      "forge": 45,
       "public-api": 20,
       "housing": 34,
       "weather": 5,
       "translations": 15,
-      "mobile-ui": 105,
       "dungeons": 59,
       "conquest": 26,
       "quests": 10
@@ -41,12 +41,114 @@
   },
   "patchNotes": [
     {
+      "id": 284,
+      "version": "0.83.4-PB",
+      "title": "Upcoming Update",
+      "headline": "Version 0.83.4-PB - Upcoming Update",
+      "releasedAt": "2026-09-29T11:45:14",
+      "releaseLabel": "8 hours ago",
+      "releaseDateLabel": "Sep 29 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=284",
+      "categories": [
+        "economy",
+        "forge",
+        "items",
+        "mobile-ui",
+        "seasonal"
+      ],
+      "excerpt": "We are currently running an alpha test of the upcoming 0.84.0 update with a selected group of players. We want to keep the test fair, so we are being careful about how much information about new features is shared ahe...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We are currently running an alpha test of the upcoming 0.84.0 update with a selected group of players. We want to keep the test fair, so we are being careful about how much information about new features is shared ahead of time."
+        },
+        {
+          "type": "paragraph",
+          "text": "While the alpha is running, we will keep the wiki roughly in line with what alpha players can access. We are generally more cautious for systems that may affect the market or competitive side of the game. Right now, that includes item loaning and the updated Forge system, as both can affect how items and materials are used. More areas will be added to the alpha, and subsequently the wiki, as testing progresses."
+        },
+        {
+          "type": "paragraph",
+          "text": "Alongside this, we've updated the wiki's home page to highlight recently updated pages, making it easier to find anything new or changed. We have been making improvements to wiki overall, including expanding and enriching the information available across it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Alpha players are free to talk about the test. We have only asked them to hold off on screenshots and recordings for now, as the design is still being worked on. Nothing in the alpha is confidential."
+        },
+        {
+          "type": "paragraph",
+          "text": "Any numbers shown on the wiki either come from the alpha or are placeholders, and all of them are subject to change. During testing, values will either match the wiki or be significantly boosted to help testers progress faster. A disclaimer at the top of each relevant wiki page will give more context on how accurate the information currently is. The alpha as a whole is unfinished, and anything may change before release."
+        },
+        {
+          "type": "paragraph",
+          "text": "This is a large update, so we are testing it in phases and introducing new content to the alpha test in waves. We may open the alpha to more players, although our alpha server has limited capacity, so we cannot promise this. If you want to stay up to date, keep an eye on our Discord."
+        },
+        {
+          "type": "paragraph",
+          "text": "The update changes a little bit of everything, including QoL improvements, new classes, new features, a large UI overhaul to make the game feel more like a game and less like a collection of menus, a brand-new tutorial, and more. We want to get it right, so we are taking our time with it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our target is still to release the update on Monday, 5th October. Given the size of the update, the upcoming campaign, and other internal projects and deadlines competing for the team's capacity, there is a chance we may not hit that date."
+        },
+        {
+          "type": "paragraph",
+          "text": "If we do miss the 5th, the release will likely move to late October. We're working hard to get everything ready for Monday and will keep you updated if anything changes."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We are currently running an alpha test of the upcoming 0.84.0 update with a selected group of players. We want to keep the test fair, so we are being careful about how much information about new features is shared ahead of time."
+            },
+            {
+              "type": "paragraph",
+              "text": "While the alpha is running, we will keep the wiki roughly in line with what alpha players can access. We are generally more cautious for systems that may affect the market or competitive side of the game. Right now, that includes item loaning and the updated Forge system, as both can affect how items and materials are used. More areas will be added to the alpha, and subsequently the wiki, as testing progresses."
+            },
+            {
+              "type": "paragraph",
+              "text": "Alongside this, we've updated the wiki's home page to highlight recently updated pages, making it easier to find anything new or changed. We have been making improvements to wiki overall, including expanding and enriching the information available across it."
+            },
+            {
+              "type": "paragraph",
+              "text": "Alpha players are free to talk about the test. We have only asked them to hold off on screenshots and recordings for now, as the design is still being worked on. Nothing in the alpha is confidential."
+            },
+            {
+              "type": "paragraph",
+              "text": "Any numbers shown on the wiki either come from the alpha or are placeholders, and all of them are subject to change. During testing, values will either match the wiki or be significantly boosted to help testers progress faster. A disclaimer at the top of each relevant wiki page will give more context on how accurate the information currently is. The alpha as a whole is unfinished, and anything may change before release."
+            },
+            {
+              "type": "paragraph",
+              "text": "This is a large update, so we are testing it in phases and introducing new content to the alpha test in waves. We may open the alpha to more players, although our alpha server has limited capacity, so we cannot promise this. If you want to stay up to date, keep an eye on our Discord."
+            },
+            {
+              "type": "paragraph",
+              "text": "The update changes a little bit of everything, including QoL improvements, new classes, new features, a large UI overhaul to make the game feel more like a game and less like a collection of menus, a brand-new tutorial, and more. We want to get it right, so we are taking our time with it."
+            },
+            {
+              "type": "paragraph",
+              "text": "Our target is still to release the update on Monday, 5th October. Given the size of the update, the upcoming campaign, and other internal projects and deadlines competing for the team's capacity, there is a chance we may not hit that date."
+            },
+            {
+              "type": "paragraph",
+              "text": "If we do miss the 5th, the release will likely move to late October. We're working hard to get everything ready for Monday and will keep you updated if anything changes."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We are currently running an alpha test of the upcoming 0.84.0 update with a selected group of players. We want to keep the test fair, so we are being careful about how much information about new features is shared ahead of time.\nWhile the alpha is running, we will keep the wiki roughly in line with what alpha players can access. We are generally more cautious for systems that may affect the market or competitive side of the game. Right now, that includes item loaning and the updated Forge system, as both can affect how items and materials are used. More areas will be added to the alpha, and subsequently the wiki, as testing progresses.\nAlongside this, we've updated the wiki's home page to highlight recently updated pages, making it easier to find anything new or changed. We have been making improvements to wiki overall, including expanding and enriching the information available across it.\nAlpha players are free to talk about the test. We have only asked them to hold off on screenshots and recordings for now, as the design is still being worked on. Nothing in the alpha is confidential.\nAny numbers shown on the wiki either come from the alpha or are placeholders, and all of them are subject to change. During testing, values will either match the wiki or be significantly boosted to help testers progress faster. A disclaimer at the top of each relevant wiki page will give more context on how accurate the information currently is. The alpha as a whole is unfinished, and anything may change before release.\nThis is a large update, so we are testing it in phases and introducing new content to the alpha test in waves. We may open the alpha to more players, although our alpha server has limited capacity, so we cannot promise this. If you want to stay up to date, keep an eye on our Discord.\nThe update changes a little bit of everything, including QoL improvements, new classes, new features, a large UI overhaul to make the game feel more like a game and less like a collection of menus, a brand-new tutorial, and more. We want to get it right, so we are taking our time with it.\nOur target is still to release the update on Monday, 5th October. Given the size of the update, the upcoming campaign, and other internal projects and deadlines competing for the team's capacity, there is a chance we may not hit that date.\nIf we do miss the 5th, the release will likely move to late October. We're working hard to get everything ready for Monday and will keep you updated if anything changes.",
+      "searchText": "version 0.83.4-pb - upcoming update we are currently running an alpha test of the upcoming 0.84.0 update with a selected group of players. we want to keep the test fair, so we are being careful about how much information about new features is shared ahead of time. while the alpha is running, we will keep the wiki roughly in line with what alpha players can access. we are generally more cautious for systems that may affect the market or competitive side of the game. right now, that includes item loaning and the updated forge system, as both can affect how items and materials are used. more areas will be added to the alpha, and subsequently the wiki, as testing progresses. alongside this, we've updated the wiki's home page to highlight recently updated pages, making it easier to find anything new or changed. we have been making improvements to wiki overall, including expanding and enriching the information available across it. alpha players are free to talk about the test. we have only asked them to hold off on screenshots and recordings for now, as the design is still being worked on. nothing in the alpha is confidential. any numbers shown on the wiki either come from the alpha or are placeholders, and all of them are subject to change. during testing, values will either match the wiki or be significantly boosted to help testers progress faster. a disclaimer at the top of each relevant wiki page will give more context on how accurate the information currently is. the alpha as a whole is unfinished, and anything may change before release. this is a large update, so we are testing it in phases and introducing new content to the alpha test in waves. we may open the alpha to more players, although our alpha server has limited capacity, so we cannot promise this. if you want to stay up to date, keep an eye on our discord. the update changes a little bit of everything, including qol improvements, new classes, new features, a large ui overhaul to make the game feel more like a game and less like a collection of menus, a brand-new tutorial, and more. we want to get it right, so we are taking our time with it. our target is still to release the update on monday, 5th october. given the size of the update, the upcoming campaign, and other internal projects and deadlines competing for the team's capacity, there is a chance we may not hit that date. if we do miss the 5th, the release will likely move to late october. we're working hard to get everything ready for monday and will keep you updated if anything changes."
+    },
+    {
       "id": 283,
       "version": "0.83.3-PB",
       "title": "Improvements",
       "headline": "Version 0.83.3-PB - Improvements",
       "releasedAt": "2026-09-25T14:44:54",
-      "releaseLabel": "3 days ago",
+      "releaseLabel": "4 days ago",
       "releaseDateLabel": "Sep 25 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=283",
@@ -123,7 +225,7 @@
       "title": "Tavern Improvements",
       "headline": "Version 0.83.2-PB - Tavern Improvements",
       "releasedAt": "2026-09-24T12:02:15",
-      "releaseLabel": "4 days ago",
+      "releaseLabel": "5 days ago",
       "releaseDateLabel": "Sep 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=282",
@@ -157,7 +259,7 @@
       "title": "Tavern Improvements",
       "headline": "Version 0.83.1-PB - Tavern Improvements",
       "releasedAt": "2026-09-23T17:06:54",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Sep 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=281",
@@ -217,7 +319,7 @@
       "title": "Auctions, Giveaways, Teleportation Costs + More",
       "headline": "Version 0.83.0-PB - Auctions, Giveaways, Teleportation Costs + More",
       "releasedAt": "2026-09-22T13:05:32",
-      "releaseLabel": "6 days ago",
+      "releaseLabel": "1 week ago",
       "releaseDateLabel": "Sep 22 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=280",
@@ -675,7 +777,7 @@
       "title": "Trade Changes",
       "headline": "Version 0.82.2-PB - Trade Changes",
       "releasedAt": "2026-09-15T13:21:58",
-      "releaseLabel": "1 week ago",
+      "releaseLabel": "2 weeks ago",
       "releaseDateLabel": "Sep 15 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=278",
