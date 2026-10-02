@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-01T19:36:58.461Z",
+    "generatedAt": "2026-10-01T23:49:44.037Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
@@ -3848,11 +3848,11 @@
             "count": 35,
             "min_price": 15000,
             "max_price": 165000,
-            "total_price": 1439201,
-            "average_price": 41120
+            "total_price": 1462200,
+            "average_price": 41777
           }
         },
-        "averagePrice": 41120,
+        "averagePrice": 41777,
         "medianPrice": 45000,
         "sampleListings": [
           {
@@ -10405,30 +10405,25 @@
       },
       "exchange": {
         "petId": 5,
-        "listingCount": 4,
+        "listingCount": 3,
         "minPrice": 368115,
         "maxPrice": 1750000,
         "byQuality": {
           "EPIC": {
-            "count": 4,
+            "count": 3,
             "min_price": 368115,
             "max_price": 1750000,
-            "total_price": 4237228,
-            "average_price": 1059307
+            "total_price": 3868115,
+            "average_price": 1289372
           }
         },
-        "averagePrice": 1059307,
-        "medianPrice": 1059557,
+        "averagePrice": 1289372,
+        "medianPrice": 1750000,
         "sampleListings": [
           {
             "level": 69,
             "quality": "EPIC",
             "price": 368115
-          },
-          {
-            "level": 70,
-            "quality": "EPIC",
-            "price": 369113
           },
           {
             "level": 99,
@@ -25890,21 +25885,26 @@
       },
       "exchange": {
         "petId": 10,
-        "listingCount": 7,
-        "minPrice": 50000,
+        "listingCount": 8,
+        "minPrice": 20000,
         "maxPrice": 60000,
         "byQuality": {
           "PREMIUM": {
-            "count": 7,
-            "min_price": 50000,
+            "count": 8,
+            "min_price": 20000,
             "max_price": 60000,
-            "total_price": 389015,
-            "average_price": 55574
+            "total_price": 409015,
+            "average_price": 51127
           }
         },
-        "averagePrice": 55574,
-        "medianPrice": 59015,
+        "averagePrice": 51127,
+        "medianPrice": 54508,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "PREMIUM",
+            "price": 20000
+          },
           {
             "level": 63,
             "quality": "PREMIUM",
@@ -32137,19 +32137,19 @@
       "valuation": null,
       "exchange": {
         "petId": 23,
-        "listingCount": 10,
+        "listingCount": 11,
         "minPrice": 10000,
         "maxPrice": 25000,
         "byQuality": {
           "REFINED": {
-            "count": 10,
+            "count": 11,
             "min_price": 10000,
             "max_price": 25000,
-            "total_price": 156962,
-            "average_price": 15696
+            "total_price": 168665,
+            "average_price": 15333
           }
         },
-        "averagePrice": 15696,
+        "averagePrice": 15333,
         "medianPrice": 15000,
         "sampleListings": [
           {
@@ -32171,6 +32171,11 @@
             "level": 39,
             "quality": "REFINED",
             "price": 11269
+          },
+          {
+            "level": 52,
+            "quality": "REFINED",
+            "price": 11703
           },
           {
             "level": 1,
@@ -44241,19 +44246,19 @@
       },
       "exchange": {
         "petId": 12,
-        "listingCount": 11,
+        "listingCount": 10,
         "minPrice": 25000,
         "maxPrice": 400000,
         "byQuality": {
           "PREMIUM": {
-            "count": 11,
+            "count": 10,
             "min_price": 25000,
             "max_price": 400000,
-            "total_price": 929749,
-            "average_price": 84523
+            "total_price": 870400,
+            "average_price": 87040
           }
         },
-        "averagePrice": 84523,
+        "averagePrice": 87040,
         "medianPrice": 60000,
         "sampleListings": [
           {
@@ -44275,11 +44280,6 @@
             "level": 1,
             "quality": "PREMIUM",
             "price": 50000
-          },
-          {
-            "level": 29,
-            "quality": "PREMIUM",
-            "price": 59349
           },
           {
             "level": 50,
@@ -100071,7 +100071,7 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-01T19:36:58.441Z",
+    "fetchedAt": "2026-10-01T23:49:44.016Z",
     "listingCount": 617,
     "speciesCount": 39,
     "pageCount": 25
