@@ -1,25 +1,25 @@
 {
   "meta": {
-    "generatedAt": "2026-10-06T11:12:40.567Z",
+    "generatedAt": "2026-10-06T20:55:58.915Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 282,
-    "totalFetched": 282,
+    "totalAvailable": 283,
+    "totalFetched": 283,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 285,
+    "latestPatchId": 286,
     "oldestPatchId": 1,
-    "latestVersion": "Version 0.84 Preview",
+    "latestVersion": "0.83.5-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "items": 161,
+      "bug-fixes": 203,
       "forge": 47,
       "mobile-ui": 107,
       "economy": 135,
-      "items": 160,
       "seasonal": 82,
       "world-bosses": 46,
-      "bug-fixes": 202,
       "tavern": 34,
       "combat": 135,
       "hunting": 68,
@@ -41,12 +41,47 @@
   },
   "patchNotes": [
     {
+      "id": 286,
+      "version": "0.83.5-PB",
+      "title": "Google Play Payment Fixes",
+      "headline": "Version 0.83.5-PB - Google Play Payment Fixes",
+      "releasedAt": "2026-10-06T17:53:04",
+      "releaseLabel": "3 hours ago",
+      "releaseDateLabel": "Oct 06 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=286",
+      "categories": [
+        "items",
+        "bug-fixes"
+      ],
+      "excerpt": "We've fixed a bug that could cause some Google Play purchases to never arrive in your account. The game now checks for any missed purchases when it starts and delivers them automatically, so you may see a \"Payment suc...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We've fixed a bug that could cause some Google Play purchases to never arrive in your account. The game now checks for any missed purchases when it starts and delivers them automatically, so you may see a \"Payment successful\" message for an earlier purchase. You haven't been charged again. If a purchase still hasn't arrived, or Google Play says \"You already have this item\", fully close and reopen the game. If the problem continues, please open a support ticket."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We've fixed a bug that could cause some Google Play purchases to never arrive in your account. The game now checks for any missed purchases when it starts and delivers them automatically, so you may see a \"Payment successful\" message for an earlier purchase. You haven't been charged again. If a purchase still hasn't arrived, or Google Play says \"You already have this item\", fully close and reopen the game. If the problem continues, please open a support ticket."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We've fixed a bug that could cause some Google Play purchases to never arrive in your account. The game now checks for any missed purchases when it starts and delivers them automatically, so you may see a \"Payment successful\" message for an earlier purchase. You haven't been charged again. If a purchase still hasn't arrived, or Google Play says \"You already have this item\", fully close and reopen the game. If the problem continues, please open a support ticket.",
+      "searchText": "version 0.83.5-pb - google play payment fixes we've fixed a bug that could cause some google play purchases to never arrive in your account. the game now checks for any missed purchases when it starts and delivers them automatically, so you may see a \"payment successful\" message for an earlier purchase. you haven't been charged again. if a purchase still hasn't arrived, or google play says \"you already have this item\", fully close and reopen the game. if the problem continues, please open a support ticket."
+    },
+    {
       "id": 285,
       "version": "Version 0.84 Preview",
       "title": "",
       "headline": "Version 0.84 Preview",
       "releasedAt": "2026-10-05T14:28:15",
-      "releaseLabel": "20 hours ago",
+      "releaseLabel": "1 day ago",
       "releaseDateLabel": "Oct 05 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=285",
@@ -97,7 +132,7 @@
       "title": "Upcoming Update",
       "headline": "Version 0.83.4-PB - Upcoming Update",
       "releasedAt": "2026-09-29T11:45:14",
-      "releaseLabel": "6 days ago",
+      "releaseLabel": "1 week ago",
       "releaseDateLabel": "Sep 29 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=284",
@@ -370,7 +405,7 @@
       "title": "Auctions, Giveaways, Teleportation Costs + More",
       "headline": "Version 0.83.0-PB - Auctions, Giveaways, Teleportation Costs + More",
       "releasedAt": "2026-09-22T13:05:32",
-      "releaseLabel": "1 week ago",
+      "releaseLabel": "2 weeks ago",
       "releaseDateLabel": "Sep 22 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=280",
