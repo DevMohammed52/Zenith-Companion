@@ -2661,6 +2661,39 @@ th.sortable:hover {
   padding: 0.8rem 1rem;
 }
 
+.alchemy-note-disclosure {
+  background: color-mix(in srgb, var(--text-accent), transparent 94%);
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
+  border-radius: 8px;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.95rem;
+}
+
+.alchemy-note-disclosure summary {
+  align-items: center;
+  color: var(--text-accent);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.alchemy-note-disclosure summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.alchemy-note-disclosure p {
+  color: var(--text-secondary, var(--text-main));
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0.45rem 0 0;
+  padding-left: 1.45rem;
+}
+
 .alchemy-summary-grid {
   display: grid;
   gap: 1rem;

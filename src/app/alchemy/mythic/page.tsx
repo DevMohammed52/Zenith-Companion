@@ -929,12 +929,12 @@ export default function MythicAlchemyPage() {
           cursor: pointer;
           display: inline-flex;
           flex: 0 0 auto;
-          height: 40px;
+          height: 44px;
           justify-content: center;
-          min-height: 40px;
-          min-width: 40px;
+          min-height: 44px;
+          min-width: 44px;
           transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
-          width: 40px;
+          width: 44px;
         }
         .dropdown-close:hover, .search-clear:hover {
           background: rgba(255,255,255,0.075);
@@ -1078,7 +1078,7 @@ export default function MythicAlchemyPage() {
           color: var(--text-muted);
           cursor: pointer;
           font-weight: 900;
-          min-height: 40px;
+          min-height: 44px;
           padding: 0.65rem 0.5rem;
           transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
         }

@@ -864,10 +864,13 @@ function AlchemyContent() {
         </div>
       )}
 
-      <div className="alchemy-alert">
-        <Info size={16} />
-        Market profit uses generated trade-history snapshots. Stable Vol is the safer sell-through clue; private buyers, off-app trades, undercutting, or spike-driven volume can still change how quickly output sells.
-      </div>
+      <details className="alchemy-note-disclosure">
+        <summary>
+          <Info size={15} />
+          <span>Market calculation notes</span>
+        </summary>
+        <p>Market profit uses generated trade-history snapshots. Stable Vol is the safer sell-through clue; private buyers, off-app trades, undercutting, or spike-driven volume can still change how quickly output sells.</p>
+      </details>
 
       <div className="alchemy-summary-grid">
         <SummaryCard icon={<Coins size={16} />} label="Best Market Craft" row={summary.market} value={summary.market ? formatSignedGold(summary.market.profit) : "N/A"} onSelect={setSelectedRow} />

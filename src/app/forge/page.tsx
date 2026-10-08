@@ -749,10 +749,10 @@ export default function ForgePage() {
           overflow-wrap: anywhere;
         }
         .metric.good strong {
-          color: #34d399;
+          color: var(--text-success, #34d399);
         }
         .metric.warn strong {
-          color: #a78bfa;
+          color: var(--text-accent, #a78bfa);
         }
         .forge-builder {
           padding: 1rem;
@@ -812,8 +812,8 @@ export default function ForgePage() {
         .combo-shell.open,
         .combo-shell:focus-within,
         .number-field input:focus {
-          border-color: rgba(34,211,238,0.65);
-          box-shadow: 0 0 0 3px rgba(34,211,238,0.12);
+          border-color: var(--border-focus);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 88%);
           outline: none;
         }
         .combo-shell svg,
@@ -836,8 +836,10 @@ export default function ForgePage() {
           border: 1px solid var(--border-subtle);
         }
         .icon-clear {
-          width: 40px;
-          height: 40px;
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
+          min-height: 44px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -854,7 +856,7 @@ export default function ForgePage() {
           top: calc(100% + 0.4rem);
           max-height: min(420px, 62vh);
           overflow: auto;
-          border: 1px solid rgba(139,92,246,0.45);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 60%);
           border-radius: 8px;
           background: rgba(12,12,16,0.98);
           box-shadow: 0 24px 70px rgba(0,0,0,0.55);
@@ -880,12 +882,12 @@ export default function ForgePage() {
         }
         .combo-option.active,
         .combo-option:hover {
-          background: rgba(139,92,246,0.14);
-          border-color: rgba(139,92,246,0.35);
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 65%);
         }
         .combo-option.selected {
-          background: rgba(34,211,238,0.12);
-          border-color: rgba(34,211,238,0.45);
+          background: color-mix(in srgb, var(--text-accent), transparent 78%);
+          border-color: var(--text-accent);
         }
         .combo-option img,
         .entry-title img,
