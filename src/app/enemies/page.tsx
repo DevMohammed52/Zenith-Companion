@@ -1187,7 +1187,7 @@ function EnemiesContent() {
           display: inline-flex;
           align-items: center;
           gap: 0.4rem;
-          min-height: 38px;
+          min-height: 44px;
           border: 1px solid rgba(56,189,248,0.26);
           border-radius: 7px;
           background: rgba(56,189,248,0.1);
@@ -1602,7 +1602,7 @@ function EnemiesContent() {
             grid-template-columns: minmax(0, 1fr) auto auto;
             align-items: center;
             gap: 0.55rem;
-            min-height: 42px;
+            min-height: 44px;
             color: #fff;
             cursor: pointer;
             font-size: 0.82rem;

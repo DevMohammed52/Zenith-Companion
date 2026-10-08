@@ -1778,7 +1778,7 @@ function BossesContent() {
                     justify-content: space-between;
                     gap: 0.75rem;
                     width: 100%;
-                    min-height: 42px;
+                    min-height: 44px;
                     padding: 0 0.85rem;
                     border: 1px solid var(--border-subtle);
                     border-radius: 8px;
@@ -1860,7 +1860,7 @@ function BossesContent() {
                     grid-template-columns: 1fr 1fr;
                     gap: 0.25rem;
                     padding: 0.25rem;
-                    min-height: 42px;
+                    min-height: 44px;
                     border: 1px solid var(--border-subtle);
                     border-radius: 8px;
                     background: rgba(255,255,255,0.02);
@@ -1888,7 +1888,7 @@ function BossesContent() {
                 }
                 .routine-toggle {
                     width: 100%;
-                    min-height: 42px;
+                    min-height: 44px;
                     padding: 0 0.75rem;
                     border: 1px solid var(--border-subtle);
                     background: rgba(255,255,255,0.02);
@@ -2250,7 +2250,7 @@ function BossesContent() {
                     bottom: calc(100% + 0.45rem);
                 }
                 :global(.world-boss-effect-option) {
-                    min-height: 42px;
+                    min-height: 44px;
                     display: grid;
                     grid-template-columns: auto minmax(0, 1fr) minmax(5rem, auto) auto;
                     align-items: center;

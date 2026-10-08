@@ -531,13 +531,15 @@ function CombatContent() {
                 </article>
             </section>
 
-            <section className="combat-dev-notice" role="status" aria-label="Combat feature status">
-                <span className="combat-dev-pill mono">Feature in Development</span>
-                <div>
-                    <strong>Combat planning is still being calibrated.</strong>
+            <details className="combat-dev-notice" role="status" aria-label="Combat calibration notice">
+                <summary>
+                    <span className="combat-dev-pill mono">Feature in Development</span>
+                    <strong>Combat planning calibration notes</strong>
+                </summary>
+                <div className="combat-dev-body">
                     <p>Current values use loot EV from enemy drops and manual kills/hour. Full hit chance, damage, food, and time-to-kill modeling are not final yet.</p>
                 </div>
-            </section>
+            </details>
 
             <div className="combat-view-tabs" role="tablist" aria-label="Combat views">
                 <button
@@ -1136,20 +1138,28 @@ function CombatContent() {
             <style jsx>{`
                 .clickable-row:hover .loot-item-name { color: var(--text-accent) !important; }
                 .combat-dev-notice {
-                    align-items: center;
                     background: linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(255,255,255,0.015));
                     border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
                     border-radius: 8px;
-                    display: flex;
-                    gap: 1rem;
+                    display: block;
                     margin-bottom: 1rem;
-                    padding: 0.9rem 1rem;
+                    padding: 0.75rem 1rem;
+                }
+                .combat-dev-notice summary {
+                    align-items: center;
+                    cursor: pointer;
+                    display: flex;
+                    gap: 0.75rem;
+                    user-select: none;
+                }
+                .combat-dev-body {
+                    margin-top: 0.5rem;
+                    padding-left: 0.25rem;
                 }
                 .combat-dev-notice strong {
                     color: #fff;
                     display: block;
                     font-size: 0.92rem;
-                    margin-bottom: 0.2rem;
                 }
                 .combat-dev-notice p {
                     color: var(--text-muted);

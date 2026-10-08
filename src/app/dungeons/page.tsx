@@ -1627,7 +1627,7 @@ function DungeonsContent() {
           grid-template-columns: 1.05rem minmax(0, 1fr);
           gap: 0.65rem;
           align-items: center;
-          min-height: 42px;
+          min-height: 44px;
           padding: 0 0.85rem;
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
@@ -1650,8 +1650,8 @@ function DungeonsContent() {
           display: block;
           width: 100%;
           min-width: 0;
-          height: 40px;
-          min-height: 40px;
+          height: 44px;
+          min-height: 44px;
           padding: 0;
           border: 0;
           background: transparent;
@@ -1665,7 +1665,7 @@ function DungeonsContent() {
         .dungeon-segmented {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          min-height: 38px;
+          min-height: 44px;
           padding: 0.25rem;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
