@@ -477,7 +477,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><Package size={14} /> VENDOR EXCLUSIVE</div>
                   <div className="vendor-message">
                     This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" rel="noopener noreferrer" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
-                    <p className="vendor-warning">You cannot obtain this from the market and cannot sell it on the market as well and it is not tradable as well.</p>
+                    <p className="vendor-warning">Untradable. Cannot be listed or purchased on the player market.</p>
                   </div>
                 </div>
               )}
@@ -631,7 +631,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       {modalLiquidity.tone !== 'active' && (
                         <div className="market-liquidity-note">
                           <Info size={15} />
-                          <span>{modalLiquidity.note} For rare gear, mythic consumables, expensive crafts, or bulk alchemy output, treat the price as a market clue and check official listings before assuming it will sell quickly.</span>
+                          <span>{modalLiquidity.note} Treat price as an estimate — check live listings before high-value trades.</span>
                         </div>
                       )}
                     </>
@@ -1638,7 +1638,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             grid-template-columns: 1fr;
           }
           .source-map-btn {
-            min-height: 42px;
+            min-height: 44px;
             width: 100%;
           }
           .source-meta,

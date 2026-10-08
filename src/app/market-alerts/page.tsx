@@ -1391,7 +1391,7 @@ export default function MarketAlertsPage() {
           font: inherit;
           font-size: 0.9rem;
           font-weight: 800;
-          min-height: 42px;
+          min-height: 44px;
           min-width: 0;
           padding: 0.65rem 0.75rem;
           width: 100%;
@@ -1531,7 +1531,7 @@ export default function MarketAlertsPage() {
           font-weight: 900;
           gap: 0.6rem;
           justify-content: space-between;
-          min-height: 42px;
+          min-height: 44px;
           padding: 0.6rem 0.7rem;
           text-align: left;
           width: 100%;
@@ -1606,7 +1606,7 @@ export default function MarketAlertsPage() {
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
           display: flex;
-          min-height: 42px;
+          min-height: 44px;
           overflow: hidden;
         }
         .comparator-control button {
@@ -1796,7 +1796,7 @@ export default function MarketAlertsPage() {
         }
         .watchlist-filter-row button {
           flex: 0 0 auto;
-          min-height: 40px;
+          min-height: 44px;
           min-width: max-content;
           padding: 0 0.75rem;
         }
@@ -1825,7 +1825,7 @@ export default function MarketAlertsPage() {
           color: var(--text-main);
           font: inherit;
           font-weight: 750;
-          min-height: 42px;
+          min-height: 44px;
           min-width: 0;
           outline: 0;
           width: 100%;
@@ -1885,7 +1885,7 @@ export default function MarketAlertsPage() {
           color: var(--text-main);
           font: inherit;
           font-weight: 760;
-          min-height: 42px;
+          min-height: 44px;
           min-width: 0;
           outline: 0;
           width: 100%;
@@ -1945,7 +1945,7 @@ export default function MarketAlertsPage() {
         }
         .mini-toggle {
           font-size: 0.72rem;
-          min-height: 40px;
+          min-height: 44px;
           min-width: 44px;
           padding: 0 0.55rem;
         }

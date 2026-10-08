@@ -1330,7 +1330,7 @@ function ItemsArchiveContent() {
           font-weight: 800;
           gap: 0.55rem;
           justify-content: space-between;
-          min-height: 38px;
+          min-height: 44px;
           min-width: 0;
           padding: 0.45rem 0.62rem;
           text-align: left;
@@ -1400,7 +1400,7 @@ function ItemsArchiveContent() {
           font-weight: 800;
           gap: 0.55rem;
           justify-content: space-between;
-          min-height: 36px;
+          min-height: 44px;
           padding: 0.45rem 0.55rem;
           text-align: left;
           transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
@@ -1452,7 +1452,7 @@ function ItemsArchiveContent() {
           align-self: end;
           display: flex;
           justify-self: end;
-          min-height: 38px;
+          min-height: 44px;
           overflow: hidden;
           width: max-content;
         }
@@ -2016,7 +2016,7 @@ function ItemsArchiveContent() {
             font-weight: 900;
             gap: 0.55rem;
             grid-template-columns: minmax(0, 1fr) auto auto;
-            min-height: 42px;
+            min-height: 44px;
             padding: 0.55rem 0.65rem;
           }
           .advanced-filter-panel summary::-webkit-details-marker {
