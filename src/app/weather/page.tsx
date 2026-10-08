@@ -1251,7 +1251,7 @@ export default function WeatherPage() {
           grid-template-columns: 30px minmax(0, 1fr) auto;
           gap: 0.5rem;
           align-items: center;
-          min-height: 42px;
+          min-height: 44px;
           border: 1px solid rgba(255,255,255,0.055);
           border-radius: 8px;
           background: rgba(255,255,255,0.025);
@@ -1300,7 +1300,7 @@ export default function WeatherPage() {
           align-items: center;
           justify-content: center;
           gap: 0.4rem;
-          min-height: 38px;
+          min-height: 44px;
           border-radius: 8px;
           color: #fff;
           background: color-mix(in srgb, var(--accent), transparent 86%);

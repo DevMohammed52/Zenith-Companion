@@ -1174,7 +1174,7 @@ function MapPageContent() {
           align-items: center;
           justify-content: center;
           gap: 0.36rem;
-          min-height: 2.35rem;
+          min-height: 44px;
           border: 1px solid rgba(255,255,255,0.09);
           border-radius: 999px;
           background: rgba(255,255,255,0.045);
@@ -1600,7 +1600,7 @@ function MapPageContent() {
           grid-template-columns: 30px minmax(0, 1fr);
           gap: 0.5rem;
           align-items: center;
-          min-height: 42px;
+          min-height: 44px;
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 8px;
           background: rgba(0,0,0,0.18);

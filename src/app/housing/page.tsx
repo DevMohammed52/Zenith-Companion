@@ -3254,7 +3254,7 @@ export default function HousingPage() {
         .repair-gold-calibration input {
           width: 100%;
           min-width: 0;
-          min-height: 38px;
+          min-height: 44px;
           border: 1px solid var(--border-subtle);
           border-radius: 7px;
           background: rgba(0,0,0,0.32);
@@ -3456,7 +3456,7 @@ export default function HousingPage() {
           gap: 0.35rem;
         }
         .guest-tier-row button {
-          min-height: 36px;
+          min-height: 44px;
           border: 1px solid var(--border-subtle);
           background: rgba(255,255,255,0.035);
           color: var(--text-muted);
@@ -3621,7 +3621,7 @@ export default function HousingPage() {
           min-width: min(100%, 260px);
         }
         .cost-share-row button {
-          min-height: 40px;
+          min-height: 44px;
           border: 1px solid var(--border-subtle);
           background: rgba(0,0,0,0.28);
           color: var(--text-muted);
@@ -4242,7 +4242,7 @@ export default function HousingPage() {
           margin-top: 0.1rem;
         }
         .housing-page .housing-quick-actions button {
-          min-height: 2.45rem;
+          min-height: 44px;
           display: inline-flex;
           align-items: center;
           justify-content: center;

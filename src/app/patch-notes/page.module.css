@@ -226,7 +226,7 @@
   align-items: center;
   gap: 0.55rem;
   width: 100%;
-  min-height: 2.45rem;
+  min-height: 2.75rem;
   padding: 0.58rem 0.65rem;
   border: 1px solid transparent;
   border-radius: 7px;
@@ -358,7 +358,7 @@
 }
 
 .latestPanel a {
-  min-height: 2.6rem;
+  min-height: 2.75rem;
   padding: 0 0.8rem;
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 72%);
   border-radius: 7px;
@@ -389,7 +389,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 0.4rem;
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   padding: 0 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
@@ -563,7 +563,7 @@
 
 .expandButton {
   align-self: flex-start;
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   padding: 0 0.9rem;
 }
 

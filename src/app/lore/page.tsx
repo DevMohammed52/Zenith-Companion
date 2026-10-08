@@ -941,7 +941,7 @@ function LoreContent() {
           border: 0;
           color: #fff;
           font: inherit;
-          min-height: 42px;
+          min-height: 44px;
           outline: 0;
           width: 100%;
         }
@@ -994,7 +994,7 @@ function LoreContent() {
           font-size: 0.82rem;
           font-weight: 800;
           gap: 0.45rem;
-          min-height: 38px;
+          min-height: 44px;
           min-width: 0;
           overflow: hidden;
           padding: 0.55rem 0.8rem;
@@ -1080,7 +1080,7 @@ function LoreContent() {
 
         .lore-toolbar-status button {
           justify-content: center;
-          min-height: 2.55rem;
+          min-height: 2.75rem;
         }
 
         .lore-toolbar-status button:disabled {
@@ -2521,7 +2521,7 @@ function LoreEntryModal({
           font: inherit;
           font-size: 0.82rem;
           font-weight: 800;
-          min-height: 38px;
+          min-height: 44px;
           padding: 0.55rem;
           text-align: left;
           transition: border-color 0.18s ease, background 0.18s ease, transform 0.16s ease;
