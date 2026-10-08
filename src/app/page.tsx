@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Settings, Upload, UserRound } from "lucide-react";
+import { ArrowRight, Settings, UserRound } from "lucide-react";
 import ZenithIcon, { type ZenithIconName } from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { useCrafting } from "@/context/CraftingContext";
@@ -252,7 +252,6 @@ export default function DashboardPage() {
           <div className="dashboard-setup-actions">
             <Link href="/profiles"><UserRound size={16} /> Create or import profile</Link>
             <Link href="/settings"><Settings size={16} /> Check route settings</Link>
-            <Link href="/profiles"><Upload size={16} /> Export local backup</Link>
           </div>
         </section>
       )}

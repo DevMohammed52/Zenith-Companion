@@ -11170,7 +11170,7 @@ kbd {
 .command-mini-card span {
   color: var(--text-muted);
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -11536,8 +11536,11 @@ kbd {
   }
 
   .command-status-card span {
-    font-size: 0.57rem;
+    font-size: 0.72rem;
     letter-spacing: 0.02em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    padding-right: 0.6rem;
   }
 
   .command-status-card::before {
@@ -11550,7 +11553,7 @@ kbd {
   }
 
   .command-status-card em {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
   }
 
   .command-priority-card {
@@ -11561,6 +11564,11 @@ kbd {
 
   .command-module-card header svg {
     margin-top: 0.08rem;
+  }
+
+  .command-module-links a,
+  .dashboard-setup-actions a {
+    min-height: 44px;
   }
 
   .command-secondary-strip {
@@ -11577,6 +11585,23 @@ kbd {
   .command-mini-card {
     flex: 0 0 min(13.5rem, 72vw);
     scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .command-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .command-status-card:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+}
+
+@media (pointer: coarse) {
+  .command-module-links a,
+  .dashboard-setup-actions a {
+    min-height: 44px;
   }
 }
 
