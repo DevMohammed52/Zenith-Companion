@@ -244,7 +244,6 @@ export default function DesktopDock() {
                 ["--dock-shift-y" as string]: `${motion.shiftY}px`,
               }}
               onFocus={() => previewDockGroup(group.label)}
-              onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => previewDockGroup(group.label)}
               onClick={() => pinDockGroup(group.label)}
             >
