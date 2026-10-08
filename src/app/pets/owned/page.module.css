@@ -75,7 +75,7 @@
 .secondaryAction,
 .primaryAction,
 .cardActions button {
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   padding: 0 0.85rem;
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 8px;
@@ -320,7 +320,7 @@
 .searchBox input {
   width: 100%;
   min-width: 0;
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   padding: 0 0.8rem 0 2.4rem;
   border: 0;
   outline: 0;
@@ -371,7 +371,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  min-height: 2.55rem;
+  min-height: 2.75rem;
   padding: 0 0.75rem;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
@@ -743,7 +743,7 @@
 
 .emptyAction {
   margin: 0.9rem 0 0;
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   padding-inline: 0.8rem;
 }
 
@@ -768,7 +768,7 @@
 }
 
 .toast button {
-  min-height: 2rem;
+  min-height: 2.75rem;
   padding: 0 0.65rem;
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 45%);
   border-radius: 7px;

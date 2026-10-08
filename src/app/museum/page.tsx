@@ -135,7 +135,7 @@ function museumEmptyState(status?: string) {
       return {
         icon: LockKeyhole,
         title: "Museum is private",
-        body: "The museum endpoint was not visible for this profile. You can still use the rest of the profile manually.",
+        body: "Museum profile data is private or not yet imported. You can still use the rest of the profile manually.",
       };
     case "unavailable":
       return {
@@ -659,7 +659,7 @@ export default function MuseumPage() {
           display: inline-flex;
           font-size: 0.78rem;
           font-weight: 800;
-          min-height: 2rem;
+          min-height: 44px;
           padding: 0 0.65rem;
           text-decoration: none;
           transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
@@ -705,7 +705,9 @@ export default function MuseumPage() {
           cursor: pointer;
           font-weight: 800;
           list-style-position: inside;
-          min-height: 2rem;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
         }
 
         .museum-import-details[open] {
@@ -798,7 +800,7 @@ export default function MuseumPage() {
           color: #fff;
           display: inline-flex;
           font-weight: 800;
-          min-height: 42px;
+          min-height: 44px;
           padding: 0 1rem;
           text-decoration: none;
           transition: border-color 180ms ease, background 180ms ease, transform 160ms ease;
@@ -993,7 +995,7 @@ export default function MuseumPage() {
           font-weight: 800;
           gap: 0.35rem;
           justify-content: space-between;
-          min-height: 42px;
+          min-height: 44px;
           padding: 0 0.8rem;
           transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
         }
@@ -1078,7 +1080,7 @@ export default function MuseumPage() {
           font-weight: 800;
           gap: 0.4rem;
           justify-content: center;
-          min-height: 2.65rem;
+          min-height: 44px;
           padding: 0 0.8rem;
           transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 160ms ease;
         }
@@ -1126,6 +1128,7 @@ export default function MuseumPage() {
         .museum-filter-chips button {
           color: #fff;
           cursor: pointer;
+          min-height: 44px;
         }
 
         .museum-filter-chips button:hover {
