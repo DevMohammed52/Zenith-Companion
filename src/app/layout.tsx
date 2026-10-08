@@ -549,7 +549,7 @@ export default function RootLayout({
             }
             .rotating-tip {
               align-items: center;
-              bottom: calc(4.5rem + env(safe-area-inset-bottom));
+              bottom: calc(5.75rem + env(safe-area-inset-bottom));
               gap: 0.55rem;
               padding: 0.6rem;
               width: calc(100vw - 1rem);

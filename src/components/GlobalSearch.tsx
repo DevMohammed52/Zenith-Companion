@@ -230,6 +230,8 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       }
 
       if (event.altKey && !typing) {
+        const triggerElement = triggerRef.current;
+        if (!triggerElement || triggerElement.getClientRects().length === 0) return;
         const href = navShortcuts[event.key.toLowerCase()];
         if (href) {
           event.preventDefault();
