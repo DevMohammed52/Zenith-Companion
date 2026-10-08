@@ -5078,7 +5078,7 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
   background: rgba(255,255,255,0.035);
@@ -5093,7 +5093,8 @@ kbd {
 }
 
 .profile-inline-actions button {
-  width: 2.35rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
 }
 
 .profile-action:hover,
@@ -16709,7 +16710,7 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
   background: rgba(255,255,255,0.035);
@@ -16725,7 +16726,8 @@ kbd {
 }
 
 .profile-inline-actions button {
-  width: 2.35rem;
+  width: 2.75rem;
+  min-width: 2.75rem;
 }
 
 .profile-action:hover,
