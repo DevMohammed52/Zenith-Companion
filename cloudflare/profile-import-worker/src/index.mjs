@@ -68,7 +68,7 @@ export async function handleRequest(request, env, ctx = {}) {
     }
 
     if (url.pathname === "/internal/process-next" && request.method === "POST") {
-      if (!hasBearerSecret(request, env.SCRAPER_COORDINATOR_SECRET)) {
+      if (!(await hasBearerSecret(request, env.SCRAPER_COORDINATOR_SECRET))) {
         return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
       }
       const result = await processNextImportJob(env);
@@ -121,7 +121,7 @@ function adminHealthCacheKey(url) {
 }
 
 async function handleAdminImportHealth(request, env, cors, ctx = {}) {
-  if (!hasBearerSecret(request, env.ADMIN_DASHBOARD_SECRET)) {
+  if (!(await hasBearerSecret(request, env.ADMIN_DASHBOARD_SECRET))) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
   assertBindings(env);
@@ -304,7 +304,7 @@ async function handleAdminImportHealth(request, env, cors, ctx = {}) {
 }
 
 async function handleUsagePing(request, env, cors) {
-  if (!hasBearerSecret(request, env.USAGE_PING_SECRET)) {
+  if (!(await hasBearerSecret(request, env.USAGE_PING_SECRET))) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
 
@@ -358,7 +358,7 @@ async function handleUsagePing(request, env, cors) {
 }
 
 async function handleUsageVitals(request, env, cors) {
-  if (!hasBearerSecret(request, env.USAGE_PING_SECRET)) {
+  if (!(await hasBearerSecret(request, env.USAGE_PING_SECRET))) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
 
@@ -407,7 +407,7 @@ async function handleUsageVitals(request, env, cors) {
 
 async function handleErrorReport(request, env, cors) {
   const secret = errorReportSecret(env);
-  if (!hasBearerSecret(request, secret)) {
+  if (!(await hasBearerSecret(request, secret))) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
 
@@ -1094,7 +1094,7 @@ async function queuePressure(env, now) {
 }
 
 async function handleScraperStatus(request, env, cors) {
-  if (!hasBearerSecret(request, env.SCRAPER_COORDINATOR_SECRET)) {
+  if (!(await hasBearerSecret(request, env.SCRAPER_COORDINATOR_SECRET))) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
 
@@ -1417,9 +1417,8 @@ function importProgressLabel(status, budget = null) {
   return "Waiting to start import";
 }
 
-async function importBudgetMode(env) {
+export async function importBudgetMode(env) {
   const stateList = await readCoordinatorStates(env);
-  if (!stateList.length) return { mode: "unknown", requestsPerMinute: 6, pollAfterMs: 10000 };
   if (stateList.some((state) => state.active && !isExpiredIso(state.expiresAt))) {
     return { mode: "github-active", requestsPerMinute: 6, pollAfterMs: 10000 };
   }
@@ -1845,6 +1844,7 @@ async function setCooldown(env, scope, key, durationMs, reason) {
 }
 
 async function readCoordinatorStates(env) {
+  if (!env?.ZENITH_COORDINATOR?.get) return [];
   const states = [];
   for (const source of coordinatorSources(env)) {
     const raw = await env.ZENITH_COORDINATOR.get(coordinatorKey(source)).catch(() => null);
@@ -1855,7 +1855,7 @@ async function readCoordinatorStates(env) {
 }
 
 function coordinatorSources(env) {
-  const configured = String(env.IMPORT_COORDINATOR_SOURCES || "")
+  const configured = String(env?.IMPORT_COORDINATOR_SOURCES || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
@@ -1978,19 +1978,37 @@ function isAllowedOrigin(request, env) {
   return allowed.includes(origin);
 }
 
-function hasBearerSecret(request, secret) {
-  const auth = request.headers.get("authorization") || "";
-  const expected = typeof secret === "string" ? secret.trim() : "";
-  return Boolean(expected) && auth === `Bearer ${expected}`;
+export async function timingSafeEqualString(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") {
+    return false;
+  }
+  const encoder = new TextEncoder();
+  const subtle = globalThis.crypto?.subtle || crypto?.subtle;
+  const [digestA, digestB] = await Promise.all([
+    subtle.digest("SHA-256", encoder.encode(a)),
+    subtle.digest("SHA-256", encoder.encode(b)),
+  ]);
+  const bufA = new Uint8Array(digestA);
+  const bufB = new Uint8Array(digestB);
+  let mismatch = bufA.length ^ bufB.length;
+  for (let i = 0; i < bufA.length; i++) {
+    mismatch |= bufA[i] ^ bufB[i];
+  }
+  return mismatch === 0;
 }
 
-async function verifyTurnstile(env, token, request) {
+export async function hasBearerSecret(request, secret) {
+  const auth = (request?.headers?.get ? request.headers.get("authorization") : request?.headers?.authorization) || "";
+  const expected = typeof secret === "string" ? secret.trim() : "";
+  if (!expected) return false;
+  return await timingSafeEqualString(auth, `Bearer ${expected}`);
+}
+
+export async function verifyTurnstile(env, token, request = null) {
   if (!token || typeof token !== "string") return { ok: false };
   const body = new FormData();
   body.set("secret", env.TURNSTILE_SECRET_KEY);
   body.set("response", token);
-  const ip = request.headers.get("cf-connecting-ip");
-  if (ip) body.set("remoteip", ip);
 
   const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
@@ -2090,8 +2108,9 @@ function cleanIso(value) {
   return text && Number.isFinite(new Date(text).getTime()) ? text : "";
 }
 
-function isExpiredIso(value) {
-  return !value || new Date(value).getTime() <= Date.now();
+export function isExpiredIso(value) {
+  const time = new Date(value).getTime();
+  return !value || !Number.isFinite(time) || time <= Date.now();
 }
 
 function safeParseJson(value) {

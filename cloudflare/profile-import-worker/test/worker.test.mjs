@@ -1,5 +1,13 @@
 import assert from "node:assert/strict";
-import { handleRequest, processNextImportJob } from "../src/index.mjs";
+import {
+  handleRequest,
+  processNextImportJob,
+  timingSafeEqualString,
+  hasBearerSecret,
+  verifyTurnstile,
+  importBudgetMode,
+  isExpiredIso,
+} from "../src/index.mjs";
 
 class MemoryKV {
   constructor() {
@@ -1056,7 +1064,7 @@ async function json(response) {
   assert.equal(response.status, 202);
   assert.match(body.jobId, /^imp_/);
   assert.equal(body.status, "queued");
-  assert.equal(body.budgetMode, "unknown");
+  assert.equal(body.budgetMode, "github-idle");
 
   const status = await handleRequest(new Request(`https://worker.test/profile-import/status/${body.jobId}`, {
     headers: { origin: "https://zenith.example" },
@@ -1087,8 +1095,10 @@ async function json(response) {
 {
   const e = env({ TURNSTILE_SECRET_KEY: "turnstile-secret" });
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
+  let siteverifyCall = null;
+  globalThis.fetch = async (url, init) => {
     if (String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")) {
+      siteverifyCall = { url, init };
       return Response.json({ success: true });
     }
     return new Response("{}", { status: 404 });
@@ -1110,6 +1120,13 @@ async function json(response) {
     assert.equal(response.status, 202);
     assert.match(body.jobId, /^imp_/);
     assert.equal(body.status, "queued");
+    assert.ok(siteverifyCall, "Turnstile siteverify should have been called");
+    assert.equal(siteverifyCall.init.method, "POST");
+    const formData = siteverifyCall.init.body;
+    assert.equal(formData.get("secret"), "turnstile-secret");
+    assert.equal(formData.get("response"), "valid-turnstile-token");
+    assert.equal(formData.has("remoteip"), false);
+    assert.equal(formData.get("remoteip"), null);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -1170,7 +1187,7 @@ async function json(response) {
   }), e);
   const body = await json(response);
   assert.equal(response.status, 202);
-  assert.equal(body.budgetMode, "unknown");
+  assert.equal(body.budgetMode, "github-idle");
 }
 
 {
@@ -2006,6 +2023,240 @@ async function json(response) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+}
+
+// ============================================================================
+// Unit Tests: Constant-Time Secret Token Verification (timingSafeEqualString & hasBearerSecret)
+// ============================================================================
+{
+  // timingSafeEqualString
+  assert.equal(await timingSafeEqualString("secret", "secret"), true);
+  assert.equal(await timingSafeEqualString("very-long-secret-key-1234567890", "very-long-secret-key-1234567890"), true);
+  assert.equal(await timingSafeEqualString("", ""), true);
+  assert.equal(await timingSafeEqualString("secret1", "secret2"), false);
+  assert.equal(await timingSafeEqualString("short", "longer-string"), false);
+  assert.equal(await timingSafeEqualString("", "not-empty"), false);
+  assert.equal(await timingSafeEqualString("not-empty", ""), false);
+  assert.equal(await timingSafeEqualString(null, "secret"), false);
+  assert.equal(await timingSafeEqualString("secret", null), false);
+  assert.equal(await timingSafeEqualString(undefined, undefined), false);
+  assert.equal(await timingSafeEqualString(12345, "12345"), false);
+
+  assert.equal(await timingSafeEqualString("token-with-🔑", "token-with-🔑"), true);
+  assert.equal(await timingSafeEqualString("token-with-🔑", "token-with-🔒"), false);
+  assert.equal(await timingSafeEqualString("a".repeat(1024), "a".repeat(1024)), true);
+  assert.equal(await timingSafeEqualString("a".repeat(1024), "a".repeat(1023) + "b"), false);
+
+  // hasBearerSecret
+  const reqWithAuth = (token) => new Request("https://worker.test/protected", {
+    headers: token !== null ? { authorization: token } : {},
+  });
+
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer correct-secret"), "correct-secret"), true);
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer correct-secret"), "  correct-secret  "), true);
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer wrong-secret"), "correct-secret"), false);
+  assert.equal(await timingSafeEqualString("Bearer correct-secret", "Bearer correct-secret-tampered"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth("Basic correct-secret"), "correct-secret"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth("correct-secret"), "correct-secret"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth(""), "correct-secret"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth(null), "correct-secret"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer "), "correct-secret"), false);
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer correct-secret"), ""), false);
+  assert.equal(await hasBearerSecret(reqWithAuth("Bearer correct-secret"), null), false);
+  assert.equal(await hasBearerSecret(null, "correct-secret"), false);
+
+  // Plain object headers support
+  assert.equal(await hasBearerSecret({ headers: { authorization: "Bearer plain-secret" } }, "plain-secret"), true);
+  assert.equal(await hasBearerSecret({ headers: { authorization: "Bearer wrong-secret" } }, "plain-secret"), false);
+}
+
+// ============================================================================
+// Unit Tests: isExpiredIso date parsing robustness
+// ============================================================================
+{
+  assert.equal(isExpiredIso(null), true);
+  assert.equal(isExpiredIso(undefined), true);
+  assert.equal(isExpiredIso(""), true);
+  assert.equal(isExpiredIso("invalid-date-string"), true);
+  assert.equal(isExpiredIso("not-a-date"), true);
+  assert.equal(isExpiredIso(new Date(Date.now() - 60000).toISOString()), true);
+  assert.equal(isExpiredIso(new Date(Date.now() + 60000).toISOString()), false);
+}
+
+// ============================================================================
+// Unit Tests: Turnstile siteverify payload structure & remoteip exclusion
+// ============================================================================
+{
+  const originalFetch = globalThis.fetch;
+  let siteverifyCalls = [];
+  globalThis.fetch = async (url, init) => {
+    if (String(url).includes("challenges.cloudflare.com/turnstile/v0/siteverify")) {
+      siteverifyCalls.push({ url: String(url), init });
+      return Response.json({ success: true });
+    }
+    return new Response("{}", { status: 404 });
+  };
+
+  try {
+    const dummyEnv = { TURNSTILE_SECRET_KEY: "my-turnstile-secret" };
+    const dummyReq = new Request("https://worker.test/verify", {
+      headers: { "cf-connecting-ip": "198.51.100.42" },
+    });
+
+    const res = await verifyTurnstile(dummyEnv, "client-cf-turnstile-token", dummyReq);
+    assert.equal(res.ok, true);
+    assert.equal(siteverifyCalls.length, 1);
+    const call = siteverifyCalls[0];
+    assert.equal(call.init.method, "POST");
+    const fd = call.init.body;
+    assert.equal(fd.get("secret"), "my-turnstile-secret");
+    assert.equal(fd.get("response"), "client-cf-turnstile-token");
+    // Explicitly verify remoteip is omitted to prevent Vercel proxy datacenter IP mismatches
+    assert.equal(fd.has("remoteip"), false);
+    assert.equal(fd.get("remoteip"), null);
+
+    // Rejection on invalid token without making network request
+    const invalidTokenRes = await verifyTurnstile(dummyEnv, "", dummyReq);
+    assert.equal(invalidTokenRes.ok, false);
+    assert.equal(siteverifyCalls.length, 1); // No new network call
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// ============================================================================
+// Unit Tests: Coordinator "Unknown" Mode Slowdown Elimination (importBudgetMode)
+// ============================================================================
+{
+  const e = env();
+
+  // 1. When coordinator KV is completely empty, must safely default to "github-idle"
+  const emptyBudget = await importBudgetMode(e);
+  assert.equal(emptyBudget.mode, "github-idle");
+  assert.equal(emptyBudget.requestsPerMinute, 35);
+  assert.equal(emptyBudget.pollAfterMs, 2000);
+
+  // 2. When coordinator KV has an active unexpired scraper run, throttle to "github-active"
+  await e.ZENITH_COORDINATOR.put("idlemmo-api-job:github-actions:update_data", JSON.stringify({
+    source: "github-actions",
+    active: true,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+  }));
+  const activeBudget = await importBudgetMode(e);
+  assert.equal(activeBudget.mode, "github-active");
+  assert.equal(activeBudget.requestsPerMinute, 6);
+  assert.equal(activeBudget.pollAfterMs, 10000);
+
+  // 3. When coordinator KV has an active but EXPIRED scraper run, must default to "github-idle"
+  await e.ZENITH_COORDINATOR.put("idlemmo-api-job:github-actions:update_data", JSON.stringify({
+    source: "github-actions",
+    active: true,
+    expiresAt: new Date(Date.now() - 60 * 1000).toISOString(),
+  }));
+  const expiredBudget = await importBudgetMode(e);
+  assert.equal(expiredBudget.mode, "github-idle");
+  assert.equal(expiredBudget.requestsPerMinute, 35);
+  assert.equal(expiredBudget.pollAfterMs, 2000);
+
+  // 4. When coordinator KV has an inactive scraper run, must default to "github-idle"
+  await e.ZENITH_COORDINATOR.put("idlemmo-api-job:github-actions:update_data", JSON.stringify({
+    source: "github-actions",
+    active: false,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+  }));
+  const inactiveBudget = await importBudgetMode(e);
+  assert.equal(inactiveBudget.mode, "github-idle");
+  assert.equal(inactiveBudget.requestsPerMinute, 35);
+  assert.equal(inactiveBudget.pollAfterMs, 2000);
+
+  // 5. When coordinator KV has an active run but with corrupted/invalid expiresAt date, must default to "github-idle"
+  await e.ZENITH_COORDINATOR.put("idlemmo-api-job:github-actions:update_data", JSON.stringify({
+    source: "github-actions",
+    active: true,
+    expiresAt: "corrupted-non-iso-date",
+  }));
+  const corruptedDateBudget = await importBudgetMode(e);
+  assert.equal(corruptedDateBudget.mode, "github-idle");
+  assert.equal(corruptedDateBudget.requestsPerMinute, 35);
+  assert.equal(corruptedDateBudget.pollAfterMs, 2000);
+
+  // 6. When coordinator binding is missing (empty env object), must safely default to "github-idle" without throwing
+  const missingKvBudget = await importBudgetMode({});
+  assert.equal(missingKvBudget.mode, "github-idle");
+  assert.equal(missingKvBudget.requestsPerMinute, 35);
+  assert.equal(missingKvBudget.pollAfterMs, 2000);
+}
+
+// ============================================================================
+// Unit Tests: Constant-Time Bearer Auth Enforcement Across All Endpoints
+// ============================================================================
+{
+  const e = env();
+
+  // /internal/process-next
+  const procUnauthorized = await handleRequest(new Request("https://worker.test/internal/process-next", {
+    method: "POST",
+    headers: { authorization: "Bearer wrong-secret" },
+  }), e);
+  assert.equal(procUnauthorized.status, 401);
+
+  // /admin/import-health
+  const adminUnauthorized = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    method: "GET",
+    headers: { authorization: "Bearer wrong-admin-secret" },
+  }), e);
+  assert.equal(adminUnauthorized.status, 401);
+
+  // /usage/ping
+  const pingUnauthorized = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      origin: "https://zenith.example",
+      authorization: "Bearer wrong-usage-secret",
+    },
+    body: JSON.stringify({ visitorId: "v1", sessionId: "s1", path: "/test" }),
+  }), e);
+  assert.equal(pingUnauthorized.status, 401);
+
+  // /usage/vitals
+  const vitalsUnauthorized = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      origin: "https://zenith.example",
+      authorization: "Bearer wrong-usage-secret",
+    },
+    body: JSON.stringify({ name: "FCP", value: 100, path: "/test" }),
+  }), e);
+  assert.equal(vitalsUnauthorized.status, 401);
+
+  // /error/report
+  const errUnauthorized = await handleRequest(new Request("https://worker.test/error/report", {
+    method: "POST",
+    headers: {
+      origin: "https://zenith.example",
+      authorization: "Bearer wrong-error-secret",
+    },
+    body: JSON.stringify({ path: "/test" }),
+  }), e);
+  assert.equal(errUnauthorized.status, 401);
+
+  // /internal/scraper-status
+  const scraperUnauthorized = await handleRequest(new Request("https://worker.test/internal/scraper-status", {
+    method: "POST",
+    headers: { authorization: "Bearer wrong-coordinator-secret" },
+    body: JSON.stringify({ status: "started", source: "test", runId: "r1" }),
+  }), e);
+  assert.equal(scraperUnauthorized.status, 401);
+
+  const scraperAuthorized = await handleRequest(new Request("https://worker.test/internal/scraper-status", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer coordinator-secret",
+    },
+    body: JSON.stringify({ status: "started", source: "test", runId: "r1" }),
+  }), e);
+  assert.equal(scraperAuthorized.status, 200);
 }
 
 console.log("Profile import Worker scaffold tests passed.");
