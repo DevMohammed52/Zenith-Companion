@@ -13,6 +13,7 @@ type JsonRecord = Record<string, unknown>;
 export type ProfileImportProxyResult = {
   payload: unknown;
   status: number;
+  headers?: Headers;
 };
 
 export type ProfileImportBodyResult =
@@ -120,7 +121,7 @@ export async function fetchProfileImportJson(
       jsonError("bad_gateway", unreadableMessage)
     ));
 
-    return { payload, status: response.status };
+    return { payload, status: response.status, headers: response.headers };
   } catch {
     return {
       status: 502,

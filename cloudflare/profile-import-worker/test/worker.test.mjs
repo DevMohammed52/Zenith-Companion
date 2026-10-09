@@ -7,6 +7,9 @@ import {
   verifyTurnstile,
   importBudgetMode,
   isExpiredIso,
+  DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE,
+  TERMINAL_STATUS_CACHE_CONTROL,
+  NOT_FOUND_STATUS_CACHE_CONTROL,
 } from "../src/index.mjs";
 
 class MemoryKV {
@@ -635,6 +638,7 @@ function env(overrides = {}) {
     USAGE_VITALS_MAX_PER_MINUTE: "80",
     ERROR_REPORT_SECRET: "error-secret",
     ERROR_REPORT_MAX_PER_MINUTE: "120",
+    IMPORT_STATUS_MAX_PER_MINUTE: "120",
     IMPORT_SIGNING_SECRET: "signing-secret",
     IMPORT_ENCRYPTION_SECRET: "encryption-secret",
     IDLEMMO_API_KEY: "idlemmo-secret",
@@ -2257,6 +2261,206 @@ async function json(response) {
     body: JSON.stringify({ status: "started", source: "test", runId: "r1" }),
   }), e);
   assert.equal(scraperAuthorized.status, 200);
+}
+
+{
+  // Status endpoint cache headers test:
+  // In-progress: queued, running, waiting_for_budget -> "no-store"
+  // Terminal: complete (done), failed (error), expired (410) -> "public, max-age=15, s-maxage=30, stale-while-revalidate=60"
+  // Not found: 404 -> "public, max-age=5, s-maxage=10"
+  const e = env();
+  const now = Date.now();
+  const validExpiry = new Date(now + 60 * 60 * 1000).toISOString();
+  const pastExpiry = new Date(now - 10 * 1000).toISOString();
+
+  // 1. Queued job -> in-progress no-store
+  e.DB.jobs.set("imp_cache_test_queued_0000001", {
+    id: "imp_cache_test_queued_0000001",
+    status: "queued",
+    target_hash_fingerprint: "hash-q",
+    requester_fingerprint: "user-q",
+    request_count: 0,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now - 1000).toISOString(),
+    updated_at: new Date(now - 1000).toISOString(),
+    expires_at: validExpiry,
+  });
+  const resQueued = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_queued_0000001"), e);
+  assert.equal(resQueued.status, 200);
+  assert.equal((await json(resQueued)).status, "queued");
+  assert.equal(resQueued.headers.get("cache-control"), "no-store");
+
+  // 2. Running job -> in-progress no-store
+  e.DB.jobs.set("imp_cache_test_running_000001", {
+    id: "imp_cache_test_running_000001",
+    status: "running",
+    target_hash_fingerprint: "hash-r",
+    requester_fingerprint: "user-r",
+    request_count: 5,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now - 5000).toISOString(),
+    updated_at: new Date(now - 1000).toISOString(),
+    expires_at: validExpiry,
+  });
+  const resRunning = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_running_000001"), e);
+  assert.equal(resRunning.status, 200);
+  assert.equal((await json(resRunning)).status, "running");
+  assert.equal(resRunning.headers.get("cache-control"), "no-store");
+
+  // 3. Waiting for budget job -> in-progress no-store
+  e.DB.jobs.set("imp_cache_test_waiting_000001", {
+    id: "imp_cache_test_waiting_000001",
+    status: "waiting_for_budget",
+    target_hash_fingerprint: "hash-w",
+    requester_fingerprint: "user-w",
+    request_count: 2,
+    retry_count: 1,
+    budget_mode: "normal",
+    created_at: new Date(now - 5000).toISOString(),
+    updated_at: new Date(now - 1000).toISOString(),
+    expires_at: validExpiry,
+  });
+  const resWaiting = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_waiting_000001"), e);
+  assert.equal(resWaiting.status, 200);
+  assert.equal((await json(resWaiting)).status, "waiting_for_budget");
+  assert.equal(resWaiting.headers.get("cache-control"), "no-store");
+
+  // 4. Completed job (done) -> Terminal public cache-control
+  e.DB.jobs.set("imp_cache_test_complete_00001", {
+    id: "imp_cache_test_complete_00001",
+    status: "complete",
+    result_json: JSON.stringify({ characters: [{ name: "Hero" }] }),
+    target_hash_fingerprint: "hash-c",
+    requester_fingerprint: "user-c",
+    request_count: 10,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now - 10000).toISOString(),
+    updated_at: new Date(now - 1000).toISOString(),
+    expires_at: validExpiry,
+  });
+  const resDone = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_complete_00001"), e);
+  assert.equal(resDone.status, 200);
+  assert.equal((await json(resDone)).status, "done");
+  assert.equal(resDone.headers.get("cache-control"), TERMINAL_STATUS_CACHE_CONTROL);
+
+  // 5. Failed job (error) -> Terminal public cache-control
+  e.DB.jobs.set("imp_cache_test_failed_0000001", {
+    id: "imp_cache_test_failed_0000001",
+    status: "failed",
+    error_code: "upstream_error",
+    error_message: "Upstream service error.",
+    target_hash_fingerprint: "hash-f",
+    requester_fingerprint: "user-f",
+    request_count: 3,
+    retry_count: 2,
+    budget_mode: "normal",
+    created_at: new Date(now - 10000).toISOString(),
+    updated_at: new Date(now - 1000).toISOString(),
+    expires_at: validExpiry,
+  });
+  const resError = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_failed_0000001"), e);
+  assert.equal(resError.status, 200);
+  assert.equal((await json(resError)).status, "error");
+  assert.equal(resError.headers.get("cache-control"), TERMINAL_STATUS_CACHE_CONTROL);
+
+  // 6. Expired job -> Terminal public cache-control and 410 status
+  e.DB.jobs.set("imp_cache_test_expired_000001", {
+    id: "imp_cache_test_expired_000001",
+    status: "queued",
+    target_hash_fingerprint: "hash-e",
+    requester_fingerprint: "user-e",
+    request_count: 0,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now - 70 * 60 * 1000).toISOString(),
+    updated_at: new Date(now - 70 * 60 * 1000).toISOString(),
+    expires_at: pastExpiry,
+  });
+  const resExpired = await handleRequest(new Request("https://worker.test/profile-import/status/imp_cache_test_expired_000001"), e);
+  assert.equal(resExpired.status, 410);
+  assert.equal((await json(resExpired)).status, "expired");
+  assert.equal(resExpired.headers.get("cache-control"), TERMINAL_STATUS_CACHE_CONTROL);
+
+  // 7. Not found job (404 valid pattern)
+  const resNotFoundValidPattern = await handleRequest(new Request("https://worker.test/profile-import/status/imp_nonexistent_job_00000001"), e);
+  assert.equal(resNotFoundValidPattern.status, 404);
+  assert.equal(resNotFoundValidPattern.headers.get("cache-control"), NOT_FOUND_STATUS_CACHE_CONTROL);
+
+  // 8. Not found job (404 invalid pattern)
+  const resNotFoundInvalid = await handleRequest(new Request("https://worker.test/profile-import/status/invalid_id"), e);
+  assert.equal(resNotFoundInvalid.status, 404);
+  assert.equal(resNotFoundInvalid.headers.get("cache-control"), NOT_FOUND_STATUS_CACHE_CONTROL);
+}
+
+{
+  // Status endpoint rate limiting test
+  const e = env({ IMPORT_STATUS_MAX_PER_MINUTE: "2" });
+  const now = Date.now();
+  const validExpiry = new Date(now + 60 * 60 * 1000).toISOString();
+
+  e.DB.jobs.set("imp_ratelimit_status_00000001", {
+    id: "imp_ratelimit_status_00000001",
+    status: "queued",
+    target_hash_fingerprint: "hash-rl",
+    requester_fingerprint: "user-rl",
+    request_count: 0,
+    retry_count: 0,
+    budget_mode: "normal",
+    created_at: new Date(now).toISOString(),
+    updated_at: new Date(now).toISOString(),
+    expires_at: validExpiry,
+  });
+
+  const ipAHeaders = { "cf-connecting-ip": "203.0.113.88" };
+  const req1 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: ipAHeaders,
+  }), e);
+  assert.equal(req1.status, 200);
+
+  const req2 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: ipAHeaders,
+  }), e);
+  assert.equal(req2.status, 200);
+
+  // 3rd request from same IP exceeds limit (max 2) -> 429
+  const req3 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: ipAHeaders,
+  }), e);
+  assert.equal(req3.status, 429);
+  const body3 = await json(req3);
+  assert.equal(body3.error?.code, "rate_limited");
+  assert.equal(body3.error?.message, "Too many status requests. Please slow down.");
+  assert.equal(req3.headers.get("cache-control"), "no-store");
+  const retryAfter = Number(req3.headers.get("retry-after"));
+  assert.equal(Number.isInteger(retryAfter) && retryAfter >= 1 && retryAfter <= 60, true);
+
+  // Different IP is not blocked by IP A's rate limit
+  const reqOtherIp = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: { "cf-connecting-ip": "203.0.113.89" },
+  }), e);
+  assert.equal(reqOtherIp.status, 200);
+
+  // Rate limiting works with x-forwarded-for when cf-connecting-ip is absent
+  const xffHeaders = { "x-forwarded-for": "198.51.100.12" };
+  const xffReq1 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: xffHeaders,
+  }), e);
+  assert.equal(xffReq1.status, 200);
+
+  const xffReq2 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: xffHeaders,
+  }), e);
+  assert.equal(xffReq2.status, 200);
+
+  const xffReq3 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
+    headers: xffHeaders,
+  }), e);
+  assert.equal(xffReq3.status, 429);
+  const xffBody3 = await json(xffReq3);
+  assert.equal(xffBody3.error?.code, "rate_limited");
 }
 
 console.log("Profile import Worker scaffold tests passed.");

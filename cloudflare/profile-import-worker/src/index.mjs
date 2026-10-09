@@ -13,6 +13,9 @@ const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
 const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
 const DEFAULT_USAGE_VITALS_MAX_PER_MINUTE = 80;
 const DEFAULT_ERROR_REPORT_MAX_PER_MINUTE = 30;
+export const DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE = 120;
+export const TERMINAL_STATUS_CACHE_CONTROL = "public, max-age=15, s-maxage=30, stale-while-revalidate=60";
+export const NOT_FOUND_STATUS_CACHE_CONTROL = "public, max-age=5, s-maxage=10";
 const RATE_LIMIT_COUNTER_RETENTION_MS = 2 * 60 * 60 * 1000;
 export const STALE_RUNNING_JOB_TIMEOUT_MS = 180000;
 export const MAX_IMPORT_RETRIES = 3;
@@ -97,7 +100,7 @@ export async function handleRequest(request, env, ctx = {}) {
 
     const statusMatch = url.pathname.match(/^\/profile-import\/status\/([^/]+)$/);
     if (statusMatch && request.method === "GET") {
-      return await handleImportStatus(statusMatch[1], env, cors);
+      return await handleImportStatus(statusMatch[1], env, cors, request);
     }
 
     return json({ error: { code: "not_found", message: "Not found." } }, 404, cors);
@@ -1316,11 +1319,44 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   }, 202, cors);
 }
 
-async function handleImportStatus(jobId, env, cors) {
+async function handleImportStatus(first, second, third, fourth) {
+  let request = null;
+  let jobId = "";
+  let env = null;
+  let cors = {};
+
+  if (typeof first === "string") {
+    jobId = first;
+    env = second;
+    cors = third;
+    request = fourth || null;
+  } else {
+    request = first;
+    jobId = second;
+    env = third;
+    cors = fourth;
+  }
+
   if (!JOB_ID_PATTERN.test(jobId)) {
-    return json({ error: { code: "not_found", message: "Import job was not found." } }, 404, cors);
+    return json({ error: { code: "not_found", message: "Import job was not found." } }, 404, {
+      ...cors,
+      "cache-control": NOT_FOUND_STATUS_CACHE_CONTROL,
+    });
   }
   assertBindings(env);
+
+  const rateLimit = await checkImportStatusRateLimit(request, env);
+  if (!rateLimit.ok) {
+    return json(
+      { error: { code: "rate_limited", message: "Too many status requests. Please slow down." } },
+      429,
+      {
+        ...cors,
+        "retry-after": String(rateLimit.retryAfterSeconds),
+        "cache-control": "no-store",
+      },
+    );
+  }
 
   const row = await env.DB.prepare(`
     SELECT id, status, result_json, request_count, retry_count, error_code, error_message,
@@ -1330,7 +1366,10 @@ async function handleImportStatus(jobId, env, cors) {
   `).bind(jobId).first();
 
   if (!row) {
-    return json({ error: { code: "not_found", message: "Import job was not found." } }, 404, cors);
+    return json({ error: { code: "not_found", message: "Import job was not found." } }, 404, {
+      ...cors,
+      "cache-control": NOT_FOUND_STATUS_CACHE_CONTROL,
+    });
   }
 
   if (new Date(row.expires_at).getTime() <= Date.now()) {
@@ -1338,7 +1377,10 @@ async function handleImportStatus(jobId, env, cors) {
       jobId,
       status: "expired",
       error: { code: "expired", message: "This import expired. Start a new import if needed." },
-    }, 410, cors);
+    }, 410, {
+      ...cors,
+      "cache-control": TERMINAL_STATUS_CACHE_CONTROL,
+    });
   }
 
   if (row.status === "complete") {
@@ -1350,7 +1392,10 @@ async function handleImportStatus(jobId, env, cors) {
         warnings: ["Import processing is not enabled in this scaffold yet."],
       },
       expiresAt: row.expires_at,
-    }, 200, cors);
+    }, 200, {
+      ...cors,
+      "cache-control": TERMINAL_STATUS_CACHE_CONTROL,
+    });
   }
 
   if (row.status === "failed") {
@@ -1367,7 +1412,10 @@ async function handleImportStatus(jobId, env, cors) {
       },
       retryAfterMs,
       pollAfterMs: 10000,
-    }, 200, cors);
+    }, 200, {
+      ...cors,
+      "cache-control": TERMINAL_STATUS_CACHE_CONTROL,
+    });
   }
 
   const budget = await importBudgetMode(env);
@@ -1388,7 +1436,10 @@ async function handleImportStatus(jobId, env, cors) {
     },
     pollAfterMs: budget.pollAfterMs,
     expiresAt: row.expires_at,
-  }, 200, cors);
+  }, 200, {
+    ...cors,
+    "cache-control": "no-store",
+  });
 }
 
 function estimateImportDurationMs(requestCount, env, budget = null) {
@@ -2202,6 +2253,13 @@ async function checkErrorReportRateLimit(request, env) {
   const maxPerMinute = readPositiveInt(env.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
   const requesterFingerprint = await fingerprint(`error:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
   return await checkD1MinuteRateLimit(env, `error-report:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
+}
+
+async function checkImportStatusRateLimit(request, env) {
+  if (!request) return { ok: true };
+  const maxPerMinute = readPositiveInt(env?.IMPORT_STATUS_MAX_PER_MINUTE, DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE);
+  const requesterFingerprint = await fingerprint(`status:${requesterKey(request)}`, env?.IMPORT_SIGNING_SECRET || "status-secret");
+  return await checkD1MinuteRateLimit(env, `import-status:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
 }
 
 async function checkD1MinuteRateLimit(env, source, maxPerMinute) {
