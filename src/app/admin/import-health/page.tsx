@@ -314,11 +314,12 @@ export default function ImportHealthPage() {
     return { label: "Healthy", tone: "good", icon: CheckCircle2 };
   }, [health, loading, selectedFrame]);
 
-  async function loadHealth() {
+  async function loadHealth(fresh = false) {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/import-health", { cache: "no-store" });
+      const url = fresh ? "/api/admin/import-health?fresh=true" : "/api/admin/import-health";
+      const response = await fetch(url, { cache: "no-store" });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(body?.error?.message || "Could not load import health.");
@@ -351,7 +352,7 @@ export default function ImportHealthPage() {
             <StateIcon size={18} className={!health && loading ? "spin" : undefined} />
             <span>{serviceState.label}</span>
           </div>
-          <button className="admin-button primary" type="button" onClick={() => void loadHealth()} disabled={loading}>
+          <button className="admin-button primary" type="button" onClick={() => void loadHealth(true)} disabled={loading}>
             {loading ? <Loader2 size={18} className="spin" /> : <RefreshCw size={18} />}
             Refresh
           </button>

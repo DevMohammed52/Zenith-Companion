@@ -48,7 +48,7 @@ export default {
   },
 };
 
-export async function handleRequest(request, env, _ctx = {}) {
+export async function handleRequest(request, env, ctx = {}) {
   const url = new URL(request.url);
   const cors = buildCorsHeaders(request, env);
 
@@ -74,7 +74,7 @@ export async function handleRequest(request, env, _ctx = {}) {
     }
 
     if (url.pathname === "/admin/import-health" && request.method === "GET") {
-      return await handleAdminImportHealth(request, env, cors);
+      return await handleAdminImportHealth(request, env, cors, ctx);
     }
 
     if (url.pathname === "/usage/ping" && request.method === "POST") {
@@ -109,11 +109,66 @@ export async function handleRequest(request, env, _ctx = {}) {
   }
 }
 
-async function handleAdminImportHealth(request, env, cors) {
+const ADMIN_HEALTH_CACHE_TTL_MS = 60 * 1000;
+
+function adminHealthCacheKey(url) {
+  const origin = (url.origin && url.origin !== "null") ? url.origin : "https://zenith-profile-import.internal";
+  return new Request(new URL("/admin/import-health", origin).toString(), {
+    method: "GET",
+  });
+}
+
+async function handleAdminImportHealth(request, env, cors, ctx = {}) {
   if (!hasBearerSecret(request, env.ADMIN_DASHBOARD_SECRET)) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
   assertBindings(env);
+
+  const url = new URL(request.url);
+  const cacheControl = (request.headers.get("cache-control") || "").toLowerCase();
+  const freshParam = url.searchParams.get("fresh");
+  const isNoCache = cacheControl.includes("no-cache") ||
+                    cacheControl.includes("max-age=0") ||
+                    freshParam === "true" ||
+                    freshParam === "1";
+  const nowMs = Date.now();
+
+  if (!isNoCache) {
+    const memoryCached = env.__adminHealthCache;
+    if (memoryCached && memoryCached.expiresAt > nowMs && memoryCached.payload && memoryCached.payload.ok) {
+      return json(memoryCached.payload, 200, {
+        ...cors,
+        "x-admin-cache": "HIT",
+      });
+    }
+
+    try {
+      const defaultCache = typeof caches !== "undefined" && caches?.default;
+      if (defaultCache) {
+        const cacheKey = adminHealthCacheKey(url);
+        const matched = await defaultCache.match(cacheKey);
+        if (matched) {
+          const payload = await matched.json();
+          if (payload && payload.ok) {
+            const generatedMs = new Date(payload.generatedAt).getTime();
+            const expiresAt = Number.isFinite(generatedMs)
+              ? generatedMs + ADMIN_HEALTH_CACHE_TTL_MS
+              : nowMs + ADMIN_HEALTH_CACHE_TTL_MS;
+
+            if (expiresAt > nowMs) {
+              env.__adminHealthCache = { payload, expiresAt };
+              return json(payload, 200, {
+                ...cors,
+                "x-admin-cache": "HIT",
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore cache match errors and fallback to live generation
+    }
+  }
 
   const now = new Date();
   const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
@@ -154,7 +209,7 @@ async function handleAdminImportHealth(request, env, cors) {
   const coordinatorStates = await readCoordinatorStates(env);
   const budget = await importBudgetMode(env);
 
-  return json({
+  const payload = {
     ok: true,
     generatedAt: now.toISOString(),
     service: {
@@ -212,7 +267,38 @@ async function handleAdminImportHealth(request, env, cors) {
       expiresAt: row.expires_at,
       expired: isExpiredIso(row.expires_at),
     })),
-  }, 200, cors);
+  };
+
+  env.__adminHealthCache = {
+    payload,
+    expiresAt: nowMs + ADMIN_HEALTH_CACHE_TTL_MS,
+  };
+
+  try {
+    const defaultCache = typeof caches !== "undefined" && caches?.default;
+    if (defaultCache) {
+      const cacheKey = adminHealthCacheKey(url);
+      const cacheResponse = new Response(JSON.stringify(payload), {
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "public, max-age=60",
+        },
+      });
+      const putPromise = defaultCache.put(cacheKey, cacheResponse).catch(() => {});
+      if (ctx && typeof ctx.waitUntil === "function") {
+        ctx.waitUntil(putPromise);
+      } else {
+        await putPromise;
+      }
+    }
+  } catch {
+    // Ignore cache put errors
+  }
+
+  return json(payload, 200, {
+    ...cors,
+    "x-admin-cache": isNoCache ? "BYPASS" : "MISS",
+  });
 }
 
 async function handleUsagePing(request, env, cors) {
@@ -413,13 +499,13 @@ async function usageSummary(env, now) {
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_1h,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_24h,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_7d,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_30d,
-      COUNT(DISTINCT visitor_fingerprint) AS unique_users_all_time,
+      COUNT(DISTINCT visitor_fingerprint) AS unique_users_30d,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_30d
+      COUNT(DISTINCT session_fingerprint) AS sessions_30d
     FROM usage_events
-  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, monthAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null);
+    WHERE created_at >= ?
+  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null);
 
   const topPages = await env.DB.prepare(`
     SELECT path, COUNT(*) AS views, COUNT(DISTINCT visitor_fingerprint) AS users
@@ -510,7 +596,7 @@ async function usageSummary(env, now) {
     uniqueUsers24h: Number(overview?.unique_users_24h || 0),
     uniqueUsers7d: Number(overview?.unique_users_7d || 0),
     uniqueUsers30d: Number(overview?.unique_users_30d || 0),
-    uniqueUsersAllTime: Number(overview?.unique_users_all_time || 0),
+    uniqueUsersAllTime: Number(overview?.unique_users_all_time || timeframes.find((frame) => frame.key === "all")?.users || overview?.unique_users_30d || 0),
     sessions24h,
     sessions7d: Number(overview?.sessions_7d || 0),
     sessions30d: Number(overview?.sessions_30d || 0),
@@ -609,11 +695,12 @@ async function webVitalsSummary(env, now) {
     SELECT
       COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
       COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_7d,
-      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_30d,
+      COUNT(*) AS events_30d,
       SUM(CASE WHEN metric_rating = 'poor' AND created_at >= ? THEN 1 ELSE 0 END) AS poor_24h,
-      SUM(CASE WHEN metric_rating = 'poor' AND created_at >= ? THEN 1 ELSE 0 END) AS poor_30d
+      SUM(CASE WHEN metric_rating = 'poor' THEN 1 ELSE 0 END) AS poor_30d
     FROM web_vital_events
-  `).bind(dayAgo, weekAgo, monthAgo, dayAgo, monthAgo).first().catch(() => null);
+    WHERE created_at >= ?
+  `).bind(dayAgo, weekAgo, dayAgo, monthAgo).first().catch(() => null);
 
   if (!overview) return empty;
 
@@ -738,10 +825,11 @@ async function appErrorSummary(env, now) {
     SELECT
       COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
       COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_7d,
-      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_30d,
+      COUNT(*) AS events_30d,
       COUNT(DISTINCT CASE WHEN created_at >= ? AND digest != '' THEN digest ELSE NULL END) AS unique_digests_24h
     FROM app_error_events
-  `).bind(dayAgo, weekAgo, monthAgo, dayAgo).first().catch(() => null);
+    WHERE created_at >= ?
+  `).bind(dayAgo, weekAgo, dayAgo, monthAgo).first().catch(() => null);
 
   if (!overview) return empty;
 

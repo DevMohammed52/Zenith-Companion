@@ -242,9 +242,10 @@ class MemoryD1 {
         unique_characters_all_time: distinctCount(jobs, "target_hash_fingerprint"),
       };
     }
-    if (sql.includes("unique_users_all_time")) {
-      const [eventsDayAgo, pageviewsDayAgo, fifteenAgo, hourAgo, usersDayAgo, usersWeekAgo, sessionsDayAgo, sessionsWeekAgo] = args;
+    if (sql.includes("unique_users_30d") || sql.includes("unique_users_all_time")) {
+      const [eventsDayAgo, pageviewsDayAgo, fifteenAgo, hourAgo, usersDayAgo, usersWeekAgo, sessionsDayAgo, sessionsWeekAgo, createdAfter] = args;
       const events = Array.from(this.usageEvents.values());
+      const boundEvents = createdAfter ? events.filter((e) => e.created_at >= createdAfter) : events;
       return {
         events_24h: events.filter((event) => event.created_at >= eventsDayAgo).length,
         pageviews_24h: events.filter((event) => event.event_type === "pageview" && event.created_at >= pageviewsDayAgo).length,
@@ -252,30 +253,47 @@ class MemoryD1 {
         active_users_1h: distinctCount(events.filter((event) => event.created_at >= hourAgo), "visitor_fingerprint"),
         unique_users_24h: distinctCount(events.filter((event) => event.created_at >= usersDayAgo), "visitor_fingerprint"),
         unique_users_7d: distinctCount(events.filter((event) => event.created_at >= usersWeekAgo), "visitor_fingerprint"),
-        unique_users_all_time: distinctCount(events, "visitor_fingerprint"),
+        unique_users_30d: distinctCount(boundEvents, "visitor_fingerprint"),
+        ...(sql.includes("unique_users_all_time") ? { unique_users_all_time: distinctCount(events, "visitor_fingerprint") } : {}),
         sessions_24h: distinctCount(events.filter((event) => event.created_at >= sessionsDayAgo), "session_fingerprint"),
         sessions_7d: distinctCount(events.filter((event) => event.created_at >= sessionsWeekAgo), "session_fingerprint"),
+        sessions_30d: distinctCount(boundEvents, "session_fingerprint"),
+      };
+    }
+    if (sql.includes("FROM usage_events") && sql.includes("SUM(CASE WHEN event_type = 'pageview'")) {
+      const [since] = args;
+      const events = Array.from(this.usageEvents.values()).filter((event) => !since || event.created_at >= since);
+      const pageviews = events.filter((e) => e.event_type === "pageview").length;
+      const sessions = distinctCount(events, "session_fingerprint");
+      return {
+        events: events.length,
+        pageviews,
+        heartbeats: events.filter((e) => e.event_type === "heartbeat").length,
+        users: distinctCount(events, "visitor_fingerprint"),
+        sessions,
       };
     }
     if (sql.includes("unique_digests_24h")) {
-      const [dayAgo, weekAgo, monthAgo, digestDayAgo] = args;
+      const [dayAgo, weekAgo, digestDayAgo, monthAgo] = args;
       const events = Array.from(this.appErrorEvents.values());
+      const boundEvents = monthAgo ? events.filter((e) => e.created_at >= monthAgo) : events;
       return {
         events_24h: events.filter((event) => event.created_at >= dayAgo).length,
         events_7d: events.filter((event) => event.created_at >= weekAgo).length,
-        events_30d: events.filter((event) => event.created_at >= monthAgo).length,
+        events_30d: boundEvents.length,
         unique_digests_24h: distinctCount(events.filter((event) => event.created_at >= digestDayAgo && event.digest), "digest"),
       };
     }
-    if (sql.includes("FROM web_vital_events") && sql.includes("events_30d")) {
-      const [dayAgo, weekAgo, monthAgo, poorDayAgo, poorMonthAgo] = args;
+    if (sql.includes("FROM web_vital_events") && (sql.includes("events_30d") || sql.includes("poor_30d"))) {
+      const [dayAgo, weekAgo, poorDayAgo, monthAgo] = args;
       const events = Array.from(this.webVitalEvents.values());
+      const boundEvents = monthAgo ? events.filter((e) => e.created_at >= monthAgo) : events;
       return {
         events_24h: events.filter((event) => event.created_at >= dayAgo).length,
         events_7d: events.filter((event) => event.created_at >= weekAgo).length,
-        events_30d: events.filter((event) => event.created_at >= monthAgo).length,
+        events_30d: boundEvents.length,
         poor_24h: events.filter((event) => event.metric_rating === "poor" && event.created_at >= poorDayAgo).length,
-        poor_30d: events.filter((event) => event.metric_rating === "poor" && event.created_at >= poorMonthAgo).length,
+        poor_30d: boundEvents.filter((event) => event.metric_rating === "poor").length,
       };
     }
     if (sql.includes("SELECT COUNT(*) AS count") && sql.includes("FROM import_jobs")) {
@@ -1318,6 +1336,183 @@ async function json(response) {
     assert.equal((await json(cooldownProcess)).result.status, "cooling_down");
   } finally {
     globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  const e = env();
+
+  // Seed usage event
+  await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "user-agent": "Mozilla/5.0 Chrome/126.0",
+      "cf-ipcountry": "US",
+    },
+    body: JSON.stringify({
+      visitorId: "cache-test-visitor-1",
+      sessionId: "cache-test-session-1",
+      eventType: "pageview",
+      path: "/admin",
+    }),
+  }), e);
+
+  // 1. Initial request: cache MISS
+  const res1 = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(res1.status, 200);
+  assert.equal(res1.headers.get("x-admin-cache"), "MISS");
+  const data1 = await json(res1);
+  assert.equal(data1.ok, true);
+  assert.equal(typeof data1.generatedAt, "string");
+  assert.equal(typeof data1.usage.uniqueUsers30d, "number");
+  assert.equal(typeof data1.usage.uniqueUsersAllTime, "number");
+  assert.equal(data1.usage.activeUsers15m, 1);
+  assert.equal(typeof data1.webVitals.events30d, "number");
+  assert.equal(typeof data1.appErrors.events30d, "number");
+  assert.equal(Array.isArray(data1.imports.timeframes), true);
+
+  // Seed another usage event
+  await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "user-agent": "Mozilla/5.0 Chrome/126.0",
+      "cf-ipcountry": "US",
+    },
+    body: JSON.stringify({
+      visitorId: "cache-test-visitor-2",
+      sessionId: "cache-test-session-2",
+      eventType: "pageview",
+      path: "/admin",
+    }),
+  }), e);
+
+  // 2. Second request within TTL: cache HIT (activeUsers15m is still 1 from cached payload)
+  const res2 = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(res2.status, 200);
+  assert.equal(res2.headers.get("x-admin-cache"), "HIT");
+  const data2 = await json(res2);
+  assert.equal(data2.generatedAt, data1.generatedAt);
+  assert.equal(data2.usage.activeUsers15m, 1);
+
+  // 3. Third request with ?fresh=true: cache BYPASS (sees new visitor, activeUsers15m is now 2)
+  const resFresh = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(resFresh.status, 200);
+  assert.equal(resFresh.headers.get("x-admin-cache"), "BYPASS");
+  const dataFresh = await json(resFresh);
+  assert.equal(dataFresh.usage.activeUsers15m, 2);
+
+  // 4. Fourth request with cache-control: no-cache: cache BYPASS
+  const resNoCache = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: {
+      authorization: "Bearer admin-secret",
+      "cache-control": "no-cache",
+    },
+  }), e);
+  assert.equal(resNoCache.status, 200);
+  assert.equal(resNoCache.headers.get("x-admin-cache"), "BYPASS");
+
+  // 5. Fifth request after cache expiration: cache MISS
+  e.__adminHealthCache.expiresAt = Date.now() - 5000;
+  const resExpired = await handleRequest(new Request("https://worker.test/admin/import-health", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(resExpired.status, 200);
+  assert.equal(resExpired.headers.get("x-admin-cache"), "MISS");
+}
+
+{
+  // Test Cloudflare Workers Cache API (caches.default) integration and ctx.waitUntil
+  const store = new Map();
+  const memoryCache = {
+    async match(req) {
+      const url = typeof req === "string" ? req : req.url;
+      const resp = store.get(url);
+      return resp ? resp.clone() : null;
+    },
+    async put(req, resp) {
+      const url = typeof req === "string" ? req : req.url;
+      store.set(url, resp.clone());
+    },
+  };
+  globalThis.caches = { default: memoryCache };
+
+  try {
+    const e = env();
+    const waitPromises = [];
+    const mockCtx = {
+      waitUntil(p) {
+        waitPromises.push(p);
+      },
+    };
+
+    // 1. Initial request with empty caches: MISS and putPromise added to waitUntil
+    const res1 = await handleRequest(new Request("https://worker.test/admin/import-health", {
+      headers: { authorization: "Bearer admin-secret" },
+    }), e, mockCtx);
+    assert.equal(res1.status, 200);
+    assert.equal(res1.headers.get("x-admin-cache"), "MISS");
+    assert.equal(waitPromises.length, 1);
+    await Promise.all(waitPromises);
+    const data1 = await json(res1);
+    assert.equal(data1.ok, true);
+
+    // 2. Wipe in-memory cache to force reading exclusively from caches.default
+    delete e.__adminHealthCache;
+
+    const res2 = await handleRequest(new Request("https://worker.test/admin/import-health", {
+      headers: { authorization: "Bearer admin-secret" },
+    }), e, mockCtx);
+    assert.equal(res2.status, 200);
+    assert.equal(res2.headers.get("x-admin-cache"), "HIT");
+    const data2 = await json(res2);
+    assert.equal(data2.generatedAt, data1.generatedAt);
+    // In-memory cache should now be re-populated
+    assert.equal(Boolean(e.__adminHealthCache?.payload), true);
+
+    // 3. Bypass via ?fresh=true
+    const resFresh = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+      headers: { authorization: "Bearer admin-secret" },
+    }), e, mockCtx);
+    assert.equal(resFresh.status, 200);
+    assert.equal(resFresh.headers.get("x-admin-cache"), "BYPASS");
+
+    // 4. Stale cache in caches.default is ignored
+    delete e.__adminHealthCache;
+    const stalePayload = {
+      ...data1,
+      generatedAt: new Date(Date.now() - 70000).toISOString(),
+    };
+    await memoryCache.put(
+      new Request("https://worker.test/admin/import-health"),
+      new Response(JSON.stringify(stalePayload), {
+        headers: { "content-type": "application/json; charset=utf-8" },
+      }),
+    );
+    const resStale = await handleRequest(new Request("https://worker.test/admin/import-health", {
+      headers: { authorization: "Bearer admin-secret" },
+    }), e, mockCtx);
+    // 5. Failing caches.default.put does not crash or throw unhandled rejection in waitUntil
+    memoryCache.put = async () => { throw new Error("cache quota exceeded"); };
+    const resPutErr = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+      headers: { authorization: "Bearer admin-secret" },
+    }), e, mockCtx);
+    assert.equal(resPutErr.status, 200);
+    // Ensure all wait promises resolve cleanly without throwing
+    await Promise.all(waitPromises);
+  } finally {
+    delete globalThis.caches;
   }
 }
 
