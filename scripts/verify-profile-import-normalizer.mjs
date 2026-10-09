@@ -9,6 +9,11 @@ const outDir = path.join(root, ".next", "profile-import-verify");
 
 const modules = [
   {
+    source: "src/lib/quality.ts",
+    output: "quality.cjs",
+    rewrites: [],
+  },
+  {
     source: "src/lib/museum.ts",
     output: "museum.cjs",
     rewrites: [],
@@ -33,7 +38,9 @@ const modules = [
   {
     source: "src/lib/pets.ts",
     output: "pets.cjs",
-    rewrites: [],
+    rewrites: [
+      ['"@/lib/quality"', '"./quality.cjs"'],
+    ],
   },
 ];
 

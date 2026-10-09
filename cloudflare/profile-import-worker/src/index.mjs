@@ -14,6 +14,8 @@ const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
 const DEFAULT_USAGE_VITALS_MAX_PER_MINUTE = 80;
 const DEFAULT_ERROR_REPORT_MAX_PER_MINUTE = 30;
 const RATE_LIMIT_COUNTER_RETENTION_MS = 2 * 60 * 60 * 1000;
+export const STALE_RUNNING_JOB_TIMEOUT_MS = 180000;
+export const MAX_IMPORT_RETRIES = 3;
 const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
@@ -90,7 +92,7 @@ export async function handleRequest(request, env, ctx = {}) {
     }
 
     if (url.pathname === "/profile-import/start" && request.method === "POST") {
-      return await handleStartImport(request, env, cors);
+      return await handleStartImport(request, env, cors, ctx);
     }
 
     const statusMatch = url.pathname.match(/^\/profile-import\/status\/([^/]+)$/);
@@ -1159,7 +1161,7 @@ async function recordImportEvent(env, event) {
   }
 }
 
-async function handleStartImport(request, env, cors) {
+async function handleStartImport(request, env, cors, ctx = {}) {
   if (!isAllowedOrigin(request, env)) {
     return json({ error: { code: "origin_not_allowed", message: "Profile imports are not available from this origin." } }, 403, cors);
   }
@@ -1194,6 +1196,26 @@ async function handleStartImport(request, env, cors) {
 
   const expiresAt = new Date(now.getTime() + JOB_TTL_MS).toISOString();
 
+  const existingJob = await env.DB.prepare(`
+    SELECT id, status
+    FROM import_jobs
+    WHERE target_hash_fingerprint = ? AND status IN ('queued', 'running', 'waiting_for_budget') AND expires_at > ?
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).bind(hashFingerprint, now.toISOString()).first();
+
+  if (existingJob) {
+    if (typeof ctx?.waitUntil === "function") {
+      ctx.waitUntil(processNextImportJob(env).catch(() => {}));
+    }
+    const budget = await importBudgetMode(env);
+    return json({
+      jobId: existingJob.id,
+      status: existingJob.status,
+      pollAfterMs: budget.pollAfterMs,
+    }, 202, cors);
+  }
+
   const cooldown = await activeCooldown(env, "hash", hashFingerprint, now)
     || await activeCooldown(env, "ip", requesterFingerprint, now)
     || await activeCooldown(env, "global", "global", now);
@@ -1218,7 +1240,7 @@ async function handleStartImport(request, env, cors) {
   const maxPending = readPositiveInt(env.IMPORT_MAX_PENDING, 25);
   const maxConcurrent = readPositiveInt(env.IMPORT_MAX_CONCURRENT, 1);
   const queue = await queueCounts(env);
-  if (queue.pending >= maxPending || queue.running >= maxConcurrent) {
+  if (queue.pending >= maxPending) {
     const budget = await importBudgetMode(env);
     const retryAfterMs = estimateQueueRetryAfterMs(queue, maxConcurrent, env, budget);
     await recordImportEvent(env, {
@@ -1280,6 +1302,10 @@ async function handleStartImport(request, env, cors) {
     budgetMode: budget.mode,
     createdAt: now.toISOString(),
   });
+
+  if (typeof ctx?.waitUntil === "function") {
+    ctx.waitUntil(processNextImportJob(env).catch(() => {}));
+  }
 
   return json({
     jobId,
@@ -1417,7 +1443,7 @@ async function runScheduledWork(env) {
   await processNextImportJob(env);
 }
 
-async function processNextImportJob(env) {
+export async function processNextImportJob(env) {
   assertBindings(env);
   assertImportSecrets(env);
 
@@ -1428,6 +1454,13 @@ async function processNextImportJob(env) {
       retryAfterMs: Math.max(10000, new Date(globalCooldown.until_at).getTime() - Date.now()),
     };
   }
+
+  const staleThreshold = new Date(Date.now() - STALE_RUNNING_JOB_TIMEOUT_MS).toISOString();
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'failed', error_code = 'timeout', error_message = ?, updated_at = ?
+    WHERE status = 'running' AND updated_at < ?
+  `).bind(publicImportErrorMessage("timeout"), new Date().toISOString(), staleThreshold).run();
 
   const budget = await importBudgetMode(env);
   const runningJob = await env.DB.prepare(`
@@ -1457,15 +1490,25 @@ async function processNextImportJob(env) {
 
   if (!job) return { status: "idle" };
 
-  await markJob(job.id, env, {
-    status: "running",
-    budgetMode: budget.mode,
-  });
+  const claimResult = await env.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'running', budget_mode = ?, updated_at = ?
+    WHERE id = ? AND status IN ('queued', 'waiting_for_budget')
+  `).bind(budget.mode, new Date().toISOString(), job.id).run();
+
+  const claimed = (claimResult?.meta?.changes ?? claimResult?.changes ?? 0) > 0;
+  if (!claimed) {
+    return {
+      status: "busy",
+      pollAfterMs: budget.pollAfterMs,
+    };
+  }
 
   try {
     const characterHash = await decryptText(job.target_hash_encrypted, env.IMPORT_ENCRYPTION_SECRET);
     const options = safeParseJson(job.requested_options_json) || {};
     const result = await importCharacterTree(characterHash, options, env, job.id, budget);
+    const completedRetryCount = Number(job.retry_count || 0) + Number(result.retryCount || 0);
     await env.DB.prepare(`
       UPDATE import_jobs
       SET status = 'complete', result_json = ?, request_count = ?, retry_count = ?,
@@ -1474,7 +1517,7 @@ async function processNextImportJob(env) {
     `).bind(
       JSON.stringify(result.publicResult),
       result.requestCount,
-      result.retryCount,
+      completedRetryCount,
       new Date().toISOString(),
       job.id,
     ).run();
@@ -1486,7 +1529,7 @@ async function processNextImportJob(env) {
       status: "complete",
       budgetMode: budget.mode,
       requestCount: result.requestCount,
-      retryCount: result.retryCount,
+      retryCount: completedRetryCount,
       durationSeconds: secondsBetween(job.created_at, new Date()),
     });
     return { status: "complete", jobId: job.id, requestCount: result.requestCount };
@@ -1495,6 +1538,29 @@ async function processNextImportJob(env) {
     const message = publicImportErrorMessage(code);
     if (code === "rate_limited") {
       await setCooldown(env, "global", "global", 3 * 60 * 1000, "IdleMMO rate limit reached. Imports will continue shortly.");
+      const currentRetries = Number(job.retry_count || 0);
+      if (currentRetries >= MAX_IMPORT_RETRIES) {
+        const failCode = "rate_limit_exhausted";
+        const failMessage = publicImportErrorMessage(failCode);
+        await env.DB.prepare(`
+          UPDATE import_jobs
+          SET status = 'failed', error_code = ?, error_message = ?, updated_at = ?
+          WHERE id = ?
+        `).bind(failCode, failMessage, new Date().toISOString(), job.id).run();
+        await recordImportEvent(env, {
+          eventType: "failed",
+          jobId: job.id,
+          requesterFingerprint: job.requester_fingerprint,
+          targetHashFingerprint: job.target_hash_fingerprint,
+          status: "failed",
+          errorCode: failCode,
+          budgetMode: budget.mode,
+          requestCount: Number(job.request_count || 0),
+          retryCount: currentRetries,
+          durationSeconds: secondsBetween(job.created_at, new Date()),
+        });
+        return { status: "failed", jobId: job.id, code: failCode };
+      }
       await env.DB.prepare(`
         UPDATE import_jobs
         SET status = 'waiting_for_budget',
@@ -1513,7 +1579,7 @@ async function processNextImportJob(env) {
         errorCode: code,
         budgetMode: budget.mode,
         requestCount: Number(job.request_count || 0),
-        retryCount: Number(job.retry_count || 0) + 1,
+        retryCount: currentRetries + 1,
         durationSeconds: secondsBetween(job.created_at, new Date()),
       });
       return { status: "waiting_for_budget", jobId: job.id, code };
@@ -2209,6 +2275,8 @@ function sleep(ms) {
 
 function publicImportErrorMessage(code) {
   if (code === "rate_limited") return "IdleMMO rate limit reached. Your import is paused and can be retried shortly.";
+  if (code === "rate_limit_exhausted") return "Profile import rate limit retries exhausted. Try again later.";
+  if (code === "timeout") return "Profile import timed out. Try again shortly.";
   if (code === "information_unavailable") return "This character could not be imported. Check that the hashed ID is correct and visible.";
   return "Profile import failed. Try again shortly.";
 }

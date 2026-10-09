@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { handleRequest } from "../src/index.mjs";
+import { handleRequest, processNextImportJob } from "../src/index.mjs";
 
 class MemoryKV {
   constructor() {
@@ -155,40 +155,88 @@ class MemoryD1 {
         updated_at: updatedAt,
       });
     }
+    if (sql.includes("UPDATE import_jobs") && sql.includes("error_code = 'timeout'")) {
+      const [errorMessage, updatedAt, staleThreshold] = args;
+      let count = 0;
+      for (const job of this.jobs.values()) {
+        if (job.status === "running" && job.updated_at < staleThreshold) {
+          Object.assign(job, {
+            status: "failed",
+            error_code: "timeout",
+            error_message: errorMessage,
+            updated_at: updatedAt,
+          });
+          count += 1;
+        }
+      }
+      return { success: true, changes: count, meta: { changes: count } };
+    }
+    if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'running'")) {
+      const [budgetMode, updatedAt, id] = args;
+      const job = this.jobs.get(id);
+      if (job && ["queued", "waiting_for_budget"].includes(job.status)) {
+        Object.assign(job, {
+          status: "running",
+          budget_mode: budgetMode,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
+    }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'failed'")) {
       const [errorCode, errorMessage, updatedAt, id] = args;
-      Object.assign(this.jobs.get(id), {
-        status: "failed",
-        error_code: errorCode,
-        error_message: errorMessage,
-        updated_at: updatedAt,
-      });
+      const job = this.jobs.get(id);
+      if (job) {
+        Object.assign(job, {
+          status: "failed",
+          error_code: errorCode,
+          error_message: errorMessage,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'waiting_for_budget'")) {
       const [errorCode, errorMessage, updatedAt, id] = args;
       const job = this.jobs.get(id);
-      Object.assign(job, {
-        status: "waiting_for_budget",
-        retry_count: Number(job.retry_count || 0) + 1,
-        error_code: errorCode,
-        error_message: errorMessage,
-        updated_at: updatedAt,
-      });
+      if (job) {
+        Object.assign(job, {
+          status: "waiting_for_budget",
+          retry_count: Number(job.retry_count || 0) + 1,
+          error_code: errorCode,
+          error_message: errorMessage,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET request_count = ?")) {
       const [requestCount, updatedAt, id] = args;
-      Object.assign(this.jobs.get(id), {
-        request_count: requestCount,
-        updated_at: updatedAt,
-      });
+      const job = this.jobs.get(id);
+      if (job) {
+        Object.assign(job, {
+          request_count: requestCount,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = ?")) {
       const [status, budgetMode, updatedAt, id] = args;
-      Object.assign(this.jobs.get(id), {
-        status,
-        budget_mode: budgetMode,
-        updated_at: updatedAt,
-      });
+      const job = this.jobs.get(id);
+      if (job) {
+        Object.assign(job, {
+          status,
+          budget_mode: budgetMode,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("INSERT OR REPLACE INTO cooldowns")) {
       const [scope, keyFingerprint, untilAt, reason, createdAt] = args;
@@ -200,7 +248,7 @@ class MemoryD1 {
         created_at: createdAt,
       });
     }
-    return { success: true };
+    return { success: true, changes: 1, meta: { changes: 1 } };
   }
   async first(sql, args) {
     if (sql.includes("INSERT INTO minute_budgets")) {
@@ -359,6 +407,16 @@ class MemoryD1 {
       return Array.from(this.jobs.values())
         .filter((job) => ["queued", "waiting_for_budget"].includes(job.status) && job.expires_at > now)
         .sort((a, b) => a.created_at.localeCompare(b.created_at))[0] || null;
+    }
+    if (sql.includes("target_hash_fingerprint = ?")) {
+      const [fingerprint, now] = args;
+      return Array.from(this.jobs.values())
+        .filter((job) =>
+          job.target_hash_fingerprint === fingerprint &&
+          ["queued", "running", "waiting_for_budget"].includes(job.status) &&
+          job.expires_at > now
+        )
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] || null;
     }
     if (sql.includes("FROM import_jobs") && sql.includes("WHERE id = ?")) {
       return this.jobs.get(args[0]) || null;
@@ -1513,6 +1571,440 @@ async function json(response) {
     await Promise.all(waitPromises);
   } finally {
     delete globalThis.caches;
+  }
+}
+
+{
+  // 1. Concurrent admission while running: queue.running >= maxConcurrent must NOT block admission when pending < maxPending,
+  // but queue.pending >= maxPending MUST block admission with 429 queue_busy.
+  const e = env({ IMPORT_MAX_CONCURRENT: "1", IMPORT_MAX_PENDING: "2" });
+  const first = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.81",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRunning01" }),
+  }), e);
+  const firstBody = await json(first);
+  assert.equal(first.status, 202);
+
+  // Transition first job to running (so queue.running = 1 >= maxConcurrent)
+  e.DB.jobs.get(firstBody.jobId).status = "running";
+
+  // Second job must be admitted as queued (pending = 1 < maxPending = 2)
+  const second = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.82",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRunning02" }),
+  }), e);
+  const secondBody = await json(second);
+  assert.equal(second.status, 202);
+  assert.equal(secondBody.status, "queued");
+  assert.equal(e.DB.jobs.get(secondBody.jobId).status, "queued");
+
+  // Third job must be admitted as queued (pending = 2 = maxPending = 2)
+  const third = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.83",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRunning03" }),
+  }), e);
+  const thirdBody = await json(third);
+  assert.equal(third.status, 202);
+  assert.equal(thirdBody.status, "queued");
+
+  // Fourth job must be rejected with 429 queue_busy because pending (2) >= maxPending (2)
+  const fourth = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.84",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRunning04" }),
+  }), e);
+  assert.equal(fourth.status, 429);
+  const fourthBody = await json(fourth);
+  assert.equal(fourthBody.error.code, "queue_busy");
+}
+
+{
+  // 2. In-flight duplicate protection: returns 202 with existing jobId, status, pollAfterMs, and does not insert duplicate
+  const e = env();
+
+  const first = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.91",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashDupe001" }),
+  }), e);
+  const firstBody = await json(first);
+  assert.equal(first.status, 202);
+  const initialJobCount = e.DB.jobs.size;
+
+  // Duplicate request while job is queued (with mockCtx triggering dispatch)
+  let dupeDispatched = false;
+  const mockCtx = {
+    waitUntil(promise) {
+      dupeDispatched = true;
+      assert.ok(promise instanceof Promise);
+    },
+  };
+  const duplicateQueued = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.92",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashDupe001" }),
+  }), e, mockCtx);
+  const dupeQueuedBody = await json(duplicateQueued);
+  assert.equal(duplicateQueued.status, 202);
+  assert.equal(dupeQueuedBody.jobId, firstBody.jobId);
+  assert.equal(dupeQueuedBody.status, "queued");
+  assert.equal(typeof dupeQueuedBody.pollAfterMs, "number");
+  assert.equal(e.DB.jobs.size, initialJobCount);
+  assert.equal(dupeDispatched, true);
+
+  // Duplicate request while job is running
+  e.DB.jobs.get(firstBody.jobId).status = "running";
+  const duplicateRunning = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.93",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashDupe001" }),
+  }), e);
+  const dupeRunningBody = await json(duplicateRunning);
+  assert.equal(duplicateRunning.status, 202);
+  assert.equal(dupeRunningBody.jobId, firstBody.jobId);
+  assert.equal(dupeRunningBody.status, "running");
+  assert.equal(typeof dupeRunningBody.pollAfterMs, "number");
+  assert.equal(e.DB.jobs.size, initialJobCount);
+
+  // Duplicate request while job is waiting_for_budget
+  e.DB.jobs.get(firstBody.jobId).status = "waiting_for_budget";
+  const duplicateBudget = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.94",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashDupe001" }),
+  }), e);
+  const dupeBudgetBody = await json(duplicateBudget);
+  assert.equal(duplicateBudget.status, 202);
+  assert.equal(dupeBudgetBody.jobId, firstBody.jobId);
+  assert.equal(dupeBudgetBody.status, "waiting_for_budget");
+  assert.equal(typeof dupeBudgetBody.pollAfterMs, "number");
+  assert.equal(e.DB.jobs.size, initialJobCount);
+}
+
+{
+  // 3. Stale zombie job reaping: running jobs older than 3m are transitioned to failed with error_code 'timeout',
+  // while active running jobs (< 3m old) are preserved.
+  const e = env();
+  const zombieJobId = "imp_zombie000000000000000000000001";
+  const staleTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  e.DB.jobs.set(zombieJobId, {
+    id: zombieJobId,
+    status: "running",
+    target_hash_encrypted: "test_enc",
+    target_hash_fingerprint: "zombie_fp",
+    requester_fingerprint: "zombie_req",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: staleTime,
+    updated_at: staleTime,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 0,
+    retry_count: 0,
+  });
+
+  const activeRunningJobId = "imp_activerun000000000000000001";
+  const freshTime = new Date(Date.now() - 30 * 1000).toISOString();
+  e.DB.jobs.set(activeRunningJobId, {
+    id: activeRunningJobId,
+    status: "running",
+    target_hash_encrypted: "test_enc2",
+    target_hash_fingerprint: "active_fp",
+    requester_fingerprint: "active_req",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: freshTime,
+    updated_at: freshTime,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 1,
+    retry_count: 0,
+  });
+
+  // Execute processNextImportJob - zombie should be reaped, active job preserved, returns busy because active job is running
+  const busyResult = await processNextImportJob(e);
+  assert.equal(busyResult.status, "busy");
+  assert.equal(busyResult.activeJobId, activeRunningJobId);
+
+  // Verify zombie reaped to failed with 'timeout'
+  const reapedZombie = e.DB.jobs.get(zombieJobId);
+  assert.equal(reapedZombie.status, "failed");
+  assert.equal(reapedZombie.error_code, "timeout");
+
+  // Verify active running job was NOT reaped
+  const activeJob = e.DB.jobs.get(activeRunningJobId);
+  assert.equal(activeJob.status, "running");
+
+  // Complete active job
+  activeJob.status = "complete";
+
+  // Now queue a new job
+  const queued = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.101",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashReap0001" }),
+  }), e);
+  const queuedBody = await json(queued);
+  assert.equal(queued.status, 202);
+
+  // Trigger process-next with mock fetch so the queued job processes cleanly
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    character: {
+      name: "Reap Chef",
+      class: "CHEF",
+      total_level: 100,
+      stats: { combat: { level: 1 } },
+    },
+  });
+  try {
+    const process = await handleRequest(new Request("https://worker.test/internal/process-next", {
+      method: "POST",
+      headers: { authorization: "Bearer coordinator-secret" },
+    }), e);
+    assert.equal(process.status, 200);
+
+    const queuedJob = e.DB.jobs.get(queuedBody.jobId);
+    assert.equal(queuedJob.status, "complete");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 4. Rate limit retry cap: transitions from retrying (waiting_for_budget) to failed (rate_limit_exhausted)
+  // when exceeding MAX_IMPORT_RETRIES (3), and sets global cooldown on 429.
+  const e = env();
+  const start = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.125",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRetry0001" }),
+  }), e);
+  const startBody = await json(start);
+  assert.equal(start.status, 202);
+
+  const retryJobId = startBody.jobId;
+  const job = e.DB.jobs.get(retryJobId);
+  job.retry_count = 2; // Retried twice so far (< MAX_IMPORT_RETRIES = 3)
+  job.status = "waiting_for_budget";
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("{}", { status: 429 });
+  try {
+    // Attempt 3 (retry_count 2 -> 3): must transition to waiting_for_budget and increment retry_count to 3
+    const process1 = await handleRequest(new Request("https://worker.test/internal/process-next", {
+      method: "POST",
+      headers: { authorization: "Bearer coordinator-secret" },
+    }), e);
+    assert.equal(process1.status, 200);
+    const body1 = await json(process1);
+    assert.equal(body1.result.status, "waiting_for_budget");
+    assert.equal(job.retry_count, 3);
+    assert.equal(job.status, "waiting_for_budget");
+
+    // Clear global cooldown so we can trigger the next retry immediately
+    e.DB.cooldowns.clear();
+
+    // Attempt 4 (retry_count 3 >= MAX_IMPORT_RETRIES = 3): must fail permanently with rate_limit_exhausted
+    const process2 = await handleRequest(new Request("https://worker.test/internal/process-next", {
+      method: "POST",
+      headers: { authorization: "Bearer coordinator-secret" },
+    }), e);
+    assert.equal(process2.status, 200);
+    const body2 = await json(process2);
+    assert.equal(body2.result.status, "failed");
+    assert.equal(body2.result.code, "rate_limit_exhausted");
+
+    const failedJob = e.DB.jobs.get(retryJobId);
+    assert.equal(failedJob.status, "failed");
+    assert.equal(failedJob.error_code, "rate_limit_exhausted");
+
+    // Verify global cooldown was set even when retries were exhausted
+    const globalCooldown = await e.DB.prepare(`
+      SELECT until_at FROM cooldowns WHERE scope = ? AND key_fingerprint = ? AND until_at > ?
+    `).bind("global", "global", new Date().toISOString()).first();
+    assert.ok(globalCooldown);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 5. Immediate dispatch: ctx.waitUntil is called when starting an import
+  const e = env();
+  let dispatched = false;
+  const mockCtx = {
+    waitUntil(promise) {
+      dispatched = true;
+      assert.ok(promise instanceof Promise);
+    },
+  };
+
+  const start = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.111",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashDispatch1" }),
+  }), e, mockCtx);
+
+  assert.equal(start.status, 202);
+  assert.equal(dispatched, true);
+}
+
+{
+  // 6. Atomic claim: changes count prevents concurrent claims and handles race conditions safely
+  const e = env();
+  const jobId = "imp_atomic000000000000000000000001";
+  const nowIso = new Date().toISOString();
+  e.DB.jobs.set(jobId, {
+    id: jobId,
+    status: "queued",
+    target_hash_encrypted: "enc",
+    target_hash_fingerprint: "atomic_fp",
+    requester_fingerprint: "atomic_req",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 0,
+    retry_count: 0,
+  });
+
+  const res1 = await e.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'running', budget_mode = ?, updated_at = ?
+    WHERE id = ? AND status IN ('queued', 'waiting_for_budget')
+  `).bind("normal", nowIso, jobId).run();
+  assert.equal(res1.meta.changes, 1);
+  assert.equal(res1.changes, 1);
+
+  // Second claim fails because status is already 'running'
+  const res2 = await e.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'running', budget_mode = ?, updated_at = ?
+    WHERE id = ? AND status IN ('queued', 'waiting_for_budget')
+  `).bind("normal", nowIso, jobId).run();
+  assert.equal(res2.meta.changes, 0);
+  assert.equal(res2.changes, 0);
+
+  // Verify processNextImportJob handles claim collision (changes === 0) by returning { status: 'busy' }
+  const raceJobId = "imp_atomic000000000000000000000002";
+  e.DB.jobs.set(raceJobId, {
+    id: raceJobId,
+    status: "queued",
+    target_hash_encrypted: "enc2",
+    target_hash_fingerprint: "atomic_fp2",
+    requester_fingerprint: "atomic_req2",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 0,
+    retry_count: 0,
+  });
+
+  // Mark first job as complete so there is no currently running job blocking claims
+  e.DB.jobs.get(jobId).status = "complete";
+
+  // Temporarily simulate another worker winning the race for the UPDATE claim
+  const origRun = e.DB.run.bind(e.DB);
+  let raceSimulated = false;
+  e.DB.run = async (sql, args) => {
+    if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'running'")) {
+      raceSimulated = true;
+      return { success: true, changes: 0, meta: { changes: 0 } };
+    }
+    return origRun(sql, args);
+  };
+  const busyResult = await processNextImportJob(e);
+  assert.equal(raceSimulated, true);
+  assert.equal(busyResult.status, "busy");
+  assert.equal(typeof busyResult.pollAfterMs, "number");
+  e.DB.run = origRun;
+}
+
+{
+  // 7. Completed job preserves prior retry_count in DB
+  const e = env();
+  const start = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.131",
+    },
+    body: JSON.stringify({ characterHash: "FixtureHashRetried1" }),
+  }), e);
+  const startBody = await json(start);
+  assert.equal(start.status, 202);
+
+  const retriedJobId = startBody.jobId;
+  const job = e.DB.jobs.get(retriedJobId);
+  job.retry_count = 2; // Had 2 previous retries
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    character: {
+      name: "Retried Hero",
+      class: "WARRIOR",
+      total_level: 50,
+      stats: { combat: { level: 25 } },
+    },
+  });
+  try {
+    const res = await processNextImportJob(e);
+    assert.equal(res.status, "complete");
+    const completedJob = e.DB.jobs.get(retriedJobId);
+    assert.equal(completedJob.status, "complete");
+    assert.equal(completedJob.retry_count, 2); // Must NOT be overwritten to 0
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 }
 
