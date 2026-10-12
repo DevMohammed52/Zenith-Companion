@@ -85,6 +85,13 @@ class MemoryD1 {
   prepare(sql) {
     return new Statement(this, sql);
   }
+  async batch(statements) {
+    const results = [];
+    for (const stmt of statements) {
+      results.push(await stmt.run());
+    }
+    return results;
+  }
   async run(sql, args) {
     if (sql.includes("INSERT INTO import_jobs")) {
       const [id, encrypted, hashFingerprint, requesterFingerprint, options, budgetMode, createdAt, updatedAt, expiresAt] = args;
@@ -891,6 +898,97 @@ async function json(response) {
 }
 
 {
+  // Phase 3: Web Vitals batching and Cross-device character linkage
+  const e = env();
+  const batchResponse = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify([
+      { metricName: "CLS", value: 0.05, rating: "good", path: "/overview" },
+      { metricName: "FCP", value: 800, rating: "good", path: "/overview" },
+      { metricName: "INP", value: 50, rating: "good", path: "/overview" },
+    ]),
+  }), e);
+  assert.equal(batchResponse.status, 202);
+  assert.equal((await json(batchResponse)).ok, true);
+  assert.equal(e.DB.webVitalEvents.size, 3);
+
+  // Reject batches with > 50 items
+  const oversizedBatch = Array.from({ length: 51 }, () => ({
+    metricName: "CLS",
+    value: 0.01,
+    rating: "good",
+    path: "/overview",
+  }));
+  const oversizedResponse = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify(oversizedBatch),
+  }), e);
+  assert.equal(oversizedResponse.status, 400);
+
+  // Accept mixed valid and invalid items in batch
+  const mixedBatchResponse = await handleRequest(new Request("https://worker.test/usage/vitals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify([
+      { metricName: "TTFB", value: 120, rating: "good", path: "/overview" },
+      { metricName: "INVALID", value: -1, path: "bad" },
+    ]),
+  }), e);
+  assert.equal(mixedBatchResponse.status, 202);
+  assert.equal(e.DB.webVitalEvents.size, 4);
+
+  const pingDesktop = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "vis_desktop_device_1",
+      sessionId: "ses_desk_1",
+      eventType: "pageview",
+      path: "/combat",
+      characterDigest: "cross_device_char_digest_abc",
+    }),
+  }), e);
+  assert.equal(pingDesktop.status, 202);
+
+  const pingMobile = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "vis_mobile_device_2",
+      sessionId: "ses_mob_2",
+      eventType: "heartbeat",
+      path: "/combat",
+      characterDigest: "cross_device_char_digest_abc",
+    }),
+  }), e);
+  assert.equal(pingMobile.status, 202);
+  // Both pings had distinct visitorIds, but sharing characterDigest deduplicated them to the same visitor row
+  assert.equal(e.DB.usageVisitors.size, 1);
+}
+
+{
   const e = env();
   const unauthorized = await handleRequest(new Request("https://worker.test/error/report", {
     method: "POST",
@@ -1413,11 +1511,15 @@ async function json(response) {
     assert.equal(body.result.characters[0].draft.skills.smelting.level, 189);
     assert.equal(body.result.characters[0].draft.museum.items[0].name, "Root Apron");
     assert.equal(body.result.characters[1].draft.importSource.characterHashTail, "ltHash123456");
+    assert.equal(typeof body.result.characters[1].draft.importSource.characterHashDigest, "string");
+    assert.equal(body.result.characters[1].draft.importSource.characterHashDigest.length, 64);
     assert.equal(body.result.characters[1].draft.levels.combat, 102);
     assert.equal(body.result.characters[1].draft.museum.items[0].name, "Alt Familiar");
     assert.equal(body.result.characters[1].draft.importSource.importedSections.includes("museum"), true);
     assert.equal(body.result.characters[2].draft.name, "DokiDex");
     assert.equal(body.result.characters[2].draft.importSource.characterHashTail, "dokidexhash");
+    assert.equal(typeof body.result.characters[2].draft.importSource.characterHashDigest, "string");
+    assert.equal(body.result.characters[2].draft.importSource.characterHashDigest.length, 64);
     assert.equal(body.result.characters[2].draft.levels.combat, 101);
   } finally {
     globalThis.fetch = originalFetch;

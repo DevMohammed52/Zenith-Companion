@@ -921,3 +921,26 @@ export function useProfiles() {
   if (!context) throw new Error("useProfiles must be used inside ProfileProvider");
   return context;
 }
+
+export function getRootPlayerDigest(profiles: CharacterProfile[] | null | undefined): string | undefined {
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    return undefined;
+  }
+
+  const mainProfile = profiles.find(
+    (profile) => profile?.kind === "main" && typeof profile?.importSource?.characterHashDigest === "string" && profile.importSource.characterHashDigest.trim(),
+  );
+  if (mainProfile?.importSource?.characterHashDigest) {
+    return mainProfile.importSource.characterHashDigest.trim();
+  }
+
+  const firstProfileWithDigest = profiles.find(
+    (profile) => typeof profile?.importSource?.characterHashDigest === "string" && profile.importSource.characterHashDigest.trim(),
+  );
+  if (firstProfileWithDigest?.importSource?.characterHashDigest) {
+    return firstProfileWithDigest.importSource.characterHashDigest.trim();
+  }
+
+  return undefined;
+}
+

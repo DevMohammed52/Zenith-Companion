@@ -28,6 +28,18 @@ export async function POST(request: Request) {
     );
   }
 
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/(?:^|;\s*)__zvid=([^;]*)/);
+  const hasZvidCookie = Boolean(match && match[1]?.trim());
+
+  let visitorId = "";
+  try {
+    const parsed = JSON.parse(body) as { visitorId?: unknown };
+    if (typeof parsed?.visitorId === "string" && parsed.visitorId.trim()) {
+      visitorId = parsed.visitorId.trim().slice(0, 128);
+    }
+  } catch {}
+
   const origin = request.headers.get("origin");
   const clientIp = extractForwardedClientIp(request);
   const userAgent = request.headers.get("user-agent");
@@ -46,8 +58,13 @@ export async function POST(request: Request) {
     body,
   }, "Usage service returned an unreadable response.");
 
+  const responseHeaders: Record<string, string> = { ...NO_STORE_HEADERS };
+  if (!hasZvidCookie && visitorId) {
+    responseHeaders["set-cookie"] = `__zvid=${encodeURIComponent(visitorId)}; Path=/; SameSite=Lax; Max-Age=31536000`;
+  }
+
   return NextResponse.json(result.payload, {
     status: result.status,
-    headers: NO_STORE_HEADERS,
+    headers: responseHeaders,
   });
 }

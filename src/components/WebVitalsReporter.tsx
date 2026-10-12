@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useReportWebVitals } from "next/web-vitals";
 
@@ -14,8 +15,17 @@ type WebVitalMetric = {
   navigationType?: string;
 };
 
+type WebVitalPayload = {
+  metricName: string;
+  value: number;
+  rating: string;
+  path: string;
+  deviceType: string;
+  navigationType: string;
+};
+
 function deviceType() {
-  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const coarse = typeof window.matchMedia === "function" ? window.matchMedia("(pointer: coarse)").matches : false;
   const width = window.innerWidth;
   if (coarse && width < 768) return "mobile";
   if (coarse && width < 1180) return "tablet";
@@ -28,7 +38,7 @@ function shouldSkipVitals() {
   try {
     return window.localStorage.getItem(DISABLE_ANALYTICS_KEY) === "true";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -47,25 +57,14 @@ function roundedVitalValue(value: number) {
   return Math.round(Math.min(value, 120000) * 1000) / 1000;
 }
 
-function sendWebVital(path: string, metric: WebVitalMetric) {
+function flushBatch(items: WebVitalPayload[]) {
+  if (items.length === 0) return;
   if (shouldSkipVitals()) return;
-  if (!VITAL_METRICS.has(metric.name)) return;
-  const value = roundedVitalValue(metric.value);
-  if (value === null) return;
-
-  const payload = {
-    metricName: metric.name,
-    value,
-    rating: normalizeRating(metric.rating),
-    path,
-    deviceType: deviceType(),
-    navigationType: normalizeNavigationType(metric.navigationType),
-  };
 
   void fetch("/api/usage/vitals", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(items),
     cache: "no-store",
     keepalive: true,
   }).catch(() => {});
@@ -73,10 +72,70 @@ function sendWebVital(path: string, metric: WebVitalMetric) {
 
 export default function WebVitalsReporter() {
   const pathname = usePathname();
+  const bufferRef = useRef<Map<string, WebVitalPayload>>(new Map());
+  const pathRef = useRef(pathname || "/");
+
+  const flush = () => {
+    if (bufferRef.current.size === 0) return;
+    const items = Array.from(bufferRef.current.values());
+    bufferRef.current.clear();
+    flushBatch(items);
+  };
+
+  useEffect(() => {
+    const current = pathname || "/";
+    if (pathRef.current !== current) {
+      flush();
+      pathRef.current = current;
+    }
+  }, [pathname]);
 
   useReportWebVitals((metric) => {
-    sendWebVital(pathname || "/", metric as WebVitalMetric);
+    if (shouldSkipVitals()) return;
+    if (!VITAL_METRICS.has(metric.name)) return;
+    const value = roundedVitalValue(metric.value);
+    if (value === null) return;
+
+    bufferRef.current.set(metric.name, {
+      metricName: metric.name,
+      value,
+      rating: normalizeRating(metric.rating),
+      path: pathRef.current,
+      deviceType: deviceType(),
+      navigationType: normalizeNavigationType(metric.navigationType),
+    });
   });
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flush();
+      }
+    };
+
+    const handlePageHide = () => {
+      flush();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      flush();
+    };
+  }, []);
 
   return null;
 }
+
+export const _webVitalsTesting = {
+  shouldSkipVitals,
+  deviceType,
+  flushBatch,
+  VITAL_METRICS,
+  normalizeRating,
+  normalizeNavigationType,
+  roundedVitalValue,
+};

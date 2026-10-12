@@ -3,7 +3,7 @@ import { extractForwardedClientIp, fetchProfileImportJson } from "@/lib/profile-
 
 export const dynamic = "force-dynamic";
 
-const VITALS_BODY_LIMIT = 1024;
+const VITALS_BODY_LIMIT = 8192;
 const NO_STORE_HEADERS = { "cache-control": "no-store" };
 const VITAL_METRICS = new Set(["CLS", "FCP", "INP", "LCP", "TTFB"]);
 const VITAL_RATINGS = new Set(["good", "needs-improvement", "poor"]);
@@ -82,10 +82,9 @@ export async function POST(request: Request) {
     );
   }
 
-  let parsed: WebVitalInput;
+  let raw: unknown;
   try {
-    const raw = JSON.parse(text) as unknown;
-    parsed = isRecord(raw) ? raw : {};
+    raw = JSON.parse(text);
   } catch {
     return NextResponse.json(
       { error: { code: "bad_request", message: "Invalid usage vitals event." } },
@@ -93,24 +92,58 @@ export async function POST(request: Request) {
     );
   }
 
-  const metricName = normalizeMetricName(parsed.metricName || parsed.metric || parsed.name);
-  const metricValue = normalizeVitalValue(parsed.value);
-  const path = normalizePath(parsed.path);
-  if (!metricName || metricValue === null || !path) {
+  const isArray = Array.isArray(raw);
+  if (Array.isArray(raw) && (raw.length === 0 || raw.length > 50)) {
     return NextResponse.json(
       { error: { code: "bad_request", message: "Invalid usage vitals event." } },
       { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
-  const body = JSON.stringify({
-    metricName,
-    value: metricValue,
-    rating: normalizeRating(parsed.rating),
-    path,
-    deviceType: normalizeDeviceType(parsed.deviceType),
-    navigationType: normalizeNavigationType(parsed.navigationType),
-  });
+  const rawItems: WebVitalInput[] = isArray
+    ? (raw as unknown[]).filter(isRecord)
+    : (isRecord(raw) ? [raw] : []);
+
+  if (rawItems.length === 0) {
+    return NextResponse.json(
+      { error: { code: "bad_request", message: "Invalid usage vitals event." } },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  const normalizedItems = [];
+  for (const item of rawItems) {
+    const metricName = normalizeMetricName(item.metricName || item.metric || item.name);
+    const metricValue = normalizeVitalValue(item.value);
+    const path = normalizePath(item.path);
+    if (!metricName || metricValue === null || !path) {
+      if (!isArray) {
+        return NextResponse.json(
+          { error: { code: "bad_request", message: "Invalid usage vitals event." } },
+          { status: 400, headers: NO_STORE_HEADERS },
+        );
+      }
+      continue;
+    }
+
+    normalizedItems.push({
+      metricName,
+      value: metricValue,
+      rating: normalizeRating(item.rating),
+      path,
+      deviceType: normalizeDeviceType(item.deviceType),
+      navigationType: normalizeNavigationType(item.navigationType),
+    });
+  }
+
+  if (normalizedItems.length === 0) {
+    return NextResponse.json(
+      { error: { code: "bad_request", message: "Invalid usage vitals event." } },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  const body = JSON.stringify(isArray ? normalizedItems : normalizedItems[0]);
 
   const origin = request.headers.get("origin");
   const clientIp = extractForwardedClientIp(request);

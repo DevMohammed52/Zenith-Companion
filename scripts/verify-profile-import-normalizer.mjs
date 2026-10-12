@@ -219,6 +219,7 @@ assert.equal(draft.museum.items.length, 2);
 assert.equal(draft.museum.pagination.failedPages[0], 2);
 assert.deepEqual(draft.importSource.importedSections, ["information", "metrics", "pets", "museum"]);
 assert.equal(draft.importSource.characterHashTail, "sh0000000001");
+assert.equal(draft.importSource.characterHashDigest, "62566e4fbfdb4a3aae17e2a5da9bebc93de5fc58d14d8f5dab658554ad8a8f28");
 
 const existing = profiles.sanitizeProfile({
   ...profiles.createDefaultProfile("Manual"),
