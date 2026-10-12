@@ -2770,6 +2770,32 @@ async function json(response) {
   assert.equal(visitorRecord.total_events, 2);
   assert.equal(visitorRecord.total_pageviews, 2);
   assert.notEqual(visitorRecord.last_seen_at, initialLastSeen);
+  // Preserved desktop & DE when ping3 omitted deviceType and country
+  assert.equal(visitorRecord.device_type, "desktop");
+  assert.equal(visitorRecord.country, "DE");
+
+  // 3b. Ping after another 15+ minutes with explicit new deviceType & country updates them
+  visitorRecord.last_seen_at = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const ping4 = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-ipcountry": "US",
+    },
+    body: JSON.stringify({
+      visitorId: "touchgate-visitor-1",
+      sessionId: "session-3",
+      eventType: "heartbeat",
+      path: "/tools/alchemy",
+      deviceType: "mobile",
+    }),
+  }), e);
+  assert.equal(ping4.status, 202);
+  assert.equal(visitorRecord.total_events, 3);
+  assert.equal(visitorRecord.device_type, "mobile");
+  assert.equal(visitorRecord.country, "US");
 
   // 4. Test admin health summary pulls from usage_visitors
   const healthRes = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
@@ -2780,6 +2806,12 @@ async function json(response) {
   assert.equal(healthBody.usage.activeUsers15m, 1);
   assert.equal(healthBody.usage.uniqueUsers24h, 1);
   assert.equal(healthBody.usage.uniqueUsersAllTime, 1);
+  const tf15m = healthBody.usage.timeframes.find((f) => f.key === "15m");
+  const tf24h = healthBody.usage.timeframes.find((f) => f.key === "24h");
+  const tfAll = healthBody.usage.timeframes.find((f) => f.key === "all");
+  assert.equal(tf15m?.users, 1);
+  assert.equal(tf24h?.users, 1);
+  assert.equal(tfAll?.users, 1);
 
   // 5. Test fallback when usage_visitors is unavailable/missing
   const fallbackEnv = env();
@@ -2822,6 +2854,9 @@ async function json(response) {
   const fallbackBody = await json(fallbackHealth);
   assert.equal(fallbackBody.usage.activeUsers15m, 1);
   assert.equal(fallbackBody.usage.pageviews24h, 1);
+  assert.equal(fallbackBody.usage.uniqueUsersAllTime, 1);
+  const fb15m = fallbackBody.usage.timeframes.find((f) => f.key === "15m");
+  assert.equal(fb15m?.users, 1);
 }
 
 console.log("Profile import Worker scaffold tests passed.");

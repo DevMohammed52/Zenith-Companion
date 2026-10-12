@@ -365,8 +365,16 @@ async function handleUsagePing(request, env, cors) {
       last_seen_at = excluded.last_seen_at,
       total_events = usage_visitors.total_events + 1,
       total_pageviews = usage_visitors.total_pageviews + excluded.total_pageviews,
-      device_type = COALESCE(excluded.device_type, usage_visitors.device_type),
-      country = COALESCE(excluded.country, usage_visitors.country)
+      device_type = CASE
+        WHEN excluded.device_type IS NOT NULL AND excluded.device_type != '' AND excluded.device_type != 'unknown'
+        THEN excluded.device_type
+        ELSE usage_visitors.device_type
+      END,
+      country = CASE
+        WHEN excluded.country IS NOT NULL AND excluded.country != ''
+        THEN excluded.country
+        ELSE usage_visitors.country
+      END
     WHERE datetime(usage_visitors.last_seen_at) < datetime(excluded.last_seen_at, '-15 minutes')
   `).bind(
     visitorFingerprint,
@@ -549,7 +557,7 @@ async function usageSummary(env, now) {
     countUsageVisitors(env, monthAgo),
     countUsageVisitors(env, null),
   ]);
-  const hasVisitorsRegistry = visitors15m !== null;
+  const hasVisitorsRegistry = typeof visitors15m === "number" && typeof visitorsAllTime === "number";
 
   const overview = hasVisitorsRegistry
     ? await env.DB.prepare(`
@@ -657,18 +665,34 @@ async function usageSummary(env, now) {
     ORDER BY hour ASC
   `).bind(dayAgo).all().catch(() => ({ results: [] }));
 
-  const timeframes = await Promise.all(ADMIN_TIMEFRAMES.map((frame) => usageFrameSummary(env, now, frame)));
+  const knownVisitorCounts = hasVisitorsRegistry
+    ? {
+        "15m": visitors15m,
+        "1h": visitors1h,
+        "24h": visitors24h,
+        "7d": visitors7d,
+        "30d": visitors30d,
+        "all": visitorsAllTime,
+      }
+    : null;
+
+  const timeframes = await Promise.all(
+    ADMIN_TIMEFRAMES.map((frame) => {
+      const known = hasVisitorsRegistry ? (knownVisitorCounts?.[frame.key] ?? undefined) : null;
+      return usageFrameSummary(env, now, frame, known);
+    }),
+  );
 
   const pageviews24h = Number(overview?.pageviews_24h || 0);
   const sessions24h = Number(overview?.sessions_24h || 0);
   return {
-    activeUsers15m: hasVisitorsRegistry ? visitors15m : Number(overview?.active_users_15m || 0),
-    activeUsers1h: hasVisitorsRegistry ? visitors1h : Number(overview?.active_users_1h || 0),
-    uniqueUsers24h: hasVisitorsRegistry ? visitors24h : Number(overview?.unique_users_24h || 0),
-    uniqueUsers7d: hasVisitorsRegistry ? visitors7d : Number(overview?.unique_users_7d || 0),
-    uniqueUsers30d: hasVisitorsRegistry ? visitors30d : Number(overview?.unique_users_30d || 0),
+    activeUsers15m: hasVisitorsRegistry ? (visitors15m ?? 0) : Number(overview?.active_users_15m || 0),
+    activeUsers1h: hasVisitorsRegistry ? (visitors1h ?? 0) : Number(overview?.active_users_1h || 0),
+    uniqueUsers24h: hasVisitorsRegistry ? (visitors24h ?? 0) : Number(overview?.unique_users_24h || 0),
+    uniqueUsers7d: hasVisitorsRegistry ? (visitors7d ?? 0) : Number(overview?.unique_users_7d || 0),
+    uniqueUsers30d: hasVisitorsRegistry ? (visitors30d ?? 0) : Number(overview?.unique_users_30d || 0),
     uniqueUsersAllTime: hasVisitorsRegistry
-      ? visitorsAllTime
+      ? (visitorsAllTime ?? 0)
       : Number(overview?.unique_users_all_time || timeframes.find((frame) => frame.key === "all")?.users || overview?.unique_users_30d || 0),
     sessions24h,
     sessions7d: Number(overview?.sessions_7d || 0),
@@ -720,9 +744,9 @@ async function usageSummary(env, now) {
   };
 }
 
-async function usageFrameSummary(env, now, frame) {
+async function usageFrameSummary(env, now, frame, knownVisitorCount = undefined) {
   const since = frame.ms === null ? null : new Date(now.getTime() - frame.ms).toISOString();
-  const visitorCount = await countUsageVisitors(env, since);
+  const visitorCount = knownVisitorCount !== undefined ? knownVisitorCount : await countUsageVisitors(env, since);
 
   let result;
   if (visitorCount !== null) {
