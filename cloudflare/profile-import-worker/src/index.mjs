@@ -316,7 +316,7 @@ async function handleUsagePing(request, env, cors) {
   }
   assertUsageBindings(env);
 
-  const rateLimit = await checkUsagePingRateLimit(request, env);
+  const rateLimit = await checkUsagePingRateLimit(request, env, true);
   if (!rateLimit.ok) {
     return json(
       { error: { code: "rate_limited", message: "Usage ping rate limit reached." } },
@@ -370,7 +370,7 @@ async function handleUsageVitals(request, env, cors) {
   }
   assertUsageBindings(env);
 
-  const rateLimit = await checkUsageVitalsRateLimit(request, env);
+  const rateLimit = await checkUsageVitalsRateLimit(request, env, true);
   if (!rateLimit.ok) {
     return json(
       { error: { code: "rate_limited", message: "Usage vitals rate limit reached." } },
@@ -419,7 +419,7 @@ async function handleErrorReport(request, env, cors) {
   }
   assertUsageBindings(env);
 
-  const rateLimit = await checkErrorReportRateLimit(request, env);
+  const rateLimit = await checkErrorReportRateLimit(request, env, true);
   if (!rateLimit.ok) {
     return json(
       { error: { code: "rate_limited", message: "Error report rate limit reached." } },
@@ -1179,7 +1179,8 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   }
 
   const now = new Date();
-  const requesterFingerprint = await fingerprint(requesterKey(request), env.IMPORT_SIGNING_SECRET);
+  const isTrusted = await isTrustedProxyRequest(request, env);
+  const requesterFingerprint = await fingerprint(requesterKey(request, isTrusted), env.IMPORT_SIGNING_SECRET);
   const hashFingerprint = await fingerprint(characterHash, env.IMPORT_SIGNING_SECRET);
 
   if (env.TURNSTILE_SECRET_KEY) {
@@ -1978,6 +1979,7 @@ async function cleanExpiredRows(env) {
     .bind(new Date(Date.now() - RATE_LIMIT_COUNTER_RETENTION_MS).toISOString())
     .run()
     .catch(() => null);
+  cleanupTelemetryRateLimits(env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS);
 }
 
 function assertBindings(env) {
@@ -2051,8 +2053,8 @@ export async function timingSafeEqualString(a, b) {
 export async function hasBearerSecret(request, secret) {
   const auth = (request?.headers?.get ? request.headers.get("authorization") : request?.headers?.authorization) || "";
   const expected = typeof secret === "string" ? secret.trim() : "";
-  if (!expected) return false;
-  return await timingSafeEqualString(auth, `Bearer ${expected}`);
+  if (!expected || !auth || !auth.startsWith("Bearer ")) return false;
+  return await timingSafeEqualString(auth.slice(7).trim(), expected);
 }
 
 export async function verifyTurnstile(env, token, request = null) {
@@ -2225,40 +2227,159 @@ function coordinatorKey(source) {
   return `idlemmo-api-job:${source}`;
 }
 
-function requesterKey(request) {
-  return request.headers.get("cf-connecting-ip")
-    || request.headers.get("x-forwarded-for")
-    || "unknown-requester";
+const IPV4_PATTERN = /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
+const IPV6_PATTERN = /^((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/;
+
+export function isValidIp(ip) {
+  if (!ip || typeof ip !== "string") return false;
+  const trimmed = ip.trim();
+  if (IPV4_PATTERN.test(trimmed)) return true;
+  return IPV6_PATTERN.test(trimmed);
+}
+
+export function requesterKey(request, isTrustedProxy = false) {
+  if (!request) return "unknown-requester";
+  const getHeader = (name) => {
+    if (typeof request.headers?.get === "function") {
+      return request.headers.get(name);
+    }
+    return request.headers?.[name] || null;
+  };
+
+  if (isTrustedProxy) {
+    const rawXff = getHeader("x-forwarded-for");
+    if (rawXff) {
+      const firstIp = rawXff.split(",")[0].trim().replace(/^\[|\]$/g, "");
+      if (isValidIp(firstIp)) {
+        return firstIp;
+      }
+    }
+  }
+
+  const cfIp = getHeader("cf-connecting-ip");
+  if (cfIp) {
+    const trimmed = cfIp.trim().replace(/^\[|\]$/g, "");
+    if (isValidIp(trimmed)) {
+      return trimmed;
+    }
+  }
+
+  return "unknown-requester";
+}
+
+export async function isTrustedProxyRequest(request, env) {
+  if (!request || !env) return false;
+  const auth = (request?.headers?.get ? request.headers.get("authorization") : request?.headers?.authorization) || "";
+  if (!auth || !auth.startsWith("Bearer ")) return false;
+  const token = auth.slice(7).trim();
+  if (!token) return false;
+
+  const candidates = [
+    env.USAGE_PING_SECRET,
+    env.ERROR_REPORT_SECRET,
+    env.ADMIN_DASHBOARD_SECRET,
+    env.SCRAPER_COORDINATOR_SECRET,
+    env.PROFILE_IMPORT_PROXY_SECRET,
+  ].filter((s) => typeof s === "string" && s.trim());
+
+  for (const secret of candidates) {
+    if (await timingSafeEqualString(token, secret.trim())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const TELEMETRY_RATE_LIMITS = new Map();
+const TELEMETRY_WINDOW_MS = 60 * 1000;
+const MAX_TELEMETRY_STORE_ENTRIES = 2000;
+let lastTelemetryCleanupAt = 0;
+
+export function resetTelemetryRateLimits(store = TELEMETRY_RATE_LIMITS) {
+  store.clear();
+  lastTelemetryCleanupAt = 0;
+}
+
+export function cleanupTelemetryRateLimits(store = TELEMETRY_RATE_LIMITS, now = Date.now()) {
+  for (const [key, entry] of store.entries()) {
+    if (entry.resetAt <= now) {
+      store.delete(key);
+    }
+  }
+  if (store.size > MAX_TELEMETRY_STORE_ENTRIES) {
+    for (const key of store.keys()) {
+      store.delete(key);
+      if (store.size <= MAX_TELEMETRY_STORE_ENTRIES) break;
+    }
+  }
+  lastTelemetryCleanupAt = now;
+}
+
+export function checkInMemoryRateLimit(key, maxPerMinute, store = TELEMETRY_RATE_LIMITS, now = Date.now()) {
+  if (!maxPerMinute || maxPerMinute <= 0) return { ok: true };
+
+  let entry = store.get(key);
+  if (entry && entry.resetAt <= now) {
+    store.delete(key);
+    entry = undefined;
+  }
+
+  if (!entry) {
+    store.set(key, { count: 1, resetAt: now + TELEMETRY_WINDOW_MS });
+    if (store.size > 500 && now - lastTelemetryCleanupAt > 5000) {
+      cleanupTelemetryRateLimits(store, now);
+    }
+    return { ok: true };
+  }
+
+  if (entry.count >= maxPerMinute) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+    return { ok: false, retryAfterSeconds };
+  }
+
+  entry.count += 1;
+  return { ok: true };
 }
 
 function errorReportSecret(env) {
-  const dedicated = typeof env.ERROR_REPORT_SECRET === "string" ? env.ERROR_REPORT_SECRET.trim() : "";
-  const fallback = typeof env.USAGE_PING_SECRET === "string" ? env.USAGE_PING_SECRET.trim() : "";
+  const dedicated = typeof env?.ERROR_REPORT_SECRET === "string" ? env.ERROR_REPORT_SECRET.trim() : "";
+  const fallback = typeof env?.USAGE_PING_SECRET === "string" ? env.USAGE_PING_SECRET.trim() : "";
   return dedicated || fallback;
 }
 
-async function checkUsagePingRateLimit(request, env) {
-  const maxPerMinute = readPositiveInt(env.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
-  const requesterFingerprint = await fingerprint(`usage:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  return await checkD1MinuteRateLimit(env, `usage-ping:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
+export async function checkUsagePingRateLimit(request, env, isTrusted = undefined) {
+  const maxPerMinute = readPositiveInt(env?.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
+  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
+  const requester = requesterKey(request, trusted);
+  const requesterFingerprint = await fingerprint(`usage:${requester}`, env?.IMPORT_SIGNING_SECRET || "usage-secret");
+  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
+  return checkInMemoryRateLimit(`usage-ping:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
 }
 
-async function checkUsageVitalsRateLimit(request, env) {
-  const maxPerMinute = readPositiveInt(env.USAGE_VITALS_MAX_PER_MINUTE, DEFAULT_USAGE_VITALS_MAX_PER_MINUTE);
-  const requesterFingerprint = await fingerprint(`vitals:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  return await checkD1MinuteRateLimit(env, `usage-vitals:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
+export async function checkUsageVitalsRateLimit(request, env, isTrusted = undefined) {
+  const maxPerMinute = readPositiveInt(env?.USAGE_VITALS_MAX_PER_MINUTE, DEFAULT_USAGE_VITALS_MAX_PER_MINUTE);
+  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
+  const requester = requesterKey(request, trusted);
+  const requesterFingerprint = await fingerprint(`vitals:${requester}`, env?.IMPORT_SIGNING_SECRET || "vitals-secret");
+  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
+  return checkInMemoryRateLimit(`usage-vitals:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
 }
 
-async function checkErrorReportRateLimit(request, env) {
-  const maxPerMinute = readPositiveInt(env.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
-  const requesterFingerprint = await fingerprint(`error:${requesterKey(request)}`, env.IMPORT_SIGNING_SECRET);
-  return await checkD1MinuteRateLimit(env, `error-report:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
+export async function checkErrorReportRateLimit(request, env, isTrusted = undefined) {
+  const maxPerMinute = readPositiveInt(env?.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
+  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
+  const requester = requesterKey(request, trusted);
+  const requesterFingerprint = await fingerprint(`error:${requester}`, env?.IMPORT_SIGNING_SECRET || "error-secret");
+  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
+  return checkInMemoryRateLimit(`error-report:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
 }
 
-async function checkImportStatusRateLimit(request, env) {
+export async function checkImportStatusRateLimit(request, env, isTrusted = undefined) {
   if (!request) return { ok: true };
   const maxPerMinute = readPositiveInt(env?.IMPORT_STATUS_MAX_PER_MINUTE, DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE);
-  const requesterFingerprint = await fingerprint(`status:${requesterKey(request)}`, env?.IMPORT_SIGNING_SECRET || "status-secret");
+  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
+  const requester = requesterKey(request, trusted);
+  const requesterFingerprint = await fingerprint(`status:${requester}`, env?.IMPORT_SIGNING_SECRET || "status-secret");
   return await checkD1MinuteRateLimit(env, `import-status:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
 }
 

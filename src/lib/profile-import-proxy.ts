@@ -28,9 +28,34 @@ function jsonError(code: string, message: string) {
   return { error: { code, message } };
 }
 
+export function extractForwardedClientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")
+    || request.headers.get("x-real-ip")
+    || request.headers.get("cf-connecting-ip")
+    || ""
+  );
+}
+
+export function getProxyAuthSecret(): string {
+  return (
+    process.env.PROFILE_IMPORT_PROXY_SECRET
+    || process.env.USAGE_PING_SECRET
+    || ""
+  ).trim();
+}
+
 function forwardedOriginHeaders(request: Request): HeadersInit {
   const origin = request.headers.get("origin");
-  return origin ? { origin } : {};
+  const clientIp = extractForwardedClientIp(request);
+  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  const proxySecret = getProxyAuthSecret();
+  return {
+    ...(origin ? { origin } : {}),
+    ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
+    ...(cfConnectingIp ? { "cf-connecting-ip": cfConnectingIp } : {}),
+    ...(proxySecret ? { authorization: `Bearer ${proxySecret}` } : {}),
+  };
 }
 
 export async function readProfileImportStartBody(request: Request): Promise<ProfileImportBodyResult> {
@@ -111,10 +136,11 @@ export async function fetchProfileImportJson(
   init: RequestInit,
   unreadableMessage: string,
 ): Promise<ProfileImportProxyResult> {
+  const { cache = "no-store", ...restInit } = init;
   try {
     const response = await fetch(`${PROFILE_IMPORT_API_URL}${path}`, {
-      ...init,
-      cache: "no-store",
+      cache,
+      ...restInit,
       signal: AbortSignal.timeout(PROFILE_IMPORT_PROXY_TIMEOUT_MS),
     });
     const payload = await response.json().catch(() => (

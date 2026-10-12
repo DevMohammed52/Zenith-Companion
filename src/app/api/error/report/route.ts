@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchProfileImportJson } from "@/lib/profile-import-proxy";
+import { extractForwardedClientIp, fetchProfileImportJson } from "@/lib/profile-import-proxy";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
   });
 
   const origin = request.headers.get("origin");
-  const forwardedFor = request.headers.get("x-forwarded-for");
+  const clientIp = extractForwardedClientIp(request);
   const userAgent = request.headers.get("user-agent");
   const country = request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry");
 
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       "content-type": "application/json",
       authorization: `Bearer ${secret}`,
       ...(origin ? { origin } : {}),
-      ...(forwardedFor ? { "x-forwarded-for": forwardedFor } : {}),
+      ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
       ...(userAgent ? { "user-agent": userAgent } : {}),
       ...(country ? { "cf-ipcountry": country } : {}),
     },

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { fetchProfileImportJson } from "@/lib/profile-import-proxy";
+import { extractForwardedClientIp, fetchProfileImportJson } from "@/lib/profile-import-proxy";
 
 const JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{20,80}$/;
 
@@ -20,13 +20,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (cfConnectingIp) {
     forwardHeaders["cf-connecting-ip"] = cfConnectingIp;
   }
-  const xForwardedFor = request.headers.get("x-forwarded-for");
-  if (xForwardedFor) {
-    forwardHeaders["x-forwarded-for"] = xForwardedFor;
+  const clientIp = extractForwardedClientIp(request);
+  if (clientIp) {
+    forwardHeaders["x-forwarded-for"] = clientIp;
   }
   const origin = request.headers.get("origin");
   if (origin) {
     forwardHeaders["origin"] = origin;
+  }
+  const proxySecret = process.env.PROFILE_IMPORT_PROXY_SECRET?.trim() || process.env.USAGE_PING_SECRET?.trim();
+  if (proxySecret) {
+    forwardHeaders["authorization"] = `Bearer ${proxySecret}`;
   }
 
   const result = await fetchProfileImportJson(

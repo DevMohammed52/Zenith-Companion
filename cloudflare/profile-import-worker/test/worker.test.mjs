@@ -10,6 +10,16 @@ import {
   DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE,
   TERMINAL_STATUS_CACHE_CONTROL,
   NOT_FOUND_STATUS_CACHE_CONTROL,
+  isValidIp,
+  requesterKey,
+  isTrustedProxyRequest,
+  checkInMemoryRateLimit,
+  resetTelemetryRateLimits,
+  cleanupTelemetryRateLimits,
+  checkUsagePingRateLimit,
+  checkUsageVitalsRateLimit,
+  checkErrorReportRateLimit,
+  checkImportStatusRateLimit,
 } from "../src/index.mjs";
 
 class MemoryKV {
@@ -908,18 +918,20 @@ async function json(response) {
       path: "/items",
     }),
   };
+  resetTelemetryRateLimits();
   const first = await handleRequest(new Request("https://worker.test/usage/ping", requestInit), e);
   const second = await handleRequest(new Request("https://worker.test/usage/ping", requestInit), e);
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.usageEvents.size, 1);
-  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 0);
   assert.equal(e.ZENITH_COORDINATOR.gets, 0);
   assert.equal(e.ZENITH_COORDINATOR.puts, 0);
 }
 
 {
   const e = env({ USAGE_VITALS_MAX_PER_MINUTE: "1" });
+  resetTelemetryRateLimits();
   const requestInit = {
     method: "POST",
     headers: {
@@ -940,13 +952,14 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.webVitalEvents.size, 1);
-  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 0);
   assert.equal(e.ZENITH_COORDINATOR.gets, 0);
   assert.equal(e.ZENITH_COORDINATOR.puts, 0);
 }
 
 {
   const e = env({ ERROR_REPORT_MAX_PER_MINUTE: "1" });
+  resetTelemetryRateLimits();
   const requestInit = {
     method: "POST",
     headers: {
@@ -967,7 +980,7 @@ async function json(response) {
   assert.equal(first.status, 202);
   assert.equal(second.status, 429);
   assert.equal(e.DB.appErrorEvents.size, 1);
-  assert.equal(e.DB.minuteBudgets.size, 1);
+  assert.equal(e.DB.minuteBudgets.size, 0);
   assert.equal(e.ZENITH_COORDINATOR.gets, 0);
   assert.equal(e.ZENITH_COORDINATOR.puts, 0);
 }
@@ -2443,24 +2456,194 @@ async function json(response) {
   }), e);
   assert.equal(reqOtherIp.status, 200);
 
-  // Rate limiting works with x-forwarded-for when cf-connecting-ip is absent
-  const xffHeaders = { "x-forwarded-for": "198.51.100.12" };
+  // Rate limiting with x-forwarded-for when sent from a trusted proxy
+  const trustedProxyHeaders = {
+    "x-forwarded-for": "198.51.100.12",
+    authorization: "Bearer coordinator-secret",
+  };
   const xffReq1 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
-    headers: xffHeaders,
+    headers: trustedProxyHeaders,
   }), e);
   assert.equal(xffReq1.status, 200);
 
   const xffReq2 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
-    headers: xffHeaders,
+    headers: trustedProxyHeaders,
   }), e);
   assert.equal(xffReq2.status, 200);
 
   const xffReq3 = await handleRequest(new Request("https://worker.test/profile-import/status/imp_ratelimit_status_00000001", {
-    headers: xffHeaders,
+    headers: trustedProxyHeaders,
   }), e);
   assert.equal(xffReq3.status, 429);
   const xffBody3 = await json(xffReq3);
   assert.equal(xffBody3.error?.code, "rate_limited");
+}
+
+// ============================================================================
+// Unit Tests: Proxy Client IP Resolution & Validation (isValidIp & requesterKey)
+// ============================================================================
+{
+  // isValidIp IPv4
+  assert.equal(isValidIp("127.0.0.1"), true);
+  assert.equal(isValidIp("198.51.100.42"), true);
+  assert.equal(isValidIp("0.0.0.0"), true);
+  assert.equal(isValidIp("255.255.255.255"), true);
+  assert.equal(isValidIp("256.0.0.1"), false);
+  assert.equal(isValidIp("1.2.3.4.5"), false);
+  assert.equal(isValidIp("1.2.3"), false);
+  assert.equal(isValidIp("not-an-ip"), false);
+  assert.equal(isValidIp(""), false);
+  assert.equal(isValidIp(null), false);
+  assert.equal(isValidIp(undefined), false);
+
+  // isValidIp IPv6
+  assert.equal(isValidIp("::1"), true);
+  assert.equal(isValidIp("::"), true);
+  assert.equal(isValidIp("2001:db8::1"), true);
+  assert.equal(isValidIp("fe80::1"), true);
+  assert.equal(isValidIp("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), true);
+  assert.equal(isValidIp("::ffff:192.0.2.128"), true);
+  assert.equal(isValidIp("12345::1"), false);
+  assert.equal(isValidIp(":::"), false);
+  assert.equal(isValidIp("2001:db8:::1"), false);
+
+  // requesterKey with trusted proxy (isTrustedProxy = true)
+  const trustedWithXff = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "198.51.100.42, 10.0.0.1",
+      "cf-connecting-ip": "203.0.113.1",
+    },
+  });
+  assert.equal(requesterKey(trustedWithXff, true), "198.51.100.42");
+
+  const trustedWithIpv6 = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "2001:db8::8a2e:370:7334",
+      "cf-connecting-ip": "203.0.113.1",
+    },
+  });
+  assert.equal(requesterKey(trustedWithIpv6, true), "2001:db8::8a2e:370:7334");
+
+  // Invalid XFF falls back to valid cf-connecting-ip
+  const trustedInvalidXff = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "malicious-header-injection",
+      "cf-connecting-ip": "203.0.113.5",
+    },
+  });
+  assert.equal(requesterKey(trustedInvalidXff, true), "203.0.113.5");
+
+  // Missing XFF falls back to cf-connecting-ip
+  const trustedNoXff = new Request("https://worker.test/", {
+    headers: {
+      "cf-connecting-ip": "203.0.113.6",
+    },
+  });
+  assert.equal(requesterKey(trustedNoXff, true), "203.0.113.6");
+
+  // requesterKey with untrusted/public client (isTrustedProxy = false)
+  // Strictly ignores x-forwarded-for and uses cf-connecting-ip
+  const untrustedWithSpoofedXff = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "1.2.3.4",
+      "cf-connecting-ip": "203.0.113.50",
+    },
+  });
+  assert.equal(requesterKey(untrustedWithSpoofedXff, false), "203.0.113.50");
+
+  // Untrusted request without cf-connecting-ip must return "unknown-requester"
+  const untrustedNoCf = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "1.2.3.4",
+    },
+  });
+  assert.equal(requesterKey(untrustedNoCf, false), "unknown-requester");
+
+  // IPv6 with brackets stripped
+  const trustedBracketedIpv6 = new Request("https://worker.test/", {
+    headers: {
+      "x-forwarded-for": "[2001:db8::1]",
+      "cf-connecting-ip": "203.0.113.1",
+    },
+  });
+  assert.equal(requesterKey(trustedBracketedIpv6, true), "2001:db8::1");
+
+  // Invalid IPv4/IPv6 edge cases rejected
+  assert.equal(isValidIp("192.168.01.1"), false);
+  assert.equal(isValidIp("fe80::1%eth0"), false);
+  assert.equal(isValidIp("198.51.100.1:8080"), false);
+
+  // isTrustedProxyRequest helper
+  const e = env();
+  assert.equal(await isTrustedProxyRequest(new Request("https://worker.test/", {
+    headers: { authorization: "Bearer usage-secret" },
+  }), e), true);
+  assert.equal(await isTrustedProxyRequest(new Request("https://worker.test/", {
+    headers: { authorization: "Bearer coordinator-secret" },
+  }), e), true);
+  assert.equal(await isTrustedProxyRequest(new Request("https://worker.test/", {
+    headers: { authorization: "Bearer wrong-secret" },
+  }), e), false);
+  assert.equal(await isTrustedProxyRequest(new Request("https://worker.test/", {
+    headers: { authorization: "Basic some-token" },
+  }), e), false);
+  assert.equal(await isTrustedProxyRequest(new Request("https://worker.test/"), e), false);
+}
+
+// ============================================================================
+// Unit Tests: In-Memory Sliding Window Telemetry Rate Limiting (Zero D1 Writes)
+// ============================================================================
+{
+  const testStore = new Map();
+  // 1. Within limit allows requests
+  const res1 = checkInMemoryRateLimit("test-key", 2, testStore, 1000);
+  assert.equal(res1.ok, true);
+  const res2 = checkInMemoryRateLimit("test-key", 2, testStore, 2000);
+  assert.equal(res2.ok, true);
+
+  // 2. Exceeding limit returns 429 retryAfter
+  const res3 = checkInMemoryRateLimit("test-key", 2, testStore, 3000);
+  assert.equal(res3.ok, false);
+  assert.equal(typeof res3.retryAfterSeconds, "number");
+  assert.ok(res3.retryAfterSeconds > 0 && res3.retryAfterSeconds <= 60);
+
+  // 3. After window expiry (60s), resets and allows requests again
+  const res4 = checkInMemoryRateLimit("test-key", 2, testStore, 1000 + 61000);
+  assert.equal(res4.ok, true);
+
+  // 4. Hard cap store eviction: exceeds MAX_TELEMETRY_STORE_ENTRIES (2000)
+  const largeStore = new Map();
+  for (let i = 0; i < 2050; i++) {
+    largeStore.set(`key-${i}`, { count: 1, resetAt: Date.now() + 60000 });
+  }
+  assert.equal(largeStore.size, 2050);
+  cleanupTelemetryRateLimits(largeStore, Date.now());
+  assert.ok(largeStore.size <= 2000);
+
+  // 5. End-to-end telemetry ping never executes writes against minute_budgets
+  const e = env({ USAGE_PING_MAX_PER_MINUTE: "2" });
+  resetTelemetryRateLimits();
+  const pingReq = (ip) => new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": ip,
+    },
+    body: JSON.stringify({ visitorId: "v1", sessionId: "s1", path: "/test" }),
+  });
+
+  const p1 = await handleRequest(pingReq("203.0.113.100"), e);
+  const p2 = await handleRequest(pingReq("203.0.113.100"), e);
+  const p3 = await handleRequest(pingReq("203.0.113.100"), e);
+  assert.equal(p1.status, 202);
+  assert.equal(p2.status, 202);
+  assert.equal(p3.status, 429);
+  assert.equal(p3.headers.get("retry-after") !== null, true);
+  const p3Body = await json(p3);
+  assert.equal(p3Body.error.code, "rate_limited");
+  assert.equal(e.DB.minuteBudgets.size, 0); // ZERO writes to minute_budgets
 }
 
 console.log("Profile import Worker scaffold tests passed.");
