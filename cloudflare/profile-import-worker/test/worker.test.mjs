@@ -77,6 +77,7 @@ class MemoryD1 {
     this.jobs = new Map();
     this.cooldowns = new Map();
     this.usageEvents = new Map();
+    this.usageVisitors = new Map();
     this.appErrorEvents = new Map();
     this.webVitalEvents = new Map();
     this.minuteBudgets = new Map();
@@ -117,6 +118,31 @@ class MemoryD1 {
         user_agent_family: userAgentFamily,
         created_at: createdAt,
       });
+    }
+    if (sql.includes("INSERT INTO usage_visitors")) {
+      const [visitorFingerprint, firstSeenAt, lastSeenAt, totalPageviews, deviceType, country] = args;
+      const existing = this.usageVisitors.get(visitorFingerprint);
+      if (!existing) {
+        this.usageVisitors.set(visitorFingerprint, {
+          visitor_fingerprint: visitorFingerprint,
+          first_seen_at: firstSeenAt,
+          last_seen_at: lastSeenAt,
+          total_events: 1,
+          total_pageviews: Number(totalPageviews || 0),
+          device_type: deviceType,
+          country,
+        });
+      } else {
+        const lastSeenMs = new Date(existing.last_seen_at).getTime();
+        const incomingMs = new Date(lastSeenAt).getTime();
+        if (incomingMs - lastSeenMs >= 15 * 60 * 1000) {
+          existing.last_seen_at = lastSeenAt;
+          existing.total_events += 1;
+          existing.total_pageviews += Number(totalPageviews || 0);
+          if (deviceType && deviceType !== "unknown") existing.device_type = deviceType;
+          if (country) existing.country = country;
+        }
+      }
     }
     if (sql.includes("INSERT INTO app_error_events")) {
       const [id, source, eventType, path, digest, appVersion, browserClass, userAgentFamily, createdAt] = args;
@@ -309,6 +335,27 @@ class MemoryD1 {
         unique_characters_24h: distinctCount(jobs.filter((job) => job.created_at >= charactersDayAgo), "target_hash_fingerprint"),
         unique_characters_7d: distinctCount(jobs.filter((job) => job.created_at >= charactersWeekAgo), "target_hash_fingerprint"),
         unique_characters_all_time: distinctCount(jobs, "target_hash_fingerprint"),
+      };
+    }
+    if (sql.includes("FROM usage_visitors")) {
+      const visitors = Array.from(this.usageVisitors.values());
+      if (sql.includes("WHERE last_seen_at >=")) {
+        const [since] = args;
+        const count = visitors.filter((v) => v.last_seen_at >= since).length;
+        return { count };
+      }
+      return { count: visitors.length };
+    }
+    if (sql.includes("sessions_30d") && !sql.includes("unique_users_30d")) {
+      const [eventsDayAgo, pageviewsDayAgo, sessionsDayAgo, sessionsWeekAgo, createdAfter] = args;
+      const events = Array.from(this.usageEvents.values());
+      const boundEvents = createdAfter ? events.filter((e) => e.created_at >= createdAfter) : events;
+      return {
+        events_24h: events.filter((event) => event.created_at >= eventsDayAgo).length,
+        pageviews_24h: events.filter((event) => event.event_type === "pageview" && event.created_at >= pageviewsDayAgo).length,
+        sessions_24h: distinctCount(events.filter((event) => event.created_at >= sessionsDayAgo), "session_fingerprint"),
+        sessions_7d: distinctCount(events.filter((event) => event.created_at >= sessionsWeekAgo), "session_fingerprint"),
+        sessions_30d: distinctCount(boundEvents, "session_fingerprint"),
       };
     }
     if (sql.includes("unique_users_30d") || sql.includes("unique_users_all_time")) {
@@ -2644,6 +2691,137 @@ async function json(response) {
   const p3Body = await json(p3);
   assert.equal(p3Body.error.code, "rate_limited");
   assert.equal(e.DB.minuteBudgets.size, 0); // ZERO writes to minute_budgets
+}
+
+// Test Phase 2: Usage visitors registry and 15-minute touch gate
+{
+  const e = env();
+  resetTelemetryRateLimits();
+
+  // 1. Initial usage ping creates a record in usageVisitors
+  const ping1 = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+      "cf-ipcountry": "DE",
+    },
+    body: JSON.stringify({
+      visitorId: "touchgate-visitor-1",
+      sessionId: "session-1",
+      eventType: "pageview",
+      path: "/tools/alchemy",
+      deviceType: "desktop",
+    }),
+  }), e);
+  assert.equal(ping1.status, 202);
+  assert.equal(e.DB.usageEvents.size, 1);
+  assert.equal(e.DB.usageVisitors.size, 1);
+
+  const visitorRecord = Array.from(e.DB.usageVisitors.values())[0];
+  assert.equal(visitorRecord.total_events, 1);
+  assert.equal(visitorRecord.total_pageviews, 1);
+  assert.equal(visitorRecord.device_type, "desktop");
+  assert.equal(visitorRecord.country, "DE");
+
+  // 2. Second ping within 15 minutes: gated by 15-minute touch gate
+  visitorRecord.last_seen_at = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const initialLastSeen = visitorRecord.last_seen_at;
+
+  const ping2 = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "touchgate-visitor-1",
+      sessionId: "session-1",
+      eventType: "heartbeat",
+      path: "/tools/alchemy",
+    }),
+  }), e);
+  assert.equal(ping2.status, 202);
+  assert.equal(e.DB.usageEvents.size, 2);
+  // Touch gate prevented update
+  assert.equal(visitorRecord.total_events, 1);
+  assert.equal(visitorRecord.last_seen_at, initialLastSeen);
+
+  // 3. Third ping after 15 minutes: touch gate passes, last_seen_at and totals update
+  visitorRecord.last_seen_at = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const ping3 = await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "touchgate-visitor-1",
+      sessionId: "session-2",
+      eventType: "pageview",
+      path: "/tools/alchemy",
+    }),
+  }), e);
+  assert.equal(ping3.status, 202);
+  assert.equal(e.DB.usageEvents.size, 3);
+  assert.equal(visitorRecord.total_events, 2);
+  assert.equal(visitorRecord.total_pageviews, 2);
+  assert.notEqual(visitorRecord.last_seen_at, initialLastSeen);
+
+  // 4. Test admin health summary pulls from usage_visitors
+  const healthRes = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(healthRes.status, 200);
+  const healthBody = await json(healthRes);
+  assert.equal(healthBody.usage.activeUsers15m, 1);
+  assert.equal(healthBody.usage.uniqueUsers24h, 1);
+  assert.equal(healthBody.usage.uniqueUsersAllTime, 1);
+
+  // 5. Test fallback when usage_visitors is unavailable/missing
+  const fallbackEnv = env();
+  resetTelemetryRateLimits();
+  const originalPrepare = fallbackEnv.DB.prepare.bind(fallbackEnv.DB);
+  fallbackEnv.DB.prepare = (sql) => {
+    if (sql.includes("FROM usage_visitors") || sql.includes("INSERT INTO usage_visitors")) {
+      return {
+        bind: () => ({
+          first: async () => { throw new Error("no such table: usage_visitors"); },
+          run: async () => { throw new Error("no such table: usage_visitors"); },
+        }),
+        first: async () => { throw new Error("no such table: usage_visitors"); },
+        run: async () => { throw new Error("no such table: usage_visitors"); },
+      };
+    }
+    return originalPrepare(sql);
+  };
+
+  // Add event to usage_events
+  await handleRequest(new Request("https://worker.test/usage/ping", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer usage-secret",
+      origin: "https://zenith.example",
+    },
+    body: JSON.stringify({
+      visitorId: "fallback-visitor",
+      sessionId: "fallback-session",
+      eventType: "pageview",
+      path: "/leaderboards",
+    }),
+  }), fallbackEnv);
+
+  const fallbackHealth = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), fallbackEnv);
+  assert.equal(fallbackHealth.status, 200);
+  const fallbackBody = await json(fallbackHealth);
+  assert.equal(fallbackBody.usage.activeUsers15m, 1);
+  assert.equal(fallbackBody.usage.pageviews24h, 1);
 }
 
 console.log("Profile import Worker scaffold tests passed.");

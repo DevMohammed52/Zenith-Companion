@@ -357,6 +357,26 @@ async function handleUsagePing(request, env, cors) {
     now,
   ).run();
 
+  await env.DB.prepare(`
+    INSERT INTO usage_visitors (
+      visitor_fingerprint, first_seen_at, last_seen_at, total_events, total_pageviews, device_type, country
+    ) VALUES (?, ?, ?, 1, ?, ?, ?)
+    ON CONFLICT(visitor_fingerprint) DO UPDATE SET
+      last_seen_at = excluded.last_seen_at,
+      total_events = usage_visitors.total_events + 1,
+      total_pageviews = usage_visitors.total_pageviews + excluded.total_pageviews,
+      device_type = COALESCE(excluded.device_type, usage_visitors.device_type),
+      country = COALESCE(excluded.country, usage_visitors.country)
+    WHERE datetime(usage_visitors.last_seen_at) < datetime(excluded.last_seen_at, '-15 minutes')
+  `).bind(
+    visitorFingerprint,
+    now,
+    now,
+    eventType === "pageview" ? 1 : 0,
+    normalizeDeviceType(payload.deviceType),
+    cleanString(request.headers.get("cf-ipcountry"), 8),
+  ).run().catch(() => null);
+
   return json({ ok: true }, 202, cors);
 }
 
@@ -489,6 +509,24 @@ async function importDemandSummary(env, now) {
   };
 }
 
+async function countUsageVisitors(env, since = null) {
+  try {
+    const stmt = since
+      ? env.DB.prepare("SELECT COUNT(*) AS count FROM usage_visitors WHERE last_seen_at >= ?").bind(since)
+      : env.DB.prepare("SELECT COUNT(*) AS count FROM usage_visitors");
+    const result = await stmt.first();
+    if (result) {
+      const val = result.count ?? result["count(*)"] ?? result["COUNT(*)"] ?? Object.values(result)[0];
+      if (val !== undefined && val !== null && !isNaN(Number(val))) {
+        return Number(val);
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function usageSummary(env, now) {
   const fifteenAgo = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
   const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
@@ -496,21 +534,49 @@ async function usageSummary(env, now) {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const overview = await env.DB.prepare(`
-    SELECT
-      COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
-      COUNT(CASE WHEN event_type = 'pageview' AND created_at >= ? THEN 1 ELSE NULL END) AS pageviews_24h,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_15m,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_1h,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_24h,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_7d,
-      COUNT(DISTINCT visitor_fingerprint) AS unique_users_30d,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
-      COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d,
-      COUNT(DISTINCT session_fingerprint) AS sessions_30d
-    FROM usage_events
-    WHERE created_at >= ?
-  `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null);
+  const [
+    visitors15m,
+    visitors1h,
+    visitors24h,
+    visitors7d,
+    visitors30d,
+    visitorsAllTime,
+  ] = await Promise.all([
+    countUsageVisitors(env, fifteenAgo),
+    countUsageVisitors(env, hourAgo),
+    countUsageVisitors(env, dayAgo),
+    countUsageVisitors(env, weekAgo),
+    countUsageVisitors(env, monthAgo),
+    countUsageVisitors(env, null),
+  ]);
+  const hasVisitorsRegistry = visitors15m !== null;
+
+  const overview = hasVisitorsRegistry
+    ? await env.DB.prepare(`
+        SELECT
+          COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
+          COUNT(CASE WHEN event_type = 'pageview' AND created_at >= ? THEN 1 ELSE NULL END) AS pageviews_24h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d,
+          COUNT(DISTINCT session_fingerprint) AS sessions_30d
+        FROM usage_events
+        WHERE created_at >= ?
+      `).bind(dayAgo, dayAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null)
+    : await env.DB.prepare(`
+        SELECT
+          COUNT(CASE WHEN created_at >= ? THEN 1 ELSE NULL END) AS events_24h,
+          COUNT(CASE WHEN event_type = 'pageview' AND created_at >= ? THEN 1 ELSE NULL END) AS pageviews_24h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_15m,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS active_users_1h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_24h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN visitor_fingerprint ELSE NULL END) AS unique_users_7d,
+          COUNT(DISTINCT visitor_fingerprint) AS unique_users_30d,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_24h,
+          COUNT(DISTINCT CASE WHEN created_at >= ? THEN session_fingerprint ELSE NULL END) AS sessions_7d,
+          COUNT(DISTINCT session_fingerprint) AS sessions_30d
+        FROM usage_events
+        WHERE created_at >= ?
+      `).bind(dayAgo, dayAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo, monthAgo).first().catch(() => null);
 
   const topPages = await env.DB.prepare(`
     SELECT path, COUNT(*) AS views, COUNT(DISTINCT visitor_fingerprint) AS users
@@ -596,12 +662,14 @@ async function usageSummary(env, now) {
   const pageviews24h = Number(overview?.pageviews_24h || 0);
   const sessions24h = Number(overview?.sessions_24h || 0);
   return {
-    activeUsers15m: Number(overview?.active_users_15m || 0),
-    activeUsers1h: Number(overview?.active_users_1h || 0),
-    uniqueUsers24h: Number(overview?.unique_users_24h || 0),
-    uniqueUsers7d: Number(overview?.unique_users_7d || 0),
-    uniqueUsers30d: Number(overview?.unique_users_30d || 0),
-    uniqueUsersAllTime: Number(overview?.unique_users_all_time || timeframes.find((frame) => frame.key === "all")?.users || overview?.unique_users_30d || 0),
+    activeUsers15m: hasVisitorsRegistry ? visitors15m : Number(overview?.active_users_15m || 0),
+    activeUsers1h: hasVisitorsRegistry ? visitors1h : Number(overview?.active_users_1h || 0),
+    uniqueUsers24h: hasVisitorsRegistry ? visitors24h : Number(overview?.unique_users_24h || 0),
+    uniqueUsers7d: hasVisitorsRegistry ? visitors7d : Number(overview?.unique_users_7d || 0),
+    uniqueUsers30d: hasVisitorsRegistry ? visitors30d : Number(overview?.unique_users_30d || 0),
+    uniqueUsersAllTime: hasVisitorsRegistry
+      ? visitorsAllTime
+      : Number(overview?.unique_users_all_time || timeframes.find((frame) => frame.key === "all")?.users || overview?.unique_users_30d || 0),
     sessions24h,
     sessions7d: Number(overview?.sessions_7d || 0),
     sessions30d: Number(overview?.sessions_30d || 0),
@@ -654,18 +722,53 @@ async function usageSummary(env, now) {
 
 async function usageFrameSummary(env, now, frame) {
   const since = frame.ms === null ? null : new Date(now.getTime() - frame.ms).toISOString();
-  const where = since ? "WHERE created_at >= ?" : "";
-  const row = await env.DB.prepare(`
-    SELECT
-      COUNT(*) AS events,
-      SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
-      SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
-      COUNT(DISTINCT visitor_fingerprint) AS users,
-      COUNT(DISTINCT session_fingerprint) AS sessions
-    FROM usage_events
-    ${where}
-  `);
-  const result = since ? await row.bind(since).first().catch(() => null) : await row.first().catch(() => null);
+  const visitorCount = await countUsageVisitors(env, since);
+
+  let result;
+  if (visitorCount !== null) {
+    const row = since
+      ? env.DB.prepare(`
+          SELECT
+            COUNT(*) AS events,
+            SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+            SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
+            COUNT(DISTINCT session_fingerprint) AS sessions
+          FROM usage_events
+          WHERE created_at >= ?
+        `).bind(since)
+      : env.DB.prepare(`
+          SELECT
+            COUNT(*) AS events,
+            SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+            SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
+            COUNT(DISTINCT session_fingerprint) AS sessions
+          FROM usage_events
+        `);
+    result = await row.first().catch(() => null);
+  } else {
+    const row = since
+      ? env.DB.prepare(`
+          SELECT
+            COUNT(*) AS events,
+            SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+            SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
+            COUNT(DISTINCT visitor_fingerprint) AS users,
+            COUNT(DISTINCT session_fingerprint) AS sessions
+          FROM usage_events
+          WHERE created_at >= ?
+        `).bind(since)
+      : env.DB.prepare(`
+          SELECT
+            COUNT(*) AS events,
+            SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+            SUM(CASE WHEN event_type = 'heartbeat' THEN 1 ELSE 0 END) AS heartbeats,
+            COUNT(DISTINCT visitor_fingerprint) AS users,
+            COUNT(DISTINCT session_fingerprint) AS sessions
+          FROM usage_events
+        `);
+    result = await row.first().catch(() => null);
+  }
+
   const pageviews = Number(result?.pageviews || 0);
   const sessions = Number(result?.sessions || 0);
   return {
@@ -674,7 +777,7 @@ async function usageFrameSummary(env, now, frame) {
     events: Number(result?.events || 0),
     pageviews,
     heartbeats: Number(result?.heartbeats || 0),
-    users: Number(result?.users || 0),
+    users: visitorCount !== null ? visitorCount : Number(result?.users || 0),
     sessions,
     pageviewsPerSession: sessions ? roundMetric(pageviews / sessions) : 0,
   };
