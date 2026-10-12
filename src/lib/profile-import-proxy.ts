@@ -155,3 +155,29 @@ export async function fetchProfileImportJson(
     };
   }
 }
+
+export type AdminActionPayload =
+  | { action: "process_queue" }
+  | { action: "clear_coordinator"; source?: string }
+  | { action: "cancel_job"; jobId: string }
+  | { action: "clear_cooldown"; scope: string; keyFingerprint: string }
+  | Record<string, unknown>;
+
+export async function executeProfileImportAdminAction(
+  actionPayload: unknown,
+  adminSecret: string,
+): Promise<ProfileImportProxyResult> {
+  return fetchProfileImportJson(
+    "/admin/actions",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${adminSecret}`,
+      },
+      body: JSON.stringify(actionPayload),
+      cache: "no-store",
+    },
+    "Cloudflare returned an unreadable response.",
+  );
+}

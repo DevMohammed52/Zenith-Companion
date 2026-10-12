@@ -82,6 +82,10 @@ export async function handleRequest(request, env, ctx = {}) {
       return await handleAdminImportHealth(request, env, cors, ctx);
     }
 
+    if (url.pathname === "/admin/actions" && request.method === "POST") {
+      return await handleAdminActions(request, env, cors, ctx);
+    }
+
     if (url.pathname === "/usage/ping" && request.method === "POST") {
       return await handleUsagePing(request, env, cors);
     }
@@ -188,29 +192,68 @@ async function handleAdminImportHealth(request, env, cors, ctx = {}) {
   const importAnalytics = await importAnalyticsSummary(env, now);
   const statusRows = await env.DB.prepare(`
     SELECT status, COUNT(*) AS count
-    FROM import_jobs
-    WHERE created_at >= ?
+    FROM import_events
+    WHERE created_at >= ? AND status IS NOT NULL AND status != ''
     GROUP BY status
-  `).bind(dayAgo).all();
-  const summary = await env.DB.prepare(`
+  `).bind(dayAgo).all().catch(() => ({ results: [] }));
+  let summary = await env.DB.prepare(`
     SELECT
       COUNT(*) AS total,
-      SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) AS completed,
-      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
-      SUM(CASE WHEN status = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+      SUM(CASE WHEN event_type IN ('queued', 'cooldown', 'queue_busy', 'turnstile_failed') THEN 1 ELSE 0 END) AS attempts,
+      SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN event_type = 'failed' THEN 1 ELSE 0 END) AS failed,
+      SUM(CASE WHEN event_type = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
       SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
-      AVG(CASE WHEN status = 'complete' THEN request_count ELSE NULL END) AS avg_request_count,
-      AVG(CASE WHEN status = 'complete' THEN retry_count ELSE NULL END) AS avg_retry_count,
-      AVG(CASE WHEN status = 'complete' THEN strftime('%s', updated_at) - strftime('%s', created_at) ELSE NULL END) AS avg_duration_seconds
-    FROM import_jobs
+      AVG(CASE WHEN event_type = 'complete' THEN request_count ELSE NULL END) AS avg_request_count,
+      AVG(CASE WHEN event_type = 'complete' THEN retry_count ELSE NULL END) AS avg_retry_count,
+      AVG(CASE WHEN event_type = 'complete' THEN duration_seconds ELSE NULL END) AS avg_duration_seconds
+    FROM import_events
     WHERE created_at >= ?
-  `).bind(dayAgo).first();
+  `).bind(dayAgo).first().catch(() => null);
+
+  const attemptsCount = Number(summary?.attempts || 0);
+  const completedCount = Number(summary?.completed || 0);
+  const failedCount = Number(summary?.failed || 0);
+  let statusResults = statusRows.results || [];
+
+  if (attemptsCount === 0 && completedCount === 0 && failedCount === 0) {
+    const fallbackSummary = await env.DB.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) AS completed,
+        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+        SUM(CASE WHEN status = 'waiting_for_budget' THEN 1 ELSE 0 END) AS waiting_for_budget,
+        SUM(CASE WHEN error_code = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+        AVG(CASE WHEN status = 'complete' THEN request_count ELSE NULL END) AS avg_request_count,
+        AVG(CASE WHEN status = 'complete' THEN retry_count ELSE NULL END) AS avg_retry_count,
+        AVG(CASE WHEN status = 'complete' THEN strftime('%s', updated_at) - strftime('%s', created_at) ELSE NULL END) AS avg_duration_seconds
+      FROM import_jobs
+      WHERE created_at >= ?
+    `).bind(dayAgo).first().catch(() => null);
+    if (fallbackSummary && Number(fallbackSummary.total || 0) > 0) {
+      summary = fallbackSummary;
+      const jobStatusRows = await env.DB.prepare(`
+        SELECT status, COUNT(*) AS count
+        FROM import_jobs
+        WHERE created_at >= ?
+        GROUP BY status
+      `).bind(dayAgo).all().catch(() => ({ results: [] }));
+      statusResults = jobStatusRows.results || [];
+    }
+  }
+
+  const effectiveCompleted = Number(summary?.completed || 0);
+  const effectiveFailed = Number(summary?.failed || 0);
+  const totalAttempts = Math.max(
+    Number(summary?.attempts || summary?.total || 0),
+    effectiveCompleted + effectiveFailed,
+  );
   const recentRows = await env.DB.prepare(`
-    SELECT status, request_count, retry_count, error_code, budget_mode, created_at, updated_at, expires_at
+    SELECT id, target_hash_fingerprint, status, error_code, error_message, request_count, retry_count, budget_mode, created_at, updated_at, expires_at
     FROM import_jobs
     ORDER BY created_at DESC
     LIMIT 10
-  `).all();
+  `).all().catch(() => ({ results: [] }));
   const coordinatorStates = await readCoordinatorStates(env);
   const budget = await importBudgetMode(env);
 
@@ -229,17 +272,18 @@ async function handleAdminImportHealth(request, env, cors, ctx = {}) {
     queue,
     cooldowns,
     last24h: {
-      total: Number(summary?.total || 0),
-      completed: Number(summary?.completed || 0),
-      failed: Number(summary?.failed || 0),
+      total: totalAttempts,
+      attempts: totalAttempts,
+      completed: effectiveCompleted,
+      failed: effectiveFailed,
       waitingForBudget: Number(summary?.waiting_for_budget || 0),
       rateLimited: Number(summary?.rate_limited || 0),
       avgRequestCount: roundMetric(summary?.avg_request_count),
       avgRetryCount: roundMetric(summary?.avg_retry_count),
       avgDurationSeconds: roundMetric(summary?.avg_duration_seconds),
-      completionRate: percentage(summary?.completed, summary?.total),
-      failureRate: percentage(summary?.failed, summary?.total),
-      statuses: Object.fromEntries((statusRows.results || []).map((row) => [row.status, Number(row.count || 0)])),
+      completionRate: percentage(effectiveCompleted, totalAttempts),
+      failureRate: percentage(effectiveFailed, totalAttempts),
+      statuses: Object.fromEntries(statusResults.map((row) => [row.status, Number(row.count || 0)])),
     },
     demand: {
       ...demand,
@@ -262,16 +306,21 @@ async function handleAdminImportHealth(request, env, cors, ctx = {}) {
       stale: isExpiredIso(state.expiresAt),
     })),
     recentJobs: (recentRows.results || []).map((row) => ({
+      id: row.id,
+      targetHashFingerprint: row.target_hash_fingerprint || "",
       status: row.status,
+      errorCode: row.error_code || "",
+      errorMessage: row.error_message || "",
       requestCount: Number(row.request_count || 0),
       retryCount: Number(row.retry_count || 0),
-      errorCode: row.error_code || "",
       budgetMode: row.budget_mode || "unknown",
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       expiresAt: row.expires_at,
       expired: isExpiredIso(row.expires_at),
     })),
+    minuteUsage: await currentMinuteUsage(env, now),
+    databaseStats: await databaseTableStats(env),
   };
 
   env.__adminHealthCache = {
@@ -304,6 +353,163 @@ async function handleAdminImportHealth(request, env, cors, ctx = {}) {
     ...cors,
     "x-admin-cache": isNoCache ? "BYPASS" : "MISS",
   });
+}
+
+async function currentMinuteUsage(env, now) {
+  const minuteKey = String(Math.floor(now.getTime() / 60000));
+  const budget = await importBudgetMode(env);
+  const fallback = {
+    minuteKey,
+    used: 0,
+    usedRequests: 0,
+    limit: budget.requestsPerMinute,
+    budgetMode: budget.mode,
+    sources: [],
+  };
+  if (!env?.DB?.prepare) return fallback;
+  const rows = await env.DB.prepare(`
+    SELECT source, used_requests, mode, updated_at
+    FROM minute_budgets
+    WHERE minute_key = ?
+  `).bind(minuteKey).all().catch(() => ({ results: [] }));
+  const results = rows.results || [];
+  const totalUsed = results.reduce((sum, r) => sum + Number(r.used_requests || 0), 0);
+  return {
+    minuteKey,
+    used: totalUsed,
+    usedRequests: totalUsed,
+    limit: budget.requestsPerMinute,
+    budgetMode: budget.mode,
+    sources: results.map((r) => ({
+      source: r.source,
+      usedRequests: Number(r.used_requests || 0),
+      mode: r.mode || "unknown",
+      updatedAt: r.updated_at,
+    })),
+  };
+}
+
+async function databaseTableStats(env) {
+  const tables = [
+    "usage_events",
+    "usage_visitors",
+    "import_events",
+    "import_jobs",
+    "cooldowns",
+    "minute_budgets",
+    "web_vital_events",
+    "app_error_events",
+  ];
+  const stats = Object.fromEntries(tables.map((table) => [table, 0]));
+  if (!env?.DB?.prepare) return stats;
+  await Promise.all(
+    tables.map(async (table) => {
+      try {
+        const row = await env.DB.prepare(`SELECT COUNT(*) AS count FROM ${table}`).first();
+        stats[table] = Number(row?.count ?? row?.["count(*)"] ?? row?.["COUNT(*)"] ?? 0);
+      } catch {
+        stats[table] = 0;
+      }
+    })
+  );
+  return stats;
+}
+
+async function handleAdminActions(request, env, cors, ctx = {}) {
+  if (!(await hasBearerSecret(request, env.ADMIN_DASHBOARD_SECRET))) {
+    return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
+  }
+  assertBindings(env);
+
+  let payload;
+  try {
+    payload = await readJson(request);
+  } catch {
+    return json({ error: { code: "bad_request", message: "Invalid JSON body." } }, 400, cors);
+  }
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return json({ error: { code: "bad_request", message: "Request body must be an object." } }, 400, cors);
+  }
+
+  const action = cleanString(payload?.action, 40);
+
+  if (action === "process_queue") {
+    const result = await processNextImportJob(env);
+    return json({ ok: true, message: "Queue processing triggered", result }, 200, cors);
+  }
+
+  if (action === "clear_coordinator") {
+    const sources = payload?.source ? [cleanString(payload.source, 80)] : coordinatorSources(env);
+    const now = new Date();
+    for (const src of sources) {
+      if (env.ZENITH_COORDINATOR) {
+        if (typeof env.ZENITH_COORDINATOR.delete === "function") {
+          await env.ZENITH_COORDINATOR.delete(coordinatorKey(src)).catch(() => {});
+        }
+        const idleRecord = {
+          active: false,
+          status: "idle",
+          source: src,
+          runId: "github-idle",
+          startedAt: now.toISOString(),
+          finishedAt: now.toISOString(),
+          lastSeenAt: now.toISOString(),
+          expiresAt: now.toISOString(),
+        };
+        if (typeof env.ZENITH_COORDINATOR.put === "function") {
+          await env.ZENITH_COORDINATOR.put(coordinatorKey(src), JSON.stringify(idleRecord), {
+            expirationTtl: 60,
+          }).catch(() => {});
+        }
+      }
+    }
+    return json({ ok: true, message: "Coordinator state cleared", sources }, 200, cors);
+  }
+
+  if (action === "cancel_job") {
+    const jobId = cleanString(payload?.jobId || payload?.job_id, 80);
+    if (!jobId) {
+      return json({ error: { code: "bad_request", message: "jobId is required." } }, 400, cors);
+    }
+    const now = new Date();
+    const job = await env.DB.prepare("SELECT * FROM import_jobs WHERE id = ?").bind(jobId).first().catch(() => null);
+    if (!job) {
+      return json({ error: { code: "not_found", message: `Job ${jobId} not found.` } }, 404, cors);
+    }
+    await env.DB.prepare(`
+      UPDATE import_jobs
+      SET status = 'failed', error_code = ?, error_message = ?, updated_at = ?
+      WHERE id = ?
+    `).bind("cancelled_by_admin", "Job cancelled by administrator.", now.toISOString(), jobId).run();
+
+    await recordImportEvent(env, {
+      eventType: "failed",
+      jobId,
+      requesterFingerprint: job.requester_fingerprint,
+      targetHashFingerprint: job.target_hash_fingerprint,
+      status: "failed",
+      errorCode: "cancelled_by_admin",
+      budgetMode: job.budget_mode,
+      requestCount: Number(job.request_count || 0),
+      retryCount: Number(job.retry_count || 0),
+      durationSeconds: secondsBetween(job.created_at, now),
+      createdAt: now.toISOString(),
+    });
+    return json({ ok: true, message: `Job ${jobId} cancelled` }, 200, cors);
+  }
+
+  if (action === "clear_cooldown") {
+    const scope = cleanString(payload?.scope, 32);
+    const keyFingerprint = cleanString(payload?.keyFingerprint || payload?.key_fingerprint, 128);
+    if (!scope || !keyFingerprint) {
+      return json({ error: { code: "bad_request", message: "scope and keyFingerprint are required." } }, 400, cors);
+    }
+    await env.DB.prepare("DELETE FROM cooldowns WHERE scope = ? AND key_fingerprint = ?").bind(scope, keyFingerprint).run();
+    return json({ ok: true, message: `Cooldown cleared for ${scope}:${keyFingerprint}` }, 200, cors);
+  }
+
+  return json({ error: { code: "bad_request", message: `Unknown admin action: ${action}` } }, 400, cors);
 }
 
 async function handleUsagePing(request, env, cors) {
@@ -538,19 +744,36 @@ async function importDemandSummary(env, now) {
       COUNT(DISTINCT CASE WHEN created_at >= ? THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_7d,
       COUNT(DISTINCT target_hash_fingerprint) AS unique_characters_all_time
     FROM import_jobs
-  `).bind(dayAgo, weekAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo).first();
+  `).bind(dayAgo, weekAgo, fifteenAgo, hourAgo, dayAgo, weekAgo, dayAgo, weekAgo).first().catch(() => null);
+
+  const eventHistory = await env.DB.prepare(`
+    SELECT
+      COUNT(CASE WHEN created_at >= ? AND event_type = 'queued' THEN 1 ELSE NULL END) AS jobs_last_24h,
+      COUNT(CASE WHEN created_at >= ? AND event_type = 'queued' THEN 1 ELSE NULL END) AS jobs_last_7d,
+      COUNT(DISTINCT CASE WHEN created_at >= ? AND requester_fingerprint != '' THEN requester_fingerprint ELSE NULL END) AS unique_import_users_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? AND requester_fingerprint != '' THEN requester_fingerprint ELSE NULL END) AS unique_import_users_7d,
+      COUNT(DISTINCT CASE WHEN requester_fingerprint != '' THEN requester_fingerprint ELSE NULL END) AS unique_import_users_all_time,
+      COUNT(DISTINCT CASE WHEN created_at >= ? AND target_hash_fingerprint != '' THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_24h,
+      COUNT(DISTINCT CASE WHEN created_at >= ? AND target_hash_fingerprint != '' THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_7d,
+      COUNT(DISTINCT CASE WHEN target_hash_fingerprint != '' THEN target_hash_fingerprint ELSE NULL END) AS unique_characters_all_time
+    FROM import_events
+  `).bind(dayAgo, weekAgo, dayAgo, weekAgo, dayAgo, weekAgo).first().catch(() => null);
+
+  const hasEvents = Number(eventHistory?.jobs_last_24h || 0) > 0 ||
+                    Number(eventHistory?.jobs_last_7d || 0) > 0 ||
+                    Number(eventHistory?.unique_characters_all_time || 0) > 0;
 
   return {
-    jobsLast24h: Number(row?.jobs_last_24h || 0),
-    jobsLast7d: Number(row?.jobs_last_7d || 0),
+    jobsLast24h: hasEvents ? Number(eventHistory?.jobs_last_24h || 0) : Number(row?.jobs_last_24h || 0),
+    jobsLast7d: hasEvents ? Number(eventHistory?.jobs_last_7d || 0) : Number(row?.jobs_last_7d || 0),
     activeImportUsers15m: Number(row?.active_import_users_15m || 0),
     activeImportUsers1h: Number(row?.active_import_users_1h || 0),
-    uniqueImportUsers24h: Number(row?.unique_import_users_24h || 0),
-    uniqueImportUsers7d: Number(row?.unique_import_users_7d || 0),
-    uniqueImportUsersAllTime: Number(row?.unique_import_users_all_time || 0),
-    uniqueCharacters24h: Number(row?.unique_characters_24h || 0),
-    uniqueCharacters7d: Number(row?.unique_characters_7d || 0),
-    uniqueCharactersAllTime: Number(row?.unique_characters_all_time || 0),
+    uniqueImportUsers24h: hasEvents ? Number(eventHistory?.unique_import_users_24h || 0) : Number(row?.unique_import_users_24h || 0),
+    uniqueImportUsers7d: hasEvents ? Number(eventHistory?.unique_import_users_7d || 0) : Number(row?.unique_import_users_7d || 0),
+    uniqueImportUsersAllTime: hasEvents ? Number(eventHistory?.unique_import_users_all_time || 0) : Number(row?.unique_import_users_all_time || 0),
+    uniqueCharacters24h: hasEvents ? Number(eventHistory?.unique_characters_24h || 0) : Number(row?.unique_characters_24h || 0),
+    uniqueCharacters7d: hasEvents ? Number(eventHistory?.unique_characters_7d || 0) : Number(row?.unique_characters_7d || 0),
+    uniqueCharactersAllTime: hasEvents ? Number(eventHistory?.unique_characters_all_time || 0) : Number(row?.unique_characters_all_time || 0),
   };
 }
 
@@ -2102,13 +2325,30 @@ async function queueCounts(env) {
 }
 
 async function cooldownSummary(env, now) {
-  const row = await env.DB.prepare(`
-    SELECT COUNT(*) AS active
+  const rows = await env.DB.prepare(`
+    SELECT scope, key_fingerprint, until_at, reason, created_at
     FROM cooldowns
     WHERE until_at > ?
-  `).bind(now.toISOString()).first();
+    ORDER BY until_at ASC
+  `).bind(now.toISOString()).all().catch(() => ({ results: [] }));
+  const results = rows.results || [];
+  const items = results.map((row) => {
+    const untilMs = new Date(row.until_at).getTime();
+    const remainingSeconds = Math.max(0, Math.round((untilMs - now.getTime()) / 1000));
+    return {
+      scope: row.scope,
+      keyFingerprint: row.key_fingerprint,
+      key_fingerprint: row.key_fingerprint,
+      reason: row.reason,
+      untilAt: row.until_at,
+      until_at: row.until_at,
+      remainingSeconds,
+    };
+  });
   return {
-    active: Number(row?.active || 0),
+    active: items.length,
+    activeCount: items.length,
+    items,
   };
 }
 

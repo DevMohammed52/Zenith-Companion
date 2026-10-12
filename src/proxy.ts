@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-
-const ADMIN_USERNAME = "zenith";
-const ADMIN_REALM = "Zenith Import Health";
+import {
+  ADMIN_REALM,
+  verifyAdminBasicAuth,
+} from "@/lib/admin-auth";
 const ERROR_PREVIEW_PATH = "/error-preview";
 const LOADING_PREVIEW_PATH = "/loading-preview";
 const BLOCKED_PUBLIC_DATA_PATHS = new Set([
@@ -57,9 +58,7 @@ export function proxy(request: NextRequest) {
     });
   }
 
-  const credentials = parseBasicAuth(request.headers.get("authorization"));
-
-  if (!credentials || credentials.username !== ADMIN_USERNAME || !sameSecret(credentials.password, adminSecret)) {
+  if (!verifyAdminBasicAuth(request.headers.get("authorization"), adminSecret)) {
     return new NextResponse("Authentication required", {
       status: 401,
       headers: {
@@ -88,31 +87,3 @@ export const config = {
     "/loading-preview",
   ],
 };
-
-function parseBasicAuth(header: string | null) {
-  if (!header?.startsWith("Basic ")) return null;
-
-  try {
-    const decoded = atob(header.slice("Basic ".length));
-    const separator = decoded.indexOf(":");
-    if (separator < 0) return null;
-
-    return {
-      username: decoded.slice(0, separator),
-      password: decoded.slice(separator + 1),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function sameSecret(input: string, expected: string) {
-  if (input.length !== expected.length) return false;
-
-  let mismatch = 0;
-  for (let index = 0; index < expected.length; index += 1) {
-    mismatch |= input.charCodeAt(index) ^ expected.charCodeAt(index);
-  }
-
-  return mismatch === 0;
-}

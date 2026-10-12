@@ -36,6 +36,9 @@ class MemoryKV {
     this.gets += 1;
     return this.map.get(key) || null;
   }
+  async delete(key) {
+    this.map.delete(key);
+  }
   async list({ prefix = "" } = {}) {
     return {
       keys: Array.from(this.map.keys())
@@ -81,6 +84,7 @@ class MemoryD1 {
     this.appErrorEvents = new Map();
     this.webVitalEvents = new Map();
     this.minuteBudgets = new Map();
+    this.importEvents = new Map();
   }
   prepare(sql) {
     return new Statement(this, sql);
@@ -302,9 +306,73 @@ class MemoryD1 {
         created_at: createdAt,
       });
     }
+    if (sql.includes("INSERT INTO import_events")) {
+      const [id, eventType, jobId, requesterFingerprint, targetHashFingerprint, status, errorCode, budgetMode, requestCount, retryCount, durationSeconds, createdAt] = args;
+      this.importEvents.set(id, {
+        id,
+        event_type: eventType,
+        job_id: jobId,
+        requester_fingerprint: requesterFingerprint,
+        target_hash_fingerprint: targetHashFingerprint,
+        status,
+        error_code: errorCode,
+        budget_mode: budgetMode,
+        request_count: requestCount,
+        retry_count: retryCount,
+        duration_seconds: durationSeconds,
+        created_at: createdAt,
+      });
+    }
+    if (sql.includes("DELETE FROM cooldowns") && sql.includes("scope = ?") && sql.includes("key_fingerprint = ?")) {
+      const [scope, keyFingerprint] = args;
+      this.cooldowns.delete(`${scope}:${keyFingerprint}`);
+      return { success: true, changes: 1, meta: { changes: 1 } };
+    }
     return { success: true, changes: 1, meta: { changes: 1 } };
   }
   async first(sql, args) {
+    if (sql.includes("COUNT(*) AS count FROM") || sql.includes("COUNT(*) FROM")) {
+      if (sql.includes("usage_events")) return { count: this.usageEvents.size };
+      if (sql.includes("usage_visitors")) return { count: this.usageVisitors.size };
+      if (sql.includes("import_events")) return { count: this.importEvents.size };
+      if (sql.includes("import_jobs") && !sql.includes("WHERE created_at >=")) return { count: this.jobs.size };
+      if (sql.includes("cooldowns") && !sql.includes("WHERE until_at >")) return { count: this.cooldowns.size };
+      if (sql.includes("minute_budgets")) return { count: this.minuteBudgets.size };
+      if (sql.includes("web_vital_events")) return { count: this.webVitalEvents.size };
+      if (sql.includes("app_error_events")) return { count: this.appErrorEvents.size };
+    }
+    if (sql.includes("FROM import_events") && (sql.includes("avg_duration_seconds") || sql.includes("attempts"))) {
+      const [createdAfter] = args;
+      const events = Array.from(this.importEvents.values()).filter((e) => !createdAfter || e.created_at >= createdAfter);
+      const completed = events.filter((e) => e.event_type === "complete" || e.status === "complete");
+      const attempts = events.filter((e) => ["queued", "cooldown", "queue_busy", "turnstile_failed"].includes(e.event_type)).length;
+      return {
+        total: events.length,
+        attempts,
+        completed: completed.length,
+        failed: events.filter((e) => e.event_type === "failed" || e.status === "failed").length,
+        waiting_for_budget: events.filter((e) => e.event_type === "waiting_for_budget" || e.status === "waiting_for_budget").length,
+        rate_limited: events.filter((e) => e.error_code === "rate_limited").length,
+        avg_request_count: average(completed.map((e) => Number(e.request_count || 0))),
+        avg_retry_count: average(completed.map((e) => Number(e.retry_count || 0))),
+        avg_duration_seconds: average(completed.map((e) => Number(e.duration_seconds || 0))),
+      };
+    }
+    if (sql.includes("FROM import_events") && sql.includes("unique_characters_all_time")) {
+      const [dayAgo, weekAgo, usersDayAgo, usersWeekAgo, charsDayAgo, charsWeekAgo] = args;
+      const events = Array.from(this.importEvents.values());
+      const queuedEvents = events.filter((e) => e.event_type === "queued");
+      return {
+        jobs_last_24h: queuedEvents.filter((e) => e.created_at >= dayAgo).length,
+        jobs_last_7d: queuedEvents.filter((e) => e.created_at >= weekAgo).length,
+        unique_import_users_24h: distinctCount(events.filter((e) => e.created_at >= (usersDayAgo || dayAgo) && e.requester_fingerprint), "requester_fingerprint"),
+        unique_import_users_7d: distinctCount(events.filter((e) => e.created_at >= (usersWeekAgo || weekAgo) && e.requester_fingerprint), "requester_fingerprint"),
+        unique_import_users_all_time: distinctCount(events.filter((e) => e.requester_fingerprint), "requester_fingerprint"),
+        unique_characters_24h: distinctCount(events.filter((e) => e.created_at >= (charsDayAgo || dayAgo) && e.target_hash_fingerprint), "target_hash_fingerprint"),
+        unique_characters_7d: distinctCount(events.filter((e) => e.created_at >= (charsWeekAgo || weekAgo) && e.target_hash_fingerprint), "target_hash_fingerprint"),
+        unique_characters_all_time: distinctCount(events.filter((e) => e.target_hash_fingerprint), "target_hash_fingerprint"),
+      };
+    }
     if (sql.includes("INSERT INTO minute_budgets")) {
       const [minuteKey, source, updatedAt, maxPerMinute] = args;
       const key = `${minuteKey}:${source}`;
@@ -658,12 +726,26 @@ class MemoryD1 {
         results: Array.from(grouped, ([referrer_host, users]) => ({ referrer_host, users: users.size })),
       };
     }
+    if (sql.includes("FROM cooldowns") && sql.includes("WHERE until_at >")) {
+      const [now] = args;
+      const active = Array.from(this.cooldowns.values())
+        .filter((c) => c.until_at > now)
+        .sort((a, b) => a.until_at.localeCompare(b.until_at));
+      return { results: active };
+    }
+    if (sql.includes("FROM minute_budgets") && sql.includes("WHERE minute_key =")) {
+      const [minuteKey] = args;
+      const results = Array.from(this.minuteBudgets.values()).filter((b) => b.minute_key === minuteKey);
+      return { results };
+    }
     if (sql.includes("GROUP BY status")) {
       const [createdAfter] = args;
       const counts = new Map();
-      for (const job of this.jobs.values()) {
-        if (job.created_at < createdAfter) continue;
-        counts.set(job.status, (counts.get(job.status) || 0) + 1);
+      const source = sql.includes("FROM import_events") ? Array.from(this.importEvents.values()) : Array.from(this.jobs.values());
+      for (const item of source) {
+        if (item.created_at < createdAfter) continue;
+        if (!item.status) continue;
+        counts.set(item.status, (counts.get(item.status) || 0) + 1);
       }
       return { results: Array.from(counts, ([status, count]) => ({ status, count })) };
     }
@@ -2959,6 +3041,294 @@ async function json(response) {
   assert.equal(fallbackBody.usage.uniqueUsersAllTime, 1);
   const fb15m = fallbackBody.usage.timeframes.find((f) => f.key === "15m");
   assert.equal(fb15m?.users, 1);
+}
+
+{
+  // --- Admin Actions & Enriched Telemetry Tests ---
+  const e = env();
+  const now = new Date();
+
+  // 1. Unauthenticated POST /admin/actions returns 401
+  const unauthRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "process_queue" }),
+  }), e);
+  assert.equal(unauthRes.status, 401);
+  const unauthBody = await json(unauthRes);
+  assert.equal(unauthBody.error.code, "unauthorized");
+
+  // 2. Action: process_queue
+  const queueRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "process_queue" }),
+  }), e);
+  assert.equal(queueRes.status, 200);
+  const queueBody = await json(queueRes);
+  assert.equal(queueBody.ok, true);
+  assert.equal(queueBody.message, "Queue processing triggered");
+
+  // 3. Action: clear_coordinator
+  await e.ZENITH_COORDINATOR.put("idlemmo-api-job:github-actions:update_data", JSON.stringify({
+    active: true,
+    status: "started",
+    source: "github-actions:update_data",
+    runId: "run-locked-1",
+    startedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 600000).toISOString(),
+  }));
+  const clearRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "clear_coordinator", source: "github-actions:update_data" }),
+  }), e);
+  assert.equal(clearRes.status, 200);
+  const clearBody = await json(clearRes);
+  assert.equal(clearBody.ok, true);
+  assert.equal(clearBody.message, "Coordinator state cleared");
+  const coordState = JSON.parse(await e.ZENITH_COORDINATOR.get("idlemmo-api-job:github-actions:update_data"));
+  assert.equal(coordState.active, false);
+  assert.equal(coordState.status, "idle");
+
+  // 4. Action: cancel_job
+  e.DB.jobs.set("imp_cancel_test", {
+    id: "imp_cancel_test",
+    status: "queued",
+    target_hash_fingerprint: "hash-to-cancel",
+    requester_fingerprint: "req-cancel",
+    request_count: 0,
+    retry_count: 0,
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+    expires_at: new Date(now.getTime() + 3600000).toISOString(),
+  });
+  const cancelRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "cancel_job", jobId: "imp_cancel_test" }),
+  }), e);
+  assert.equal(cancelRes.status, 200);
+  const cancelBody = await json(cancelRes);
+  assert.equal(cancelBody.ok, true);
+  const cancelledJob = e.DB.jobs.get("imp_cancel_test");
+  assert.equal(cancelledJob.status, "failed");
+  assert.equal(cancelledJob.error_code, "cancelled_by_admin");
+  assert.equal(cancelledJob.error_message, "Job cancelled by administrator.");
+
+  // 5. Action: clear_cooldown
+  e.DB.cooldowns.set("hash:fingerprint-cd-1", {
+    scope: "hash",
+    key_fingerprint: "fingerprint-cd-1",
+    until_at: new Date(now.getTime() + 60000).toISOString(),
+    reason: "Cooldown test",
+    created_at: now.toISOString(),
+  });
+  assert.equal(e.DB.cooldowns.has("hash:fingerprint-cd-1"), true);
+  const cdClearRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "clear_cooldown", scope: "hash", keyFingerprint: "fingerprint-cd-1" }),
+  }), e);
+  assert.equal(cdClearRes.status, 200);
+  const cdClearBody = await json(cdClearRes);
+  assert.equal(cdClearBody.ok, true);
+  assert.equal(e.DB.cooldowns.has("hash:fingerprint-cd-1"), false);
+
+  // 6. Enriched telemetry & import_events metrics in handleAdminImportHealth
+  e.DB.jobs.set("imp_recent_detail", {
+    id: "imp_recent_detail",
+    status: "failed",
+    target_hash_fingerprint: "hash-detail",
+    requester_fingerprint: "user-detail",
+    error_code: "cancelled_by_admin",
+    error_message: "Job cancelled by administrator.",
+    request_count: 5,
+    retry_count: 2,
+    budget_mode: "normal",
+    created_at: new Date(now.getTime() - 20 * 60 * 1000).toISOString(),
+    updated_at: new Date(now.getTime() - 19 * 60 * 1000).toISOString(),
+    expires_at: new Date(now.getTime() + 40 * 60 * 1000).toISOString(),
+  });
+  e.DB.cooldowns.set("ip:active-cd", {
+    scope: "ip",
+    key_fingerprint: "active-cd",
+    until_at: new Date(now.getTime() + 45000).toISOString(),
+    reason: "Too many requests",
+    created_at: now.toISOString(),
+  });
+  const currentMin = String(Math.floor(now.getTime() / 60000));
+  e.DB.minuteBudgets.set(`${currentMin}:usage_ping`, {
+    minute_key: currentMin,
+    source: "usage_ping",
+    used_requests: 25,
+    mode: "rate_limit",
+    updated_at: now.toISOString(),
+  });
+  e.DB.importEvents.set("iev_hist_1", {
+    id: "iev_hist_1",
+    event_type: "queued",
+    job_id: "imp_hist_1",
+    requester_fingerprint: "user-hist-1",
+    target_hash_fingerprint: "char-hist-1",
+    status: "queued",
+    created_at: new Date(now.getTime() - 3 * 3600 * 1000).toISOString(),
+  });
+  e.DB.importEvents.set("iev_hist_2", {
+    id: "iev_hist_2",
+    event_type: "complete",
+    job_id: "imp_hist_1",
+    requester_fingerprint: "user-hist-1",
+    target_hash_fingerprint: "char-hist-1",
+    status: "complete",
+    request_count: 12,
+    retry_count: 1,
+    duration_seconds: 3.2,
+    created_at: new Date(now.getTime() - 3 * 3600 * 1000 + 5000).toISOString(),
+  });
+
+  const enrichedHealthRes = await handleRequest(new Request("https://worker.test/admin/import-health?fresh=true", {
+    headers: { authorization: "Bearer admin-secret" },
+  }), e);
+  assert.equal(enrichedHealthRes.status, 200);
+  const enrichedHealth = await json(enrichedHealthRes);
+
+  // Assert recentJobs has id, errorMessage, and errorCode
+  const foundRecent = enrichedHealth.recentJobs.find((j) => j.id === "imp_recent_detail");
+  assert.ok(foundRecent);
+  assert.equal(foundRecent.errorCode, "cancelled_by_admin");
+  assert.equal(foundRecent.errorMessage, "Job cancelled by administrator.");
+  assert.equal(foundRecent.requestCount, 5);
+  assert.equal(foundRecent.retryCount, 2);
+
+  // Assert cooldownSummary has activeCount and detailed items array
+  assert.ok(enrichedHealth.cooldowns.activeCount >= 1);
+  assert.ok(Array.isArray(enrichedHealth.cooldowns.items));
+  const foundCd = enrichedHealth.cooldowns.items.find((item) => item.scope === "ip");
+  assert.ok(foundCd);
+  assert.equal(foundCd.key_fingerprint, "active-cd");
+  assert.equal(foundCd.reason, "Too many requests");
+  assert.ok(foundCd.remainingSeconds > 0);
+
+  // Assert minuteUsage live meter
+  assert.ok(enrichedHealth.minuteUsage);
+  assert.ok(enrichedHealth.minuteUsage.usedRequests >= 25);
+  assert.equal(typeof enrichedHealth.minuteUsage.limit, "number");
+  assert.ok(enrichedHealth.minuteUsage.limit > 0);
+  assert.equal(typeof enrichedHealth.minuteUsage.budgetMode, "string");
+
+  // Assert databaseStats row counts for all 8 tables
+  assert.ok(enrichedHealth.databaseStats);
+  const expectedTables = [
+    "usage_events",
+    "usage_visitors",
+    "import_events",
+    "import_jobs",
+    "cooldowns",
+    "minute_budgets",
+    "web_vital_events",
+    "app_error_events",
+  ];
+  for (const table of expectedTables) {
+    assert.equal(typeof enrichedHealth.databaseStats[table], "number", `Expected number for table ${table}`);
+  }
+
+  // Assert historical accuracy from import_events
+  assert.ok(enrichedHealth.last24h.completed >= 1);
+  assert.ok(enrichedHealth.last24h.completionRate > 0);
+  assert.ok(enrichedHealth.last24h.completionRate <= 100);
+  assert.ok(enrichedHealth.demand.jobsLast24h >= 1);
+  assert.ok(enrichedHealth.demand.uniqueCharacters24h >= 1);
+  assert.ok(enrichedHealth.demand.uniqueCharacters7d >= 1);
+  assert.ok(enrichedHealth.demand.uniqueCharactersAllTime >= 1);
+  assert.ok(enrichedHealth.demand.uniqueImportUsers24h >= 1);
+  assert.ok(enrichedHealth.demand.uniqueImportUsers7d >= 1);
+  assert.ok(enrichedHealth.demand.uniqueImportUsersAllTime >= 1);
+
+  // 7. Error handling & edge case validation for POST /admin/actions
+  // 7a. Non-existent job cancellation returns 404
+  const cancelMissingRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "cancel_job", jobId: "imp_non_existent" }),
+  }), e);
+  assert.equal(cancelMissingRes.status, 404);
+  const cancelMissingBody = await json(cancelMissingRes);
+  assert.equal(cancelMissingBody.error.code, "not_found");
+
+  // 7b. Missing jobId returns 400
+  const cancelNoIdRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "cancel_job" }),
+  }), e);
+  assert.equal(cancelNoIdRes.status, 400);
+
+  // 7c. Missing clear_cooldown arguments returns 400
+  const cdNoArgsRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "clear_cooldown", scope: "ip" }),
+  }), e);
+  assert.equal(cdNoArgsRes.status, 400);
+
+  // 7d. Unknown action returns 400
+  const unknownActionRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "unknown_custom_action" }),
+  }), e);
+  assert.equal(unknownActionRes.status, 400);
+
+  // 7e. Malformed body returns 400
+  const malformedBodyRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: "not-json{",
+  }), e);
+  assert.equal(malformedBodyRes.status, 400);
+
+  // 7f. clear_coordinator without specific source clears all coordinator sources
+  const clearAllCoordRes = await handleRequest(new Request("https://worker.test/admin/actions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer admin-secret",
+    },
+    body: JSON.stringify({ action: "clear_coordinator" }),
+  }), e);
+  assert.equal(clearAllCoordRes.status, 200);
+  const clearAllCoordBody = await json(clearAllCoordRes);
+  assert.equal(clearAllCoordBody.ok, true);
+  assert.ok(Array.isArray(clearAllCoordBody.sources));
+  assert.ok(clearAllCoordBody.sources.length >= 2);
 }
 
 console.log("Profile import Worker scaffold tests passed.");
