@@ -3,13 +3,19 @@ export const PROFILE_BACKUP_DUE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export function getLastProfileBackupAt() {
   if (typeof window === "undefined") return 0;
-  const stored = Number(window.localStorage.getItem(LAST_PROFILE_BACKUP_KEY) || 0);
-  return Number.isFinite(stored) ? stored : 0;
+  try {
+    const stored = Number(window.localStorage.getItem(LAST_PROFILE_BACKUP_KEY) || 0);
+    return Number.isFinite(stored) ? stored : 0;
+  } catch {
+    return 0;
+  }
 }
 
 export function markProfileBackupCopied() {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LAST_PROFILE_BACKUP_KEY, String(Date.now()));
+  try {
+    window.localStorage.setItem(LAST_PROFILE_BACKUP_KEY, String(Date.now()));
+  } catch {}
 }
 
 export function isProfileBackupDue(profileCount: number) {

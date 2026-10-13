@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CRAFTING_QUEUE_STORAGE_KEY,
   isCraftingQueueRecipe,
@@ -26,14 +26,22 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
   const storageKey = useMemo(() => getProfileStorageKey(CRAFTING_QUEUE_STORAGE_KEY, activeProfile?.id), [activeProfile?.id]);
   const [queue, setQueue] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
+  const loadedStorageKeyRef = useRef<string | null>(null);
+  loadedStorageKeyRef.current = loadedStorageKey;
 
   useEffect(() => {
     setIsLoaded(false);
-    setQueue(readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY));
+    const nextQueue = readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY);
+    setQueue(nextQueue);
+    setLoadedStorageKey(storageKey);
+    loadedStorageKeyRef.current = storageKey;
     setIsLoaded(true);
 
     const handleStorageUpdate = (event: StorageEvent) => {
-      if (event.key === storageKey) setQueue(readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY));
+      if (event.key === storageKey || event.key === null) {
+        setQueue(readStoredQueue(storageKey, activeProfileId ? undefined : CRAFTING_QUEUE_STORAGE_KEY));
+      }
     };
 
     window.addEventListener("storage", handleStorageUpdate);
@@ -41,10 +49,14 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
   }, [activeProfileId, storageKey]);
 
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(storageKey, JSON.stringify(sanitizeCraftingQueue(queue)));
+    if (isLoaded && loadedStorageKey === storageKey && loadedStorageKeyRef.current === storageKey) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(sanitizeCraftingQueue(queue)));
+      } catch (e) {
+        console.error('Failed to save craft queue:', e);
+      }
     }
-  }, [queue, isLoaded, storageKey]);
+  }, [queue, isLoaded, loadedStorageKey, storageKey]);
 
   const addToQueue = useCallback((name: string, qty: number = 1) => {
     if (!isCraftingQueueRecipe(name)) return;

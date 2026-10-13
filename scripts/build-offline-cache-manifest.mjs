@@ -20,16 +20,20 @@ const BLOCKED_PUBLIC_PATHS = new Set([
 ]);
 const BLOCKED_PUBLIC_PREFIXES = [
   "/guild-details/",
+  "/readme/",
+  "/pwa/screenshots/",
 ];
 
 async function main() {
   const entries = await collectEntries(PUBLIC_DIR);
   const urls = [];
+  const hashes = {};
   let totalBytes = 0;
   const versionHash = crypto.createHash("sha256");
 
   for (const entry of entries.sort((a, b) => a.url.localeCompare(b.url))) {
     urls.push(entry.url);
+    hashes[entry.url] = entry.hash.slice(0, 16);
     totalBytes += entry.size;
     versionHash.update(`${entry.url}:${entry.size}:${entry.hash}\n`);
   }
@@ -37,7 +41,7 @@ async function main() {
   const version = versionHash.digest("hex").slice(0, 16);
   const existingManifest = await readExistingManifest();
   const generatedAt =
-    isSameCacheContents(existingManifest, { version, count: urls.length, totalBytes, urls }) &&
+    isSameCacheContents(existingManifest, { version, count: urls.length, totalBytes, urls, hashes }) &&
     typeof existingManifest.generatedAt === "string"
       ? existingManifest.generatedAt
       : new Date().toISOString();
@@ -48,6 +52,7 @@ async function main() {
     count: urls.length,
     totalBytes,
     urls,
+    hashes,
   };
 
   const serialized = `${JSON.stringify(manifest, null, 2)}\n`;
@@ -85,12 +90,16 @@ function isSameCacheContents(existing, next) {
     existing.count !== next.count ||
     existing.totalBytes !== next.totalBytes ||
     !Array.isArray(existing.urls) ||
-    existing.urls.length !== next.urls.length
+    existing.urls.length !== next.urls.length ||
+    !existing.hashes ||
+    typeof existing.hashes !== "object"
   ) {
     return false;
   }
 
-  return existing.urls.every((url, index) => url === next.urls[index]);
+  return existing.urls.every(
+    (url, index) => url === next.urls[index] && existing.hashes[url] === next.hashes[url],
+  );
 }
 
 async function collectEntries(directory) {

@@ -93,9 +93,17 @@
   letter-spacing: 0;
 }
 
+@media (max-width: 1180px) {
+  .banner {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    inset-inline-start: 5.75rem;
+    max-width: min(310px, calc(100vw - 6.75rem));
+  }
+}
+
 @media (max-width: 520px) {
   .banner {
-    bottom: calc(5.2rem + env(safe-area-inset-bottom));
+    bottom: calc(10.25rem + env(safe-area-inset-bottom));
     inset-inline: 0.75rem;
     max-width: none;
   }

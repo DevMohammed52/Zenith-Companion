@@ -170,17 +170,27 @@ const pageNotices: Record<string, ZenithNotification> = {
 
 function getSnoozedUntil() {
   if (typeof window === "undefined") return 0;
-  const stored = window.localStorage.getItem(TIP_SNOOZE_KEY);
-  const parsed = stored ? Number(stored) : 0;
-  return Number.isFinite(parsed) ? parsed : 0;
+  try {
+    const stored = window.localStorage.getItem(TIP_SNOOZE_KEY);
+    const parsed = stored ? Number(stored) : 0;
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function readSeenPages() {
   try {
     const stored = window.localStorage.getItem(PAGE_NOTICE_STORAGE_KEY);
-    return stored ? new Set(JSON.parse(stored) as string[]) : new Set<string>();
+    if (!stored) return new Set<string>();
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((entry): entry is string => typeof entry === "string"))
+      : new Set<string>();
   } catch {
-    window.localStorage.removeItem(PAGE_NOTICE_STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(PAGE_NOTICE_STORAGE_KEY);
+    } catch {}
     return new Set<string>();
   }
 }
@@ -188,7 +198,9 @@ function readSeenPages() {
 function rememberSeenPage(pathname: string) {
   const seen = readSeenPages();
   seen.add(pathname);
-  window.localStorage.setItem(PAGE_NOTICE_STORAGE_KEY, JSON.stringify(Array.from(seen).slice(-60)));
+  try {
+    window.localStorage.setItem(PAGE_NOTICE_STORAGE_KEY, JSON.stringify(Array.from(seen).slice(-60)));
+  } catch {}
 }
 
 function isSuppressedByOverlay() {
@@ -376,7 +388,9 @@ export default function RotatingTips() {
   const dismiss = () => {
     clearHideTimer();
     hideCallbackRef.current = null;
-    window.localStorage.setItem(TIP_SNOOZE_KEY, String(Date.now() + TIP_SNOOZE_MS));
+    try {
+      window.localStorage.setItem(TIP_SNOOZE_KEY, String(Date.now() + TIP_SNOOZE_MS));
+    } catch {}
     setVisible(false);
     setIndex((current) => (current + 1) % tips.length);
   };

@@ -1,12 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Settings, UserRound } from "lucide-react";
 import ZenithIcon, { type ZenithIconName } from "@/components/icons/ZenithIcon";
 import { useData } from "@/context/DataContext";
 import { useCrafting } from "@/context/CraftingContext";
+import { DATA_DELAYED_AFTER_MS } from "@/lib/data-freshness";
+import {
+  FORGE_PLANNER_STORAGE_KEY,
+  sanitizeForgePlannerLines,
+  type ForgePlannerLine,
+} from "@/lib/forge-planner";
 import { formatGold } from "@/lib/format";
+import {
+  MARKET_WATCH_RULES_EVENT,
+  MARKET_WATCH_STORAGE_KEY,
+  sanitizeMarketWatchRules,
+} from "@/lib/market-alerts";
 import { usePreferences } from "@/lib/preferences";
 import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
@@ -15,6 +26,7 @@ import {
   calculateSkillProfitRows,
   DEFAULT_TOOL_SELECTIONS,
   SKILLS,
+  type SaleMode,
   type SkillName,
   type SkillProfitRow,
   type SkillProfitSettings,
@@ -24,10 +36,15 @@ import {
   SKILL_TO_HOUSING_ACTIVITY,
   calculateHousingBuffs,
   getHousingIdleHoursForActivity,
+  getProfileBaseIdleActionHours,
 } from "@/lib/housing";
+import {
+  SUPPORTED_ESSENCE_SKILLS,
+  calculateEssenceSession,
+  type EssenceSession,
+  type EssenceSkillName,
+} from "@/lib/essences";
 import { MYTHIC_ACTIVE_RECIPES_STORAGE_KEY } from "@/lib/mythic-alchemy";
-
-type DashboardMarketData = Record<string, any>;
 
 type ModuleLink = {
   href: string;
@@ -42,10 +59,108 @@ type ModuleGroup = {
   links: ModuleLink[];
 };
 
+type PersistedSkillProfitDashboardState = {
+  energizingPoolExp: number;
+  ascensionBuffIds: string[];
+  saleMode: SaleMode;
+  minVolume: number;
+  barteringBoost: number | "";
+  essenceBySkill: Partial<Record<SkillName, string>>;
+  customRows: unknown[];
+  skillLevels: Record<string, number>;
+  efficiencyBoosts: Record<string, number>;
+};
+
+const SKILL_PROFIT_STORAGE_KEY = "zenith_skill_profit_finder";
+const DEFAULT_INDEXED_ITEMS_COUNT = 1353;
+const DELAYED_THRESHOLD_MINUTES = Math.round(DATA_DELAYED_AFTER_MS / 60_000);
+
+const DEFAULT_PERSISTED_SKILL_PROFIT: PersistedSkillProfitDashboardState = {
+  energizingPoolExp: 0,
+  ascensionBuffIds: [],
+  saleMode: "best",
+  minVolume: 100,
+  barteringBoost: 0,
+  essenceBySkill: {},
+  customRows: [],
+  skillLevels: {},
+  efficiencyBoosts: {},
+};
+
+function getRankedProfitPerHour(row: SkillProfitRow) {
+  if (row.essenceActive && row.profitWithEssencePerHour !== null) return row.profitWithEssencePerHour;
+  if (row.essenceActive && row.essenceNeedsPrice) return row.baseProfitPerHour;
+  return row.profitPerHour;
+}
+
+function readMythicNamesFromKey(key: string): string[] | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
+  } catch {
+    return null;
+  }
+}
+
+function readSkillProfitStateFromKey(key: string): PersistedSkillProfitDashboardState | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const rawSettings = parsed.settings && typeof parsed.settings === "object" && !Array.isArray(parsed.settings)
+      ? parsed.settings
+      : parsed;
+    const saleMode: SaleMode = rawSettings?.saleMode === "market" || rawSettings?.saleMode === "vendor" || rawSettings?.saleMode === "best"
+      ? rawSettings.saleMode
+      : "best";
+    const minVolume = typeof parsed?.minVolume === "number" && Number.isFinite(parsed.minVolume)
+      ? Math.max(0, parsed.minVolume)
+      : 100;
+    const energizingPoolExp = Math.max(0, Number(rawSettings?.energizingPoolExp ?? parsed?.energizingPoolExp ?? 0) || 0);
+    const rawAscension = Array.isArray(rawSettings?.ascensionBuffIds)
+      ? rawSettings.ascensionBuffIds
+      : Array.isArray(parsed?.ascensionBuffIds)
+        ? parsed.ascensionBuffIds
+        : [];
+    const ascensionBuffIds = rawAscension.filter((id: unknown): id is string => typeof id === "string");
+    const barteringBoost = rawSettings?.barteringBoost ?? parsed?.barteringBoost ?? 0;
+    const rawEssences = rawSettings?.essenceBySkill && typeof rawSettings.essenceBySkill === "object" && !Array.isArray(rawSettings.essenceBySkill)
+      ? rawSettings.essenceBySkill
+      : parsed?.essenceBySkill && typeof parsed.essenceBySkill === "object" && !Array.isArray(parsed.essenceBySkill)
+        ? parsed.essenceBySkill
+        : {};
+    const essenceBySkill: Partial<Record<SkillName, string>> = {};
+    for (const skill of SUPPORTED_ESSENCE_SKILLS) {
+      const val = rawEssences[skill];
+      if (typeof val === "string" && val.trim()) essenceBySkill[skill] = val.trim();
+    }
+    const customRows = Array.isArray(parsed?.customRows) ? parsed.customRows : [];
+    const skillLevels = parsed?.skillLevels && typeof parsed.skillLevels === "object" ? parsed.skillLevels : {};
+    const efficiencyBoosts = parsed?.efficiencyBoosts && typeof parsed.efficiencyBoosts === "object" ? parsed.efficiencyBoosts : {};
+    return {
+      energizingPoolExp,
+      ascensionBuffIds,
+      saleMode,
+      minVolume,
+      barteringBoost,
+      essenceBySkill,
+      customRows,
+      skillLevels,
+      efficiencyBoosts,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const MODULE_GROUPS: ModuleGroup[] = [
   {
     title: "Economy",
-    text: "Prices, sell-through, recipes, and saved queues.",
+    text: "Market prices, trade volume, alchemy EV, and craft queues.",
     icon: "economy",
     links: [
       { href: "/skill-profit", label: "Skill Profit", icon: "skill" },
@@ -57,19 +172,21 @@ const MODULE_GROUPS: ModuleGroup[] = [
   },
   {
     title: "Character",
-    text: "Local profile, house buffs, gear, tools, and pets.",
+    text: "Profiles, house rooms, gear loadouts, tools, and pet rosters.",
     icon: "profile",
     links: [
       { href: "/profiles", label: "Profiles", icon: "profile" },
       { href: "/housing", label: "Housing", icon: "housing" },
       { href: "/pets", label: "Pets", icon: "pets" },
+      { href: "/pets/owned", label: "Owned Pets", icon: "pets" },
+      { href: "/pets/compare", label: "Pet Compare", icon: "pets" },
       { href: "/forge", label: "Forge", icon: "forge" },
       { href: "/bis", label: "BiS", icon: "shield" },
     ],
   },
   {
     title: "Combat & World",
-    text: "Enemy drops, dungeon runs, boss windows, weather, and travel.",
+    text: "Drop tables, dungeon requirements, world bosses, weather, and map routes.",
     icon: "world",
     links: [
       { href: "/map", label: "Map", icon: "map" },
@@ -82,20 +199,20 @@ const MODULE_GROUPS: ModuleGroup[] = [
   },
   {
     title: "Guild & Archive",
-    text: "Guild reference data, collections, lore, and patch history.",
+    text: "Guild rankings, conquest seasons, museum collections, lore, and patch notes.",
     icon: "archive",
     links: [
       { href: "/guilds", label: "Guilds", icon: "guild" },
       { href: "/conquest", label: "Conquest", icon: "conquest" },
       { href: "/museum", label: "Museum", icon: "museum" },
       { href: "/lore", label: "Lore", icon: "archive" },
-      { href: "/pets/owned", label: "Owned Pets", icon: "pets" },
+      { href: "/patch-notes", label: "Patch Notes", icon: "archive" },
     ],
   },
 ];
 
 function formatAge(minutes: number | null) {
-  if (minutes === null) return "Waiting";
+  if (minutes === null || !Number.isFinite(minutes)) return "Waiting";
   if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -105,72 +222,205 @@ function formatAge(minutes: number | null) {
 
 export default function DashboardPage() {
   const { preferences } = usePreferences();
-  const { activeProfile, state: profileState } = useProfiles();
-  const needsProfileSetup = !activeProfile || isStarterProfile(activeProfile);
+  const { activeProfile, state: profileState, loaded: profilesLoaded } = useProfiles();
+  const configuredProfile = activeProfile && !isStarterProfile(activeProfile) ? activeProfile : null;
+  const needsProfileSetup = !configuredProfile;
   const { queue } = useCrafting();
-  const { marketData: sharedMarketData, allItemsDb } = useData({ autoLoad: false });
-  const [dashboardMarketData, setDashboardMarketData] = useState<DashboardMarketData | null>(null);
-  const marketData = sharedMarketData ?? dashboardMarketData;
+  const { marketData, allItemsDb, ensureMarketLoaded } = useData({ autoLoad: false });
+  const { ensureLoaded } = useData({ autoLoad: false });
 
+  const [now, setNow] = useState(() => Date.now());
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
+  const [forgeLines, setForgeLines] = useState<ForgePlannerLine[]>([]);
+  const [marketWatchCount, setMarketWatchCount] = useState(0);
+  const [persistedSkillProfit, setPersistedSkillProfit] = useState<PersistedSkillProfitDashboardState>(
+    DEFAULT_PERSISTED_SKILL_PROFIT,
+  );
+
   const activeMythicStorageKey = useMemo(
     () => getProfileStorageKey(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY, activeProfile?.id),
     [activeProfile?.id],
   );
-  const housingSummary = useMemo(() => calculateHousingBuffs(activeProfile?.housing), [activeProfile?.housing]);
+  const skillProfitStorageKey = useMemo(
+    () => getProfileStorageKey(SKILL_PROFIT_STORAGE_KEY, activeProfile?.id) ?? SKILL_PROFIT_STORAGE_KEY,
+    [activeProfile?.id],
+  );
+  const housingSummary = useMemo(
+    () => calculateHousingBuffs(activeProfile?.housing, { profileClassName: activeProfile?.className }),
+    [activeProfile?.className, activeProfile?.housing],
+  );
 
   useEffect(() => {
-    const saved = localStorage.getItem(activeMythicStorageKey) ?? (activeProfile?.id ? null : localStorage.getItem(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY));
-    if (!saved) {
-      setActiveMythicNames([]);
-      return;
-    }
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!profilesLoaded || typeof document === "undefined") return;
+    document.documentElement.dataset.profileSetup = needsProfileSetup ? "needed" : "ready";
+  }, [needsProfileSetup, profilesLoaded]);
+
+  const syncLocalDashboardStorage = useCallback(() => {
+    setActiveMythicNames(
+      readMythicNamesFromKey(activeMythicStorageKey)
+        ?? readMythicNamesFromKey(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY)
+        ?? [],
+    );
+
     try {
-      setActiveMythicNames(JSON.parse(saved));
+      const savedForge = localStorage.getItem(FORGE_PLANNER_STORAGE_KEY);
+      if (!savedForge) {
+        setForgeLines([]);
+      } else {
+        const parsed = JSON.parse(savedForge);
+        setForgeLines(sanitizeForgePlannerLines(parsed?.lines));
+      }
     } catch {
-      setActiveMythicNames([]);
+      setForgeLines([]);
     }
-  }, [activeMythicStorageKey, activeProfile?.id]);
+
+    try {
+      const savedWatch = localStorage.getItem(MARKET_WATCH_STORAGE_KEY);
+      const rules = sanitizeMarketWatchRules(savedWatch ? JSON.parse(savedWatch) : []);
+      setMarketWatchCount(rules.length);
+    } catch {
+      setMarketWatchCount(0);
+    }
+
+    setPersistedSkillProfit(
+      readSkillProfitStateFromKey(skillProfitStorageKey)
+        ?? readSkillProfitStateFromKey(SKILL_PROFIT_STORAGE_KEY)
+        ?? DEFAULT_PERSISTED_SKILL_PROFIT,
+    );
+  }, [activeMythicStorageKey, skillProfitStorageKey]);
 
   useEffect(() => {
-    if (sharedMarketData) return;
-    const controller = new AbortController();
-    fetch("/market-data.json", { cache: "no-cache", signal: controller.signal })
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload) => {
-        if (payload && !controller.signal.aborted) setDashboardMarketData(payload);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [sharedMarketData]);
+    syncLocalDashboardStorage();
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        !event.key ||
+        event.key === activeMythicStorageKey ||
+        event.key === MYTHIC_ACTIVE_RECIPES_STORAGE_KEY ||
+        event.key === FORGE_PLANNER_STORAGE_KEY ||
+        event.key === MARKET_WATCH_STORAGE_KEY ||
+        event.key === skillProfitStorageKey ||
+        event.key === SKILL_PROFIT_STORAGE_KEY
+      ) {
+        syncLocalDashboardStorage();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(MARKET_WATCH_RULES_EVENT, syncLocalDashboardStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(MARKET_WATCH_RULES_EVENT, syncLocalDashboardStorage);
+    };
+  }, [activeMythicStorageKey, skillProfitStorageKey, syncLocalDashboardStorage]);
 
-  const skillProfitSettings = useMemo<SkillProfitSettings>(() => ({
-    membership: preferences.membership,
-    classBonus: activeProfile ? false : preferences.skillClassBonus,
-    profileClassName: activeProfile?.className || undefined,
-    energizingPoolExp: 0,
-    assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
-    ascensionBuffIds: [],
-    tools: activeProfile
-      ? {
-          Woodcutting: activeProfile.tools.woodcutting ?? "",
-          Mining: activeProfile.tools.mining ?? "",
-          Fishing: activeProfile.tools.fishing ?? "",
-        }
-      : {
-          ...DEFAULT_TOOL_SELECTIONS,
-          ...preferences.skillTools,
-        },
-    customPrices: preferences.customPrices,
-    barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
-    housingIdleHoursBySkill: Object.fromEntries(SKILLS.map((skill) => {
+  const hasConfiguredEssence = useMemo(
+    () => SUPPORTED_ESSENCE_SKILLS.some((skill) => Boolean(persistedSkillProfit.essenceBySkill?.[skill])),
+    [persistedSkillProfit.essenceBySkill],
+  );
+
+  useEffect(() => {
+    void ensureMarketLoaded();
+  }, [ensureMarketLoaded]);
+
+  useEffect(() => {
+    if (hasConfiguredEssence && !allItemsDb) {
+      void ensureLoaded();
+    }
+  }, [allItemsDb, ensureLoaded, hasConfiguredEssence]);
+
+  const housingIdleHoursBySkill = useMemo(
+    () => Object.fromEntries(SKILLS.map((skill) => {
       const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
       return [skill, activity ? getHousingIdleHoursForActivity(housingSummary, activity) : 0];
     })) as Partial<Record<SkillName, number>>,
-  }), [
-    activeProfile,
-    housingSummary,
+    [housingSummary],
+  );
+
+  const baseIdleActionHours = configuredProfile ? getProfileBaseIdleActionHours(configuredProfile) : 8;
+
+  const idleActionHoursBySkill = useMemo(
+    () => Object.fromEntries(SKILLS.map((skill) => [
+      skill,
+      baseIdleActionHours + Number(housingIdleHoursBySkill[skill] || 0),
+    ])) as Partial<Record<SkillName, number>>,
+    [baseIdleActionHours, housingIdleHoursBySkill],
+  );
+
+  const essenceSessionsBySkill = useMemo(() => {
+    const entries = SUPPORTED_ESSENCE_SKILLS.map((skill) => [
+      skill,
+      calculateEssenceSession({
+        essenceName: persistedSkillProfit.essenceBySkill?.[skill] || "",
+        skill,
+        items: allItemsDb,
+        marketData,
+        customPrices: preferences.customPrices,
+        actionHours: idleActionHoursBySkill[skill] || baseIdleActionHours,
+      }),
+    ] as const);
+    return Object.fromEntries(entries) as Partial<Record<EssenceSkillName, EssenceSession>>;
+  }, [
+    allItemsDb,
+    baseIdleActionHours,
+    idleActionHoursBySkill,
+    marketData,
+    persistedSkillProfit.essenceBySkill,
+    preferences.customPrices,
+  ]);
+
+  const skillProfitSettings = useMemo<SkillProfitSettings>(() => {
+    const essenceBuffsBySkill: SkillProfitSettings["essenceBuffsBySkill"] = {};
+    const essencePricesBySkill: SkillProfitSettings["essencePricesBySkill"] = {};
+    for (const skill of SUPPORTED_ESSENCE_SKILLS) {
+      const session = essenceSessionsBySkill[skill];
+      if (session?.buff) essenceBuffsBySkill[skill] = session.buff;
+      if (session?.price) essencePricesBySkill[skill] = session.price;
+    }
+
+    return {
+      membership: preferences.membership,
+      classBonus: configuredProfile ? false : preferences.skillClassBonus,
+      saleMode: persistedSkillProfit.saleMode,
+      profileClassName: configuredProfile?.className || undefined,
+      energizingPoolExp: persistedSkillProfit.energizingPoolExp,
+      assaultRank: configuredProfile ? getProfileConquestRank(configuredProfile) : preferences.assaultRank,
+      ascensionBuffIds: persistedSkillProfit.ascensionBuffIds,
+      tools: configuredProfile
+        ? {
+            Woodcutting: configuredProfile.tools.woodcutting ?? "",
+            Mining: configuredProfile.tools.mining ?? "",
+            Fishing: configuredProfile.tools.fishing ?? "",
+          }
+        : {
+            ...DEFAULT_TOOL_SELECTIONS,
+            ...preferences.skillTools,
+          },
+      customPrices: preferences.customPrices,
+      barteringBoost: configuredProfile
+        ? getProfileBarteringBoost(configuredProfile)
+        : Number(preferences.barteringBoost !== "" ? preferences.barteringBoost : persistedSkillProfit.barteringBoost) || 0,
+      housingIdleHoursBySkill,
+      essenceBySkill: persistedSkillProfit.essenceBySkill,
+      essenceBuffsBySkill,
+      essencePricesBySkill,
+      idleActionHoursBySkill,
+    };
+  }, [
+    configuredProfile,
+    essenceSessionsBySkill,
+    housingIdleHoursBySkill,
+    idleActionHoursBySkill,
+    persistedSkillProfit.ascensionBuffIds,
+    persistedSkillProfit.barteringBoost,
+    persistedSkillProfit.energizingPoolExp,
+    persistedSkillProfit.essenceBySkill,
+    persistedSkillProfit.saleMode,
     preferences.assaultRank,
+    preferences.barteringBoost,
     preferences.customPrices,
     preferences.membership,
     preferences.skillClassBonus,
@@ -179,79 +429,106 @@ export default function DashboardPage() {
 
   const bestSkillRoute = useMemo(() => {
     if (!marketData) return null;
-    const rows = calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, [], 60);
+    const minVolume = persistedSkillProfit.minVolume;
+    const rows = calculateSkillProfitRows(marketData, allItemsDb, skillProfitSettings, [], minVolume);
     let best: SkillProfitRow | null = null;
     for (const row of rows) {
-      if (row.excludedFromTop || row.profitPerHour <= 0) continue;
-      if (!best || row.profitPerHour > best.profitPerHour) best = row;
+      const rankedProfit = getRankedProfitPerHour(row);
+      if (row.skill === "Forge" || row.saleSource === "missing" || rankedProfit <= 0) continue;
+      const excludedByLiquidity = row.saleSource === "market" ? (!row.isLiquid || row.stableVolume3d < minVolume) : false;
+      if (excludedByLiquidity) continue;
+      if (!best || rankedProfit > getRankedProfitPerHour(best)) best = row;
     }
     return best;
-  }, [allItemsDb, marketData, skillProfitSettings]);
+  }, [allItemsDb, marketData, persistedSkillProfit.minVolume, skillProfitSettings]);
 
   const queuePlan = useMemo(
     () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
       ...preferences,
-      barteringBoost: activeProfile ? getProfileBarteringBoost(activeProfile) : 0,
+      barteringBoost: configuredProfile ? getProfileBarteringBoost(configuredProfile) : Number(preferences.barteringBoost || 0),
     }),
-    [activeProfile, allItemsDb, marketData, preferences, queue],
+    [allItemsDb, configuredProfile, marketData, preferences, queue],
+  );
+
+  const forgeCraftsCount = useMemo(
+    () => forgeLines.reduce((sum, line) => sum + Math.max(0, Number(line.quantity) || 0), 0),
+    [forgeLines],
   );
 
   const lastUpdated = marketData?._meta?.last_updated;
-  const timeSince = lastUpdated ? Math.max(0, Math.floor((Date.now() - new Date(lastUpdated).getTime()) / 60000)) : null;
-  const registryCount = allItemsDb
-    ? Object.keys(allItemsDb).length
-    : Object.keys(marketData || {}).filter((key) => !key.startsWith("_")).length;
-  const marketFreshness = timeSince === null ? "Waiting for cache" : timeSince < 90 ? "Fresh enough" : "Needs refresh";
-  const registryCountLabel = allItemsDb ? "items indexed" : "market entries";
+  const lastUpdatedMs = lastUpdated ? new Date(lastUpdated).getTime() : NaN;
+  const timeSince = Number.isFinite(lastUpdatedMs) ? Math.max(0, Math.floor((now - lastUpdatedMs) / 60_000)) : null;
+  const registryCount = allItemsDb ? Object.keys(allItemsDb).length : DEFAULT_INDEXED_ITEMS_COUNT;
+  const marketFreshness = timeSince === null
+    ? "Loading snapshot"
+    : timeSince < DELAYED_THRESHOLD_MINUTES
+      ? "Current"
+      : "Stale (>2.5h)";
+  const registryCountLabel = "items indexed";
   const hasStarterProfile = Boolean(activeProfile && isStarterProfile(activeProfile));
   const activeProfileLabel = hasStarterProfile ? "Starter profile" : activeProfile?.name?.trim() || "No profile";
   const profileDetail = hasStarterProfile
-    ? "Needs setup for reliable numbers"
+    ? "Set character stats for exact math"
     : activeProfile
       ? `${activeProfile.className || "Character"} profile active`
       : `${profileState.profiles.length}/5 saved profiles`;
+
+  const isOwnerWithoutFoundation = housingSummary.mode === "owner" && !activeProfile?.housing?.foundationBuilt;
   const housingLabel = housingSummary.mode === "none"
     ? "Not configured"
-    : housingSummary.mode === "guest"
-      ? `${housingSummary.activeComponentCount} guest buff${housingSummary.activeComponentCount === 1 ? "" : "s"}`
-      : `${housingSummary.activeComponentCount}/${housingSummary.slotCapacity || 0} slots`;
+    : isOwnerWithoutFoundation
+      ? "Foundation needed"
+      : housingSummary.activeComponentCount === 0
+        ? "No active buffs"
+        : housingSummary.mode === "guest"
+          ? `${housingSummary.activeComponentCount} guest buff${housingSummary.activeComponentCount === 1 ? "" : "s"}`
+          : `${housingSummary.activeComponentCount}/${housingSummary.slotCapacity || 0} slots`;
+  const housingDescription = housingSummary.mode === "none"
+    ? "Set owner or guest rooms for idle timer buffs."
+    : isOwnerWithoutFoundation
+      ? "Build a Foundation to unlock room slots and idle timers."
+      : housingSummary.activeComponentCount === 0
+        ? "No active buffs selected for this house."
+        : housingSummary.locationLimited
+          ? "Local zone only (no Remote Conduit)."
+          : "Remote Conduit active — buffs apply in all zones.";
 
   return (
     <main className="container dashboard dashboard-command">
       <section className="command-hero">
         <div className="command-hero-copy">
           <h1>IdleMMO Companion &amp; Market Tools</h1>
-          <p>Check market age, profile setup, saved projects, and the next routes worth opening.</p>
+          <p>Live market prices, skilling profit/hr, crafting queues, and character planners.</p>
         </div>
-        <div className="command-status-grid" aria-label="App status">
+        <div className="command-status-grid" role="group" aria-label="App status">
           <div className="command-status-card">
             <span>Market snapshot</span>
             <strong>{formatAge(timeSince)}</strong>
             <em>{marketFreshness}</em>
           </div>
-          <div className="command-status-card">
+          <Link href="/items" className="command-status-card">
             <span>Item index</span>
             <strong>{registryCount.toLocaleString()}</strong>
             <em>{registryCountLabel}</em>
-          </div>
-          <div className="command-status-card">
+          </Link>
+          <Link href="/profiles" className="command-status-card">
             <span>Active profile</span>
             <strong title={activeProfileLabel}>{activeProfileLabel}</strong>
             <em title={profileDetail}>{profileDetail}</em>
-          </div>
+          </Link>
         </div>
       </section>
 
       {needsProfileSetup && (
         <section className="dashboard-setup-state" aria-label="Profile setup reminder">
           <div>
-            <span>Before trusting profit</span>
-            <h2>Set the character facts that change route math.</h2>
-            <p>Class, tools, bartering, pets, housing, magic find, and timers all change Zenith estimates. Saved profile data stays in this browser.</p>
+            <span>Profile setup</span>
+            <h2>Set character stats that change route math.</h2>
+            <p>Class, tools, bartering, pets, housing, magic find, and idle timers change profit/hr and drop estimates. Profile data stays in your browser.</p>
           </div>
           <div className="dashboard-setup-actions">
             <Link href="/profiles"><UserRound size={16} /> Create or import profile</Link>
-            <Link href="/settings"><Settings size={16} /> Check route settings</Link>
+            <Link href="/settings"><Settings size={16} /> Route settings</Link>
           </div>
         </section>
       )}
@@ -265,8 +542,8 @@ export default function DashboardPage() {
           <strong>{bestSkillRoute?.name || "Open Finder"}</strong>
           <p>
             {bestSkillRoute
-              ? `${bestSkillRoute.skill} route, ${formatGold(bestSkillRoute.profitPerHour)}g/hr estimate`
-              : "Compare gathering routes after the market cache loads."}
+              ? `${bestSkillRoute.skill} • ${formatGold(getRankedProfitPerHour(bestSkillRoute))}g/hr (${bestSkillRoute.saleSource === "vendor" ? "vendor" : "market"})`
+              : "Compare gathering and crafting routes once market data loads."}
           </p>
           <ArrowRight size={16} />
         </Link>
@@ -276,8 +553,8 @@ export default function DashboardPage() {
             <ZenithIcon name="crafting" size={18} />
             <span>Crafting Queue</span>
           </div>
-          <strong>{queuePlan.totalCrafts.toLocaleString()} crafts</strong>
-          <p>{queuePlan.entries.length > 0 ? `${queuePlan.entries.length} planned item${queuePlan.entries.length === 1 ? "" : "s"}` : "No active queue yet."}</p>
+          <strong>{queuePlan.totalCrafts.toLocaleString()} craft{queuePlan.totalCrafts === 1 ? "" : "s"}</strong>
+          <p>{queuePlan.entries.length > 0 ? `${queuePlan.entries.length} planned item${queuePlan.entries.length === 1 ? "" : "s"}` : "Build multi-step material lists and craft batches."}</p>
           <ArrowRight size={16} />
         </Link>
 
@@ -287,7 +564,7 @@ export default function DashboardPage() {
             <span>Housing</span>
           </div>
           <strong>{housingLabel}</strong>
-          <p>{housingSummary.mode === "none" ? "Set owner or guest bonuses for profile planning." : "Profile housing modifiers are available."}</p>
+          <p>{housingDescription}</p>
           <ArrowRight size={16} />
         </Link>
 
@@ -296,8 +573,12 @@ export default function DashboardPage() {
             <ZenithIcon name="forge" size={18} />
             <span>Forge Planner</span>
           </div>
-          <strong>{activeMythicNames.length} lab project{activeMythicNames.length === 1 ? "" : "s"}</strong>
-          <p>Plan saved high-rarity recipe sessions and missing materials.</p>
+          <strong>{forgeCraftsCount.toLocaleString()} craft{forgeCraftsCount === 1 ? "" : "s"}</strong>
+          <p>
+            {forgeLines.length > 0
+              ? `${forgeLines.length} planned recipe${forgeLines.length === 1 ? "" : "s"} — track scroll costs and material gaps.`
+              : "Track scroll costs, material gaps, and craft margins."}
+          </p>
           <ArrowRight size={16} />
         </Link>
       </section>
@@ -306,7 +587,7 @@ export default function DashboardPage() {
         <Link href="/pets" className="command-mini-card">
           <ZenithIcon name="pets" size={17} />
           <span>Pet Database</span>
-          <strong>Open</strong>
+          <strong>{activeProfile?.ownedPets?.length ? `${activeProfile.ownedPets.length} owned` : "109 species"}</strong>
         </Link>
         <Link href="/alchemy/mythic" className="command-mini-card">
           <ZenithIcon name="spark" size={17} />
@@ -316,17 +597,17 @@ export default function DashboardPage() {
         <Link href="/market-alerts" className="command-mini-card">
           <ZenithIcon name="bell" size={17} />
           <span>Market Watch</span>
-          <strong>Snapshot rules</strong>
+          <strong>{marketWatchCount} rule{marketWatchCount === 1 ? "" : "s"}</strong>
         </Link>
         <Link href="/weather" className="command-mini-card">
           <ZenithIcon name="weather" size={17} />
           <span>Weather</span>
-          <strong>Forecasts</strong>
+          <strong>Zone rotation</strong>
         </Link>
         <Link href="/guilds" className="command-mini-card">
           <ZenithIcon name="guild" size={17} />
           <span>Guild Data</span>
-          <strong>Browse</strong>
+          <strong>Rankings &amp; rosters</strong>
         </Link>
       </section>
 

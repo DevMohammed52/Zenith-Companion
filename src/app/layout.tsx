@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://zenith-companion.vercel.app"),
   applicationName: "Zenith Companion",
   title: {
-    default: "Zenith Companion",
+    default: "Zenith Companion — IdleMMO Market & Character Tools",
     template: "%s | Zenith Companion",
   },
   description:
@@ -45,24 +45,15 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://zenith-companion.vercel.app",
     siteName: "Zenith Companion",
-    title: "Zenith Companion",
+    title: "Zenith Companion — IdleMMO Market & Character Tools",
     description:
       "Profile-aware IdleMMO tools for market checks, skilling routes, item intelligence, combat planning, and world boss decisions.",
-    images: [
-      {
-        url: "/readme/social-preview.png",
-        width: 1280,
-        height: 640,
-        alt: "Zenith Companion product preview with dashboard and skill profit screenshots.",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Zenith Companion",
+    title: "Zenith Companion — IdleMMO Market & Character Tools",
     description:
       "Profile-aware IdleMMO tools for market checks, skilling routes, item intelligence, combat planning, and world boss decisions.",
-    images: ["/readme/social-preview.png"],
   },
   icons: {
     icon: [
@@ -148,13 +139,18 @@ const jsonLd = {
   ],
 };
 
+const PRE_PAINT_INIT_SCRIPT = `(function(){var d=document.documentElement;d.dataset.theme="ember";d.dataset.desktopNavigation="sidebar";d.dataset.mobileNavigation="standard";d.dataset.profileSetup="needed";try{var rawPref=localStorage.getItem("zenith_preferences");var pref=rawPref?JSON.parse(rawPref):null;if(pref&&typeof pref.theme==="string")d.dataset.theme=pref.theme;if(pref&&pref.desktopNavigationStyle==="dock")d.dataset.desktopNavigation="dock";if(pref&&pref.mobileNavigationStyle==="command")d.dataset.mobileNavigation="command";}catch(e){}try{var rawProf=localStorage.getItem("zenith_character_profiles_v1");var profState=rawProf?JSON.parse(rawProf):null;var list=profState&&Array.isArray(profState.profiles)?profState.profiles:[];var active=list.find(function(p){return p&&p.id===profState.activeProfileId;})||list[0]||null;var totalLvl=active&&active.levels&&active.levels.totalLevel!==undefined?Number(active.levels.totalLevel):20;var combatLvl=active&&active.levels&&active.levels.combat!==undefined?Number(active.levels.combat):1;var barterLvl=active&&active.boosts&&active.boosts.barteringLevel!==undefined?Number(active.boosts.barteringLevel):0;var cls=active&&typeof active.className==="string"&&active.className?active.className:"Warrior";var isStarter=!active||(String(active.name||"Main Character").trim()==="Main Character"&&cls==="Warrior"&&totalLvl===20&&combatLvl===1&&barterLvl===0&&(!active.importSource||active.importSource.mode==="manual")&&(!active.importSource||!Array.isArray(active.importSource.importedSections)||active.importSource.importedSections.length===0)&&(!active.fieldSources||Object.keys(active.fieldSources).length===0));d.dataset.profileSetup=isStarter?"needed":"ready";}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PRE_PAINT_INIT_SCRIPT }} />
+      </head>
       <body>
         <script
           type="application/ld+json"
@@ -209,7 +205,6 @@ export default function RootLayout({
           .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
-            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             min-width: 0;
@@ -525,6 +520,12 @@ export default function RootLayout({
               width: calc(100vw - 1.5rem);
             }
           }
+          @media (max-width: 768px), (pointer: coarse) {
+            .site-footer-pill,
+            .rotating-tip-action {
+              min-height: 44px;
+            }
+          }
           @media (max-width: 640px) {
             .site-footer {
               margin: 1rem 0 0;
@@ -544,7 +545,7 @@ export default function RootLayout({
             }
             .site-footer-pill {
               justify-content: flex-start;
-              min-height: 38px;
+              min-height: 44px;
               white-space: normal;
             }
             .rotating-tip {
@@ -574,12 +575,12 @@ export default function RootLayout({
               -webkit-line-clamp: 2;
             }
             .rotating-tip-action {
-              min-height: 34px;
+              min-height: 44px;
               padding: 0.42rem 0.58rem;
             }
             .rotating-tip button {
-              width: 34px;
-              height: 34px;
+              width: 44px;
+              height: 44px;
             }
           }
         `}</style>

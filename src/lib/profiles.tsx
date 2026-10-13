@@ -280,9 +280,11 @@ const cleanDateString = (value: unknown) => {
   return Number.isFinite(date.getTime()) ? value : undefined;
 };
 
-const cleanUrlString = (value: unknown) => (
-  typeof value === "string" && /^https?:\/\//i.test(value.trim()) ? value.trim().slice(0, 500) : ""
-);
+export const cleanUrlString = (value: unknown) => {
+  if (typeof value !== "string") return "";
+  const cleaned = value.trim().replace(/["'()\\\r\n]/g, "").slice(0, 500);
+  return /^https?:\/\//i.test(cleaned) ? cleaned : "";
+};
 
 const cleanOptionalNumber = (value: unknown): number | undefined => {
   const next = Number(value);
@@ -746,17 +748,47 @@ export function getProfileCombatPrimary(profile: CharacterProfile | null | undef
   };
 }
 
-function readProfilesState(): ProfilesState {
+let fallbackProfilesState: ProfilesState | null = null;
+
+export function readStoredProfilesState(): { state: ProfilesState; hasStoredProfiles: boolean } {
   try {
     const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-    if (stored) return sanitizeProfilesState(JSON.parse(stored));
-  } catch {}
-  return sanitizeProfilesState({ profiles: [createDefaultProfile("Main Character")] });
+    if (stored) {
+      const parsed = sanitizeProfilesState(JSON.parse(stored));
+      if (parsed.profiles.length > 0 && parsed.activeProfileId) {
+        fallbackProfilesState = parsed;
+        return { state: parsed, hasStoredProfiles: true };
+      }
+    }
+    const initial = sanitizeProfilesState({ profiles: [createDefaultProfile("Main Character")] });
+    fallbackProfilesState = initial;
+    return { state: initial, hasStoredProfiles: false };
+  } catch {
+    if (fallbackProfilesState && fallbackProfilesState.profiles.length > 0) {
+      return { state: fallbackProfilesState, hasStoredProfiles: false };
+    }
+    const initial = sanitizeProfilesState({ profiles: [createDefaultProfile("Main Character")] });
+    fallbackProfilesState = initial;
+    return { state: initial, hasStoredProfiles: false };
+  }
 }
 
-function writeProfilesState(state: ProfilesState) {
-  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(state));
-  window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
+function readProfilesState(): ProfilesState {
+  return readStoredProfilesState().state;
+}
+
+export function writeProfilesState(state: ProfilesState) {
+  fallbackProfilesState = state;
+  try {
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+  if (typeof window !== "undefined") {
+    const event =
+      typeof CustomEvent === "function"
+        ? new CustomEvent(PROFILE_UPDATED_EVENT, { detail: state })
+        : new Event(PROFILE_UPDATED_EVENT);
+    window.dispatchEvent(event);
+  }
 }
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
@@ -764,19 +796,27 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const handleUpdate = () => {
-      setState(readProfilesState());
+    const handleUpdate = (event?: Event) => {
+      if (typeof CustomEvent === "function" && event instanceof CustomEvent && event.detail) {
+        setState(event.detail as ProfilesState);
+        return;
+      }
+      const { state: next, hasStoredProfiles } = readStoredProfilesState();
+      setState(next);
+      if (!hasStoredProfiles) {
+        try {
+          localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+      }
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === PROFILE_STORAGE_KEY) handleUpdate();
+      if (event.key === PROFILE_STORAGE_KEY || event.key === null) handleUpdate();
     };
 
-    const initial = readProfilesState();
+    const { state: initial, hasStoredProfiles } = readStoredProfilesState();
     setState(initial);
-    if (initial.profiles.length === 0) {
-      const fallback = sanitizeProfilesState({ profiles: [createDefaultProfile("Main Character")] });
-      writeProfilesState(fallback);
-      setState(fallback);
+    if (!hasStoredProfiles) {
+      writeProfilesState(initial);
     }
     setLoaded(true);
     window.addEventListener(PROFILE_UPDATED_EVENT, handleUpdate);

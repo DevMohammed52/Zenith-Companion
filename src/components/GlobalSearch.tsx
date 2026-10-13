@@ -79,12 +79,55 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
   const resultsId = `${idPrefix}-global-search-results`;
   const statusId = `${idPrefix}-global-search-status`;
 
-  // Load recent from storage
+  // Load recent from storage and keep multiple mounted instances in sync
   useEffect(() => {
-    const stored = localStorage.getItem('zenith-recent-items');
-    if (stored) {
-      try { setRecent(JSON.parse(stored)); } catch {}
-    }
+    const readRecent = (): SearchResult[] => {
+      try {
+        const stored = localStorage.getItem('zenith-recent-items');
+        if (!stored) return [];
+        const parsed: unknown = JSON.parse(stored);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter((item): item is Record<string, unknown> => (
+            typeof item === "object" &&
+            item !== null &&
+            !Array.isArray(item) &&
+            (typeof (item as { label?: unknown }).label === "string" || typeof (item as { name?: unknown }).name === "string")
+          ))
+          .map((item) => {
+            const label = typeof item.label === "string" && item.label.trim()
+              ? item.label.trim()
+              : typeof item.name === "string"
+                ? item.name.trim()
+                : "";
+            const type = typeof item.type === "string" && item.type.trim() ? item.type.trim() : "Item";
+            const href = typeof item.href === "string" && item.href.trim() ? item.href.trim() : "/items";
+            const detail = typeof item.detail === "string" && item.detail.trim() ? item.detail.trim() : undefined;
+            return { label, type, href, ...(detail ? { detail } : {}) };
+          })
+          .filter((item) => item.label.length > 0)
+          .slice(0, 5);
+      } catch {
+        return [];
+      }
+    };
+
+    const syncRecent = () => {
+      setRecent(readRecent());
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'zenith-recent-items' || event.key === null) {
+        syncRecent();
+      }
+    };
+
+    syncRecent();
+    window.addEventListener('zenith-recent-items-updated', syncRecent);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('zenith-recent-items-updated', syncRecent);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   useEffect(() => {
@@ -355,7 +398,10 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     const resultIdentity = getSearchResultIdentity(result);
     const updatedRecent = [result, ...recent.filter(r => getSearchResultIdentity(r) !== resultIdentity)].slice(0, 5);
     setRecent(updatedRecent);
-    localStorage.setItem('zenith-recent-items', JSON.stringify(updatedRecent));
+    try {
+      localStorage.setItem('zenith-recent-items', JSON.stringify(updatedRecent));
+      window.dispatchEvent(new Event('zenith-recent-items-updated'));
+    } catch {}
 
     if (result.type === "Recipe") {
       // Always navigate for Alchemy recipes to see the profit calculator

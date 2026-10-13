@@ -234,7 +234,6 @@ export default function DesktopDock() {
               aria-label={`${group.label}: ${group.eyebrow}`}
               aria-controls={shelfId}
               aria-expanded={openGroupLabel === group.label}
-              aria-pressed={pinnedGroupLabel === group.label}
               data-active={active ? "true" : "false"}
               data-open={openGroupLabel === group.label ? "true" : "false"}
               className={`desktop-dock-item ${active ? "desktop-dock-item-active" : ""}`}

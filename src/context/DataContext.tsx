@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { applyTheme, DEFAULT_PREFERENCES, PREFERENCE_STORAGE_KEY } from '@/lib/preferences';
 import type { WorldLocation } from '@/lib/locations';
 
 type MarketData = Record<string, any>;
@@ -31,6 +30,7 @@ type DataContextType = {
   loading: boolean;
   refresh: () => Promise<void>;
   ensureLoaded: () => Promise<void>;
+  ensureMarketLoaded: () => Promise<void>;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -45,31 +45,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const loadPromiseRef = useRef<Promise<void> | null>(null);
-
-  // Initialize and Sync Theme
-  useEffect(() => {
-    const refreshTheme = () => {
-      try {
-        const stored = localStorage.getItem(PREFERENCE_STORAGE_KEY);
-        if (stored) {
-          const theme = JSON.parse(stored).theme || DEFAULT_PREFERENCES.theme;
-          applyTheme(theme);
-        } else {
-          applyTheme(DEFAULT_PREFERENCES.theme);
-        }
-      } catch {
-        applyTheme(DEFAULT_PREFERENCES.theme);
-      }
-    };
-
-    refreshTheme(); // Initial load
-    window.addEventListener("zenith-preferences-updated", refreshTheme);
-    window.addEventListener("storage", refreshTheme); // Sync across tabs
-    return () => {
-      window.removeEventListener("zenith-preferences-updated", refreshTheme);
-      window.removeEventListener("storage", refreshTheme);
-    };
-  }, []);
+  const marketDataRef = useRef<MarketData | null>(null);
+  const marketLoadPromiseRef = useRef<Promise<MarketData | null> | null>(null);
 
   const fetchJson = useCallback(async <T,>(url: string, init?: RequestInit): Promise<T | null> => {
     try {
@@ -82,22 +59,54 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loadMarketData = useCallback((force = false): Promise<MarketData | null> => {
+    if (!force && marketDataRef.current) {
+      return Promise.resolve(marketDataRef.current);
+    }
+    if (!force && marketLoadPromiseRef.current) {
+      return marketLoadPromiseRef.current;
+    }
+    const request = fetchJson<MarketData>("/market-data.json", { cache: "no-cache" })
+      .then((market) => {
+        if (market) {
+          marketDataRef.current = market;
+          setMarketData(market);
+        }
+        return market;
+      })
+      .finally(() => {
+        if (marketLoadPromiseRef.current === request) {
+          marketLoadPromiseRef.current = null;
+        }
+      });
+    marketLoadPromiseRef.current = request;
+    return request;
+  }, [fetchJson]);
+
+  const ensureMarketLoaded = useCallback(() => {
+    return loadMarketData(false).then(() => undefined);
+  }, [loadMarketData]);
+
   const refreshScraperStatus = useCallback(async () => {
     const status = await fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" });
     if (status) setScraperStatus(status);
   }, [fetchJson]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (options?: { forceMarket?: boolean }) => {
     setLoading(true);
+    const forceMarket = Boolean(options?.forceMarket);
     const [market, staticPayload, status, items, worldLocationsPayload] = await Promise.all([
-      fetchJson<MarketData>("/market-data.json", { cache: "no-cache" }),
+      loadMarketData(forceMarket),
       fetchJson<StaticData>("/static-data.json"),
       fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" }),
       fetchJson<ItemLookup>("/all-items-db.json"),
       fetchJson<{ locations?: WorldLocation[] }>("/world-locations.json"),
     ]);
 
-    if (market) setMarketData(market);
+    if (market) {
+      marketDataRef.current = market;
+      setMarketData(market);
+    }
     if (staticPayload) setStaticData(staticPayload);
     if (status) setScraperStatus(status);
 
@@ -116,12 +125,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(false);
     setLoaded(true);
-  }, [fetchJson]);
+  }, [fetchJson, loadMarketData]);
+
+  const refresh = useCallback(() => {
+    return fetchData({ forceMarket: true });
+  }, [fetchData]);
 
   const ensureLoaded = useCallback(() => {
     if (loaded) return Promise.resolve();
     if (!loadPromiseRef.current) {
-      loadPromiseRef.current = fetchData().finally(() => {
+      loadPromiseRef.current = fetchData({ forceMarket: false }).finally(() => {
         loadPromiseRef.current = null;
       });
     }
@@ -146,9 +159,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     worldLocations,
     scraperStatus,
     loading,
-    refresh: fetchData,
+    refresh,
     ensureLoaded,
-  }), [allItemsDb, ensureLoaded, fetchData, itemRegistry, loading, marketData, scraperStatus, staticData, worldLocations]);
+    ensureMarketLoaded,
+  }), [allItemsDb, ensureLoaded, ensureMarketLoaded, itemRegistry, loading, marketData, refresh, scraperStatus, staticData, worldLocations]);
 
   return (
     <DataContext.Provider value={value}>

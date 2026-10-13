@@ -9,7 +9,7 @@ export default function MobileMenuBtn() {
     const { preferences, loaded } = usePreferences();
     const commandMode = preferences.mobileNavigationStyle === 'command';
 
-    if (!loaded || commandMode) return null;
+    if (loaded && commandMode) return null;
 
     return (
         <>

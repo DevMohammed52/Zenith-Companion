@@ -11,7 +11,7 @@ import { useSidebar } from '@/context/SidebarContext';
 const DEFAULT_EXPANDED_GROUPS: Record<string, boolean> = {
     'General': true,
     'Databases': true,
-    'Planning Tools': false,
+    'Planning Tools': true,
     'World & Combat': true,
 };
 const SIDEBAR_GROUP_STORAGE_KEY = 'zenith.sidebar.expandedGroups.v1';
@@ -95,6 +95,8 @@ export default function Sidebar() {
         return () => query.removeEventListener('change', updateViewport);
     }, []);
 
+    const [groupsHydrated, setGroupsHydrated] = useState(false);
+
     useEffect(() => {
         if (!activeGroupLabel) return;
         setExpandedGroups((prev) => prev[activeGroupLabel] ? prev : { ...prev, [activeGroupLabel]: true });
@@ -103,23 +105,34 @@ export default function Sidebar() {
     useEffect(() => {
         try {
             const savedGroups = window.localStorage.getItem(SIDEBAR_GROUP_STORAGE_KEY);
-            if (!savedGroups) return;
-            const parsedGroups = JSON.parse(savedGroups) as Record<string, unknown>;
-            const nextGroups = NAV_GROUPS.reduce<Record<string, boolean>>((acc, group) => {
-                acc[group.label] = typeof parsedGroups[group.label] === 'boolean'
-                    ? parsedGroups[group.label] as boolean
-                    : DEFAULT_EXPANDED_GROUPS[group.label] ?? false;
-                return acc;
-            }, {});
-            setExpandedGroups(activeGroupLabel ? { ...nextGroups, [activeGroupLabel]: true } : nextGroups);
+            if (savedGroups) {
+                const parsedGroups = JSON.parse(savedGroups) as unknown;
+                if (parsedGroups && typeof parsedGroups === 'object' && !Array.isArray(parsedGroups)) {
+                    const record = parsedGroups as Record<string, unknown>;
+                    const nextGroups = NAV_GROUPS.reduce<Record<string, boolean>>((acc, group) => {
+                        acc[group.label] = typeof record[group.label] === 'boolean'
+                            ? record[group.label] as boolean
+                            : DEFAULT_EXPANDED_GROUPS[group.label] ?? false;
+                        return acc;
+                    }, {});
+                    setExpandedGroups(activeGroupLabel ? { ...nextGroups, [activeGroupLabel]: true } : nextGroups);
+                }
+            }
         } catch {
-            window.localStorage.removeItem(SIDEBAR_GROUP_STORAGE_KEY);
+            try {
+                window.localStorage.removeItem(SIDEBAR_GROUP_STORAGE_KEY);
+            } catch {}
+        } finally {
+            setGroupsHydrated(true);
         }
     }, [activeGroupLabel]);
 
     useEffect(() => {
-        window.localStorage.setItem(SIDEBAR_GROUP_STORAGE_KEY, JSON.stringify(expandedGroups));
-    }, [expandedGroups]);
+        if (!groupsHydrated) return;
+        try {
+            window.localStorage.setItem(SIDEBAR_GROUP_STORAGE_KEY, JSON.stringify(expandedGroups));
+        } catch {}
+    }, [expandedGroups, groupsHydrated]);
 
     const commandNavigationActive = preferences.mobileNavigationStyle === 'command' && mobileViewport;
     const standardSidebarOpen = mobileOpen && !commandNavigationActive;

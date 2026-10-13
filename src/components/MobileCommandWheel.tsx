@@ -72,7 +72,12 @@ export default function MobileCommandWheel({
   useEffect(() => {
     if (!open) return;
     const focusFrame = window.requestAnimationFrame(() => {
-      groupRefs.current[selectedIndex]?.focus({ preventScroll: true });
+      const activeElement = document.activeElement;
+      const dialog = dialogRef.current;
+      const isInsideTablist = activeElement instanceof Element && Boolean(activeElement.closest('.command-wheel-groups, [role="tablist"]'));
+      if (!dialog || !dialog.contains(activeElement) || isInsideTablist) {
+        groupRefs.current[selectedIndex]?.focus({ preventScroll: true });
+      }
     });
     return () => window.cancelAnimationFrame(focusFrame);
   }, [open, selectedIndex]);
@@ -106,16 +111,24 @@ export default function MobileCommandWheel({
         return;
       }
 
+      const activeElement = document.activeElement;
+      const isFocusInsideTablist = activeElement instanceof Element && Boolean(activeElement.closest('.command-wheel-groups, [role="tablist"]'));
+      if (!isFocusInsideTablist) return;
+
       if (event.key === "ArrowDown" || event.key === "ArrowRight") {
         event.preventDefault();
-        const next = NAV_GROUPS[(selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length];
+        const nextIndex = (selectedIndex + 1 + NAV_GROUPS.length) % NAV_GROUPS.length;
+        const next = NAV_GROUPS[nextIndex];
         setSelectedGroupLabel(next.label);
+        groupRefs.current[nextIndex]?.focus({ preventScroll: true });
       }
 
       if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
-        const next = NAV_GROUPS[(selectedIndex - 1 + NAV_GROUPS.length) % NAV_GROUPS.length];
+        const nextIndex = (selectedIndex - 1 + NAV_GROUPS.length) % NAV_GROUPS.length;
+        const next = NAV_GROUPS[nextIndex];
         setSelectedGroupLabel(next.label);
+        groupRefs.current[nextIndex]?.focus({ preventScroll: true });
       }
     };
 

@@ -18,7 +18,11 @@ export default function FirstRunSetup() {
 
   useEffect(() => {
     if (!preferencesLoaded || !profilesLoaded) return;
-    if (window.localStorage.getItem(SETUP_STORAGE_KEY)) return;
+    try {
+      if (window.localStorage.getItem(SETUP_STORAGE_KEY)) return;
+    } catch {
+      return;
+    }
     const timer = window.setTimeout(() => {
       setVisible(true);
       playZenithSound("open");
@@ -27,13 +31,17 @@ export default function FirstRunSetup() {
   }, [preferencesLoaded, profilesLoaded]);
 
   const dismiss = useCallback(() => {
-    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    try {
+      window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    } catch {}
     setVisible(false);
     playZenithSound("close");
   }, []);
 
   const finish = useCallback(() => {
-    window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    try {
+      window.localStorage.setItem(SETUP_STORAGE_KEY, new Date().toISOString());
+    } catch {}
     setVisible(false);
     playZenithSound("success", { force: true });
   }, []);
@@ -126,7 +134,7 @@ export default function FirstRunSetup() {
           <X size={16} />
         </button>
         <div className="setup-kicker">First time setup</div>
-        <h2 id="setup-title">Make Zenith match your character before planning.</h2>
+        <h2 id="setup-title">Import your IdleMMO character</h2>
         <p id="setup-description">
           Zenith works best after you import or create a local profile, check your settings, and know how to back up your data. Your saved profiles and planner data stay in this browser.
         </p>
@@ -147,7 +155,7 @@ export default function FirstRunSetup() {
 
           <Link href="/profiles" className="setup-step" onClick={finish}>
             <span><Upload size={17} /></span>
-            <strong>Know your backup path</strong>
+            <strong>Back up local profiles</strong>
             <small>Profiles are browser-local. Export JSON before changing browser or clearing data.</small>
           </Link>
         </div>

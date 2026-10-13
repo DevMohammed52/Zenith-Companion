@@ -21,7 +21,12 @@ export default function LocalBackupReminder() {
     const profileCount = state.profiles.length;
     if (!loaded || !preferencesLoaded || !preferences.inAppNotifications || profileCount === 0) return;
     if (!isProfileBackupDue(profileCount)) return;
-    const stored = window.localStorage.getItem(BACKUP_REMINDER_KEY);
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(BACKUP_REMINDER_KEY);
+    } catch {
+      return;
+    }
     const lastShown = stored ? Number(stored) : 0;
     if (Number.isFinite(lastShown) && Date.now() - lastShown < BACKUP_REMINDER_INTERVAL_MS) return;
 
@@ -35,7 +40,9 @@ export default function LocalBackupReminder() {
         actionLabel: "Open backup",
         actionHref: "/profiles#profile-backup",
       });
-      window.localStorage.setItem(BACKUP_REMINDER_KEY, String(Date.now()));
+      try {
+        window.localStorage.setItem(BACKUP_REMINDER_KEY, String(Date.now()));
+      } catch {}
     }, 14000);
 
     return () => window.clearTimeout(timer);

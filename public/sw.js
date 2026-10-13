@@ -1,6 +1,7 @@
 const CACHE_NAME = "zenith-offline-v2";
 const OFFLINE_URL = "/offline.html";
 const MANIFEST_URL = "/offline-cache-manifest.json";
+const MANIFEST_META_URL = "/__zenith-offline-manifest-state__.json";
 const CORE_URLS = ["/", OFFLINE_URL, MANIFEST_URL];
 const OFFLINE_IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Offline image"><rect width="96" height="96" rx="14" fill="#141416"/><rect x="1" y="1" width="94" height="94" rx="13" fill="none" stroke="#f5b041" stroke-opacity=".42" stroke-width="2"/><circle cx="48" cy="48" r="22" fill="#f5b041" fill-opacity=".12" stroke="#f5b041" stroke-width="4"/><path d="M42 58l5-13 13-5-5 13-13 5z" fill="none" stroke="#f5b041" stroke-width="4" stroke-linejoin="round"/></svg>`;
 const PUBLIC_API_PREFIXES = ["/api/items/"];
@@ -191,13 +192,62 @@ async function refreshPublicDataCache() {
     if (!manifestResponse.ok) return;
 
     const manifest = await manifestResponse.clone().json();
-    await cache.put(MANIFEST_URL, manifestResponse);
-
-    if (previousManifest?.version === manifest.version) return;
-
     const urls = Array.isArray(manifest.urls) ? manifest.urls : [];
-    await cacheUrls(cache, urls, { cache: "no-cache" });
+    const previousHashes =
+      previousManifest && typeof previousManifest.hashes === "object" && previousManifest.hashes !== null
+        ? previousManifest.hashes
+        : null;
+    const nextHashes =
+      manifest && typeof manifest.hashes === "object" && manifest.hashes !== null
+        ? manifest.hashes
+        : null;
+
+    const urlsToCache = [];
+    await Promise.all(
+      urls.map(async (url) => {
+        if (typeof url !== "string") return;
+        try {
+          const requestUrl = new URL(url, self.location.origin);
+          const cachedEntry = await cache.match(normalizeCacheRequest(requestUrl));
+          const previousHash = previousHashes ? previousHashes[url] : undefined;
+          const nextHash = nextHashes ? nextHashes[url] : undefined;
+          const hashUnchanged =
+            Boolean(previousHash) && Boolean(nextHash) && previousHash === nextHash;
+          if (!cachedEntry || !hashUnchanged) {
+            urlsToCache.push(url);
+          }
+        } catch {
+          // Ignore malformed manifest URLs.
+        }
+      }),
+    );
+
+    const syncedHashes = nextHashes ? { ...nextHashes } : {};
+    if (urlsToCache.length > 0) {
+      const succeededUrls = await cacheUrls(cache, urlsToCache, { cache: "no-cache" });
+      for (const url of urlsToCache) {
+        if (!succeededUrls.has(url)) {
+          if (previousHashes && previousHashes[url]) {
+            syncedHashes[url] = previousHashes[url];
+          } else {
+            delete syncedHashes[url];
+          }
+        }
+      }
+    }
     await pruneRemovedManifestUrls(cache, previousManifest?.urls, urls);
+    const syncedManifest = { ...manifest, hashes: syncedHashes };
+    const metaResponse =
+      typeof Response === "function"
+        ? new Response(JSON.stringify(syncedManifest), {
+            headers: { "content-type": "application/json" },
+          })
+        : {};
+    if (typeof metaResponse.json !== "function") {
+      metaResponse.json = async () => syncedManifest;
+    }
+    await cache.put(MANIFEST_META_URL, metaResponse);
+    await cache.put(MANIFEST_URL, manifestResponse);
   })().finally(() => {
     manifestRefreshPromise = null;
   });
@@ -296,7 +346,7 @@ function getValidGuildDetailUrls(urls) {
 }
 
 async function readCachedManifest(cache) {
-  const cached = await cache.match(MANIFEST_URL);
+  const cached = (await cache.match(MANIFEST_META_URL)) || (await cache.match(MANIFEST_URL));
   if (!cached) return null;
 
   try {
@@ -308,6 +358,7 @@ async function readCachedManifest(cache) {
 
 async function cacheUrls(cache, urls, requestInit = {}) {
   const chunkSize = 16;
+  const succeededUrls = new Set();
 
   for (let index = 0; index < urls.length; index += chunkSize) {
     const chunk = urls.slice(index, index + chunkSize);
@@ -317,13 +368,18 @@ async function cacheUrls(cache, urls, requestInit = {}) {
           const requestUrl = new URL(url, self.location.origin);
           const request = new Request(requestUrl, requestInit);
           const response = await fetch(request);
-          if (response.ok) await cache.put(normalizeCacheRequest(requestUrl), response);
+          if (response.ok) {
+            await cache.put(normalizeCacheRequest(requestUrl), response);
+            succeededUrls.add(url);
+          }
         } catch {
           // Keep the service worker active even if one optional public asset is unavailable.
         }
       }),
     );
   }
+
+  return succeededUrls;
 }
 
 async function pruneRemovedManifestUrls(cache, previousUrls, nextUrls) {
