@@ -20,8 +20,8 @@ import {
 import { formatGold } from "@/lib/format";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import QualityText from "@/components/QualityText";
-import { usePreferences } from "@/lib/preferences";
-import { useProfiles } from "@/lib/profiles";
+import { PREFERENCE_STORAGE_KEY, usePreferences } from "@/lib/preferences";
+import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { barteringBuffPercent, getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
@@ -100,7 +100,7 @@ const DEFAULT_STATE: PersistedState = {
   sortDesc: true,
   searchTerm: "",
   minVolume: 100,
-  ascensionOpen: true,
+  ascensionOpen: false,
   essenceOpen: false,
 };
 
@@ -112,7 +112,7 @@ const SORT_LABELS: Record<SkillProfitSortKey, string> = {
   level: "Level",
   profitEach: "Profit/Piece",
   profitPerHour: "Gold/Hr",
-  roi: "Profit/Piece",
+  roi: "ROI %",
   itemsPerHour: "Items/Hr",
   expPerSecond: "Exp/S",
   expPerHour: "Exp/Hr",
@@ -142,6 +142,7 @@ export default function SkillProfitPage() {
   const { openItemByName, prefetchItem } = useItemModal();
   const { preferences, setPreferences, loaded: preferencesLoaded } = usePreferences();
   const { activeProfile, updateProfile, loaded: profilesLoaded } = useProfiles();
+  const configuredProfile = activeProfile && !isStarterProfile(activeProfile) ? activeProfile : null;
   const [settings, setSettings] = useState<SkillProfitSettings>(DEFAULT_STATE.settings);
   const [activeSkill, setActiveSkill] = useState<SkillName | "All">(DEFAULT_STATE.activeSkill);
   const [sortKey, setSortKey] = useState<SkillProfitSortKey>(DEFAULT_STATE.sortKey);
@@ -157,6 +158,7 @@ export default function SkillProfitPage() {
   const [visibleRowLimit, setVisibleRowLimit] = useState(MOBILE_RESULT_BATCH_SIZE);
   const [includeForgeInfoRows, setIncludeForgeInfoRows] = useState(false);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
+  const [storageReloadTick, setStorageReloadTick] = useState(0);
   const [gearData, setGearData] = useState<GearData | null>(null);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
   const [activeDropdownLayer, setActiveDropdownLayer] = useState<DropdownLayer | null>(null);
@@ -177,27 +179,25 @@ export default function SkillProfitPage() {
     setDropdownLayerOpen("command", open);
   }, [setDropdownLayerOpen]);
 
-  const activeProfileId = activeProfile?.id || null;
+  const activeProfileId = configuredProfile?.id || null;
   const storageKey = useMemo(
     () => getProfileStorageKey(STORAGE_KEY, activeProfileId),
     [activeProfileId],
   );
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const effectiveToolSelections = useMemo(
-    () => activeProfile
-      ? {
-          Woodcutting: activeProfile.tools.woodcutting ?? "",
-          Mining: activeProfile.tools.mining ?? "",
-          Fishing: activeProfile.tools.fishing ?? "",
-        }
-      : settings.tools,
-    [activeProfile, settings.tools],
+  const searchTokens = useMemo(
+    () => getSearchTokens(deferredSearchTerm.trim().toLowerCase()),
+    [deferredSearchTerm],
   );
-  const displayedBarteringLevel = activeProfile
-    ? activeProfile.boosts.barteringLevel
-    : settings.barteringBoost === ""
-      ? ""
-      : Math.min(100, Math.max(0, Math.round((Number(settings.barteringBoost) || 0) / 0.2)));
+
+  const targetBarteringLevel = configuredProfile
+    ? (configuredProfile.boosts?.barteringLevel ?? 0)
+    : Math.min(100, Math.max(0, Math.round(Number(preferences.barteringBoost || 0) / 0.2)));
+  const [barteringLevelDraft, setBarteringLevelDraft] = useState(() => String(targetBarteringLevel));
+
+  useEffect(() => {
+    setBarteringLevelDraft(String(targetBarteringLevel));
+  }, [targetBarteringLevel]);
 
   useEffect(() => {
     setPoolExpDraft(String(settings.energizingPoolExp));
@@ -216,78 +216,79 @@ export default function SkillProfitPage() {
   }, []);
 
   useEffect(() => {
-    if (!preferencesLoaded || !profilesLoaded || !loadedStoredState) return;
-    const profileTools = activeProfile?.tools || {};
-    const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : 0;
-    const syncedTools = activeProfile
-      ? {
-          Woodcutting: profileTools.woodcutting ?? "",
-          Mining: profileTools.mining ?? "",
-          Fishing: profileTools.fishing ?? "",
-        }
-      : {
-          ...DEFAULT_TOOL_SELECTIONS,
-          ...preferences.skillTools,
-        };
-    setSettings((current) => ({
-      ...current,
-      membership: preferences.membership,
-      classBonus: activeProfile ? false : preferences.skillClassBonus,
-      profileClassName: activeProfile?.className || undefined,
-      assaultRank: activeProfile ? getProfileConquestRank(activeProfile) : preferences.assaultRank,
-      tools: syncedTools,
-      customPrices: preferences.customPrices,
-      barteringBoost: profileBarteringBoost,
-    }));
-  }, [
-    activeProfile,
-    activeProfile?.tools,
-    loadedStoredState,
-    preferences.assaultRank,
-    preferences.customPrices,
-    preferences.membership,
-    preferences.skillClassBonus,
-    preferences.skillTools,
-    profilesLoaded,
-    preferencesLoaded,
-  ]);
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        event.key === null ||
+        event.key === storageKey ||
+        event.key === STORAGE_KEY ||
+        event.key === PREFERENCE_STORAGE_KEY
+      ) {
+        setStorageReloadTick((tick) => tick + 1);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!profilesLoaded) return;
     loadedStorageKeyRef.current = null;
     setLoadedStoredState(false);
-    setSettings(DEFAULT_STATE.settings);
-    setActiveSkill(DEFAULT_STATE.activeSkill);
-    setSortKey(DEFAULT_STATE.sortKey);
-    setSortDesc(DEFAULT_STATE.sortDesc);
-    setSearchTerm(DEFAULT_STATE.searchTerm);
-    setMinVolume(DEFAULT_STATE.minVolume);
-    setAscensionOpen(DEFAULT_STATE.ascensionOpen);
-    setEssenceOpen(DEFAULT_STATE.essenceOpen);
+
+    let nextSettings = DEFAULT_STATE.settings;
+    let nextActiveSkill = DEFAULT_STATE.activeSkill;
+    let nextSortKey = DEFAULT_STATE.sortKey;
+    let nextSortDesc = DEFAULT_STATE.sortDesc;
+    let nextSearchTerm = DEFAULT_STATE.searchTerm;
+    let nextMinVolume = DEFAULT_STATE.minVolume;
+    let nextAscensionOpen = DEFAULT_STATE.ascensionOpen;
+    let nextEssenceOpen = DEFAULT_STATE.essenceOpen;
+
     try {
-      const stored = localStorage.getItem(storageKey) || (!activeProfileId ? localStorage.getItem(STORAGE_KEY) : null);
-      if (!stored) return;
-      const parsed = JSON.parse(stored) as Partial<PersistedState>;
-      setSettings({
-        ...DEFAULT_SETTINGS,
-        ...parsed.settings,
-        tools: { ...DEFAULT_TOOL_SELECTIONS, ...parsed.settings?.tools },
-        essenceBySkill: { ...DEFAULT_SETTINGS.essenceBySkill, ...parsed.settings?.essenceBySkill },
-        customPrices: DEFAULT_SETTINGS.customPrices,
-      });
-      if (parsed.activeSkill) setActiveSkill(parsed.activeSkill);
-      if (parsed.sortKey) setSortKey(parsed.sortKey === "roi" ? "profitEach" : parsed.sortKey);
-      if (typeof parsed.sortDesc === "boolean") setSortDesc(parsed.sortDesc);
-      if (typeof parsed.searchTerm === "string") setSearchTerm(parsed.searchTerm);
-      if (typeof parsed.minVolume === "number") setMinVolume(parsed.minVolume);
-      if (typeof parsed.ascensionOpen === "boolean") setAscensionOpen(parsed.ascensionOpen);
-      if (typeof parsed.essenceOpen === "boolean") setEssenceOpen(parsed.essenceOpen);
+      const stored = localStorage.getItem(storageKey) || localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+          if (parsed.settings && typeof parsed.settings === "object" && !Array.isArray(parsed.settings)) {
+            nextSettings = {
+              ...DEFAULT_SETTINGS,
+              ...parsed.settings,
+              tools: { ...DEFAULT_TOOL_SELECTIONS, ...parsed.settings.tools },
+              essenceBySkill: { ...DEFAULT_SETTINGS.essenceBySkill, ...parsed.settings.essenceBySkill },
+              customPrices: DEFAULT_SETTINGS.customPrices,
+            };
+          }
+          if (parsed.activeSkill) nextActiveSkill = parsed.activeSkill;
+          if (parsed.sortKey) nextSortKey = parsed.sortKey === "roi" ? "profitEach" : parsed.sortKey;
+          if (typeof parsed.sortDesc === "boolean") nextSortDesc = parsed.sortDesc;
+          if (typeof parsed.searchTerm === "string") nextSearchTerm = parsed.searchTerm;
+          if (typeof parsed.minVolume === "number" && Number.isFinite(parsed.minVolume)) {
+            nextMinVolume = parsed.minVolume;
+          }
+          if (typeof parsed.ascensionOpen === "boolean") nextAscensionOpen = parsed.ascensionOpen;
+          if (typeof parsed.essenceOpen === "boolean") nextEssenceOpen = parsed.essenceOpen;
+        }
+      }
     } catch {
-    } finally {
+      // Ignore parse or storage errors
+    }
+
+    setSettings(nextSettings);
+    setActiveSkill(nextActiveSkill);
+    setSortKey(nextSortKey);
+    setSortDesc(nextSortDesc);
+    setSearchTerm(nextSearchTerm);
+    setMinVolume(nextMinVolume);
+    setAscensionOpen(nextAscensionOpen);
+    setEssenceOpen(nextEssenceOpen);
+
+    const timer = setTimeout(() => {
       loadedStorageKeyRef.current = storageKey;
       setLoadedStoredState(true);
-    }
-  }, [activeProfileId, profilesLoaded, storageKey]);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [activeProfileId, profilesLoaded, storageKey, storageReloadTick]);
 
   useEffect(() => {
     if (!profilesLoaded || !loadedStoredState) return;
@@ -303,7 +304,11 @@ export default function SkillProfitPage() {
       essenceOpen,
     };
     const timeout = window.setTimeout(() => {
-      localStorage.setItem(storageKey, JSON.stringify(payload));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(payload));
+      } catch {
+        // Ignore storage errors (e.g. Safari Private Browsing SecurityError or quota exceeded)
+      }
     }, 200);
     return () => window.clearTimeout(timeout);
   }, [activeSkill, ascensionOpen, essenceOpen, loadedStoredState, minVolume, profilesLoaded, searchTerm, settings, sortDesc, sortKey, storageKey]);
@@ -320,8 +325,8 @@ export default function SkillProfitPage() {
     [gearData, itemRegistry],
   );
   const housingSummary = useMemo(
-    () => calculateHousingBuffs(activeProfile?.housing, { profileClassName: activeProfile?.className }),
-    [activeProfile?.className, activeProfile?.housing],
+    () => calculateHousingBuffs(configuredProfile?.housing, { profileClassName: configuredProfile?.className }),
+    [configuredProfile?.className, configuredProfile?.housing],
   );
   const rawHousingIdleHoursBySkill = useMemo(() => {
     const entries = SKILLS.map((skill) => {
@@ -339,7 +344,7 @@ export default function SkillProfitPage() {
     });
     return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
   }, [housingSummary]);
-  const baseIdleActionHours = activeProfile ? getProfileBaseIdleActionHours(activeProfile) : 8;
+  const baseIdleActionHours = configuredProfile ? getProfileBaseIdleActionHours(configuredProfile) : 8;
   const idleActionHoursBySkill = useMemo(() => {
     const entries = SKILLS.map((skill) => [
       skill,
@@ -385,22 +390,57 @@ export default function SkillProfitPage() {
     return result;
   }, [essenceSessionsBySkill]);
   const activeEssenceCount = SUPPORTED_ESSENCE_SKILLS.filter((skill) => essenceSessionsBySkill[skill]?.active).length;
-  const effectiveSettings = useMemo<SkillProfitSettings>(
-    () => ({
-      ...settings,
-      tools: effectiveToolSelections,
+  const effectiveSettings = useMemo<SkillProfitSettings>(() => {
+    const base = {
+      membership: preferences.membership,
+      saleMode: settings.saleMode,
+      energizingPoolExp: settings.energizingPoolExp,
+      ascensionBuffIds: settings.ascensionBuffIds,
+      customPrices: preferences.customPrices,
+      essenceBySkill: settings.essenceBySkill,
       essenceBuffsBySkill,
       essencePricesBySkill,
       idleActionHoursBySkill,
-    }),
-    [
-      effectiveToolSelections,
-      essenceBuffsBySkill,
-      essencePricesBySkill,
-      idleActionHoursBySkill,
-      settings,
-    ],
-  );
+    };
+    if (!configuredProfile) {
+      return {
+        ...base,
+        tools: { ...DEFAULT_TOOL_SELECTIONS, ...preferences.skillTools },
+        classBonus: preferences.skillClassBonus,
+        barteringBoost: Number(preferences.barteringBoost || 0),
+        assaultRank: preferences.assaultRank,
+        profileClassName: undefined,
+      };
+    }
+    return {
+      ...base,
+      tools: {
+        Woodcutting: configuredProfile.tools?.woodcutting ?? "",
+        Mining: configuredProfile.tools?.mining ?? "",
+        Fishing: configuredProfile.tools?.fishing ?? "",
+      },
+      classBonus: false,
+      barteringBoost: getProfileBarteringBoost(configuredProfile),
+      assaultRank: getProfileConquestRank(configuredProfile),
+      profileClassName: configuredProfile.className,
+    };
+  }, [
+    configuredProfile,
+    essenceBuffsBySkill,
+    essencePricesBySkill,
+    idleActionHoursBySkill,
+    preferences.assaultRank,
+    preferences.barteringBoost,
+    preferences.customPrices,
+    preferences.membership,
+    preferences.skillClassBonus,
+    preferences.skillTools,
+    settings.ascensionBuffIds,
+    settings.energizingPoolExp,
+    settings.essenceBySkill,
+    settings.saleMode,
+  ]);
+  const effectiveToolSelections = effectiveSettings.tools;
   const deferredSettings = useDeferredValue(effectiveSettings);
 
   const rows = useMemo(
@@ -415,8 +455,6 @@ export default function SkillProfitPage() {
   );
 
   const rowModel = useMemo(() => {
-    const normalizedSearch = deferredSearchTerm.trim().toLowerCase();
-    const searchTokens = getSearchTokens(normalizedSearch);
     const topBySkill = new Map<SkillName, SkillProfitRow>();
     let topOverall: SkillProfitRow | null = null;
 
@@ -453,7 +491,7 @@ export default function SkillProfitPage() {
     for (const row of rows) counts.set(row.skill, (counts.get(row.skill) || 0) + 1);
 
     return { filtered, topBySkill, topOverall, counts };
-  }, [activeSkill, deferredSearchTerm, includeForgeInfoRows, minVolume, rows, sortDesc, sortKey]);
+  }, [activeSkill, includeForgeInfoRows, minVolume, rows, searchTokens, sortDesc, sortKey]);
 
   useEffect(() => {
     setVisibleRowLimit(MOBILE_RESULT_BATCH_SIZE);
@@ -519,7 +557,7 @@ export default function SkillProfitPage() {
     .map((entry) => `${entry.label} +${formatHours(entry.hours)}`)
     .join(", ");
   const housingWindowExtraCount = Math.max(0, visibleHousingWindows.length - 3);
-  const housingWindowAllValue = !activeProfile
+  const housingWindowAllValue = !configuredProfile
     ? "Profile needed"
     : visibleHousingWindows.length === 0
       ? "None"
@@ -537,7 +575,7 @@ export default function SkillProfitPage() {
       : housingSummary.mode === "guest"
         ? " - guest local, not applied"
         : " - location-limited, not applied";
-  const housingWindowAllSub = !activeProfile
+  const housingWindowAllSub = !configuredProfile
     ? "load a profile"
     : visibleHousingWindows.length === 0
       ? "no profile bonus"
@@ -549,7 +587,7 @@ export default function SkillProfitPage() {
   const activeSkillHousingHours = activeSkill !== "All"
     ? housingWindowHours || (hasLocationLimitedHousing ? rawHousingWindowHours : 0)
     : 0;
-  const housingWindowSub = !activeProfile
+  const housingWindowSub = !configuredProfile
     ? "profile needed"
     : hasLocationLimitedHousing
       ? housingSummary.mode === "guest" ? "guest local, not applied" : "location-limited, not applied"
@@ -586,36 +624,82 @@ export default function SkillProfitPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedRow]);
 
-  const patchSettings = (patch: Partial<SkillProfitSettings>) => {
+  const patchSettings = useCallback((patch: Partial<SkillProfitSettings>) => {
     setSettings((current) => ({
       ...current,
       ...patch,
       tools: { ...current.tools, ...patch.tools },
       essenceBySkill: { ...current.essenceBySkill, ...patch.essenceBySkill },
     }));
-    if (activeProfile && (patch.assaultRank || patch.barteringBoost !== undefined)) {
-      updateProfile(activeProfile.id, {
+    if (configuredProfile && (patch.assaultRank || patch.barteringBoost !== undefined)) {
+      updateProfile(configuredProfile.id, {
         boosts: {
-          ...activeProfile.boosts,
+          ...configuredProfile.boosts,
           ...(patch.assaultRank ? { conquestRank: patch.assaultRank } : {}),
           ...(patch.barteringBoost !== undefined ? { barteringLevel: Math.min(100, Math.max(0, Math.round((Number(patch.barteringBoost) || 0) / 0.2))) } : {}),
         },
       });
     }
-    if ("membership" in patch || "classBonus" in patch || (!activeProfile && "tools" in patch) || "customPrices" in patch) {
+    if (
+      "membership" in patch ||
+      "classBonus" in patch ||
+      "assaultRank" in patch ||
+      "barteringBoost" in patch ||
+      (!configuredProfile && "tools" in patch) ||
+      "customPrices" in patch
+    ) {
       setPreferences({
         ...(typeof patch.membership === "boolean" ? { membership: patch.membership } : {}),
-        ...(!activeProfile && typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
-        ...(!activeProfile && patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
+        ...(!configuredProfile && typeof patch.classBonus === "boolean" ? { skillClassBonus: patch.classBonus } : {}),
+        ...(!configuredProfile && patch.assaultRank ? { assaultRank: patch.assaultRank } : {}),
+        ...(!configuredProfile && patch.barteringBoost !== undefined ? { barteringBoost: Number(patch.barteringBoost) || 0 } : {}),
+        ...(!configuredProfile && patch.tools ? { skillTools: { ...preferences.skillTools, ...patch.tools } } : {}),
         ...(patch.customPrices ? { customPrices: patch.customPrices } : {}),
       });
     }
-  };
+  }, [configuredProfile, preferences.customPrices, preferences.skillTools, setPreferences, updateProfile]);
+
+  const commitBarteringLevel = useCallback((raw: string) => {
+    const parsed = raw === "" ? 0 : Number(raw);
+    const level = Number.isFinite(parsed) ? Math.min(100, Math.max(0, Math.round(parsed))) : 0;
+    setBarteringLevelDraft(String(level));
+    const boost = Math.round(level * 0.2);
+    patchSettings({ barteringBoost: boost });
+    if (!configuredProfile) {
+      setPreferences({ barteringBoost: boost });
+    }
+  }, [configuredProfile, patchSettings, setPreferences]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const parsed = barteringLevelDraft === "" ? 0 : Number(barteringLevelDraft);
+      if (!Number.isFinite(parsed)) return;
+      const level = Math.min(100, Math.max(0, Math.round(parsed)));
+      const boost = Math.round(level * 0.2);
+      const currentBoost = configuredProfile
+        ? getProfileBarteringBoost(configuredProfile)
+        : Number(preferences.barteringBoost || 0);
+      if (boost !== currentBoost) {
+        patchSettings({ barteringBoost: boost });
+        if (!configuredProfile) {
+          setPreferences({ barteringBoost: boost });
+        }
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [barteringLevelDraft, configuredProfile, patchSettings, preferences.barteringBoost, setPreferences]);
 
   const patchTool = (skill: ToolSkill, toolName: string) => {
-    if (activeProfile) {
+    if (configuredProfile) {
       const profileToolKey = skill === "Woodcutting" ? "woodcutting" : skill === "Mining" ? "mining" : "fishing";
-      updateProfile(activeProfile.id, { tools: { ...activeProfile.tools, [profileToolKey]: toolName } });
+      updateProfile(configuredProfile.id, { tools: { ...configuredProfile.tools, [profileToolKey]: toolName } });
+    } else {
+      setPreferences({
+        skillTools: {
+          ...preferences.skillTools,
+          [skill]: toolName,
+        },
+      });
     }
     patchSettings({ tools: { ...settings.tools, [skill]: toolName } });
   };
@@ -658,7 +742,7 @@ export default function SkillProfitPage() {
   const topRoute = rowModel.topOverall;
   const saleModeLabel = SALE_MODE_OPTIONS.find((option) => option.value === (settings.saleMode || "best"))?.label || "Auto";
   const scopeLabel = activeSkill === "All" ? "All skills" : activeSkill;
-  const profileLabel = activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback";
+  const profileLabel = configuredProfile ? `${configuredProfile.name || "Active profile"} synced` : "Global fallback";
 
   return (
     <main className={`container ${styles.shell} ${mobileSetupOpen ? styles.mobileSetupOpen : styles.mobileSetupCollapsed}`} aria-label="Skill Profit Finder">
@@ -670,7 +754,7 @@ export default function SkillProfitPage() {
               Skill Profit Routes <ZenithIcon name="skill" size={22} />
             </h1>
             <p className={styles.heroSubtitle}>
-              Rank gathering routes with market tax, vendor fallback, tools, buffs, housing time, and essence costs.
+              Rank gathering, crafting, cooking, and construction routes with taxes, tools, buffs, and costs.
             </p>
           </div>
           <div className={styles.heroChips} aria-label="Current skill profit inputs">
@@ -709,7 +793,7 @@ export default function SkillProfitPage() {
           <Metric label="Market age" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rows.length.toLocaleString()} rows`} />
           <Metric label="Buff totals" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active buffs"} />
           <Metric
-            label="Housing window"
+            label="Housing Idle Buffs"
             value={activeSkill === "All"
               ? housingWindowAllValue
               : activeSkillHousingHours > 0 ? `${activeSkillHousingLabel} +${formatHours(activeSkillHousingHours)}` : "None"}
@@ -773,10 +857,10 @@ export default function SkillProfitPage() {
             )}
           </div>
           <div className={`${styles.numberField} ${styles.conquestField}`}>
-            <span>Conquest</span>
+            <span>Guild Conquest</span>
             <OptionPicker
               options={CONQUEST_PICKER_OPTIONS}
-              value={settings.assaultRank}
+              value={effectiveSettings.assaultRank}
               onChange={(value) => patchSettings({ assaultRank: value as AssaultRank })}
               onOpenChange={handleCommandPickerOpenChange}
             />
@@ -811,14 +895,17 @@ export default function SkillProfitPage() {
               type="number"
               min={0}
               max={100}
-              value={displayedBarteringLevel}
+              value={barteringLevelDraft}
               placeholder="0"
               onChange={(event) => {
-                const level = event.target.value === "" ? "" : Math.min(100, Math.max(0, Number(event.target.value) || 0));
-                if (activeProfile) {
-                  updateProfile(activeProfile.id, { boosts: { ...activeProfile.boosts, barteringLevel: level } });
-                } else {
-                  patchSettings({ barteringBoost: level === "" ? "" : barteringBuffPercent(level) });
+                setBarteringLevelDraft(event.target.value);
+              }}
+              onBlur={() => {
+                commitBarteringLevel(barteringLevelDraft);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  commitBarteringLevel(barteringLevelDraft);
                 }
               }}
             />
@@ -865,25 +952,25 @@ export default function SkillProfitPage() {
         </div>
         <div className={styles.toggleRow} aria-label="Skill profit route toggles">
           <button
-            className={`${styles.toggle} ${settings.membership ? styles.toggleActive : ""}`}
-            onClick={() => patchSettings({ membership: !settings.membership })}
+            className={`${styles.toggle} ${effectiveSettings.membership ? styles.toggleActive : ""}`}
+            onClick={() => patchSettings({ membership: !effectiveSettings.membership })}
             type="button"
           >
-            {settings.membership && <Check size={14} />} Member
+            {effectiveSettings.membership && <Check size={14} />} Member
           </button>
           <button
-            className={`${styles.toggle} ${(activeProfile ? settings.profileClassName : settings.classBonus) ? styles.toggleActive : ""}`}
+            className={`${styles.toggle} ${(configuredProfile ? effectiveSettings.profileClassName : effectiveSettings.classBonus) ? styles.toggleActive : ""}`}
             onClick={() => {
-              if (!activeProfile) patchSettings({ classBonus: !settings.classBonus });
+              if (!configuredProfile) patchSettings({ classBonus: !effectiveSettings.classBonus });
             }}
-            disabled={Boolean(activeProfile)}
-            title={activeProfile ? `Using ${activeProfile.className} from active profile` : "Fallback class helper when no profile is active"}
+            disabled={Boolean(configuredProfile)}
+            title={configuredProfile ? `Using ${configuredProfile.className} from active profile` : "Fallback class helper when no profile is active"}
             type="button"
           >
-            {(activeProfile ? settings.profileClassName : settings.classBonus) && <Check size={14} />} {activeProfile ? activeProfile.className : "Class"}
+            {(configuredProfile ? effectiveSettings.profileClassName : effectiveSettings.classBonus) && <Check size={14} />} {configuredProfile ? configuredProfile.className : "Class"}
           </button>
-          <div className={`${styles.taxPill} ${settings.membership ? styles.taxMember : ""}`}>
-            {settings.membership ? "12% tax" : "15% tax"}
+          <div className={`${styles.taxPill} ${effectiveSettings.membership ? styles.taxMember : ""}`}>
+            {effectiveSettings.membership ? "12% tax" : "15% tax"}
           </div>
           <button
             aria-pressed={includeForgeInfoRows}
@@ -908,10 +995,47 @@ export default function SkillProfitPage() {
             <span>Needs data</span>
             <strong>{needsPriceCount > 0 ? `${needsPriceCount.toLocaleString()} routes` : "Clear"}</strong>
           </div>
-          <div className={styles.commandStat}>
+          <label className={styles.commandStat} style={{ cursor: "pointer" }}>
             <span>Sort</span>
-            <strong>{SORT_LABELS[sortKey]} {sortDesc ? "desc" : "asc"}</strong>
-          </div>
+            <select
+              aria-label="Sort routes"
+              value={`${sortKey}:${sortDesc ? "desc" : "asc"}`}
+              onChange={(event) => {
+                const [key, dir] = event.target.value.split(":") as [SkillProfitSortKey, "asc" | "desc"];
+                setSortKey(key);
+                setSortDesc(dir === "desc");
+              }}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-main)",
+                font: "inherit",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                padding: 0,
+                margin: 0,
+                height: "auto",
+                cursor: "pointer",
+                width: "100%",
+                outline: "none",
+              }}
+            >
+              <option value="profitPerHour:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Gold/Hr (high to low)</option>
+              <option value="profitPerHour:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Gold/Hr (low to high)</option>
+              <option value="profitEach:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Profit/Piece (high to low)</option>
+              <option value="profitEach:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Profit/Piece (low to high)</option>
+              <option value="inputCost:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Cost (low to high)</option>
+              <option value="inputCost:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Cost (high to low)</option>
+              <option value="volume3d:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Volume (high to low)</option>
+              <option value="volume3d:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Volume (low to high)</option>
+              <option value="level:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Level (low to high)</option>
+              <option value="level:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Level (high to low)</option>
+              <option value="name:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Item Name (A-Z)</option>
+              <option value="name:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Item Name (Z-A)</option>
+              <option value="skill:asc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Skill (A-Z)</option>
+              <option value="skill:desc" style={{ background: "var(--bg-panel)", color: "var(--text-main)" }}>Skill (Z-A)</option>
+            </select>
+          </label>
           <button
             className={styles.resetFilters}
             disabled={routeFilterCount === 0}
@@ -927,7 +1051,7 @@ export default function SkillProfitPage() {
         <div>
           <strong>Profile and buffs</strong>
           <span>
-            {activeProfile ? `${activeProfile.name || "Active profile"} synced` : "Global fallback"}
+            {configuredProfile ? `${configuredProfile.name || "Active profile"} synced` : "Global fallback"}
             {" - "}
             {activeEssenceCount > 0 ? `${activeEssenceCount} essence${activeEssenceCount === 1 ? "" : "s"}` : "No essences"}
             {" - "}
@@ -963,10 +1087,10 @@ export default function SkillProfitPage() {
                     <>
                       Lvl {selectedTool.level} - <QualityText value={selectedTool.quality}>{selectedTool.quality}</QualityText>
                     </>
-                  ) : activeProfile
+                  ) : configuredProfile
                       ? "No tool selected"
                       : "No tool bonus"}
-                  {activeProfile ? " - synced with profile" : " - global fallback"}
+                  {configuredProfile ? " - synced with profile" : " - global fallback"}
                 </small>
               </div>
             );
@@ -1010,7 +1134,7 @@ export default function SkillProfitPage() {
             </div>
           )}
           <p className={styles.essenceNote}>
-            {(activeProfile
+            {(configuredProfile
               ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? "; location-limited housing time is not added on this page." : ", plus housing time when it is available anywhere."}`
               : "No active profile is loaded, so essence costs use an 8h fallback timer.")}
             {" "}Dungeon, combat, hunting, and world boss potions are future support.
@@ -1029,6 +1153,7 @@ export default function SkillProfitPage() {
                 <button
                   key={index}
                   className={`${styles.selectedSlot} ${buff ? styles.selectedSlotFilled : ""}`}
+                  disabled={!buff}
                   onClick={() => buff && toggleAscension(buff.id)}
                   title={buff ? `${buff.label}: +${buff.value}% ${buff.type === "Eff" ? "efficiency" : "experience"}` : "Empty ascension slot"}
                   type="button"
@@ -1095,7 +1220,7 @@ export default function SkillProfitPage() {
       <section className={styles.mobileResults} aria-label="Skill profit routes">
         {visibleRows.map((row) => {
           const displayProfit = getDisplayProfitPerHour(row);
-          const matchedIngredient = getMatchedIngredient(row, deferredSearchTerm);
+          const matchedIngredient = getMatchedIngredient(row, searchTokens);
           const liquidityText = row.skill === "Forge"
             ? "Info"
             : row.liquidityRisk
@@ -1167,7 +1292,7 @@ export default function SkillProfitPage() {
       </section>
 
       <section className={styles.tableWrap} aria-label="Skill profit route results table" role="region" tabIndex={0}>
-        <table>
+        <table aria-label="Skill profit route results">
           <thead>
             <tr>
               <SortableTh sortKey="name" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} align="left" />
@@ -1177,25 +1302,17 @@ export default function SkillProfitPage() {
               <SortableTh sortKey="profitEach" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <SortableTh sortKey="inputCost" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
               <SortableTh sortKey="volume3d" activeKey={sortKey} sortDesc={sortDesc} onSort={handleSort} />
-              <th>Sell</th>
-              <th>Liquidity</th>
+              <th scope="col">Sell</th>
+              <th scope="col">Liquidity</th>
             </tr>
           </thead>
           <tbody>
             {visibleRows.map((row) => {
-              const matchedIngredient = getMatchedIngredient(row, deferredSearchTerm);
+              const matchedIngredient = getMatchedIngredient(row, searchTokens);
               return (
                 <tr
-                  aria-label={`Open ${row.name} skill strategy`}
                   key={`${row.skill}-${row.name}`}
                   onClick={() => setSelectedRow(row)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedRow(row);
-                    }
-                  }}
-                  tabIndex={0}
                 >
                   <td className="left-align">
                     <div className={styles.nameCell}>
@@ -1271,7 +1388,7 @@ export default function SkillProfitPage() {
                 <td colSpan={9}>
                   <div className={styles.resultBatchMore} role="status">
                     <span>
-                      Showing {visibleRows.length.toLocaleString()} of {rowModel.filtered.length.toLocaleString()} routes on mobile.
+                      Showing {visibleRows.length.toLocaleString()} of {rowModel.filtered.length.toLocaleString()} routes.
                     </span>
                     <button
                       type="button"
@@ -1307,7 +1424,7 @@ export default function SkillProfitPage() {
         <SkillStrategyModal
           row={selectedRow}
           settings={{ ...effectiveSettings, housingIdleHoursBySkill }}
-          membership={settings.membership}
+          membership={effectiveSettings.membership}
           onClose={() => setSelectedRow(null)}
           onOpenItem={(name) => {
             setSelectedRow(null);
@@ -1336,7 +1453,8 @@ function SortableTh({
   const directionLabel = active ? (sortDesc ? "descending" : "ascending") : "not sorted";
   return (
     <th
-      aria-sort={active ? (sortDesc ? "descending" : "ascending") : "none"}
+      scope="col"
+      aria-sort={sortKey === activeKey ? (sortDesc ? "descending" : "ascending") : "none"}
       className={align === "left" ? styles.sortHeaderLeft : undefined}
     >
       <button
@@ -1910,14 +2028,14 @@ function SkillStrategyModal({
                 <div className={styles.sharedScenario}>
                   <div className={styles.sharedScenarioHeader}>
                     <div>
-                      <strong>Shared material move</strong>
+                      <strong>Combined material break-even</strong>
                       <span>Current editable input mix: {formatGold(sharedInputCost)}g</span>
                     </div>
                     <small>{sharedBreakEvenLabel}</small>
                   </div>
                   <div className={styles.sharedScenarioSummary}>
                     <div>
-                      <span>Break-even basket</span>
+                      <span>Max combined cost</span>
                       <strong className={sharedBreakEvenBudget !== null && sharedBreakEvenBudget > 0 ? styles.goodValue : styles.badValue}>
                         {sharedBreakEvenBudget === null
                           ? "Needs essence price"
@@ -1925,7 +2043,7 @@ function SkillStrategyModal({
                       </strong>
                     </div>
                     <div>
-                      <span>Target basket</span>
+                      <span>Target combined cost</span>
                       <strong className={sharedTargetBudget === null ? "" : sharedTargetBudget > 0 ? styles.goodValue : styles.badValue}>
                         {sharedTargetBudget === null
                           ? targetNeedsEssencePrice ? "Needs essence price" : "Set target"
@@ -1955,7 +2073,7 @@ function SkillStrategyModal({
                 </div>
               )}
               {targetNeedsEssencePrice && (
-                <div className={styles.fixedPriceNote}>Essence price required for boosted caps</div>
+                <div className={styles.fixedPriceNote}>Set essence price to calculate profit target</div>
               )}
               {hasScenarioPrices && (
                 <div className={styles.scenarioActions}>
@@ -2002,7 +2120,7 @@ function SkillStrategyModal({
                   </>
                 )}
                 {activeRow.toolBonus > 0 && <CalcRow label="Tool efficiency" value={`+${activeRow.toolBonus}%`} />}
-                <CalcRow label={activeRow.essenceActive ? "Boosted before essence cost" : "Gold per hour"} value={`${formatGold(activeRow.profitPerHour)}g`} tone={activeRow.profitPerHour >= 0 ? "good" : "bad"} />
+                <CalcRow label={activeRow.essenceActive ? "Gross profit/hr (pre-essence)" : "Gold per hour"} value={`${formatGold(activeRow.profitPerHour)}g`} tone={activeRow.profitPerHour >= 0 ? "good" : "bad"} />
                 {activeRow.essenceActive ? (
                   <>
                     <CalcRow label="Base route profit/hr" value={`${formatGold(baseRouteRow.profitPerHour)}g`} />
@@ -2234,13 +2352,12 @@ function rowMatchesSearch(row: SkillProfitRow, tokens: string[]) {
   return tokens.every((token) => parts.some((part) => part.includes(token)));
 }
 
-function getMatchedIngredient(row: SkillProfitRow, search: string) {
-  const tokens = getSearchTokens(search.trim().toLowerCase());
-  if (tokens.length === 0) return "";
+function getMatchedIngredient(row: SkillProfitRow, tokens: string[]): string | null {
+  if (tokens.length === 0) return null;
   return row.ingredients.find((ingredient) => {
     const ingredientName = ingredient.name.toLowerCase();
     return tokens.every((token) => ingredientName.includes(token));
-  })?.name || "";
+  })?.name ?? null;
 }
 
 function getSortValue(row: SkillProfitRow, key: SkillProfitSortKey) {
