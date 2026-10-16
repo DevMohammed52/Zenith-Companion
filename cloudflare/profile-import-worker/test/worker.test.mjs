@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import {
   handleRequest,
   processNextImportJob,
+  advanceJobStep,
+  IMPORT_STEPS,
+  STEP_LEASE_MS,
+  STEP_METADATA,
   timingSafeEqualString,
   hasBearerSecret,
   verifyTurnstile,
@@ -102,6 +106,11 @@ class MemoryD1 {
       this.jobs.set(id, {
         id,
         status: "queued",
+        current_step: "root_baseline",
+        step_status: "pending",
+        step_data_json: null,
+        lease_expires_at: null,
+        lease_token: null,
         target_hash_encrypted: encrypted,
         target_hash_fingerprint: hashFingerprint,
         requester_fingerprint: requesterFingerprint,
@@ -201,17 +210,80 @@ class MemoryD1 {
         if (budget.updated_at <= updatedBefore) this.minuteBudgets.delete(key);
       }
     }
+    if (sql.includes("UPDATE import_jobs") && sql.includes("SET step_status = 'running'")) {
+      const [leaseExpiresAt, leaseToken, budgetMode, updatedAt, id, nowIso] = args;
+      const job = this.jobs.get(id);
+      if (!job) return { success: true, changes: 0, meta: { changes: 0 } };
+      const statusOk = ["queued", "running", "waiting_for_budget"].includes(job.status);
+      const leaseExpired = !job.lease_expires_at || job.lease_expires_at <= nowIso;
+      const stepPending = job.step_status === "pending";
+      if (statusOk && (stepPending || leaseExpired)) {
+        job.step_status = "running";
+        job.lease_expires_at = leaseExpiresAt;
+        job.lease_token = leaseToken;
+        job.status = "running";
+        job.budget_mode = budgetMode;
+        job.updated_at = updatedAt;
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
+    }
+    if (sql.includes("UPDATE import_jobs") && sql.includes("SET current_step = ?")) {
+      const [currentStep, stepDataJson, requestCount, updatedAt, id, leaseToken] = args;
+      const job = this.jobs.get(id);
+      if (job && (!leaseToken || job.lease_token === leaseToken)) {
+        job.current_step = currentStep;
+        job.step_status = "pending";
+        job.step_data_json = stepDataJson;
+        job.request_count = requestCount;
+        job.lease_expires_at = null;
+        job.lease_token = null;
+        job.updated_at = updatedAt;
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
+    }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'complete'")) {
+      if (sql.includes("lease_token = ?")) {
+        const [resultJson, requestCount, retryCount, updatedAt, id, leaseToken] = args;
+        const job = this.jobs.get(id);
+        if (job && (!leaseToken || job.lease_token === leaseToken)) {
+          Object.assign(job, {
+            status: "complete",
+            step_status: "complete",
+            current_step: "final_assembly",
+            result_json: resultJson,
+            request_count: requestCount,
+            retry_count: retryCount,
+            lease_expires_at: null,
+            lease_token: null,
+            error_code: null,
+            error_message: null,
+            updated_at: updatedAt,
+          });
+          return { success: true, changes: 1, meta: { changes: 1 } };
+        }
+        return { success: true, changes: 0, meta: { changes: 0 } };
+      }
       const [resultJson, requestCount, retryCount, updatedAt, id] = args;
-      Object.assign(this.jobs.get(id), {
-        status: "complete",
-        result_json: resultJson,
-        request_count: requestCount,
-        retry_count: retryCount,
-        error_code: null,
-        error_message: null,
-        updated_at: updatedAt,
-      });
+      const job = this.jobs.get(id);
+      if (job) {
+        Object.assign(job, {
+          status: "complete",
+          step_status: "complete",
+          current_step: "final_assembly",
+          result_json: resultJson,
+          request_count: requestCount,
+          retry_count: retryCount,
+          lease_expires_at: null,
+          lease_token: null,
+          error_code: null,
+          error_message: null,
+          updated_at: updatedAt,
+        });
+        return { success: true, changes: 1, meta: { changes: 1 } };
+      }
+      return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("error_code = 'timeout'")) {
       const [errorMessage, updatedAt, staleThreshold] = args;
@@ -243,13 +315,17 @@ class MemoryD1 {
       return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'failed'")) {
-      const [errorCode, errorMessage, updatedAt, id] = args;
+      const isLease = sql.includes("lease_token = ?");
+      const [errorCode, errorMessage, updatedAt, id, leaseToken] = args;
       const job = this.jobs.get(id);
-      if (job) {
+      if (job && (!isLease || !leaseToken || job.lease_token === leaseToken)) {
         Object.assign(job, {
           status: "failed",
+          step_status: "failed",
           error_code: errorCode,
           error_message: errorMessage,
+          lease_expires_at: null,
+          lease_token: null,
           updated_at: updatedAt,
         });
         return { success: true, changes: 1, meta: { changes: 1 } };
@@ -257,14 +333,18 @@ class MemoryD1 {
       return { success: true, changes: 0, meta: { changes: 0 } };
     }
     if (sql.includes("UPDATE import_jobs") && sql.includes("SET status = 'waiting_for_budget'")) {
-      const [errorCode, errorMessage, updatedAt, id] = args;
+      const isLease = sql.includes("lease_token = ?");
+      const [errorCode, errorMessage, updatedAt, id, leaseToken] = args;
       const job = this.jobs.get(id);
-      if (job) {
+      if (job && (!isLease || !leaseToken || job.lease_token === leaseToken)) {
         Object.assign(job, {
           status: "waiting_for_budget",
+          step_status: "pending",
           retry_count: Number(job.retry_count || 0) + 1,
           error_code: errorCode,
           error_message: errorMessage,
+          lease_expires_at: null,
+          lease_token: null,
           updated_at: updatedAt,
         });
         return { success: true, changes: 1, meta: { changes: 1 } };
@@ -1596,7 +1676,7 @@ async function json(response) {
     assert.equal(typeof body.result.characters[1].draft.importSource.characterHashDigest, "string");
     assert.equal(body.result.characters[1].draft.importSource.characterHashDigest.length, 64);
     assert.equal(body.result.characters[1].draft.levels.combat, 102);
-    assert.equal(body.result.characters[1].draft.museum.items[0].name, "Alt Familiar");
+    assert.equal(body.result.characters[1].draft.museum.items[0].name, "Root Apron");
     assert.equal(body.result.characters[1].draft.importSource.importedSections.includes("museum"), true);
     assert.equal(body.result.characters[2].draft.name, "DokiDex");
     assert.equal(body.result.characters[2].draft.importSource.characterHashTail, "dokidexhash");
@@ -3330,5 +3410,498 @@ async function json(response) {
   assert.ok(Array.isArray(clearAllCoordBody.sources));
   assert.ok(clearAllCoordBody.sources.length >= 2);
 }
+
+// ============================================================================
+// Unit & Integration Tests: Chunked Import State Machine & Atomic Step Leases (M1 & M2)
+// ============================================================================
+
+{
+  // 1. Multi-Step Job Advancement (root_baseline -> account_museum -> alt_characters -> final_assembly)
+  const e = env();
+  const originalFetch = globalThis.fetch;
+  const requestedUrls = [];
+
+  globalThis.fetch = async (url) => {
+    const urlStr = String(url);
+    requestedUrls.push(urlStr);
+    const path = new URL(urlStr).pathname;
+    if (path.endsWith("/information")) {
+      const isAlt = path.includes("AltHero");
+      return Response.json({
+        character: {
+          name: isAlt ? "Alt Hero" : "Root Knight",
+          class: "KNIGHT",
+          total_level: 200,
+          stats: { combat: { level: 90 } },
+        },
+      });
+    }
+    if (path.endsWith("/metrics")) {
+      return Response.json({ metrics: {} });
+    }
+    if (path.endsWith("/pets")) {
+      return Response.json({ pets: [] });
+    }
+    if (path.endsWith("/characters")) {
+      return Response.json({
+        characters: [{ hashed_id: "AltHeroHash123", name: "Alt Hero" }],
+      });
+    }
+    if (path.endsWith("/museum")) {
+      return Response.json({
+        items: [{ id: 1, name: "Ancient Relic", category: "COLLECTIBLES" }],
+        pagination: { current_page: 1, last_page: 1, per_page: 25, total: 1 },
+      });
+    }
+    return new Response("{}", { status: 404 });
+  };
+
+  try {
+    // 1a. Start import
+    const startRes = await handleRequest(new Request("https://worker.test/profile-import/start", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://zenith.example",
+        "cf-connecting-ip": "203.0.113.88",
+      },
+      body: JSON.stringify({ characterHash: "RootKnightHash123" }),
+    }), e);
+    assert.equal(startRes.status, 202);
+    const startBody = await json(startRes);
+    const jobId = startBody.jobId;
+
+    // Verify initial D1 state
+    const initialJob = e.DB.jobs.get(jobId);
+    assert.equal(initialJob.status, "queued");
+    assert.equal(initialJob.current_step, "root_baseline");
+    assert.equal(initialJob.step_status, "pending");
+    assert.equal(initialJob.lease_token, null);
+
+    // 1b. Step 1: root_baseline
+    const step1Result = await advanceJobStep(e, jobId);
+    assert.equal(step1Result.status, "running");
+    assert.equal(step1Result.currentStep, "account_museum");
+    assert.equal(step1Result.stepStatus, "pending");
+
+    const afterStep1 = e.DB.jobs.get(jobId);
+    assert.equal(afterStep1.current_step, "account_museum");
+    assert.equal(afterStep1.step_status, "pending");
+    assert.equal(afterStep1.lease_token, null); // Lease released after step commit
+    const step1Data = JSON.parse(afterStep1.step_data_json);
+    assert.equal(step1Data.rootDraft.name, "Root Knight");
+    assert.equal(step1Data.visibleAlts.length, 1);
+    assert.equal(step1Data.visibleAlts[0].hashed_id, "AltHeroHash123");
+    assert.ok(step1Data.stepDurationsMs.root_baseline >= 0);
+
+    // 1c. Step 2: account_museum
+    const step2Result = await advanceJobStep(e, jobId);
+    assert.equal(step2Result.status, "running");
+    assert.equal(step2Result.currentStep, "alt_characters");
+    assert.equal(step2Result.stepStatus, "pending");
+
+    const afterStep2 = e.DB.jobs.get(jobId);
+    assert.equal(afterStep2.current_step, "alt_characters");
+    const step2Data = JSON.parse(afterStep2.step_data_json);
+    assert.equal(step2Data.accountMuseum.snapshot.items[0].name, "Ancient Relic");
+    assert.ok(step2Data.stepDurationsMs.account_museum >= 0);
+
+    // 1d. Step 3: alt_characters
+    const step3Result = await advanceJobStep(e, jobId);
+    assert.equal(step3Result.status, "running");
+    assert.equal(step3Result.currentStep, "final_assembly");
+    assert.equal(step3Result.stepStatus, "pending");
+
+    const afterStep3 = e.DB.jobs.get(jobId);
+    assert.equal(afterStep3.current_step, "final_assembly");
+    const step3Data = JSON.parse(afterStep3.step_data_json);
+    assert.equal(step3Data.completedAlts.length, 1);
+    assert.equal(step3Data.completedAlts[0].draft.name, "Alt Hero");
+
+    // 1e. Step 4: final_assembly
+    const step4Result = await advanceJobStep(e, jobId);
+    assert.equal(step4Result.status, "complete");
+    assert.ok(step4Result.publicResult);
+
+    const completedJob = e.DB.jobs.get(jobId);
+    assert.equal(completedJob.status, "complete");
+    assert.equal(completedJob.step_status, "complete");
+    assert.equal(completedJob.current_step, "final_assembly");
+    assert.equal(completedJob.lease_token, null);
+
+    const parsedResult = JSON.parse(completedJob.result_json);
+    assert.equal(parsedResult.characters.length, 2);
+    assert.equal(parsedResult.characters[0].draft.name, "Root Knight");
+    assert.equal(parsedResult.characters[0].draft.museum.items[0].name, "Ancient Relic");
+    assert.equal(parsedResult.characters[1].draft.name, "Alt Hero");
+    assert.equal(parsedResult.characters[1].draft.museum.items[0].name, "Ancient Relic");
+    assert.equal(parsedResult.characters[1].draft.importSource.importedSections.includes("museum"), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 2. Multi-Tab Concurrent Poll Step Deduplication (Atomic Lease Guard)
+  const e = env();
+  const startRes = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.89",
+    },
+    body: JSON.stringify({ characterHash: "ConcurrentHash123" }),
+  }), e);
+  assert.equal(startRes.status, 202);
+  const { jobId: testJobId } = await json(startRes);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    await new Promise((r) => setTimeout(r, 20));
+    return Response.json({
+      character: { name: "Concurrent Hero", class: "MAGE", total_level: 50, stats: { combat: { level: 20 } } },
+    });
+  };
+
+  try {
+    // Simulate two simultaneous polls/advances on the same job
+    const [tab1Result, tab2Result] = await Promise.all([
+      advanceJobStep(e, testJobId),
+      advanceJobStep(e, testJobId),
+    ]);
+
+    // Exactly one call acquires the lease and advances
+    const acquiredCount = (tab1Result.status === "running" ? 1 : 0) + (tab2Result.status === "running" ? 1 : 0);
+    const busyCount = (tab1Result.busy ? 1 : 0) + (tab2Result.busy ? 1 : 0);
+    assert.equal(acquiredCount, 1, "Exactly one concurrent caller must acquire the lease");
+    assert.equal(busyCount, 1, "The second concurrent caller must receive busy");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 3. Stale Lease Crash Recovery (Resume Checkpointed Step)
+  const e = env();
+  const crashJobId = "imp_crash_recovery_test_00000001";
+  const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+  const futureExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  // Job was mid-execution of 'account_museum' when isolate crashed
+  e.DB.jobs.set(crashJobId, {
+    id: crashJobId,
+    status: "running",
+    current_step: "account_museum",
+    step_status: "running", // was left running by crashed isolate
+    lease_expires_at: fiveSecondsAgo, // lease has expired
+    lease_token: "zombie_token_crashed",
+    step_data_json: JSON.stringify({
+      rootHash: "RecoveredRootHash",
+      rootDraft: { name: "Crash Survivor", importSource: { importedSections: ["information"] } },
+      visibleAlts: [],
+      completedAlts: [],
+      currentAltIndex: 0,
+      stepDurationsMs: { root_baseline: 4500 },
+      importedAt: fiveSecondsAgo,
+      requestCount: 3,
+    }),
+    target_hash_encrypted: "enc_hash_crash",
+    target_hash_fingerprint: "fp_crash",
+    requester_fingerprint: "req_crash",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: fiveSecondsAgo,
+    updated_at: fiveSecondsAgo,
+    expires_at: futureExpires,
+    request_count: 3,
+    retry_count: 0,
+  });
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    items: [{ id: 99, name: "Resurrected Artifact", category: "COLLECTIBLES" }],
+    pagination: { current_page: 1, last_page: 1, per_page: 25, total: 1 },
+  });
+
+  try {
+    // Attempting to advance broken lease should reclaim lease and execute account_museum
+    const recoverResult = await advanceJobStep(e, crashJobId);
+    assert.equal(recoverResult.status, "running");
+    assert.equal(recoverResult.currentStep, "final_assembly");
+
+    const recoveredJob = e.DB.jobs.get(crashJobId);
+    assert.equal(recoveredJob.current_step, "final_assembly");
+    assert.equal(recoveredJob.step_status, "pending");
+    assert.equal(recoveredJob.lease_token, null);
+
+    const data = JSON.parse(recoveredJob.step_data_json);
+    assert.equal(data.accountMuseum.snapshot.items[0].name, "Resurrected Artifact");
+    assert.equal(data.rootDraft.name, "Crash Survivor"); // Prior checkpoint preserved!
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 4. Alt Character Import Without Redundant Museum Queries (0 Alt Museum Queries)
+  const e = env();
+  const altUrls = [];
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (url) => {
+    const urlStr = String(url);
+    altUrls.push(urlStr);
+    const path = new URL(urlStr).pathname;
+    if (path.endsWith("/information")) {
+      const isAlt1 = path.includes("AltOne");
+      const isAlt2 = path.includes("AltTwo");
+      return Response.json({
+        character: {
+          name: isAlt1 ? "Alt One" : isAlt2 ? "Alt Two" : "Root Master",
+          class: "ARCHER",
+          total_level: 100,
+          stats: { combat: { level: 40 } },
+        },
+      });
+    }
+    if (path.endsWith("/metrics")) return Response.json({ metrics: {} });
+    if (path.endsWith("/pets")) return Response.json({ pets: [] });
+    if (path.endsWith("/characters")) {
+      return Response.json({
+        characters: [
+          { hashed_id: "AltOneHash789", name: "Alt One" },
+          { hashed_id: "AltTwoHash789", name: "Alt Two" },
+        ],
+      });
+    }
+    if (path.endsWith("/museum")) {
+      return Response.json({
+        items: [{ id: 77, name: "Guild Trophy", category: "COLLECTIBLES" }],
+        pagination: { current_page: 1, last_page: 1, per_page: 25, total: 1 },
+      });
+    }
+    return new Response("{}", { status: 404 });
+  };
+
+  try {
+    const start = await handleRequest(new Request("https://worker.test/profile-import/start", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://zenith.example",
+        "cf-connecting-ip": "203.0.113.120",
+      },
+      body: JSON.stringify({ characterHash: "RootMasterHash789" }),
+    }), e);
+    const { jobId } = await json(start);
+
+    // Run all steps to completion
+    const finalResult = await processNextImportJob(e);
+    assert.equal(finalResult.status, "complete");
+
+    // Count museum queries per character
+    const rootMuseumCalls = altUrls.filter((u) => u.includes("RootMasterHash789") && u.includes("/museum"));
+    const alt1MuseumCalls = altUrls.filter((u) => u.includes("AltOneHash789") && u.includes("/museum"));
+    const alt2MuseumCalls = altUrls.filter((u) => u.includes("AltTwoHash789") && u.includes("/museum"));
+
+    assert.equal(rootMuseumCalls.length, 1, "Root museum must be fetched exactly once");
+    assert.equal(alt1MuseumCalls.length, 0, "Alt 1 museum must NOT be queried (0 redundant calls)");
+    assert.equal(alt2MuseumCalls.length, 0, "Alt 2 museum must NOT be queried (0 redundant calls)");
+
+    // Both alts must have the shared museum attached
+    const statusRes = await handleRequest(new Request(`https://worker.test/profile-import/status/${jobId}`), e);
+    const statusBody = await json(statusRes);
+    assert.equal(statusBody.status, "done");
+    assert.equal(statusBody.result.characters.length, 3);
+    assert.equal(statusBody.result.characters[0].draft.museum.items[0].name, "Guild Trophy");
+    assert.equal(statusBody.result.characters[1].draft.museum.items[0].name, "Guild Trophy");
+    assert.equal(statusBody.result.characters[2].draft.museum.items[0].name, "Guild Trophy");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 5. Decoupled pollAfterMs vs retryAfterMs in handleImportStatus
+  const e = env();
+  const testJobId = "imp_decoupled_status_00000000001";
+  const nowIso = new Date().toISOString();
+  e.DB.jobs.set(testJobId, {
+    id: testJobId,
+    status: "running",
+    current_step: "account_museum",
+    step_status: "pending",
+    step_data_json: JSON.stringify({
+      rootHash: "DecoupleRoot",
+      accountMuseum: {
+        snapshot: { pagination: { currentPage: 2, lastPage: 4 } },
+      },
+    }),
+    lease_expires_at: null,
+    lease_token: null,
+    target_hash_encrypted: "enc_dec",
+    target_hash_fingerprint: "fp_dec",
+    requester_fingerprint: "req_dec",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 5,
+    retry_count: 0,
+  });
+
+  // 5a. Healthy running job: retryAfterMs must be null, pollAfterMs must be cadence (e.g. 2000)
+  const statusRes = await handleRequest(new Request(`https://worker.test/profile-import/status/${testJobId}`), e);
+  assert.equal(statusRes.status, 200);
+  const statusBody = await json(statusRes);
+  assert.equal(statusBody.status, "running");
+  assert.equal(statusBody.currentStep, "account_museum");
+  assert.equal(statusBody.stepStatus, "pending");
+  assert.equal(statusBody.retryAfterMs, null);
+  assert.equal(typeof statusBody.pollAfterMs, "number");
+  assert.equal(statusBody.progress.step, "account_museum");
+  assert.equal(statusBody.progress.stepIndex, 2);
+  assert.equal(statusBody.progress.stepTotal, 4);
+  assert.equal(statusBody.progress.stepLabel, "Scanning museum (Page 2 of 4)");
+
+  // 5b. When rate limit cooldown is active: retryAfterMs is returned with cooldown ms
+  e.DB.cooldowns.set("global:global", {
+    scope: "global",
+    key_fingerprint: "global",
+    until_at: new Date(Date.now() + 25000).toISOString(),
+    reason: "Rate limited",
+    created_at: nowIso,
+  });
+
+  const cooldownStatusRes = await handleRequest(new Request(`https://worker.test/profile-import/status/${testJobId}`), e);
+  const cooldownBody = await json(cooldownStatusRes);
+  assert.ok(typeof cooldownBody.retryAfterMs === "number" && cooldownBody.retryAfterMs > 0);
+  assert.equal(typeof cooldownBody.pollAfterMs, "number");
+}
+
+{
+  // 6. Boundary case: Account with 0 visible alts skips alt_characters directly to final_assembly
+  const e = env();
+  const zeroAltJobId = "imp_zero_alts_test_00000000001";
+  const nowIso = new Date().toISOString();
+  e.DB.jobs.set(zeroAltJobId, {
+    id: zeroAltJobId,
+    status: "running",
+    current_step: "account_museum",
+    step_status: "pending",
+    step_data_json: JSON.stringify({
+      rootHash: "SoloHeroHash",
+      rootDraft: { name: "Solo Hero", importSource: { importedSections: ["information"] } },
+      visibleAlts: [], // 0 alts!
+      completedAlts: [],
+      currentAltIndex: 0,
+      stepDurationsMs: { root_baseline: 2000 },
+      importedAt: nowIso,
+      requestCount: 2,
+    }),
+    target_hash_encrypted: "enc_solo",
+    target_hash_fingerprint: "fp_solo",
+    requester_fingerprint: "req_solo",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 2,
+    retry_count: 0,
+  });
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    items: [{ id: 10, name: "Solo Banner", category: "SKINS" }],
+    pagination: { current_page: 1, last_page: 1, per_page: 25, total: 1 },
+  });
+
+  try {
+    // advanceJobStep from account_museum with 0 alts
+    const stepRes = await advanceJobStep(e, zeroAltJobId);
+    assert.equal(stepRes.status, "running");
+    assert.equal(stepRes.currentStep, "final_assembly", "Must skip alt_characters and transition directly to final_assembly");
+
+    const finalRes = await advanceJobStep(e, zeroAltJobId);
+    assert.equal(finalRes.status, "complete");
+    assert.equal(finalRes.publicResult.characters.length, 1);
+    assert.equal(finalRes.publicResult.characters[0].draft.name, "Solo Hero");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+{
+  // 7. Boundary case: Private museum sets status 'private' and attaches without failing
+  const e = env();
+  const privateMuseumJobId = "imp_private_museum_test_0001";
+  const nowIso = new Date().toISOString();
+  e.DB.jobs.set(privateMuseumJobId, {
+    id: privateMuseumJobId,
+    status: "running",
+    current_step: "account_museum",
+    step_status: "pending",
+    step_data_json: JSON.stringify({
+      rootHash: "PrivateRootHash",
+      rootDraft: { name: "Private Hero", importSource: { importedSections: ["information"] } },
+      visibleAlts: [{ hashed_id: "PrivateAltHash", name: "Private Alt" }],
+      completedAlts: [],
+      currentAltIndex: 0,
+      stepDurationsMs: { root_baseline: 1500 },
+      importedAt: nowIso,
+      requestCount: 2,
+    }),
+    target_hash_encrypted: "enc_priv",
+    target_hash_fingerprint: "fp_priv",
+    requester_fingerprint: "req_priv",
+    requested_options_json: "{}",
+    budget_mode: "unknown",
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    request_count: 2,
+    retry_count: 0,
+  });
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const urlStr = String(url);
+    if (urlStr.includes("/museum")) {
+      return new Response("{}", { status: 403 }); // 403 Forbidden / Private
+    }
+    return Response.json({
+      character: { name: "Private Alt", class: "ROGUE", total_level: 80, stats: { combat: { level: 30 } } },
+    });
+  };
+
+  try {
+    // account_museum returns private snapshot
+    const museumRes = await advanceJobStep(e, privateMuseumJobId);
+    assert.equal(museumRes.status, "running");
+    assert.equal(museumRes.currentStep, "alt_characters");
+
+    const jobAfterMuseum = e.DB.jobs.get(privateMuseumJobId);
+    const dataAfterMuseum = JSON.parse(jobAfterMuseum.step_data_json);
+    assert.equal(dataAfterMuseum.accountMuseum.snapshot.status, "private");
+
+    // alt_characters completes without error
+    const altRes = await advanceJobStep(e, privateMuseumJobId);
+    assert.equal(altRes.status, "running");
+    assert.equal(altRes.currentStep, "final_assembly");
+
+    // final_assembly completes successfully
+    const finalRes = await advanceJobStep(e, privateMuseumJobId);
+    assert.equal(finalRes.status, "complete");
+    assert.equal(finalRes.publicResult.characters[0].draft.museum.status, "private");
+    assert.equal(finalRes.publicResult.characters[1].draft.museum.status, "private");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+await import("./adversarial-state-machine.test.mjs");
 
 console.log("Profile import Worker scaffold tests passed.");

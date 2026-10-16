@@ -264,11 +264,40 @@ type LiveProfileImportResult = {
   warnings?: string[];
 };
 
-type LiveProfileImportProgress = {
+export type LiveProfileImportStepKey = "root_baseline" | "account_museum" | "alt_characters" | "final_assembly";
+
+export interface LiveProfileImportStepConfig {
+  key: LiveProfileImportStepKey;
+  index: number;
+  defaultLabel: string;
+  gamerCopy: string;
+}
+
+export const LIVE_IMPORT_STEPS: readonly LiveProfileImportStepConfig[] = [
+  { key: "root_baseline", index: 1, defaultLabel: "Reading root character", gamerCopy: "Reading root character" },
+  { key: "account_museum", index: 2, defaultLabel: "Scanning museum", gamerCopy: "Scanning museum" },
+  { key: "alt_characters", index: 3, defaultLabel: "Importing alts", gamerCopy: "Importing Alt characters" },
+  { key: "final_assembly", index: 4, defaultLabel: "Assembling profile", gamerCopy: "Assembling profile" },
+] as const;
+
+export interface ResolvedLiveImportStep {
+  step: LiveProfileImportStepKey | string;
+  stepIndex: number;
+  stepTotal: number;
+  stepLabel: string;
+  badge: string;
+  detail: string;
+}
+
+export type LiveProfileImportProgress = {
   current?: number;
   total?: number;
   label?: string;
   estimatedRemainingMs?: number;
+  step?: LiveProfileImportStepKey | string;
+  stepIndex?: number;
+  stepTotal?: number;
+  stepLabel?: string;
 };
 
 type LiveProfileImportSnapshot = {
@@ -292,7 +321,11 @@ type LiveProfileImportLease = {
   until?: number;
 };
 
-function formatWaitTime(ms?: number) {
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+export function formatWaitTime(ms?: number) {
   if (!ms || !Number.isFinite(ms) || ms <= 0) return "";
   const seconds = Math.ceil(ms / 1000);
   if (seconds < 60) return `${seconds} sec`;
@@ -300,20 +333,75 @@ function formatWaitTime(ms?: number) {
   return `${minutes} min`;
 }
 
-function getRetryAfterMs(payload: unknown) {
+export function getRetryAfterMs(payload: unknown): number | null {
   if (!isRecord(payload)) return null;
-  if (typeof payload.retryAfterMs === "number") return payload.retryAfterMs;
-  if (typeof payload.pollAfterMs === "number") return payload.pollAfterMs;
+  if (typeof payload.retryAfterMs === "number" && Number.isFinite(payload.retryAfterMs) && payload.retryAfterMs > 0) {
+    return Math.round(payload.retryAfterMs);
+  }
   return null;
+}
+
+export function getPollAfterMs(payload: unknown, defaultMs = 3500): number {
+  if (!isRecord(payload)) return defaultMs;
+  if (typeof payload.pollAfterMs === "number" && Number.isFinite(payload.pollAfterMs) && payload.pollAfterMs > 0) {
+    return Math.round(payload.pollAfterMs);
+  }
+  return defaultMs;
+}
+
+export function resolveLiveImportStep(progress: unknown, status?: LiveProfileImportStatus): ResolvedLiveImportStep {
+  const stepTotal = isRecord(progress) && typeof progress.stepTotal === "number" && progress.stepTotal > 0
+    ? progress.stepTotal
+    : 4;
+
+  let matchedConfig: LiveProfileImportStepConfig | undefined;
+
+  if (isRecord(progress)) {
+    if (typeof progress.stepIndex === "number" && Number.isFinite(progress.stepIndex) && progress.stepIndex >= 1) {
+      const clampedIndex = Math.min(stepTotal, Math.round(progress.stepIndex));
+      matchedConfig = LIVE_IMPORT_STEPS.find((s) => s.index === clampedIndex);
+    }
+    if (!matchedConfig && typeof progress.step === "string") {
+      matchedConfig = LIVE_IMPORT_STEPS.find((s) => s.key === progress.step);
+    }
+  }
+
+  if (!matchedConfig) {
+    if (status === "done") {
+      matchedConfig = LIVE_IMPORT_STEPS[3]; // final_assembly
+    } else {
+      matchedConfig = LIVE_IMPORT_STEPS[0]; // root_baseline
+    }
+  }
+
+  const stepLabel = (isRecord(progress) && typeof progress.stepLabel === "string" && progress.stepLabel.trim())
+    ? progress.stepLabel.trim()
+    : matchedConfig.defaultLabel;
+
+  const badge = `Step ${matchedConfig.index} of ${stepTotal}: ${stepLabel}`;
+
+  let detail = matchedConfig.gamerCopy;
+  if (isRecord(progress) && typeof progress.label === "string" && progress.label.trim()) {
+    detail = progress.label.trim();
+  } else if (status === "done") {
+    detail = "Profile assembled and ready to save.";
+  } else if (status === "waiting_for_budget") {
+    detail = "IdleMMO rate limit cooldown active. Resuming automatically.";
+  }
+
+  return {
+    step: matchedConfig.key,
+    stepIndex: matchedConfig.index,
+    stepTotal,
+    stepLabel,
+    badge,
+    detail,
+  };
 }
 
 type PetPickerValue =
   | { kind: "database"; pet: PetDatabaseRecord }
   | { kind: "owned"; pet: ProfileOwnedPet };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
 
 function isLiveImportTerminal(status: LiveProfileImportStatus) {
   return status === "done" || status === "error" || status === "expired";
@@ -378,7 +466,7 @@ function liveProfileImportStatusCopy(status: LiveProfileImportStatus, retryAfter
   if (status === "waiting_for_budget") return "Another scraper or import is using the shared budget, so this job is waiting briefly.";
   if (status === "done") return "Choose the character you want, check the summary, then save it to the active profile.";
   if (status === "error" && retryAfterMs) return "Imports are busy right now. You can close this page and try again after the timer.";
-  if (status === "error") return "The import could not finish. Check the message below and try again later.";
+  if (status === "error") return "The import could not finish. Your local profile was not changed.";
   if (status === "expired") return "This import result expired. Start a new import if you still need it.";
   return "Paste a character hash to fetch visible IdleMMO profile details. Nothing is saved until you confirm.";
 }
@@ -1405,7 +1493,9 @@ export default function ProfilesPage() {
       window.clearTimeout(liveImportPollRef.current);
     }
     const fallbackDelay = document.visibilityState === "hidden" ? 15000 : 3500;
-    const safeDelay = Math.max(2000, Math.min(Number(delayMs) || fallbackDelay, document.visibilityState === "hidden" ? 30000 : 15000));
+    const parsedDelay = Number(delayMs) || fallbackDelay;
+    const minDelay = document.visibilityState === "hidden" ? 15000 : 2000;
+    const safeDelay = Math.max(minDelay, parsedDelay);
     liveImportPollRef.current = window.setTimeout(() => {
       void pollLiveImportJob(jobId);
     }, safeDelay);
@@ -1420,6 +1510,29 @@ export default function ProfilesPage() {
     try {
       const response = await fetch(`${PROFILE_IMPORT_API_URL}/profile-import/status/${encodeURIComponent(jobId)}`);
       const payload = await response.json().catch(() => ({}));
+
+      // HTTP 429: Rate-limited cooldown - transition to waiting_for_budget rather than fatal crash
+      if (response.status === 429) {
+        const retryAfterHeader = response.headers.get("retry-after");
+        const headerSeconds = retryAfterHeader ? Number(retryAfterHeader) : null;
+        const headerMs = headerSeconds && Number.isFinite(headerSeconds) && headerSeconds > 0 ? headerSeconds * 1000 : null;
+        const payloadRetryMs = getRetryAfterMs(payload);
+        const cooldownMs = headerMs || payloadRetryMs || 30000;
+
+        setLiveImportStatus("waiting_for_budget");
+        setLiveImportRetryAfterMs(cooldownMs);
+        setLiveImportError("");
+        saveLiveImportSnapshot({
+          jobId,
+          status: "waiting_for_budget",
+          progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
+          error: "",
+          retryAfterMs: cooldownMs,
+        });
+        scheduleLiveImportPoll(jobId, cooldownMs);
+        return;
+      }
+
       if (!response.ok && response.status !== 410) {
         throw new Error(getLiveImportErrorMessage(payload, "Could not read import status."));
       }
@@ -1427,7 +1540,9 @@ export default function ProfilesPage() {
       const nextStatus = (isRecord(payload) && typeof payload.status === "string" ? payload.status : "error") as LiveProfileImportStatus;
       setLiveImportStatus(nextStatus);
       setLiveImportProgress(isRecord(payload) && isRecord(payload.progress) ? payload.progress : null);
-      setLiveImportRetryAfterMs(getRetryAfterMs(payload));
+      const retryAfterMs = getRetryAfterMs(payload);
+      const pollAfterMs = getPollAfterMs(payload, 3500);
+      setLiveImportRetryAfterMs(retryAfterMs);
 
       if (nextStatus === "done") {
         const result = isRecord(payload) && isRecord(payload.result) ? payload.result as LiveProfileImportResult : null;
@@ -1459,7 +1574,7 @@ export default function ProfilesPage() {
           status: nextStatus,
           progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
           error: errorMessage,
-          retryAfterMs: getRetryAfterMs(payload),
+          retryAfterMs: retryAfterMs,
         });
         return;
       }
@@ -1469,9 +1584,10 @@ export default function ProfilesPage() {
         status: nextStatus,
         progress: isRecord(payload) && isRecord(payload.progress) ? payload.progress : null,
         error: "",
-        retryAfterMs: getRetryAfterMs(payload),
+        retryAfterMs: retryAfterMs,
       });
-      scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3500);
+      const nextDelayMs = (nextStatus === "waiting_for_budget" && retryAfterMs) ? retryAfterMs : pollAfterMs;
+      scheduleLiveImportPoll(jobId, nextDelayMs);
     } catch (error) {
       const errorMessage = `${error instanceof Error ? error.message : "Could not read import status."} Your local profile was not changed.`;
       setLiveImportStatus("error");
@@ -1543,7 +1659,7 @@ export default function ProfilesPage() {
         estimatedMs,
         startedAt: Date.now(),
       });
-      scheduleLiveImportPoll(jobId, isRecord(payload) && typeof payload.pollAfterMs === "number" ? payload.pollAfterMs : 3000);
+      scheduleLiveImportPoll(jobId, getPollAfterMs(payload, 3000));
       setToast("Import started. You can leave this page and come back while Zenith prepares the saved profile preview.");
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -1733,6 +1849,12 @@ export default function ProfilesPage() {
   const liveImportRetryText = formatWaitTime(liveImportRetryAfterMs || undefined);
   const liveImportBusy = liveImportStatus === "queued" || liveImportStatus === "running" || liveImportStatus === "waiting_for_budget";
   const liveImportHasUnsavedResult = Boolean(liveImportResult?.characters?.length && importReview);
+
+  const resolvedStep = resolveLiveImportStep(liveImportProgress, liveImportStatus);
+  const isTerminalError = liveImportStatus === "error" || liveImportStatus === "expired";
+  const isRateLimited = !isTerminalError && (liveImportStatus === "waiting_for_budget" || Boolean(liveImportRetryAfterMs && liveImportRetryAfterMs > 0));
+  const isActiveProgress = !isTerminalError && !isRateLimited && (liveImportStatus === "running" || liveImportStatus === "queued" || (Boolean(liveImportJobId) && !isLiveImportTerminal(liveImportStatus)));
+  const isComplete = !isTerminalError && liveImportStatus === "done";
 
   const getSlotOptions = (types: string[]) => types.flatMap((type) => itemOptionsByType[type] || []);
   const itemPickerOption = (item: ProfileItemRecord): PickerOption<ProfileItemRecord> => ({
@@ -2614,52 +2736,250 @@ export default function ProfilesPage() {
                   {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}
                 </button>
               </div>
-              <div
-                id={LIVE_IMPORT_STATUS_ID}
-                className={`profile-live-import-status ${liveImportStatus}`}
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                <div>
-                  <strong>{liveProfileImportStatusLabel(liveImportStatus, liveImportRetryAfterMs)}</strong>
-                  <span>{liveImportProgress?.label || liveProfileImportStatusCopy(liveImportStatus, liveImportRetryAfterMs)}</span>
-                </div>
-                <div>
-                  <strong>
-                    {liveImportRetryText
-                      ? liveImportRetryText
-                      : liveImportProgress
-                        ? `${liveImportProgress.current || 0}/${liveImportProgress.total || 20}`
-                        : liveImportWaitText
-                          ? `~${liveImportWaitText}`
-                          : "Ready"}
-                  </strong>
-                  <span>{liveImportRetryText ? "Try again in" : liveImportProgress ? "Requests used" : "Estimated time"}</span>
-                </div>
-              </div>
-              {liveImportError && (
-                <ErrorState
-                  compact
-                  id={LIVE_IMPORT_ERROR_ID}
-                  title="Import could not finish"
-                  description={liveImportError}
-                />
-              )}
-              {liveImportJobId && (
-                <div className="profile-import-savebar" aria-label="Import recovery controls">
-                  <div>
-                    <strong>Import recovery is active</strong>
-                    <span>This browser will restore the current job after reloads and sync status across open tabs.</span>
+              {/* Single unified status card with mutually exclusive states */}
+              {isTerminalError ? (
+                <div
+                  id={LIVE_IMPORT_STATUS_ID}
+                  className="profile-live-import-status error"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <div className="profile-live-import-status-header">
+                    <div>
+                      <strong className="profile-live-import-step-badge text-danger">
+                        {liveImportStatus === "expired" ? "Import expired" : "Import failed"}
+                      </strong>
+                      <p id={LIVE_IMPORT_ERROR_ID} className="profile-live-import-error-desc">
+                        {liveImportError || "The import could not finish. Your local profile was not changed."}
+                      </p>
+                    </div>
+                    <div className="profile-live-import-status-stat">
+                      <strong className="text-danger">Failed</strong>
+                      <span>Unchanged</span>
+                    </div>
                   </div>
-                  {!isLiveImportTerminal(liveImportStatus) && (
-                    <button type="button" className="profile-action" onClick={() => void pollLiveImportJob(liveImportJobId)}>
-                      <Loader2 size={15} /> Check status
-                    </button>
-                  )}
-                  <button type="button" className="profile-action" onClick={() => resetLiveImportState()}>
-                    <X size={15} /> Clear saved import
-                  </button>
+                  <div className="profile-live-import-status-footer">
+                    <span>Your local profile was not changed.</span>
+                    <div className="profile-live-import-status-actions">
+                      <button
+                        type="button"
+                        className="profile-action"
+                        onClick={() => resetLiveImportState()}
+                      >
+                        <X size={15} /> Start new import
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isRateLimited ? (
+                <div
+                  id={LIVE_IMPORT_STATUS_ID}
+                  className="profile-live-import-status cooldown"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <div className="profile-live-import-status-header">
+                    <div>
+                      <strong className="profile-live-import-step-badge text-accent">
+                        {resolvedStep.badge}
+                      </strong>
+                      <span className="profile-live-import-subtext">
+                        {liveImportProgress?.label || "IdleMMO rate limit active. Resuming automatically."}
+                      </span>
+                    </div>
+                    <div className="profile-live-import-status-stat">
+                      <strong>{liveImportRetryText || formatWaitTime(liveImportRetryAfterMs ?? 0) || "Paused"}</strong>
+                      <span>{liveImportRetryText ? "Resuming in" : "Rate limited"}</span>
+                    </div>
+                  </div>
+                  <div
+                    className="profile-import-step-track"
+                    role="progressbar"
+                    aria-label="Import step progress"
+                    aria-valuenow={resolvedStep.stepIndex}
+                    aria-valuemin={1}
+                    aria-valuemax={4}
+                  >
+                    {LIVE_IMPORT_STEPS.map((step) => {
+                      let stateClass = "upcoming";
+                      if (step.index < resolvedStep.stepIndex) {
+                        stateClass = "completed";
+                      } else if (step.index === resolvedStep.stepIndex) {
+                        stateClass = "active";
+                      }
+                      return (
+                        <div
+                          key={step.key}
+                          className={`profile-import-step-segment ${stateClass}`}
+                          title={`Step ${step.index}: ${step.defaultLabel}`}
+                          aria-label={`Step ${step.index}: ${step.defaultLabel} (${stateClass})`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="profile-live-import-status-footer">
+                    <span>Saved to browser • Resumes automatically</span>
+                    <div className="profile-live-import-status-actions">
+                      <button
+                        type="button"
+                        className="profile-action"
+                        onClick={() => resetLiveImportState()}
+                      >
+                        <X size={15} /> Cancel import
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isActiveProgress ? (
+                <div
+                  id={LIVE_IMPORT_STATUS_ID}
+                  className={`profile-live-import-status ${liveImportStatus}`}
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <div className="profile-live-import-status-header">
+                    <div>
+                      <strong className="profile-live-import-step-badge">
+                        {resolvedStep.badge}
+                      </strong>
+                      <span className="profile-live-import-subtext">
+                        {resolvedStep.detail}
+                      </span>
+                    </div>
+                    <div className="profile-live-import-status-stat">
+                      <strong>
+                        {liveImportProgress?.current !== undefined
+                          ? `${liveImportProgress.current}/${liveImportProgress.total || 12}`
+                          : liveImportWaitText
+                            ? `~${liveImportWaitText}`
+                            : "Active"}
+                      </strong>
+                      <span>{liveImportProgress?.current !== undefined ? "Requests used" : "Estimated time"}</span>
+                    </div>
+                  </div>
+                  <div
+                    className="profile-import-step-track"
+                    role="progressbar"
+                    aria-label="Import step progress"
+                    aria-valuenow={resolvedStep.stepIndex}
+                    aria-valuemin={1}
+                    aria-valuemax={4}
+                  >
+                    {LIVE_IMPORT_STEPS.map((step) => {
+                      let stateClass = "upcoming";
+                      if (step.index < resolvedStep.stepIndex) {
+                        stateClass = "completed";
+                      } else if (step.index === resolvedStep.stepIndex) {
+                        stateClass = "active";
+                      }
+                      return (
+                        <div
+                          key={step.key}
+                          className={`profile-import-step-segment ${stateClass}`}
+                          title={`Step ${step.index}: ${step.defaultLabel}`}
+                          aria-label={`Step ${step.index}: ${step.defaultLabel} (${stateClass})`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="profile-live-import-status-footer">
+                    <span>Import recovery active • Synced across tabs</span>
+                    <div className="profile-live-import-status-actions">
+                      {liveImportJobId && (
+                        <button
+                          type="button"
+                          className="profile-action"
+                          onClick={() => void pollLiveImportJob(liveImportJobId)}
+                          disabled={liveImportBusy}
+                        >
+                          <Loader2 size={15} className={liveImportBusy ? "spin" : ""} /> Check status
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="profile-action"
+                        onClick={() => resetLiveImportState()}
+                      >
+                        <X size={15} /> Cancel import
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isComplete ? (
+                <div
+                  id={LIVE_IMPORT_STATUS_ID}
+                  className="profile-live-import-status done"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <div className="profile-live-import-status-header">
+                    <div>
+                      <strong className="profile-live-import-step-badge text-success">
+                        Step 4 of 4: Profile assembled
+                      </strong>
+                      <span className="profile-live-import-subtext">
+                        Choose a character below to preview and save to your active profile.
+                      </span>
+                    </div>
+                    <div className="profile-live-import-status-stat">
+                      <strong className="text-success">{liveImportResult?.characters?.length || 0}</strong>
+                      <span>Character{liveImportResult?.characters?.length === 1 ? "" : "s"} found</span>
+                    </div>
+                  </div>
+                  <div
+                    className="profile-import-step-track"
+                    role="progressbar"
+                    aria-label="Import step progress"
+                    aria-valuenow={4}
+                    aria-valuemin={1}
+                    aria-valuemax={4}
+                  >
+                    {LIVE_IMPORT_STEPS.map((step) => (
+                      <div
+                        key={step.key}
+                        className="profile-import-step-segment completed"
+                        title={`Step ${step.index}: ${step.defaultLabel}`}
+                        aria-label={`Step ${step.index}: ${step.defaultLabel} (completed)`}
+                      />
+                    ))}
+                  </div>
+                  <div className="profile-live-import-status-footer">
+                    <span>Import complete • Ready to save</span>
+                    <div className="profile-live-import-status-actions">
+                      <button
+                        type="button"
+                        className="profile-action"
+                        onClick={() => resetLiveImportState()}
+                      >
+                        <X size={15} /> Clear saved import
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  id={LIVE_IMPORT_STATUS_ID}
+                  className="profile-live-import-status idle"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <div className="profile-live-import-status-header">
+                    <div>
+                      <strong className="profile-live-import-step-badge">Not started</strong>
+                      <span className="profile-live-import-subtext">
+                        Paste a character hash to fetch visible IdleMMO profile details. Nothing is saved until you confirm.
+                      </span>
+                    </div>
+                    <div className="profile-live-import-status-stat">
+                      <strong>Ready</strong>
+                      <span>Waiting for hash</span>
+                    </div>
+                  </div>
                 </div>
               )}
               {liveImportResult?.characters?.length ? (

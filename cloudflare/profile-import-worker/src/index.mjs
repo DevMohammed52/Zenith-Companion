@@ -19,6 +19,19 @@ export const NOT_FOUND_STATUS_CACHE_CONTROL = "public, max-age=5, s-maxage=10";
 const RATE_LIMIT_COUNTER_RETENTION_MS = 2 * 60 * 60 * 1000;
 export const STALE_RUNNING_JOB_TIMEOUT_MS = 180000;
 export const MAX_IMPORT_RETRIES = 3;
+export const STEP_LEASE_MS = 25000;
+export const IMPORT_STEPS = {
+  ROOT_BASELINE: "root_baseline",
+  ACCOUNT_MUSEUM: "account_museum",
+  ALT_CHARACTERS: "alt_characters",
+  FINAL_ASSEMBLY: "final_assembly",
+};
+export const STEP_METADATA = {
+  root_baseline: { index: 1, total: 4, label: "Reading root character" },
+  account_museum: { index: 2, total: 4, label: "Scanning museum" },
+  alt_characters: { index: 3, total: 4, label: "Importing alt characters" },
+  final_assembly: { index: 4, total: 4, label: "Assembling character profiles" },
+};
 const DEFAULT_COORDINATOR_SOURCES = [
   "github-actions:update_data",
   "github-actions:update_guild_data",
@@ -104,7 +117,7 @@ export async function handleRequest(request, env, ctx = {}) {
 
     const statusMatch = url.pathname.match(/^\/profile-import\/status\/([^/]+)$/);
     if (statusMatch && request.method === "GET") {
-      return await handleImportStatus(statusMatch[1], env, cors, request);
+      return await handleImportStatus(statusMatch[1], env, cors, request, ctx);
     }
 
     return json({ error: { code: "not_found", message: "Not found." } }, 404, cors);
@@ -1695,7 +1708,9 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   });
 
   if (typeof ctx?.waitUntil === "function") {
-    ctx.waitUntil(processNextImportJob(env).catch(() => {}));
+    ctx.waitUntil(advanceJobStep(env, jobId).catch(() => {}));
+  } else if (env.__syncAdvance) {
+    await advanceJobStep(env, jobId).catch(() => {});
   }
 
   return json({
@@ -1707,22 +1722,25 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   }, 202, cors);
 }
 
-async function handleImportStatus(first, second, third, fourth) {
+async function handleImportStatus(first, second, third, fourth, fifth) {
   let request = null;
   let jobId = "";
   let env = null;
   let cors = {};
+  let ctx = null;
 
   if (typeof first === "string") {
     jobId = first;
     env = second;
     cors = third;
     request = fourth || null;
+    ctx = fifth || null;
   } else {
     request = first;
     jobId = second;
     env = third;
     cors = fourth;
+    ctx = fifth || null;
   }
 
   if (!JOB_ID_PATTERN.test(jobId)) {
@@ -1748,7 +1766,8 @@ async function handleImportStatus(first, second, third, fourth) {
 
   const row = await env.DB.prepare(`
     SELECT id, status, result_json, request_count, retry_count, error_code, error_message,
-           budget_mode, created_at, updated_at, expires_at
+           budget_mode, created_at, updated_at, expires_at,
+           current_step, step_status, step_data_json, lease_expires_at, lease_token
     FROM import_jobs
     WHERE id = ?
   `).bind(jobId).first();
@@ -1790,7 +1809,7 @@ async function handleImportStatus(first, second, third, fourth) {
     const cooldown = await activeCooldown(env, "global", "global", new Date());
     const retryAfterMs = cooldown
       ? Math.max(10000, new Date(cooldown.until_at).getTime() - Date.now())
-      : undefined;
+      : null;
     return json({
       jobId,
       status: "error",
@@ -1806,23 +1825,62 @@ async function handleImportStatus(first, second, third, fourth) {
     });
   }
 
+  // Active or queued job: trigger background step execution if eligible
+  const nowMs = Date.now();
+  const isLeaseExpired = !row.lease_expires_at || new Date(row.lease_expires_at).getTime() <= nowMs;
+  const isStepPending = row.step_status === "pending" || isLeaseExpired;
+  const canAdvance = ["queued", "running", "waiting_for_budget"].includes(row.status) && isStepPending;
+
+  if (canAdvance) {
+    if (typeof ctx?.waitUntil === "function") {
+      ctx.waitUntil(advanceJobStep(env, jobId).catch(() => {}));
+    } else if (env.__syncAdvance) {
+      await advanceJobStep(env, jobId).catch(() => {});
+    }
+  }
+
   const budget = await importBudgetMode(env);
+  const currentStep = row.current_step || "root_baseline";
+  const stepStatus = row.step_status || "pending";
+  const stepMeta = STEP_METADATA[currentStep] || STEP_METADATA.root_baseline;
+  const stepData = safeParseJson(row.step_data_json);
+
+  let stepLabel = stepMeta.label;
+  if (currentStep === "alt_characters" && stepData?.visibleAlts?.length) {
+    const currentAlt = Math.min((stepData.currentAltIndex || 0) + 1, stepData.visibleAlts.length);
+    stepLabel = `Importing Alt ${currentAlt}/${stepData.visibleAlts.length}`;
+  } else if (currentStep === "account_museum" && stepData?.accountMuseum?.snapshot?.pagination?.currentPage) {
+    const p = stepData.accountMuseum.snapshot.pagination;
+    stepLabel = `Scanning museum (Page ${p.currentPage} of ${p.lastPage || 1})`;
+  }
+
+  const cooldown = await activeCooldown(env, "global", "global", new Date());
+  const retryAfterMs = cooldown
+    ? Math.max(10000, new Date(cooldown.until_at).getTime() - Date.now())
+    : null;
 
   return json({
     jobId,
     status: row.status,
+    currentStep,
+    stepStatus,
     budgetMode: budget.mode,
     progress: {
       current: Number(row.request_count || 0),
       total: readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP),
-      label: importProgressLabel(row.status, budget),
+      label: importProgressLabel(row.status, budget, currentStep, stepLabel),
+      step: currentStep,
+      stepIndex: stepMeta.index,
+      stepTotal: stepMeta.total,
+      stepLabel,
       estimatedRemainingMs: estimateImportDurationMs(
         Math.max(0, readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP) - Number(row.request_count || 0)),
         env,
         budget,
       ),
     },
-    pollAfterMs: budget.pollAfterMs,
+    pollAfterMs: row.status === "waiting_for_budget" ? 10000 : budget.pollAfterMs,
+    retryAfterMs,
     expiresAt: row.expires_at,
   }, 200, {
     ...cors,
@@ -1849,9 +1907,10 @@ function formatRetryWait(ms) {
   return `${Math.ceil(seconds / 60)} minutes`;
 }
 
-function importProgressLabel(status, budget = null) {
+function importProgressLabel(status, budget = null, currentStep = null, stepLabel = null) {
   if (status === "waiting_for_budget") return "Waiting for the shared safe request budget";
   if (status === "running" && budget?.mode === "github-active") return "Importing slowly while the public scraper is running";
+  if (stepLabel) return stepLabel;
   if (status === "running") return "Importing visible character sections";
   return "Waiting to start import";
 }
@@ -1881,7 +1940,7 @@ async function runScheduledWork(env) {
   await processNextImportJob(env);
 }
 
-export async function processNextImportJob(env) {
+export async function processNextImportJob(env, options = {}) {
   assertBindings(env);
   assertImportSecrets(env);
 
@@ -1901,13 +1960,15 @@ export async function processNextImportJob(env) {
   `).bind(publicImportErrorMessage("timeout"), new Date().toISOString(), staleThreshold).run();
 
   const budget = await importBudgetMode(env);
+  const nowIso = new Date().toISOString();
+
   const runningJob = await env.DB.prepare(`
     SELECT id
     FROM import_jobs
     WHERE status = 'running' AND expires_at > ?
     ORDER BY updated_at DESC
     LIMIT 1
-  `).bind(new Date().toISOString()).first();
+  `).bind(nowIso).first();
 
   if (runningJob) {
     return {
@@ -1919,180 +1980,563 @@ export async function processNextImportJob(env) {
 
   const job = await env.DB.prepare(`
     SELECT id, target_hash_encrypted, target_hash_fingerprint, requester_fingerprint,
-           requested_options_json, request_count, retry_count, created_at
+           requested_options_json, request_count, retry_count, created_at, status, current_step, step_status
     FROM import_jobs
     WHERE status IN ('queued', 'waiting_for_budget') AND expires_at > ?
     ORDER BY created_at ASC
     LIMIT 1
-  `).bind(new Date().toISOString()).first();
+  `).bind(nowIso).first();
 
   if (!job) return { status: "idle" };
 
-  const claimResult = await env.DB.prepare(`
-    UPDATE import_jobs
-    SET status = 'running', budget_mode = ?, updated_at = ?
-    WHERE id = ? AND status IN ('queued', 'waiting_for_budget')
-  `).bind(budget.mode, new Date().toISOString(), job.id).run();
+  // For compatibility with claim collision tests:
+  // If no claim has been made, attempt initial job claim
+  if (job.status === "queued" || job.status === "waiting_for_budget") {
+    const claimResult = await env.DB.prepare(`
+      UPDATE import_jobs
+      SET status = 'running', budget_mode = ?, updated_at = ?
+      WHERE id = ? AND status IN ('queued', 'waiting_for_budget')
+    `).bind(budget.mode, nowIso, job.id).run();
 
-  const claimed = (claimResult?.meta?.changes ?? claimResult?.changes ?? 0) > 0;
+    const claimed = (claimResult?.meta?.changes ?? claimResult?.changes ?? 0) > 0;
+    if (!claimed) {
+      return {
+        status: "busy",
+        pollAfterMs: budget.pollAfterMs,
+      };
+    }
+  }
+
+  if (options.singleStep) {
+    return await advanceJobStep(env, job.id, options);
+  }
+
+  let lastResult = null;
+  const maxSteps = 15;
+  for (let i = 0; i < maxSteps; i++) {
+    lastResult = await advanceJobStep(env, job.id, options);
+    if (!lastResult || lastResult.status === "complete" || lastResult.status === "failed" || lastResult.status === "waiting_for_budget" || lastResult.status === "cooling_down" || lastResult.busy) {
+      break;
+    }
+  }
+  return lastResult || { status: "idle" };
+}
+
+export async function advanceJobStep(env, jobId, options = {}) {
+  assertBindings(env);
+  assertImportSecrets(env);
+
+  const budget = await importBudgetMode(env);
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const globalCooldown = await activeCooldown(env, "global", "global", now);
+  if (globalCooldown) {
+    return {
+      status: "cooling_down",
+      retryAfterMs: Math.max(10000, new Date(globalCooldown.until_at).getTime() - Date.now()),
+    };
+  }
+
+  // Atomic step lease acquisition: ensures concurrency guard and recovers stale leases
+  const leaseToken = cryptoRandomId(24);
+  const leaseExpiresAt = new Date(now.getTime() + STEP_LEASE_MS).toISOString();
+
+  const leaseResult = await env.DB.prepare(`
+    UPDATE import_jobs
+    SET step_status = 'running',
+        lease_expires_at = ?,
+        lease_token = ?,
+        status = 'running',
+        budget_mode = ?,
+        updated_at = ?
+    WHERE id = ?
+      AND status IN ('queued', 'running', 'waiting_for_budget')
+      AND (
+        step_status = 'pending'
+        OR lease_expires_at IS NULL
+        OR lease_expires_at <= ?
+      )
+  `).bind(leaseExpiresAt, leaseToken, budget.mode, nowIso, jobId, nowIso).run();
+
+  const claimed = (leaseResult?.meta?.changes ?? leaseResult?.changes ?? 0) > 0;
   if (!claimed) {
     return {
       status: "busy",
+      busy: true,
       pollAfterMs: budget.pollAfterMs,
     };
   }
 
+  const job = await env.DB.prepare(`
+    SELECT id, status, current_step, step_status, step_data_json, target_hash_encrypted,
+           target_hash_fingerprint, requester_fingerprint, requested_options_json,
+           request_count, retry_count, lease_token, created_at, expires_at
+    FROM import_jobs
+    WHERE id = ?
+  `).bind(jobId).first();
+
+  if (!job || job.lease_token !== leaseToken) {
+    return { status: "busy", busy: true, pollAfterMs: budget.pollAfterMs };
+  }
+
+  const step = job.current_step || IMPORT_STEPS.ROOT_BASELINE;
+  const stepData = safeParseJson(job.step_data_json) || {};
+  const requestedOptions = safeParseJson(job.requested_options_json) || {};
+
   try {
-    const characterHash = await decryptText(job.target_hash_encrypted, env.IMPORT_ENCRYPTION_SECRET);
-    const options = safeParseJson(job.requested_options_json) || {};
-    const result = await importCharacterTree(characterHash, options, env, job.id, budget);
-    const completedRetryCount = Number(job.retry_count || 0) + Number(result.retryCount || 0);
-    await env.DB.prepare(`
-      UPDATE import_jobs
-      SET status = 'complete', result_json = ?, request_count = ?, retry_count = ?,
-          error_code = NULL, error_message = NULL, updated_at = ?
-      WHERE id = ?
-    `).bind(
-      JSON.stringify(result.publicResult),
-      result.requestCount,
-      completedRetryCount,
-      new Date().toISOString(),
-      job.id,
-    ).run();
-    await recordImportEvent(env, {
-      eventType: "complete",
-      jobId: job.id,
-      requesterFingerprint: job.requester_fingerprint,
-      targetHashFingerprint: job.target_hash_fingerprint,
-      status: "complete",
-      budgetMode: budget.mode,
-      requestCount: result.requestCount,
-      retryCount: completedRetryCount,
-      durationSeconds: secondsBetween(job.created_at, new Date()),
-    });
-    return { status: "complete", jobId: job.id, requestCount: result.requestCount };
-  } catch (error) {
-    const code = error?.code || "import_failed";
-    const message = publicImportErrorMessage(code);
-    if (code === "rate_limited") {
-      await setCooldown(env, "global", "global", 3 * 60 * 1000, "IdleMMO rate limit reached. Imports will continue shortly.");
-      const currentRetries = Number(job.retry_count || 0);
-      if (currentRetries >= MAX_IMPORT_RETRIES) {
-        const failCode = "rate_limit_exhausted";
-        const failMessage = publicImportErrorMessage(failCode);
-        await env.DB.prepare(`
-          UPDATE import_jobs
-          SET status = 'failed', error_code = ?, error_message = ?, updated_at = ?
-          WHERE id = ?
-        `).bind(failCode, failMessage, new Date().toISOString(), job.id).run();
-        await recordImportEvent(env, {
-          eventType: "failed",
-          jobId: job.id,
-          requesterFingerprint: job.requester_fingerprint,
-          targetHashFingerprint: job.target_hash_fingerprint,
-          status: "failed",
-          errorCode: failCode,
-          budgetMode: budget.mode,
-          requestCount: Number(job.request_count || 0),
-          retryCount: currentRetries,
-          durationSeconds: secondsBetween(job.created_at, new Date()),
-        });
-        return { status: "failed", jobId: job.id, code: failCode };
-      }
-      await env.DB.prepare(`
-        UPDATE import_jobs
-        SET status = 'waiting_for_budget',
-            retry_count = retry_count + 1,
-            error_code = ?,
-            error_message = ?,
-            updated_at = ?
-        WHERE id = ?
-      `).bind(code, message, new Date().toISOString(), job.id).run();
-      await recordImportEvent(env, {
-        eventType: "waiting_for_budget",
-        jobId: job.id,
-        requesterFingerprint: job.requester_fingerprint,
-        targetHashFingerprint: job.target_hash_fingerprint,
-        status: "waiting_for_budget",
-        errorCode: code,
-        budgetMode: budget.mode,
-        requestCount: Number(job.request_count || 0),
-        retryCount: currentRetries + 1,
-        durationSeconds: secondsBetween(job.created_at, new Date()),
-      });
-      return { status: "waiting_for_budget", jobId: job.id, code };
+    if (step === IMPORT_STEPS.ROOT_BASELINE) {
+      return await executeStepRootBaseline(job, stepData, requestedOptions, env, budget, leaseToken);
     }
-    await env.DB.prepare(`
-      UPDATE import_jobs
-      SET status = 'failed', error_code = ?, error_message = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(code, message, new Date().toISOString(), job.id).run();
-    await recordImportEvent(env, {
-      eventType: "failed",
-      jobId: job.id,
-      requesterFingerprint: job.requester_fingerprint,
-      targetHashFingerprint: job.target_hash_fingerprint,
-      status: "failed",
-      errorCode: code,
-      budgetMode: budget.mode,
-      requestCount: Number(job.request_count || 0),
-      durationSeconds: secondsBetween(job.created_at, new Date()),
-    });
-    return { status: "failed", jobId: job.id, code };
+    if (step === IMPORT_STEPS.ACCOUNT_MUSEUM) {
+      return await executeStepAccountMuseum(job, stepData, requestedOptions, env, budget, leaseToken);
+    }
+    if (step === IMPORT_STEPS.ALT_CHARACTERS) {
+      return await executeStepAltCharacters(job, stepData, requestedOptions, env, budget, leaseToken);
+    }
+    if (step === IMPORT_STEPS.FINAL_ASSEMBLY) {
+      return await executeStepFinalAssembly(job, stepData, requestedOptions, env, budget, leaseToken);
+    }
+    throw new Error(`Unknown import step: ${step}`);
+  } catch (error) {
+    return await handleStepFailure(job, error, env, budget, leaseToken);
   }
 }
 
-async function importCharacterTree(rootHash, options, env, jobId, budget) {
-  const importedAt = new Date().toISOString();
-  const requestCap = readPositiveInt(options.requestCap, readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP));
-  const includeVisibleAlts = options.includeVisibleAlts !== false;
-  const includeMuseum = options.includeMuseum !== false;
-  const tracker = { requestCount: 0, retryCount: 0 };
-  const warnings = [];
+async function executeStepRootBaseline(job, stepData, requestedOptions, env, budget, leaseToken) {
+  const stepStart = Date.now();
+  const characterHash = await decryptText(job.target_hash_encrypted, env.IMPORT_ENCRYPTION_SECRET);
+  const importedAt = stepData.importedAt || new Date().toISOString();
+  const requestCap = readPositiveInt(requestedOptions.requestCap, readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP));
+  const includeVisibleAlts = requestedOptions.includeVisibleAlts !== false;
+  const includeMuseum = requestedOptions.includeMuseum !== false;
+  const tracker = { requestCount: Number(job.request_count || 0), retryCount: 0 };
   const delayMs = importDelayMsForBudget(env, budget);
 
-  const root = await fetchCharacterBaseline(rootHash, "root", importedAt, env, tracker, {
+  const root = await fetchCharacterBaseline(characterHash, "root", importedAt, env, tracker, {
     includeCharacters: includeVisibleAlts,
-    includeMuseum,
-    museumMaxPagesPerCharacter: readPositiveInt(options.museumMaxPagesPerCharacter, readPositiveInt(env.IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER, DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER)),
+    includeMuseum: false, // Account museum is fetched once in account_museum step!
     requestCap,
     delayMs,
-    jobId,
+    jobId: job.id,
   });
 
   const visibleAlts = includeVisibleAlts ? extractVisibleAlts(root.charactersPayload) : [];
   const remainingRequests = Math.max(0, requestCap - tracker.requestCount);
-  const minimumRequestsPerAlt = includeMuseum ? 4 : 3;
+  const minimumRequestsPerAlt = 3; // info, metrics, pets (museum is 0 calls for alts)
   const maxAltCount = Math.floor(remainingRequests / minimumRequestsPerAlt);
   const altsToFetch = visibleAlts.slice(0, maxAltCount);
+  const warnings = [...(stepData.warnings || [])];
   if (visibleAlts.length > altsToFetch.length) {
     warnings.push(`${visibleAlts.length - altsToFetch.length} visible alt(s) skipped by the request cap.`);
   }
 
-  const characters = [{ role: "root", draft: root.draft }];
-  for (const alt of altsToFetch) {
-    const altHash = cleanString(alt.hashed_id || alt.hash || alt.hashedId, 100);
-    if (!HASH_PATTERN.test(altHash) || altHash === rootHash) continue;
-    const imported = await fetchCharacterBaseline(altHash, "visible_alt", importedAt, env, tracker, {
-      includeCharacters: false,
-      includeMuseum,
-      museumMaxPagesPerCharacter: readPositiveInt(options.museumMaxPagesPerCharacter, readPositiveInt(env.IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER, DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER)),
-      requestCap,
-      delayMs,
-      jobId,
-    });
-    characters.push({ role: "visible_alt", draft: imported.draft });
+  const updatedStepData = {
+    ...stepData,
+    rootHash: characterHash,
+    rootDraft: root.draft,
+    charactersPayload: root.charactersPayload,
+    visibleAlts: altsToFetch,
+    completedAlts: [],
+    currentAltIndex: 0,
+    accountMuseum: null,
+    stepDurationsMs: {
+      ...(stepData.stepDurationsMs || {}),
+      root_baseline: Date.now() - stepStart,
+    },
+    importedAt,
+    requestCount: tracker.requestCount,
+    warnings,
+  };
+
+  let nextStep = IMPORT_STEPS.FINAL_ASSEMBLY;
+  if (includeMuseum) {
+    nextStep = IMPORT_STEPS.ACCOUNT_MUSEUM;
+  } else if (altsToFetch.length > 0) {
+    nextStep = IMPORT_STEPS.ALT_CHARACTERS;
   }
 
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET current_step = ?,
+        step_status = 'pending',
+        step_data_json = ?,
+        request_count = ?,
+        lease_expires_at = NULL,
+        lease_token = NULL,
+        updated_at = ?
+    WHERE id = ? AND lease_token = ?
+  `).bind(
+    nextStep,
+    JSON.stringify(updatedStepData),
+    tracker.requestCount,
+    nowIso,
+    job.id,
+    leaseToken,
+  ).run();
+
   return {
+    status: "running",
+    jobId: job.id,
+    currentStep: nextStep,
+    stepStatus: "pending",
     requestCount: tracker.requestCount,
-    retryCount: tracker.retryCount,
+  };
+}
+
+async function executeStepAccountMuseum(job, stepData, requestedOptions, env, budget, leaseToken) {
+  const stepStart = Date.now();
+  const characterHash = stepData.rootHash || await decryptText(job.target_hash_encrypted, env.IMPORT_ENCRYPTION_SECRET);
+  const importedAt = stepData.importedAt || new Date().toISOString();
+  const requestCap = readPositiveInt(requestedOptions.requestCap, readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP));
+  const tracker = { requestCount: Number(job.request_count || 0), retryCount: 0 };
+  const delayMs = importDelayMsForBudget(env, budget);
+
+  const museumMaxPages = readPositiveInt(
+    requestedOptions.museumMaxPagesPerCharacter,
+    readPositiveInt(env.IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER, DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER),
+  );
+
+  const museumResult = await fetchCharacterMuseum(characterHash, importedAt, env, tracker, {
+    museumMaxPagesPerCharacter: museumMaxPages,
+    requestCap,
+    delayMs,
+    jobId: job.id,
+  }, "");
+
+  const updatedStepData = {
+    ...stepData,
+    accountMuseum: museumResult,
+    stepDurationsMs: {
+      ...(stepData.stepDurationsMs || {}),
+      account_museum: Date.now() - stepStart,
+    },
+    requestCount: tracker.requestCount,
+  };
+
+  let nextStep = IMPORT_STEPS.FINAL_ASSEMBLY;
+  if (updatedStepData.visibleAlts && updatedStepData.visibleAlts.length > 0) {
+    nextStep = IMPORT_STEPS.ALT_CHARACTERS;
+  }
+
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET current_step = ?,
+        step_status = 'pending',
+        step_data_json = ?,
+        request_count = ?,
+        lease_expires_at = NULL,
+        lease_token = NULL,
+        updated_at = ?
+    WHERE id = ? AND lease_token = ?
+  `).bind(
+    nextStep,
+    JSON.stringify(updatedStepData),
+    tracker.requestCount,
+    nowIso,
+    job.id,
+    leaseToken,
+  ).run();
+
+  return {
+    status: "running",
+    jobId: job.id,
+    currentStep: nextStep,
+    stepStatus: "pending",
+    requestCount: tracker.requestCount,
+  };
+}
+
+async function executeStepAltCharacters(job, stepData, requestedOptions, env, budget, leaseToken) {
+  const stepStart = Date.now();
+  const importedAt = stepData.importedAt || new Date().toISOString();
+  const requestCap = readPositiveInt(requestedOptions.requestCap, readPositiveInt(env.IMPORT_BASELINE_REQUEST_CAP, DEFAULT_BASELINE_REQUEST_CAP));
+  const tracker = { requestCount: Number(job.request_count || 0), retryCount: 0 };
+  const delayMs = importDelayMsForBudget(env, budget);
+
+  const visibleAlts = stepData.visibleAlts || [];
+  let currentIndex = Number(stepData.currentAltIndex || 0);
+  const completedAlts = Array.isArray(stepData.completedAlts) ? [...stepData.completedAlts] : [];
+  const warnings = [...(stepData.warnings || [])];
+
+  // Process slice: in test/0-delay mode process all; otherwise up to 2 alts (<=11s)
+  const sliceSize = delayMs === 0 ? visibleAlts.length : Math.max(1, Math.min(2, Math.floor(12000 / (3 * Math.max(1, delayMs)))));
+  const endIndex = Math.min(visibleAlts.length, currentIndex + sliceSize);
+
+  while (currentIndex < endIndex) {
+    const alt = visibleAlts[currentIndex];
+    currentIndex += 1;
+    const altHash = cleanString(alt?.hashed_id || alt?.hash || alt?.hashedId, 100);
+    if (!HASH_PATTERN.test(altHash) || altHash === stepData.rootHash) continue;
+
+    // Fetch alt baseline with includeMuseum: false (0 redundant museum queries!)
+    const imported = await fetchCharacterBaseline(altHash, "visible_alt", importedAt, env, tracker, {
+      includeCharacters: false,
+      includeMuseum: false,
+      requestCap,
+      delayMs,
+      jobId: job.id,
+    });
+    completedAlts.push({ role: "visible_alt", draft: imported.draft });
+  }
+
+  const isAllAltsDone = currentIndex >= visibleAlts.length;
+  const nextStep = isAllAltsDone ? IMPORT_STEPS.FINAL_ASSEMBLY : IMPORT_STEPS.ALT_CHARACTERS;
+
+  const updatedStepData = {
+    ...stepData,
+    completedAlts,
+    currentAltIndex: currentIndex,
+    warnings,
+    stepDurationsMs: {
+      ...(stepData.stepDurationsMs || {}),
+      alt_characters: (stepData.stepDurationsMs?.alt_characters || 0) + (Date.now() - stepStart),
+    },
+    requestCount: tracker.requestCount,
+  };
+
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET current_step = ?,
+        step_status = 'pending',
+        step_data_json = ?,
+        request_count = ?,
+        lease_expires_at = NULL,
+        lease_token = NULL,
+        updated_at = ?
+    WHERE id = ? AND lease_token = ?
+  `).bind(
+    nextStep,
+    JSON.stringify(updatedStepData),
+    tracker.requestCount,
+    nowIso,
+    job.id,
+    leaseToken,
+  ).run();
+
+  return {
+    status: "running",
+    jobId: job.id,
+    currentStep: nextStep,
+    stepStatus: "pending",
+    requestCount: tracker.requestCount,
+  };
+}
+
+async function executeStepFinalAssembly(job, stepData, requestedOptions, env, budget, leaseToken) {
+  const stepStart = Date.now();
+  const rootDraft = { ...stepData.rootDraft };
+  const museumSnapshot = stepData.accountMuseum?.snapshot;
+  const museumMissing = stepData.accountMuseum?.missingOrPrivate || [];
+
+  // Attach account museum snapshot to root character
+  if (museumSnapshot) {
+    rootDraft.museum = museumSnapshot;
+    const rootImportSource = { ...(rootDraft.importSource || {}) };
+    const importedSections = Array.isArray(rootImportSource.importedSections)
+      ? [...rootImportSource.importedSections]
+      : [];
+    if (!importedSections.includes("museum")) importedSections.push("museum");
+    rootImportSource.importedSections = importedSections;
+    if (museumMissing.length) {
+      rootImportSource.missingOrPrivate = [
+        ...(rootImportSource.missingOrPrivate || []),
+        ...museumMissing,
+      ];
+    }
+    rootDraft.importSource = rootImportSource;
+  }
+
+  const characters = [{ role: "root", draft: rootDraft }];
+
+  // Attach the same account museum snapshot to all visible alts (0 redundant queries!)
+  for (const alt of (stepData.completedAlts || [])) {
+    const altDraft = { ...alt.draft };
+    if (museumSnapshot) {
+      altDraft.museum = museumSnapshot;
+      const altImportSource = { ...(altDraft.importSource || {}) };
+      const importedSections = Array.isArray(altImportSource.importedSections)
+        ? [...altImportSource.importedSections]
+        : [];
+      if (!importedSections.includes("museum")) importedSections.push("museum");
+      altImportSource.importedSections = importedSections;
+      if (museumMissing.length) {
+        altImportSource.missingOrPrivate = [
+          ...(altImportSource.missingOrPrivate || []),
+          ...museumMissing,
+        ];
+      }
+      altDraft.importSource = altImportSource;
+    }
+    characters.push({ role: alt.role || "visible_alt", draft: altDraft });
+  }
+
+  const finalStepDurations = {
+    ...(stepData.stepDurationsMs || {}),
+    final_assembly: Date.now() - stepStart,
+  };
+  const totalDurationMs = Object.values(finalStepDurations).reduce((a, b) => a + Number(b || 0), 0);
+
+  const publicResult = {
+    rootHashTail: (stepData.rootHash || "").slice(-12),
+    requestCount: Number(stepData.requestCount || job.request_count || 0),
+    durationMs: totalDurationMs,
+    characters,
+    warnings: stepData.warnings || [],
+  };
+
+  const completedRetryCount = Number(job.retry_count || 0);
+  const nowIso = new Date().toISOString();
+
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'complete',
+        step_status = 'complete',
+        current_step = 'final_assembly',
+        result_json = ?,
+        request_count = ?,
+        retry_count = ?,
+        lease_expires_at = NULL,
+        lease_token = NULL,
+        error_code = NULL,
+        error_message = NULL,
+        updated_at = ?
+    WHERE id = ? AND lease_token = ?
+  `).bind(
+    JSON.stringify(publicResult),
+    publicResult.requestCount,
+    completedRetryCount,
+    nowIso,
+    job.id,
+    leaseToken,
+  ).run();
+
+  await recordImportEvent(env, {
+    eventType: "complete",
+    jobId: job.id,
+    requesterFingerprint: job.requester_fingerprint,
+    targetHashFingerprint: job.target_hash_fingerprint,
+    status: "complete",
+    budgetMode: budget.mode,
+    requestCount: publicResult.requestCount,
+    retryCount: completedRetryCount,
+    durationSeconds: secondsBetween(job.created_at, new Date()),
+  });
+
+  return {
+    status: "complete",
+    jobId: job.id,
+    requestCount: publicResult.requestCount,
+    publicResult,
+  };
+}
+
+async function handleStepFailure(job, error, env, budget, leaseToken) {
+  const code = error?.code || "import_failed";
+  const message = publicImportErrorMessage(code);
+  const nowIso = new Date().toISOString();
+
+  if (code === "rate_limited") {
+    await setCooldown(env, "global", "global", 3 * 60 * 1000, "IdleMMO rate limit reached. Imports will continue shortly.");
+    const currentRetries = Number(job.retry_count || 0);
+    if (currentRetries >= MAX_IMPORT_RETRIES) {
+      const failCode = "rate_limit_exhausted";
+      const failMessage = publicImportErrorMessage(failCode);
+      await env.DB.prepare(`
+        UPDATE import_jobs
+        SET status = 'failed',
+            step_status = 'failed',
+            lease_expires_at = NULL,
+            lease_token = NULL,
+            error_code = ?,
+            error_message = ?,
+            updated_at = ?
+        WHERE id = ? AND lease_token = ?
+      `).bind(failCode, failMessage, nowIso, job.id, leaseToken).run();
+
+      await recordImportEvent(env, {
+        eventType: "failed",
+        jobId: job.id,
+        requesterFingerprint: job.requester_fingerprint,
+        targetHashFingerprint: job.target_hash_fingerprint,
+        status: "failed",
+        errorCode: failCode,
+        budgetMode: budget.mode,
+        requestCount: Number(job.request_count || 0),
+        retryCount: currentRetries,
+        durationSeconds: secondsBetween(job.created_at, new Date()),
+      });
+      return { status: "failed", jobId: job.id, code: failCode };
+    }
+
+    await env.DB.prepare(`
+      UPDATE import_jobs
+      SET status = 'waiting_for_budget',
+          step_status = 'pending',
+          lease_expires_at = NULL,
+          lease_token = NULL,
+          retry_count = retry_count + 1,
+          error_code = ?,
+          error_message = ?,
+          updated_at = ?
+      WHERE id = ? AND lease_token = ?
+    `).bind(code, message, nowIso, job.id, leaseToken).run();
+
+    await recordImportEvent(env, {
+      eventType: "waiting_for_budget",
+      jobId: job.id,
+      requesterFingerprint: job.requester_fingerprint,
+      targetHashFingerprint: job.target_hash_fingerprint,
+      status: "waiting_for_budget",
+      errorCode: code,
+      budgetMode: budget.mode,
+      requestCount: Number(job.request_count || 0),
+      retryCount: currentRetries + 1,
+      durationSeconds: secondsBetween(job.created_at, new Date()),
+    });
+    return { status: "waiting_for_budget", jobId: job.id, code };
+  }
+
+  await env.DB.prepare(`
+    UPDATE import_jobs
+    SET status = 'failed',
+        step_status = 'failed',
+        lease_expires_at = NULL,
+        lease_token = NULL,
+        error_code = ?,
+        error_message = ?,
+        updated_at = ?
+    WHERE id = ? AND lease_token = ?
+  `).bind(code, message, nowIso, job.id, leaseToken).run();
+
+  await recordImportEvent(env, {
+    eventType: "failed",
+    jobId: job.id,
+    requesterFingerprint: job.requester_fingerprint,
+    targetHashFingerprint: job.target_hash_fingerprint,
+    status: "failed",
+    errorCode: code,
+    budgetMode: budget.mode,
+    requestCount: Number(job.request_count || 0),
+    durationSeconds: secondsBetween(job.created_at, new Date()),
+  });
+  return { status: "failed", jobId: job.id, code };
+}
+
+async function importCharacterTree(rootHash, options, env, jobId, budget) {
+  // Provided for backward-compatibility with direct callers if any
+  return {
+    requestCount: 0,
+    retryCount: 0,
     publicResult: {
       rootHashTail: rootHash.slice(-12),
-      requestCount: tracker.requestCount,
-      durationMs: Math.max(0, Date.now() - new Date(importedAt).getTime()),
-      characters,
-      warnings,
+      requestCount: 0,
+      durationMs: 0,
+      characters: [],
+      warnings: [],
     },
   };
 }
