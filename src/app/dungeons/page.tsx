@@ -47,7 +47,7 @@ import {
 } from "@/lib/housing";
 import MobileSortControls from "@/components/MobileSortControls";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
-import { getLoreHintsForNames } from "@/lib/lore-links";
+import type { LoreNameInput } from "@/lib/lore-links";
 import { LoadingState, NoResultsState } from "@/components/StateBlock";
 
 type ReadinessFilter = "all" | "ready" | "blocked";
@@ -792,13 +792,13 @@ function DungeonsContent() {
       ? "Showing the highest expected-value dungeon in the current filters; it may still be blocked by profile requirements."
       : "Use the filters below to compare entry cost, loot EV, shard value, action capacity, and magic-find EV.";
 
-  const selectedDungeonLore = useMemo(() => {
+  const selectedDungeonLoreNames = useMemo<LoreNameInput[]>(() => {
     if (!selectedDungeon) return [];
-    return getLoreHintsForNames([
+    return [
       { name: selectedDungeon.name, source: "entity" },
       { name: selectedDungeon.location?.name, source: "location" },
       ...(selectedDungeon.lootDetails || []).map((drop: any) => ({ name: drop.name, source: "drop" as const })),
-    ], 5);
+    ];
   }, [selectedDungeon]);
 
   const openLoreThread = (entryId: string) => {
@@ -1318,7 +1318,7 @@ function DungeonsContent() {
                 </section>
               </div>
 
-              <LoreThreadPanel hints={selectedDungeonLore} title="Dungeon Lore Thread" onOpenThread={openLoreThread} />
+              <LoreThreadPanel names={selectedDungeonLoreNames} title="Dungeon Lore Thread" onOpenThread={openLoreThread} />
 
               <h3 className="dungeon-loot-heading"><PackageOpen size={16} /> Loot Table</h3>
               <div className="dungeon-loot-list">

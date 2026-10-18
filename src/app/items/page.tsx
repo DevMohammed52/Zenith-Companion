@@ -27,7 +27,12 @@ import { useData } from '@/context/DataContext';
 import { GameImage } from '@/components/GameImage';
 import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
 import ZenithIcon from '@/components/icons/ZenithIcon';
-import { getAllLoreForItem } from '@/data/lore';
+import {
+  getAllLoreForItem,
+  getCachedLoreDataset,
+  loadLoreData,
+  type LoreDataset,
+} from '@/data/lore';
 import { formatItemTypeLabel, isForcedUntradableItem, isLegacyItem } from '@/lib/item-display';
 import {
   buildDropLocationOptions,
@@ -401,10 +406,23 @@ function ItemsArchiveContent() {
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [visibleCount, setVisibleCount] = useState(DESKTOP_ITEM_BATCH_SIZE);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loreDataset, setLoreDataset] = useState<LoreDataset | null>(() => getCachedLoreDataset());
   const { openItem } = useItemModal();
   const { marketData, allItemsDb, loading } = useData();
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const itemBatchSize = isCompactViewport ? MOBILE_ITEM_BATCH_SIZE : DESKTOP_ITEM_BATCH_SIZE;
+
+  useEffect(() => {
+    let cancelled = false;
+    loadLoreData()
+      .then((data) => {
+        if (!cancelled) setLoreDataset(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -508,7 +526,7 @@ function ItemsArchiveContent() {
         liquidity,
         tradeable,
       });
-      const loreCount = getAllLoreForItem(item.name).length;
+      const loreCount = getAllLoreForItem(item.name, loreDataset).length;
       const requiredLevel = getRequiredLevel(full);
       const isSecondaryProduction = SECONDARY_PRODUCTION_TYPES.has(item.type)
         || (item.type === 'CONSTRUCTION_MATERIAL' && CONSTRUCTION_OUTPUT_PATTERN.test(item.name));
@@ -557,7 +575,7 @@ function ItemsArchiveContent() {
         searchWords: tokenizeSearchText(searchText),
       };
     });
-  }, [index, allItemsDb, marketData, usageMap]);
+  }, [index, allItemsDb, marketData, usageMap, loreDataset]);
 
   const types = useMemo(() => {
     const t = new Set(enrichedItems.map(i => i.type).filter(Boolean));

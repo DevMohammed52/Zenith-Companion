@@ -25,6 +25,7 @@ import { useData } from "@/context/DataContext";
 import { useProfiles } from "@/lib/profiles";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { formatDuration, formatGold, formatSignedGold } from "@/lib/format";
 import {
     calculateCraftingQueuePlan,
     isCraftingQueueRecipe,
@@ -1217,21 +1218,6 @@ function CraftItemImage({
             onError={() => setFailed(true)}
         />
     );
-}
-
-function formatGold(value: number) {
-    return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
-function formatDuration(seconds: number) {
-    const wholeSeconds = Math.max(0, Math.round(seconds));
-    const minutes = Math.floor(wholeSeconds / 60);
-    const remainingSeconds = wholeSeconds % 60;
-    return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
-}
-
-function formatSignedGold(value: number) {
-    return `${value >= 0 ? "+" : ""}${formatGold(value)}g`;
 }
 
 function formatSaleSource(source: QueueSaleSource) {

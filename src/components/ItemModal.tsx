@@ -16,7 +16,15 @@ import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
-import { getDescriptionLoreForItem, getLoreEntry, getLoreForItem } from '@/data/lore';
+import {
+  getDescriptionLoreForItem,
+  getLoreEntry,
+  getLoreForItem,
+  getCachedLoreDataset,
+  loadLoreData,
+  type LoreDataset,
+  type LoreEntry,
+} from '@/data/lore';
 import { getMarketLiquidity, getSafeMarketValue } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
@@ -218,7 +226,21 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const qColor = item ? getQualityColor(item.quality) : getQualityColor('STANDARD');
   const itemName = item?.name;
   const itemIsTradeable = item ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false : false;
-  const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName) : [], [itemName]);
+  const [loreDataset, setLoreDataset] = useState<LoreDataset | null>(() => getCachedLoreDataset());
+
+  useEffect(() => {
+    let cancelled = false;
+    loadLoreData()
+      .then((data) => {
+        if (!cancelled) setLoreDataset(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName, loreDataset) : [], [itemName, loreDataset]);
   const descriptionLoreLinks = useMemo(() => itemName ? getDescriptionLoreForItem(itemName) : [], [itemName]);
 
   const relationEntry = useMemo(() => {
@@ -525,8 +547,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><BookOpen size={14} /> Lore Thread</div>
                   <div className="lore-thread-list">
                     {loreLinks.map((link) => {
-                      const primary = getLoreEntry(link.entryIds[0]);
-                      const linkedEntries = link.entryIds.map((entryId) => getLoreEntry(entryId)).filter(Boolean);
+                      const primary = getLoreEntry(link.entryIds[0], loreDataset);
+                      const linkedEntries = link.entryIds
+                        .map((entryId) => getLoreEntry(entryId, loreDataset))
+                        .filter((entry): entry is LoreEntry => Boolean(entry));
                       if (!primary) return null;
 
                       return (
@@ -555,8 +579,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   <div className="card-label"><BookOpen size={14} /> Lore Links From Description</div>
                   <div className="lore-thread-list">
                     {descriptionLoreLinks.map((link) => {
-                      const primary = getLoreEntry(link.entryIds[0]);
-                      const linkedEntries = link.entryIds.map((entryId) => getLoreEntry(entryId)).filter(Boolean);
+                      const primary = getLoreEntry(link.entryIds[0], loreDataset);
+                      const linkedEntries = link.entryIds
+                        .map((entryId) => getLoreEntry(entryId, loreDataset))
+                        .filter((entry): entry is LoreEntry => Boolean(entry));
                       if (!primary) return null;
 
                       return (

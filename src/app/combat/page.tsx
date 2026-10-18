@@ -12,7 +12,7 @@ import MobileSortControls from "@/components/MobileSortControls";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
 import { LoadingState, NoResultsState } from "@/components/StateBlock";
-import { getLoreHintsForNames } from "@/lib/lore-links";
+import type { LoreNameInput } from "@/lib/lore-links";
 import { getItemTrueValue } from "@/lib/ev-logic";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import { useProfiles } from "@/lib/profiles";
@@ -441,13 +441,13 @@ function CombatContent() {
         });
     };
 
-    const selectedEnemyLore = useMemo(() => {
+    const selectedEnemyLoreNames = useMemo<LoreNameInput[]>(() => {
         if (!selectedEnemy) return [];
-        return getLoreHintsForNames([
+        return [
             { name: selectedEnemy.name, source: "entity" },
             { name: selectedEnemy.location?.name, source: "location" },
             ...(selectedEnemy.lootDetails || []).map((drop: any) => ({ name: drop.name, source: "drop" as const })),
-        ], 5);
+        ];
     }, [selectedEnemy]);
 
     const openLoreThread = (entryId: string) => {
@@ -1093,7 +1093,7 @@ function CombatContent() {
                                 </div>
                             </div>
 
-                            <LoreThreadPanel hints={selectedEnemyLore} title="Combat Lore Thread" onOpenThread={openLoreThread} />
+                            <LoreThreadPanel names={selectedEnemyLoreNames} title="Combat Lore Thread" onOpenThread={openLoreThread} />
                             
                             <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>Loot Table</h3>
                             

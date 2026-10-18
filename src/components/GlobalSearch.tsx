@@ -165,12 +165,12 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
     setStaticSearchLoading(true);
     Promise.all([
       import("@/constants"),
-      import("@/data/lore"),
-    ]).then(([constantsModule, loreModule]) => {
+      import("@/data/lore").then((m) => m.loadLoreData()),
+    ]).then(([constantsModule, loreData]) => {
       if (cancelled) return;
       const rows: SearchResult[] = [];
 
-      loreModule.LORE_ENTRIES.forEach(entry => {
+      loreData.entries.forEach(entry => {
         rows.push({
           label: entry.title,
           type: "Lore",
@@ -179,7 +179,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         });
       });
 
-      loreModule.LORE_THEORIES.forEach(theory => {
+      loreData.theories.forEach(theory => {
         rows.push({
           label: theory.title,
           type: "Theory",
