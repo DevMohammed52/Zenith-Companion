@@ -1,22 +1,58 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
-import type { LoreHint } from "@/lib/lore-links";
+import { getCachedLoreDataset, loadLoreData } from "@/data/lore";
+import { getLoreHintsForNames, type LoreHint, type LoreNameInput } from "@/lib/lore-links";
 
 type LoreThreadPanelProps = {
-  hints: LoreHint[];
+  hints?: LoreHint[];
+  names?: LoreNameInput[];
   title?: string;
   compact?: boolean;
   onOpenThread?: (entryId: string) => void;
 };
 
 export default function LoreThreadPanel({
-  hints,
+  hints: initialHints,
+  names,
   title = "Lore Thread",
   compact = false,
   onOpenThread,
 }: LoreThreadPanelProps) {
+  const [hints, setHints] = useState<LoreHint[]>(() => {
+    if (initialHints && initialHints.length > 0) return initialHints;
+    const cached = getCachedLoreDataset();
+    if (cached && names && names.length > 0) {
+      return getLoreHintsForNames(names, 6, cached);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (initialHints && initialHints.length > 0) {
+      setHints(initialHints);
+      return;
+    }
+    if (names && names.length > 0) {
+      let cancelled = false;
+      loadLoreData()
+        .then((dataset) => {
+          if (!cancelled) {
+            setHints(getLoreHintsForNames(names, 6, dataset));
+          }
+        })
+        .catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (!initialHints || initialHints.length === 0) {
+      setHints([]);
+    }
+  }, [initialHints, names]);
+
   if (hints.length === 0) return null;
 
   return (

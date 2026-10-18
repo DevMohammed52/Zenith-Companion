@@ -27,14 +27,12 @@ import {
 } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import {
-  LORE_ENTRIES,
-  LORE_ENTRY_BY_ID,
-  LORE_ITEM_LINKS,
-  LORE_RELATIONS,
-  LORE_THEORIES,
-  LORE_TIMELINE,
+  getCachedLoreDataset,
+  loadLoreData,
   getDescriptionLoreForEntry,
+  type LoreDataset,
   type LoreEntry,
+  type LoreItemLink,
   type LoreRelation,
 } from "@/data/lore";
 
@@ -98,8 +96,6 @@ const NPC_NETWORK_HUB_IDS = [
   "world-valaron",
 ];
 
-const entries = LORE_ENTRIES as readonly LoreEntry[];
-
 const normalizeLoreText = (value: string) => value
   .toLowerCase()
   .replace(/&/g, " and ")
@@ -122,20 +118,51 @@ function LoreContent() {
   const searchParamKey = searchParams.toString();
   const initialViewParam = searchParams.get("view");
   const initialThreadParam = searchParams.get("thread");
-  const initialView = initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam]
-    ? "board"
-    : isLoreView(initialViewParam)
-      ? initialViewParam
-      : "atlas";
-  const [activeView, setActiveView] = useState<LoreView>(initialView);
+
+  const [dataset, setDataset] = useState<LoreDataset | null>(() => getCachedLoreDataset());
+  const [loading, setLoading] = useState(() => !getCachedLoreDataset());
+
+  useEffect(() => {
+    let cancelled = false;
+    loadLoreData()
+      .then((data) => {
+        if (!cancelled) {
+          setDataset(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const entries = useMemo(() => dataset?.entries || [], [dataset]);
+  const entryById = useMemo(() => {
+    if (!dataset) return {} as Record<string, LoreEntry>;
+    return Object.fromEntries(dataset.entries.map((entry) => [entry.id, entry]));
+  }, [dataset]);
+  const relations = useMemo(() => dataset?.relations || [], [dataset]);
+  const theories = useMemo(() => dataset?.theories || [], [dataset]);
+  const timeline = useMemo(() => dataset?.timeline || [], [dataset]);
+  const itemLinks = useMemo(() => dataset?.itemLinks || [], [dataset]);
+
+  const [activeView, setActiveView] = useState<LoreView>(() => {
+    if (initialThreadParam) return "board";
+    return isLoreView(initialViewParam) ? initialViewParam : "atlas";
+  });
   const [activeCategory, setActiveCategory] = useState<LoreFilter>("all");
   const [search, setSearch] = useState("");
-  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(
-    initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam] ? LORE_ENTRY_BY_ID[initialThreadParam] : null,
-  );
-  const [boardEntryId, setBoardEntryId] = useState(
-    initialThreadParam && LORE_ENTRY_BY_ID[initialThreadParam] ? initialThreadParam : "artifacts-the-runemark-of-eternity",
-  );
+  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(() => {
+    const cached = getCachedLoreDataset();
+    if (cached && initialThreadParam) {
+      return cached.entries.find((e) => e.id === initialThreadParam) || null;
+    }
+    return null;
+  });
+  const [boardEntryId, setBoardEntryId] = useState(() => initialThreadParam || "artifacts-the-runemark-of-eternity");
   const [relationFilter, setRelationFilter] = useState<RelationFilter>("all");
   const [boardPickerOpen, setBoardPickerOpen] = useState(false);
   const [boardPickerSearch, setBoardPickerSearch] = useState("");
@@ -151,12 +178,12 @@ function LoreContent() {
     const view = searchParams.get("view");
     if (query) setSearch(query);
     if (isLoreView(view)) setActiveView(view);
-    if (thread && LORE_ENTRY_BY_ID[thread]) {
+    if (thread && entryById[thread]) {
       setBoardEntryId(thread);
       setActiveView("board");
-      setSelectedEntry(LORE_ENTRY_BY_ID[thread]);
+      setSelectedEntry(entryById[thread]);
     }
-  }, [searchParamKey, searchParams]);
+  }, [entryById, searchParamKey, searchParams]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -182,7 +209,7 @@ function LoreContent() {
       acc[entry.category] = (acc[entry.category] || 0) + 1;
       return acc;
     }, {});
-  }, []);
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -199,13 +226,13 @@ function LoreContent() {
       ].join(" ").toLowerCase();
       return haystack.includes(q);
     });
-  }, [activeCategory, search]);
+  }, [activeCategory, entries, search]);
 
   const featuredAtlas = useMemo(() => {
-    const featured = FEATURED_ATLAS_IDS.map((id) => LORE_ENTRY_BY_ID[id]).filter(Boolean);
+    const featured = FEATURED_ATLAS_IDS.map((id) => entryById[id]).filter(Boolean);
     if (search.trim() || activeCategory !== "all") return filteredEntries;
     return featured;
-  }, [activeCategory, filteredEntries, search]);
+  }, [activeCategory, entryById, filteredEntries, search]);
 
   const characterEntries = useMemo(
     () => filteredEntries.filter((entry) => entry.category === "NPC"),
@@ -214,7 +241,7 @@ function LoreContent() {
 
   const npcNetworkGroups = useMemo(() => {
     const hubs = NPC_NETWORK_HUB_IDS
-      .map((id) => LORE_ENTRY_BY_ID[id])
+      .map((id) => entryById[id])
       .filter((entry): entry is LoreEntry => Boolean(entry));
 
     const assigned = new Set<string>();
@@ -251,34 +278,36 @@ function LoreContent() {
     }
 
     return groups;
-  }, [characterEntries]);
+  }, [characterEntries, entryById]);
 
   const artifactsAndBeasts = useMemo(
     () => filteredEntries.filter((entry) => entry.category === "Artifact" || entry.category === "Bestiary" || entry.category === "Concept"),
     [filteredEntries],
   );
 
-  const boardEntry = LORE_ENTRY_BY_ID[boardEntryId] || LORE_ENTRY_BY_ID["artifacts-the-runemark-of-eternity"] || entries[0];
+  const boardEntry = (boardEntryId && entryById[boardEntryId]) || entryById["artifacts-the-runemark-of-eternity"] || entries[0];
   const boardRelations = useMemo(() => {
-    return (LORE_RELATIONS as readonly LoreRelation[]).filter((relation) => {
+    if (!boardEntry) return [];
+    return relations.filter((relation) => {
       const touchesBoard = relation.source === boardEntry.id || relation.target === boardEntry.id;
       const passesFilter = relationFilter === "all" || relation.confidence === relationFilter;
       return touchesBoard && passesFilter;
     }).slice(0, 18);
-  }, [boardEntry.id, relationFilter]);
+  }, [boardEntry, relationFilter, relations]);
 
   const boardStats = useMemo(() => {
-    const related = (LORE_RELATIONS as readonly LoreRelation[]).filter((relation) => relation.source === boardEntry.id || relation.target === boardEntry.id);
+    if (!boardEntry) return { total: 0, canon: 0, inferred: 0, theory: 0 };
+    const related = relations.filter((relation) => relation.source === boardEntry.id || relation.target === boardEntry.id);
     return {
       total: related.length,
       canon: related.filter((relation) => relation.confidence === "canon").length,
       inferred: related.filter((relation) => relation.confidence === "inferred").length,
       theory: related.filter((relation) => relation.confidence === "theory").length,
     };
-  }, [boardEntry.id]);
+  }, [boardEntry, relations]);
 
   const boardGraphRelations = boardRelations.slice(0, 8);
-  const boardOptions = useMemo(() => entries.filter((entry) => entry.category !== "Index"), []);
+  const boardOptions = useMemo(() => entries.filter((entry) => entry.category !== "Index"), [entries]);
   const filteredBoardOptions = useMemo(() => {
     const q = boardPickerSearch.trim().toLowerCase();
     const categoryMatches = (entry: LoreEntry) => boardPickerCategory === "all" || entry.category === boardPickerCategory;
@@ -315,11 +344,11 @@ function LoreContent() {
     ? activeCategory === "all" ? "All categories" : CATEGORY_META[activeCategory].label
     : "Not used in this view";
   const visibleEntryCount = (() => {
-    if (activeView === "timeline") return LORE_TIMELINE.length;
+    if (activeView === "timeline") return timeline.length;
     if (activeView === "characters") return characterEntries.length;
     if (activeView === "artifacts") return artifactsAndBeasts.length;
     if (activeView === "board") return boardRelations.length;
-    if (activeView === "theories") return LORE_THEORIES.length;
+    if (activeView === "theories") return theories.length;
     return featuredAtlas.length;
   })();
   const hasSearch = search.trim().length > 0;
@@ -413,9 +442,9 @@ function LoreContent() {
           witnesses, and suspiciously convenient historical silences.
         </p>
         <div className="lore-hero-stats" aria-label="Lore coverage">
-          <span><strong>{entries.length}</strong> official records</span>
-          <span><strong>{LORE_RELATIONS.length}</strong> source links</span>
-          <span><strong>{LORE_THEORIES.length}</strong> theory files</span>
+          <span><strong>{loading ? "..." : entries.length}</strong> official records</span>
+          <span><strong>{loading ? "..." : relations.length}</strong> source links</span>
+          <span><strong>{loading ? "..." : theories.length}</strong> theory files</span>
         </div>
       </section>
 
@@ -502,7 +531,9 @@ function LoreContent() {
               ))}
             </div>
           ) : (
-            <div className="empty-thread atlas-empty">No Atlas records match this filter.</div>
+            <div className="empty-thread atlas-empty">
+              {loading ? "Loading lore archive..." : "No Atlas records match this filter."}
+            </div>
           )}
         </section>
       )}
@@ -511,7 +542,7 @@ function LoreContent() {
         <section className="lore-section">
           <SectionHeading label="Chronology" detail="The clean version of history, with enough gaps to make anyone nervous." />
           <div className="timeline-list">
-            {LORE_TIMELINE.map((event) => (
+            {timeline.map((event) => (
               <article key={event.id} className="timeline-item">
                 <div className="timeline-era">{event.era}</div>
                 <div className="timeline-body">
@@ -519,7 +550,7 @@ function LoreContent() {
                   <p>{event.summary}</p>
                   <div className="thread-pills">
                     {event.entryIds.map((id) => {
-                      const entry = LORE_ENTRY_BY_ID[id];
+                      const entry = entryById[id];
                       return entry ? (
                         <button key={id} type="button" onClick={() => openEntry(entry)}>
                           {entry.title}
@@ -726,7 +757,7 @@ function LoreContent() {
               </div>
               {boardGraphRelations.map((relation, index) => {
                 const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
-                const other = LORE_ENTRY_BY_ID[otherId];
+                const other = entryById[otherId];
                 if (!other) return null;
                 return (
                   <button
@@ -744,7 +775,7 @@ function LoreContent() {
             <div className="thread-list">
               {boardRelations.length > 0 ? boardRelations.map((relation) => {
                 const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
-                const other = LORE_ENTRY_BY_ID[otherId];
+                const other = entryById[otherId];
                 if (!other) return null;
                 return (
                   <button key={`${relation.source}-${relation.target}`} type="button" className="thread-card" onClick={() => setBoardEntryId(other.id)}>
@@ -766,7 +797,7 @@ function LoreContent() {
         <section className="lore-section">
           <SectionHeading label="Theory Files" detail="Speculation is clearly labeled. Canon is the evidence, not the conclusion." />
           <div className="theory-grid">
-            {LORE_THEORIES.map((theory) => (
+            {theories.map((theory) => (
               <article key={theory.id} className="theory-card">
                 <span className={`spec-level level-${theory.speculationLevel.toLowerCase()}`}>{theory.speculationLevel} speculation</span>
                 <h3>{theory.title}</h3>
@@ -774,7 +805,7 @@ function LoreContent() {
                 <div className="theory-evidence">
                   <strong>Evidence threads</strong>
                   {theory.evidenceIds.map((id) => {
-                    const entry = LORE_ENTRY_BY_ID[id];
+                    const entry = entryById[id];
                     return entry ? <button key={id} type="button" onClick={() => openEntry(entry)}>{entry.title}</button> : null;
                   })}
                 </div>
@@ -788,7 +819,15 @@ function LoreContent() {
         </section>
       )}
 
-      {selectedEntry && <LoreEntryModal entry={selectedEntry} onClose={() => setSelectedEntry(null)} onOpen={openEntry} />}
+      {selectedEntry && (
+        <LoreEntryModal
+          entry={selectedEntry}
+          onClose={() => setSelectedEntry(null)}
+          onOpen={openEntry}
+          entryById={entryById}
+          itemLinks={itemLinks}
+        />
+      )}
 
       <style jsx global>{`
         .lore-page {
@@ -1104,6 +1143,7 @@ function LoreContent() {
 
         .lore-section {
           margin-top: 2rem;
+          min-height: 380px;
         }
 
         .section-heading {
@@ -2187,14 +2227,18 @@ function LoreEntryModal({
   entry,
   onClose,
   onOpen,
+  entryById = {},
+  itemLinks = [],
 }: {
   entry: LoreEntry;
   onClose: () => void;
   onOpen: (entry: LoreEntry) => void;
+  entryById?: Record<string, LoreEntry>;
+  itemLinks?: LoreItemLink[];
 }) {
   const meta = CATEGORY_META[entry.category];
-  const related = entry.relatedIds.map((id) => LORE_ENTRY_BY_ID[id]).filter(Boolean).slice(0, 10);
-  const itemLinks = LORE_ITEM_LINKS.filter((link) => (link.entryIds as readonly string[]).includes(entry.id)).slice(0, 8);
+  const related = entry.relatedIds.map((id) => entryById[id]).filter(Boolean).slice(0, 10);
+  const matchedItemLinks = itemLinks.filter((link) => (link.entryIds as readonly string[]).includes(entry.id)).slice(0, 8);
   const descriptionItemLinks = getDescriptionLoreForEntry(entry.id, 10);
   const modalRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -2306,11 +2350,11 @@ function LoreEntryModal({
             </div>
           </section>
 
-          {itemLinks.length > 0 && (
+          {matchedItemLinks.length > 0 && (
             <section className="modal-panel span-two">
               <h3>Item Lore Hooks</h3>
               <div className="item-link-grid">
-                {itemLinks.map((link) => (
+                {matchedItemLinks.map((link) => (
                   <span key={`${entry.id}-${link.itemName}`}>
                     <strong>{link.itemName}</strong>
                     <em>{link.confidence}: {link.reason}</em>

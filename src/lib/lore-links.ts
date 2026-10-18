@@ -1,13 +1,14 @@
 import {
   LORE_ENTRIES,
   LORE_ENTRY_BY_ID,
+  type LoreDataset,
   type LoreEntry,
   type LoreItemLink,
   getLoreForItem,
 } from "@/data/lore";
 
-type LoreConfidence = LoreItemLink["confidence"];
-type LoreHintSource = "entity" | "location" | "drop" | "item";
+export type LoreConfidence = LoreItemLink["confidence"];
+export type LoreHintSource = "entity" | "location" | "drop" | "item";
 
 export type LoreHint = {
   id: string;
@@ -18,7 +19,7 @@ export type LoreHint = {
   matchedName: string;
 };
 
-type LoreNameInput = string | {
+export type LoreNameInput = string | {
   name?: string | null;
   source?: LoreHintSource;
   reason?: string;
@@ -35,8 +36,6 @@ const normalize = (value: string) => value
   .replace(/&/g, " and ")
   .replace(/[^a-z0-9]+/g, " ")
   .trim();
-
-const titleLookup = new Map(LORE_ENTRIES.map((entry) => [normalize(entry.title), entry]));
 
 const aliasLinks: Array<{
   needle: string;
@@ -81,7 +80,17 @@ function parseInput(input: LoreNameInput): { name: string; source: LoreHintSourc
   return { name, source: input.source || "entity", reason: input.reason };
 }
 
-export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHint[] {
+export function getLoreHintsForNames(
+  inputs: LoreNameInput[],
+  limit = 6,
+  dataset?: LoreDataset | null,
+): LoreHint[] {
+  const entries = dataset ? dataset.entries : LORE_ENTRIES;
+  const entryById = dataset
+    ? Object.fromEntries(dataset.entries.map((e) => [e.id, e]))
+    : LORE_ENTRY_BY_ID;
+
+  const currentTitleLookup = new Map(entries.map((entry) => [normalize(entry.title), entry]));
   const hints = new Map<string, LoreHint>();
 
   for (const rawInput of inputs) {
@@ -89,7 +98,7 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
     if (!input) continue;
 
     const normalizedName = normalize(input.name);
-    const exactEntry = titleLookup.get(normalizedName);
+    const exactEntry = currentTitleLookup.get(normalizedName);
 
     if (exactEntry) {
       addHint(hints, {
@@ -102,9 +111,9 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
       });
     }
 
-    for (const itemLink of getLoreForItem(input.name)) {
+    for (const itemLink of getLoreForItem(input.name, dataset)) {
       for (const entryId of itemLink.entryIds) {
-        const entry = LORE_ENTRY_BY_ID[entryId];
+        const entry = entryById[entryId];
         if (!entry) continue;
         addHint(hints, {
           id: entry.id,
@@ -119,7 +128,7 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
 
     for (const alias of aliasLinks) {
       if (!normalizedName.includes(alias.needle)) continue;
-      const entry = LORE_ENTRY_BY_ID[alias.entryId];
+      const entry = entryById[alias.entryId];
       if (!entry) continue;
       addHint(hints, {
         id: entry.id,
@@ -132,7 +141,7 @@ export function getLoreHintsForNames(inputs: LoreNameInput[], limit = 6): LoreHi
     }
 
     if (normalizedName.length >= 5) {
-      const fuzzyEntry = LORE_ENTRIES.find((entry) => {
+      const fuzzyEntry = entries.find((entry) => {
         const normalizedTitle = normalize(entry.title);
         return normalizedTitle.includes(normalizedName) || normalizedName.includes(normalizedTitle);
       });

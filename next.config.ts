@@ -142,6 +142,10 @@ const nextConfig: NextConfig = {
         headers: longLivedDataHeaders,
       },
       {
+        source: "/data/:path*.json",
+        headers: longLivedDataHeaders,
+      },
+      {
         source: "/market-data.json",
         headers: [
           {

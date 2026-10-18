@@ -209,4 +209,104 @@ describe("public JSON data contract", () => {
       expect(weather.buffs, `${weather.location} ${weather.name} should match reviewed weather modifiers`).toEqual(expectedWeatherBuffs.get(weather.id));
     }
   });
+
+  it("keeps public/data/lore.json valid, inside budget, and matching schema constraints", () => {
+    const lorePath = path.join(publicDir, "data", "lore.json");
+    expect(existsSync(lorePath), "public/data/lore.json should exist").toBe(true);
+
+    const raw = readFileSync(lorePath, "utf8");
+    const stats = statSync(lorePath);
+    expect(stats.size, "public/data/lore.json exceeds 250 KB budget").toBeLessThanOrEqual(250_000);
+
+    for (const secretPattern of secretPatterns) {
+      expect(secretPattern.pattern.test(raw), `public/data/lore.json includes ${secretPattern.name}`).toBe(false);
+    }
+
+    const payload = JSON.parse(raw) as {
+      entries?: Array<{
+        id?: string;
+        title?: string;
+        category?: string;
+        summary?: string;
+        tags?: string[];
+        relatedIds?: string[];
+        sections?: Array<{ title?: string; body?: string }>;
+        keyFacts?: string[];
+        timelineMarkers?: string[];
+      }>;
+      relations?: Array<{
+        source?: string;
+        target?: string;
+        type?: string;
+        confidence?: string;
+        evidence?: string;
+      }>;
+      theories?: Array<{
+        id?: string;
+        title?: string;
+        premise?: string;
+        evidenceIds?: string[];
+        counterpoints?: string[];
+        speculationLevel?: string;
+      }>;
+      timeline?: Array<{
+        id?: string;
+        era?: string;
+        title?: string;
+        summary?: string;
+        entryIds?: string[];
+      }>;
+      itemLinks?: Array<{
+        itemName?: string;
+        entryIds?: string[];
+        reason?: string;
+        confidence?: string;
+      }>;
+    };
+
+    expect(payload).toBeDefined();
+    expect(Array.isArray(payload.entries)).toBe(true);
+    expect(payload.entries?.length).toBeGreaterThanOrEqual(80);
+    expect(Array.isArray(payload.relations)).toBe(true);
+    expect(payload.relations?.length).toBeGreaterThanOrEqual(150);
+    expect(Array.isArray(payload.theories)).toBe(true);
+    expect(payload.theories?.length).toBeGreaterThanOrEqual(10);
+    expect(Array.isArray(payload.timeline)).toBe(true);
+    expect(payload.timeline?.length).toBeGreaterThanOrEqual(10);
+    expect(Array.isArray(payload.itemLinks)).toBe(true);
+    expect(payload.itemLinks?.length).toBeGreaterThanOrEqual(20);
+
+    const allowedCategories = ["Index", "Overview", "Civilization", "World", "Concept", "Artifact", "Bestiary", "NPC"];
+    for (const entry of payload.entries || []) {
+      expect(typeof entry.id).toBe("string");
+      expect(entry.id!.length).toBeGreaterThan(0);
+      expect(typeof entry.title).toBe("string");
+      expect(entry.title!.length).toBeGreaterThan(0);
+      expect(allowedCategories).toContain(entry.category);
+      expect(typeof entry.summary).toBe("string");
+      expect(Array.isArray(entry.tags)).toBe(true);
+      expect(Array.isArray(entry.relatedIds)).toBe(true);
+      expect(Array.isArray(entry.sections)).toBe(true);
+      expect(Array.isArray(entry.keyFacts)).toBe(true);
+      expect(Array.isArray(entry.timelineMarkers)).toBe(true);
+    }
+
+    for (const relation of payload.relations || []) {
+      expect(typeof relation.source).toBe("string");
+      expect(typeof relation.target).toBe("string");
+      expect(["canon", "inferred", "theory"]).toContain(relation.confidence);
+    }
+
+    for (const theory of payload.theories || []) {
+      expect(typeof theory.id).toBe("string");
+      expect(typeof theory.title).toBe("string");
+      expect(["Low", "Medium", "High"]).toContain(theory.speculationLevel);
+    }
+
+    for (const link of payload.itemLinks || []) {
+      expect(typeof link.itemName).toBe("string");
+      expect(Array.isArray(link.entryIds)).toBe(true);
+      expect(["canon", "inferred", "theory"]).toContain(link.confidence);
+    }
+  });
 });
