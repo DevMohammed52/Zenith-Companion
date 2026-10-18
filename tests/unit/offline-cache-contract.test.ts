@@ -23,6 +23,7 @@ const guildPageSource = readFileSync(path.join(process.cwd(), "src/app/guilds/pa
 const essentialPublicData = [
   "/all-items-db.json",
   "/conquest-data.json",
+  "/data/lore.json",
   "/gear-data.json",
   "/global-search-index.json",
   "/guild-list.json",
