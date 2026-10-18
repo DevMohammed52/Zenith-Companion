@@ -1,5 +1,7 @@
 "use client";
 
+import { formatHours } from "./format";
+
 export type HousingMode = "none" | "owner" | "guest";
 
 export type HousingActivity =
@@ -593,11 +595,7 @@ export function getHousingActivityLabel(activity: HousingActivity) {
   return ACTIVITY_LABELS[activity];
 }
 
-export function formatHours(hours: number) {
-  if (!Number.isFinite(hours) || hours <= 0) return "0h";
-  if (hours < 1) return `${Math.round(hours * 60)}m`;
-  return Number.isInteger(hours) ? `${hours}h` : `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`;
-}
+export { formatHours } from "./format";
 
 export function getComponentBuildCost(
   component: HousingComponent,
