@@ -15,6 +15,7 @@ import {
   formatSignedGold,
   formatStarts,
   formatTime,
+  formatNumber,
 } from "../../src/lib/format";
 
 describe("formatGold", () => {
@@ -315,5 +316,21 @@ describe("duration and time formatters", () => {
     const date = new Date("2026-03-15T12:30:00Z");
     expect(formatTime(date)).not.toBe("Unknown");
     expect(formatDateTime(date)).not.toBe("Unknown");
+  });
+});
+
+describe("formatNumber", () => {
+  it("formats positive numbers with locale grouping", () => {
+    expect(formatNumber(0)).toBe("0");
+    expect(formatNumber(1234)).toBe("1,234");
+    expect(formatNumber(1234567.8)).toBe("1,234,568");
+  });
+
+  it("handles non-finite and nullish values safely", () => {
+    expect(formatNumber(NaN)).toBe("-");
+    expect(formatNumber(Infinity)).toBe("-");
+    expect(formatNumber(-Infinity)).toBe("-");
+    expect(formatNumber(null)).toBe("-");
+    expect(formatNumber(undefined)).toBe("-");
   });
 });

@@ -204,3 +204,9 @@ export function formatDistance(distanceMeters: number | null | undefined): strin
   }
   return distanceMeters === 0 ? "Same location" : `${distanceMeters.toLocaleString()}m`;
 }
+
+export function formatNumber(value: number | null | undefined): string {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.round(value).toLocaleString()
+    : "-";
+}
