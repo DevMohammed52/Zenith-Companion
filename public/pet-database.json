@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-18T23:18:10.472Z",
+    "generatedAt": "2026-10-19T00:22:23.147Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
@@ -19444,20 +19444,20 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 91,
+        "listingCount": 90,
         "minPrice": 5000,
         "maxPrice": 55000,
         "byQuality": {
           "STANDARD": {
-            "count": 91,
+            "count": 90,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 593505,
-            "average_price": 6522
+            "total_price": 588505,
+            "average_price": 6539
           }
         },
-        "averagePrice": 6522,
-        "medianPrice": 5067,
+        "averagePrice": 6539,
+        "medianPrice": 5075,
         "sampleListings": [
           {
             "level": 1,
@@ -25908,21 +25908,26 @@
       },
       "exchange": {
         "petId": 10,
-        "listingCount": 11,
-        "minPrice": 30000,
+        "listingCount": 12,
+        "minPrice": 20000,
         "maxPrice": 72140,
         "byQuality": {
           "PREMIUM": {
-            "count": 11,
-            "min_price": 30000,
+            "count": 12,
+            "min_price": 20000,
             "max_price": 72140,
-            "total_price": 585220,
-            "average_price": 53202
+            "total_price": 605220,
+            "average_price": 50435
           }
         },
-        "averagePrice": 53202,
-        "medianPrice": 60000,
+        "averagePrice": 50435,
+        "medianPrice": 55000,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "PREMIUM",
+            "price": 20000
+          },
           {
             "level": 1,
             "quality": "PREMIUM",
@@ -100109,7 +100114,7 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-18T23:18:10.450Z",
+    "fetchedAt": "2026-10-19T00:22:23.125Z",
     "listingCount": 623,
     "speciesCount": 41,
     "pageCount": 25
