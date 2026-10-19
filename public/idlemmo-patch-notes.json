@@ -1,45 +1,960 @@
 {
   "meta": {
-    "generatedAt": "2026-10-18T18:35:48.213Z",
+    "generatedAt": "2026-10-19T09:49:23.971Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 283,
-    "totalFetched": 283,
+    "totalAvailable": 284,
+    "totalFetched": 284,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 286,
+    "latestPatchId": 287,
     "oldestPatchId": 1,
-    "latestVersion": "0.83.5-PB",
+    "latestVersion": "0.84.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "items": 161,
-      "bug-fixes": 203,
-      "forge": 47,
-      "mobile-ui": 107,
-      "economy": 135,
-      "seasonal": 82,
+      "combat": 136,
+      "pets": 110,
+      "guilds": 76,
+      "conquest": 27,
+      "housing": 35,
+      "economy": 136,
+      "alchemy": 44,
+      "forge": 48,
+      "skills": 163,
+      "items": 162,
+      "tavern": 35,
+      "mobile-ui": 108,
+      "seasonal": 83,
+      "membership": 68,
+      "bug-fixes": 204,
       "world-bosses": 46,
-      "tavern": 34,
-      "combat": 135,
       "hunting": 68,
-      "pets": 109,
-      "guilds": 75,
-      "alchemy": 43,
-      "skills": 162,
       "map": 66,
-      "membership": 67,
       "public-api": 20,
-      "housing": 34,
       "weather": 5,
       "translations": 15,
       "dungeons": 59,
-      "conquest": 26,
       "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 287,
+      "version": "0.84.0-PB",
+      "title": "Forge Lessons, UI Improvements, Guild Slayer, and much more!",
+      "headline": "Version 0.84.0-PB - Forge Lessons, UI Improvements, Guild Slayer, and much more!",
+      "releasedAt": "2026-10-19T08:32:59",
+      "releaseLabel": "1 hour ago",
+      "releaseDateLabel": "Oct 19 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=287",
+      "categories": [
+        "combat",
+        "pets",
+        "guilds",
+        "conquest",
+        "housing",
+        "economy",
+        "alchemy",
+        "forge",
+        "skills",
+        "items",
+        "tavern",
+        "mobile-ui",
+        "seasonal",
+        "membership",
+        "bug-fixes"
+      ],
+      "excerpt": "This is a big update, so here's a quick rundown of the good stuff you might be interested in! Forge Lessons - Pick some materials, start a lesson, and earn Forge EXP. Fill up your temper bar to get shards. Simple! For...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "This is a big update, so here's a quick rundown of the good stuff you might be interested in!"
+        },
+        {
+          "type": "listItem",
+          "text": "Forge Lessons - Pick some materials, start a lesson, and earn Forge EXP. Fill up your temper bar to get shards. Simple!"
+        },
+        {
+          "type": "listItem",
+          "text": "Forge Recipe Changes - No more fish in recipes (finally!), plus some higher level requirements."
+        },
+        {
+          "type": "listItem",
+          "text": "UI Changes - Just open the game and have a look for yourself. You'll see!"
+        },
+        {
+          "type": "listItem",
+          "text": "Item Loaning - Loan items directly to other players without having to mess around with trades."
+        },
+        {
+          "type": "listItem",
+          "text": "Inventory QoL - Item ordering, locking, and a bunch of other handy improvements."
+        },
+        {
+          "type": "listItem",
+          "text": "Guild Slayer - Team up with your guild and tackle Slayer together!"
+        },
+        {
+          "type": "listItem",
+          "text": "Regional Conquests - Rewards have been increased by around 50% ."
+        },
+        {
+          "type": "listItem",
+          "text": "Slayer Shards - Rewards have been bumped up by around 20%."
+        },
+        {
+          "type": "listItem",
+          "text": "New Mythic Pet - Say hello to Shardback!"
+        },
+        {
+          "type": "listItem",
+          "text": "Meditation Scrolls - Pay directly without trading, have up to 3 pending at once, and it no longer takes up an inventory slot."
+        },
+        {
+          "type": "listItem",
+          "text": "New Classes - Alchemist, Blacksmith, Builder, and Monk have joined the party."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved Tutorial - We've given the tutorial some love. Even if you're a veteran, you can check it out by restarting it in your settings."
+        },
+        {
+          "type": "paragraph",
+          "text": "Want to read the full list of changes?"
+        },
+        {
+          "type": "heading",
+          "text": "Forge"
+        },
+        {
+          "type": "paragraph",
+          "text": "Forge Lessons"
+        },
+        {
+          "type": "listItem",
+          "text": "Forge now has a Lessons tab. Pick some materials, start a lesson, and your character spends that time practising. You don't get gear out of it. You get Forge EXP, plus some Strength EXP."
+        },
+        {
+          "type": "listItem",
+          "text": "Lessons accept ores, metal bars, logs and crafting materials."
+        },
+        {
+          "type": "listItem",
+          "text": "Materials close to your Forge level teach best. Materials you've outgrown are marked as \"too basic\", and ones well beyond your level are marked \"too advanced\". Both teach more slowly, which stops lessons being used to power level with top-tier materials."
+        },
+        {
+          "type": "listItem",
+          "text": "Rare battle drops teach faster, but are used up faster too."
+        },
+        {
+          "type": "listItem",
+          "text": "You can cancel at any time. You keep the EXP you've earned so far, and any materials you didn't use go back to your inventory."
+        },
+        {
+          "type": "listItem",
+          "text": "Lessons fill your Temper bar."
+        },
+        {
+          "type": "listItem",
+          "text": "As the bar fills, it stores up shards, which you can claim whenever you like. The fuller the bar, the better the payout, so it pays to let it build. Once it's full, it stops filling, and you'll need to claim it before it resets. You'll get a notification when it's full and again shortly before it resets."
+        },
+        {
+          "type": "paragraph",
+          "text": "Forge Recipe Changes"
+        },
+        {
+          "type": "listItem",
+          "text": "Higher-level recipes now take much longer to forge, but each craft gives far more EXP."
+        },
+        {
+          "type": "listItem",
+          "text": "Fish are gone from forge recipes. They have been replaced with metal bars."
+        },
+        {
+          "type": "listItem",
+          "text": "The Forge recipe list also has a type filter and loads in pages, so it's much easier to find what you're after."
+        },
+        {
+          "type": "listItem",
+          "text": "On top of that, we've also adjusted the level requirements for mythic recipes. We don’t feel that being able to craft mythics at level 90, when that isn’t even halfway through the skill, really fits with the progression we’re aiming for."
+        },
+        {
+          "type": "heading",
+          "text": "Living, breathing skills"
+        },
+        {
+          "type": "paragraph",
+          "text": "All primary skills now each have their own animated scene at the top of the page. While you're skilling, your character is right there doing the work. They swing an axe at a tree, chip away at a rock, cast a line and wait for a bite, or hammer away at the anvil. Tap the scene and your character takes a swing."
+        },
+        {
+          "type": "paragraph",
+          "text": "Other players nearby now appear in your scene. If someone else is chopping wood in the same area as you, you'll see them floating in their own bubble in the background. Your own characters show first, then your party, then your guild, so the people you know are easy to spot."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tap someone's bubble to see what they're up to. You can watch their scene play out, see what they're gathering, how far along they are, how much EXP each item gives and when the next one lands. You can jump to their profile from there too."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you'd rather keep to yourself, you still can either hide your action by turning off \" Display Active Action\" or hide yourself completely by appearing offline."
+        },
+        {
+          "type": "heading",
+          "text": "Item Loaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can now lend your equipment to other players."
+        },
+        {
+          "type": "paragraph",
+          "text": "Until now, lending gear meant trading it away and hoping you'd get it back. Item loaning removes that risk. Choose an item, a player and how long they can borrow it for. When the time is up, it comes straight back to you."
+        },
+        {
+          "type": "paragraph",
+          "text": "A borrowed item is yours to use, not yours to keep. You can equip it and move it between your inventory and bank, but you can't sell, trade, upgrade or lend it on. Borrowed items show a Loaned badge so they're easy to tell apart."
+        },
+        {
+          "type": "paragraph",
+          "text": "The lender can't take an item back early. The borrower can return it early once 3 days has elapsed."
+        },
+        {
+          "type": "heading",
+          "text": "Inventory"
+        },
+        {
+          "type": "listItem",
+          "text": "Item Locking. Prevent accidental item losses by locking an item. this will prevent you from selling items."
+        },
+        {
+          "type": "listItem",
+          "text": "Inventory Ordering. Drag items in your inventory or bank to put them in whatever order you like. Your layout is saved, and your inventory and bank are kept separate. On mobile, press and hold an item to start dragging."
+        },
+        {
+          "type": "listItem",
+          "text": "Inventory Sorting. Sort by date, quality, quantity, type, value or name, and reverse the order if you like. The default sort uses your own layout."
+        },
+        {
+          "type": "listItem",
+          "text": "Inventory grid or table view. Pick whichever suits you."
+        },
+        {
+          "type": "listItem",
+          "text": "Multi-select. Select a batch of items and deposit, withdraw, sell or lock them all at once."
+        },
+        {
+          "type": "heading",
+          "text": "Slayer"
+        },
+        {
+          "type": "listItem",
+          "text": "Guild Slayer. Team up with your guild and complete contracts together."
+        },
+        {
+          "type": "listItem",
+          "text": "Contracts generated from guilds can only be contributed by members in the guild at the time of generation."
+        },
+        {
+          "type": "listItem",
+          "text": "We've increased shard rewards for slayer contracts by up to 20%."
+        },
+        {
+          "type": "listItem",
+          "text": "Added per-enemy slayer leaderboards."
+        },
+        {
+          "type": "listItem",
+          "text": "Added slayer boost to shrine tier 3."
+        },
+        {
+          "type": "listItem",
+          "text": "Added slayer icon to enemy list when a contract is active"
+        },
+        {
+          "type": "heading",
+          "text": "A more consistent UI"
+        },
+        {
+          "type": "paragraph",
+          "text": "Many pages have been redesigned so they share the same look and layout:"
+        },
+        {
+          "type": "listItem",
+          "text": "Profile. Metrics, Museum and Effects are now tabs on your profile instead of separate pages and pop-ups. You can equip skins and backgrounds straight from the museum."
+        },
+        {
+          "type": "listItem",
+          "text": "Effects. Filter your active effects, and cancel ones you no longer want."
+        },
+        {
+          "type": "listItem",
+          "text": "Redesigns. Guilds, leaderboards, the daily reward panel and the token shop all got a fresh look."
+        },
+        {
+          "type": "listItem",
+          "text": "Housing. House upgrades can now be filtered and sorted."
+        },
+        {
+          "type": "heading",
+          "text": "Mobile Web App"
+        },
+        {
+          "type": "listItem",
+          "text": "Menu sheet. A new Menu button in the bottom navigation opens a sheet you can swipe away."
+        },
+        {
+          "type": "listItem",
+          "text": "Character switching. Tap your avatar to switch characters without leaving the page you're on."
+        },
+        {
+          "type": "listItem",
+          "text": "You can re-enable the old mobile menu via settings by enabling \"Classic Mobile Menu\""
+        },
+        {
+          "type": "heading",
+          "text": "Meditation Scroll Changes"
+        },
+        {
+          "type": "listItem",
+          "text": "Writing a Guidance Scroll now takes 90 minutes, up from 60, due to the following changes."
+        },
+        {
+          "type": "listItem",
+          "text": "Given scrolls no longer are stored in the receivers inventory. They go to the receiver’s pending list, which they can open from the Guidance Scroll button on their own profile."
+        },
+        {
+          "type": "listItem",
+          "text": "Receivers can accept a scroll whenever they’re ready, and the boosts start at that moment. Scrolls can’t be accepted while guidance boosts are already active."
+        },
+        {
+          "type": "listItem",
+          "text": "Receivers can also give a scroll back. It returns to the giver’s inventory."
+        },
+        {
+          "type": "listItem",
+          "text": "Pending scrolls expire if they aren’t accepted within 180 days."
+        },
+        {
+          "type": "listItem",
+          "text": "Players can hold 1 pending scroll, or 3 with a membership."
+        },
+        {
+          "type": "listItem",
+          "text": "When giving a scroll, you can now charge the cost of a Blank Scroll (currently 60,000 gold). The receiver pays it when they accept, and the gold goes straight to you with no tax."
+        },
+        {
+          "type": "listItem",
+          "text": "The receiver now needs a total level of 100."
+        },
+        {
+          "type": "listItem",
+          "text": "Givers get a notification when their scroll is accepted or given back."
+        },
+        {
+          "type": "heading",
+          "text": "An Improved Tutorial"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each tutorial is now a short slideshow of a few steps, with its own animated illustrations showing how things work. You'll see logs being chopped, potions being brewed and battles playing out. Each step sticks to one idea, so you can take it in at a glance and get back to playing. You can move back and forth between steps at your own pace."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you skipped through a tutorial or want to see them again, you can reset the tutorial from Settings > Account . Each one will show up again as you visit each area."
+        },
+        {
+          "type": "heading",
+          "text": "New Classes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Four new skilling classes have joined the roster:"
+        },
+        {
+          "type": "listItem",
+          "text": "Alchemist for Alchemy"
+        },
+        {
+          "type": "listItem",
+          "text": "Blacksmith for Forge"
+        },
+        {
+          "type": "listItem",
+          "text": "Builder for Construction"
+        },
+        {
+          "type": "listItem",
+          "text": "Monk for Meditation"
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "The global search now remembers your recent searches."
+        },
+        {
+          "type": "listItem",
+          "text": "Trading between alts is now much more seamless and can be processed in a single button."
+        },
+        {
+          "type": "listItem",
+          "text": "You can now save your food choices when battling."
+        },
+        {
+          "type": "listItem",
+          "text": "A new mythic pet - Shardback - is now available in the celestial exchange."
+        },
+        {
+          "type": "listItem",
+          "text": "A flashing indicator now appears for promo codes when one is available that you have not yet seen."
+        },
+        {
+          "type": "listItem",
+          "text": "There is now a flashing indicator on auctions and giveaways when there is a new auction you have not yet seen."
+        },
+        {
+          "type": "listItem",
+          "text": "Auctions now have a minimum price of 1m gold."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved the auction UI to display the item more prominently."
+        },
+        {
+          "type": "listItem",
+          "text": "On receiving a guidance scroll, the name is now clickable within the notification."
+        },
+        {
+          "type": "listItem",
+          "text": "Significantly reduced the frequency of the bot verification screen."
+        },
+        {
+          "type": "listItem",
+          "text": "We've made significant adjustments to the risk system. You should notice that some trades may be less affected by the risk system."
+        },
+        {
+          "type": "listItem",
+          "text": "Post subscriptions are now completely disabled for giveaway posts."
+        },
+        {
+          "type": "listItem",
+          "text": "Added \"Enter all\" button for giveaways."
+        },
+        {
+          "type": "listItem",
+          "text": "Added new warning box when you cannot enter giveaways."
+        },
+        {
+          "type": "listItem",
+          "text": "Add party roles with ability to generate slayer tasks."
+        },
+        {
+          "type": "listItem",
+          "text": "Added component ordering to houses."
+        },
+        {
+          "type": "listItem",
+          "text": "Added multi-select to battling."
+        },
+        {
+          "type": "listItem",
+          "text": "Minimum level requirement for skills now only applies to the main character."
+        },
+        {
+          "type": "listItem",
+          "text": "Removed latest posts from stats tab on tavern."
+        },
+        {
+          "type": "listItem",
+          "text": "Leaving a guild now has a 24 hour cooldown from the moment of leaving instead of joining."
+        },
+        {
+          "type": "listItem",
+          "text": "Region conquest rewards have been increased by approximately 50%."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the list of bonuses to the conquest screen."
+        },
+        {
+          "type": "listItem",
+          "text": "\"Login in Apple\" has been enabled for iOS devices. Please ensure that your iOS app has been updated to the latest version."
+        },
+        {
+          "type": "paragraph",
+          "text": "Bug Fixes"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed bug that allowed you to bid under the reserved price when it is known."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the special item on the market."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed risk threshold bug when adding just gold to trades."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "This is a big update, so here's a quick rundown of the good stuff you might be interested in!"
+            },
+            {
+              "type": "listItem",
+              "text": "Forge Lessons - Pick some materials, start a lesson, and earn Forge EXP. Fill up your temper bar to get shards. Simple!"
+            },
+            {
+              "type": "listItem",
+              "text": "Forge Recipe Changes - No more fish in recipes (finally!), plus some higher level requirements."
+            },
+            {
+              "type": "listItem",
+              "text": "UI Changes - Just open the game and have a look for yourself. You'll see!"
+            },
+            {
+              "type": "listItem",
+              "text": "Item Loaning - Loan items directly to other players without having to mess around with trades."
+            },
+            {
+              "type": "listItem",
+              "text": "Inventory QoL - Item ordering, locking, and a bunch of other handy improvements."
+            },
+            {
+              "type": "listItem",
+              "text": "Guild Slayer - Team up with your guild and tackle Slayer together!"
+            },
+            {
+              "type": "listItem",
+              "text": "Regional Conquests - Rewards have been increased by around 50% ."
+            },
+            {
+              "type": "listItem",
+              "text": "Slayer Shards - Rewards have been bumped up by around 20%."
+            },
+            {
+              "type": "listItem",
+              "text": "New Mythic Pet - Say hello to Shardback!"
+            },
+            {
+              "type": "listItem",
+              "text": "Meditation Scrolls - Pay directly without trading, have up to 3 pending at once, and it no longer takes up an inventory slot."
+            },
+            {
+              "type": "listItem",
+              "text": "New Classes - Alchemist, Blacksmith, Builder, and Monk have joined the party."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved Tutorial - We've given the tutorial some love. Even if you're a veteran, you can check it out by restarting it in your settings."
+            },
+            {
+              "type": "paragraph",
+              "text": "Want to read the full list of changes?"
+            }
+          ]
+        },
+        {
+          "heading": "Forge",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Forge Lessons"
+            },
+            {
+              "type": "listItem",
+              "text": "Forge now has a Lessons tab. Pick some materials, start a lesson, and your character spends that time practising. You don't get gear out of it. You get Forge EXP, plus some Strength EXP."
+            },
+            {
+              "type": "listItem",
+              "text": "Lessons accept ores, metal bars, logs and crafting materials."
+            },
+            {
+              "type": "listItem",
+              "text": "Materials close to your Forge level teach best. Materials you've outgrown are marked as \"too basic\", and ones well beyond your level are marked \"too advanced\". Both teach more slowly, which stops lessons being used to power level with top-tier materials."
+            },
+            {
+              "type": "listItem",
+              "text": "Rare battle drops teach faster, but are used up faster too."
+            },
+            {
+              "type": "listItem",
+              "text": "You can cancel at any time. You keep the EXP you've earned so far, and any materials you didn't use go back to your inventory."
+            },
+            {
+              "type": "listItem",
+              "text": "Lessons fill your Temper bar."
+            },
+            {
+              "type": "listItem",
+              "text": "As the bar fills, it stores up shards, which you can claim whenever you like. The fuller the bar, the better the payout, so it pays to let it build. Once it's full, it stops filling, and you'll need to claim it before it resets. You'll get a notification when it's full and again shortly before it resets."
+            },
+            {
+              "type": "paragraph",
+              "text": "Forge Recipe Changes"
+            },
+            {
+              "type": "listItem",
+              "text": "Higher-level recipes now take much longer to forge, but each craft gives far more EXP."
+            },
+            {
+              "type": "listItem",
+              "text": "Fish are gone from forge recipes. They have been replaced with metal bars."
+            },
+            {
+              "type": "listItem",
+              "text": "The Forge recipe list also has a type filter and loads in pages, so it's much easier to find what you're after."
+            },
+            {
+              "type": "listItem",
+              "text": "On top of that, we've also adjusted the level requirements for mythic recipes. We don’t feel that being able to craft mythics at level 90, when that isn’t even halfway through the skill, really fits with the progression we’re aiming for."
+            }
+          ]
+        },
+        {
+          "heading": "Living, breathing skills",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "All primary skills now each have their own animated scene at the top of the page. While you're skilling, your character is right there doing the work. They swing an axe at a tree, chip away at a rock, cast a line and wait for a bite, or hammer away at the anvil. Tap the scene and your character takes a swing."
+            },
+            {
+              "type": "paragraph",
+              "text": "Other players nearby now appear in your scene. If someone else is chopping wood in the same area as you, you'll see them floating in their own bubble in the background. Your own characters show first, then your party, then your guild, so the people you know are easy to spot."
+            },
+            {
+              "type": "paragraph",
+              "text": "Tap someone's bubble to see what they're up to. You can watch their scene play out, see what they're gathering, how far along they are, how much EXP each item gives and when the next one lands. You can jump to their profile from there too."
+            },
+            {
+              "type": "paragraph",
+              "text": "If you'd rather keep to yourself, you still can either hide your action by turning off \" Display Active Action\" or hide yourself completely by appearing offline."
+            }
+          ]
+        },
+        {
+          "heading": "Item Loaning",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "You can now lend your equipment to other players."
+            },
+            {
+              "type": "paragraph",
+              "text": "Until now, lending gear meant trading it away and hoping you'd get it back. Item loaning removes that risk. Choose an item, a player and how long they can borrow it for. When the time is up, it comes straight back to you."
+            },
+            {
+              "type": "paragraph",
+              "text": "A borrowed item is yours to use, not yours to keep. You can equip it and move it between your inventory and bank, but you can't sell, trade, upgrade or lend it on. Borrowed items show a Loaned badge so they're easy to tell apart."
+            },
+            {
+              "type": "paragraph",
+              "text": "The lender can't take an item back early. The borrower can return it early once 3 days has elapsed."
+            }
+          ]
+        },
+        {
+          "heading": "Inventory",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Item Locking. Prevent accidental item losses by locking an item. this will prevent you from selling items."
+            },
+            {
+              "type": "listItem",
+              "text": "Inventory Ordering. Drag items in your inventory or bank to put them in whatever order you like. Your layout is saved, and your inventory and bank are kept separate. On mobile, press and hold an item to start dragging."
+            },
+            {
+              "type": "listItem",
+              "text": "Inventory Sorting. Sort by date, quality, quantity, type, value or name, and reverse the order if you like. The default sort uses your own layout."
+            },
+            {
+              "type": "listItem",
+              "text": "Inventory grid or table view. Pick whichever suits you."
+            },
+            {
+              "type": "listItem",
+              "text": "Multi-select. Select a batch of items and deposit, withdraw, sell or lock them all at once."
+            }
+          ]
+        },
+        {
+          "heading": "Slayer",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Guild Slayer. Team up with your guild and complete contracts together."
+            },
+            {
+              "type": "listItem",
+              "text": "Contracts generated from guilds can only be contributed by members in the guild at the time of generation."
+            },
+            {
+              "type": "listItem",
+              "text": "We've increased shard rewards for slayer contracts by up to 20%."
+            },
+            {
+              "type": "listItem",
+              "text": "Added per-enemy slayer leaderboards."
+            },
+            {
+              "type": "listItem",
+              "text": "Added slayer boost to shrine tier 3."
+            },
+            {
+              "type": "listItem",
+              "text": "Added slayer icon to enemy list when a contract is active"
+            }
+          ]
+        },
+        {
+          "heading": "A more consistent UI",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Many pages have been redesigned so they share the same look and layout:"
+            },
+            {
+              "type": "listItem",
+              "text": "Profile. Metrics, Museum and Effects are now tabs on your profile instead of separate pages and pop-ups. You can equip skins and backgrounds straight from the museum."
+            },
+            {
+              "type": "listItem",
+              "text": "Effects. Filter your active effects, and cancel ones you no longer want."
+            },
+            {
+              "type": "listItem",
+              "text": "Redesigns. Guilds, leaderboards, the daily reward panel and the token shop all got a fresh look."
+            },
+            {
+              "type": "listItem",
+              "text": "Housing. House upgrades can now be filtered and sorted."
+            }
+          ]
+        },
+        {
+          "heading": "Mobile Web App",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Menu sheet. A new Menu button in the bottom navigation opens a sheet you can swipe away."
+            },
+            {
+              "type": "listItem",
+              "text": "Character switching. Tap your avatar to switch characters without leaving the page you're on."
+            },
+            {
+              "type": "listItem",
+              "text": "You can re-enable the old mobile menu via settings by enabling \"Classic Mobile Menu\""
+            }
+          ]
+        },
+        {
+          "heading": "Meditation Scroll Changes",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Writing a Guidance Scroll now takes 90 minutes, up from 60, due to the following changes."
+            },
+            {
+              "type": "listItem",
+              "text": "Given scrolls no longer are stored in the receivers inventory. They go to the receiver’s pending list, which they can open from the Guidance Scroll button on their own profile."
+            },
+            {
+              "type": "listItem",
+              "text": "Receivers can accept a scroll whenever they’re ready, and the boosts start at that moment. Scrolls can’t be accepted while guidance boosts are already active."
+            },
+            {
+              "type": "listItem",
+              "text": "Receivers can also give a scroll back. It returns to the giver’s inventory."
+            },
+            {
+              "type": "listItem",
+              "text": "Pending scrolls expire if they aren’t accepted within 180 days."
+            },
+            {
+              "type": "listItem",
+              "text": "Players can hold 1 pending scroll, or 3 with a membership."
+            },
+            {
+              "type": "listItem",
+              "text": "When giving a scroll, you can now charge the cost of a Blank Scroll (currently 60,000 gold). The receiver pays it when they accept, and the gold goes straight to you with no tax."
+            },
+            {
+              "type": "listItem",
+              "text": "The receiver now needs a total level of 100."
+            },
+            {
+              "type": "listItem",
+              "text": "Givers get a notification when their scroll is accepted or given back."
+            }
+          ]
+        },
+        {
+          "heading": "An Improved Tutorial",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each tutorial is now a short slideshow of a few steps, with its own animated illustrations showing how things work. You'll see logs being chopped, potions being brewed and battles playing out. Each step sticks to one idea, so you can take it in at a glance and get back to playing. You can move back and forth between steps at your own pace."
+            },
+            {
+              "type": "paragraph",
+              "text": "If you skipped through a tutorial or want to see them again, you can reset the tutorial from Settings > Account . Each one will show up again as you visit each area."
+            }
+          ]
+        },
+        {
+          "heading": "New Classes",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Four new skilling classes have joined the roster:"
+            },
+            {
+              "type": "listItem",
+              "text": "Alchemist for Alchemy"
+            },
+            {
+              "type": "listItem",
+              "text": "Blacksmith for Forge"
+            },
+            {
+              "type": "listItem",
+              "text": "Builder for Construction"
+            },
+            {
+              "type": "listItem",
+              "text": "Monk for Meditation"
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "The global search now remembers your recent searches."
+            },
+            {
+              "type": "listItem",
+              "text": "Trading between alts is now much more seamless and can be processed in a single button."
+            },
+            {
+              "type": "listItem",
+              "text": "You can now save your food choices when battling."
+            },
+            {
+              "type": "listItem",
+              "text": "A new mythic pet - Shardback - is now available in the celestial exchange."
+            },
+            {
+              "type": "listItem",
+              "text": "A flashing indicator now appears for promo codes when one is available that you have not yet seen."
+            },
+            {
+              "type": "listItem",
+              "text": "There is now a flashing indicator on auctions and giveaways when there is a new auction you have not yet seen."
+            },
+            {
+              "type": "listItem",
+              "text": "Auctions now have a minimum price of 1m gold."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved the auction UI to display the item more prominently."
+            },
+            {
+              "type": "listItem",
+              "text": "On receiving a guidance scroll, the name is now clickable within the notification."
+            },
+            {
+              "type": "listItem",
+              "text": "Significantly reduced the frequency of the bot verification screen."
+            },
+            {
+              "type": "listItem",
+              "text": "We've made significant adjustments to the risk system. You should notice that some trades may be less affected by the risk system."
+            },
+            {
+              "type": "listItem",
+              "text": "Post subscriptions are now completely disabled for giveaway posts."
+            },
+            {
+              "type": "listItem",
+              "text": "Added \"Enter all\" button for giveaways."
+            },
+            {
+              "type": "listItem",
+              "text": "Added new warning box when you cannot enter giveaways."
+            },
+            {
+              "type": "listItem",
+              "text": "Add party roles with ability to generate slayer tasks."
+            },
+            {
+              "type": "listItem",
+              "text": "Added component ordering to houses."
+            },
+            {
+              "type": "listItem",
+              "text": "Added multi-select to battling."
+            },
+            {
+              "type": "listItem",
+              "text": "Minimum level requirement for skills now only applies to the main character."
+            },
+            {
+              "type": "listItem",
+              "text": "Removed latest posts from stats tab on tavern."
+            },
+            {
+              "type": "listItem",
+              "text": "Leaving a guild now has a 24 hour cooldown from the moment of leaving instead of joining."
+            },
+            {
+              "type": "listItem",
+              "text": "Region conquest rewards have been increased by approximately 50%."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the list of bonuses to the conquest screen."
+            },
+            {
+              "type": "listItem",
+              "text": "\"Login in Apple\" has been enabled for iOS devices. Please ensure that your iOS app has been updated to the latest version."
+            },
+            {
+              "type": "paragraph",
+              "text": "Bug Fixes"
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed bug that allowed you to bid under the reserved price when it is known."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the special item on the market."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed risk threshold bug when adding just gold to trades."
+            }
+          ]
+        }
+      ],
+      "bodyText": "This is a big update, so here's a quick rundown of the good stuff you might be interested in!\nForge Lessons - Pick some materials, start a lesson, and earn Forge EXP. Fill up your temper bar to get shards. Simple!\nForge Recipe Changes - No more fish in recipes (finally!), plus some higher level requirements.\nUI Changes - Just open the game and have a look for yourself. You'll see!\nItem Loaning - Loan items directly to other players without having to mess around with trades.\nInventory QoL - Item ordering, locking, and a bunch of other handy improvements.\nGuild Slayer - Team up with your guild and tackle Slayer together!\nRegional Conquests - Rewards have been increased by around 50% .\nSlayer Shards - Rewards have been bumped up by around 20%.\nNew Mythic Pet - Say hello to Shardback!\nMeditation Scrolls - Pay directly without trading, have up to 3 pending at once, and it no longer takes up an inventory slot.\nNew Classes - Alchemist, Blacksmith, Builder, and Monk have joined the party.\nImproved Tutorial - We've given the tutorial some love. Even if you're a veteran, you can check it out by restarting it in your settings.\nWant to read the full list of changes?\nForge\nForge Lessons\nForge now has a Lessons tab. Pick some materials, start a lesson, and your character spends that time practising. You don't get gear out of it. You get Forge EXP, plus some Strength EXP.\nLessons accept ores, metal bars, logs and crafting materials.\nMaterials close to your Forge level teach best. Materials you've outgrown are marked as \"too basic\", and ones well beyond your level are marked \"too advanced\". Both teach more slowly, which stops lessons being used to power level with top-tier materials.\nRare battle drops teach faster, but are used up faster too.\nYou can cancel at any time. You keep the EXP you've earned so far, and any materials you didn't use go back to your inventory.\nLessons fill your Temper bar.\nAs the bar fills, it stores up shards, which you can claim whenever you like. The fuller the bar, the better the payout, so it pays to let it build. Once it's full, it stops filling, and you'll need to claim it before it resets. You'll get a notification when it's full and again shortly before it resets.\nForge Recipe Changes\nHigher-level recipes now take much longer to forge, but each craft gives far more EXP.\nFish are gone from forge recipes. They have been replaced with metal bars.\nThe Forge recipe list also has a type filter and loads in pages, so it's much easier to find what you're after.\nOn top of that, we've also adjusted the level requirements for mythic recipes. We don’t feel that being able to craft mythics at level 90, when that isn’t even halfway through the skill, really fits with the progression we’re aiming for.\nLiving, breathing skills\nAll primary skills now each have their own animated scene at the top of the page. While you're skilling, your character is right there doing the work. They swing an axe at a tree, chip away at a rock, cast a line and wait for a bite, or hammer away at the anvil. Tap the scene and your character takes a swing.\nOther players nearby now appear in your scene. If someone else is chopping wood in the same area as you, you'll see them floating in their own bubble in the background. Your own characters show first, then your party, then your guild, so the people you know are easy to spot.\nTap someone's bubble to see what they're up to. You can watch their scene play out, see what they're gathering, how far along they are, how much EXP each item gives and when the next one lands. You can jump to their profile from there too.\nIf you'd rather keep to yourself, you still can either hide your action by turning off \" Display Active Action\" or hide yourself completely by appearing offline.\nItem Loaning\nYou can now lend your equipment to other players.\nUntil now, lending gear meant trading it away and hoping you'd get it back. Item loaning removes that risk. Choose an item, a player and how long they can borrow it for. When the time is up, it comes straight back to you.\nA borrowed item is yours to use, not yours to keep. You can equip it and move it between your inventory and bank, but you can't sell, trade, upgrade or lend it on. Borrowed items show a Loaned badge so they're easy to tell apart.\nThe lender can't take an item back early. The borrower can return it early once 3 days has elapsed.\nInventory\nItem Locking. Prevent accidental item losses by locking an item. this will prevent you from selling items.\nInventory Ordering. Drag items in your inventory or bank to put them in whatever order you like. Your layout is saved, and your inventory and bank are kept separate. On mobile, press and hold an item to start dragging.\nInventory Sorting. Sort by date, quality, quantity, type, value or name, and reverse the order if you like. The default sort uses your own layout.\nInventory grid or table view. Pick whichever suits you.\nMulti-select. Select a batch of items and deposit, withdraw, sell or lock them all at once.\nSlayer\nGuild Slayer. Team up with your guild and complete contracts together.\nContracts generated from guilds can only be contributed by members in the guild at the time of generation.\nWe've increased shard rewards for slayer contracts by up to 20%.\nAdded per-enemy slayer leaderboards.\nAdded slayer boost to shrine tier 3.\nAdded slayer icon to enemy list when a contract is active\nA more consistent UI\nMany pages have been redesigned so they share the same look and layout:\nProfile. Metrics, Museum and Effects are now tabs on your profile instead of separate pages and pop-ups. You can equip skins and backgrounds straight from the museum.\nEffects. Filter your active effects, and cancel ones you no longer want.\nRedesigns. Guilds, leaderboards, the daily reward panel and the token shop all got a fresh look.\nHousing. House upgrades can now be filtered and sorted.\nMobile Web App\nMenu sheet. A new Menu button in the bottom navigation opens a sheet you can swipe away.\nCharacter switching. Tap your avatar to switch characters without leaving the page you're on.\nYou can re-enable the old mobile menu via settings by enabling \"Classic Mobile Menu\"\nMeditation Scroll Changes\nWriting a Guidance Scroll now takes 90 minutes, up from 60, due to the following changes.\nGiven scrolls no longer are stored in the receivers inventory. They go to the receiver’s pending list, which they can open from the Guidance Scroll button on their own profile.\nReceivers can accept a scroll whenever they’re ready, and the boosts start at that moment. Scrolls can’t be accepted while guidance boosts are already active.\nReceivers can also give a scroll back. It returns to the giver’s inventory.\nPending scrolls expire if they aren’t accepted within 180 days.\nPlayers can hold 1 pending scroll, or 3 with a membership.\nWhen giving a scroll, you can now charge the cost of a Blank Scroll (currently 60,000 gold). The receiver pays it when they accept, and the gold goes straight to you with no tax.\nThe receiver now needs a total level of 100.\nGivers get a notification when their scroll is accepted or given back.\nAn Improved Tutorial\nEach tutorial is now a short slideshow of a few steps, with its own animated illustrations showing how things work. You'll see logs being chopped, potions being brewed and battles playing out. Each step sticks to one idea, so you can take it in at a glance and get back to playing. You can move back and forth between steps at your own pace.\nIf you skipped through a tutorial or want to see them again, you can reset the tutorial from Settings > Account . Each one will show up again as you visit each area.\nNew Classes\nFour new skilling classes have joined the roster:\nAlchemist for Alchemy\nBlacksmith for Forge\nBuilder for Construction\nMonk for Meditation\nMore\nThe global search now remembers your recent searches.\nTrading between alts is now much more seamless and can be processed in a single button.\nYou can now save your food choices when battling.\nA new mythic pet - Shardback - is now available in the celestial exchange.\nA flashing indicator now appears for promo codes when one is available that you have not yet seen.\nThere is now a flashing indicator on auctions and giveaways when there is a new auction you have not yet seen.\nAuctions now have a minimum price of 1m gold.\nImproved the auction UI to display the item more prominently.\nOn receiving a guidance scroll, the name is now clickable within the notification.\nSignificantly reduced the frequency of the bot verification screen.\nWe've made significant adjustments to the risk system. You should notice that some trades may be less affected by the risk system.\nPost subscriptions are now completely disabled for giveaway posts.\nAdded \"Enter all\" button for giveaways.\nAdded new warning box when you cannot enter giveaways.\nAdd party roles with ability to generate slayer tasks.\nAdded component ordering to houses.\nAdded multi-select to battling.\nMinimum level requirement for skills now only applies to the main character.\nRemoved latest posts from stats tab on tavern.\nLeaving a guild now has a 24 hour cooldown from the moment of leaving instead of joining.\nRegion conquest rewards have been increased by approximately 50%.\nAdded the list of bonuses to the conquest screen.\n\"Login in Apple\" has been enabled for iOS devices. Please ensure that your iOS app has been updated to the latest version.\nBug Fixes\nFixed bug that allowed you to bid under the reserved price when it is known.\nFixed the special item on the market.\nFixed risk threshold bug when adding just gold to trades.",
+      "searchText": "version 0.84.0-pb - forge lessons, ui improvements, guild slayer, and much more! this is a big update, so here's a quick rundown of the good stuff you might be interested in! forge lessons - pick some materials, start a lesson, and earn forge exp. fill up your temper bar to get shards. simple! forge recipe changes - no more fish in recipes (finally!), plus some higher level requirements. ui changes - just open the game and have a look for yourself. you'll see! item loaning - loan items directly to other players without having to mess around with trades. inventory qol - item ordering, locking, and a bunch of other handy improvements. guild slayer - team up with your guild and tackle slayer together! regional conquests - rewards have been increased by around 50% . slayer shards - rewards have been bumped up by around 20%. new mythic pet - say hello to shardback! meditation scrolls - pay directly without trading, have up to 3 pending at once, and it no longer takes up an inventory slot. new classes - alchemist, blacksmith, builder, and monk have joined the party. improved tutorial - we've given the tutorial some love. even if you're a veteran, you can check it out by restarting it in your settings. want to read the full list of changes? forge forge lessons forge now has a lessons tab. pick some materials, start a lesson, and your character spends that time practising. you don't get gear out of it. you get forge exp, plus some strength exp. lessons accept ores, metal bars, logs and crafting materials. materials close to your forge level teach best. materials you've outgrown are marked as \"too basic\", and ones well beyond your level are marked \"too advanced\". both teach more slowly, which stops lessons being used to power level with top-tier materials. rare battle drops teach faster, but are used up faster too. you can cancel at any time. you keep the exp you've earned so far, and any materials you didn't use go back to your inventory. lessons fill your temper bar. as the bar fills, it stores up shards, which you can claim whenever you like. the fuller the bar, the better the payout, so it pays to let it build. once it's full, it stops filling, and you'll need to claim it before it resets. you'll get a notification when it's full and again shortly before it resets. forge recipe changes higher-level recipes now take much longer to forge, but each craft gives far more exp. fish are gone from forge recipes. they have been replaced with metal bars. the forge recipe list also has a type filter and loads in pages, so it's much easier to find what you're after. on top of that, we've also adjusted the level requirements for mythic recipes. we don’t feel that being able to craft mythics at level 90, when that isn’t even halfway through the skill, really fits with the progression we’re aiming for. living, breathing skills all primary skills now each have their own animated scene at the top of the page. while you're skilling, your character is right there doing the work. they swing an axe at a tree, chip away at a rock, cast a line and wait for a bite, or hammer away at the anvil. tap the scene and your character takes a swing. other players nearby now appear in your scene. if someone else is chopping wood in the same area as you, you'll see them floating in their own bubble in the background. your own characters show first, then your party, then your guild, so the people you know are easy to spot. tap someone's bubble to see what they're up to. you can watch their scene play out, see what they're gathering, how far along they are, how much exp each item gives and when the next one lands. you can jump to their profile from there too. if you'd rather keep to yourself, you still can either hide your action by turning off \" display active action\" or hide yourself completely by appearing offline. item loaning you can now lend your equipment to other players. until now, lending gear meant trading it away and hoping you'd get it back. item loaning removes that risk. choose an item, a player and how long they can borrow it for. when the time is up, it comes straight back to you. a borrowed item is yours to use, not yours to keep. you can equip it and move it between your inventory and bank, but you can't sell, trade, upgrade or lend it on. borrowed items show a loaned badge so they're easy to tell apart. the lender can't take an item back early. the borrower can return it early once 3 days has elapsed. inventory item locking. prevent accidental item losses by locking an item. this will prevent you from selling items. inventory ordering. drag items in your inventory or bank to put them in whatever order you like. your layout is saved, and your inventory and bank are kept separate. on mobile, press and hold an item to start dragging. inventory sorting. sort by date, quality, quantity, type, value or name, and reverse the order if you like. the default sort uses your own layout. inventory grid or table view. pick whichever suits you. multi-select. select a batch of items and deposit, withdraw, sell or lock them all at once. slayer guild slayer. team up with your guild and complete contracts together. contracts generated from guilds can only be contributed by members in the guild at the time of generation. we've increased shard rewards for slayer contracts by up to 20%. added per-enemy slayer leaderboards. added slayer boost to shrine tier 3. added slayer icon to enemy list when a contract is active a more consistent ui many pages have been redesigned so they share the same look and layout: profile. metrics, museum and effects are now tabs on your profile instead of separate pages and pop-ups. you can equip skins and backgrounds straight from the museum. effects. filter your active effects, and cancel ones you no longer want. redesigns. guilds, leaderboards, the daily reward panel and the token shop all got a fresh look. housing. house upgrades can now be filtered and sorted. mobile web app menu sheet. a new menu button in the bottom navigation opens a sheet you can swipe away. character switching. tap your avatar to switch characters without leaving the page you're on. you can re-enable the old mobile menu via settings by enabling \"classic mobile menu\" meditation scroll changes writing a guidance scroll now takes 90 minutes, up from 60, due to the following changes. given scrolls no longer are stored in the receivers inventory. they go to the receiver’s pending list, which they can open from the guidance scroll button on their own profile. receivers can accept a scroll whenever they’re ready, and the boosts start at that moment. scrolls can’t be accepted while guidance boosts are already active. receivers can also give a scroll back. it returns to the giver’s inventory. pending scrolls expire if they aren’t accepted within 180 days. players can hold 1 pending scroll, or 3 with a membership. when giving a scroll, you can now charge the cost of a blank scroll (currently 60,000 gold). the receiver pays it when they accept, and the gold goes straight to you with no tax. the receiver now needs a total level of 100. givers get a notification when their scroll is accepted or given back. an improved tutorial each tutorial is now a short slideshow of a few steps, with its own animated illustrations showing how things work. you'll see logs being chopped, potions being brewed and battles playing out. each step sticks to one idea, so you can take it in at a glance and get back to playing. you can move back and forth between steps at your own pace. if you skipped through a tutorial or want to see them again, you can reset the tutorial from settings > account . each one will show up again as you visit each area. new classes four new skilling classes have joined the roster: alchemist for alchemy blacksmith for forge builder for construction monk for meditation more the global search now remembers your recent searches. trading between alts is now much more seamless and can be processed in a single button. you can now save your food choices when battling. a new mythic pet - shardback - is now available in the celestial exchange. a flashing indicator now appears for promo codes when one is available that you have not yet seen. there is now a flashing indicator on auctions and giveaways when there is a new auction you have not yet seen. auctions now have a minimum price of 1m gold. improved the auction ui to display the item more prominently. on receiving a guidance scroll, the name is now clickable within the notification. significantly reduced the frequency of the bot verification screen. we've made significant adjustments to the risk system. you should notice that some trades may be less affected by the risk system. post subscriptions are now completely disabled for giveaway posts. added \"enter all\" button for giveaways. added new warning box when you cannot enter giveaways. add party roles with ability to generate slayer tasks. added component ordering to houses. added multi-select to battling. minimum level requirement for skills now only applies to the main character. removed latest posts from stats tab on tavern. leaving a guild now has a 24 hour cooldown from the moment of leaving instead of joining. region conquest rewards have been increased by approximately 50%. added the list of bonuses to the conquest screen. \"login in apple\" has been enabled for ios devices. please ensure that your ios app has been updated to the latest version. bug fixes fixed bug that allowed you to bid under the reserved price when it is known. fixed the special item on the market. fixed risk threshold bug when adding just gold to trades."
+    },
     {
       "id": 286,
       "version": "0.83.5-PB",
