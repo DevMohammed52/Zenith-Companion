@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-10-21T08:54:50.395Z",
+    "generatedAt": "2026-10-21T09:56:37.098Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 34,
-      "exchangeListings": 595,
+      "exchangeListings": 591,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -32142,21 +32142,26 @@
       "valuation": null,
       "exchange": {
         "petId": 23,
-        "listingCount": 4,
+        "listingCount": 5,
         "minPrice": 10000,
         "maxPrice": 18205,
         "byQuality": {
           "REFINED": {
-            "count": 4,
+            "count": 5,
             "min_price": 10000,
             "max_price": 18205,
-            "total_price": 53806,
-            "average_price": 13452
+            "total_price": 63806,
+            "average_price": 12761
           }
         },
-        "averagePrice": 13452,
-        "medianPrice": 12801,
+        "averagePrice": 12761,
+        "medianPrice": 10601,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "REFINED",
+            "price": 10000
+          },
           {
             "level": 1,
             "quality": "REFINED",
@@ -81037,36 +81042,21 @@
       },
       "exchange": {
         "petId": 15,
-        "listingCount": 10,
+        "listingCount": 7,
         "minPrice": 80000,
         "maxPrice": 131519,
         "byQuality": {
           "PREMIUM": {
-            "count": 10,
+            "count": 7,
             "min_price": 80000,
             "max_price": 131519,
-            "total_price": 910202,
-            "average_price": 91020
+            "total_price": 670202,
+            "average_price": 95743
           }
         },
-        "averagePrice": 91020,
-        "medianPrice": 86500,
+        "averagePrice": 95743,
+        "medianPrice": 90684,
         "sampleListings": [
-          {
-            "level": 61,
-            "quality": "PREMIUM",
-            "price": 80000
-          },
-          {
-            "level": 61,
-            "quality": "PREMIUM",
-            "price": 80000
-          },
-          {
-            "level": 61,
-            "quality": "PREMIUM",
-            "price": 80000
-          },
           {
             "level": 61,
             "quality": "PREMIUM",
@@ -87036,19 +87026,19 @@
       },
       "exchange": {
         "petId": 21,
-        "listingCount": 21,
+        "listingCount": 19,
         "minPrice": 60000,
         "maxPrice": 73422,
         "byQuality": {
           "PREMIUM": {
-            "count": 21,
+            "count": 19,
             "min_price": 60000,
             "max_price": 73422,
-            "total_price": 1468967,
-            "average_price": 69951
+            "total_price": 1330967,
+            "average_price": 70051
           }
         },
-        "averagePrice": 69951,
+        "averagePrice": 70051,
         "medianPrice": 70367,
         "sampleListings": [
           {
@@ -87065,16 +87055,6 @@
             "level": 47,
             "quality": "PREMIUM",
             "price": 65359
-          },
-          {
-            "level": 50,
-            "quality": "PREMIUM",
-            "price": 69000
-          },
-          {
-            "level": 50,
-            "quality": "PREMIUM",
-            "price": 69000
           },
           {
             "level": 50,
@@ -87110,6 +87090,16 @@
             "level": 62,
             "quality": "PREMIUM",
             "price": 70367
+          },
+          {
+            "level": 54,
+            "quality": "PREMIUM",
+            "price": 70617
+          },
+          {
+            "level": 68,
+            "quality": "PREMIUM",
+            "price": 73422
           }
         ]
       },
@@ -99965,8 +99955,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-21T08:54:50.370Z",
-    "listingCount": 595,
+    "fetchedAt": "2026-10-21T09:56:37.084Z",
+    "listingCount": 591,
     "speciesCount": 38,
     "pageCount": 24
   }
