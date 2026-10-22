@@ -1,45 +1,342 @@
 {
   "meta": {
-    "generatedAt": "2026-10-22T09:21:45.725Z",
+    "generatedAt": "2026-10-22T20:00:39.078Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 284,
-    "totalFetched": 284,
+    "totalAvailable": 285,
+    "totalFetched": 285,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 287,
+    "latestPatchId": 288,
     "oldestPatchId": 1,
-    "latestVersion": "0.84.0-PB",
+    "latestVersion": "0.85.0",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "combat": 136,
-      "pets": 110,
-      "guilds": 76,
+      "combat": 137,
+      "pets": 111,
+      "guilds": 77,
+      "economy": 137,
+      "skills": 164,
+      "items": 163,
+      "map": 67,
+      "translations": 16,
+      "mobile-ui": 109,
+      "membership": 69,
+      "bug-fixes": 205,
       "conquest": 27,
       "housing": 35,
-      "economy": 136,
       "alchemy": 44,
       "forge": 48,
-      "skills": 163,
-      "items": 162,
       "tavern": 35,
-      "mobile-ui": 108,
       "seasonal": 83,
-      "membership": 68,
-      "bug-fixes": 204,
       "world-bosses": 46,
       "hunting": 68,
-      "map": 66,
       "public-api": 20,
       "weather": 5,
-      "translations": 15,
       "dungeons": 59,
       "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 288,
+      "version": "0.85.0",
+      "title": "QoL Improvements",
+      "headline": "Version 0.85.0 - QoL Improvements",
+      "releasedAt": "2026-10-22T17:35:39",
+      "releaseLabel": "2 hours ago",
+      "releaseDateLabel": "Oct 22 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=288",
+      "categories": [
+        "combat",
+        "pets",
+        "guilds",
+        "economy",
+        "skills",
+        "items",
+        "map",
+        "translations",
+        "mobile-ui",
+        "membership",
+        "bug-fixes"
+      ],
+      "excerpt": "This update brings a bunch of new quality of life features, and significant improvements to the early game experience to help newer players join the game. Idle Time Changes Alt characters now get 4 hours or 6 hours of...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "This update brings a bunch of new quality of life features, and significant improvements to the early game experience to help newer players join the game."
+        },
+        {
+          "type": "heading",
+          "text": "Idle Time Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Alt characters now get 4 hours or 6 hours of idle time instead of 3 or 4 hours depending on membership status."
+        },
+        {
+          "type": "paragraph",
+          "text": "Market locked classes, such as Banished or Cursed, now get the same idle time as main characters even if its an alt character."
+        },
+        {
+          "type": "heading",
+          "text": "Experience Formula Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "We've noticed that new players were finding the first few levels painfully slow, making it difficult to get into the game."
+        },
+        {
+          "type": "paragraph",
+          "text": "To improve this, we've adjusted how much EXP is required to reach the early levels. Level 2 now requires significantly less EXP, with the difference gradually getting smaller until level 20, where the requirements return to exactly what they were before."
+        },
+        {
+          "type": "paragraph",
+          "text": "To be clear, this is not an EXP boost. No one will earn EXP any faster than before. We've simply changed the formula that determines how much EXP is needed for each level, making the earlier levels easier to reach. Once you reach level 20, everything remains exactly the same as before."
+        },
+        {
+          "type": "paragraph",
+          "text": "No one will lose any EXP. However, anything currently below level 20, including skills, stats, pets, and guilds, may automatically gain a few levels because of the new requirements."
+        },
+        {
+          "type": "heading",
+          "text": "Guidance Scroll Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guidance Scrolls must now be claimed within 48 hours, and claiming pays the giver straight away. Claiming doesn’t use the scroll, so you can use it any time within 30 days of claiming. Unclaimed scrolls go back to the giver. Scrolls already pending keep their current expiry date as their claim deadline."
+        },
+        {
+          "type": "heading",
+          "text": "More"
+        },
+        {
+          "type": "listItem",
+          "text": "Too many notifications? You can now hide them! Select which notifications you want to filter out by going to your character settings."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to teleport multiple pets at once."
+        },
+        {
+          "type": "listItem",
+          "text": "General UI bug fixes and improvements across the game to make the game more consistent, following the previous update. You'll notice a few changes throughout the app."
+        },
+        {
+          "type": "listItem",
+          "text": "Several improvements to the new player experience to make it easier to find your way around and explore the game without feeling overwhelmed."
+        },
+        {
+          "type": "listItem",
+          "text": "Added a checkmark to the item inspection page if an item is tradable."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the ability to purchase merchant items directly from the inspection page."
+        },
+        {
+          "type": "listItem",
+          "text": "Added the most popular items to the main merchants page."
+        },
+        {
+          "type": "listItem",
+          "text": "Improved the animation when tapping on a pet to give it a boost. We've also made it more obvious that tapping on your pet can boost it."
+        },
+        {
+          "type": "listItem",
+          "text": "Added \"What's this?\" tutorial buttons for the shrine and shooting star."
+        },
+        {
+          "type": "listItem",
+          "text": "The enemy slayer badge will be faded out once all related slayer contracts are complete."
+        },
+        {
+          "type": "listItem",
+          "text": "Added an indicator to the museum tab when a milestone is pending."
+        },
+        {
+          "type": "listItem",
+          "text": "You can now view the stats of pets directly in the museum without having to search for their eggs."
+        },
+        {
+          "type": "listItem",
+          "text": "Logging out of your game normally no longer logs you out of every device by default."
+        },
+        {
+          "type": "listItem",
+          "text": "You can now manually log out of all devices by going to your settings page and pressing \"Log out of all devices\"."
+        },
+        {
+          "type": "heading",
+          "text": "Fixes"
+        },
+        {
+          "type": "listItem",
+          "text": "Trying to select a pet group that has no pets will now display an error."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the yellow loading bar bug on apps."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed screen window spacing on the latest iOS apps with the Liquid Glass design."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the performance of the museum."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed various translation issues across the app."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "This update brings a bunch of new quality of life features, and significant improvements to the early game experience to help newer players join the game."
+            }
+          ]
+        },
+        {
+          "heading": "Idle Time Changes",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Alt characters now get 4 hours or 6 hours of idle time instead of 3 or 4 hours depending on membership status."
+            },
+            {
+              "type": "paragraph",
+              "text": "Market locked classes, such as Banished or Cursed, now get the same idle time as main characters even if its an alt character."
+            }
+          ]
+        },
+        {
+          "heading": "Experience Formula Changes",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We've noticed that new players were finding the first few levels painfully slow, making it difficult to get into the game."
+            },
+            {
+              "type": "paragraph",
+              "text": "To improve this, we've adjusted how much EXP is required to reach the early levels. Level 2 now requires significantly less EXP, with the difference gradually getting smaller until level 20, where the requirements return to exactly what they were before."
+            },
+            {
+              "type": "paragraph",
+              "text": "To be clear, this is not an EXP boost. No one will earn EXP any faster than before. We've simply changed the formula that determines how much EXP is needed for each level, making the earlier levels easier to reach. Once you reach level 20, everything remains exactly the same as before."
+            },
+            {
+              "type": "paragraph",
+              "text": "No one will lose any EXP. However, anything currently below level 20, including skills, stats, pets, and guilds, may automatically gain a few levels because of the new requirements."
+            }
+          ]
+        },
+        {
+          "heading": "Guidance Scroll Changes",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Guidance Scrolls must now be claimed within 48 hours, and claiming pays the giver straight away. Claiming doesn’t use the scroll, so you can use it any time within 30 days of claiming. Unclaimed scrolls go back to the giver. Scrolls already pending keep their current expiry date as their claim deadline."
+            }
+          ]
+        },
+        {
+          "heading": "More",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Too many notifications? You can now hide them! Select which notifications you want to filter out by going to your character settings."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to teleport multiple pets at once."
+            },
+            {
+              "type": "listItem",
+              "text": "General UI bug fixes and improvements across the game to make the game more consistent, following the previous update. You'll notice a few changes throughout the app."
+            },
+            {
+              "type": "listItem",
+              "text": "Several improvements to the new player experience to make it easier to find your way around and explore the game without feeling overwhelmed."
+            },
+            {
+              "type": "listItem",
+              "text": "Added a checkmark to the item inspection page if an item is tradable."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the ability to purchase merchant items directly from the inspection page."
+            },
+            {
+              "type": "listItem",
+              "text": "Added the most popular items to the main merchants page."
+            },
+            {
+              "type": "listItem",
+              "text": "Improved the animation when tapping on a pet to give it a boost. We've also made it more obvious that tapping on your pet can boost it."
+            },
+            {
+              "type": "listItem",
+              "text": "Added \"What's this?\" tutorial buttons for the shrine and shooting star."
+            },
+            {
+              "type": "listItem",
+              "text": "The enemy slayer badge will be faded out once all related slayer contracts are complete."
+            },
+            {
+              "type": "listItem",
+              "text": "Added an indicator to the museum tab when a milestone is pending."
+            },
+            {
+              "type": "listItem",
+              "text": "You can now view the stats of pets directly in the museum without having to search for their eggs."
+            },
+            {
+              "type": "listItem",
+              "text": "Logging out of your game normally no longer logs you out of every device by default."
+            },
+            {
+              "type": "listItem",
+              "text": "You can now manually log out of all devices by going to your settings page and pressing \"Log out of all devices\"."
+            }
+          ]
+        },
+        {
+          "heading": "Fixes",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Trying to select a pet group that has no pets will now display an error."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the yellow loading bar bug on apps."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed screen window spacing on the latest iOS apps with the Liquid Glass design."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the performance of the museum."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed various translation issues across the app."
+            }
+          ]
+        }
+      ],
+      "bodyText": "This update brings a bunch of new quality of life features, and significant improvements to the early game experience to help newer players join the game.\nIdle Time Changes\nAlt characters now get 4 hours or 6 hours of idle time instead of 3 or 4 hours depending on membership status.\nMarket locked classes, such as Banished or Cursed, now get the same idle time as main characters even if its an alt character.\nExperience Formula Changes\nWe've noticed that new players were finding the first few levels painfully slow, making it difficult to get into the game.\nTo improve this, we've adjusted how much EXP is required to reach the early levels. Level 2 now requires significantly less EXP, with the difference gradually getting smaller until level 20, where the requirements return to exactly what they were before.\nTo be clear, this is not an EXP boost. No one will earn EXP any faster than before. We've simply changed the formula that determines how much EXP is needed for each level, making the earlier levels easier to reach. Once you reach level 20, everything remains exactly the same as before.\nNo one will lose any EXP. However, anything currently below level 20, including skills, stats, pets, and guilds, may automatically gain a few levels because of the new requirements.\nGuidance Scroll Changes\nGuidance Scrolls must now be claimed within 48 hours, and claiming pays the giver straight away. Claiming doesn’t use the scroll, so you can use it any time within 30 days of claiming. Unclaimed scrolls go back to the giver. Scrolls already pending keep their current expiry date as their claim deadline.\nMore\nToo many notifications? You can now hide them! Select which notifications you want to filter out by going to your character settings.\nAdded the ability to teleport multiple pets at once.\nGeneral UI bug fixes and improvements across the game to make the game more consistent, following the previous update. You'll notice a few changes throughout the app.\nSeveral improvements to the new player experience to make it easier to find your way around and explore the game without feeling overwhelmed.\nAdded a checkmark to the item inspection page if an item is tradable.\nAdded the ability to purchase merchant items directly from the inspection page.\nAdded the most popular items to the main merchants page.\nImproved the animation when tapping on a pet to give it a boost. We've also made it more obvious that tapping on your pet can boost it.\nAdded \"What's this?\" tutorial buttons for the shrine and shooting star.\nThe enemy slayer badge will be faded out once all related slayer contracts are complete.\nAdded an indicator to the museum tab when a milestone is pending.\nYou can now view the stats of pets directly in the museum without having to search for their eggs.\nLogging out of your game normally no longer logs you out of every device by default.\nYou can now manually log out of all devices by going to your settings page and pressing \"Log out of all devices\".\nFixes\nTrying to select a pet group that has no pets will now display an error.\nFixed the yellow loading bar bug on apps.\nFixed screen window spacing on the latest iOS apps with the Liquid Glass design.\nFixed the performance of the museum.\nFixed various translation issues across the app.",
+      "searchText": "version 0.85.0 - qol improvements this update brings a bunch of new quality of life features, and significant improvements to the early game experience to help newer players join the game. idle time changes alt characters now get 4 hours or 6 hours of idle time instead of 3 or 4 hours depending on membership status. market locked classes, such as banished or cursed, now get the same idle time as main characters even if its an alt character. experience formula changes we've noticed that new players were finding the first few levels painfully slow, making it difficult to get into the game. to improve this, we've adjusted how much exp is required to reach the early levels. level 2 now requires significantly less exp, with the difference gradually getting smaller until level 20, where the requirements return to exactly what they were before. to be clear, this is not an exp boost. no one will earn exp any faster than before. we've simply changed the formula that determines how much exp is needed for each level, making the earlier levels easier to reach. once you reach level 20, everything remains exactly the same as before. no one will lose any exp. however, anything currently below level 20, including skills, stats, pets, and guilds, may automatically gain a few levels because of the new requirements. guidance scroll changes guidance scrolls must now be claimed within 48 hours, and claiming pays the giver straight away. claiming doesn’t use the scroll, so you can use it any time within 30 days of claiming. unclaimed scrolls go back to the giver. scrolls already pending keep their current expiry date as their claim deadline. more too many notifications? you can now hide them! select which notifications you want to filter out by going to your character settings. added the ability to teleport multiple pets at once. general ui bug fixes and improvements across the game to make the game more consistent, following the previous update. you'll notice a few changes throughout the app. several improvements to the new player experience to make it easier to find your way around and explore the game without feeling overwhelmed. added a checkmark to the item inspection page if an item is tradable. added the ability to purchase merchant items directly from the inspection page. added the most popular items to the main merchants page. improved the animation when tapping on a pet to give it a boost. we've also made it more obvious that tapping on your pet can boost it. added \"what's this?\" tutorial buttons for the shrine and shooting star. the enemy slayer badge will be faded out once all related slayer contracts are complete. added an indicator to the museum tab when a milestone is pending. you can now view the stats of pets directly in the museum without having to search for their eggs. logging out of your game normally no longer logs you out of every device by default. you can now manually log out of all devices by going to your settings page and pressing \"log out of all devices\". fixes trying to select a pet group that has no pets will now display an error. fixed the yellow loading bar bug on apps. fixed screen window spacing on the latest ios apps with the liquid glass design. fixed the performance of the museum. fixed various translation issues across the app."
+    },
     {
       "id": 287,
       "version": "0.84.0-PB",
@@ -1226,7 +1523,7 @@
       "title": "Tavern Improvements",
       "headline": "Version 0.83.2-PB - Tavern Improvements",
       "releasedAt": "2026-09-24T12:02:15",
-      "releaseLabel": "3 weeks ago",
+      "releaseLabel": "4 weeks ago",
       "releaseDateLabel": "Sep 24 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=282",
