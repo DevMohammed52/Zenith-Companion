@@ -1,19 +1,21 @@
 {
   "meta": {
-    "generatedAt": "2026-10-23T09:17:43.484Z",
+    "generatedAt": "2026-10-23T19:56:13.524Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 285,
-    "totalFetched": 285,
+    "totalAvailable": 286,
+    "totalFetched": 286,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 288,
+    "latestPatchId": 289,
     "oldestPatchId": 1,
-    "latestVersion": "0.85.0",
+    "latestVersion": "0.86.0-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "combat": 137,
+      "combat": 138,
+      "dungeons": 60,
+      "seasonal": 84,
       "pets": 111,
       "guilds": 77,
       "economy": 137,
@@ -29,24 +31,74 @@
       "alchemy": 44,
       "forge": 48,
       "tavern": 35,
-      "seasonal": 83,
       "world-bosses": 46,
       "hunting": 68,
       "public-api": 20,
       "weather": 5,
-      "dungeons": 59,
       "quests": 10
     },
     "note": "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
     {
+      "id": 289,
+      "version": "0.86.0-PB",
+      "title": "🎃 Eve of Shadows",
+      "headline": "Version 0.86.0-PB - 🎃 Eve of Shadows",
+      "releasedAt": "2026-10-23T13:04:55",
+      "releaseLabel": "6 hours ago",
+      "releaseDateLabel": "Oct 23 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=289",
+      "categories": [
+        "combat",
+        "dungeons",
+        "seasonal"
+      ],
+      "excerpt": "The 🎃 Eve of Shadows event is now live! Head over to Wraithwood Forest to pick pumpkins, catch ghosts, explore unique dungeons, and compete for seasonal contest rewards! We've also made a few changes to the campaign...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "The 🎃 Eve of Shadows event is now live! Head over to Wraithwood Forest to pick pumpkins, catch ghosts, explore unique dungeons, and compete for seasonal contest rewards!"
+        },
+        {
+          "type": "paragraph",
+          "text": "We've also made a few changes to the campaign page, including a more interactive contest battle! You can now walk around and tap on any targets that pop up. Nothing too major, just a little something to make it more interactive!"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first contest battle begins 30 minutes after the event starts, so make sure to choose a team and get prepared!"
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The 🎃 Eve of Shadows event is now live! Head over to Wraithwood Forest to pick pumpkins, catch ghosts, explore unique dungeons, and compete for seasonal contest rewards!"
+            },
+            {
+              "type": "paragraph",
+              "text": "We've also made a few changes to the campaign page, including a more interactive contest battle! You can now walk around and tap on any targets that pop up. Nothing too major, just a little something to make it more interactive!"
+            },
+            {
+              "type": "paragraph",
+              "text": "The first contest battle begins 30 minutes after the event starts, so make sure to choose a team and get prepared!"
+            }
+          ]
+        }
+      ],
+      "bodyText": "The 🎃 Eve of Shadows event is now live! Head over to Wraithwood Forest to pick pumpkins, catch ghosts, explore unique dungeons, and compete for seasonal contest rewards!\nWe've also made a few changes to the campaign page, including a more interactive contest battle! You can now walk around and tap on any targets that pop up. Nothing too major, just a little something to make it more interactive!\nThe first contest battle begins 30 minutes after the event starts, so make sure to choose a team and get prepared!",
+      "searchText": "version 0.86.0-pb - 🎃 eve of shadows the 🎃 eve of shadows event is now live! head over to wraithwood forest to pick pumpkins, catch ghosts, explore unique dungeons, and compete for seasonal contest rewards! we've also made a few changes to the campaign page, including a more interactive contest battle! you can now walk around and tap on any targets that pop up. nothing too major, just a little something to make it more interactive! the first contest battle begins 30 minutes after the event starts, so make sure to choose a team and get prepared!"
+    },
+    {
       "id": 288,
       "version": "0.85.0",
       "title": "QoL Improvements",
       "headline": "Version 0.85.0 - QoL Improvements",
       "releasedAt": "2026-10-22T17:35:39",
-      "releaseLabel": "15 hours ago",
+      "releaseLabel": "1 day ago",
       "releaseDateLabel": "Oct 22 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=288",
@@ -1446,7 +1498,7 @@
       "title": "Improvements",
       "headline": "Version 0.83.3-PB - Improvements",
       "releasedAt": "2026-09-25T14:44:54",
-      "releaseLabel": "3 weeks ago",
+      "releaseLabel": "4 weeks ago",
       "releaseDateLabel": "Sep 25 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=283",
