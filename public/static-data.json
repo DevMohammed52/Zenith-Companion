@@ -1848,6 +1848,102 @@
           "chance": 75.9
         }
       ]
+    },
+    {
+      "id": 57,
+      "name": "Crypt Stalker",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQCZEE2A4ND1VV0FCGTJ1WQ.png",
+      "level": 1,
+      "experience": 3,
+      "health": 23,
+      "chance_of_loot": 20,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 3
+        },
+        {
+          "hashed_item_id": "1vlVrzjLrWGMQao8mGKM",
+          "name": "Pumpkin",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/x7rGxCzU7FP4uF5Qt3UfEJ3jR5trSb-metacHVtcGtpbiAyLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 97
+        }
+      ],
+      "_source": "live_enemies_api"
+    },
+    {
+      "id": 58,
+      "name": "Phantom Lurker",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQD0E70WGYCKQ0HYZZCBTBF.png",
+      "level": 30,
+      "experience": 17,
+      "health": 259,
+      "chance_of_loot": 22,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 5
+        },
+        {
+          "hashed_item_id": "1vlVrzjLrWGMQao8mGKM",
+          "name": "Pumpkin",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/x7rGxCzU7FP4uF5Qt3UfEJ3jR5trSb-metacHVtcGtpbiAyLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 95
+        }
+      ],
+      "_source": "live_enemies_api"
+    },
+    {
+      "id": 59,
+      "name": "Hellfire Brute",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQD2023YWESA6F03DQQ3PQ3.png",
+      "level": 65,
+      "experience": 35,
+      "health": 544,
+      "chance_of_loot": 24,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 10
+        },
+        {
+          "hashed_item_id": "1vlVrzjLrWGMQao8mGKM",
+          "name": "Pumpkin",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/x7rGxCzU7FP4uF5Qt3UfEJ3jR5trSb-metacHVtcGtpbiAyLnBuZw==-.png",
+          "quality": "STANDARD",
+          "quantity": 1,
+          "chance": 90
+        }
+      ],
+      "_source": "live_enemies_api"
     }
   ],
   "dungeons": [
@@ -4442,6 +4538,106 @@
           "dungeoneering": 105084
         }
       }
+    },
+    {
+      "id": 22,
+      "name": "Pumpkin Hollow",
+      "description": "A haunted forest filled with twisted, glowing pumpkins and creeping vines. Shadows dance between the trees, and eerie laughter echoes through the air. Dark magic lingers, drawing in those brave enough to explore its depths.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBPKX70W9VXH030HDWVGH2.png",
+      "level_required": 25,
+      "difficulty": 100,
+      "length": 7200000,
+      "cost": 2500,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 80
+        },
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 19.98
+        },
+        {
+          "hashed_item_id": "jlPA8v9NM9aRNEyMe2Oa",
+          "name": "Nightwood Broom",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GIwh1zbetIfQYyfCVLwQc7H7GgvbTvG88M0BHOfj.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.02
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 828,
+          "dungeoneering": 5400,
+          "shadow-mastery": 828
+        }
+      },
+      "_source": "live_dungeons_api"
+    },
+    {
+      "id": 23,
+      "name": "Wickedroot Patch",
+      "description": "An overgrown field of cursed pumpkins and tangled, thorny vines. The ground pulses with dark energy, and the air is thick with an unnatural fog. Strange, twisted creatures lurk among the twisted roots, guarding the sinister secrets buried within.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQC9727C8JT96E8ATJJDNX3.png",
+      "level_required": 75,
+      "difficulty": 850,
+      "length": 7200000,
+      "cost": 10000,
+      "shards": 40,
+      "completion_requirement": 50,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 69.9
+        },
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "jlPA8v9NM9aRNEyMe2Oa",
+          "name": "Nightwood Broom",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GIwh1zbetIfQYyfCVLwQc7H7GgvbTvG88M0BHOfj.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1800,
+          "dungeoneering": 15120,
+          "shadow-mastery": 1800
+        }
+      },
+      "_source": "live_dungeons_api"
     }
   ],
   "world_bosses": [
@@ -4575,8 +4771,8 @@
         }
       ],
       "status": "READY_FOR_LOBBY",
-      "battle_starts_at": "2026-10-23T12:20:46+00:00",
-      "battle_ends_at": "2026-10-23T12:44:06+00:00"
+      "battle_starts_at": "2026-10-24T04:45:07+00:00",
+      "battle_ends_at": "2026-10-24T05:08:27+00:00"
     },
     {
       "id": 3,
@@ -4660,9 +4856,9 @@
           "chance": 56
         }
       ],
-      "status": "IN_PROGRESS",
-      "battle_starts_at": "2026-10-23T11:36:15+00:00",
-      "battle_ends_at": "2026-10-23T11:51:15+00:00"
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-10-23T22:52:17+00:00",
+      "battle_ends_at": "2026-10-23T23:07:17+00:00"
     },
     {
       "id": 7,
@@ -4708,8 +4904,8 @@
         }
       ],
       "status": "READY_FOR_LOBBY",
-      "battle_starts_at": "2026-10-23T13:35:40+00:00",
-      "battle_ends_at": "2026-10-23T13:55:40+00:00"
+      "battle_starts_at": "2026-10-24T03:56:40+00:00",
+      "battle_ends_at": "2026-10-24T04:16:40+00:00"
     },
     {
       "id": 2,
@@ -4953,6 +5149,86 @@
       "status": "READY_FOR_LOBBY",
       "battle_starts_at": "2026-10-23T15:10:28+00:00",
       "battle_ends_at": "2026-10-23T15:35:28+00:00"
+    },
+    {
+      "id": 15,
+      "name": "Mortem",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQE4G1TZBF99BFEEXT0DG13.png",
+      "level": 60,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 25,
+          "chance": 29.8
+        },
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 25,
+          "chance": 70
+        },
+        {
+          "hashed_item_id": "AB1E9poQqZErNnakeJj5",
+          "name": "The Looking Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/XWXH2SrCHxZBpmZF4Bjbdvga8gAJEzSaufVmBNMv.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.2
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-10-23T15:53:27+00:00",
+      "battle_ends_at": "2026-10-23T15:54:47+00:00",
+      "_source": "live_world_boss_api"
+    },
+    {
+      "id": 18,
+      "name": "Wickerjack",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01K7PAAQVYVRFYWBQXMEPD4A79.png",
+      "level": 10,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 10,
+          "chance": 19.95
+        },
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 10,
+          "chance": 80
+        },
+        {
+          "hashed_item_id": "AB1E9poQqZErNnakeJj5",
+          "name": "The Looking Glass",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/XWXH2SrCHxZBpmZF4Bjbdvga8gAJEzSaufVmBNMv.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.05
+        }
+      ],
+      "status": "READY_FOR_LOBBY",
+      "battle_starts_at": "2026-10-23T17:53:36+00:00",
+      "battle_ends_at": "2026-10-23T17:54:56+00:00",
+      "_source": "live_world_boss_api"
     }
   ]
 }

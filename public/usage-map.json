@@ -6529,6 +6529,98 @@
     "required_for": [],
     "shops": []
   },
+  "Cursed Ticket (Untradable)": {
+    "dropped_by": [
+      {
+        "type": "ENEMY",
+        "name": "Crypt Stalker",
+        "chance": 3,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "ENEMY",
+        "name": "Phantom Lurker",
+        "chance": 5,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "ENEMY",
+        "name": "Hellfire Brute",
+        "chance": 10,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "DUNGEON",
+        "name": "Pumpkin Hollow",
+        "chance": 80,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "DUNGEON",
+        "name": "Wickedroot Patch",
+        "chance": 69.9,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "BOSS",
+        "name": "Mortem",
+        "chance": 70,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "BOSS",
+        "name": "Wickerjack",
+        "chance": 80,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      }
+    ],
+    "required_for": [],
+    "shops": []
+  },
+  "Pumpkin": {
+    "dropped_by": [
+      {
+        "type": "ENEMY",
+        "name": "Crypt Stalker",
+        "chance": 97,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "ENEMY",
+        "name": "Phantom Lurker",
+        "chance": 95,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "ENEMY",
+        "name": "Hellfire Brute",
+        "chance": 90,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      }
+    ],
+    "required_for": [],
+    "shops": []
+  },
   "Improved Fishing Rod Recipe": {
     "dropped_by": [
       {
@@ -11810,6 +11902,66 @@
       }
     ]
   },
+  "Cursed Ticket": {
+    "dropped_by": [
+      {
+        "type": "DUNGEON",
+        "name": "Pumpkin Hollow",
+        "chance": 19.98,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "DUNGEON",
+        "name": "Wickedroot Patch",
+        "chance": 30,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "BOSS",
+        "name": "Mortem",
+        "chance": 29.8,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "BOSS",
+        "name": "Wickerjack",
+        "chance": 19.95,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      }
+    ],
+    "required_for": [],
+    "shops": []
+  },
+  "Nightwood Broom": {
+    "dropped_by": [
+      {
+        "type": "DUNGEON",
+        "name": "Pumpkin Hollow",
+        "chance": 0.02,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "DUNGEON",
+        "name": "Wickedroot Patch",
+        "chance": 0.1,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      }
+    ],
+    "required_for": [],
+    "shops": []
+  },
   "Fluffy Egg": {
     "dropped_by": [
       {
@@ -12384,6 +12536,28 @@
         "location": "The Citadel",
         "location_id": 10,
         "location_key": "the-citadel"
+      }
+    ],
+    "required_for": [],
+    "shops": []
+  },
+  "The Looking Glass": {
+    "dropped_by": [
+      {
+        "type": "BOSS",
+        "name": "Mortem",
+        "chance": 0.2,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
+      },
+      {
+        "type": "BOSS",
+        "name": "Wickerjack",
+        "chance": 0.05,
+        "location": "Wraithwood Forest",
+        "location_id": 11,
+        "location_key": "wraithwood-forest"
       }
     ],
     "required_for": [],
@@ -24689,17 +24863,7 @@
     "required_for": [],
     "shops": []
   },
-  "Cursed Ticket": {
-    "dropped_by": [],
-    "required_for": [],
-    "shops": []
-  },
   "Cursed Ticket (2024)": {
-    "dropped_by": [],
-    "required_for": [],
-    "shops": []
-  },
-  "Cursed Ticket (Untradable)": {
     "dropped_by": [],
     "required_for": [],
     "shops": []
@@ -24890,11 +25054,6 @@
     "shops": []
   },
   "Pink Paint Brush (2025)": {
-    "dropped_by": [],
-    "required_for": [],
-    "shops": []
-  },
-  "Pumpkin": {
     "dropped_by": [],
     "required_for": [],
     "shops": []
