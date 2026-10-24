@@ -135,7 +135,7 @@ export const CLASS_DATA = [
   {
     id: "Alchemist",
     category: "Skill",
-    icon: "",
+    icon: "https://cdn.idle-mmo.com/cdn-cgi/image/width=100/uploaded/skins/01M3HW3QFMGFDPBFYK8AS3X36A.png",
     summary: "Alchemy class.",
     effects: ["+10% Alchemy Efficiency", "+10% Alchemy Experience"],
     notes: ["No battle talents."],
@@ -144,7 +144,7 @@ export const CLASS_DATA = [
   {
     id: "Blacksmith",
     category: "Skill",
-    icon: "",
+    icon: "https://cdn.idle-mmo.com/cdn-cgi/image/width=100/uploaded/skins/01M3HW3FC686DQVC3KV7BMM36K.png",
     summary: "Forge class.",
     effects: ["+10% Forge Efficiency", "+10% Forge Experience"],
     notes: ["No battle talents."],
@@ -153,7 +153,7 @@ export const CLASS_DATA = [
   {
     id: "Builder",
     category: "Skill",
-    icon: "",
+    icon: "https://cdn.idle-mmo.com/cdn-cgi/image/width=100/uploaded/skins/01M3HW395D2NVHV85T1GABQ0EN.png",
     summary: "Construction class.",
     effects: ["+10% Construction Efficiency", "+10% Construction Experience"],
     notes: ["No battle talents."],
@@ -162,7 +162,7 @@ export const CLASS_DATA = [
   {
     id: "Monk",
     category: "Skill",
-    icon: "",
+    icon: "https://cdn.idle-mmo.com/cdn-cgi/image/width=100/uploaded/skins/01M3HW311PD7KG83DPAZBRXWAY.png",
     summary: "Meditation class.",
     effects: ["+10% Meditation Efficiency", "+10% Meditation Experience"],
     notes: ["No battle talents."],

@@ -72,7 +72,7 @@ describe("Skilling Classes (v0.84.0-PB) Rework Verification Contracts", () => {
   });
 
   describe("Gate 2: Profile Calculations & CLASS_DATA Registry", () => {
-    it("contains all 4 new classes in CLASS_DATA under Skill category", () => {
+    it("contains all 4 new classes in CLASS_DATA under Skill category with official CDN skin icons", () => {
       const classIds = CLASS_DATA.map((c) => c.id);
       expect(classIds).toContain("Alchemist");
       expect(classIds).toContain("Blacksmith");
@@ -82,21 +82,25 @@ describe("Skilling Classes (v0.84.0-PB) Rework Verification Contracts", () => {
       const alchemist = getClassInfo("Alchemist");
       expect(alchemist.category).toBe("Skill");
       expect(alchemist.effects).toEqual(["+10% Alchemy Efficiency", "+10% Alchemy Experience"]);
+      expect(alchemist.icon).toContain("01M3HW3QFMGFDPBFYK8AS3X36A.png");
       expect(alchemist.talents).toHaveLength(0);
 
       const blacksmith = getClassInfo("Blacksmith");
       expect(blacksmith.category).toBe("Skill");
       expect(blacksmith.effects).toEqual(["+10% Forge Efficiency", "+10% Forge Experience"]);
+      expect(blacksmith.icon).toContain("01M3HW3FC686DQVC3KV7BMM36K.png");
       expect(blacksmith.talents).toHaveLength(0);
 
       const builder = getClassInfo("Builder");
       expect(builder.category).toBe("Skill");
       expect(builder.effects).toEqual(["+10% Construction Efficiency", "+10% Construction Experience"]);
+      expect(builder.icon).toContain("01M3HW395D2NVHV85T1GABQ0EN.png");
       expect(builder.talents).toHaveLength(0);
 
       const monk = getClassInfo("Monk");
       expect(monk.category).toBe("Skill");
       expect(monk.effects).toEqual(["+10% Meditation Efficiency", "+10% Meditation Experience"]);
+      expect(monk.icon).toContain("01M3HW311PD7KG83DPAZBRXWAY.png");
       expect(monk.talents).toHaveLength(0);
     });
   });
