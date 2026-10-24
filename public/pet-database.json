@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-10-23T23:53:47.004Z",
+    "generatedAt": "2026-10-24T00:58:40.662Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 33,
-      "exchangeListings": 598,
+      "exchangeListings": 596,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -7189,26 +7189,21 @@
       "valuation": null,
       "exchange": {
         "petId": 3,
-        "listingCount": 11,
-        "minPrice": 9000,
+        "listingCount": 10,
+        "minPrice": 9400,
         "maxPrice": 650000,
         "byQuality": {
           "REFINED": {
-            "count": 11,
-            "min_price": 9000,
+            "count": 10,
+            "min_price": 9400,
             "max_price": 650000,
-            "total_price": 806750,
-            "average_price": 73341
+            "total_price": 797750,
+            "average_price": 79775
           }
         },
-        "averagePrice": 73341,
-        "medianPrice": 10000,
+        "averagePrice": 79775,
+        "medianPrice": 12250,
         "sampleListings": [
-          {
-            "level": 1,
-            "quality": "REFINED",
-            "price": 9000
-          },
           {
             "level": 1,
             "quality": "REFINED",
@@ -19373,20 +19368,20 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 94,
+        "listingCount": 93,
         "minPrice": 5000,
         "maxPrice": 55000,
         "byQuality": {
           "STANDARD": {
-            "count": 94,
+            "count": 93,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 616257,
-            "average_price": 6556
+            "total_price": 611257,
+            "average_price": 6573
           }
         },
-        "averagePrice": 6556,
-        "medianPrice": 5075,
+        "averagePrice": 6573,
+        "medianPrice": 5083,
         "sampleListings": [
           {
             "level": 1,
@@ -99922,8 +99917,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-23T23:53:46.980Z",
-    "listingCount": 598,
+    "fetchedAt": "2026-10-24T00:58:40.642Z",
+    "listingCount": 596,
     "speciesCount": 38,
     "pageCount": 24
   }
