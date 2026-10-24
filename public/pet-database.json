@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-10-24T21:13:32.844Z",
+    "generatedAt": "2026-10-24T22:21:02.619Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 36,
-      "exchangeListings": 600,
+      "exchangeListings": 598,
       "exchangeSpecies": 41
     },
     "sources": [
@@ -7432,30 +7432,25 @@
       },
       "exchange": {
         "petId": 4,
-        "listingCount": 2,
+        "listingCount": 1,
         "minPrice": 3000000,
-        "maxPrice": 3500000,
+        "maxPrice": 3000000,
         "byQuality": {
           "LEGENDARY": {
-            "count": 2,
+            "count": 1,
             "min_price": 3000000,
-            "max_price": 3500000,
-            "total_price": 6500000,
-            "average_price": 3250000
+            "max_price": 3000000,
+            "total_price": 3000000,
+            "average_price": 3000000
           }
         },
-        "averagePrice": 3250000,
-        "medianPrice": 3250000,
+        "averagePrice": 3000000,
+        "medianPrice": 3000000,
         "sampleListings": [
           {
             "level": 1,
             "quality": "LEGENDARY",
             "price": 3000000
-          },
-          {
-            "level": 90,
-            "quality": "LEGENDARY",
-            "price": 3500000
           }
         ]
       },
@@ -50427,26 +50422,21 @@
       },
       "exchange": {
         "petId": 13,
-        "listingCount": 2,
-        "minPrice": 1600000,
+        "listingCount": 1,
+        "minPrice": 2222222,
         "maxPrice": 2222222,
         "byQuality": {
           "LEGENDARY": {
-            "count": 2,
-            "min_price": 1600000,
+            "count": 1,
+            "min_price": 2222222,
             "max_price": 2222222,
-            "total_price": 3822222,
-            "average_price": 1911111
+            "total_price": 2222222,
+            "average_price": 2222222
           }
         },
-        "averagePrice": 1911111,
-        "medianPrice": 1911111,
+        "averagePrice": 2222222,
+        "medianPrice": 2222222,
         "sampleListings": [
-          {
-            "level": 78,
-            "quality": "LEGENDARY",
-            "price": 1600000
-          },
           {
             "level": 85,
             "quality": "LEGENDARY",
@@ -100041,8 +100031,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-24T21:13:32.823Z",
-    "listingCount": 600,
+    "fetchedAt": "2026-10-24T22:21:02.600Z",
+    "listingCount": 598,
     "speciesCount": 41,
     "pageCount": 24
   }
