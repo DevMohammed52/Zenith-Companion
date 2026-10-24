@@ -213,3 +213,112 @@ export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "
 
   return { request, addEstimated, stats };
 }
+
+export async function searchItems({ query, type, page = 1, apiKey } = {}) {
+  const resolvedApiKey = apiKey || readApiKey();
+  if (!resolvedApiKey) {
+    throw new Error("IDLEMMO_API_KEY is required to search items.");
+  }
+  const url = new URL(`${BASE_URL}/item/search`);
+  if (query) url.searchParams.set("query", String(query));
+  if (type) url.searchParams.set("type", String(type));
+  if (page) url.searchParams.set("page", String(page));
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${resolvedApiKey}`,
+      Accept: "application/json",
+      "User-Agent": "ZenithCompanion/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Item search failed with HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
+
+export async function checkAuth({ apiKey } = {}) {
+  const resolvedApiKey = apiKey || readApiKey();
+  if (!resolvedApiKey) {
+    throw new Error("IDLEMMO_API_KEY is required to check auth.");
+  }
+  const response = await fetch(`${BASE_URL}/auth/check`, {
+    headers: {
+      Authorization: `Bearer ${resolvedApiKey}`,
+      Accept: "application/json",
+      "User-Agent": "ZenithCompanion/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Auth check failed with HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchGuildActivity({ guildId, page = 1, characterHashedId, apiKey } = {}) {
+  const resolvedApiKey = apiKey || readApiKey();
+  if (!resolvedApiKey) {
+    throw new Error("IDLEMMO_API_KEY is required to fetch guild activity.");
+  }
+  const url = new URL(`${BASE_URL}/guild/${encodeURIComponent(guildId)}/activity`);
+  if (page) url.searchParams.set("page", String(page));
+  if (characterHashedId) url.searchParams.set("character_hashed_id", String(characterHashedId));
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${resolvedApiKey}`,
+      Accept: "application/json",
+      "User-Agent": "ZenithCompanion/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Guild activity fetch failed with HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchCharacterEffects({ characterHash, apiKey } = {}) {
+  const resolvedApiKey = apiKey || readApiKey();
+  if (!resolvedApiKey) {
+    throw new Error("IDLEMMO_API_KEY is required to fetch character effects.");
+  }
+  const response = await fetch(`${BASE_URL}/character/${encodeURIComponent(characterHash)}/effects`, {
+    headers: {
+      Authorization: `Bearer ${resolvedApiKey}`,
+      Accept: "application/json",
+      "User-Agent": "ZenithCompanion/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Character effects fetch failed with HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
+
+export async function fetchCharacterCurrentAction({ characterHash, apiKey } = {}) {
+  const resolvedApiKey = apiKey || readApiKey();
+  if (!resolvedApiKey) {
+    throw new Error("IDLEMMO_API_KEY is required to fetch character current action.");
+  }
+  const response = await fetch(`${BASE_URL}/character/${encodeURIComponent(characterHash)}/current-action`, {
+    headers: {
+      Authorization: `Bearer ${resolvedApiKey}`,
+      Accept: "application/json",
+      "User-Agent": "ZenithCompanion/1.0",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Character current action fetch failed with HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  return await response.json();
+}
