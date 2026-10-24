@@ -2,3 +2,4 @@
 
 * **Forge**: Updated all forge recipes to use metal bars instead of fish, and aligned mythic craft level requirements (levels 90–96).
 * **Classes**: Added support for Alchemist, Blacksmith, Builder, and Monk classes across profile import and skill calculations.
+* **Conquest**: Updated regional conquest assault buffs to reflect the 50% reward increase (up to +25% EXP and +5% Efficiency).

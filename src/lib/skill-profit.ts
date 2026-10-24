@@ -164,7 +164,7 @@ export function isFixedBuyPriceItem(name: string) {
   return getMerchantBuyPrice(name) > 0;
 }
 
-export type AssaultRank = "none" | "first" | "second" | "third" | "fourthSeventh" | "eighthTenth";
+export type AssaultRank = "none" | "first" | "second" | "third" | "fourth" | "fifthSeventh" | "fourthSeventh" | "eighthTenth";
 export type ToolSkill = "Woodcutting" | "Mining" | "Fishing";
 export type ToolSelections = Record<ToolSkill, string>;
 
@@ -336,11 +336,13 @@ export const ASCENSION_BUFFS = [
 
 const ASSAULT_BUFFS: Record<AssaultRank, { exp: number; efficiency: number; label: string }> = {
   none: { exp: 0, efficiency: 0, label: "No conquest buff" },
-  first: { exp: 15, efficiency: 3, label: "1st Place (+15% EXP, +3% Eff)" },
-  second: { exp: 10, efficiency: 3, label: "2nd Place (+10% EXP, +3% Eff)" },
-  third: { exp: 8, efficiency: 3, label: "3rd Place (+8% EXP, +3% Eff)" },
-  fourthSeventh: { exp: 6, efficiency: 2, label: "4th-7th (+6% EXP, +2% Eff)" },
-  eighthTenth: { exp: 2, efficiency: 1, label: "8th-10th (+2% EXP, +1% Eff)" },
+  first: { exp: 25, efficiency: 5, label: "1st Place (+25% EXP, +5% Eff)" },
+  second: { exp: 17, efficiency: 5, label: "2nd Place (+17% EXP, +5% Eff)" },
+  third: { exp: 13, efficiency: 5, label: "3rd Place (+13% EXP, +5% Eff)" },
+  fourth: { exp: 10, efficiency: 3, label: "4th Place (+10% EXP, +3% Eff)" },
+  fifthSeventh: { exp: 7, efficiency: 3, label: "5th-7th (+7% EXP, +3% Eff)" },
+  fourthSeventh: { exp: 7, efficiency: 3, label: "5th-7th (+7% EXP, +3% Eff)" },
+  eighthTenth: { exp: 3, efficiency: 2, label: "8th-10th (+3% EXP, +2% Eff)" },
 };
 
 export function getAssaultBuff(rank: AssaultRank | null | undefined) {
@@ -372,10 +374,12 @@ function getClassSkillEffect(settings: SkillProfitSettings, skill?: SkillName | 
   return { exp: 0, efficiency: 0 };
 }
 
-export const ASSAULT_OPTIONS = Object.entries(ASSAULT_BUFFS).map(([value, config]) => ({
-  value: value as AssaultRank,
-  label: config.label,
-}));
+export const ASSAULT_OPTIONS = Object.entries(ASSAULT_BUFFS)
+  .filter(([value]) => value !== "fourthSeventh")
+  .map(([value, config]) => ({
+    value: value as AssaultRank,
+    label: config.label,
+  }));
 
 const gatheringRecipes: SkillRecipe[] = [
   ...[

@@ -57,7 +57,7 @@ import {
   type PetDatabaseRecord,
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
-import { ASSAULT_OPTIONS, type AssaultRank } from "@/lib/skill-profit";
+import { ASSAULT_OPTIONS, getAssaultBuff, type AssaultRank } from "@/lib/skill-profit";
 import { calculateHousingBuffs, canUseHousingGuestAccess, formatHours, getHousingActivityLabel } from "@/lib/housing";
 import {
   formatProfileBackupAge,
@@ -2373,7 +2373,7 @@ export default function ProfilesPage() {
                 placeholder="Select conquest buff"
                 selected={{
                   id: profile.boosts.conquestRank,
-                  title: ASSAULT_OPTIONS.find((option) => option.value === profile.boosts.conquestRank)?.label || "No conquest buff",
+                  title: ASSAULT_OPTIONS.find((option) => option.value === profile.boosts.conquestRank)?.label || getAssaultBuff(profile.boosts.conquestRank).label,
                   subtitle: "Alchemy efficiency and tax effects",
                   searchText: profile.boosts.conquestRank,
                   value: profile.boosts.conquestRank,

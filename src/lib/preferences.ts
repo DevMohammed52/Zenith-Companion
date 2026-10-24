@@ -78,6 +78,8 @@ const VALID_ASSAULT_RANKS = new Set<AssaultRank>([
   "first",
   "second",
   "third",
+  "fourth",
+  "fifthSeventh",
   "fourthSeventh",
   "eighthTenth",
 ]);

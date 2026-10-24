@@ -124,11 +124,12 @@ const SORT_LABELS: Record<SkillProfitSortKey, string> = {
 
 const CONQUEST_PICKER_OPTIONS: Array<{ value: AssaultRank; label: string; hint: string }> = [
   { value: "none", label: "No conquest", hint: "No profile buff" },
-  { value: "first", label: "1st place", hint: "+15% EXP, +3% Eff" },
-  { value: "second", label: "2nd place", hint: "+10% EXP, +3% Eff" },
-  { value: "third", label: "3rd place", hint: "+8% EXP, +3% Eff" },
-  { value: "fourthSeventh", label: "4th-7th", hint: "+6% EXP, +2% Eff" },
-  { value: "eighthTenth", label: "8th-10th", hint: "+2% EXP, +1% Eff" },
+  { value: "first", label: "1st place", hint: "+25% EXP, +5% Eff" },
+  { value: "second", label: "2nd place", hint: "+17% EXP, +5% Eff" },
+  { value: "third", label: "3rd place", hint: "+13% EXP, +5% Eff" },
+  { value: "fourth", label: "4th place", hint: "+10% EXP, +3% Eff" },
+  { value: "fifthSeventh", label: "5th-7th", hint: "+7% EXP, +3% Eff" },
+  { value: "eighthTenth", label: "8th-10th", hint: "+3% EXP, +2% Eff" },
 ];
 
 const SALE_MODE_OPTIONS: Array<{ value: SaleMode; label: string; hint: string }> = [

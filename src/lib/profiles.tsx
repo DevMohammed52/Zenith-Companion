@@ -672,7 +672,7 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   if (next.boosts.barteringLevel !== "") {
     next.boosts.barteringLevel = Math.min(100, Math.max(0, Number(next.boosts.barteringLevel)));
   }
-  if (!["none", "first", "second", "third", "fourthSeventh", "eighthTenth"].includes(next.boosts.conquestRank)) {
+  if (!["none", "first", "second", "third", "fourth", "fifthSeventh", "fourthSeventh", "eighthTenth"].includes(next.boosts.conquestRank)) {
     next.boosts.conquestRank = "none";
   }
   for (const key of Object.keys(next.timers) as Array<keyof CharacterProfile["timers"]>) {
