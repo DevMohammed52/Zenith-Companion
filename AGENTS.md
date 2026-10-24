@@ -68,3 +68,10 @@ A local, indexed knowledge repository of the IdleMMO game is maintained at `.age
 * **Patch Notes**: `.agents/knowledge/idlemmo/patch-notes-summary.md` and `public/idlemmo-patch-notes.json` (280+ releases)
 * **Usage**: When reasoning about game rules, formulas, drop rates, or planned game updates, search `.agents/knowledge/idlemmo/` with `rg` rather than guessing or querying external APIs.
 
+---
+
+## 7. GitHub Workflow & API Rate Safety
+* **Pre-flight Workflow Check:** ALWAYS run gh run list --limit 5 before executing any API queries, scraper runs, or test scripts. If an automated workflow (such as Update Market, Boss, Pet & Conquest Data or Update Guild Data) is in_progress, DO NOT initiate local scraper runs or heavy API bursts to prevent:
+  1. Compounding API rate limit consumption (user key limit: 60 req/min).
+  2. Git push collisions with automated data publisher commits on main.
+* **Rate Limit Budget:** The IdleMMO API key limit is **60 requests/minute** (1 req/sec). Maintain an explicit request throttle / delay (>= 1,000ms–1,500ms) with exponential backoff on HTTP 429.
