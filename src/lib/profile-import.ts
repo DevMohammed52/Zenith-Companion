@@ -115,16 +115,23 @@ const API_STAT_TO_PROFILE_STAT: Record<string, keyof ProfilePetStats> = {
   critical_chance: "criticalChance",
 };
 
-const API_CLASS_TO_PROFILE_CLASS: Record<string, string> = {
+export const API_CLASS_TO_PROFILE_CLASS: Record<string, string> = {
   WARRIOR: "Warrior",
   SHADOWBLADE: "Shadowblade",
+  SHADOW_BLADE: "Shadowblade",
   RANGER: "Ranger",
   MINER: "Miner",
   ANGLER: "Angler",
   CHEF: "Chef",
   LUMBERJACK: "Lumberjack",
   SMELTER: "Smelter",
+  ALCHEMIST: "Alchemist",
+  BLACKSMITH: "Blacksmith",
+  BLACK_SMITH: "Blacksmith",
+  BUILDER: "Builder",
+  MONK: "Monk",
   BEASTMASTER: "Beastmaster",
+  BEAST_MASTER: "Beastmaster",
   BANISHED: "Banished",
   FORSAKEN: "Forsaken",
   CURSED: "Cursed",
@@ -132,7 +139,7 @@ const API_CLASS_TO_PROFILE_CLASS: Record<string, string> = {
 
 const LEVEL_100_EXPERIENCE = 15_878_925;
 const ASCENSION_EXPERIENCE_STEP = 1_000_000;
-const ASCENSION_SKILL_KEYS = new Set([
+export const ASCENSION_SKILL_KEYS = new Set([
   "woodcutting",
   "mining",
   "fishing",
@@ -141,6 +148,7 @@ const ASCENSION_SKILL_KEYS = new Set([
   "cooking",
   "forge",
   "construction",
+  "meditation",
   "hunting-mastery",
   "combat",
   "dungeoneering",
@@ -176,7 +184,7 @@ function mapApiSkillMap(input: unknown) {
   ]));
 }
 
-function normalizeApiClassName(value: unknown) {
+export function normalizeApiClassName(value: unknown) {
   const raw = cleanString(value, 40);
   if (!raw) return "";
   const lookupKey = raw.replace(/[\s-]+/g, "_").toUpperCase();

@@ -347,12 +347,16 @@ export function getAssaultBuff(rank: AssaultRank | null | undefined) {
   return ASSAULT_BUFFS[rank || "none"] || ASSAULT_BUFFS.none;
 }
 
-const SKILL_CLASS_EFFECTS: Record<string, { skill: SkillName; exp: number; efficiency: number }> = {
+export const SKILL_CLASS_EFFECTS: Record<string, { skill: SkillName | "Meditation"; exp: number; efficiency: number }> = {
   Miner: { skill: "Mining", exp: 10, efficiency: 10 },
   Angler: { skill: "Fishing", exp: 10, efficiency: 10 },
   Chef: { skill: "Cooking", exp: 10, efficiency: 10 },
   Lumberjack: { skill: "Woodcutting", exp: 10, efficiency: 10 },
   Smelter: { skill: "Smelting", exp: 10, efficiency: 10 },
+  Alchemist: { skill: "Alchemy", exp: 10, efficiency: 10 },
+  Blacksmith: { skill: "Forge", exp: 10, efficiency: 10 },
+  Builder: { skill: "Construction", exp: 10, efficiency: 10 },
+  Monk: { skill: "Meditation", exp: 10, efficiency: 10 },
 };
 
 const SKILL_EXP_PENALTY_CLASSES = new Set(["Cursed", "Forsaken"]);
@@ -591,7 +595,7 @@ export function getBuffTotals(settings: SkillProfitSettings, includeAscension = 
     .reduce((sum, buff) => sum + buff.value, 0) : 0;
   const assault = getAssaultBuff(settings.assaultRank);
   const classEffect = getClassSkillEffect(settings, skill);
-  const supportsClass = !skill || skill === "All" || (skill !== "Alchemy" && skill !== "Forge" && skill !== "Construction");
+  const supportsClass = true;
   const essence = skill && skill !== "All" ? settings.essenceBuffsBySkill?.[skill] : undefined;
 
   return {
