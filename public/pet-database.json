@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-10-25T06:12:26.623Z",
+    "generatedAt": "2026-10-25T07:45:31.452Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 46,
       "petsWithStats": 46,
       "petsWithEggs": 40,
       "petsWithExchangeListings": 35,
-      "exchangeListings": 598,
+      "exchangeListings": 599,
       "exchangeSpecies": 40
     },
     "sources": [
@@ -3840,20 +3840,20 @@
       "valuation": null,
       "exchange": {
         "petId": 1,
-        "listingCount": 47,
+        "listingCount": 48,
         "minPrice": 15000,
         "maxPrice": 165000,
         "byQuality": {
           "REFINED": {
-            "count": 47,
+            "count": 48,
             "min_price": 15000,
             "max_price": 165000,
-            "total_price": 2220355,
-            "average_price": 47242
+            "total_price": 2275873,
+            "average_price": 47414
           }
         },
-        "averagePrice": 47242,
-        "medianPrice": 48306,
+        "averagePrice": 47414,
+        "medianPrice": 48607,
         "sampleListings": [
           {
             "level": 1,
@@ -22449,11 +22449,11 @@
             "count": 30,
             "min_price": 10000,
             "max_price": 82000,
-            "total_price": 1001950,
-            "average_price": 33398
+            "total_price": 1001451,
+            "average_price": 33382
           }
         },
-        "averagePrice": 33398,
+        "averagePrice": 33382,
         "medianPrice": 15151,
         "sampleListings": [
           {
@@ -22502,17 +22502,17 @@
             "price": 11469
           },
           {
+            "level": 75,
+            "quality": "REFINED",
+            "price": 14500
+          },
+          {
             "level": 68,
             "quality": "REFINED",
             "price": 14999
           },
           {
             "level": 69,
-            "quality": "REFINED",
-            "price": 14999
-          },
-          {
-            "level": 75,
             "quality": "REFINED",
             "price": 14999
           }
@@ -99953,8 +99953,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-25T06:12:26.602Z",
-    "listingCount": 598,
+    "fetchedAt": "2026-10-25T07:45:31.435Z",
+    "listingCount": 599,
     "speciesCount": 40,
     "pageCount": 24
   }

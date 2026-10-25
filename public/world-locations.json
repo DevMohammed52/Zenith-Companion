@@ -1,11 +1,11 @@
 {
   "_meta": {
     "source": "/v1/world/locations/list",
-    "fetched_at": "2026-10-25T06:11:29.872Z",
-    "endpoint_updates_at": "2026-10-25T06:12:29+00:00",
+    "fetched_at": "2026-10-25T07:44:34.693Z",
+    "endpoint_updates_at": "2026-10-25T07:45:34+00:00",
     "location_count": 11
   },
-  "endpoint_updates_at": "2026-10-25T06:12:29+00:00",
+  "endpoint_updates_at": "2026-10-25T07:45:34+00:00",
   "locations": [
     {
       "id": 1,
@@ -331,16 +331,6 @@
           "day_name": "Sunday",
           "date": "25 Oct",
           "weathers": [
-            {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Sat 24 Oct, 19:43 to Sun 25 Oct, 07:43",
-              "starts_at": "2026-10-24T19:43:28+00:00",
-              "starts_at_time": "19:43",
-              "ends_at": "2026-10-25T07:43:28+00:00",
-              "buffs": []
-            },
             {
               "key": "RAIN",
               "icon": "rain",
@@ -2235,16 +2225,6 @@
           "date": "25 Oct",
           "weathers": [
             {
-              "key": "OVERCAST",
-              "icon": "overcast",
-              "name": "Overcast",
-              "window": "Sun 25 Oct, 00:43 to Sun 25 Oct, 07:43",
-              "starts_at": "2026-10-25T00:43:28+00:00",
-              "starts_at_time": "00:43",
-              "ends_at": "2026-10-25T07:43:28+00:00",
-              "buffs": []
-            },
-            {
               "key": "WINDY",
               "icon": "windy",
               "name": "Windy",
@@ -3662,27 +3642,6 @@
           "day_name": "Sunday",
           "date": "25 Oct",
           "weathers": [
-            {
-              "key": "STORM",
-              "icon": "storm",
-              "name": "Storm",
-              "window": "Sat 24 Oct, 22:43 to Sun 25 Oct, 07:43",
-              "starts_at": "2026-10-24T22:43:28+00:00",
-              "starts_at_time": "22:43",
-              "ends_at": "2026-10-25T07:43:28+00:00",
-              "buffs": [
-                "-15% Hunt Efficiency",
-                "+35% Hunting Mastery EXP",
-                "-20% Fishing Efficiency",
-                "+40% Fishing EXP",
-                "-20% Woodcutting Efficiency",
-                "+40% Woodcutting EXP",
-                "-10% Mining Efficiency",
-                "+25% Mining EXP",
-                "-10% Construction Efficiency",
-                "+25% Construction EXP"
-              ]
-            },
             {
               "key": "WINDY",
               "icon": "windy",
