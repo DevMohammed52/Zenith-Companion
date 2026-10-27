@@ -68,3 +68,12 @@ Audited against IdleMMO releases v0.72.1 through v0.86.0 (October 2026).
 - [ ] **12. Combat Queue Limit (v0.73.0)**
   - **In-Game**: Battle queue max enemies increased to 6.
   - **Affected Files**: Combat simulator
+
+- [x] **13. Reset Stone Item Database Integration (v0.81.0)**
+  - **In-Game**: Consumable item purchasable for 500 Tokens from General Goods merchant that resets one skill to level 1.
+  - **Data**: ID: yeZRGx9YjBkxYB80gWlP, Type: RESET_STONE, Quality: MYTHIC, vendor price: 0, untradable.
+  - **Affected Files**: public/all-items-db.json, public/items-map.json, public/search-index.json, public/global-search-index.json
+
+- [x] **14. World Boss Anti-Overlap Jitter Alignment (v0.81.0 / v0.83.3)**
+  - **In-Game**: World bosses that would otherwise overlap receive a random delay of 10m to 3h to prevent concurrent spawns; live API spawn timestamps already reflect this.
+  - **Affected Files**: src/app/bosses/components/WorldBossRoutinePlanner.tsx

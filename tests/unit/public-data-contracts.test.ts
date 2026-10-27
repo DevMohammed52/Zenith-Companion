@@ -309,4 +309,21 @@ describe("public JSON data contract", () => {
       expect(["canon", "inferred", "theory"]).toContain(link.confidence);
     }
   });
+
+  it("indexes Reset Stone with correct official schema in all-items-db and search-index", () => {
+    const allItems = JSON.parse(readPublicJson("all-items-db.json").raw) as Record<string, any>;
+    const resetStone = allItems["yeZRGx9YjBkxYB80gWlP"];
+    expect(resetStone).toBeDefined();
+    expect(resetStone.name).toBe("Reset Stone");
+    expect(resetStone.type).toBe("RESET_STONE");
+    expect(resetStone.quality).toBe("MYTHIC");
+    expect(resetStone.image_url).toBe("https://cdn.idle-mmo.com/uploaded/skins/01M0D7XTAFHV8QXD9G3JVF99RY.png");
+    expect(resetStone.vendor_price).toBe(0);
+    expect(resetStone.is_tradeable).toBe(false);
+
+    const searchIndex = JSON.parse(readPublicJson("search-index.json").raw) as Array<any>;
+    const searchEntry = searchIndex.find((item: any) => item.id === "yeZRGx9YjBkxYB80gWlP");
+    expect(searchEntry).toBeDefined();
+    expect(searchEntry?.name).toBe("Reset Stone");
+  });
 });

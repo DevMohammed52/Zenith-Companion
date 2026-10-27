@@ -264,7 +264,7 @@ export function WorldBossRoutinePlanner({ state }: WorldBossRoutinePlannerProps)
             {routinePlan.conflictLegs > 0 && (
                 <div className="boss-warning-box routine-warning">
                     <AlertTriangle size={16} />
-                    <p>{routinePlan.conflictLegs} selected boss window{routinePlan.conflictLegs === 1 ? "" : "s"} need timing review. Some can still be reachable after spawn; check the route timing badges.</p>
+                    <p>{routinePlan.conflictLegs} selected boss window{routinePlan.conflictLegs === 1 ? "" : "s"} need timing review. Some can still be reachable after spawn; check the route timing badges. Server anti-overlap jitter (10m–3h) applies to concurrent spawns; live timers reflect this.</p>
                 </div>
             )}
         </section>
