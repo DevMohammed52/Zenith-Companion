@@ -28,6 +28,7 @@ import {
   type CombatStyle,
   type ProfileFieldSource,
   type ProfileOwnedPet,
+  type ProfileSkillSnapshot,
   type ProfileUpdateOptions,
   useProfiles,
 } from "@/lib/profiles";
@@ -85,6 +86,26 @@ const ASCENSION_LEVEL_FIELDS = new Set<keyof CharacterProfile["levels"]>([
   "huntingMastery",
   "dungeoneering",
 ]);
+
+const SKILL_FIELDS: Array<[string, string]> = [
+  ["woodcutting", "Woodcutting"],
+  ["mining", "Mining"],
+  ["fishing", "Fishing"],
+  ["cooking", "Cooking"],
+  ["smelting", "Smelting"],
+  ["alchemy", "Alchemy"],
+  ["forge", "Forge"],
+  ["construction", "Construction"],
+];
+
+const MASTERY_FIELDS: Array<[string, string]> = [
+  ["meditation", "Meditation"],
+  ["guild-mastery", "Guild Mastery"],
+  ["shadow-mastery", "Shadow Mastery"],
+  ["lunar-mastery", "Lunar Mastery"],
+  ["springtide-mastery", "Springtide Mastery"],
+  ["yule-mastery", "Yule Mastery"],
+];
 
 const SECONDARY_FIELDS: Array<[keyof CharacterProfile["secondaryStats"], string]> = [
   ["attackPower", "Attack Power"],
@@ -1202,6 +1223,40 @@ export default function ProfilesPage() {
     } as Partial<CharacterProfile>);
   };
 
+  const getSkillInputLevel = (skillKey: string): number | "" => {
+    if (!profile?.skills) return "";
+    const entry =
+      profile.skills[skillKey] ??
+      profile.skills[skillKey.replace(/-/g, "_")] ??
+      profile.skills[skillKey.replace(/_/g, "-")];
+    return typeof entry?.level === "number" || entry?.level === "" ? entry.level : "";
+  };
+
+  const updateSkillLevel = (skillKey: string, levelValue: number | "") => {
+    if (!profile) return;
+    const currentSkills = profile.skills || {};
+    const existing =
+      currentSkills[skillKey] ??
+      currentSkills[skillKey.replace(/-/g, "_")] ??
+      currentSkills[skillKey.replace(/_/g, "-")];
+    const nextEntry: ProfileSkillSnapshot = {
+      level: levelValue,
+      experience: existing?.experience ?? "",
+    };
+    patchActive(
+      {
+        skills: {
+          ...currentSkills,
+          [skillKey]: nextEntry,
+        },
+      },
+      {
+        source: "manual",
+        fieldPaths: [`skills.${skillKey}`],
+      },
+    );
+  };
+
   useEffect(() => {
     if (!profile || !calculatedSecondary || !autoStatKey || !Object.keys(itemByName).length) return;
     if (lastAutoStatKey.current === autoStatKey) return;
@@ -2286,7 +2341,7 @@ export default function ProfilesPage() {
           <section id="profile-levels" className="profile-panel" tabIndex={-1}>
             <div className="profile-panel-heading">
               <div>
-                <h2>Levels</h2>
+                <h2>Combat & Core Levels</h2>
                 <p>Combat, Hunting Mastery, and Dungeoneering can store ascension levels above 100.</p>
               </div>
             </div>
@@ -2303,6 +2358,56 @@ export default function ProfilesPage() {
                     onChange={(value) => updateNested("levels", key, value)}
                     hint={asc ? `Ascension ${asc}` : undefined}
                     source={fieldSource(`levels.${key}`)}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="profile-panel-heading" style={{ marginTop: "1.75rem" }}>
+              <div>
+                <h2>Primary Skilling Levels</h2>
+                <p>Gathering, refining, and crafting skills. Levels can exceed 100 via ascension.</p>
+              </div>
+            </div>
+            <div className="profile-grid compact">
+              {SKILL_FIELDS.map(([key, label]) => {
+                const currentLevel = getSkillInputLevel(key);
+                const asc = typeof currentLevel === "number" && currentLevel > 100 ? currentLevel - 100 : 0;
+                return (
+                  <ProfileNumberField
+                    key={key}
+                    label={label}
+                    value={currentLevel}
+                    min={1}
+                    max={600}
+                    onChange={(value) => updateSkillLevel(key, value)}
+                    hint={asc ? `Ascension ${asc}` : undefined}
+                    source={fieldSource(`skills.${key}.level`) || fieldSource(`skills.${key}`)}
+                  />
+                );
+              })}
+            </div>
+
+            <div className="profile-panel-heading" style={{ marginTop: "1.75rem" }}>
+              <div>
+                <h2>Masteries & Special Skills</h2>
+                <p>Guild, meditation, and seasonal masteries exempt from economic penalties.</p>
+              </div>
+            </div>
+            <div className="profile-grid compact">
+              {MASTERY_FIELDS.map(([key, label]) => {
+                const currentLevel = getSkillInputLevel(key);
+                const asc = typeof currentLevel === "number" && currentLevel > 100 ? currentLevel - 100 : 0;
+                return (
+                  <ProfileNumberField
+                    key={key}
+                    label={label}
+                    value={currentLevel}
+                    min={1}
+                    max={600}
+                    onChange={(value) => updateSkillLevel(key, value)}
+                    hint={asc ? `Ascension ${asc}` : undefined}
+                    source={fieldSource(`skills.${key}.level`) || fieldSource(`skills.${key}`)}
                   />
                 );
               })}
