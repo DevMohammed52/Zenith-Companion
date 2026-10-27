@@ -23,6 +23,8 @@ import {
     DEFAULT_MOVEMENT_SPEED,
     MAX_RELEVANT_TELEPORT_LEVEL,
     buildWorldBossRoutinePlan,
+    getProfileEconomicTeleportLevel,
+    isTeleportDiscountClass,
     getRoutineBossKey,
 } from "@/lib/world-boss-routing";
 import { getProfileStorageKey } from "@/lib/profile-storage";
@@ -241,14 +243,20 @@ export function useBossState() {
         };
     }, [routineLocationOpen]);
 
-    // Apply profile default movement speed
+    // Apply profile default movement speed, economic teleport level, and class discount
     useEffect(() => {
         if (!routineSettingsLoaded || !activeProfile || profileDefaultsAppliedRef.current === activeProfile.id) return;
         if (activeProfile.secondaryStats.movementSpeed !== "" && Number(routineMovementSpeed) === DEFAULT_MOVEMENT_SPEED) {
             setRoutineMovementSpeed(clampNumber(Number(activeProfile.secondaryStats.movementSpeed), 0.1, 500));
         }
+        if (routineTeleportLevel === DEFAULT_RELEVANT_TELEPORT_LEVEL || routineTeleportLevel === "") {
+            setRoutineTeleportLevel(getProfileEconomicTeleportLevel(activeProfile));
+        }
+        if (isTeleportDiscountClass(activeProfile.className)) {
+            setRoutineClassDiscount(true);
+        }
         profileDefaultsAppliedRef.current = activeProfile.id;
-    }, [activeProfile, routineMovementSpeed, routineSettingsLoaded]);
+    }, [activeProfile, routineMovementSpeed, routineSettingsLoaded, routineTeleportLevel]);
 
     const profileWorldBossMagicFindInput = activeProfile
         ? activeProfile.magicFind.worldBoss

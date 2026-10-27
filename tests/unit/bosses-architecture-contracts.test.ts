@@ -177,7 +177,7 @@ describe("bosses architecture and modularization contracts", () => {
             expect(distance).toBe(50_451);
 
             const tpCost = calculateTeleportCost(distance!, 1_359);
-            expect(tpCost).toBe(4_066);
+            expect(tpCost).toBe(2_254);
 
             const travelSec = calculateTravelSeconds(1_000, 25);
             expect(travelSec).toBe(40);
@@ -446,9 +446,9 @@ describe("bosses architecture and modularization contracts", () => {
             const costLevel0 = calculateTeleportCost(distance, 0);
             const costLevel1359 = calculateTeleportCost(distance, DEFAULT_RELEVANT_TELEPORT_LEVEL);
 
-            // Level 0 should be base factor only: floor(50451 * (1/300)) = 168
-            expect(costLevel0).toBe(168);
-            expect(costLevel1359).toBe(4_066);
+            // Level 0 should be flat beginner floor: 50g
+            expect(costLevel0).toBe(50);
+            expect(costLevel1359).toBe(2_254);
             expect(costLevel0).toBeLessThan(costLevel1359);
         });
 

@@ -56,15 +56,154 @@ export type RoutinePlan = {
     conflictLegs: number;
 };
 
+// Legacy factors preserved for interface stability
 export const TELEPORT_BASE_FACTOR = 1 / 300;
 export const TELEPORT_LEVEL_FACTOR = 1e-6 * (86 / 999);
 export const TELEPORT_LEVEL_EXPONENT = 1.9;
+
 export const MIN_TELEPORT_ACTION_COST = 50;
-export const TELEPORT_FORMULA_LABEL = "max(50, floor(distance * (1/300 + 1e-6 * 86/999 * relevantLevel^1.9)))";
+export const TELEPORT_SOFT_CAP_LEVEL = 1500;
+export const TELEPORT_BEGINNER_FLOOR_LEVEL = 200;
+export const TELEPORT_MAX_SLOPE = 1900 / 568.594759; // 3.341571426619499 gold per coordinate unit
+export const TELEPORT_FORMULA_LABEL = "max(50, round((50 + (distanceMeters / 75) * S(economicLevel)) * (discount ? 0.5 : 1)))";
 export const DEFAULT_RELEVANT_TELEPORT_LEVEL = 1359;
-export const MAX_RELEVANT_TELEPORT_LEVEL = 2300;
+export const MAX_RELEVANT_TELEPORT_LEVEL = 2500;
 export const DEFAULT_MOVEMENT_SPEED = 25.68;
 export const BASE_MOVEMENT_SPEED = 3;
+
+/**
+ * Canonical 5 exempt skills excluded from teleportation cost (Patch 0.23.5-PB / 0.83.0-PB).
+ * These skills have no direct influence on the core economy.
+ */
+export const TELEPORT_EXEMPT_SKILL_KEYS = [
+    "guild-mastery",
+    "shadow-mastery",
+    "yule-mastery",
+    "springtide-mastery",
+    "lunar-mastery",
+] as const;
+
+/**
+ * Known world locations and their coordinate map for direct coordinate distance calculation.
+ */
+export const WORLD_LOCATION_COORDINATES: Record<string, { x: number; y: number }> = {
+    "bluebell hollow": { x: 180, y: 100 },
+    "whispering woods": { x: 500, y: 150 },
+    "eldoria": { x: 290, y: 380 },
+    "crystal caverns": { x: 650, y: 420 },
+    "skyreach peak": { x: 800, y: 500 },
+    "enchanted oasis": { x: 240, y: 770 },
+    "floating gardens of aetheria": { x: 120, y: 270 },
+    "celestial observatory": { x: 575, y: 710 },
+    "isle of whispers": { x: 170, y: 470 },
+    "the citadel": { x: 810, y: 100 },
+    "wraithwood forest": { x: 315, y: 220 },
+};
+
+/**
+ * Extracts a character profile's Economic Total Level by deducting the 5 exempt masteries.
+ */
+export function getProfileEconomicTeleportLevel(profile: {
+    levels?: { totalLevel?: number | "" };
+    skills?: Record<string, { level?: number | "" }>;
+} | null | undefined): number {
+    if (!profile) return DEFAULT_RELEVANT_TELEPORT_LEVEL;
+    const total = Number(profile.levels?.totalLevel) || 0;
+    if (total <= 0) return 0;
+
+    let exempt = 0;
+    if (profile.skills) {
+        for (const key of TELEPORT_EXEMPT_SKILL_KEYS) {
+            const skill = profile.skills[key];
+            if (skill && typeof skill.level === "number" && Number.isFinite(skill.level)) {
+                exempt += skill.level;
+            }
+        }
+    }
+    return Math.max(0, total - exempt);
+}
+
+/**
+ * Checks whether a character class qualifies for the 50% teleportation discount (Banished & Cursed).
+ */
+export function isTeleportDiscountClass(className: string | null | undefined): boolean {
+    if (!className) return false;
+    const normalized = className.trim().toLowerCase();
+    return normalized === "banished" || normalized === "cursed";
+}
+
+/**
+ * Calibrated 11 empirical anchor points combining official v0.83.0 patch notes and verified player data.
+ * Format: [Economic Total Level, Slope S (gold per coordinate unit)]
+ */
+export const TELEPORT_CURVE_ANCHORS: ReadonlyArray<readonly [number, number]> = [
+    [200, 0.000000],
+    [500, 0.640175],
+    [661, 1.181139],
+    [800, 1.762239],
+    [1000, 2.536077],
+    [1035, 2.611754],
+    [1100, 2.823107],
+    [1200, 3.051382],
+    [1344, 3.262776],
+    [1398, 3.305932],
+    [1500, 3.341571],
+] as const;
+
+// Precomputed PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) slopes
+const PCHIP_X = TELEPORT_CURVE_ANCHORS.map((p) => p[0]);
+const PCHIP_Y = TELEPORT_CURVE_ANCHORS.map((p) => p[1]);
+const PCHIP_N = PCHIP_X.length;
+const PCHIP_H: number[] = [];
+const PCHIP_DELTA: number[] = [];
+
+for (let i = 0; i < PCHIP_N - 1; i++) {
+    PCHIP_H.push(PCHIP_X[i + 1] - PCHIP_X[i]);
+    PCHIP_DELTA.push((PCHIP_Y[i + 1] - PCHIP_Y[i]) / PCHIP_H[i]);
+}
+
+const PCHIP_D: number[] = new Array(PCHIP_N).fill(0);
+PCHIP_D[0] = ((2 * PCHIP_H[0] + PCHIP_H[1]) * PCHIP_DELTA[0] - PCHIP_H[0] * PCHIP_DELTA[1]) / (PCHIP_H[0] + PCHIP_H[1]);
+if (Math.sign(PCHIP_D[0]) !== Math.sign(PCHIP_DELTA[0])) PCHIP_D[0] = 0;
+
+PCHIP_D[PCHIP_N - 1] = ((2 * PCHIP_H[PCHIP_N - 2] + PCHIP_H[PCHIP_N - 3]) * PCHIP_DELTA[PCHIP_N - 2] - PCHIP_H[PCHIP_N - 2] * PCHIP_DELTA[PCHIP_N - 3]) / (PCHIP_H[PCHIP_N - 2] + PCHIP_H[PCHIP_N - 3]);
+if (Math.sign(PCHIP_D[PCHIP_N - 1]) !== Math.sign(PCHIP_DELTA[PCHIP_N - 2])) PCHIP_D[PCHIP_N - 1] = 0;
+
+for (let i = 1; i < PCHIP_N - 1; i++) {
+    if (PCHIP_DELTA[i - 1] * PCHIP_DELTA[i] <= 0) {
+        PCHIP_D[i] = 0;
+    } else {
+        const w1 = 2 * PCHIP_H[i] + PCHIP_H[i - 1];
+        const w2 = PCHIP_H[i] + 2 * PCHIP_H[i - 1];
+        PCHIP_D[i] = (w1 + w2) / (w1 / PCHIP_DELTA[i - 1] + w2 / PCHIP_DELTA[i]);
+    }
+}
+
+/**
+ * Calculates the exact distance slope S for a given economic level using monotone cubic interpolation.
+ */
+export function calculateTeleportSlope(economicLevel: number): number {
+    const level = Math.max(0, Number(economicLevel) || 0);
+    if (level <= TELEPORT_BEGINNER_FLOOR_LEVEL) return 0;
+    if (level >= TELEPORT_SOFT_CAP_LEVEL) return TELEPORT_MAX_SLOPE;
+
+    let i = 0;
+    while (i < PCHIP_N - 2 && level > PCHIP_X[i + 1]) {
+        i++;
+    }
+
+    const dx = level - PCHIP_X[i];
+    const hi = PCHIP_H[i];
+    const t = dx / hi;
+    const t2 = t * t;
+    const t3 = t2 * t;
+    const h00 = 2 * t3 - 3 * t2 + 1;
+    const h10 = t3 - 2 * t2 + t;
+    const h01 = -2 * t3 + 3 * t2;
+    const h11 = t3 - t2;
+
+    return h00 * PCHIP_Y[i] + h10 * hi * PCHIP_D[i] + h01 * PCHIP_Y[i + 1] + h11 * hi * PCHIP_D[i + 1];
+}
 
 export const WORLD_BOSS_ROUTE_PAIRS: WorldBossRoutePair[] = [
     { origin: "Bluebell Hollow", destination: "Celestial Observatory", distanceMeters: 54504 },
@@ -125,21 +264,35 @@ function getRouteKey(origin: string, destination: string) {
     return `${origin.trim().toLowerCase()}::${destination.trim().toLowerCase()}`;
 }
 
-export function getBossRouteDistance(origin: string, destination: string) {
+export function getBossRouteDistance(origin: string, destination: string): number | null {
     if (!origin || !destination) return null;
     if (origin === destination) return 0;
-    return distanceLookup.get(getRouteKey(origin, destination)) ?? null;
+    const direct = distanceLookup.get(getRouteKey(origin, destination));
+    if (direct !== undefined) return direct;
+
+    // Coordinate fallback for unlisted locations (e.g. Wraithwood Forest / Event locations)
+    const origCoord = WORLD_LOCATION_COORDINATES[origin.trim().toLowerCase()];
+    const destCoord = WORLD_LOCATION_COORDINATES[destination.trim().toLowerCase()];
+    if (origCoord && destCoord) {
+        const dx = origCoord.x - destCoord.x;
+        const dy = origCoord.y - destCoord.y;
+        return Math.round(Math.sqrt(dx * dx + dy * dy) * 75);
+    }
+
+    return null;
 }
 
-export function calculateTeleportCost(distanceMeters: number, relevantTeleportLevel: number, classDiscount = false) {
+export function calculateTeleportCost(distanceMeters: number, relevantTeleportLevel: number, classDiscount = false): number {
     const safeDistance = Math.max(0, Number(distanceMeters) || 0);
     if (safeDistance <= 0) return 0;
 
     const safeLevel = Math.max(0, Number(relevantTeleportLevel) || 0);
-    const multiplier = classDiscount ? 0.5 : 1;
-    const teleportFactor = TELEPORT_BASE_FACTOR + TELEPORT_LEVEL_FACTOR * Math.pow(safeLevel, TELEPORT_LEVEL_EXPONENT);
-    const rawCost = Math.floor(safeDistance * teleportFactor * multiplier);
-    return Math.max(MIN_TELEPORT_ACTION_COST, rawCost);
+    const coordDist = safeDistance / 75;
+    const slope = calculateTeleportSlope(safeLevel);
+    const rawBaseCost = 50 + coordDist * slope;
+    const minCost = classDiscount ? Math.round(MIN_TELEPORT_ACTION_COST * 0.5) : MIN_TELEPORT_ACTION_COST;
+    const finalCost = classDiscount ? Math.round(rawBaseCost * 0.5) : Math.round(rawBaseCost);
+    return Math.max(minCost, finalCost);
 }
 
 export function calculateTravelSeconds(distanceMeters: number, movementSpeed: number) {

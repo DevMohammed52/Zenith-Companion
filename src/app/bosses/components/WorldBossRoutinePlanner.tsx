@@ -127,18 +127,18 @@ export function WorldBossRoutinePlanner({ state }: WorldBossRoutinePlannerProps)
                 </div>
 
                 <label className="control-group">
-                    <span className="control-label">Relevant TL</span>
+                    <span className="control-label">Economic TL</span>
                     <input
-                        aria-label="Routine relevant teleport total level"
+                        aria-label="Routine economic teleport total level"
                         type="number"
                         min="0"
                         max={MAX_RELEVANT_TELEPORT_LEVEL}
-                        title="Total level minus Meditation and excluded seasonal/event mastery levels."
+                        title="Economic Total Level: Gross TL minus Guild, Shadow, and seasonal masteries. Teleport costs cap at 1,500."
                         className="control-input"
                         value={routineTeleportLevel}
                         onChange={(event) => setRoutineTeleportLevel(event.target.value === "" ? "" : clampNumber(Number(event.target.value) || 0, 0, MAX_RELEVANT_TELEPORT_LEVEL))}
                     />
-                    <span className="routine-teleport-hint">TL minus Meditation and event masteries</span>
+                    <span className="routine-teleport-hint">Gross TL minus Guild, Shadow &amp; Seasonal (Capped at 1,500)</span>
                 </label>
 
                 <label className="control-group">

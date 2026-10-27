@@ -16,7 +16,7 @@ Audited against IdleMMO releases v0.72.1 through v0.86.0 (October 2026).
     - 8th–10th Place: +3% Primary Skill EXP, +2% Primary Skill Efficiency *(was 2% / 1%)*
   - **Affected Files**: `src/lib/skill-profit.ts` (`ASSAULT_BUFFS`), `tests/unit/`
 
-- [ ] **2. Teleportation Cost Formula & Soft Cap (v0.83.0)**
+- [x] **2. Teleportation Cost Formula & Soft Cap (v0.83.0)**
   - **In-Game**: Teleport costs overhauled and capped at Total Level 1,500 (e.g. Bluebell → Crystal Caverns maxes out at 1,950g instead of 5,184g at TL 1,800). Beginner trips under TL 200 flattened to 50g base.
   - **Affected Files**: `src/lib/world-boss-routing.ts` (`calculateTeleportCost`, constants), `tests/unit/world-boss-routing.test.ts`
 
