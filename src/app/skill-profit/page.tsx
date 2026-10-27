@@ -21,7 +21,7 @@ import { formatGold } from "@/lib/format";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import QualityText from "@/components/QualityText";
 import { PREFERENCE_STORAGE_KEY, usePreferences } from "@/lib/preferences";
-import { isStarterProfile, useProfiles } from "@/lib/profiles";
+import { getProfileSkillLevel, isStarterProfile, useProfiles } from "@/lib/profiles";
 import { barteringBuffPercent, getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
@@ -90,6 +90,7 @@ type PersistedState = {
   minVolume: number;
   ascensionOpen: boolean;
   essenceOpen: boolean;
+  hideAboveLevel: boolean;
 };
 
 type DropdownLayer = "tools" | "essences" | "command";
@@ -103,6 +104,7 @@ const DEFAULT_STATE: PersistedState = {
   minVolume: 100,
   ascensionOpen: false,
   essenceOpen: false,
+  hideAboveLevel: false,
 };
 
 const MOBILE_RESULT_BATCH_SIZE = 48;
@@ -159,6 +161,7 @@ export default function SkillProfitPage() {
   const [compactResults, setCompactResults] = useState(false);
   const [visibleRowLimit, setVisibleRowLimit] = useState(MOBILE_RESULT_BATCH_SIZE);
   const [includeForgeInfoRows, setIncludeForgeInfoRows] = useState(false);
+  const [hideAboveLevel, setHideAboveLevel] = useState(DEFAULT_STATE.hideAboveLevel);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
   const [storageReloadTick, setStorageReloadTick] = useState(0);
   const [gearData, setGearData] = useState<GearData | null>(null);
@@ -245,6 +248,7 @@ export default function SkillProfitPage() {
     let nextMinVolume = DEFAULT_STATE.minVolume;
     let nextAscensionOpen = DEFAULT_STATE.ascensionOpen;
     let nextEssenceOpen = DEFAULT_STATE.essenceOpen;
+    let nextHideAboveLevel = DEFAULT_STATE.hideAboveLevel;
 
     try {
       const stored = localStorage.getItem(storageKey) || localStorage.getItem(STORAGE_KEY);
@@ -269,6 +273,7 @@ export default function SkillProfitPage() {
           }
           if (typeof parsed.ascensionOpen === "boolean") nextAscensionOpen = parsed.ascensionOpen;
           if (typeof parsed.essenceOpen === "boolean") nextEssenceOpen = parsed.essenceOpen;
+          if (typeof parsed.hideAboveLevel === "boolean") nextHideAboveLevel = parsed.hideAboveLevel;
         }
       }
     } catch {
@@ -283,6 +288,7 @@ export default function SkillProfitPage() {
     setMinVolume(nextMinVolume);
     setAscensionOpen(nextAscensionOpen);
     setEssenceOpen(nextEssenceOpen);
+    setHideAboveLevel(nextHideAboveLevel);
 
     const timer = setTimeout(() => {
       loadedStorageKeyRef.current = storageKey;
@@ -304,6 +310,7 @@ export default function SkillProfitPage() {
       minVolume,
       ascensionOpen,
       essenceOpen,
+      hideAboveLevel,
     };
     const timeout = window.setTimeout(() => {
       try {
@@ -313,7 +320,7 @@ export default function SkillProfitPage() {
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [activeSkill, ascensionOpen, essenceOpen, loadedStoredState, minVolume, profilesLoaded, searchTerm, settings, sortDesc, sortKey, storageKey]);
+  }, [activeSkill, ascensionOpen, essenceOpen, hideAboveLevel, loadedStoredState, minVolume, profilesLoaded, searchTerm, settings, sortDesc, sortKey, storageKey]);
 
   useEffect(() => {
     fetch("/gear-data.json")
@@ -462,6 +469,10 @@ export default function SkillProfitPage() {
 
     for (const row of rows) {
       if (!isExcludedFromTop(row, minVolume)) {
+        if (hideAboveLevel && configuredProfile) {
+          const playerLevel = getProfileSkillLevel(configuredProfile, row.skill);
+          if (playerLevel !== null && row.level > playerLevel) continue;
+        }
         const currentSkillTop = topBySkill.get(row.skill);
         if (!currentSkillTop || getRankedProfitPerHour(row) > getRankedProfitPerHour(currentSkillTop)) {
           topBySkill.set(row.skill, row);
@@ -476,6 +487,12 @@ export default function SkillProfitPage() {
       .filter((row) => activeSkill === "All" || row.skill === activeSkill)
       .filter((row) => row.skill !== "Forge" || activeSkill === "Forge" || includeForgeInfoRows)
       .filter((row) => rowMatchesSearch(row, searchTokens))
+      .filter((row) => {
+        if (!hideAboveLevel || !configuredProfile) return true;
+        const playerLevel = getProfileSkillLevel(configuredProfile, row.skill);
+        if (playerLevel === null) return true;
+        return row.level <= playerLevel;
+      })
       .sort((a, b) => {
         if (activeSkill === "All" && a.skill !== b.skill) {
           if (a.skill === "Forge") return 1;
@@ -493,11 +510,11 @@ export default function SkillProfitPage() {
     for (const row of rows) counts.set(row.skill, (counts.get(row.skill) || 0) + 1);
 
     return { filtered, topBySkill, topOverall, counts };
-  }, [activeSkill, includeForgeInfoRows, minVolume, rows, searchTokens, sortDesc, sortKey]);
+  }, [activeSkill, configuredProfile, hideAboveLevel, includeForgeInfoRows, minVolume, rows, searchTokens, sortDesc, sortKey]);
 
   useEffect(() => {
     setVisibleRowLimit(MOBILE_RESULT_BATCH_SIZE);
-  }, [activeSkill, deferredSearchTerm, includeForgeInfoRows, minVolume, sortDesc, sortKey]);
+  }, [activeSkill, configuredProfile, deferredSearchTerm, hideAboveLevel, includeForgeInfoRows, minVolume, sortDesc, sortKey]);
 
   const visibleRows = compactResults
     ? rowModel.filtered.slice(0, visibleRowLimit)
@@ -516,6 +533,7 @@ export default function SkillProfitPage() {
     activeSkill !== "All",
     minVolume !== DEFAULT_STATE.minVolume,
     includeForgeInfoRows,
+    hideAboveLevel,
     sortKey !== DEFAULT_STATE.sortKey || sortDesc !== DEFAULT_STATE.sortDesc,
     (settings.saleMode || "best") !== DEFAULT_SETTINGS.saleMode,
   ].filter(Boolean).length;
@@ -718,6 +736,7 @@ export default function SkillProfitPage() {
     setSortKey(DEFAULT_STATE.sortKey);
     setSortDesc(DEFAULT_STATE.sortDesc);
     setIncludeForgeInfoRows(false);
+    setHideAboveLevel(false);
     patchSettings({ saleMode: DEFAULT_SETTINGS.saleMode });
   };
 
@@ -744,6 +763,10 @@ export default function SkillProfitPage() {
   const topRoute = rowModel.topOverall;
   const saleModeLabel = SALE_MODE_OPTIONS.find((option) => option.value === (settings.saleMode || "best"))?.label || "Auto";
   const scopeLabel = activeSkill === "All" ? "All skills" : activeSkill;
+  const hasProfileSkills = Boolean(configuredProfile && Object.keys(configuredProfile.skills || {}).length > 0);
+  const activeSkillLevel = configuredProfile && activeSkill !== "All"
+    ? getProfileSkillLevel(configuredProfile, activeSkill)
+    : null;
   const profileLabel = configuredProfile ? `${configuredProfile.name || "Active profile"} synced` : "Global fallback";
 
   return (
@@ -970,6 +993,22 @@ export default function SkillProfitPage() {
             type="button"
           >
             {(configuredProfile ? effectiveSettings.profileClassName : effectiveSettings.classBonus) && <Check size={14} />} {configuredProfile ? configuredProfile.className : "Class"}
+          </button>
+          <button
+            aria-pressed={hideAboveLevel}
+            className={`${styles.toggle} ${hideAboveLevel ? styles.toggleActive : ""}`}
+            disabled={!hasProfileSkills}
+            onClick={() => setHideAboveLevel((current) => !current)}
+            title={hasProfileSkills
+              ? (activeSkillLevel !== null
+                ? `Only show ${activeSkill} routes requiring Lv ${activeSkillLevel} or below`
+                : "Only show routes requiring a skill level your character has reached")
+              : configuredProfile
+                ? "No skill levels recorded on this profile. Import character data to filter routes."
+                : "Import or select a character profile to filter routes by skill level"}
+            type="button"
+          >
+            {hideAboveLevel && <Check size={14} />} {activeSkillLevel !== null ? `Within Lv ${activeSkillLevel}` : "Within level"}
           </button>
           <div className={`${styles.taxPill} ${effectiveSettings.membership ? styles.taxMember : ""}`}>
             {effectiveSettings.membership ? "12% tax" : "15% tax"}

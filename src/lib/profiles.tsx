@@ -739,6 +739,28 @@ export function getProfileDungeonStatTotal(profile: CharacterProfile | null | un
   );
 }
 
+export function getProfileSkillLevel(
+  profile: CharacterProfile | null | undefined,
+  skillName: string,
+): number | null {
+  if (!profile?.skills) return null;
+  const raw = skillName.trim().toLowerCase();
+  if (!raw) return null;
+
+  const asUnderscores = raw.replace(/[- ]+/g, "_").replace(/[^a-z0-9_]/g, "");
+  const asHyphens = raw.replace(/[_ ]+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+  const entry =
+    profile.skills[raw] ??
+    profile.skills[asUnderscores] ??
+    profile.skills[asHyphens] ??
+    profile.skills[skillName];
+
+  if (!entry) return null;
+  const level = Number(entry.level);
+  return Number.isFinite(level) && level > 0 ? level : null;
+}
+
 export function getProfileCombatPrimary(profile: CharacterProfile | null | undefined) {
   return {
     combatLevel: Number(profile?.levels.combat || 0),
