@@ -785,7 +785,7 @@ function getToolEfficiencyBonus(settings: SkillProfitSettings, skill: SkillName)
   return SKILL_TOOLS[skill].find((tool) => tool.name === selectedTool)?.efficiency || 0;
 }
 
-function getPrice(
+export function getPrice(
   name: string,
   marketData: MarketData | null,
   items: ItemLookup | null,

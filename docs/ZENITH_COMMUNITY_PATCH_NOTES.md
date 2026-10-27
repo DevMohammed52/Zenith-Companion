@@ -1,10 +1,10 @@
 # Zenith Companion Patch Notes
 
-* **Forge**: Updated all forge recipes to use metal bars instead of fish, and aligned mythic craft level requirements (levels 90–96).
-* **Classes**: Added support for Alchemist, Blacksmith, Builder, and Monk classes across profile import and skill calculations.
-* **Conquest**: Updated regional conquest assault buffs to reflect the 50% reward increase (up to +25% EXP and +5% Efficiency).
-* **Idle Hours**: Updated alt character base idle hours (4h free, 6h member) and applied full 8-hour idle action caps to market-locked classes (Banished and Cursed) across dungeons, housing, skill profit, and dashboard.
-* **Teleportation**: Overhauled teleportation cost calculation to align with Patch v0.83.0. Enforces the 50g beginner floor (<= 200 TL), the 1,500 TL soft cap, the 50% discount for Banished and Cursed classes, and deducts the 5 exempt masteries (Guild, Shadow, Yule, Springtide, Lunar) to calculate true Economic Total Level with 0-coin drift.
-* **Pets**: Added new Mythic pet **Shardback** (Dex #048, 300,000 Shards via Celestial Exchange) with verified base stats and growth curves (Protection +1.04/lvl, Attack +0.92/lvl, Accuracy +0.92/lvl, Agility +0.81/lvl, Speed +0.225/lvl) and integrated **Shardback Egg** into item databases.
-* **World Bosses & Travel**: Added verified route distances connecting the Eve of Shadows event zone (Wraithwood Forest) to all major world destinations with exact teleport cost parity. Clarified in-game server anti-overlap jitter (random 10m–3h delay) in the World Boss Routine Planner conflict notices.
-* **Items & Database**: Added **Reset Stone** (yeZRGx9YjBkxYB80gWlP, 500 Tokens, Mythic, untradable) from the official IdleMMO API across all item directories and search indexes.
+* **New Mythic Pet (Shardback)**: Added Shardback (#048) and its egg to the pet database, stats calculator, and comparison tools.
+* **Reset Stone**: Added the merchant Reset Stone to item lookups and search.
+* **Teleport Costs Fixed**: Updated the formula with the TL 1,500 cost cap, 50g beginner floor, and seasonal skill exemptions (0-coin drift).
+* **Wraithwood Forest Travel**: Added exact route distances and travel costs to and from the Eve of Shadows event area.
+* **Alt Idle Hours**: Updated alt idle caps to 4h (Free) / 6h (Member). Banished and Cursed keep the full 8h on alts.
+* **New Classes**: Added Alchemist, Blacksmith, Builder, and Monk to profiles and skilling calculators.
+* **Conquest Buffs**: Updated assault rewards to the new values (up to +25% EXP / +5% Eff).
+* **Skill Profit Strategy**: Added "Try sell price" with live break-even and profit-target price calculation.

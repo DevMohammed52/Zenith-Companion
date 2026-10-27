@@ -60,6 +60,7 @@ import {
   buildForgeRecipes,
   calculateSkillProfitRow,
   calculateSkillProfitRows,
+  getPrice,
   getBuffTotals,
   isFixedBuyPriceItem,
 } from "@/lib/skill-profit";
@@ -1867,11 +1868,31 @@ function SkillStrategyModal({
   const rankedProfitPerHour = getRankedProfitPerHour(activeRow);
   const changeNeedsPriceData = (row.essenceActive && row.essenceNeedsPrice) || (activeRow.essenceActive && activeRow.essenceNeedsPrice);
   const profitPerHourDelta = changeNeedsPriceData ? null : rankedProfitPerHour - getRankedProfitPerHour(row);
-  const hasMarketRevenue = activeRow.marketRevenue > 0;
-  const grossRevenue = hasMarketRevenue ? Math.round(activeRow.marketRevenue / (1 - taxRate / 100)) : 0;
-  const taxPaid = hasMarketRevenue ? grossRevenue - activeRow.marketRevenue : 0;
   const item = allItemsDb?.[activeRow.name];
   const market = marketData?.[activeRow.name] || {};
+  const baseSale = useMemo(
+    () => getPrice(row.name, marketData, allItemsDb, preferences.customPrices),
+    [allItemsDb, marketData, preferences.customPrices, row.name],
+  );
+  const canTrySellPrice = item ? item.is_tradeable !== false && !/\(Untradable\)$/i.test(activeRow.name) : !/\(Untradable\)$/i.test(activeRow.name);
+  const currentTrySellPrice = scenarioPrices[activeRow.name] ?? "";
+  const taxMultiplier = 1 - taxRate / 100;
+  const totalCostPerAction = activeRow.inputCost + essenceCostPerAction;
+  const breakEvenGrossSellPrice = targetNeedsEssencePrice
+    ? null
+    : canTrySellPrice && taxMultiplier > 0
+      ? Math.ceil(totalCostPerAction / taxMultiplier)
+      : Math.ceil(totalCostPerAction);
+  const targetGrossSellPrice = targetPerAction !== null && canTrySellPrice && taxMultiplier > 0
+    ? Math.ceil((activeRow.inputCost + targetPerAction) / taxMultiplier)
+    : null;
+  const hasMarketRevenue = activeRow.marketRevenue > 0;
+  const grossRevenue = activeRow.bestSaleSource !== "vendor" && activeRow.salePrice > 0
+    ? activeRow.salePrice
+    : hasMarketRevenue
+      ? Math.round(activeRow.marketRevenue / (1 - taxRate / 100))
+      : 0;
+  const taxPaid = hasMarketRevenue ? Math.max(0, grossRevenue - activeRow.marketRevenue) : 0;
   const itemStats = item?.stats && typeof item.stats === "object" ? Object.entries(item.stats).filter(([, value]) => value !== null && value !== 0 && value !== "") : [];
   const itemRequirements = item?.requirements && typeof item.requirements === "object" ? Object.entries(item.requirements).filter(([, value]) => value !== null && value !== "") : [];
   const itemEffects = item?.effects
@@ -1906,13 +1927,16 @@ function SkillStrategyModal({
         <div className="modal-body">
           <div className={styles.modalGrid}>
             <section className={styles.modalPanel}>
-              <div className={styles.modalPanelTitle}><PackageSearch size={16} /> Inputs</div>
+              <div className={styles.modalPanelTitle}><PackageSearch size={16} /> Pricing & Inputs</div>
               <div className={styles.tryPriceHeader}>
                 <div>
-                  <strong>Try Buy Prices</strong>
-                  <span>Test bulk-buy prices without changing your saved custom prices.</span>
+                  <strong>Try Buy & Sell Prices</strong>
+                  <span>Test market sell price and bulk-buy prices without changing your saved custom prices.</span>
                 </div>
-                <small>{editableInputCount > 0 ? `${editableInputCount} editable material${editableInputCount === 1 ? "" : "s"}` : "Fixed inputs"}</small>
+                <small>
+                  {canTrySellPrice ? "1 output" : "Fixed output"}
+                  {editableInputCount > 0 ? ` + ${editableInputCount} material${editableInputCount === 1 ? "" : "s"}` : ""}
+                </small>
               </div>
               {hasScenarioPrices && (
                 <div className={styles.tryPriceSummary}>
@@ -1935,6 +1959,69 @@ function SkillStrategyModal({
                 </div>
               )}
               <div className={styles.materialList}>
+                <div className={styles.materialScenario}>
+                  <button
+                    className={styles.materialLine}
+                    onClick={() => onOpenItem(activeRow.name)}
+                    type="button"
+                  >
+                    <span className={styles.materialName}>
+                      <strong>1x {activeRow.name} (Output)</strong>
+                      <small>Current {formatGold(baseSale.value)}g ea - {formatPriceSource(baseSale.source)}</small>
+                    </span>
+                    <strong>{formatGold(activeRow.netRevenue)}g net</strong>
+                  </button>
+                  {canTrySellPrice ? (
+                    <div className={styles.tryPriceGrid}>
+                      <label className={styles.scenarioInput}>
+                        <span>Try sell price</span>
+                        <input
+                          aria-label={`Try sell price for ${activeRow.name}`}
+                          inputMode="numeric"
+                          min={0}
+                          placeholder={`${formatGold(baseSale.value)}g`}
+                          type="number"
+                          value={currentTrySellPrice}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setScenarioSaved(false);
+                            setScenarioPrices((current) => {
+                              const next = { ...current };
+                              if (value === "") delete next[activeRow.name];
+                              else next[activeRow.name] = value;
+                              return next;
+                            });
+                          }}
+                        />
+                      </label>
+                      <div className={styles.breakEvenLine}>
+                        <span>Break-even</span>
+                        <strong className={breakEvenGrossSellPrice !== null && breakEvenGrossSellPrice > 0 ? styles.goodValue : styles.badValue}>
+                          {breakEvenGrossSellPrice === null
+                            ? "Needs essence price"
+                            : breakEvenGrossSellPrice > 0
+                              ? `${formatGold(breakEvenGrossSellPrice)}g gross`
+                              : "0g (Free)"}
+                        </strong>
+                      </div>
+                      {targetGrossSellPrice !== null ? (
+                        <div className={styles.breakEvenLine}>
+                          <span>For target</span>
+                          <strong className={targetGrossSellPrice > 0 ? styles.goodValue : styles.badValue}>
+                            {targetGrossSellPrice > 0 ? `${formatGold(targetGrossSellPrice)}g gross` : "Not possible"}
+                          </strong>
+                        </div>
+                      ) : (
+                        <div className={styles.breakEvenLine}>
+                          <span>Net after tax</span>
+                          <strong>{formatGold(activeRow.netRevenue)}g</strong>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.fixedPriceNote}>Untradable item (Vendor only)</div>
+                  )}
+                </div>
                 {activeRow.ingredients.length === 0 ? (
                   <div className={styles.materialLine}>
                     <span>Zero input</span>
