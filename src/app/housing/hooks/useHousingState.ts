@@ -273,7 +273,7 @@ export function useHousingState() {
   ), [profitPlannerFamily]);
   const plannerActivity = plannerRoomVariants[0]?.activity || null;
   const plannerSkill = plannerActivity ? HOUSING_ACTIVITY_TO_SKILL[plannerActivity] || null : null;
-  const plannerBaseIdleHours = getProfileBaseIdleActionHours(activeProfile);
+  const plannerBaseIdleHours = getProfileBaseIdleActionHours(activeProfile, preferences.membership);
   const plannerPlaytimeHours = Math.min(24, Math.max(0, Number(activeProfile?.timers.activeHours || 0)));
   const plannerOfflineHours = Math.max(0, 24 - plannerPlaytimeHours);
 

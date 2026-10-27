@@ -561,9 +561,19 @@ export function calculateHousingBuffs(
   };
 }
 
-export function getProfileBaseIdleActionHours(profile: { kind?: string } | null | undefined) {
+export function getProfileBaseIdleActionHours(
+  profile: { kind?: string; className?: string; class?: string } | null | undefined,
+  isMembership = false,
+) {
   if (!profile) return 0;
-  return profile.kind === "main" ? 8 : 4;
+  const className = String(profile.className || profile.class || "").trim().toLowerCase();
+  if (className === "banished" || className === "cursed") {
+    return 8;
+  }
+  if (profile.kind === "main") {
+    return 8;
+  }
+  return isMembership ? 6 : 4;
 }
 
 export function getHousingIdleHoursForActivity(

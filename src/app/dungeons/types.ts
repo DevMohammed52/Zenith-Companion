@@ -308,8 +308,12 @@ export function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useP
   return getHousingIdleHoursForActivity(profile.housing, "dungeon", dungeonLocation, { profileClassName: profile.className });
 }
 
-export function getProfileIdleActionHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any): number {
-  return getProfileBaseIdleActionHours(profile) + getHousingDungeonHoursForDungeon(profile, dungeon);
+export function getProfileIdleActionHoursForDungeon(
+  profile: ReturnType<typeof useProfiles>["activeProfile"],
+  dungeon: any,
+  isMembership = false,
+): number {
+  return getProfileBaseIdleActionHours(profile, isMembership) + getHousingDungeonHoursForDungeon(profile, dungeon);
 }
 
 export function getHousingDungeonScopeText(profile: ReturnType<typeof useProfiles>["activeProfile"]): string {

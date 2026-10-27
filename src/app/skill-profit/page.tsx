@@ -345,7 +345,7 @@ export default function SkillProfitPage() {
     });
     return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
   }, [housingSummary]);
-  const baseIdleActionHours = configuredProfile ? getProfileBaseIdleActionHours(configuredProfile) : 8;
+  const baseIdleActionHours = configuredProfile ? getProfileBaseIdleActionHours(configuredProfile, preferences.membership) : 8;
   const idleActionHoursBySkill = useMemo(() => {
     const entries = SKILLS.map((skill) => [
       skill,

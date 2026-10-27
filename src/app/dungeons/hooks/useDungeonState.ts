@@ -340,7 +340,7 @@ export function useDungeonState() {
       const effectiveDurationMins = durationMins / (1 + efficiency / 100);
       const effectiveDurationHours = effectiveDurationMins / 60;
       const housingDungeonHours = getHousingDungeonHoursForDungeon(activeProfile, dungeon);
-      const idleActionLimitHours = getProfileIdleActionHoursForDungeon(activeProfile, dungeon);
+      const idleActionLimitHours = getProfileIdleActionHoursForDungeon(activeProfile, dungeon, preferences.membership);
       const netProfitPerRun = totalEv - entryCost;
       const runsToDrop = combinedDropChance > 0 ? 1 / combinedDropChance : Infinity;
       const requiredDungeonStats = Math.ceil(Number(dungeon.difficulty || 0) * 0.7);
@@ -521,7 +521,7 @@ export function useDungeonState() {
   }, [rows]);
 
   const actionLimitSummary = useMemo(() => {
-    const base = getProfileBaseIdleActionHours(activeProfile);
+    const base = getProfileBaseIdleActionHours(activeProfile, preferences.membership);
     const housingRows = rows.filter((row) => Number(row.housingDungeonHours || 0) > 0);
     const maxHousing = housingRows.reduce((max, row) => Math.max(max, Number(row.housingDungeonHours || 0)), 0);
     const matchingLocations = Array.from(new Set(
@@ -539,7 +539,7 @@ export function useDungeonState() {
       matchingRows: housingRows.length,
       matchingLocationText: visibleLocationText,
     };
-  }, [activeProfile, rows]);
+  }, [activeProfile, preferences.membership, rows]);
 
   const heroDungeon = summary.bestReady ?? summary.bestProfit;
   const heroModeLabel = summary.bestReady
