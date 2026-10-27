@@ -24,6 +24,7 @@ import {
   checkUsageVitalsRateLimit,
   checkErrorReportRateLimit,
   checkImportStatusRateLimit,
+  fingerprint,
 } from "../src/index.mjs";
 
 class MemoryKV {
@@ -630,6 +631,17 @@ class MemoryD1 {
       return Array.from(this.jobs.values())
         .filter((job) => ["queued", "waiting_for_budget"].includes(job.status) && job.expires_at > now)
         .sort((a, b) => a.created_at.localeCompare(b.created_at))[0] || null;
+    }
+    if (sql.includes("target_hash_fingerprint = ?") && sql.includes("status = 'complete'")) {
+      const [fingerprint, cacheThreshold, now] = args;
+      return Array.from(this.jobs.values())
+        .filter((job) =>
+          job.target_hash_fingerprint === fingerprint &&
+          job.status === "complete" &&
+          job.updated_at >= cacheThreshold &&
+          job.expires_at > now
+        )
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] || null;
     }
     if (sql.includes("target_hash_fingerprint = ?")) {
       const [fingerprint, now] = args;
@@ -3900,6 +3912,76 @@ async function json(response) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+}
+
+{
+  // 6. Edge D1 Completed Job Cache & forceRefresh bypass
+  const e = env();
+  const characterHash = "FixtureCachedHash123";
+  const hashFp = await fingerprint(characterHash, e.IMPORT_SIGNING_SECRET);
+  const nowIso = new Date().toISOString();
+
+  // Create a completed job in D1
+  const completedJobId = "imp_cached_00000000001";
+  e.DB.jobs.set(completedJobId, {
+    id: completedJobId,
+    status: "complete",
+    step_status: "complete",
+    current_step: "final_assembly",
+    target_hash_encrypted: "enc_cached",
+    target_hash_fingerprint: hashFp,
+    requester_fingerprint: "req_cached",
+    requested_options_json: "{}",
+    result_json: JSON.stringify({
+      characters: [
+        { name: "Cached Knight", draft: { name: "Cached Knight", className: "Knight" } },
+      ],
+    }),
+    budget_mode: "normal",
+    request_count: 3,
+    retry_count: 0,
+    created_at: nowIso,
+    updated_at: nowIso,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  });
+
+  const initialJobCount = e.DB.jobs.size;
+
+  // Request start import for the same hash without forceRefresh -> should return 200 with cached: true
+  const cacheHitRes = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.150",
+    },
+    body: JSON.stringify({ characterHash }),
+  }), e);
+
+  assert.equal(cacheHitRes.status, 200);
+  const cacheHitBody = await json(cacheHitRes);
+  assert.equal(cacheHitBody.status, "done");
+  assert.equal(cacheHitBody.cached, true);
+  assert.equal(cacheHitBody.jobId, completedJobId);
+  assert.equal(cacheHitBody.result.characters[0].name, "Cached Knight");
+  assert.equal(e.DB.jobs.size, initialJobCount, "Cache hit must not create new jobs in D1");
+
+  // Request start import with forceRefresh: true -> should bypass cache and return 202 queued
+  const forceRefreshRes = await handleRequest(new Request("https://worker.test/profile-import/start", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: "https://zenith.example",
+      "cf-connecting-ip": "203.0.113.151",
+    },
+    body: JSON.stringify({ characterHash, forceRefresh: true }),
+  }), e);
+
+  assert.equal(forceRefreshRes.status, 202);
+  const forceRefreshBody = await json(forceRefreshRes);
+  assert.equal(forceRefreshBody.status, "queued");
+  assert.notEqual(forceRefreshBody.jobId, completedJobId, "Force refresh must queue a new job");
+  assert.equal(e.DB.jobs.size, initialJobCount + 1, "Force refresh must create a new queued job in D1");
 }
 
 await import("./adversarial-state-machine.test.mjs");

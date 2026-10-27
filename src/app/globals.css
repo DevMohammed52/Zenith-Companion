@@ -17546,6 +17546,33 @@ kbd {
   font-size: 0.7rem;
 }
 
+.profile-import-options {
+  display: flex;
+  align-items: center;
+  margin-top: -0.25rem;
+}
+
+.profile-force-refresh-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.profile-force-refresh-toggle:hover {
+  color: var(--text-main);
+}
+
+.profile-force-refresh-toggle input[type="checkbox"] {
+  accent-color: var(--text-accent);
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
 .profile-cached-import-card {
   display: flex;
   flex-direction: column;

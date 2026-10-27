@@ -1583,6 +1583,8 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   const requesterFingerprint = await fingerprint(requesterKey(request, isTrusted), env.IMPORT_SIGNING_SECRET);
   const hashFingerprint = await fingerprint(characterHash, env.IMPORT_SIGNING_SECRET);
 
+  const forceRefresh = payload.forceRefresh === true;
+
   if (env.TURNSTILE_SECRET_KEY) {
     const turnstileResult = await verifyTurnstile(env, payload.turnstileToken, request);
     if (!turnstileResult.ok) {
@@ -1599,6 +1601,49 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   }
 
   const expiresAt = new Date(now.getTime() + JOB_TTL_MS).toISOString();
+
+  // Edge D1 Completed Job Cache: reuse fresh completed scrapes (default: 30 mins TTL) unless forceRefresh is set
+  if (!forceRefresh) {
+    const cacheTtlMs = readPositiveInt(env.IMPORT_CACHE_TTL_MS, 30 * 60 * 1000);
+    const cacheThreshold = new Date(now.getTime() - cacheTtlMs).toISOString();
+
+    const cachedJob = await env.DB.prepare(`
+      SELECT id, status, result_json, request_count, created_at, updated_at, expires_at
+      FROM import_jobs
+      WHERE target_hash_fingerprint = ?
+        AND status = 'complete'
+        AND updated_at >= ?
+        AND expires_at > ?
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `).bind(hashFingerprint, cacheThreshold, now.toISOString()).first();
+
+    if (cachedJob && cachedJob.result_json) {
+      const parsedResult = safeParseJson(cachedJob.result_json);
+      if (parsedResult && Array.isArray(parsedResult.characters) && parsedResult.characters.length > 0) {
+        await recordImportEvent(env, {
+          eventType: "cache_hit",
+          jobId: cachedJob.id,
+          requesterFingerprint,
+          targetHashFingerprint: hashFingerprint,
+          status: "complete",
+          createdAt: now.toISOString(),
+        });
+
+        const cacheAgeSeconds = Math.max(0, Math.round((now.getTime() - new Date(cachedJob.updated_at).getTime()) / 1000));
+        return json({
+          jobId: cachedJob.id,
+          status: "done",
+          cached: true,
+          cachedAt: cachedJob.updated_at,
+          cacheAgeSeconds,
+          result: parsedResult,
+          durationMs: secondsBetween(cachedJob.created_at, cachedJob.updated_at) * 1000,
+          requestCount: cachedJob.request_count,
+        }, 200, cors);
+      }
+    }
+  }
 
   const existingJob = await env.DB.prepare(`
     SELECT id, status
@@ -3348,7 +3393,7 @@ function sha256Hex(ascii) {
   return hex;
 }
 
-async function fingerprint(value, secret) {
+export async function fingerprint(value, secret) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),

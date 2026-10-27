@@ -963,6 +963,7 @@ export default function ProfilesPage() {
   const [liveImportEstimatedMs, setLiveImportEstimatedMs] = useState<number | null>(null);
   const [cachedImportMatch, setCachedImportMatch] = useState<CachedProfileImportEntry | null>(null);
   const [recentCachedImports, setRecentCachedImports] = useState<CachedProfileImportEntry[]>([]);
+  const [forceRefreshScrape, setForceRefreshScrape] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(!TURNSTILE_SITE_KEY);
   const [turnstileError, setTurnstileError] = useState("");
@@ -1705,6 +1706,7 @@ export default function ProfilesPage() {
           characterHash,
           includeVisibleAlts: true,
           includeMuseum: true,
+          forceRefresh: forceRefreshScrape ? true : undefined,
           turnstileToken: TURNSTILE_SITE_KEY ? turnstileToken : undefined,
         }),
         signal: controller.signal,
@@ -1716,6 +1718,51 @@ export default function ProfilesPage() {
       }
       const jobId = isRecord(payload) && typeof payload.jobId === "string" ? payload.jobId : "";
       if (!jobId) throw new Error("Import started without a job reference. Try again.");
+
+      const isDone = isRecord(payload) && payload.status === "done";
+      if (isDone) {
+        const rawResult = isRecord(payload) && isRecord(payload.result) ? payload.result as LiveProfileImportResult : null;
+        const characters = Array.isArray(rawResult?.characters)
+          ? rawResult.characters.filter((entry) => isRecord(entry?.draft))
+          : [];
+        const nextResult: LiveProfileImportResult = rawResult ? { ...rawResult, characters } : { characters: [] };
+        setLiveImportJobId(jobId);
+        setLiveImportStatus("done");
+        setLiveImportProgress(null);
+        setLiveImportResult(nextResult);
+        setLiveImportSelectedIndex(0);
+        setLiveImportError(characters.length ? "" : "The import finished, but no visible character profile was returned.");
+        setLiveImportRetryAfterMs(null);
+        setLiveImportEstimatedMs(null);
+
+        saveLiveImportSnapshot({
+          jobId,
+          characterHash,
+          characterHashTail: characterHash.slice(-12),
+          status: "done",
+          progress: null,
+          result: nextResult,
+          selectedIndex: 0,
+          error: characters.length ? "" : "The import finished, but no visible character profile was returned.",
+          retryAfterMs: null,
+          estimatedMs: 0,
+          startedAt: Date.now(),
+        });
+
+        if (characters.length) {
+          saveCachedProfileImport(characterHash, nextResult);
+        }
+
+        if (characters[0]?.draft) {
+          const cacheAgeMsg = typeof payload.cacheAgeSeconds === "number"
+            ? `${Math.max(1, Math.round(payload.cacheAgeSeconds / 60))}m ago`
+            : "fresh edge cache";
+          prepareProfileImportReview(characters[0].draft, `Loaded from edge cache (${cacheAgeMsg}).`);
+        }
+        setToast("Profile loaded from edge cache.");
+        return;
+      }
+
       const estimatedMs = isRecord(payload) && typeof payload.estimatedDurationMs === "number" ? payload.estimatedDurationMs : null;
       setLiveImportJobId(jobId);
       setLiveImportEstimatedMs(estimatedMs);
@@ -2920,6 +2967,17 @@ export default function ProfilesPage() {
                   {liveImportBusy ? <Loader2 size={15} className="spin" /> : <FileUp size={15} />}
                   {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}
                 </button>
+              </div>
+              <div className="profile-import-options">
+                <label className="profile-force-refresh-toggle">
+                  <input
+                    type="checkbox"
+                    checked={forceRefreshScrape}
+                    onChange={(event) => setForceRefreshScrape(event.target.checked)}
+                    disabled={liveImportBusy || liveImportHasUnsavedResult}
+                  />
+                  <span>Force fresh scrape from game (bypass cache)</span>
+                </label>
               </div>
               {!liveImportHash.trim() && recentCachedImports.length > 0 && !liveImportBusy && !liveImportHasUnsavedResult && (
                 <div className="profile-cached-import-recents">

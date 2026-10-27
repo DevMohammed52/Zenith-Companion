@@ -119,6 +119,7 @@ export async function readProfileImportStartBody(request: Request): Promise<Prof
     characterHash,
     includeVisibleAlts: payload.includeVisibleAlts !== false,
     includeMuseum: payload.includeMuseum !== false,
+    forceRefresh: payload.forceRefresh === true,
   };
   if (typeof payload.turnstileToken === "string" && payload.turnstileToken.length <= 4096) {
     body.turnstileToken = payload.turnstileToken;
