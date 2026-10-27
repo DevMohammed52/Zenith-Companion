@@ -3,7 +3,7 @@
 ## 1. Tooling & Token Efficiency
 * **Fast Search:** Always use `rg` (ripgrep) for regex and code search, and `fd` for fast file listing instead of slow recursive grep/find commands or full-directory dumps.
 * **Surgical Reads:** Never read giant files in full unless strictly necessary. Use line-slice ranges with `view_file` to conserve tokens aggressively.
-* **Knowledge Graph:** When answering structural architecture questions, check `graphify-out/` or use `graphify query`.
+* **Knowledge Graph (Mandatory):** Whenever investigating code dependencies, route structure, state flows, or architectural impact, ALWAYS query the graphify knowledge graph at `graphify-out/` first via `query_graph` (MCP) or `graphify query` (CLI), along with `get_node` and `shortest_path`. Never guess file relations when the knowledge graph exists. Keep the graph updated after code modifications using `graphify update .`.
 
 ## 2. Strict Logic Invariance
 * **Do NOT alter game logic or calculations:** Mathematical formulas (alchemy EV, market pricing guards, combat simulation, boss timers, drop chances, skill profit formulas, pet stat curves) are complex, interconnected, and production-tested.

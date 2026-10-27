@@ -7,6 +7,7 @@ import {
   Copy,
   Download,
   FileUp,
+  History,
   Home,
   Loader2,
   Package,
@@ -19,6 +20,7 @@ import {
   Upload,
   UserRound,
   X,
+  Zap,
 } from "lucide-react";
 import {
   DEFAULT_PROFILE_BACKGROUND_IMAGE_URL,
@@ -40,6 +42,15 @@ import {
   type ImportedProfileDraft,
   type ImportedProfileMergeResult,
 } from "@/lib/profile-import";
+import {
+  deleteCachedProfileImport,
+  formatCacheAge,
+  getCachedProfileImport,
+  getRecentCachedProfileImports,
+  saveCachedProfileImport,
+  type CachedProfileImportEntry,
+  IMPORT_CACHE_EVENT,
+} from "@/lib/profile-import-cache";
 import { useData } from "@/context/DataContext";
 import {
   CLASS_DATA,
@@ -950,6 +961,8 @@ export default function ProfilesPage() {
   const [liveImportError, setLiveImportError] = useState("");
   const [liveImportRetryAfterMs, setLiveImportRetryAfterMs] = useState<number | null>(null);
   const [liveImportEstimatedMs, setLiveImportEstimatedMs] = useState<number | null>(null);
+  const [cachedImportMatch, setCachedImportMatch] = useState<CachedProfileImportEntry | null>(null);
+  const [recentCachedImports, setRecentCachedImports] = useState<CachedProfileImportEntry[]>([]);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(!TURNSTILE_SITE_KEY);
   const [turnstileError, setTurnstileError] = useState("");
@@ -1615,6 +1628,12 @@ export default function ProfilesPage() {
           error: characters.length ? "" : "The import finished, but no visible character profile was returned.",
           retryAfterMs: null,
         });
+
+        const targetHash = liveImportHash.trim() || (isRecord(payload) && typeof payload.targetHash === "string" ? payload.targetHash : "");
+        if (characters.length && targetHash) {
+          saveCachedProfileImport(targetHash, nextResult);
+        }
+
         if (characters[0]?.draft) {
           prepareProfileImportReview(characters[0].draft, "Imported character ready to save.");
         }
@@ -1742,6 +1761,67 @@ export default function ProfilesPage() {
       });
     }
   };
+
+  const handleRestoreCachedImport = (cached: CachedProfileImportEntry) => {
+    const characters = Array.isArray(cached.result?.characters)
+      ? cached.result.characters.filter((entry) => isRecord(entry?.draft))
+      : [];
+    if (!characters.length) return;
+
+    if (liveImportPollRef.current !== null) {
+      window.clearTimeout(liveImportPollRef.current);
+      liveImportPollRef.current = null;
+    }
+    liveImportAbortRef.current?.abort();
+
+    const fakeJobId = `cached-${cached.timestamp}`;
+    setLiveImportJobId(fakeJobId);
+    setLiveImportHash(cached.characterHash);
+    setLiveImportStatus("done");
+    setLiveImportProgress(null);
+    setLiveImportResult(cached.result);
+    setLiveImportSelectedIndex(0);
+    setLiveImportError("");
+    setLiveImportRetryAfterMs(null);
+    setLiveImportEstimatedMs(null);
+
+    saveLiveImportSnapshot({
+      jobId: fakeJobId,
+      characterHash: cached.characterHash,
+      characterHashTail: cached.characterHashTail,
+      status: "done",
+      progress: null,
+      result: cached.result,
+      selectedIndex: 0,
+      error: "",
+      retryAfterMs: null,
+    });
+
+    if (characters[0]?.draft) {
+      prepareProfileImportReview(characters[0].draft, `Loaded ${cached.mainName} from instant cache.`);
+    }
+  };
+
+  useEffect(() => {
+    const updateCacheMatch = () => {
+      const hash = liveImportHash.trim();
+      if (hash) {
+        setCachedImportMatch(getCachedProfileImport(hash));
+      } else {
+        setCachedImportMatch(null);
+      }
+      setRecentCachedImports(getRecentCachedProfileImports());
+    };
+
+    updateCacheMatch();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener(IMPORT_CACHE_EVENT, updateCacheMatch);
+      return () => {
+        window.removeEventListener(IMPORT_CACHE_EVENT, updateCacheMatch);
+      };
+    }
+  }, [liveImportHash]);
 
   useEffect(() => {
     const restoreSavedImport = () => {
@@ -2841,6 +2921,64 @@ export default function ProfilesPage() {
                   {liveImportHasUnsavedResult ? "Save current import first" : "Start import"}
                 </button>
               </div>
+              {!liveImportHash.trim() && recentCachedImports.length > 0 && !liveImportBusy && !liveImportHasUnsavedResult && (
+                <div className="profile-cached-import-recents">
+                  <span className="profile-cached-import-recents-label">Recent imports:</span>
+                  <div className="profile-cached-import-pills">
+                    {recentCachedImports.map((entry) => (
+                      <button
+                        key={entry.characterHash}
+                        type="button"
+                        className="profile-cached-pill"
+                        onClick={() => {
+                          setLiveImportHash(entry.characterHash);
+                          setLiveImportError("");
+                        }}
+                        title={`Select ${entry.mainName} (${entry.characterHashTail})`}
+                      >
+                        <History size={12} /> {entry.mainName} <small>({formatCacheAge(entry.timestamp)})</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {cachedImportMatch && !liveImportBusy && !liveImportHasUnsavedResult && (
+                <div className="profile-cached-import-card" role="region" aria-label="Cached character import">
+                  <div className="profile-cached-import-header">
+                    <div className="profile-cached-import-meta">
+                      <span className="profile-cached-import-badge">
+                        <History size={13} /> Instant Cache Available
+                      </span>
+                      <strong>{cachedImportMatch.mainName}</strong>
+                      <span className="profile-cached-import-sub">
+                        {cachedImportMatch.characterCount} {cachedImportMatch.characterCount === 1 ? "character" : "characters"} &bull; {cachedImportMatch.classes.join(", ") || "Saved draft"} &bull; {formatCacheAge(cachedImportMatch.timestamp)}
+                      </span>
+                    </div>
+                    <div className="profile-cached-import-actions">
+                      <button
+                        type="button"
+                        className="profile-action secondary"
+                        onClick={() => handleRestoreCachedImport(cachedImportMatch)}
+                        title="Restore this character draft immediately without re-scraping"
+                      >
+                        <Zap size={14} /> Restore Cached
+                      </button>
+                      <button
+                        type="button"
+                        className="profile-cached-import-dismiss"
+                        onClick={() => {
+                          deleteCachedProfileImport(cachedImportMatch.characterHash);
+                          setCachedImportMatch(null);
+                        }}
+                        title="Clear this cached draft"
+                        aria-label="Clear cached draft"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Single unified status card with mutually exclusive states */}
               {isTerminalError ? (
                 <div
