@@ -24,6 +24,13 @@ const PET_SOURCE_OVERRIDES = {
     merchant: { name: "Celestial Exchange", url: CELESTIAL_EXCHANGE_URL, currency: "shards", price: 300000 },
     notes: ["Available from the Celestial Exchange for 300,000 shards."],
   },
+  Shardback: {
+    type: "merchant",
+    availability: "available",
+    label: "Celestial Exchange",
+    merchant: { name: "Celestial Exchange", url: CELESTIAL_EXCHANGE_URL, currency: "shards", price: 300000 },
+    notes: ["Available from the Celestial Exchange for 300,000 shards."],
+  },
   Lovebuzz: {
     type: "event",
     availability: "legacy_vault",

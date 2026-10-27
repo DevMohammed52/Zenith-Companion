@@ -90,6 +90,14 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
       expect(calculateTeleportCost(38_200, 182)).toBe(50);
       expect(calculateTeleportCost(38_200, 188)).toBe(50);
     });
+
+    it("matches Rn3x (Wraithwood -> Bluebell: 12,412m, Isle: 21,676m, Oasis: 41,632m, Skyreach: 42,002m, Econ TL 1835)", () => {
+      const econTL = 1_835;
+      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Bluebell Hollow")!, econTL)).toBe(603);
+      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Isle of Whispers")!, econTL)).toBe(1016);
+      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Enchanted Oasis")!, econTL)).toBe(1905);
+      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Skyreach Peak")!, econTL)).toBe(1921);
+    });
   });
 
   describe("Economic Total Level & Class Exemptions", () => {

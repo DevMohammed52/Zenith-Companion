@@ -36,9 +36,10 @@ Audited against IdleMMO releases v0.72.1 through v0.86.0 (October 2026).
   - **In-Game**: Complete primary skill covering building dwellings, gathering houses, storehouses, citizen food balance, tax rates, VR-to-gold conversion rate curves, warfare scouting, and 21-day leagues (750k passive EXP contribution cap).
   - **Affected Files**: `src/app/profiles/`, new village planner/calculator module
 
-- [ ] **6. New Mythic Pet: Shardback (v0.84.0)**
-  - **In-Game**: Mythic pet added to the Celestial Exchange.
-  - **Affected Files**: `public/pet-database.json`, `src/lib/pets.ts`, tests
+- [x] **6. New Mythic Pet: Shardback (v0.84.0)**
+  - **In-Game**: Mythic pet added to the Celestial Exchange (300,000 Shards).
+  - **Stats**: High-defense tank profile (Base: 9/9/9/9, per-level: Protection +1.04, Attack +0.92, Accuracy +0.92, Agility +0.81, Speed +0.225, Health +20, Stamina +1.5).
+  - **Affected Files**: `public/pet-database.json`, `public/all-items-db.json`, `public/items-map.json`, `scripts/build-pet-database.mjs`, `tests/unit/pet-stats.test.ts`
 
 - [ ] **7. Tavern Auctions & Giveaways (v0.83.0 – v0.83.2)**
   - **In-Game**: In-game player auction house with 12% tax (free) / 8% (members), 30-minute anti-sniping bid reset, 1m min price, and player giveaways.

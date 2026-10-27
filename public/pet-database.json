@@ -3,9 +3,9 @@
     "generatedAt": "2026-10-27T08:13:03.837Z",
     "verificationStatus": "research",
     "counts": {
-      "pets": 46,
-      "petsWithStats": 46,
-      "petsWithEggs": 40,
+      "pets": 47,
+      "petsWithStats": 47,
+      "petsWithEggs": 41,
       "petsWithExchangeListings": 34,
       "exchangeListings": 571,
       "exchangeSpecies": 38
@@ -59286,6 +59286,82 @@
             "ranking": null
           }
         ]
+      }
+    },
+    {
+      "id": 48,
+      "hashedId": "Ro31P7kZL6WAQveGxXOy",
+      "name": "Shardback",
+      "quality": "MYTHIC",
+      "imageUrl": "https://cdn.idle-mmo.com/uploaded/skins/01M4XD9N7G5RNPFGB4GZ1B1M60.png",
+      "description": null,
+      "egg": {
+        "name": "Shardback Egg",
+        "hashedId": "rz9RZnWN7eZ0LKAp0Mdl",
+        "imageUrl": "https://cdn.idle-mmo.com/uploaded/skins/wWoWHXee7cJuXQEyyksbysgkyLKYpW-metaZWdnLTEwLnBuZw==-.png",
+        "quality": "MYTHIC",
+        "vendorPrice": 2000000,
+        "isTradeable": true,
+        "worldBosses": []
+      },
+      "stats": {
+        "agility": {
+          "base": 9,
+          "per_level": 0.81
+        },
+        "accuracy": {
+          "base": 9,
+          "per_level": 0.92
+        },
+        "protection": {
+          "base": 9,
+          "per_level": 1.04
+        },
+        "attack_power": {
+          "base": 9,
+          "per_level": 0.92
+        },
+        "movement_speed": {
+          "base": 2,
+          "per_level": 0.225
+        },
+        "max_health": {
+          "base": 150,
+          "per_level": 20
+        },
+        "max_stamina": {
+          "base": 200,
+          "per_level": 1.5
+        },
+        "critical_damage": {
+          "base": 4,
+          "per_level": 0.45
+        },
+        "critical_chance": {
+          "base": 12,
+          "per_level": 0
+        }
+      },
+      "acquisition": [],
+      "sourceOverride": {
+        "type": "merchant",
+        "availability": "available",
+        "label": "Celestial Exchange",
+        "merchant": {
+          "name": "Celestial Exchange",
+          "url": "https://web.idle-mmo.com/merchants?category=CELESTIAL_EXCHANGE",
+          "currency": "shards",
+          "price": 300000
+        },
+        "notes": [
+          "Available from the Celestial Exchange for 300,000 shards."
+        ]
+      },
+      "rarity": null,
+      "valuation": null,
+      "exchange": null,
+      "battle": {
+        "zones": []
       }
     },
     {

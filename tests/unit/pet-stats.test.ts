@@ -44,4 +44,14 @@ describe("pet stat formula", () => {
       ),
     ).toBe(36.84);
   });
+
+  it("calculates Shardback tank stat curve correctly at level 1 and 100", () => {
+    const protectionFormula = { base: 9, per_level: 1.04 };
+    expect(calculatePetStatValue(protectionFormula, { statKey: "protection", level: 1 })).toBe(9);
+    expect(calculatePetStatValue(protectionFormula, { statKey: "protection", level: 100 })).toBe(111);
+    expect(calculatePetStatValue(protectionFormula, { statKey: "protection", level: 100, masteryBonusPercent: 20 })).toBe(133);
+
+    const speedFormula = { base: 2, per_level: 0.225 };
+    expect(calculatePetStatValue(speedFormula, { statKey: "movement_speed", level: 100 })).toBe(24.3);
+  });
 });

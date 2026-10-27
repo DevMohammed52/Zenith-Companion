@@ -251,6 +251,16 @@ export const WORLD_BOSS_ROUTE_PAIRS: WorldBossRoutePair[] = [
     { origin: "Whispering Woods", destination: "Floating Gardens of Aetheria", distanceMeters: 29887 },
     { origin: "Whispering Woods", destination: "Isle of Whispers", distanceMeters: 34476 },
     { origin: "Whispering Woods", destination: "Skyreach Peak", distanceMeters: 34573 },
+    { origin: "Wraithwood Forest", destination: "Bluebell Hollow", distanceMeters: 12412 },
+    { origin: "Wraithwood Forest", destination: "Celestial Observatory", distanceMeters: 41618 },
+    { origin: "Wraithwood Forest", destination: "Crystal Caverns", distanceMeters: 28954 },
+    { origin: "Wraithwood Forest", destination: "Eldoria", distanceMeters: 12008 },
+    { origin: "Wraithwood Forest", destination: "Enchanted Oasis", distanceMeters: 41632 },
+    { origin: "Wraithwood Forest", destination: "Floating Gardens of Aetheria", distanceMeters: 14925 },
+    { origin: "Wraithwood Forest", destination: "Isle of Whispers", distanceMeters: 21676 },
+    { origin: "Wraithwood Forest", destination: "Skyreach Peak", distanceMeters: 42002 },
+    { origin: "Wraithwood Forest", destination: "The Citadel", distanceMeters: 38200 },
+    { origin: "Wraithwood Forest", destination: "Whispering Woods", distanceMeters: 14835 },
 ];
 
 const distanceLookup = new Map<string, number>();
