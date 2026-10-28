@@ -25,19 +25,19 @@
 ## 5. Page Decomposition & Modularization Backlog (22 Remaining)
 *Goal: Decompose monolithic God Pages into modular feature components under `src/app/<route>/components/` and custom hooks under `src/app/<route>/hooks/`, reducing `page.tsx` to an orchestrator (< 200 lines) with strict layout containment (`CLS <= 0.1`) and game math invariance.*
 
-### Completed (4/25)
+### Completed (5/25)
 - [x] `/housing` (was 4,322 lines $\rightarrow$ 41 lines)
 - [x] `/bosses` (was 2,886 lines $\rightarrow$ 147 lines)
 - [x] `/dungeons` (was 3,131 lines $\rightarrow$ 157 lines)
 - [x] `/profiles` (was 3,434 lines $\rightarrow$ 213 lines)
+- [x] `/skill-profit` (was 2,525 lines $\rightarrow$ 125 lines)
 
-### Tier 1: Mega God Pages (> 2,000 Lines) — 8 Pages
+### Tier 1: Mega God Pages (> 2,000 Lines) — 7 Pages
 - [ ] `/forge` (2,633 lines) — Ore forging, catalyst calculations, heat mechanics, profit EV
 - [ ] `/market-alerts` (2,518 lines) — Live price triggers, volume filters, notification routing
 - [ ] `/lore` (2,480 lines) — Lore browser, thread connections, search indexing
 - [ ] `/map` (2,409 lines) — World locations, coordinate routing, travel time calculator
 - [ ] `/items` (2,309 lines) — Item database, vendor values, recipes, filtering system
-- [ ] `/skill-profit` (2,297 lines) — Multi-skill yield profit calculator, action time scaling
 - [ ] `/weather` (2,154 lines) — Live weather rotation, zone forecasts, enemy affinities
 - [ ] `/combat` (2,072 lines) — Battle simulator, kill time EV, gear damage formulas
 
