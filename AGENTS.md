@@ -66,7 +66,14 @@ A local, indexed knowledge repository of the IdleMMO game is maintained at `.age
 * **Wiki Knowledge Base**: `.agents/knowledge/idlemmo/wiki/` (161 complete docs: combat, skills, pets, items, housing, conquest, etc.)
 * **Official Roadmap**: `.agents/knowledge/idlemmo/roadmap.md` (Trello public roadmap cards: in-progress, upcoming, archived)
 * **Patch Notes**: `.agents/knowledge/idlemmo/patch-notes-summary.md` and `public/idlemmo-patch-notes.json` (280+ releases)
-* **Usage**: When reasoning about game rules, formulas, drop rates, or planned game updates, search `.agents/knowledge/idlemmo/` with `rg` rather than guessing or querying external APIs.
+* **Official Support & Haunty Wiki**: `https://support.idle-mmo.com/` (Patch 0.86.1+).
+  - Every wiki article has a native clean markdown endpoint: `https://support.idle-mmo.com/wiki/<category>/<page>.md`
+  - Knowledge base articles: `https://support.idle-mmo.com/knowledge-base/<category>/<page>.md`
+  - In-house AI assistant ("Boo"): Accessible via `POST https://support.idle-mmo.com/question-box` with `{ question: string }` and CSRF cookie.
+* **Usage & Token Efficiency Hierarchy**:
+  1. **Tier 1 (Lowest Tokens & Instant)**: ALWAYS search `.agents/knowledge/idlemmo/` with `rg` and read specific line slices (`view_file`).
+  2. **Tier 2 (Official Remote Markdown)**: When verifying unindexed patch notes or recent game rule changes, fetch the direct clean `.md` URL on `support.idle-mmo.com/...md`.
+  3. **Tier 3 (Boo AI Assistant)**: Use Boo (`/question-box`) primarily for discovering which obscure article a game mechanic is filed under (via its `articles` source references), rather than relying on its text generation for deep mathematical formulas.
 
 ---
 
