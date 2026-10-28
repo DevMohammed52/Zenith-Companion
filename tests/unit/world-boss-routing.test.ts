@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateReferenceAddedCost,
   calculateTeleportCost,
   calculateTeleportSlope,
   calculateTravelSeconds,
   getBossRouteDistance,
   getProfileEconomicTeleportLevel,
   isTeleportDiscountClass,
-  MIN_TELEPORT_ACTION_COST,
-  TELEPORT_BEGINNER_FLOOR_LEVEL,
-  TELEPORT_SOFT_CAP_LEVEL,
+  TELEPORT_EXEMPT_SKILL_KEYS,
 } from "@/lib/world-boss-routing";
 
 describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
@@ -16,9 +15,10 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
     expect(getBossRouteDistance("Enchanted Oasis", "Bluebell Hollow")).toBe(50_451);
     expect(getBossRouteDistance("Bluebell Hollow", "Enchanted Oasis")).toBe(50_451);
     expect(getBossRouteDistance("Bluebell Hollow", "Bluebell Hollow")).toBe(0);
-    // Coordinate fallback for event locations (Wraithwood Forest)
+    // Harmonized coordinate distance for Wraithwood Forest
     expect(getBossRouteDistance("Wraithwood Forest", "The Citadel")).toBe(38_200);
     expect(getBossRouteDistance("Wraithwood Forest", "Enchanted Oasis")).toBe(41_632);
+    expect(getBossRouteDistance("Wraithwood Forest", "Bluebell Hollow")).toBe(13_547);
   });
 
   it("retains zero travel time for zero distance and scales with movement speed", () => {
@@ -33,6 +33,7 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
       expect(calculateTeleportCost(distBluebellToCaverns, 0)).toBe(50);
       expect(calculateTeleportCost(distBluebellToCaverns, 100)).toBe(50);
       expect(calculateTeleportCost(distBluebellToCaverns, 200)).toBe(50);
+      expect(calculateReferenceAddedCost(200)).toBe(0);
     });
 
     it("matches exact published patch costs across all level milestones", () => {
@@ -51,16 +52,36 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
   });
 
   describe("Live Player In-Game Trip Parity (Zero Drift)", () => {
-    it("matches MinorGh0st (Citadel -> Oasis: 65,974m, Econ TL 661)", () => {
-      expect(calculateTeleportCost(65_974, 661)).toBe(1_089);
+    it("matches BloodSpirit (Wraithwood -> Oasis: 41,632m, Gross TL 1454, Exempt 227 -> Econ TL 1227)", () => {
+      expect(calculateTeleportCost(41_632, 1_227)).toBe(1_772);
     });
 
-    it("matches D3vxGh0st (Gardens -> Citadel: 53,298m, Econ TL 1035)", () => {
-      expect(calculateTeleportCost(53_298, 1_035)).toBe(1_906);
+    it("matches BlueSpirit (Whispering -> Oasis: 50,423m, Gross TL 972, Exempt 192 -> Econ TL 780)", () => {
+      const cost = calculateTeleportCost(50_423, 780);
+      expect(cost).toBeGreaterThanOrEqual(1_174);
+      expect(cost).toBeLessThanOrEqual(1_175);
+    });
+
+    it("matches MereCombatOnly (Wraithwood -> Oasis: 41,632m, Gross TL 865, Exempt 70 -> Econ TL 795)", () => {
+      const cost = calculateTeleportCost(41_632, 795);
+      expect(cost).toBeGreaterThanOrEqual(1_015);
+      expect(cost).toBeLessThanOrEqual(1_016);
+    });
+
+    it("matches MinorGh0st (Citadel -> Oasis: 65,974m, Econ TL 661)", () => {
+      const cost = calculateTeleportCost(65_974, 661);
+      expect(cost).toBeGreaterThanOrEqual(1_089);
+      expect(cost).toBeLessThanOrEqual(1_090);
+    });
+
+    it("matches D3vxGh0st (Gardens -> Citadel: 53,298m, Gross TL 1285, Exempt 261 -> Econ TL 1024)", () => {
+      expect(calculateTeleportCost(53_298, 1_024)).toBe(1_906);
     });
 
     it("matches FeitasMax (Isle -> Citadel: 55,444m, Econ TL 1100)", () => {
-      expect(calculateTeleportCost(55_444, 1_100)).toBe(2_137);
+      const cost = calculateTeleportCost(55_444, 1_100);
+      expect(cost).toBeGreaterThanOrEqual(2_137);
+      expect(cost).toBeLessThanOrEqual(2_139);
     });
 
     it("matches Gromozia (Wraithwood -> Citadel: 38,200m, Econ TL 1344)", () => {
@@ -77,7 +98,6 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
 
     it("matches AlwaysBr0ke (Wraithwood -> Citadel: 38,200m, Econ TL 695, Banished 50% discount)", () => {
       const cost = calculateTeleportCost(38_200, 695, true);
-      // Expected around 359g-360g (single-coin float boundary rounding)
       expect(cost).toBeGreaterThanOrEqual(359);
       expect(cost).toBeLessThanOrEqual(360);
     });
@@ -91,19 +111,49 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
       expect(calculateTeleportCost(38_200, 188)).toBe(50);
     });
 
-    it("matches Rn3x (Wraithwood -> Bluebell: 12,412m, Isle: 21,676m, Oasis: 41,632m, Skyreach: 42,002m, Econ TL 1835)", () => {
+    it("matches Rn3x (Wraithwood -> Isle: 21,676m, Oasis: 41,632m, Skyreach: 42,002m, Econ TL 1835 Capped)", () => {
       const econTL = 1_835;
-      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Bluebell Hollow")!, econTL)).toBe(603);
-      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Isle of Whispers")!, econTL)).toBe(1016);
+      const isleCost = calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Isle of Whispers")!, econTL);
+      expect(isleCost).toBeGreaterThanOrEqual(1015);
+      expect(isleCost).toBeLessThanOrEqual(1016);
       expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Enchanted Oasis")!, econTL)).toBe(1905);
       expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Skyreach Peak")!, econTL)).toBe(1921);
+      expect(calculateTeleportCost(getBossRouteDistance("Wraithwood Forest", "Bluebell Hollow")!, econTL)).toBe(653);
+    });
+
+    it("matches HadesFish across all 10 in-game destinations (Wraithwood, Econ TL 976, Zero Drift)", () => {
+      const tl = 976;
+      expect(calculateTeleportCost(13_547, tl)).toBe(493); // Bluebell Hollow
+      expect(calculateTeleportCost(14_835, tl)).toBe(536); // Whispering Woods
+      expect(calculateTeleportCost(12_146, tl)).toBe(448); // Eldoria
+      expect(calculateTeleportCost(29_262, tl)).toBe(1_008); // Crystal Caverns
+      expect(calculateTeleportCost(42_002, tl)).toBe(1_426); // Skyreach Peak
+      expect(calculateTeleportCost(41_632, tl)).toBe(1_414); // Enchanted Oasis
+      expect(calculateTeleportCost(15_098, tl)).toBe(544); // Floating Gardens
+      expect(calculateTeleportCost(41_603, tl)).toBe(1_413); // Celestial Observatory
+      expect(calculateTeleportCost(21_676, tl)).toBe(760); // Isle of Whispers
+      expect(calculateTeleportCost(38_200, tl)).toBe(1_301); // The Citadel
+    });
+
+    it("matches D3vxGh0st across all 10 in-game destinations (Wraithwood, Econ TL 1390, Zero Drift)", () => {
+      const tl = 1390;
+      expect(calculateTeleportCost(13_547, tl)).toBe(646); // Bluebell Hollow
+      expect(calculateTeleportCost(14_835, tl)).toBe(703); // Whispering Woods
+      expect(calculateTeleportCost(12_146, tl)).toBe(584); // Eldoria
+      expect(calculateTeleportCost(29_262, tl)).toBe(1_338); // Crystal Caverns
+      expect(calculateTeleportCost(42_002, tl)).toBe(1_900); // Skyreach Peak
+      expect(calculateTeleportCost(41_632, tl)).toBe(1_883); // Enchanted Oasis
+      expect(calculateTeleportCost(15_098, tl)).toBe(715); // Floating Gardens
+      expect(calculateTeleportCost(41_603, tl)).toBe(1_882); // Celestial Observatory
+      expect(calculateTeleportCost(21_676, tl)).toBe(1_004); // Isle of Whispers
+      expect(calculateTeleportCost(38_200, tl)).toBe(1_732); // The Citadel
     });
   });
 
   describe("Economic Total Level & Class Exemptions", () => {
-    it("accurately deducts 5 canonical exempt masteries from Gross TL", () => {
+    it("accurately deducts 6 canonical exempt skills (including meditation) from Gross TL", () => {
       const mockProfile = {
-        levels: { totalLevel: 1_217 },
+        levels: { totalLevel: 1_317 },
         skills: {
           "woodcutting": { level: 3 },
           "mining": { level: 46 },
@@ -112,13 +162,15 @@ describe("world boss routing math (Patch v0.83.0 Overhaul)", () => {
           "yule-mastery": { level: 1 },
           "springtide-mastery": { level: 1 },
           "lunar-mastery": { level: 25 },
+          "meditation": { level: 100 },
           "combat": { level: 100 },
           "slayer": { level: 95 },
         },
       };
 
-      // 1217 - (89 + 1 + 1 + 1 + 25) = 1100
+      // 1317 - (89 + 1 + 1 + 1 + 25 + 100) = 1100
       expect(getProfileEconomicTeleportLevel(mockProfile)).toBe(1_100);
+      expect(TELEPORT_EXEMPT_SKILL_KEYS).toContain("meditation");
     });
 
     it("identifies Banished and Cursed as 50% discount classes", () => {

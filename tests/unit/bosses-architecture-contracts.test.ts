@@ -177,7 +177,7 @@ describe("bosses architecture and modularization contracts", () => {
             expect(distance).toBe(50_451);
 
             const tpCost = calculateTeleportCost(distance!, 1_359);
-            expect(tpCost).toBe(2_254);
+            expect(tpCost).toBe(2_255);
 
             const travelSec = calculateTravelSeconds(1_000, 25);
             expect(travelSec).toBe(40);
@@ -448,7 +448,7 @@ describe("bosses architecture and modularization contracts", () => {
 
             // Level 0 should be flat beginner floor: 50g
             expect(costLevel0).toBe(50);
-            expect(costLevel1359).toBe(2_254);
+            expect(costLevel1359).toBe(2_255);
             expect(costLevel0).toBeLessThan(costLevel1359);
         });
 

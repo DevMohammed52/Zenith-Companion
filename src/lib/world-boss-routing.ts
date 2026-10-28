@@ -64,8 +64,8 @@ export const TELEPORT_LEVEL_EXPONENT = 1.9;
 export const MIN_TELEPORT_ACTION_COST = 50;
 export const TELEPORT_SOFT_CAP_LEVEL = 1500;
 export const TELEPORT_BEGINNER_FLOOR_LEVEL = 200;
-export const TELEPORT_MAX_SLOPE = 1900 / 568.594759; // 3.341571426619499 gold per coordinate unit
-export const TELEPORT_FORMULA_LABEL = "max(50, round((50 + (distanceMeters / 75) * S(economicLevel)) * (discount ? 0.5 : 1)))";
+export const TELEPORT_MAX_SLOPE = 1900.49 / (42645 / 75); // ~3.34237 gold per coordinate unit
+export const TELEPORT_FORMULA_LABEL = "max(50, floor((50 + (refAdded(economicLevel) / 42645) * distanceMeters) * (discount ? 0.5 : 1)))";
 export const DEFAULT_RELEVANT_TELEPORT_LEVEL = 1359;
 export const MAX_RELEVANT_TELEPORT_LEVEL = 2500;
 export const DEFAULT_MOVEMENT_SPEED = 25.68;
@@ -81,6 +81,7 @@ export const TELEPORT_EXEMPT_SKILL_KEYS = [
     "yule-mastery",
     "springtide-mastery",
     "lunar-mastery",
+    "meditation",
 ] as const;
 
 /**
@@ -150,59 +151,33 @@ export const TELEPORT_CURVE_ANCHORS: ReadonlyArray<readonly [number, number]> = 
     [1500, 3.341571],
 ] as const;
 
-// Precomputed PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) slopes
-const PCHIP_X = TELEPORT_CURVE_ANCHORS.map((p) => p[0]);
-const PCHIP_Y = TELEPORT_CURVE_ANCHORS.map((p) => p[1]);
-const PCHIP_N = PCHIP_X.length;
-const PCHIP_H: number[] = [];
-const PCHIP_DELTA: number[] = [];
-
-for (let i = 0; i < PCHIP_N - 1; i++) {
-    PCHIP_H.push(PCHIP_X[i + 1] - PCHIP_X[i]);
-    PCHIP_DELTA.push((PCHIP_Y[i + 1] - PCHIP_Y[i]) / PCHIP_H[i]);
-}
-
-const PCHIP_D: number[] = new Array(PCHIP_N).fill(0);
-PCHIP_D[0] = ((2 * PCHIP_H[0] + PCHIP_H[1]) * PCHIP_DELTA[0] - PCHIP_H[0] * PCHIP_DELTA[1]) / (PCHIP_H[0] + PCHIP_H[1]);
-if (Math.sign(PCHIP_D[0]) !== Math.sign(PCHIP_DELTA[0])) PCHIP_D[0] = 0;
-
-PCHIP_D[PCHIP_N - 1] = ((2 * PCHIP_H[PCHIP_N - 2] + PCHIP_H[PCHIP_N - 3]) * PCHIP_DELTA[PCHIP_N - 2] - PCHIP_H[PCHIP_N - 2] * PCHIP_DELTA[PCHIP_N - 3]) / (PCHIP_H[PCHIP_N - 2] + PCHIP_H[PCHIP_N - 3]);
-if (Math.sign(PCHIP_D[PCHIP_N - 1]) !== Math.sign(PCHIP_DELTA[PCHIP_N - 2])) PCHIP_D[PCHIP_N - 1] = 0;
-
-for (let i = 1; i < PCHIP_N - 1; i++) {
-    if (PCHIP_DELTA[i - 1] * PCHIP_DELTA[i] <= 0) {
-        PCHIP_D[i] = 0;
-    } else {
-        const w1 = 2 * PCHIP_H[i] + PCHIP_H[i - 1];
-        const w2 = PCHIP_H[i] + 2 * PCHIP_H[i - 1];
-        PCHIP_D[i] = (w1 + w2) / (w1 / PCHIP_DELTA[i - 1] + w2 / PCHIP_DELTA[i]);
+/**
+ * Calculates the reference added cost at the canonical baseline distance (42,645m, Bluebell -> Caverns).
+ * Follows the game's exact piecewise quadratic model (Hades reverse-engineered equation):
+ * - Level <= 200: 0g added (flat 50g base floor)
+ * - Level 200..800: Convex quadratic: (137/90000) * (tl - 200)^2 + (227/300) * (tl - 200)
+ * - Level 800..1500: Concave quadratic: 1900.49 - 0.0018319 * (1500 - tl)^2
+ * - Level > 1500: Capped at 1900.49g added (1,950g total at 42,645m)
+ */
+export function calculateReferenceAddedCost(economicLevel: number): number {
+    const tl = Math.max(200, Math.min(1500, Number(economicLevel) || 0));
+    if (tl <= 200) {
+        return 0;
     }
+    if (tl < 800) {
+        const x = tl - 200;
+        return (137 / 90000) * x * x + (227 / 300) * x;
+    }
+    const dL = 1500 - tl;
+    return 1900.49 - 0.0018319 * dL * dL;
 }
 
 /**
- * Calculates the exact distance slope S for a given economic level using monotone cubic interpolation.
+ * Calculates the exact distance slope S (gold per coordinate unit of 75m) for a given economic level.
  */
 export function calculateTeleportSlope(economicLevel: number): number {
-    const level = Math.max(0, Number(economicLevel) || 0);
-    if (level <= TELEPORT_BEGINNER_FLOOR_LEVEL) return 0;
-    if (level >= TELEPORT_SOFT_CAP_LEVEL) return TELEPORT_MAX_SLOPE;
-
-    let i = 0;
-    while (i < PCHIP_N - 2 && level > PCHIP_X[i + 1]) {
-        i++;
-    }
-
-    const dx = level - PCHIP_X[i];
-    const hi = PCHIP_H[i];
-    const t = dx / hi;
-    const t2 = t * t;
-    const t3 = t2 * t;
-    const h00 = 2 * t3 - 3 * t2 + 1;
-    const h10 = t3 - 2 * t2 + t;
-    const h01 = -2 * t3 + 3 * t2;
-    const h11 = t3 - t2;
-
-    return h00 * PCHIP_Y[i] + h10 * hi * PCHIP_D[i] + h01 * PCHIP_Y[i + 1] + h11 * hi * PCHIP_D[i + 1];
+    const refAdded = calculateReferenceAddedCost(economicLevel);
+    return (refAdded / 42645) * 75;
 }
 
 export const WORLD_BOSS_ROUTE_PAIRS: WorldBossRoutePair[] = [
@@ -251,12 +226,12 @@ export const WORLD_BOSS_ROUTE_PAIRS: WorldBossRoutePair[] = [
     { origin: "Whispering Woods", destination: "Floating Gardens of Aetheria", distanceMeters: 29887 },
     { origin: "Whispering Woods", destination: "Isle of Whispers", distanceMeters: 34476 },
     { origin: "Whispering Woods", destination: "Skyreach Peak", distanceMeters: 34573 },
-    { origin: "Wraithwood Forest", destination: "Bluebell Hollow", distanceMeters: 12412 },
-    { origin: "Wraithwood Forest", destination: "Celestial Observatory", distanceMeters: 41618 },
-    { origin: "Wraithwood Forest", destination: "Crystal Caverns", distanceMeters: 28954 },
-    { origin: "Wraithwood Forest", destination: "Eldoria", distanceMeters: 12008 },
+    { origin: "Wraithwood Forest", destination: "Bluebell Hollow", distanceMeters: 13547 },
+    { origin: "Wraithwood Forest", destination: "Celestial Observatory", distanceMeters: 41603 },
+    { origin: "Wraithwood Forest", destination: "Crystal Caverns", distanceMeters: 29262 },
+    { origin: "Wraithwood Forest", destination: "Eldoria", distanceMeters: 12146 },
     { origin: "Wraithwood Forest", destination: "Enchanted Oasis", distanceMeters: 41632 },
-    { origin: "Wraithwood Forest", destination: "Floating Gardens of Aetheria", distanceMeters: 14925 },
+    { origin: "Wraithwood Forest", destination: "Floating Gardens of Aetheria", distanceMeters: 15098 },
     { origin: "Wraithwood Forest", destination: "Isle of Whispers", distanceMeters: 21676 },
     { origin: "Wraithwood Forest", destination: "Skyreach Peak", distanceMeters: 42002 },
     { origin: "Wraithwood Forest", destination: "The Citadel", distanceMeters: 38200 },
@@ -296,13 +271,13 @@ export function calculateTeleportCost(distanceMeters: number, relevantTeleportLe
     const safeDistance = Math.max(0, Number(distanceMeters) || 0);
     if (safeDistance <= 0) return 0;
 
-    const safeLevel = Math.max(0, Number(relevantTeleportLevel) || 0);
-    const coordDist = safeDistance / 75;
-    const slope = calculateTeleportSlope(safeLevel);
-    const rawBaseCost = 50 + coordDist * slope;
+    const refAdded = calculateReferenceAddedCost(relevantTeleportLevel);
+    const ratePerMeter = refAdded / 42645;
+    const rawCost = 50 + ratePerMeter * safeDistance;
+    const finalCost = classDiscount ? rawCost * 0.5 : rawCost;
+
     const minCost = classDiscount ? Math.round(MIN_TELEPORT_ACTION_COST * 0.5) : MIN_TELEPORT_ACTION_COST;
-    const finalCost = classDiscount ? Math.round(rawBaseCost * 0.5) : Math.round(rawBaseCost);
-    return Math.max(minCost, finalCost);
+    return Math.max(minCost, Math.floor(finalCost));
 }
 
 export function calculateTravelSeconds(distanceMeters: number, movementSpeed: number) {
