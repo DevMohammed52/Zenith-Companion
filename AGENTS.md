@@ -25,13 +25,13 @@
 ## 5. Page Decomposition & Modularization Backlog (22 Remaining)
 *Goal: Decompose monolithic God Pages into modular feature components under `src/app/<route>/components/` and custom hooks under `src/app/<route>/hooks/`, reducing `page.tsx` to an orchestrator (< 200 lines) with strict layout containment (`CLS <= 0.1`) and game math invariance.*
 
-### Completed (3/25)
+### Completed (4/25)
 - [x] `/housing` (was 4,322 lines $\rightarrow$ 41 lines)
 - [x] `/bosses` (was 2,886 lines $\rightarrow$ 147 lines)
 - [x] `/dungeons` (was 3,131 lines $\rightarrow$ 157 lines)
+- [x] `/profiles` (was 3,434 lines $\rightarrow$ 213 lines)
 
-### Tier 1: Mega God Pages (> 2,000 Lines) — 9 Pages
-- [ ] `/profiles` (2,966 lines) — Profile import, alt switching, stat sheets, D1 state polling
+### Tier 1: Mega God Pages (> 2,000 Lines) — 8 Pages
 - [ ] `/forge` (2,633 lines) — Ore forging, catalyst calculations, heat mechanics, profit EV
 - [ ] `/market-alerts` (2,518 lines) — Live price triggers, volume filters, notification routing
 - [ ] `/lore` (2,480 lines) — Lore browser, thread connections, search indexing
