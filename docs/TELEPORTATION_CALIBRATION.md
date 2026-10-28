@@ -83,3 +83,36 @@ Per the official IdleMMO Wiki, the 6 skills excluded from economic teleport leve
 4. `Guild Mastery`
 5. `Yule Mastery`
 6. `Meditation`
+
+
+---
+
+## 6. Reverse-Engineering: Why PCHIP Spline Cracked vs Piecewise Quadratic
+
+### The Root Cause of PCHIP Spline Bulge
+Previously, Zenith Companion approximated the teleportation cost using a Monotone Cubic Hermite Interpolating Polynomial (PCHIP) between 11 empirical anchor points.
+
+While PCHIP guarantees monotonicity ($S'(tl) \ge 0$), its derivative calculation uses weighted harmonic means of neighboring secular slopes ($\Delta_{i-1}, \Delta_i$):
+1. **Curvature Mismatch**: In the upper bracket ($800 \le TL \le 1,500$), the game's true cost formula is a **concave quadratic** ($f''(TL) = -2 \times 0.0018319 = -0.00366$, meaning its marginal rate of increase declines linearly toward the 1,500 soft-cap ceiling).
+2. **Tangent Overshoot**: PCHIP's node tangents between Anchor 800 ($S = 1.7622$) and Anchor 1000 ($S = 2.5361$) over-estimated the instantaneous derivative at $TL \approx 950\dots 1,000$.
+3. **The HadesFish Discrepancy**: At $TL = 976$ (HadesFish), the true rate per meter is:
+   $$\text{refAdded}(976) = 1900.49 - 0.0018319 \times (1500 - 976)^2 = 1397.49\text{g}$$
+   $$\text{ratePerMeter} = \frac{1397.49}{42,645} \approx 0.03276907$$
+   $$\text{coordSlope} = 0.03276907 \times 75 = 2.45768$$
+   The PCHIP spline predicted $S = 2.46717$ (+0.00949 per coordinate unit). Multiplied across longer routes (e.g. Citadel: $509.33$ coords, Skyreach: $560$ coords), this created a consistent $+2\text{g}$ to $+6\text{g}$ positive residual across all 10 destinations.
+
+### The True Closed-Form Piecewise Quadratic Formula (Implemented)
+$$\text{refAdded}(tl) = \begin{cases} 0 & tl \le 200 \\ \frac{137}{90,000}(tl - 200)^2 + \frac{227}{300}(tl - 200) & 200 < tl < 800 \\ 1900.49 - 0.0018319(1500 - tl)^2 & 800 \le tl \le 1,500 \\ 1900.49 & tl > 1,500 \end{cases}$$
+
+$$\text{rawCost} = 50 + \frac{\text{refAdded}(tl) \times \text{distanceMeters}}{42,645}$$
+
+$$\text{finalCost} = \text{isDiscount} \ ? \ \text{rawCost} \times 0.5 : \text{rawCost}$$
+
+$$\text{teleportCost} = \max(\text{isDiscount} \ ? \ 25 : 50, \lfloor\text{finalCost}\rfloor)$$
+
+### Validation Results (43 In-Game Real-World Trips)
+- **Exact Matches (0 diff)**: **36 / 43 (83.7%)** (up from 23/43 on PCHIP)
+- **Within $\le 1\text{g}$**: **42 / 43 (97.7%)**
+- **HadesFish (All 10 Routes)**: **10 / 10 exact (100% 0 diff)**
+- **D3vxGh0st (All 10 Routes)**: **10 / 10 exact (100% 0 diff)**
+- **BloodSpirit & BlueSpirit**: 100% accurate once Meditation is excluded from Gross TL.
