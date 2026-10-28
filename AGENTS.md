@@ -70,6 +70,7 @@ A local, indexed knowledge repository of the IdleMMO game is maintained at `.age
   - Every wiki article has a native clean markdown endpoint: `https://support.idle-mmo.com/wiki/<category>/<page>.md`
   - Knowledge base articles: `https://support.idle-mmo.com/knowledge-base/<category>/<page>.md`
   - In-house AI assistant ("Boo"): Accessible via `POST https://support.idle-mmo.com/question-box` with `{ question: string }` and CSRF cookie.
+* **Wiki Recency vs Patch Notes Verification**: Wiki articles often lag behind live game updates. ALWAYS verify the article's "Last updated" date against newer releases in `public/idlemmo-patch-notes.json` (or live patch notes). If a patch was released after the wiki article was last modified, the patch notes take precedence.
 * **Usage & Token Efficiency Hierarchy**:
   1. **Tier 1 (Lowest Tokens & Instant)**: ALWAYS search `.agents/knowledge/idlemmo/` with `rg` and read specific line slices (`view_file`).
   2. **Tier 2 (Official Remote Markdown)**: When verifying unindexed patch notes or recent game rule changes, fetch the direct clean `.md` URL on `support.idle-mmo.com/...md`.
