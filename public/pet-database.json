@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-10-29T18:37:21.676Z",
+    "generatedAt": "2026-10-29T19:29:01.874Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
-      "petsWithExchangeListings": 32,
-      "exchangeListings": 568,
-      "exchangeSpecies": 37
+      "petsWithExchangeListings": 33,
+      "exchangeListings": 570,
+      "exchangeSpecies": 38
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -59576,21 +59576,26 @@
       "valuation": null,
       "exchange": {
         "petId": 33,
-        "listingCount": 1,
+        "listingCount": 2,
         "minPrice": 7000000,
         "maxPrice": 7000000,
         "byQuality": {
           "EPIC": {
-            "count": 1,
+            "count": 2,
             "min_price": 7000000,
             "max_price": 7000000,
-            "total_price": 7000000,
+            "total_price": 14000000,
             "average_price": 7000000
           }
         },
         "averagePrice": 7000000,
         "medianPrice": 7000000,
         "sampleListings": [
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 7000000
+          },
           {
             "level": 1,
             "quality": "EPIC",
@@ -68787,7 +68792,30 @@
       },
       "rarity": null,
       "valuation": null,
-      "exchange": null,
+      "exchange": {
+        "petId": 35,
+        "listingCount": 1,
+        "minPrice": 7000000,
+        "maxPrice": 7000000,
+        "byQuality": {
+          "EPIC": {
+            "count": 1,
+            "min_price": 7000000,
+            "max_price": 7000000,
+            "total_price": 7000000,
+            "average_price": 7000000
+          }
+        },
+        "averagePrice": 7000000,
+        "medianPrice": 7000000,
+        "sampleListings": [
+          {
+            "level": 1,
+            "quality": "EPIC",
+            "price": 7000000
+          }
+        ]
+      },
       "battle": {
         "zones": []
       }
@@ -99970,9 +99998,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-29T18:37:21.653Z",
-    "listingCount": 568,
-    "speciesCount": 37,
+    "fetchedAt": "2026-10-29T19:29:01.849Z",
+    "listingCount": 570,
+    "speciesCount": 38,
     "pageCount": 23
   }
 }
