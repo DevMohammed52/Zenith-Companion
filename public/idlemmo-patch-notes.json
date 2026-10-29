@@ -1,30 +1,31 @@
 {
   "meta": {
-    "generatedAt": "2026-10-29T10:51:31.918Z",
+    "generatedAt": "2026-10-29T21:02:49.577Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 287,
-    "totalFetched": 287,
+    "totalAvailable": 288,
+    "totalFetched": 288,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 290,
+    "latestPatchId": 291,
     "oldestPatchId": 1,
-    "latestVersion": "0.86.1",
+    "latestVersion": "0.86.2",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
-      "bug-fixes": 206,
-      "combat": 138,
-      "dungeons": 60,
-      "seasonal": 84,
+      "public-api": 21,
+      "combat": 139,
+      "dungeons": 61,
+      "economy": 138,
+      "skills": 165,
+      "items": 164,
+      "mobile-ui": 110,
+      "seasonal": 85,
+      "bug-fixes": 207,
       "pets": 111,
       "guilds": 77,
-      "economy": 137,
-      "skills": 164,
-      "items": 163,
       "map": 67,
       "translations": 16,
-      "mobile-ui": 109,
       "membership": 69,
       "conquest": 27,
       "housing": 35,
@@ -33,7 +34,6 @@
       "tavern": 35,
       "world-bosses": 46,
       "hunting": 68,
-      "public-api": 20,
       "weather": 5,
       "quests": 10
     },
@@ -41,12 +41,179 @@
   },
   "patchNotes": [
     {
+      "id": 291,
+      "version": "0.86.2",
+      "title": "Campaign Contest Improvements + Bug Fixes",
+      "headline": "Version 0.86.2 - Campaign Contest Improvements + Bug Fixes",
+      "releasedAt": "2026-10-29T12:42:39",
+      "releaseLabel": "8 hours ago",
+      "releaseDateLabel": "Oct 29 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=291",
+      "categories": [
+        "public-api",
+        "combat",
+        "dungeons",
+        "economy",
+        "skills",
+        "items",
+        "mobile-ui",
+        "seasonal",
+        "bug-fixes"
+      ],
+      "excerpt": "Seasonal Contest Fixed throws sometimes stopping completely until you refreshed the page. Clicks would still play the animation and use up items, but no points were scored. Fixed opponents’ target rings disappearing a...",
+      "contentBlocks": [
+        {
+          "type": "heading",
+          "text": "Seasonal Contest"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed throws sometimes stopping completely until you refreshed the page. Clicks would still play the animation and use up items, but no points were scored."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed opponents’ target rings disappearing after a while."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the battleground sometimes staying empty after you came back to the tab."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the “too many interactions” message always saying “Try again in 0 seconds”. It now shows the real wait."
+        },
+        {
+          "type": "listItem",
+          "text": "Players can now receive 500 throws every 10 minutes, up from 100, so popular targets get locked out far less often."
+        },
+        {
+          "type": "listItem",
+          "text": "A refused throw now gives your item back and puts that target on cooldown, so you aren’t stuck retrying a locked target."
+        },
+        {
+          "type": "listItem",
+          "text": "Verification checks now come up much less often while throwing."
+        },
+        {
+          "type": "heading",
+          "text": "Bug Fixes"
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed queued battles losing ascension battle damage bonuses (including Slayer ascension) when the stack started after the perk’s duration ended; they now apply like all other buffs active when the battle is queued."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed a bug preventing listings from being removed on the market when you list the same item 2 or more times."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the Slayer badge in the main menu not showing its ascension level, and added ascension badges to the Battle, Slayer and Dungeons entries on the Combat page."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed various UI bugs."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed market bug that locked out items within the market if a character switches their main character and they are below total level 150."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed the campaign reward chain, the reward preview and the Rewards tab count, which showed more tiers as claimable than your points could pay for because claiming a tier spends its points."
+        },
+        {
+          "type": "listItem",
+          "text": "Fixed campaign task progress not counting until you opened the campaign page after a task reset or a new campaign starting."
+        },
+        {
+          "type": "listItem",
+          "text": "[Public API] Fixed the public API item inspect endpoint returning 1 for recipe experience; it now returns the full skill and stat experience, and max_uses is null for unlimited recipes."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Seasonal Contest",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed throws sometimes stopping completely until you refreshed the page. Clicks would still play the animation and use up items, but no points were scored."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed opponents’ target rings disappearing after a while."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the battleground sometimes staying empty after you came back to the tab."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the “too many interactions” message always saying “Try again in 0 seconds”. It now shows the real wait."
+            },
+            {
+              "type": "listItem",
+              "text": "Players can now receive 500 throws every 10 minutes, up from 100, so popular targets get locked out far less often."
+            },
+            {
+              "type": "listItem",
+              "text": "A refused throw now gives your item back and puts that target on cooldown, so you aren’t stuck retrying a locked target."
+            },
+            {
+              "type": "listItem",
+              "text": "Verification checks now come up much less often while throwing."
+            }
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "blocks": [
+            {
+              "type": "listItem",
+              "text": "Fixed queued battles losing ascension battle damage bonuses (including Slayer ascension) when the stack started after the perk’s duration ended; they now apply like all other buffs active when the battle is queued."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed a bug preventing listings from being removed on the market when you list the same item 2 or more times."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the Slayer badge in the main menu not showing its ascension level, and added ascension badges to the Battle, Slayer and Dungeons entries on the Combat page."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed various UI bugs."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed market bug that locked out items within the market if a character switches their main character and they are below total level 150."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed the campaign reward chain, the reward preview and the Rewards tab count, which showed more tiers as claimable than your points could pay for because claiming a tier spends its points."
+            },
+            {
+              "type": "listItem",
+              "text": "Fixed campaign task progress not counting until you opened the campaign page after a task reset or a new campaign starting."
+            },
+            {
+              "type": "listItem",
+              "text": "[Public API] Fixed the public API item inspect endpoint returning 1 for recipe experience; it now returns the full skill and stat experience, and max_uses is null for unlimited recipes."
+            }
+          ]
+        }
+      ],
+      "bodyText": "Seasonal Contest\nFixed throws sometimes stopping completely until you refreshed the page. Clicks would still play the animation and use up items, but no points were scored.\nFixed opponents’ target rings disappearing after a while.\nFixed the battleground sometimes staying empty after you came back to the tab.\nFixed the “too many interactions” message always saying “Try again in 0 seconds”. It now shows the real wait.\nPlayers can now receive 500 throws every 10 minutes, up from 100, so popular targets get locked out far less often.\nA refused throw now gives your item back and puts that target on cooldown, so you aren’t stuck retrying a locked target.\nVerification checks now come up much less often while throwing.\nBug Fixes\nFixed queued battles losing ascension battle damage bonuses (including Slayer ascension) when the stack started after the perk’s duration ended; they now apply like all other buffs active when the battle is queued.\nFixed a bug preventing listings from being removed on the market when you list the same item 2 or more times.\nFixed the Slayer badge in the main menu not showing its ascension level, and added ascension badges to the Battle, Slayer and Dungeons entries on the Combat page.\nFixed various UI bugs.\nFixed market bug that locked out items within the market if a character switches their main character and they are below total level 150.\nFixed the campaign reward chain, the reward preview and the Rewards tab count, which showed more tiers as claimable than your points could pay for because claiming a tier spends its points.\nFixed campaign task progress not counting until you opened the campaign page after a task reset or a new campaign starting.\n[Public API] Fixed the public API item inspect endpoint returning 1 for recipe experience; it now returns the full skill and stat experience, and max_uses is null for unlimited recipes.",
+      "searchText": "version 0.86.2 - campaign contest improvements + bug fixes seasonal contest fixed throws sometimes stopping completely until you refreshed the page. clicks would still play the animation and use up items, but no points were scored. fixed opponents’ target rings disappearing after a while. fixed the battleground sometimes staying empty after you came back to the tab. fixed the “too many interactions” message always saying “try again in 0 seconds”. it now shows the real wait. players can now receive 500 throws every 10 minutes, up from 100, so popular targets get locked out far less often. a refused throw now gives your item back and puts that target on cooldown, so you aren’t stuck retrying a locked target. verification checks now come up much less often while throwing. bug fixes fixed queued battles losing ascension battle damage bonuses (including slayer ascension) when the stack started after the perk’s duration ended; they now apply like all other buffs active when the battle is queued. fixed a bug preventing listings from being removed on the market when you list the same item 2 or more times. fixed the slayer badge in the main menu not showing its ascension level, and added ascension badges to the battle, slayer and dungeons entries on the combat page. fixed various ui bugs. fixed market bug that locked out items within the market if a character switches their main character and they are below total level 150. fixed the campaign reward chain, the reward preview and the rewards tab count, which showed more tiers as claimable than your points could pay for because claiming a tier spends its points. fixed campaign task progress not counting until you opened the campaign page after a task reset or a new campaign starting. [public api] fixed the public api item inspect endpoint returning 1 for recipe experience; it now returns the full skill and stat experience, and max_uses is null for unlimited recipes."
+    },
+    {
       "id": 290,
       "version": "0.86.1",
       "title": "Support",
       "headline": "Version 0.86.1 - Support",
       "releasedAt": "2026-10-27T18:18:13",
-      "releaseLabel": "1 day ago",
+      "releaseLabel": "2 days ago",
       "releaseDateLabel": "Oct 27 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=290",
@@ -120,7 +287,7 @@
       "title": "🎃 Eve of Shadows",
       "headline": "Version 0.86.0-PB - 🎃 Eve of Shadows",
       "releasedAt": "2026-10-23T13:04:55",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Oct 23 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=289",
@@ -172,7 +339,7 @@
       "title": "QoL Improvements",
       "headline": "Version 0.85.0 - QoL Improvements",
       "releasedAt": "2026-10-22T17:35:39",
-      "releaseLabel": "6 days ago",
+      "releaseLabel": "1 week ago",
       "releaseDateLabel": "Oct 22 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=288",
@@ -1470,7 +1637,7 @@
       "title": "Upcoming Update",
       "headline": "Version 0.83.4-PB - Upcoming Update",
       "releasedAt": "2026-09-29T11:45:14",
-      "releaseLabel": "4 weeks ago",
+      "releaseLabel": "1 month ago",
       "releaseDateLabel": "Sep 29 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=284",
