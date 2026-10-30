@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-10-30T08:52:51.166Z",
+    "generatedAt": "2026-10-30T10:29:23.403Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
-      "petsWithExchangeListings": 31,
+      "petsWithExchangeListings": 32,
       "exchangeListings": 557,
-      "exchangeSpecies": 36
+      "exchangeSpecies": 37
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -16384,12 +16384,12 @@
             "count": 5,
             "min_price": 450000,
             "max_price": 1000000,
-            "total_price": 3070000,
-            "average_price": 614000
+            "total_price": 3045000,
+            "average_price": 609000
           }
         },
-        "averagePrice": 614000,
-        "medianPrice": 525000,
+        "averagePrice": 609000,
+        "medianPrice": 500000,
         "sampleListings": [
           {
             "level": 1,
@@ -16404,7 +16404,7 @@
           {
             "level": 1,
             "quality": "EPIC",
-            "price": 525000
+            "price": 500000
           },
           {
             "level": 81,
@@ -22594,19 +22594,19 @@
       "valuation": null,
       "exchange": {
         "petId": 9,
-        "listingCount": 53,
+        "listingCount": 51,
         "minPrice": 5000,
         "maxPrice": 50000,
         "byQuality": {
           "STANDARD": {
-            "count": 53,
+            "count": 51,
             "min_price": 5000,
             "max_price": 50000,
-            "total_price": 361874,
-            "average_price": 6828
+            "total_price": 351690,
+            "average_price": 6896
           }
         },
-        "averagePrice": 6828,
+        "averagePrice": 6896,
         "medianPrice": 5000,
         "sampleListings": [
           {
@@ -59387,20 +59387,20 @@
       "valuation": null,
       "exchange": {
         "petId": 22,
-        "listingCount": 48,
+        "listingCount": 49,
         "minPrice": 5000,
         "maxPrice": 100000,
         "byQuality": {
           "STANDARD": {
-            "count": 48,
+            "count": 49,
             "min_price": 5000,
             "max_price": 100000,
-            "total_price": 361082,
-            "average_price": 7523
+            "total_price": 366833,
+            "average_price": 7486
           }
         },
-        "averagePrice": 7523,
-        "medianPrice": 5042,
+        "averagePrice": 7486,
+        "medianPrice": 5050,
         "sampleListings": [
           {
             "level": 1,
@@ -81060,7 +81060,30 @@
           }
         ]
       },
-      "exchange": null,
+      "exchange": {
+        "petId": 15,
+        "listingCount": 1,
+        "minPrice": 230000,
+        "maxPrice": 230000,
+        "byQuality": {
+          "PREMIUM": {
+            "count": 1,
+            "min_price": 230000,
+            "max_price": 230000,
+            "total_price": 230000,
+            "average_price": 230000
+          }
+        },
+        "averagePrice": 230000,
+        "medianPrice": 230000,
+        "sampleListings": [
+          {
+            "level": 69,
+            "quality": "PREMIUM",
+            "price": 230000
+          }
+        ]
+      },
       "battle": {
         "zones": [
           {
@@ -99922,9 +99945,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-10-30T08:52:51.143Z",
+    "fetchedAt": "2026-10-30T10:29:23.388Z",
     "listingCount": 557,
-    "speciesCount": 36,
+    "speciesCount": 37,
     "pageCount": 23
   }
 }
