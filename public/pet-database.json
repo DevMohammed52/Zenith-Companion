@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-11-03T20:20:28.479Z",
+    "generatedAt": "2026-11-03T21:51:41.424Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
       "petsWithExchangeListings": 33,
-      "exchangeListings": 591,
+      "exchangeListings": 592,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -868,21 +868,26 @@
       },
       "exchange": {
         "petId": 30,
-        "listingCount": 22,
-        "minPrice": 400000,
+        "listingCount": 23,
+        "minPrice": 210000,
         "maxPrice": 620000,
         "byQuality": {
           "EPIC": {
-            "count": 22,
-            "min_price": 400000,
+            "count": 23,
+            "min_price": 210000,
             "max_price": 620000,
-            "total_price": 13220980,
-            "average_price": 600954
+            "total_price": 13430980,
+            "average_price": 583956
           }
         },
-        "averagePrice": 600954,
+        "averagePrice": 583956,
         "medianPrice": 620000,
         "sampleListings": [
+          {
+            "level": 13,
+            "quality": "EPIC",
+            "price": 210000
+          },
           {
             "level": 77,
             "quality": "EPIC",
@@ -897,11 +902,6 @@
             "level": 86,
             "quality": "EPIC",
             "price": 615980
-          },
-          {
-            "level": 94,
-            "quality": "EPIC",
-            "price": 620000
           },
           {
             "level": 94,
@@ -77897,12 +77897,12 @@
             "count": 23,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 220929,
-            "average_price": 9606
+            "total_price": 219827,
+            "average_price": 9558
           }
         },
-        "averagePrice": 9606,
-        "medianPrice": 5501,
+        "averagePrice": 9558,
+        "medianPrice": 5401,
         "sampleListings": [
           {
             "level": 1,
@@ -77935,6 +77935,11 @@
             "price": 5067
           },
           {
+            "level": 5,
+            "quality": "STANDARD",
+            "price": 5067
+          },
+          {
             "level": 13,
             "quality": "STANDARD",
             "price": 5184
@@ -77958,11 +77963,6 @@
             "level": 14,
             "quality": "STANDARD",
             "price": 5401
-          },
-          {
-            "level": 31,
-            "quality": "STANDARD",
-            "price": 5501
           }
         ]
       },
@@ -100023,8 +100023,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-11-03T20:20:28.455Z",
-    "listingCount": 591,
+    "fetchedAt": "2026-11-03T21:51:41.405Z",
+    "listingCount": 592,
     "speciesCount": 38,
     "pageCount": 24
   }
