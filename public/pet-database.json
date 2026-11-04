@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-11-04T11:37:23.424Z",
+    "generatedAt": "2026-11-04T12:53:10.454Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
       "petsWithExchangeListings": 33,
-      "exchangeListings": 578,
+      "exchangeListings": 580,
       "exchangeSpecies": 38
     },
     "sources": [
@@ -868,20 +868,20 @@
       },
       "exchange": {
         "petId": 30,
-        "listingCount": 3,
+        "listingCount": 4,
         "minPrice": 210000,
-        "maxPrice": 615980,
+        "maxPrice": 629000,
         "byQuality": {
           "EPIC": {
-            "count": 3,
+            "count": 4,
             "min_price": 210000,
-            "max_price": 615980,
-            "total_price": 1225980,
-            "average_price": 408660
+            "max_price": 629000,
+            "total_price": 1851000,
+            "average_price": 462750
           }
         },
-        "averagePrice": 408660,
-        "medianPrice": 400000,
+        "averagePrice": 462750,
+        "medianPrice": 506000,
         "sampleListings": [
           {
             "level": 14,
@@ -896,7 +896,12 @@
           {
             "level": 86,
             "quality": "EPIC",
-            "price": 615980
+            "price": 612000
+          },
+          {
+            "level": 94,
+            "quality": "EPIC",
+            "price": 629000
           }
         ]
       },
@@ -19348,20 +19353,20 @@
       "valuation": null,
       "exchange": {
         "petId": 24,
-        "listingCount": 83,
+        "listingCount": 84,
         "minPrice": 5000,
         "maxPrice": 55000,
         "byQuality": {
           "STANDARD": {
-            "count": 83,
+            "count": 84,
             "min_price": 5000,
             "max_price": 55000,
-            "total_price": 542122,
-            "average_price": 6532
+            "total_price": 547773,
+            "average_price": 6521
           }
         },
-        "averagePrice": 6532,
-        "medianPrice": 5184,
+        "averagePrice": 6521,
+        "medianPrice": 5192,
         "sampleListings": [
           {
             "level": 1,
@@ -81053,17 +81058,37 @@
             "count": 13,
             "min_price": 58823,
             "max_price": 178000,
-            "total_price": 1186823,
-            "average_price": 91294
+            "total_price": 1106823,
+            "average_price": 85140
           }
         },
-        "averagePrice": 91294,
+        "averagePrice": 85140,
         "medianPrice": 85000,
         "sampleListings": [
           {
             "level": 38,
             "quality": "PREMIUM",
             "price": 58823
+          },
+          {
+            "level": 77,
+            "quality": "PREMIUM",
+            "price": 70000
+          },
+          {
+            "level": 78,
+            "quality": "PREMIUM",
+            "price": 70000
+          },
+          {
+            "level": 79,
+            "quality": "PREMIUM",
+            "price": 70000
+          },
+          {
+            "level": 76,
+            "quality": "PREMIUM",
+            "price": 70000
           },
           {
             "level": 55,
@@ -81099,26 +81124,6 @@
             "level": 68,
             "quality": "PREMIUM",
             "price": 85000
-          },
-          {
-            "level": 77,
-            "quality": "PREMIUM",
-            "price": 90000
-          },
-          {
-            "level": 78,
-            "quality": "PREMIUM",
-            "price": 90000
-          },
-          {
-            "level": 79,
-            "quality": "PREMIUM",
-            "price": 90000
-          },
-          {
-            "level": 76,
-            "quality": "PREMIUM",
-            "price": 90000
           }
         ]
       },
@@ -99983,8 +99988,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-11-04T11:37:23.405Z",
-    "listingCount": 578,
+    "fetchedAt": "2026-11-04T12:53:10.441Z",
+    "listingCount": 580,
     "speciesCount": 38,
     "pageCount": 24
   }
