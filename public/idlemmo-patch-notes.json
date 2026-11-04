@@ -1,18 +1,19 @@
 {
   "meta": {
-    "generatedAt": "2026-11-04T12:02:01.773Z",
+    "generatedAt": "2026-11-04T21:51:39.472Z",
     "source": "https://web.idle-mmo.com/patch-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 289,
-    "totalFetched": 289,
+    "totalAvailable": 290,
+    "totalFetched": 290,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 292,
+    "latestPatchId": 293,
     "oldestPatchId": 1,
-    "latestVersion": "0.86.3",
+    "latestVersion": "0.86.4",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "world-bosses": 47,
       "seasonal": 86,
       "public-api": 21,
       "combat": 139,
@@ -32,7 +33,6 @@
       "alchemy": 44,
       "forge": 48,
       "tavern": 35,
-      "world-bosses": 46,
       "hunting": 68,
       "weather": 5,
       "quests": 10
@@ -41,12 +41,78 @@
   },
   "patchNotes": [
     {
+      "id": 293,
+      "version": "0.86.4",
+      "title": "App Update",
+      "headline": "Version 0.86.4 - App Update",
+      "releasedAt": "2026-11-04T16:31:04",
+      "releaseLabel": "5 hours ago",
+      "releaseDateLabel": "Nov 04 2026",
+      "page": 1,
+      "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=293",
+      "categories": [
+        "world-bosses"
+      ],
+      "excerpt": "We have recently released a new app update on both the iOS App Store and Google Play Store. Please ensure you update to the latest version , as push notifications will stop working on older versions of the app within...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We have recently released a new app update on both the iOS App Store and Google Play Store."
+        },
+        {
+          "type": "paragraph",
+          "text": "Please ensure you update to the latest version , as push notifications will stop working on older versions of the app within the next few weeks. If there is no pending update, you are on the latest version."
+        },
+        {
+          "type": "paragraph",
+          "text": "This update introduces a new behind-the-scenes notification system that gives us much greater flexibility over how we deliver push notifications."
+        },
+        {
+          "type": "paragraph",
+          "text": "We hope this will allow us to introduce more useful, opt-in notifications in the future, such as alerts for world bosses and other in-game events."
+        },
+        {
+          "type": "paragraph",
+          "text": "These additional notification options will be introduced in future updates."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We have recently released a new app update on both the iOS App Store and Google Play Store."
+            },
+            {
+              "type": "paragraph",
+              "text": "Please ensure you update to the latest version , as push notifications will stop working on older versions of the app within the next few weeks. If there is no pending update, you are on the latest version."
+            },
+            {
+              "type": "paragraph",
+              "text": "This update introduces a new behind-the-scenes notification system that gives us much greater flexibility over how we deliver push notifications."
+            },
+            {
+              "type": "paragraph",
+              "text": "We hope this will allow us to introduce more useful, opt-in notifications in the future, such as alerts for world bosses and other in-game events."
+            },
+            {
+              "type": "paragraph",
+              "text": "These additional notification options will be introduced in future updates."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We have recently released a new app update on both the iOS App Store and Google Play Store.\nPlease ensure you update to the latest version , as push notifications will stop working on older versions of the app within the next few weeks. If there is no pending update, you are on the latest version.\nThis update introduces a new behind-the-scenes notification system that gives us much greater flexibility over how we deliver push notifications.\nWe hope this will allow us to introduce more useful, opt-in notifications in the future, such as alerts for world bosses and other in-game events.\nThese additional notification options will be introduced in future updates.",
+      "searchText": "version 0.86.4 - app update we have recently released a new app update on both the ios app store and google play store. please ensure you update to the latest version , as push notifications will stop working on older versions of the app within the next few weeks. if there is no pending update, you are on the latest version. this update introduces a new behind-the-scenes notification system that gives us much greater flexibility over how we deliver push notifications. we hope this will allow us to introduce more useful, opt-in notifications in the future, such as alerts for world bosses and other in-game events. these additional notification options will be introduced in future updates."
+    },
+    {
       "id": 292,
       "version": "0.86.3",
       "title": "Community Goal",
       "headline": "Version 0.86.3 - Community Goal",
       "releasedAt": "2026-10-30T16:04:47",
-      "releaseLabel": "4 days ago",
+      "releaseLabel": "5 days ago",
       "releaseDateLabel": "Oct 30 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=292",
@@ -96,7 +162,7 @@
       "title": "Campaign Contest Improvements + Bug Fixes",
       "headline": "Version 0.86.2 - Campaign Contest Improvements + Bug Fixes",
       "releasedAt": "2026-10-29T12:42:39",
-      "releaseLabel": "5 days ago",
+      "releaseLabel": "6 days ago",
       "releaseDateLabel": "Oct 29 2026",
       "page": 1,
       "sourceUrl": "https://web.idle-mmo.com/patch-notes?patch_note_id=291",
