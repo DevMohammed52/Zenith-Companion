@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generatedAt": "2026-11-06T20:06:58.159Z",
+    "generatedAt": "2026-11-06T20:59:33.684Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
       "petsWithExchangeListings": 32,
-      "exchangeListings": 600,
+      "exchangeListings": 599,
       "exchangeSpecies": 37
     },
     "sources": [
@@ -868,20 +868,20 @@
       },
       "exchange": {
         "petId": 30,
-        "listingCount": 7,
+        "listingCount": 6,
         "minPrice": 370000,
-        "maxPrice": 638664,
+        "maxPrice": 612000,
         "byQuality": {
           "EPIC": {
-            "count": 7,
+            "count": 6,
             "min_price": 370000,
-            "max_price": 638664,
-            "total_price": 3170664,
-            "average_price": 452952
+            "max_price": 612000,
+            "total_price": 2532000,
+            "average_price": 422000
           }
         },
-        "averagePrice": 452952,
-        "medianPrice": 400000,
+        "averagePrice": 422000,
+        "medianPrice": 385000,
         "sampleListings": [
           {
             "level": 42,
@@ -912,11 +912,6 @@
             "level": 86,
             "quality": "EPIC",
             "price": 612000
-          },
-          {
-            "level": 100,
-            "quality": "EPIC",
-            "price": 638664
           }
         ]
       },
@@ -99980,8 +99975,8 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-11-06T20:06:58.144Z",
-    "listingCount": 600,
+    "fetchedAt": "2026-11-06T20:59:33.672Z",
+    "listingCount": 599,
     "speciesCount": 37,
     "pageCount": 24
   }
