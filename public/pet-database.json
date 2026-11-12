@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-11-12T21:09:28.630Z",
+    "generatedAt": "2026-11-12T22:52:02.940Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
@@ -10347,20 +10347,20 @@
       },
       "exchange": {
         "petId": 5,
-        "listingCount": 8,
+        "listingCount": 9,
         "minPrice": 177800,
         "maxPrice": 1750000,
         "byQuality": {
           "EPIC": {
-            "count": 8,
+            "count": 9,
             "min_price": 177800,
             "max_price": 1750000,
-            "total_price": 4581800,
-            "average_price": 572725
+            "total_price": 4949915,
+            "average_price": 549991
           }
         },
-        "averagePrice": 572725,
-        "medianPrice": 180300,
+        "averagePrice": 549991,
+        "medianPrice": 181800,
         "sampleListings": [
           {
             "level": 69,
@@ -10391,6 +10391,11 @@
             "level": 77,
             "quality": "EPIC",
             "price": 185800
+          },
+          {
+            "level": 69,
+            "quality": "EPIC",
+            "price": 368115
           },
           {
             "level": 99,
@@ -50428,30 +50433,25 @@
       },
       "exchange": {
         "petId": 13,
-        "listingCount": 2,
+        "listingCount": 1,
         "minPrice": 1999999,
-        "maxPrice": 2490000,
+        "maxPrice": 1999999,
         "byQuality": {
           "LEGENDARY": {
-            "count": 2,
+            "count": 1,
             "min_price": 1999999,
-            "max_price": 2490000,
-            "total_price": 4489999,
-            "average_price": 2245000
+            "max_price": 1999999,
+            "total_price": 1999999,
+            "average_price": 1999999
           }
         },
-        "averagePrice": 2245000,
-        "medianPrice": 2245000,
+        "averagePrice": 1999999,
+        "medianPrice": 1999999,
         "sampleListings": [
           {
             "level": 62,
             "quality": "LEGENDARY",
             "price": 1999999
-          },
-          {
-            "level": 81,
-            "quality": "LEGENDARY",
-            "price": 2490000
           }
         ]
       },
@@ -100132,7 +100132,7 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-11-12T21:09:28.611Z",
+    "fetchedAt": "2026-11-12T22:52:02.914Z",
     "listingCount": 685,
     "speciesCount": 43,
     "pageCount": 28
