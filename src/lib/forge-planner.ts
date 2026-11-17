@@ -378,7 +378,9 @@ export function calculateForgePlanner(
     }))
     .sort((a, b) => b.totalCost - a.totalCost || b.missingCopies - a.missingCopies || a.recipeName.localeCompare(b.recipeName));
 
-  const totalMissingCost = entries.reduce((sum, entry) => sum + entry.totalMissingCost, 0);
+  const totalMaterialMissingCost = materialNeeds.reduce((sum, row) => sum + row.totalCost, 0);
+  const totalRecipeMissingCost = recipeRows.reduce((sum, row) => sum + row.totalCost, 0);
+  const totalMissingCost = totalMaterialMissingCost + totalRecipeMissingCost;
   const totalOutputValue = entries.reduce((sum, entry) => sum + entry.outputValueTotal, 0);
 
   return {

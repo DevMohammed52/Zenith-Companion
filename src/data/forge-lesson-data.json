@@ -1,0 +1,930 @@
+{
+  "ores": [
+    {
+      "name": "Coal Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.03,
+      "efficiency": 1,
+      "duration_seconds": 1,
+      "base_exp": 1.03,
+      "base_exp_per_sec": 1.03
+    },
+    {
+      "name": "Tin Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.03,
+      "efficiency": 1,
+      "duration_seconds": 1,
+      "base_exp": 1.03,
+      "base_exp_per_sec": 1.03
+    },
+    {
+      "name": "Copper Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.29,
+      "efficiency": 1,
+      "duration_seconds": 2,
+      "base_exp": 1.29,
+      "base_exp_per_sec": 0.645
+    },
+    {
+      "name": "Iron Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.97,
+      "efficiency": 1,
+      "duration_seconds": 3,
+      "base_exp": 1.97,
+      "base_exp_per_sec": 0.6567
+    },
+    {
+      "name": "Lead Ore",
+      "saqr_level": 3,
+      "displayed_exp": 2.13,
+      "efficiency": 0.92,
+      "duration_seconds": 3,
+      "base_exp": 2.3152,
+      "base_exp_per_sec": 0.7717
+    },
+    {
+      "name": "Steel Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.38,
+      "efficiency": 0.52,
+      "duration_seconds": 4,
+      "base_exp": 2.6538,
+      "base_exp_per_sec": 0.6635
+    },
+    {
+      "name": "Mercury Ore",
+      "saqr_level": 3,
+      "displayed_exp": 0.77,
+      "efficiency": 0.25,
+      "duration_seconds": 5,
+      "base_exp": 3.08,
+      "base_exp_per_sec": 0.616
+    },
+    {
+      "name": "Chromite Ore",
+      "saqr_level": 3,
+      "displayed_exp": 0.86,
+      "efficiency": 0.25,
+      "duration_seconds": 5,
+      "base_exp": 3.44,
+      "base_exp_per_sec": 0.688
+    },
+    {
+      "name": "Uranium Ore",
+      "saqr_level": 3,
+      "displayed_exp": 0.94,
+      "efficiency": 0.25,
+      "duration_seconds": 6,
+      "base_exp": 3.76,
+      "base_exp_per_sec": 0.6267
+    },
+    {
+      "name": "Mystic Ore",
+      "saqr_level": 3,
+      "displayed_exp": 1.18,
+      "efficiency": 0.25,
+      "duration_seconds": 7,
+      "base_exp": 4.72,
+      "base_exp_per_sec": 0.6743
+    }
+  ],
+  "bars": [
+    {
+      "name": "Tin Bar",
+      "saqr_level": 3,
+      "displayed_exp": 3.55,
+      "efficiency": 1,
+      "base_exp": 3.55
+    },
+    {
+      "name": "Copper Bar",
+      "saqr_level": 3,
+      "displayed_exp": 4.14,
+      "efficiency": 1,
+      "base_exp": 4.14
+    },
+    {
+      "name": "Iron Bar",
+      "saqr_level": 3,
+      "displayed_exp": 5.72,
+      "efficiency": 1,
+      "base_exp": 5.72
+    },
+    {
+      "name": "Lead Bar",
+      "saqr_level": 3,
+      "displayed_exp": 5.99,
+      "efficiency": 0.92,
+      "base_exp": 6.5109
+    },
+    {
+      "name": "Steel Bar",
+      "saqr_level": 3,
+      "displayed_exp": 3.8,
+      "efficiency": 0.52,
+      "base_exp": 7.3077
+    },
+    {
+      "name": "Mercury Bar",
+      "saqr_level": 3,
+      "displayed_exp": 2.07,
+      "efficiency": 0.25,
+      "base_exp": 8.28
+    },
+    {
+      "name": "Chromite Bar",
+      "saqr_level": 3,
+      "displayed_exp": 2.27,
+      "efficiency": 0.25,
+      "base_exp": 9.08
+    },
+    {
+      "name": "Uranium Bar",
+      "saqr_level": 3,
+      "displayed_exp": 2.47,
+      "efficiency": 0.25,
+      "base_exp": 9.88
+    },
+    {
+      "name": "Mystic Bar",
+      "saqr_level": 3,
+      "displayed_exp": 3.01,
+      "efficiency": 0.25,
+      "base_exp": 12.04
+    }
+  ],
+  "total_bars_duration_seconds": 108,
+  "logs": [
+    {
+      "name": "Oak Log",
+      "saqr_level": 3,
+      "displayed_exp": 1.03,
+      "efficiency": 1,
+      "duration_seconds": 1,
+      "base_exp": 1.03
+    },
+    {
+      "name": "Yew Log",
+      "saqr_level": 3,
+      "displayed_exp": 1.29,
+      "efficiency": 1,
+      "duration_seconds": 2,
+      "base_exp": 1.29
+    },
+    {
+      "name": "Spruce Log",
+      "saqr_level": 3,
+      "displayed_exp": 1.97,
+      "efficiency": 1,
+      "duration_seconds": 3,
+      "base_exp": 1.97
+    },
+    {
+      "name": "Birch Log",
+      "saqr_level": 3,
+      "displayed_exp": 2.13,
+      "efficiency": 0.92,
+      "duration_seconds": 3,
+      "base_exp": 2.3152
+    },
+    {
+      "name": "Banyan Log",
+      "saqr_level": 3,
+      "displayed_exp": 1.38,
+      "efficiency": 0.52,
+      "duration_seconds": 4,
+      "base_exp": 2.6538
+    },
+    {
+      "name": "Maple Log",
+      "saqr_level": 3,
+      "displayed_exp": 0.77,
+      "efficiency": 0.25,
+      "duration_seconds": 5,
+      "base_exp": 3.08
+    },
+    {
+      "name": "Willow Log",
+      "saqr_level": 3,
+      "displayed_exp": 0.86,
+      "efficiency": 0.25,
+      "duration_seconds": 5,
+      "base_exp": 3.44
+    },
+    {
+      "name": "Mahogany Log",
+      "saqr_level": 3,
+      "displayed_exp": 0.94,
+      "efficiency": 0.25,
+      "duration_seconds": 6,
+      "base_exp": 3.76
+    },
+    {
+      "name": "Mystical Log",
+      "saqr_level": 3,
+      "displayed_exp": 1.18,
+      "efficiency": 0.25,
+      "duration_seconds": 7,
+      "base_exp": 4.72
+    }
+  ],
+  "total_logs_duration_seconds": 39,
+  "mobDrops": {
+    "Goblin Totem": {
+      "quality": "STANDARD",
+      "mob": "Goblin (Lv 2)",
+      "mobLvl": 2,
+      "displayedExpOnLv4": 4.32,
+      "displayedEff": 91,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 3.32,
+      "marketPrice": 15,
+      "goldPerBaseExp": 4.52
+    },
+    "Snakes Head": {
+      "quality": "STANDARD",
+      "mob": "Gorgon (Lv 14)",
+      "mobLvl": 14,
+      "displayedExpOnLv4": 2.88,
+      "displayedEff": 91,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 2.22,
+      "marketPrice": 61,
+      "goldPerBaseExp": 27.48
+    },
+    "Djinn's Bottle": {
+      "quality": "STANDARD",
+      "mob": "Djinn (Lv 16)",
+      "mobLvl": 16,
+      "displayedExpOnLv4": 3.34,
+      "displayedEff": 84,
+      "penaltyEff": 0.92,
+      "normalizedBaseExp": 2.79,
+      "marketPrice": 135,
+      "goldPerBaseExp": 48.39
+    },
+    "Slime Extract": {
+      "quality": "STANDARD",
+      "mob": "Slimeball (Lv 24)",
+      "mobLvl": 24,
+      "displayedExpOnLv4": 1.57,
+      "displayedEff": 55,
+      "penaltyEff": 0.6,
+      "normalizedBaseExp": 2.01,
+      "marketPrice": 7,
+      "goldPerBaseExp": 3.48
+    },
+    "Bone Fragment": {
+      "quality": "STANDARD",
+      "mob": "Skeleton Warrior (Lv 28)",
+      "mobLvl": 28,
+      "displayedExpOnLv4": 1.22,
+      "displayedEff": 40,
+      "penaltyEff": 0.44,
+      "normalizedBaseExp": 2.13,
+      "marketPrice": 19,
+      "goldPerBaseExp": 8.92
+    },
+    "Long Forgotten Necklace": {
+      "quality": "STANDARD",
+      "mob": "Zombie (Lv 32)",
+      "mobLvl": 32,
+      "displayedExpOnLv4": 0.76,
+      "displayedEff": 25,
+      "penaltyEff": 0.28,
+      "normalizedBaseExp": 2.09,
+      "marketPrice": 8,
+      "goldPerBaseExp": 3.83
+    },
+    "Dwarven Whetstone": {
+      "quality": "STANDARD",
+      "mob": "Dwarven Warrior (Lv 68)",
+      "mobLvl": 68,
+      "displayedExpOnLv4": 1.2,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 3.69,
+      "marketPrice": 28,
+      "goldPerBaseExp": 7.59
+    },
+    "Minotaurs Horn": {
+      "quality": "STANDARD",
+      "mob": "Minotaur (Lv 72)",
+      "mobLvl": 72,
+      "displayedExpOnLv4": 0.71,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 2.19,
+      "marketPrice": 9,
+      "goldPerBaseExp": 4.11
+    },
+    "Cursed Cloth": {
+      "quality": "STANDARD",
+      "mob": "Reaper (Lv 74)",
+      "mobLvl": 74,
+      "displayedExpOnLv4": 0.42,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 1.29,
+      "marketPrice": 8,
+      "goldPerBaseExp": 6.2
+    },
+    "Harpy's Wings": {
+      "quality": "STANDARD",
+      "mob": "Harpy (Lv 76)",
+      "mobLvl": 76,
+      "displayedExpOnLv4": 0.71,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 2.19,
+      "marketPrice": 9,
+      "goldPerBaseExp": 4.11
+    },
+    "Aetherial Feather Quill": {
+      "quality": "STANDARD",
+      "mob": "Griffon (Lv 94)",
+      "mobLvl": 94,
+      "displayedExpOnLv4": 0.65,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 2,
+      "marketPrice": 8,
+      "goldPerBaseExp": 4
+    },
+    "Claw of the Alpha": {
+      "quality": "STANDARD",
+      "mob": "Werewolf (Lv 99)",
+      "mobLvl": 99,
+      "displayedExpOnLv4": 0.52,
+      "displayedEff": 23,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 1.6,
+      "marketPrice": 8,
+      "goldPerBaseExp": 5
+    },
+    "Ruined Robes": {
+      "quality": "REFINED",
+      "mob": "Cultist (Lv 12)",
+      "mobLvl": 12,
+      "displayedExpOnLv4": 5.95,
+      "displayedEff": 94,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 4.58,
+      "marketPrice": 19,
+      "goldPerBaseExp": 4.15
+    },
+    "Cursed Talisman": {
+      "quality": "REFINED",
+      "mob": "Cultist (Lv 12)",
+      "mobLvl": 12,
+      "displayedExpOnLv4": 6.5,
+      "displayedEff": 94,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 5,
+      "marketPrice": 21,
+      "goldPerBaseExp": 4.2
+    },
+    "Raw Onion": {
+      "quality": "REFINED",
+      "mob": "Ogre (Lv 20)",
+      "mobLvl": 20,
+      "displayedExpOnLv4": 6.58,
+      "displayedEff": 71,
+      "penaltyEff": 0.76,
+      "normalizedBaseExp": 6.66,
+      "marketPrice": 24,
+      "goldPerBaseExp": 3.6
+    },
+    "Swamp Juice": {
+      "quality": "REFINED",
+      "mob": "Ogre (Lv 20)",
+      "mobLvl": 20,
+      "displayedExpOnLv4": 9.21,
+      "displayedEff": 71,
+      "penaltyEff": 0.76,
+      "normalizedBaseExp": 9.32,
+      "marketPrice": 46,
+      "goldPerBaseExp": 4.94
+    },
+    "Chest of Scraps": {
+      "quality": "REFINED",
+      "mob": "Pirate (Lv 26)",
+      "mobLvl": 26,
+      "displayedExpOnLv4": 5.25,
+      "displayedEff": 49,
+      "penaltyEff": 0.52,
+      "normalizedBaseExp": 7.77,
+      "marketPrice": 48,
+      "goldPerBaseExp": 6.18
+    },
+    "Siren's Scales": {
+      "quality": "REFINED",
+      "mob": "Siren (Lv 42)",
+      "mobLvl": 42,
+      "displayedExpOnLv4": 1.98,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 6.09,
+      "marketPrice": 18,
+      "goldPerBaseExp": 2.96
+    },
+    "Umbral Claw": {
+      "quality": "REFINED",
+      "mob": "Shadow Beast (Lv 35)",
+      "mobLvl": 35,
+      "displayedExpOnLv4": 3.16,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 9.72,
+      "marketPrice": 93,
+      "goldPerBaseExp": 9.57
+    },
+    "Wolf Pelt": {
+      "quality": "REFINED",
+      "mob": "Wolf (Lv 69)",
+      "mobLvl": 69,
+      "displayedExpOnLv4": 2.78,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 8.55,
+      "marketPrice": 90,
+      "goldPerBaseExp": 10.53
+    },
+    "Polar Bear Pelt": {
+      "quality": "REFINED",
+      "mob": "Polar Bear (Lv 60)",
+      "mobLvl": 60,
+      "displayedExpOnLv4": 3.02,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 9.29,
+      "marketPrice": 92,
+      "goldPerBaseExp": 9.9
+    },
+    "Raccoon Fur": {
+      "quality": "REFINED",
+      "mob": "Raccoon (Lv 64)",
+      "mobLvl": 64,
+      "displayedExpOnLv4": 2.78,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 8.55,
+      "marketPrice": 77,
+      "goldPerBaseExp": 9.01
+    },
+    "Black Bear Pelt": {
+      "quality": "REFINED",
+      "mob": "Black Bear (Lv 70)",
+      "mobLvl": 70,
+      "displayedExpOnLv4": 2.91,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 8.95,
+      "marketPrice": 75,
+      "goldPerBaseExp": 8.38
+    },
+    "Cursed Blade Fragment": {
+      "quality": "REFINED",
+      "mob": "Undead Knight (Lv 78)",
+      "mobLvl": 78,
+      "displayedExpOnLv4": 2.3,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 7.08,
+      "marketPrice": 40,
+      "goldPerBaseExp": 5.65
+    },
+    "Deer Antler": {
+      "quality": "REFINED",
+      "mob": "Deer (Lv 10)",
+      "mobLvl": 10,
+      "displayedExpOnLv4": 12.12,
+      "displayedEff": 94,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 9.32,
+      "marketPrice": 31,
+      "goldPerBaseExp": 3.33
+    },
+    "Pirates Code": {
+      "quality": "REFINED",
+      "mob": "Pirate (Lv 26)",
+      "mobLvl": 26,
+      "displayedExpOnLv4": 7.5,
+      "displayedEff": 49,
+      "penaltyEff": 0.52,
+      "normalizedBaseExp": 11.09,
+      "marketPrice": 68,
+      "goldPerBaseExp": 6.13
+    },
+    "Golem Core Fragment": {
+      "quality": "REFINED",
+      "mob": "Golem (Lv 58)",
+      "mobLvl": 58,
+      "displayedExpOnLv4": 1.74,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 5.35,
+      "marketPrice": 31,
+      "goldPerBaseExp": 5.79
+    },
+    "Moose Antler": {
+      "quality": "REFINED",
+      "mob": "Moose (Lv 54)",
+      "mobLvl": 54,
+      "displayedExpOnLv4": 3.31,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 10.18,
+      "marketPrice": 77,
+      "goldPerBaseExp": 7.56
+    },
+    "Lions Teeth": {
+      "quality": "REFINED",
+      "mob": "Lion (Lv 48)",
+      "mobLvl": 48,
+      "displayedExpOnLv4": 3.02,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 9.29,
+      "marketPrice": 148,
+      "goldPerBaseExp": 15.93
+    },
+    "Ducks Mouth": {
+      "quality": "PREMIUM",
+      "mob": "Duck (Lv 4)",
+      "mobLvl": 4,
+      "displayedExpOnLv4": 22.22,
+      "displayedEff": 96,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 17.09,
+      "marketPrice": 40,
+      "goldPerBaseExp": 2.34
+    },
+    "Goblin Pouch": {
+      "quality": "PREMIUM",
+      "mob": "Goblin (Lv 2)",
+      "mobLvl": 2,
+      "displayedExpOnLv4": 22.22,
+      "displayedEff": 96,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 17.09,
+      "marketPrice": 38,
+      "goldPerBaseExp": 2.22
+    },
+    "Goblin Scraps": {
+      "quality": "PREMIUM",
+      "mob": "Goblin (Lv 2)",
+      "mobLvl": 2,
+      "displayedExpOnLv4": 40.4,
+      "displayedEff": 96,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 31.08,
+      "marketPrice": 92,
+      "goldPerBaseExp": 2.96
+    },
+    "Lucky Rabbit Foot": {
+      "quality": "PREMIUM",
+      "mob": "Rabbit (Lv 1)",
+      "mobLvl": 1,
+      "displayedExpOnLv4": 22.22,
+      "displayedEff": 96,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 17.09,
+      "marketPrice": 57,
+      "goldPerBaseExp": 3.33
+    },
+    "Buffalo Horn": {
+      "quality": "PREMIUM",
+      "mob": "Buffalo (Lv 22)",
+      "mobLvl": 22,
+      "displayedExpOnLv4": 13.74,
+      "displayedEff": 65,
+      "penaltyEff": 0.68,
+      "normalizedBaseExp": 15.54,
+      "marketPrice": 42,
+      "goldPerBaseExp": 2.7
+    },
+    "Parchment": {
+      "quality": "PREMIUM",
+      "mob": "Pirate (Lv 26)",
+      "mobLvl": 26,
+      "displayedExpOnLv4": 17.51,
+      "displayedEff": 50,
+      "penaltyEff": 0.52,
+      "normalizedBaseExp": 25.9,
+      "marketPrice": 124,
+      "goldPerBaseExp": 4.79
+    },
+    "Vial of Wraith Ectoplasm": {
+      "quality": "PREMIUM",
+      "mob": "Wraith (Lv 52)",
+      "mobLvl": 52,
+      "displayedExpOnLv4": 8.42,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 25.91,
+      "marketPrice": 77,
+      "goldPerBaseExp": 2.97
+    },
+    "Siren's Soulstone": {
+      "quality": "PREMIUM",
+      "mob": "Siren (Lv 42)",
+      "mobLvl": 42,
+      "displayedExpOnLv4": 8.42,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 25.91,
+      "marketPrice": 83,
+      "goldPerBaseExp": 3.2
+    },
+    "Orb of Elemental Conjuring": {
+      "quality": "PREMIUM",
+      "mob": "Wizard of the South (Lv 82)",
+      "mobLvl": 82,
+      "displayedExpOnLv4": 2.78,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 8.55,
+      "marketPrice": 38,
+      "goldPerBaseExp": 4.44
+    },
+    "Elk Antler": {
+      "quality": "PREMIUM",
+      "mob": "Elk (Lv 38)",
+      "mobLvl": 38,
+      "displayedExpOnLv4": 5.45,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 16.77,
+      "marketPrice": 107,
+      "goldPerBaseExp": 6.38
+    },
+    "Enigmatic Stone": {
+      "quality": "PREMIUM",
+      "mob": "Golem (Lv 58)",
+      "mobLvl": 58,
+      "displayedExpOnLv4": 3.53,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 10.86,
+      "marketPrice": 78,
+      "goldPerBaseExp": 7.18
+    },
+    "Minotaur Hide": {
+      "quality": "PREMIUM",
+      "mob": "Minotaur (Lv 72)",
+      "mobLvl": 72,
+      "displayedExpOnLv4": 4.27,
+      "displayedEff": 24,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 13.14,
+      "marketPrice": 185,
+      "goldPerBaseExp": 14.08
+    },
+    "Forbidden Tome": {
+      "quality": "EPIC",
+      "mob": "Cultist (Lv 12)",
+      "mobLvl": 12,
+      "displayedExpOnLv6": 72.39,
+      "displayedEff": 100,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 55.68,
+      "marketPrice": 98,
+      "goldPerBaseExp": 1.76
+    },
+    "Venom Extract": {
+      "quality": "EPIC",
+      "mob": "Gorgon (Lv 14)",
+      "mobLvl": 14,
+      "displayedExpOnLv6": 63.7,
+      "displayedEff": 100,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 49,
+      "marketPrice": 87,
+      "goldPerBaseExp": 1.78
+    },
+    "Boar Tusk": {
+      "quality": "EPIC",
+      "mob": "Boar (Lv 8)",
+      "mobLvl": 8,
+      "displayedExpOnLv6": 106.17,
+      "displayedEff": 100,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 81.67,
+      "marketPrice": 400,
+      "goldPerBaseExp": 4.9
+    },
+    "Ivory": {
+      "quality": "EPIC",
+      "mob": "Elephant (Lv 36)",
+      "mobLvl": 36,
+      "displayedExpOnLv6": 16.59,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 51.05,
+      "marketPrice": 166,
+      "goldPerBaseExp": 3.25
+    },
+    "Undying Crest": {
+      "quality": "EPIC",
+      "mob": "Undead Knight (Lv 78)",
+      "mobLvl": 78,
+      "displayedExpOnLv6": 21.97,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 67.6,
+      "marketPrice": 236,
+      "goldPerBaseExp": 3.49
+    },
+    "Fire Elemental Essence": {
+      "quality": "EPIC",
+      "mob": "Fire Elemental (Lv 89)",
+      "mobLvl": 89,
+      "displayedExpOnLv6": 13.79,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 42.43,
+      "marketPrice": 186,
+      "goldPerBaseExp": 4.38
+    },
+    "Water Elemental Essence": {
+      "quality": "EPIC",
+      "mob": "Water Elemental (Lv 86)",
+      "mobLvl": 86,
+      "displayedExpOnLv6": 13.79,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 42.43,
+      "marketPrice": 169,
+      "goldPerBaseExp": 3.98
+    },
+    "Air Elemental Essence": {
+      "quality": "EPIC",
+      "mob": "Air Elemental (Lv 84)",
+      "mobLvl": 84,
+      "displayedExpOnLv6": 13.79,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 42.43,
+      "marketPrice": 172,
+      "goldPerBaseExp": 4.05
+    },
+    "Broken Dwarven Plate": {
+      "quality": "EPIC",
+      "mob": "Dwarven Warrior (Lv 68)",
+      "mobLvl": 68,
+      "displayedExpOnLv6": 14.75,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 45.38,
+      "marketPrice": 179,
+      "goldPerBaseExp": 3.94
+    },
+    "Earth Elemental Essence": {
+      "quality": "EPIC",
+      "mob": "Earth Elemental (Lv 98)",
+      "mobLvl": 98,
+      "displayedExpOnLv6": 12.64,
+      "displayedEff": 25,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 38.89,
+      "marketPrice": 170,
+      "goldPerBaseExp": 4.37
+    },
+    "Essence of Shadows": {
+      "quality": "LEGENDARY",
+      "mob": "Cultist (Lv 12)",
+      "mobLvl": 12,
+      "displayedExpOnLv7": 273.85,
+      "displayedEff": 109,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 210.65,
+      "marketPrice": 343,
+      "goldPerBaseExp": 1.63
+    },
+    "Goblin Crown": {
+      "quality": "LEGENDARY",
+      "mob": "Goblin King (Lv 6)",
+      "mobLvl": 6,
+      "displayedExpOnLv7": 301.23,
+      "displayedEff": 109,
+      "penaltyEff": 1,
+      "normalizedBaseExp": 231.72,
+      "marketPrice": 1130,
+      "goldPerBaseExp": 4.88
+    },
+    "Vial of Spectre Ectoplasm": {
+      "quality": "LEGENDARY",
+      "mob": "Spectre (Lv 18)",
+      "mobLvl": 18,
+      "displayedExpOnLv7": 141.07,
+      "displayedEff": 105,
+      "penaltyEff": 0.96,
+      "normalizedBaseExp": 113.04,
+      "marketPrice": 247,
+      "goldPerBaseExp": 2.19
+    },
+    "Abyssal Scroll": {
+      "quality": "LEGENDARY",
+      "mob": "Shadow Beast (Lv 35)",
+      "mobLvl": 35,
+      "displayedExpOnLv7": 140.58,
+      "displayedEff": 31,
+      "penaltyEff": 0.28,
+      "normalizedBaseExp": 386.21,
+      "marketPrice": 593,
+      "goldPerBaseExp": 1.54
+    },
+    "Oceanic Essence": {
+      "quality": "LEGENDARY",
+      "mob": "Siren (Lv 42)",
+      "mobLvl": 42,
+      "displayedExpOnLv7": 62.76,
+      "displayedEff": 27,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 193.11,
+      "marketPrice": 345,
+      "goldPerBaseExp": 1.79
+    },
+    "Stoneheart Core": {
+      "quality": "LEGENDARY",
+      "mob": "Golem (Lv 58)",
+      "mobLvl": 58,
+      "displayedExpOnLv7": 35.86,
+      "displayedEff": 27,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 110.34,
+      "marketPrice": 298,
+      "goldPerBaseExp": 2.7
+    },
+    "Void Essence": {
+      "quality": "LEGENDARY",
+      "mob": "Witch (Lv 62)",
+      "mobLvl": 62,
+      "displayedExpOnLv7": 28.24,
+      "displayedEff": 27,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 86.89,
+      "marketPrice": 326,
+      "goldPerBaseExp": 3.75
+    },
+    "Moonblood Tincture": {
+      "quality": "MYTHIC",
+      "mob": "Werewolf (Lv 99)",
+      "mobLvl": 99,
+      "displayedExpOnLv7": 1377.6,
+      "displayedEff": 30,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 4238.77,
+      "marketPrice": 15278,
+      "goldPerBaseExp": 3.6
+    },
+    "Grimoire of Shadows": {
+      "quality": "MYTHIC",
+      "mob": "Witch (Lv 62)",
+      "mobLvl": 62,
+      "displayedExpOnLv7": 282.41,
+      "displayedEff": 30,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 868.95,
+      "marketPrice": 5144,
+      "goldPerBaseExp": 5.92
+    },
+    "Petrifying Gaze Crystal": {
+      "quality": "MYTHIC",
+      "mob": "Basilisk (Lv 92)",
+      "mobLvl": 92,
+      "displayedExpOnLv7": 237.32,
+      "displayedEff": 30,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 730.22,
+      "marketPrice": 6318,
+      "goldPerBaseExp": 8.65
+    },
+    "Arcane Starstone": {
+      "quality": "MYTHIC",
+      "mob": "Wizard of the South (Lv 82)",
+      "mobLvl": 82,
+      "displayedExpOnLv7": 176.5,
+      "displayedEff": 30,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 543.08,
+      "marketPrice": 4965,
+      "goldPerBaseExp": 9.14
+    },
+    "Basilisk Venom Vial": {
+      "quality": "MYTHIC",
+      "mob": "Basilisk (Lv 92)",
+      "mobLvl": 92,
+      "displayedExpOnLv7": 332.24,
+      "displayedEff": 30,
+      "penaltyEff": 0.25,
+      "normalizedBaseExp": 1022.28,
+      "marketPrice": 9423,
+      "goldPerBaseExp": 9.22
+    }
+  }
+}
