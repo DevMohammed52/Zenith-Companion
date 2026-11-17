@@ -236,16 +236,60 @@ export const CALIBRATED_ITEM_DURATIONS: Record<string, number> = {
   "Claw of the Alpha": 3.50,
   "Snakes Head": 4.78,
   "Ruined Robes": 9.55,
+
+  // Saqr & Empirical Session Calibrated Mob Drops & Materials
+  "Goblin Pouch": 35.13,
+  "Goblin Scraps": 35.13,
+  "Lucky Rabbit Foot": 35.13,
+  "Buffalo Horn": 38.00,
+  "Elk Antler": 38.00,
+  "Cursed Blade Fragment": 14.51,
+  "Copper Bar": 6.76,
+  "Iron Bar": 9.33,
+  "Steel Bar": 11.90,
+  "Silver Bar": 8.42,
+  "Tin Bar": 8.07,
+  "Lead Bar": 10.20,
+  "Chromite Bar": 14.80,
+  "Mystic Bar": 17.50,
+  "Tin Ore": 2.93,
+  "Copper Ore": 3.02,
+  "Iron Ore": 3.22,
+  "Lead Ore": 3.78,
+  "Silver Ore": 3.08,
+  "Steel Ore": 4.34,
+  "Mercury Ore": 4.80,
+  "Chromite Ore": 5.40,
+  "Mystic Ore": 6.80,
+  "Spruce Log": 3.22,
+  "Birch Log": 3.40,
+  "Long Forgotten Necklace": 4.48,
+  "Obsidian Shard": 3.14,
+  "Djinn's Bottle": 5.50,
+  "Minotaurs Horn": 6.00,
+  "Cursed Cloth": 6.00,
+  "Harpy's Wings": 6.00,
+  "Cursed Talisman": 16.50,
+  "Raw Onion": 16.50,
+  "Siren's Scales": 16.50,
+  "Black Bear Pelt": 16.50,
+  "Forbidden Tome": 75.00,
+  "Undying Crest": 85.00,
 };
 
 export function getItemBurnDuration(
   name: string,
   category: string,
   quality: string,
-  reqLvl: number
+  reqLvl: number,
+  baseTimeSeconds?: number
 ): number {
   if (CALIBRATED_ITEM_DURATIONS[name] !== undefined) {
     return CALIBRATED_ITEM_DURATIONS[name];
+  }
+
+  if (baseTimeSeconds && baseTimeSeconds > 0) {
+    return baseTimeSeconds;
   }
 
   const cat = category.toUpperCase();
@@ -301,10 +345,11 @@ export function calculateDynamicMaterialYield(
   reqLvl: number,
   playerLevel: number,
   buffMultiplier: number = 1.0,
-  marketPrice: number = 0
+  marketPrice: number = 0,
+  baseTimeSeconds?: number
 ): DynamicMaterialYield {
   const eff = calculateLessonEfficiency(name, reqLvl, quality, category, playerLevel);
-  const timeSeconds = getItemBurnDuration(name, category, quality, reqLvl);
+  const timeSeconds = getItemBurnDuration(name, category, quality, reqLvl, baseTimeSeconds);
   const hourlyRate = getForgeHourlyRate(playerLevel);
 
   const exactEff = eff.penaltyEff * eff.speedMult;

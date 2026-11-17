@@ -38,6 +38,25 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     }
   });
 
+  it("verifies Goblin Pouch matches Ducks Mouth at ~35.13s burn duration and exactly calculates empirical Level 9 yields", () => {
+    const gp = rawMaterials.find((m) => m.name === "Goblin Pouch") as ForgeLessonMaterial;
+    const dm = rawMaterials.find((m) => m.name === "Ducks Mouth") as ForgeLessonMaterial;
+    expect(gp).toBeDefined();
+    expect(dm).toBeDefined();
+
+    // At Level 9 with +15% Membership EXP
+    const gpYield = calculateLessonMaterialEfficiency(gp, 9, 1.15);
+    const dmYield = calculateLessonMaterialEfficiency(dm, 9, 1.15);
+
+    expect(gpYield.timeSeconds).toBeCloseTo(35.13, 1);
+    expect(dmYield.timeSeconds).toBeCloseTo(35.13, 1);
+    expect(gpYield.displayedEff).toBe(96);
+    expect(dmYield.displayedEff).toBe(96);
+    // Modal matches empirical ~27 EXP per item at Level 9
+    expect(gpYield.effectiveExp).toBeCloseTo(27.0, 1);
+    expect(dmYield.effectiveExp).toBeCloseTo(27.0, 1);
+  });
+
   it("verifies live game modal match for Level 8 player crafting Essence of Shadows (+30% buffs)", () => {
     const eos = rawMaterials.find((m) => m.name === "Essence of Shadows") as ForgeLessonMaterial;
     expect(eos).toBeDefined();

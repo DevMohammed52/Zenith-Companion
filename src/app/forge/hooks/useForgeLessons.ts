@@ -59,7 +59,8 @@ export function calculateLessonMaterialEfficiency(
     mat.reqLvl,
     playerLevel,
     buffMultiplier,
-    resolvedPrice
+    resolvedPrice,
+    mat.timeSeconds
   );
 
   return {
