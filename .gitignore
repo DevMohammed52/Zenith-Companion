@@ -78,6 +78,17 @@ tmp-ui-sweep/
 test-artifacts/
 artifacts-*.png
 
+# local forge calibration and research scratch files
+forge-calibration-targets.json
+idlemmo-forge-data*.json
+public/batch*-launcher.html
+scripts/*batch*
+scripts/audit-all-91-mats.cjs
+scripts/check-latest-patch.mjs
+scripts/fetch-all-character-endpoints.mjs
+scripts/fetch-mythic-mats-history.mjs
+scripts/fetch-user-characters.mjs
+
 # local draft handoff files
 github-profile-readme/
 idlemmo-wiki-update-drafts/

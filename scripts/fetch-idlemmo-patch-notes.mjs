@@ -2,9 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const BASE_URL = "https://web.idle-mmo.com/patch-notes";
+const BASE_URL = "https://support.idle-mmo.com/release-notes";
+const LEGACY_URL = "https://web.idle-mmo.com/patch-notes";
 const DEFAULT_OUT = path.join(ROOT, "public", "idlemmo-patch-notes.json");
-const USER_AGENT = "ZenithCompanionPatchNotes/1.0";
+const USER_AGENT = "ZenithCompanionPatchNotes/2.0";
 
 const args = parseArgs(process.argv.slice(2));
 const outFile = path.resolve(String(args.out || DEFAULT_OUT));
@@ -28,7 +29,7 @@ const CATEGORY_RULES = [
   ["weather", /\b(weather|forecast)\b/i],
   ["map", /\b(map|location|locations|teleport|travel)\b/i],
   ["tavern", /\b(tavern|post|reply|comment|spam)\b/i],
-  ["translations", /\b(translation|language|indonesian|filipino|bahasa|dialogue)\b/i],
+  ["translations", /\b(translation|language|indonesian|filipino|bahasa|dialogue|localisation)\b/i],
   ["mobile-ui", /\b(mobile|android|adreno|ui|ux|rendering|brightness|contrast|scale)\b/i],
   ["seasonal", /\b(seasonal|springtide|yule|campaign|event|shards)\b/i],
   ["membership", /\b(membership|member|members)\b/i],
@@ -39,20 +40,44 @@ const CATEGORY_RULES = [
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const firstPage = await fetchPage(1);
-  const total = parseTotalResults(firstPage) || 0;
-  const lastPage = parseLastPage(firstPage, total);
-  const pagesToFetch = latestOnly ? [1] : Array.from({ length: lastPage }, (_, index) => index + 1);
+  const firstPageHtml = await fetchPage(1);
+  const inertiaData = parseInertiaData(firstPageHtml);
 
+  let total = 0;
+  let lastPage = 1;
   const allNotes = [];
 
-  for (const page of pagesToFetch) {
-    const html = page === 1 ? firstPage : await fetchPage(page);
-    allNotes.push(...parsePatchNotesPage(html, page));
-    if (page !== pagesToFetch.at(-1)) await sleep(150);
+  if (inertiaData?.props?.notes) {
+    const notesProp = inertiaData.props.notes;
+    total = notesProp.total || 0;
+    lastPage = notesProp.last_page || 1;
+    const pagesToFetch = latestOnly ? [1] : Array.from({ length: lastPage }, (_, index) => index + 1);
+
+    for (const page of pagesToFetch) {
+      const html = page === 1 ? firstPageHtml : await fetchPage(page);
+      const pageData = page === 1 ? inertiaData : parseInertiaData(html);
+      if (pageData?.props?.notes?.data) {
+        for (const item of pageData.props.notes.data) {
+          const parsed = await processInertiaNote(item, page);
+          allNotes.push(parsed);
+        }
+      }
+      if (page !== pagesToFetch.at(-1)) await sleep(150);
+    }
+  } else {
+    // Fallback parser
+    total = parseTotalResults(firstPageHtml) || 0;
+    lastPage = parseLastPage(firstPageHtml, total);
+    const pagesToFetch = latestOnly ? [1] : Array.from({ length: lastPage }, (_, index) => index + 1);
+
+    for (const page of pagesToFetch) {
+      const html = page === 1 ? firstPageHtml : await fetchPage(page);
+      allNotes.push(...parseLegacyPatchNotesPage(html, page));
+      if (page !== pagesToFetch.at(-1)) await sleep(150);
+    }
   }
 
-  const existing = latestOnly ? readExisting(outFile) : [];
+  const existing = readExisting(outFile);
   const merged = mergeNotes(existing, allNotes);
   const categoryCounts = countCategories(merged);
   const latest = merged[0];
@@ -65,13 +90,12 @@ async function main() {
       mode: latestOnly ? "latest-page-merge" : "full-refresh",
       totalAvailable: total || merged.length,
       totalFetched: merged.length,
-      fetchedPages: pagesToFetch,
       latestPatchId: latest?.id ?? null,
       oldestPatchId: oldest?.id ?? null,
       latestVersion: latest?.version ?? null,
       oldestVersion: oldest?.version ?? null,
       categoryCounts,
-      note: "Generated from the public IdleMMO patch notes page. Keep sourceUrl links visible in UI.",
+      note: "Generated from the public IdleMMO release notes page. Keep sourceUrl links visible in UI.",
     },
     patchNotes: merged,
   };
@@ -100,7 +124,109 @@ async function fetchPage(page) {
   return response.text();
 }
 
-function parsePatchNotesPage(html, page) {
+function parseInertiaData(html) {
+  const match = html.match(/data-page="([^"]+)"/);
+  if (!match) return null;
+  try {
+    const raw = match[1].replace(/&quot;/g, '"');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+async function processInertiaNote(item, page) {
+  const id = Number(item.id);
+  const headline = textFromHtml(item.title_html || "");
+  const { version, title } = parseHeadline(headline);
+  const releasedAt = item.released_at ? normalizeDateTime(item.released_at) : null;
+  const sourceUrl = item.path ? `https://support.idle-mmo.com${item.path}` : `${BASE_URL}?patch_note_id=${id}`;
+
+  let bodyHtml = item.content_html || "";
+
+  // If truncated, attempt to fetch clean markdown
+  if (item.is_truncated && item.path) {
+    try {
+      const mdRes = await fetch(`https://support.idle-mmo.com${item.path}.md`, {
+        headers: { "user-agent": USER_AGENT },
+      });
+      if (mdRes.ok) {
+        const mdText = await mdRes.text();
+        const contentBlocks = parseMarkdownBlocks(mdText);
+        const sections = buildSections(contentBlocks);
+        const bodyText = contentBlocks.map((b) => b.text).join("\n");
+        const searchText = normalizeWhitespace(`${headline} ${bodyText}`);
+        const categories = inferCategories(searchText);
+
+        return {
+          id,
+          version,
+          title,
+          headline,
+          releasedAt,
+          releaseLabel: formatRelativeDate(releasedAt),
+          releaseDateLabel: formatDateLabel(releasedAt),
+          page,
+          sourceUrl,
+          categories,
+          excerpt: makeExcerpt(bodyText),
+          contentBlocks,
+          sections,
+          bodyText,
+          searchText: searchText.toLowerCase(),
+        };
+      }
+    } catch {}
+  }
+
+  const contentBlocks = parseContentBlocks(bodyHtml);
+  const sections = buildSections(contentBlocks);
+  const bodyText = contentBlocks.map((b) => b.text).join("\n");
+  const searchText = normalizeWhitespace(`${headline} ${bodyText}`);
+  const categories = inferCategories(searchText);
+
+  return {
+    id,
+    version,
+    title,
+    headline,
+    releasedAt,
+    releaseLabel: formatRelativeDate(releasedAt),
+    releaseDateLabel: formatDateLabel(releasedAt),
+    page,
+    sourceUrl,
+    categories,
+    excerpt: makeExcerpt(bodyText),
+    contentBlocks,
+    sections,
+    bodyText,
+    searchText: searchText.toLowerCase(),
+  };
+}
+
+function parseMarkdownBlocks(md) {
+  const lines = md.split("\n");
+  const blocks = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    if (line.startsWith("#")) {
+      const text = line.replace(/^#+\s*/, "").trim();
+      blocks.push({ type: "heading", text });
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      const text = line.slice(2).trim();
+      blocks.push({ type: "listItem", text });
+    } else {
+      blocks.push({ type: "paragraph", text: line });
+    }
+  }
+
+  return blocks;
+}
+
+function parseLegacyPatchNotesPage(html, page) {
   const notes = [];
   const pattern = /<div id="patch-note-(\d+)">([\s\S]*?)(?=\s*<hr class="border-gray-800 my-12">|\s*<div class="mt-6 flex|\s*<nav|\s*<\/div>\s*<\/div>\s*<footer)/g;
   let match;
@@ -113,7 +239,7 @@ function parsePatchNotesPage(html, page) {
     const timeMatch = block.match(/<time\s+datetime="([^"]+)">([\s\S]*?)<\/time>/i);
     const sourceUrl =
       firstMatch(block, /\$clipboard\('([^']+patch_note_id=\d+)'/i) ||
-      `${BASE_URL}?patch_note_id=${id}`;
+      `${LEGACY_URL}?patch_note_id=${id}`;
     const tooltipDate = firstMatch(block, /x-tooltip="'([^']+)'"><time/i);
     const bodyHtml = firstMatch(block, /<div class="markdown">\s*<div>([\s\S]*?)<\/div>\s*<\/div>/i) || "";
     const contentBlocks = parseContentBlocks(bodyHtml);
@@ -196,7 +322,7 @@ function buildSections(blocks) {
 }
 
 function parseHeadline(headline) {
-  const match = headline.match(/^Version\s+([^\s]+)(?:\s+-\s+(.+))?$/i);
+  const match = headline.match(/^(?:Version\s+)?([0-9a-zA-Z.-]+)(?:\s+-\s+(.+))?$/i);
   if (!match) return { version: headline, title: "" };
   return {
     version: match[1],
@@ -220,10 +346,17 @@ function countCategories(notes) {
 }
 
 function mergeNotes(existing, incoming) {
-  const byId = new Map();
-  for (const note of existing) byId.set(note.id, note);
-  for (const note of incoming) byId.set(note.id, note);
-  return Array.from(byId.values()).sort((a, b) => {
+  const byKey = new Map();
+  // Key by version or ID to avoid duplicate representations
+  for (const note of existing) {
+    const key = note.version ? `v_${note.version}` : `id_${note.id}`;
+    byKey.set(key, note);
+  }
+  for (const note of incoming) {
+    const key = note.version ? `v_${note.version}` : `id_${note.id}`;
+    byKey.set(key, note);
+  }
+  return Array.from(byKey.values()).sort((a, b) => {
     const timeA = a.releasedAt ? Date.parse(a.releasedAt) : 0;
     const timeB = b.releasedAt ? Date.parse(b.releasedAt) : 0;
     if (timeA !== timeB) return timeB - timeA;
@@ -251,6 +384,23 @@ function parseLastPage(html, total) {
 
 function normalizeDateTime(value) {
   return value.includes("T") ? value : value.replace(" ", "T");
+}
+
+function formatDateLabel(isoString) {
+  if (!isoString) return null;
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatRelativeDate(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const diffMs = Date.now() - d.getTime();
+  const diffHours = Math.floor(diffMs / 3600000);
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} days ago`;
 }
 
 function makeExcerpt(text) {
