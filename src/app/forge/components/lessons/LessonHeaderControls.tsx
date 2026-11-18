@@ -95,7 +95,14 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
     };
   }, [durationMenuOpen, closeDurationMenu]);
 
-  // Sync external changes (e.g. profile switch) only when user is not actively interacting
+  // Reset interaction state and sync immediately when active profile switches
+  useEffect(() => {
+    isInteractingRef.current = false;
+    setLocalLevel(forgeLevel);
+    setRawLevelInput(String(forgeLevel));
+  }, [lessons.activeProfile?.id]);
+
+  // Sync external changes only when user is not actively interacting
   useEffect(() => {
     if (!isInteractingRef.current) {
       setLocalLevel(forgeLevel);
@@ -396,16 +403,16 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
           </div>
 
           <div className="buff-inputs-grid">
-            {/* Zenith Membership Status Toggle */}
+            {/* Membership Status Toggle */}
             <button
               type="button"
               className={`membership-pill-btn ${hasMembershipBuff ? "active" : ""}`}
               onClick={() => setHasMembershipBuff(!hasMembershipBuff)}
               aria-pressed={hasMembershipBuff}
-              title="Zenith Membership grants +15% EXP and +10% Efficiency"
+              title="Membership grants +15% EXP and +10% Speed"
             >
               <Shield size={13} aria-hidden="true" />
-              <span>{hasMembershipBuff ? "Zenith Member (+15% EXP)" : "Standard (+0% Buffs)"}</span>
+              <span>{hasMembershipBuff ? "Membership (+15% EXP)" : "No Membership"}</span>
             </button>
 
             {/* Bonus EXP and Bonus Speed Inputs */}

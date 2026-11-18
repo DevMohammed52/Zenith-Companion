@@ -3311,6 +3311,7 @@ export function ForgeStyles() {
           cursor: pointer;
         }
         .forge-page .add-inventory-form {
+          position: relative;
           display: grid;
           grid-template-columns: minmax(200px, 1.2fr) minmax(260px, 1fr) auto;
           align-items: end;
@@ -3320,12 +3321,19 @@ export function ForgeStyles() {
           border-radius: 8px;
           background: var(--bg-card);
         }
+        .forge-page .add-inventory-form:has(.combobox-container.open) {
+          z-index: 50;
+        }
         .forge-page .select-material-group {
           position: relative;
           display: flex;
           flex-direction: column;
           gap: 0.3rem;
           min-width: 0;
+        }
+        .forge-page .select-material-group.menu-open,
+        .forge-page .select-material-group:has(.combobox-container.open) {
+          z-index: 100;
         }
         .forge-page .select-material-label-row {
           display: flex;
@@ -3351,6 +3359,9 @@ export function ForgeStyles() {
         .forge-page .combobox-container {
           position: relative;
           width: 100%;
+        }
+        .forge-page .combobox-container.open {
+          z-index: 100;
         }
         .forge-page .combobox-trigger-shell {
           min-height: 40px;
@@ -3430,16 +3441,17 @@ export function ForgeStyles() {
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          max-height: 320px;
-          background: var(--bg-panel);
-          border: 1px solid var(--border-subtle);
+          max-height: 340px;
+          background: var(--bg-panel) !important;
+          border: 1px solid var(--border-focus);
           border-radius: 8px;
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
-          z-index: 50;
-          padding: 0.35rem;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+          z-index: 1000;
+          padding: 0.4rem;
           display: flex;
           flex-direction: column;
           gap: 0.35rem;
+          isolation: isolate;
         }
         .forge-page .combobox-cat-bar {
           display: flex;
@@ -3476,11 +3488,12 @@ export function ForgeStyles() {
           color: var(--text-accent);
         }
         .forge-page .combobox-items-scroll {
-          max-height: 240px;
+          max-height: 250px;
           overflow-y: auto;
           display: flex;
           flex-direction: column;
-          gap: 0.2rem;
+          gap: 0.25rem;
+          background: var(--bg-panel);
         }
         .forge-page .combobox-empty-message {
           padding: 1rem;
@@ -3493,17 +3506,19 @@ export function ForgeStyles() {
           align-items: center;
           justify-content: space-between;
           gap: 0.75rem;
-          padding: 0.45rem 0.65rem;
+          padding: 0.5rem 0.65rem;
           border-radius: 6px;
           cursor: pointer;
           border: 1px solid transparent;
-          min-height: 44px;
+          min-height: 50px;
+          box-sizing: border-box;
           flex-shrink: 0;
+          background: color-mix(in srgb, var(--bg-card), transparent 30%);
           transition: background-color 120ms ease, border-color 120ms ease;
         }
         .forge-page .combobox-item-row:hover,
         .forge-page .combobox-item-row.highlighted {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.08);
           border-color: var(--border-subtle);
         }
         .forge-page .combobox-item-row.selected {
@@ -3520,20 +3535,22 @@ export function ForgeStyles() {
         .forge-page .combobox-item-row .item-name-stack {
           display: flex;
           flex-direction: column;
-          gap: 0.15rem;
+          gap: 0.2rem;
           min-width: 0;
           flex: 1;
         }
         .forge-page .combobox-item-row .item-name {
-          font-size: 0.82rem;
+          font-size: 0.84rem;
           font-weight: 700;
+          line-height: 1.25;
           color: var(--text-primary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
         .forge-page .combobox-item-row .item-sub {
-          font-size: 0.7rem;
+          font-size: 0.71rem;
+          line-height: 1.25;
           color: var(--text-muted);
           white-space: nowrap;
           overflow: hidden;

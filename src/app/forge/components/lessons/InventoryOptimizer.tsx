@@ -241,7 +241,7 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
       {/* Modern Searchable Combobox Add Form */}
       <form className="add-inventory-form" onSubmit={handleAddSubmit}>
         {/* Searchable Combobox */}
-        <div className="select-material-group" ref={comboboxRef}>
+        <div className={`select-material-group ${comboboxOpen ? "menu-open" : ""}`} ref={comboboxRef}>
           <div className="select-material-label-row">
             <label htmlFor="inventory-mat-search">Material</label>
             {selectedMatName && ownedMaterials[selectedMatName] ? (
