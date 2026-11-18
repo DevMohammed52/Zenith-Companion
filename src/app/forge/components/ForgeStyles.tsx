@@ -1393,6 +1393,17 @@ export function ForgeStyles() {
           opacity: 0.35;
           cursor: not-allowed;
         }
+        .forge-page .stepper-btn.mini.duration-step-btn {
+          width: auto;
+          min-width: 48px;
+          height: 44px;
+          min-height: 44px;
+          padding: 0 0.5rem;
+          font-size: 0.82rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+        }
         .forge-page .number-display-wrap.compact {
           flex: 0 1 auto;
           display: inline-flex;

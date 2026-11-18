@@ -306,7 +306,7 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
           <div className="unified-duration-control">
             <button
               type="button"
-              className="stepper-btn mini"
+              className="stepper-btn mini duration-step-btn"
               onClick={() => stepDuration(-30)}
               disabled={totalSessionMinutes <= 30}
               aria-label="Decrease duration 30 minutes"
@@ -382,7 +382,7 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
             </div>
             <button
               type="button"
-              className="stepper-btn mini"
+              className="stepper-btn mini duration-step-btn"
               onClick={() => stepDuration(30)}
               disabled={totalSessionMinutes >= 720}
               aria-label="Increase duration 30 minutes"
