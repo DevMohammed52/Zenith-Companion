@@ -1,10 +1,69 @@
 "use client";
 
-import { useState } from "react";
-import { AlertCircle, AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Flame, Play, Sparkles, Trash2, X, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Flame, Play, Sparkles, Trash2, X, Zap } from "lucide-react";
 import { formatGold } from "@/lib/format";
+import { GoldIcon } from "@/components/GoldIcon";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
-import { calculateBankedShardsForLevel, MAX_OFFLINE_SECONDS } from "../../hooks/useForgeLessons";
+import { MAX_OFFLINE_SECONDS } from "../../hooks/useForgeLessons";
+
+function QueueItemQtyField({
+  materialName,
+  quantity,
+  onChangeQuantity,
+}: {
+  materialName: string;
+  quantity: number;
+  onChangeQuantity: (name: string, val: number) => void;
+}) {
+  const [raw, setRaw] = useState(String(quantity));
+  useEffect(() => {
+    setRaw(String(quantity));
+  }, [quantity]);
+
+  const commit = (val: number) => {
+    const clamped = Math.min(100000, Math.max(1, val));
+    setRaw(String(clamped));
+    onChangeQuantity(materialName, clamped);
+  };
+
+  return (
+    <input
+      id={`queue-qty-${materialName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+      name={`queue-qty-${materialName}`}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      autoComplete="off"
+      value={raw}
+      onChange={(e) => {
+        const text = e.target.value.replace(/[^0-9]/g, "");
+        setRaw(text);
+        if (text !== "") {
+          const parsed = parseInt(text, 10);
+          if (!Number.isNaN(parsed)) {
+            const clamped = Math.min(100000, Math.max(1, parsed));
+            onChangeQuantity(materialName, clamped);
+          }
+        }
+      }}
+      onBlur={() => {
+        const parsed = parseInt(raw, 10);
+        const clamped = Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(100000, parsed);
+        commit(clamped);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          const parsed = parseInt(raw, 10);
+          const clamped = Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(100000, parsed);
+          commit(clamped);
+        }
+      }}
+      className="qty-input"
+      aria-label={`${materialName} quantity`}
+    />
+  );
+}
 
 function formatDurationHms(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -17,6 +76,21 @@ function formatDurationHms(totalSeconds: number): string {
   return `${hh}:${mm}:${ss}`;
 }
 
+function formatDurationSmart(totalSeconds: number): string {
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m ${seconds}s`;
+}
+
 export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn }) {
   const {
     forgeLevel,
@@ -27,6 +101,8 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
     sessionSummary,
     queueAllOwned,
     visibleMaterials,
+    allCalculatedMaterials,
+    ownedMaterials,
     fillSessionWithMaterial,
     totalTargetDurationSeconds,
     lastReplacedQueue,
@@ -42,14 +118,39 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
     totalCost,
     projectedLevel,
     projectedLevelProgress,
-    temperPercentGain,
-    projectedShards,
-    hasOverlevelWarning,
-    hasRareDropWarning,
-    exceedsCap,
   } = sessionSummary;
 
-  const maxBankableShards = calculateBankedShardsForLevel(forgeLevel);
+  // Level-appropriate training material recommendations (no rare drops, no outgrown penalty)
+  const trainingPool = (allCalculatedMaterials || visibleMaterials).filter(
+    (m) =>
+      m.reqLvl <= forgeLevel + 10 &&
+      m.displayedEff >= 100 &&
+      (m.category === "ORES" ||
+        m.category === "BARS" ||
+        m.category === "LOGS" ||
+        m.quality === "STANDARD" ||
+        m.quality === "REFINED")
+  );
+
+  const candidates = trainingPool.length > 0
+    ? trainingPool
+    : (allCalculatedMaterials || visibleMaterials).filter((m) => m.reqLvl <= forgeLevel + 10 && m.displayedEff >= 100);
+
+  const cheapestRec = candidates.length > 0
+    ? [...candidates].sort((a, b) => a.goldPerExp - b.goldPerExp)[0]
+    : null;
+
+  const fastestRec = candidates.length > 0
+    ? [...candidates].sort((a, b) => b.expPerSecond - a.expPerSecond)[0]
+    : null;
+
+  const totalOwnedCount = Object.values(ownedMaterials || {}).reduce((acc, q) => acc + q, 0);
+
+  const sessionSeconds = totalTargetDurationSeconds > 0 ? totalTargetDurationSeconds : 6 * 3600;
+  const targetHours = Math.floor(sessionSeconds / 3600);
+  const targetMins = Math.floor((sessionSeconds % 3600) / 60);
+  const targetSessionLabel = targetMins > 0 ? `${targetHours}h ${targetMins}m` : `${targetHours}h`;
+  const totalSessionsCount = Math.max(1, Math.ceil(totalDurationSeconds / sessionSeconds));
 
   if (queuedItems.length === 0) {
     return (
@@ -58,25 +159,39 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
           <Flame size={32} className="empty-icon" aria-hidden="true" />
           <h2>No Materials Queued for Lesson</h2>
           <p>
-            Select materials from the catalog or queue your bank items to calculate training duration, efficiency, and level gains.
+            Select materials from the catalog below, or pick a recommended training material to fill your offline session.
           </p>
           <div className="empty-actions-row">
-            {visibleMaterials.length > 0 && (
+            {cheapestRec && (
               <button
                 type="button"
                 className="primary-action-btn"
-                onClick={() => fillSessionWithMaterial(visibleMaterials[0].name)}
+                onClick={() => fillSessionWithMaterial(cheapestRec.name)}
+                title={`Fill session with ${cheapestRec.name} (Cheapest at ${cheapestRec.goldPerExp.toFixed(2)}g/EXP)`}
               >
                 <Zap size={14} aria-hidden="true" />
-                <span>Fill Session with {visibleMaterials[0].name}</span>
+                <span>Fill with {cheapestRec.name} (Cheapest)</span>
+              </button>
+            )}
+            {fastestRec && fastestRec.name !== cheapestRec?.name && (
+              <button
+                type="button"
+                className="secondary-action-btn"
+                onClick={() => fillSessionWithMaterial(fastestRec.name)}
+                title={`Fill session with ${fastestRec.name} (Fastest at ${(fastestRec.expPerSecond * 60).toFixed(0)} EXP/min)`}
+              >
+                <Zap size={14} aria-hidden="true" />
+                <span>Fill with {fastestRec.name} (Fastest)</span>
               </button>
             )}
             <button
               type="button"
               className="ghost-action-btn"
               onClick={() => queueAllOwned()}
+              disabled={totalOwnedCount <= 0}
+              title={totalOwnedCount > 0 ? "Queue all tracked items from your inventory" : "No owned items tracked in Inventory Optimizer"}
             >
-              <span>Queue All Owned Materials</span>
+              <span>Queue All Owned {totalOwnedCount > 0 ? `(${totalOwnedCount.toLocaleString()})` : ""}</span>
             </button>
           </div>
         </div>
@@ -88,8 +203,8 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
     <section className="lesson-queue-shell active-queue" aria-label="Smithing lesson queue">
       <div className="queue-header-bar">
         <div className="queue-title-stack">
-          <span className="panel-kicker"><Flame size={14} aria-hidden="true" /> Active Smithing Lesson</span>
-          <h2>{queuedItems.length} Material{queuedItems.length === 1 ? "" : "s"} Queued</h2>
+          <span className="panel-kicker"><Flame size={14} aria-hidden="true" /> Active Training Queue</span>
+          <h2>{queuedItems.length} {queuedItems.length === 1 ? "Item" : "Items"} in Queue</h2>
         </div>
         <div className="queue-quick-actions">
           {lastReplacedQueue && (
@@ -106,7 +221,7 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
             type="button"
             className="clear-queue-btn"
             onClick={() => clearQueue()}
-            aria-label="Clear lesson queue"
+            aria-label="Clear Queue"
           >
             <Trash2 size={13} aria-hidden="true" />
             <span>Clear Queue</span>
@@ -114,14 +229,36 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
         </div>
       </div>
 
+      {/* Progression Roadmap Overview Strip */}
+      <div className="queue-roadmap-strip">
+        <span className="roadmap-label">
+          Progression Roadmap: <strong>{queuedItems.length} {queuedItems.length === 1 ? "Material" : "Materials"}</strong> · <strong>~{totalSessionsCount} {totalSessionsCount === 1 ? "Session" : "Sessions"}</strong> ({formatDurationSmart(totalDurationSeconds)})
+        </span>
+      </div>
+
       {/* Queued item list */}
       <div className="queue-items-list" aria-label="Queued materials">
-        {queuedItems.map((item) => {
+        {queuedItems.map((item, idx) => {
           const { material, quantity, totalExp, totalDurationSeconds: itemDuration } = item;
+          const itemPerSession = Math.max(1, Math.floor(sessionSeconds / material.timeSeconds));
+          const itemSessions = Math.ceil(itemDuration / sessionSeconds);
+
           return (
             <article key={material.name} className={`queue-item-card ${material.hasPenalty ? "has-penalty" : ""}`}>
+              {material.imageUrl && (
+                <img
+                  src={material.imageUrl}
+                  alt=""
+                  width={34}
+                  height={34}
+                  loading="lazy"
+                  decoding="async"
+                  className="queue-item-icon"
+                />
+              )}
               <div className="item-card-left">
                 <div className="item-name-row">
+                  <span className="step-badge">Step {idx + 1}</span>
                   <strong className="item-title">{material.name}</strong>
                   {material.hasPenalty && (
                     <span className="overlevel-pill" title={`Material req level ${material.reqLvl} exceeds grace level ${forgeLevel + 10}`}>
@@ -147,20 +284,10 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
                   <label htmlFor={`queue-qty-${material.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`} className="sr-only">
                     {material.name} quantity
                   </label>
-                  <input
-                    id={`queue-qty-${material.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
-                    name={`queue-qty-${material.name}`}
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!Number.isNaN(val)) {
-                        setQueueQuantity(material.name, Math.max(1, val));
-                      }
-                    }}
-                    className="qty-input"
-                    aria-label={`${material.name} quantity`}
+                  <QueueItemQtyField
+                    materialName={material.name}
+                    quantity={quantity}
+                    onChangeQuantity={setQueueQuantity}
                   />
                   <button
                     type="button"
@@ -189,6 +316,10 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
                 </div>
 
                 <div className="item-metric-badges">
+                  <div className="metric-badge session-badge">
+                    <span>Sessions</span>
+                    <strong>~{itemSessions} ({targetSessionLabel})</strong>
+                  </div>
                   <div className="metric-badge">
                     <span>Total EXP</span>
                     <strong>{Math.floor(totalExp).toLocaleString()}</strong>
@@ -203,7 +334,14 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
                   </div>
                   <div className="metric-badge">
                     <span>Duration</span>
-                    <span>{formatDurationHms(itemDuration)}</span>
+                    <span>{itemDuration >= 86400 ? formatDurationSmart(itemDuration) : formatDurationHms(itemDuration)}</span>
+                  </div>
+                  <div className="metric-badge">
+                    <span>Est. Cost</span>
+                    <strong>
+                      {formatGold(item.totalCost)}
+                      <GoldIcon size={11} />
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -223,7 +361,7 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
         })}
       </div>
 
-      {/* Advanced Details Toggle & Drawer */}
+      {/* Session Summary Drawer */}
       <div className="advanced-drawer-card">
         <button
           type="button"
@@ -231,7 +369,7 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
           onClick={() => setShowAdvanced(!showAdvanced)}
           aria-expanded={showAdvanced}
         >
-          <span>Advanced Lesson Details & Projections</span>
+          <span>Session Summary</span>
           {showAdvanced ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
         </button>
 
@@ -241,27 +379,26 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
             <div className="summary-stat-grid">
               <div className="summary-stat-box">
                 <span className="stat-label">Forge EXP</span>
-                <strong className="stat-value highlight">+{totalForgeExp.toLocaleString()} ^</strong>
+                <strong className="stat-value highlight">+{totalForgeExp.toLocaleString()}</strong>
               </div>
               <div className="summary-stat-box">
                 <span className="stat-label">Strength EXP (5%)</span>
-                <strong className="stat-value">+{totalStrengthExp.toLocaleString()} ^</strong>
+                <strong className="stat-value">+{totalStrengthExp.toLocaleString()}</strong>
               </div>
-              <div className={`summary-stat-box ${exceedsCap ? "danger-stat" : ""}`}>
-                <span className="stat-label">Duration</span>
+              <div className="summary-stat-box">
+                <span className="stat-label">Total Time &amp; Sessions</span>
                 <strong className="stat-value">
-                  {formatDurationHms(totalDurationSeconds)} / {formatDurationHms(totalTargetDurationSeconds)}
+                  {totalDurationSeconds >= 86400
+                    ? formatDurationSmart(totalDurationSeconds)
+                    : `${formatDurationHms(totalDurationSeconds)} / ${formatDurationHms(totalTargetDurationSeconds)}`}
+                  <small className="sessions-sub"> (~{totalSessionsCount} sessions)</small>
                 </strong>
               </div>
               <div className="summary-stat-box">
-                <span className="stat-label">Temper Gain</span>
-                <strong className="stat-value good">+{temperPercentGain}%</strong>
-              </div>
-              <div className="summary-stat-box">
-                <span className="stat-label">Temper Shards</span>
-                <strong className="stat-value good">
-                  +{projectedShards} / {maxBankableShards}
-                  {temperPercentGain >= 100 ? " (Full Bar)" : temperPercentGain >= 50 ? " (Early Claim Ready)" : ""}
+                <span className="stat-label">Est. Session Cost</span>
+                <strong className="stat-value">
+                  {formatGold(totalCost)}
+                  <GoldIcon size={13} />
                 </strong>
               </div>
             </div>
@@ -269,7 +406,7 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
             {/* Level Progression Progress Bar */}
             <div className="level-progression-panel">
               <div className="level-progression-labels">
-                <span className="panel-sub-label">Projected Level Gain</span>
+                <span className="panel-sub-label">Projected Level</span>
                 <div className="level-jump-text">
                   <span>Lv. {forgeLevel}</span>
                   <ArrowRight size={13} aria-hidden="true" />
@@ -277,41 +414,20 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
                   <span className="progress-hint">({projectedLevelProgress}% to next)</span>
                 </div>
               </div>
-              <div className="level-progress-track" role="progressbar" aria-valuenow={projectedLevelProgress} aria-valuemin={0} aria-valuemax={100}>
+              <div
+                className="level-progress-track"
+                role="progressbar"
+                aria-label="Forge level progress"
+                aria-valuenow={projectedLevelProgress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
                 <div
                   className="level-progress-fill"
                   style={{ width: `${projectedLevelProgress}%` }}
                 />
               </div>
             </div>
-
-            {/* In-game warning banners */}
-            {hasOverlevelWarning && (
-              <div className="in-game-warning-banner" role="alert">
-                <AlertTriangle size={15} className="warn-icon" aria-hidden="true" />
-                <p>
-                  This lesson uses materials that are too advanced for you. They are used up once the lesson reaches them.
-                </p>
-              </div>
-            )}
-
-            {hasRareDropWarning && (
-              <div className="in-game-warning-banner" role="alert">
-                <AlertCircle size={15} className="warn-icon" aria-hidden="true" />
-                <p>
-                  This lesson uses rare drops. They are used up once the lesson reaches them.
-                </p>
-              </div>
-            )}
-
-            {exceedsCap && (
-              <div className="in-game-warning-banner cap-exceeded" role="alert">
-                <AlertTriangle size={15} className="warn-icon" aria-hidden="true" />
-                <p>
-                  Lesson duration exceeds the 12-hour offline limit ({formatDurationHms(totalDurationSeconds)} &gt; 12:00:00). IdleMMO will stop training once 12 hours elapse.
-                </p>
-              </div>
-            )}
           </div>
         )}
       </div>

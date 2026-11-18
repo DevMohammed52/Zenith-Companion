@@ -1,25 +1,21 @@
 "use client";
 
-import { Clock, Flame, Shield, Sparkles } from "lucide-react";
+import { useEffect, useId, useState, useRef, useCallback } from "react";
+import { ChevronDown, Clock, Flame, Shield, Sparkles, Zap } from "lucide-react";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
-import { MAX_OFFLINE_SECONDS } from "../../hooks/useForgeLessons";
-import { getForgeHourlyRate } from "@/lib/forge-lesson-math";
 
-const LEVEL_MILESTONES = [1, 10, 25, 50, 75, 90, 99];
-const DURATION_PRESETS = [
-  { label: "30m", hours: 0, mins: 30 },
-  { label: "1h", hours: 1, mins: 0 },
-  { label: "2h", hours: 2, mins: 0 },
-  { label: "4h", hours: 4, mins: 0 },
-  { label: "6h (Max)", hours: 6, mins: 0 },
-];
-
-const SHRINE_TIERS = [
-  { label: "None", percent: 0 },
-  { label: "T1 (+10%)", percent: 10 },
-  { label: "T2 (+15%)", percent: 15 },
-  { label: "T3 (+20%)", percent: 20 },
-  { label: "All (+45%)", percent: 45 },
+const COMMON_DURATIONS = [
+  { label: "30 min", totalMinutes: 30 },
+  { label: "1 hour", totalMinutes: 60 },
+  { label: "1 hr 30 min", totalMinutes: 90 },
+  { label: "2 hours", totalMinutes: 120 },
+  { label: "2 hr 30 min", totalMinutes: 150 },
+  { label: "3 hours", totalMinutes: 180 },
+  { label: "4 hours", totalMinutes: 240 },
+  { label: "6 hours", totalMinutes: 360 },
+  { label: "8 hours", totalMinutes: 480 },
+  { label: "10 hours", totalMinutes: 600 },
+  { label: "12 hours", totalMinutes: 720 },
 ];
 
 export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsReturn }) {
@@ -28,350 +24,447 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
     setForgeLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
-    hasCampaignBuff,
-    setHasCampaignBuff,
-    shrineBuffPercent,
-    setShrineBuffPercent,
-    hasDailyBlessing,
-    setHasDailyBlessing,
-    customBuffPercent,
-    setCustomBuffPercent,
+    extraExpBuffPercent = 0,
+    setExtraExpBuffPercent,
+    extraEffBuffPercent = 0,
+    setExtraEffBuffPercent,
     totalBuffMultiplier,
+    totalEffMultiplier = 1.0,
     targetHours,
     setTargetHours,
     targetMinutes,
     setTargetMinutes,
-    totalTargetDurationSeconds,
+    isCursedOrForsaken,
+    profileClassName,
   } = lessons;
 
-  const totalBuffDisplay = Math.round((totalBuffMultiplier - 1) * 100);
-  const baseHourlyRate = getForgeHourlyRate(forgeLevel);
-  const activeHourlyRate = baseHourlyRate * totalBuffMultiplier;
-  const nextLvlRate = getForgeHourlyRate(Math.min(100, forgeLevel + 1));
-  const rateSlopeText = forgeLevel >= 100 ? "Max Level" : `+${(nextLvlRate - baseHourlyRate).toFixed(2)}/hr`;
-  const sweetSpotMin = Math.max(1, forgeLevel - 10);
-  const sweetSpotMax = Math.min(100, forgeLevel + 10);
+  const levelInputId = useId();
+  const durationSelectId = useId();
+  const extraExpInputId = useId();
+  const extraEffInputId = useId();
 
-  const applyFullBuffsPreset = () => {
-    setHasMembershipBuff(true);
-    setShrineBuffPercent(45);
-    setHasDailyBlessing(true);
-    setHasCampaignBuff(false);
-    setCustomBuffPercent(0);
+  const forgeAscensionLevel = lessons.forgeAscensionLevel || 0;
+
+  // Local level state for instant 120fps input feedback during rapid arrow stepping or typing
+  const [localLevel, setLocalLevel] = useState(forgeLevel);
+  const [rawLevelInput, setRawLevelInput] = useState<string>(String(forgeLevel));
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isInteractingRef = useRef<boolean>(false);
+  const [durationMenuOpen, setDurationMenuOpen] = useState(false);
+  const [highlightedDurationIndex, setHighlightedDurationIndex] = useState<number>(-1);
+  const durationMenuRef = useRef<HTMLDivElement>(null);
+  const durationTriggerRef = useRef<HTMLButtonElement>(null);
+  const durationOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const openDurationMenu = useCallback(() => {
+    const activeIdx = COMMON_DURATIONS.findIndex((d) => d.totalMinutes === (targetHours * 60 + targetMinutes));
+    const initialIdx = activeIdx >= 0 ? activeIdx : 0;
+    setHighlightedDurationIndex(initialIdx);
+    setDurationMenuOpen(true);
+  }, [targetHours, targetMinutes]);
+
+  const closeDurationMenu = useCallback((focusTrigger: boolean = true) => {
+    setDurationMenuOpen(false);
+    setHighlightedDurationIndex(-1);
+    if (focusTrigger) {
+      durationTriggerRef.current?.focus();
+    }
+  }, []);
+
+  // Auto-scroll highlighted option into view
+  useEffect(() => {
+    if (durationMenuOpen && highlightedDurationIndex >= 0) {
+      const el = durationOptionRefs.current[highlightedDurationIndex];
+      if (el) {
+        el.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [durationMenuOpen, highlightedDurationIndex]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) {
+        closeDurationMenu(false);
+      }
+    }
+    if (durationMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [durationMenuOpen, closeDurationMenu]);
+
+  // Sync external changes (e.g. profile switch) only when user is not actively interacting
+  useEffect(() => {
+    if (!isInteractingRef.current) {
+      setLocalLevel(forgeLevel);
+      setRawLevelInput(String(forgeLevel));
+    }
+  }, [forgeLevel]);
+
+  const commitLevel = useCallback((val: number) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    isInteractingRef.current = false;
+    const clamped = Math.min(100, Math.max(1, Math.floor(val)));
+    setLocalLevel(clamped);
+    setRawLevelInput(String(clamped));
+    setForgeLevel(clamped);
+  }, [setForgeLevel]);
+
+  const handleLevelChange = (val: number, immediate: boolean = false) => {
+    const clamped = Math.min(100, Math.max(1, Math.floor(val)));
+    setLocalLevel(clamped);
+    setRawLevelInput(String(clamped));
+    isInteractingRef.current = true;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (immediate) {
+      commitLevel(clamped);
+    } else {
+      debounceTimerRef.current = setTimeout(() => {
+        commitLevel(clamped);
+      }, 150);
+    }
   };
 
-  const applyMemberT3Preset = () => {
-    setHasMembershipBuff(true);
-    setShrineBuffPercent(20);
-    setHasDailyBlessing(false);
-    setHasCampaignBuff(false);
-    setCustomBuffPercent(0);
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const totalExpPercent = Math.round((totalBuffMultiplier - 1) * 100);
+  const totalEffPercent = Math.round((totalEffMultiplier - 1) * 100);
+
+  // Unified Duration Calculation
+  const totalSessionMinutes = targetHours * 60 + targetMinutes;
+
+  const handleDurationSelect = (mins: number) => {
+    const clampedMins = Math.min(720, Math.max(15, mins));
+    const h = Math.floor(clampedMins / 60);
+    const m = clampedMins % 60;
+    setTargetHours(h);
+    setTargetMinutes(m);
   };
 
-  const resetBuffs = () => {
-    setHasMembershipBuff(false);
-    setShrineBuffPercent(0);
-    setHasDailyBlessing(false);
-    setHasCampaignBuff(false);
-    setCustomBuffPercent(0);
+  const stepDuration = (deltaMinutes: number) => {
+    handleDurationSelect(totalSessionMinutes + deltaMinutes);
+  };
+
+  const handleDurationTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!durationMenuOpen) {
+        openDurationMenu();
+      } else {
+        const delta = e.key === "ArrowDown" ? 1 : -1;
+        setHighlightedDurationIndex((prev) => {
+          const next = (prev + delta + COMMON_DURATIONS.length) % COMMON_DURATIONS.length;
+          return next;
+        });
+      }
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (!durationMenuOpen) {
+        openDurationMenu();
+      } else if (highlightedDurationIndex >= 0 && highlightedDurationIndex < COMMON_DURATIONS.length) {
+        handleDurationSelect(COMMON_DURATIONS[highlightedDurationIndex].totalMinutes);
+        closeDurationMenu(true);
+      }
+    } else if (e.key === "Escape" && durationMenuOpen) {
+      e.preventDefault();
+      closeDurationMenu(true);
+    } else if (e.key === "Home" && durationMenuOpen) {
+      e.preventDefault();
+      setHighlightedDurationIndex(0);
+    } else if (e.key === "End" && durationMenuOpen) {
+      e.preventDefault();
+      setHighlightedDurationIndex(COMMON_DURATIONS.length - 1);
+    } else if (e.key === "Tab" && durationMenuOpen) {
+      closeDurationMenu(false);
+    }
   };
 
   return (
     <section className="lesson-header-controls" aria-label="Forge lesson parameters">
-      <div className="controls-panel-grid">
-        {/* Panel 1: Player Level */}
-        <div className="control-card">
-          <div className="control-card-header">
-            <span className="panel-kicker"><Flame size={14} aria-hidden="true" /> Forge Skill</span>
-            <span className="card-hint">Sets 10-level grace range</span>
-          </div>
-          <div className="stepper-input-row">
-            <button
-              type="button"
-              className="stepper-btn"
-              onClick={() => setForgeLevel(Math.max(1, forgeLevel - 1))}
-              disabled={forgeLevel <= 1}
-              aria-label="-1 level"
-            >
-              -1
-            </button>
-            <div className="number-display-wrap">
-              <label htmlFor="forge-level-input" className="sr-only">Forge Level</label>
-              <span className="level-prefix">Lv.</span>
-              <input
-                id="forge-level-input"
-                type="number"
-                min={1}
-                max={100}
-                value={forgeLevel}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  if (!Number.isNaN(val)) {
-                    setForgeLevel(Math.min(100, Math.max(1, val)));
-                  }
-                }}
-                className="direct-number-input"
-              />
-            </div>
-            <button
-              type="button"
-              className="stepper-btn"
-              onClick={() => setForgeLevel(Math.min(100, forgeLevel + 1))}
-              disabled={forgeLevel >= 100}
-              aria-label="+1 level"
-            >
-              +1
-            </button>
-          </div>
-          <div className="milestone-pill-row" aria-label="Level milestones">
-            {LEVEL_MILESTONES.map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                className={`milestone-pill ${forgeLevel === lvl ? "active" : ""}`}
-                onClick={() => setForgeLevel(lvl)}
-              >
-                {lvl}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Panel 2: EXP Buffs */}
-        <div className="control-card">
-          <div className="control-card-header">
-            <span className="panel-kicker"><Sparkles size={14} aria-hidden="true" /> Experience Buffs</span>
-            <span className="card-hint">
-              {totalBuffDisplay > 0 ? `+${totalBuffDisplay}% active` : "Base 100%"}
+      <div className="controls-unified-bar">
+        {/* Section 1: Player Level (Clean Stepper, No Pills) */}
+        <div className="toolbar-section level-section">
+          <div className="toolbar-section-header">
+            <span className="panel-kicker">
+              <Flame size={14} aria-hidden="true" /> Forge Skill
+            </span>
+            <span className="toolbar-subtext">
+              {forgeAscensionLevel > 0 ? `Synced (Asc. ${forgeAscensionLevel})` : "Synced to Profile"}
             </span>
           </div>
-          <div className="buff-toggles-row">
+          <div className="stepper-wrap compact">
             <button
               type="button"
-              className={`buff-toggle-btn ${hasMembershipBuff ? "active" : ""}`}
-              onClick={() => setHasMembershipBuff(!hasMembershipBuff)}
-              aria-pressed={hasMembershipBuff}
+              className="stepper-btn mini"
+              onClick={() => handleLevelChange(localLevel - 1, false)}
+              disabled={localLevel <= 1}
+              aria-label="Decrease forge level"
             >
-              <Shield size={14} aria-hidden="true" />
-              <span>+15% Member</span>
+              -
             </button>
+            <div className="number-display-wrap compact">
+              <label htmlFor={levelInputId} className="sr-only">Forge Level</label>
+              <span className="level-prefix">Lv.</span>
+              <input
+                id={levelInputId}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                value={rawLevelInput}
+                onChange={(e) => {
+                  isInteractingRef.current = true;
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  setRawLevelInput(raw);
+                  if (raw !== "") {
+                    const parsed = parseInt(raw, 10);
+                    if (!Number.isNaN(parsed)) {
+                      const clamped = Math.min(100, Math.max(1, parsed));
+                      handleLevelChange(clamped, false);
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  const val = parseInt(rawLevelInput, 10);
+                  const clamped = Number.isNaN(val) || val < 1 ? localLevel : Math.min(100, val);
+                  commitLevel(clamped);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = parseInt(rawLevelInput, 10);
+                    const clamped = Number.isNaN(val) || val < 1 ? localLevel : Math.min(100, val);
+                    commitLevel(clamped);
+                  }
+                }}
+                className="direct-number-input compact"
+              />
+              {forgeAscensionLevel > 0 && localLevel >= 100 && (
+                <span className="ascension-pill" title={`Ascension Level ${forgeAscensionLevel}`}>
+                  +{forgeAscensionLevel} Asc
+                </span>
+              )}
+            </div>
             <button
               type="button"
-              className={`buff-toggle-btn ${hasDailyBlessing ? "active" : ""}`}
-              onClick={() => setHasDailyBlessing(!hasDailyBlessing)}
-              aria-pressed={hasDailyBlessing}
+              className="stepper-btn mini"
+              onClick={() => handleLevelChange(localLevel + 1, false)}
+              disabled={localLevel >= 100}
+              aria-label="Increase forge level"
             >
-              <Sparkles size={14} aria-hidden="true" />
-              <span>+5% Blessing</span>
+              +
             </button>
           </div>
+        </div>
 
-          <div style={{ marginTop: "0.5rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-              <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-muted)", textTransform: "uppercase" }}>Shrine Buff</span>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-accent)", fontWeight: 700 }}>
-                {shrineBuffPercent > 0 ? `+${shrineBuffPercent}%` : "None"}
+        {/* Section 2: Unified Session Target (Single accessible picker, No Pills) */}
+        <div className="toolbar-section duration-section">
+          <div className="toolbar-section-header">
+            <span className="panel-kicker">
+              <Clock size={14} aria-hidden="true" /> Session Duration <span className="sr-only">Offline Session Target</span>
+            </span>
+            <span className="toolbar-subtext">{targetHours}h {targetMinutes > 0 ? `${targetMinutes}m` : ""}</span>
+          </div>
+          <div className="unified-duration-control">
+            <button
+              type="button"
+              className="stepper-btn mini"
+              onClick={() => stepDuration(-30)}
+              disabled={totalSessionMinutes <= 30}
+              aria-label="Decrease duration 30 minutes"
+            >
+              -30m
+            </button>
+            <div className={`duration-select-wrapper ${durationMenuOpen ? "open" : ""}`} ref={durationMenuRef}>
+              <button
+                ref={durationTriggerRef}
+                id={durationSelectId}
+                type="button"
+                className={`duration-trigger-btn ${durationMenuOpen ? "open" : ""}`}
+                onClick={() => {
+                  if (durationMenuOpen) {
+                    closeDurationMenu(false);
+                  } else {
+                    openDurationMenu();
+                  }
+                }}
+                onKeyDown={handleDurationTriggerKeyDown}
+                role="combobox"
+                aria-haspopup="listbox"
+                aria-expanded={durationMenuOpen}
+                aria-controls="duration-popover-listbox"
+                aria-activedescendant={
+                  durationMenuOpen && highlightedDurationIndex >= 0
+                    ? `duration-opt-${highlightedDurationIndex}`
+                    : undefined
+                }
+                aria-label="Select session duration"
+              >
+                <span className="duration-val">
+                  {COMMON_DURATIONS.find((d) => d.totalMinutes === totalSessionMinutes)?.label ||
+                    `${targetHours}h ${targetMinutes > 0 ? `${targetMinutes}m` : ""}`}
+                </span>
+                <ChevronDown size={14} className={`chevron-icon ${durationMenuOpen ? "flipped" : ""}`} />
+              </button>
+
+              {durationMenuOpen && (
+                <div
+                  id="duration-popover-listbox"
+                  className="duration-popover-menu"
+                  role="listbox"
+                  aria-label="Available session durations"
+                >
+                  {COMMON_DURATIONS.map((d, idx) => {
+                    const isSelected = d.totalMinutes === totalSessionMinutes;
+                    const isHighlighted = idx === highlightedDurationIndex;
+                    return (
+                      <button
+                        key={d.totalMinutes}
+                        ref={(el) => {
+                          durationOptionRefs.current[idx] = el;
+                        }}
+                        id={`duration-opt-${idx}`}
+                        type="button"
+                        className={`duration-option-btn ${isSelected ? "active" : ""} ${isHighlighted ? "highlighted" : ""}`}
+                        onMouseEnter={() => setHighlightedDurationIndex(idx)}
+                        onClick={() => {
+                          handleDurationSelect(d.totalMinutes);
+                          closeDurationMenu(true);
+                        }}
+                        role="option"
+                        aria-selected={isSelected}
+                      >
+                        <span>{d.label}</span>
+                        {isSelected && <span className="active-dot" aria-hidden="true">•</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="stepper-btn mini"
+              onClick={() => stepDuration(30)}
+              disabled={totalSessionMinutes >= 720}
+              aria-label="Increase duration 30 minutes"
+            >
+              +30m
+            </button>
+          </div>
+        </div>
+
+        {/* Section 3: EXP & Speed Buffs */}
+        <div className="toolbar-section buffs-section">
+          <div className="toolbar-section-header">
+            <span className="panel-kicker">
+              <Sparkles size={14} aria-hidden="true" /> EXP & Speed Buffs
+            </span>
+            <div className={`buff-active-badge-group ${totalExpPercent !== 0 || totalEffPercent !== 0 ? "active" : ""}`}>
+              {isCursedOrForsaken && (
+                <span className="buff-badge-pill penalty-tag" title="Cursed / Forsaken class -50% base EXP penalty">
+                  {profileClassName || "Cursed"}
+                </span>
+              )}
+              <span
+                className={`buff-badge-pill ${totalExpPercent < 0 ? "penalty" : "exp"}`}
+                title={`${totalExpPercent >= 0 ? "+" : ""}${totalExpPercent}% Forge Experience modifier`}
+              >
+                <Zap size={10} aria-hidden="true" />
+                <strong>{totalExpPercent >= 0 ? `+${totalExpPercent}%` : `${totalExpPercent}%`}</strong> EXP
+              </span>
+              <span className="buff-badge-dot" aria-hidden="true">·</span>
+              <span className="buff-badge-pill speed" title={`+${totalEffPercent}% Smithing Speed bonus`}>
+                <Clock size={10} aria-hidden="true" />
+                <strong>+{totalEffPercent}%</strong> Speed
               </span>
             </div>
-            <div className="milestone-pill-row" aria-label="Shrine buff tiers">
-              {SHRINE_TIERS.map((tier) => (
-                <button
-                  key={tier.label}
-                  type="button"
-                  className={`milestone-pill mini ${shrineBuffPercent === tier.percent ? "active" : ""}`}
-                  onClick={() => setShrineBuffPercent(tier.percent)}
-                >
-                  {tier.label}
-                </button>
-              ))}
-            </div>
           </div>
 
-          <div className="custom-buff-row" style={{ marginTop: "0.4rem" }}>
-            <label htmlFor="custom-buff-input" className="custom-buff-label">Other Buff %</label>
-            <input
-              id="custom-buff-input"
-              type="number"
-              min={0}
-              max={100}
-              value={customBuffPercent || ""}
-              placeholder="0"
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setCustomBuffPercent(Number.isNaN(val) ? 0 : Math.max(0, Math.min(100, val)));
-              }}
-              className="custom-buff-input"
-            />
-          </div>
+          <div className="buff-inputs-grid">
+            {/* Zenith Membership Status Toggle */}
+            <button
+              type="button"
+              className={`membership-pill-btn ${hasMembershipBuff ? "active" : ""}`}
+              onClick={() => setHasMembershipBuff(!hasMembershipBuff)}
+              aria-pressed={hasMembershipBuff}
+              title="Zenith Membership grants +15% EXP and +10% Efficiency"
+            >
+              <Shield size={13} aria-hidden="true" />
+              <span>{hasMembershipBuff ? "Zenith Member (+15% EXP)" : "Standard (+0% Buffs)"}</span>
+            </button>
 
-          <div className="milestone-pill-row" style={{ marginTop: "0.4rem" }} aria-label="Quick buff presets">
-            <button
-              type="button"
-              className="milestone-pill mini"
-              onClick={applyFullBuffsPreset}
-              title="Membership (+15%) + All Shrines (+45%) + Blessing (+5%)"
-            >
-              Full +65%
-            </button>
-            <button
-              type="button"
-              className="milestone-pill mini"
-              onClick={applyMemberT3Preset}
-              title="Membership (+15%) + Shrine T3 (+20%)"
-            >
-              T3 +35%
-            </button>
-            <button
-              type="button"
-              className="milestone-pill mini"
-              onClick={resetBuffs}
-              title="Reset all buffs to Base 100%"
-            >
-              Reset 0%
-            </button>
-          </div>
-          <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.35rem 0 0" }}>
-            Campaign tasks only advance from crafting, not lessons.
-          </p>
-        </div>
-
-        {/* Panel 3: Session Duration Planner (NO SLIDERS) */}
-        <div className="control-card">
-          <div className="control-card-header">
-            <span className="panel-kicker"><Clock size={14} aria-hidden="true" /> Offline Session Target</span>
-            <span className="card-hint">Up to 12h (Housing + Member)</span>
-          </div>
-          <div className="duration-input-row">
-            <div className="duration-unit-group">
-              <label htmlFor="target-hours-input">Hours</label>
-              <div className="unit-stepper-wrap">
-                <button
-                  type="button"
-                  className="unit-step-btn"
-                  onClick={() => setTargetHours(Math.max(0, targetHours - 1))}
-                  disabled={targetHours <= 0}
-                  aria-label="-1 hour"
-                >
-                  -
-                </button>
+            {/* Bonus EXP and Bonus Speed Inputs */}
+            <div className="buff-extra-inputs-row">
+              <div className="buff-field-group">
+                <label htmlFor={extraExpInputId} className="buff-field-label">
+                  <Zap size={11} aria-hidden="true" /> Bonus EXP %
+                </label>
                 <input
-                  id="target-hours-input"
-                  type="number"
-                  min={0}
-                  max={12}
-                  value={targetHours}
+                  id={extraExpInputId}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  value={extraExpBuffPercent === 0 ? "" : extraExpBuffPercent}
+                  placeholder="0"
                   onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!Number.isNaN(val)) {
-                      const clampedH = Math.min(12, Math.max(0, val));
-                      setTargetHours(clampedH);
-                      if (clampedH === 12) {
-                        setTargetMinutes(0);
-                      }
-                    }
-                  }}
-                  className="duration-number-input"
-                />
-                <button
-                  type="button"
-                  className="unit-step-btn"
-                  onClick={() => {
-                    const nextH = Math.min(12, targetHours + 1);
-                    setTargetHours(nextH);
-                    if (nextH === 12) {
-                      setTargetMinutes(0);
-                    }
-                  }}
-                  disabled={targetHours >= 12}
-                  aria-label="+1 hour"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div className="duration-unit-group">
-              <label htmlFor="target-mins-input">Mins</label>
-              <div className="unit-stepper-wrap">
-                <button
-                  type="button"
-                  className="unit-step-btn"
-                  onClick={() => setTargetMinutes(Math.max(0, targetMinutes - 15))}
-                  disabled={targetMinutes <= 0 || targetHours >= 12}
-                  aria-label="-15 minutes"
-                >
-                  -
-                </button>
-                <input
-                  id="target-mins-input"
-                  type="number"
-                  min={0}
-                  max={targetHours >= 12 ? 0 : 59}
-                  step={5}
-                  value={targetHours >= 12 ? 0 : targetMinutes}
-                  disabled={targetHours >= 12}
-                  onChange={(e) => {
-                    if (targetHours >= 12) {
-                      setTargetMinutes(0);
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    if (raw === "") {
+                      setExtraExpBuffPercent?.(0);
                       return;
                     }
-                    const val = parseInt(e.target.value, 10);
+                    const val = parseInt(raw, 10);
                     if (!Number.isNaN(val)) {
-                      setTargetMinutes(Math.min(59, Math.max(0, val)));
+                      setExtraExpBuffPercent?.(Math.min(500, Math.max(0, val)));
                     }
                   }}
-                  className="duration-number-input"
+                  className="buff-number-field"
                 />
-                <button
-                  type="button"
-                  className="unit-step-btn"
-                  onClick={() => setTargetMinutes(Math.min(59, targetMinutes + 15))}
-                  disabled={targetHours >= 12 || targetMinutes >= 45}
-                  aria-label="+15 minutes"
-                >
-                  +
-                </button>
+              </div>
+
+              <div className="buff-field-group">
+                <label htmlFor={extraEffInputId} className="buff-field-label">
+                  <Clock size={11} aria-hidden="true" /> Bonus Speed %
+                </label>
+                <input
+                  id={extraEffInputId}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  value={extraEffBuffPercent === 0 ? "" : extraEffBuffPercent}
+                  placeholder="0"
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    if (raw === "") {
+                      setExtraEffBuffPercent?.(0);
+                      return;
+                    }
+                    const val = parseInt(raw, 10);
+                    if (!Number.isNaN(val)) {
+                      setExtraEffBuffPercent?.(Math.min(500, Math.max(0, val)));
+                    }
+                  }}
+                  className="buff-number-field"
+                />
               </div>
             </div>
           </div>
-
-          <div className="preset-pill-row" aria-label="Session duration presets">
-            {DURATION_PRESETS.map((p) => {
-              const isMatch = targetHours === p.hours && targetMinutes === p.mins;
-              return (
-                <button
-                  key={p.label}
-                  type="button"
-                  className={`preset-pill ${isMatch ? "active" : ""}`}
-                  onClick={() => {
-                    setTargetHours(p.hours);
-                    setTargetMinutes(p.mins);
-                  }}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="rate-context-strip" aria-label="Hourly training rate and grace window context">
-        <div className="context-stat">
-          <span className="stat-label">Base Speed</span>
-          <strong>{baseHourlyRate.toFixed(2)} EXP/hr</strong>
-        </div>
-        <div className="context-stat">
-          <span className="stat-label">Active Rate ({totalBuffDisplay > 0 ? `+${totalBuffDisplay}%` : "1.0x"})</span>
-          <strong className="good-val">{activeHourlyRate.toFixed(2)} EXP/hr</strong>
-        </div>
-        <div className="context-stat">
-          <span className="stat-label">100% Sweet Spot</span>
-          <strong>Lv. {sweetSpotMin} – {sweetSpotMax}</strong>
-        </div>
-        <div className="context-stat">
-          <span className="stat-label">Next Level Slope</span>
-          <span>{rateSlopeText}</span>
         </div>
       </div>
     </section>

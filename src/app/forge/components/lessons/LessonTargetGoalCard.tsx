@@ -1,18 +1,29 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, DollarSign, FastForward, Target, Zap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ArrowRight, CheckCircle2, Compass, DollarSign, FastForward, Layers, Sparkles } from "lucide-react";
 import { formatGold } from "@/lib/format";
+import { GoldIcon } from "@/components/GoldIcon";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
+import type { GoalProgressionStep } from "../../types";
 
-const TARGET_MILESTONES = [25, 50, 75, 90, 99, 100];
+function formatLongDuration(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "0m";
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const remainingHours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const remainingMinutes = totalMinutes % 60;
 
-function formatTime(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+  if (days > 0) {
+    if (remainingMinutes > 0) {
+      return `${days}d ${remainingHours}h ${remainingMinutes}m`;
+    }
+    return `${days}d ${remainingHours}h`;
   }
-  return `${minutes}m ${Math.floor(totalSeconds % 60)}s`;
+  if (remainingHours > 0) {
+    return `${remainingHours}h ${remainingMinutes}m`;
+  }
+  return `${remainingMinutes}m ${Math.floor(totalSeconds % 60)}s`;
 }
 
 export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsReturn }) {
@@ -21,150 +32,247 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
     targetGoalLevel,
     setTargetGoalLevel,
     goalEstimate,
-    fillSessionWithMaterial,
+    addToQueue,
   } = lessons;
 
-  const { expNeeded, cheapestOption, fastestOption } = goalEstimate;
+  const {
+    expNeeded,
+    cheapestOption,
+    bestOption,
+    fastestOption,
+    cheapestSteps = [],
+    bestSteps = [],
+    fastestSteps = [],
+    totalCheapestCost = 0,
+    totalBestCost = 0,
+    totalFastestCost = 0,
+    totalCheapestDurationSeconds = 0,
+    totalBestDurationSeconds = 0,
+    totalFastestDurationSeconds = 0,
+  } = goalEstimate;
+
+  const isMaxLevel = forgeLevel >= 100;
+
+  const [rawTargetStr, setRawTargetStr] = useState(String(targetGoalLevel));
+  useEffect(() => {
+    setRawTargetStr(String(targetGoalLevel));
+  }, [targetGoalLevel]);
+
+  const applyPathToQueue = (steps: GoalProgressionStep[]) => {
+    for (const step of steps) {
+      if (step.material?.name && step.quantityNeeded > 0) {
+        addToQueue(step.material.name, step.quantityNeeded);
+      }
+    }
+  };
+
+  const routes = [
+    {
+      key: "cheapest" as const,
+      tagClass: "cheap",
+      icon: DollarSign,
+      title: "Cheapest Route",
+      subtitle: "Lowest Gold Cost",
+      option: cheapestOption,
+      steps: cheapestSteps,
+      totalCost: totalCheapestCost || cheapestOption?.totalCost || 0,
+      totalDurationSeconds: totalCheapestDurationSeconds || cheapestOption?.totalDurationSeconds || 0,
+    },
+    {
+      key: "best" as const,
+      tagClass: "best",
+      icon: Sparkles,
+      title: "Balanced Route",
+      subtitle: "Optimal Speed & Cost",
+      option: bestOption || cheapestOption,
+      steps: bestSteps.length > 0 ? bestSteps : cheapestSteps,
+      totalCost: totalBestCost || bestOption?.totalCost || totalCheapestCost || 0,
+      totalDurationSeconds: totalBestDurationSeconds || bestOption?.totalDurationSeconds || totalCheapestDurationSeconds || 0,
+    },
+    {
+      key: "fastest" as const,
+      tagClass: "fast",
+      icon: FastForward,
+      title: "Fastest Route",
+      subtitle: "Maximum EXP Speed",
+      option: fastestOption,
+      steps: fastestSteps,
+      totalCost: totalFastestCost || fastestOption?.totalCost || 0,
+      totalDurationSeconds: totalFastestDurationSeconds || fastestOption?.totalDurationSeconds || 0,
+    },
+  ];
 
   return (
     <section className="lesson-target-goal-card" aria-label="Level target estimator">
       <div className="goal-card-topbar">
         <div className="goal-title-group">
-          <span className="panel-kicker"><Target size={14} aria-hidden="true" /> Level Target Estimator</span>
-          <h2>Plan from Level {forgeLevel} to Goal</h2>
+          <span className="panel-kicker"><Compass size={14} aria-hidden="true" /> Progression Routes <span className="sr-only">Level Target Estimator</span></span>
+          <h2>Training Plan: Lv. {forgeLevel} to {targetGoalLevel}</h2>
         </div>
 
-        <div className="target-stepper-wrap">
-          <label htmlFor="target-level-input" className="sr-only">Target Level</label>
-          <span className="target-label">Target Lv:</span>
-          <button
-            type="button"
-            className="stepper-btn small"
-            onClick={() => setTargetGoalLevel(Math.max(forgeLevel + 1, targetGoalLevel - 1))}
-            disabled={targetGoalLevel <= forgeLevel + 1}
-            aria-label="-1 target level"
-          >
-            -1
-          </button>
-          <input
-            id="target-level-input"
-            type="number"
-            min={forgeLevel + 1}
-            max={100}
-            value={targetGoalLevel}
-            onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              if (!Number.isNaN(val)) {
-                setTargetGoalLevel(Math.min(100, Math.max(forgeLevel + 1, val)));
-              }
-            }}
-            className="direct-number-input small"
-          />
-          <button
-            type="button"
-            className="stepper-btn small"
-            onClick={() => setTargetGoalLevel(Math.min(100, targetGoalLevel + 1))}
-            disabled={targetGoalLevel >= 100}
-            aria-label="+1 target level"
-          >
-            +1
-          </button>
-          <div className="target-milestones" aria-label="Target level milestones">
-            {TARGET_MILESTONES.filter((m) => m > forgeLevel).map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                className={`milestone-pill mini ${targetGoalLevel === lvl ? "active" : ""}`}
-                onClick={() => setTargetGoalLevel(lvl)}
-              >
-                {lvl}
-              </button>
-            ))}
+        {!isMaxLevel && (
+          <div className="target-stepper-wrap">
+            <div className="target-direct-group">
+              <label htmlFor="target-level-input" className="sr-only">Target Level</label>
+              <span className="target-label">Target Lv:</span>
+              <div className="stepper-wrap compact">
+                <button
+                  type="button"
+                  className="stepper-btn mini"
+                  onClick={() => {
+                    const next = Math.max(forgeLevel + 1, targetGoalLevel - 1);
+                    setTargetGoalLevel(next);
+                    setRawTargetStr(String(next));
+                  }}
+                  disabled={targetGoalLevel <= forgeLevel + 1}
+                  aria-label="Decrease target level"
+                >
+                  -
+                </button>
+                <div className="number-display-wrap compact">
+                  <span className="level-prefix">Lv.</span>
+                  <input
+                    id="target-level-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    value={rawTargetStr}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      setRawTargetStr(raw);
+                      if (raw !== "") {
+                        const parsed = parseInt(raw, 10);
+                        if (!Number.isNaN(parsed)) {
+                          const clamped = Math.min(100, parsed);
+                          if (clamped >= forgeLevel + 1) {
+                            setTargetGoalLevel(clamped);
+                          }
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const parsed = parseInt(rawTargetStr, 10);
+                      const clamped = Number.isNaN(parsed) || parsed < forgeLevel + 1
+                        ? Math.min(100, forgeLevel + 1)
+                        : Math.min(100, parsed);
+                      setRawTargetStr(String(clamped));
+                      setTargetGoalLevel(clamped);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const parsed = parseInt(rawTargetStr, 10);
+                        const clamped = Number.isNaN(parsed) || parsed < forgeLevel + 1
+                          ? Math.min(100, forgeLevel + 1)
+                          : Math.min(100, parsed);
+                        setRawTargetStr(String(clamped));
+                        setTargetGoalLevel(clamped);
+                      }
+                    }}
+                    className="direct-number-input compact"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="stepper-btn mini"
+                  onClick={() => {
+                    const next = Math.min(100, targetGoalLevel + 1);
+                    setTargetGoalLevel(next);
+                    setRawTargetStr(String(next));
+                  }}
+                  disabled={targetGoalLevel >= 100}
+                  aria-label="Increase target level"
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="goal-exp-banner">
         <div className="exp-metric-block">
-          <span className="metric-label">Experience Needed</span>
-          <strong>{expNeeded.toLocaleString()} EXP</strong>
+          <span className="metric-label">EXP Required</span>
+          <strong>{isMaxLevel ? "Cap Reached" : `${expNeeded.toLocaleString()} EXP`}</strong>
         </div>
         <div className="level-jump-badge">
           <span>Lv. {forgeLevel}</span>
           <ArrowRight size={14} aria-hidden="true" />
-          <strong>Lv. {targetGoalLevel}</strong>
+          <strong>{isMaxLevel ? "MAX (100)" : `Lv. ${targetGoalLevel}`}</strong>
         </div>
       </div>
 
-      <div className="goal-routes-grid">
-        {/* Cheapest Route */}
-        {cheapestOption && (
-          <div className="route-card cheap-route">
-            <div className="route-header">
-              <span className="route-tag cheap"><DollarSign size={13} aria-hidden="true" /> Cheapest Route</span>
-              <span className="route-ratio">{cheapestOption.material.goldPerExp.toFixed(2)}g / EXP</span>
-            </div>
-            <div className="route-body">
-              <h3 className="route-mat-name">{cheapestOption.material.name}</h3>
-              <p className="route-details">
-                Burn <strong>{cheapestOption.quantityNeeded.toLocaleString()}x</strong>
-                {" • "}
-                Est. Cost: <strong className="good-val">{formatGold(cheapestOption.totalCost)}g</strong>
-              </p>
-              <p className="route-subtext">
-                Session time: {formatTime(cheapestOption.totalDurationSeconds)}
-              </p>
-              {cheapestOption.material.reqLvl > forgeLevel + 10 && (
-                <p className="route-subtext" style={{ color: "var(--text-accent)" }}>
-                  Optimal once you reach Lv. {Math.max(1, cheapestOption.material.reqLvl - 10)}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              className="route-action-btn"
-              onClick={() => fillSessionWithMaterial(cheapestOption.material.name)}
-            >
-              <Zap size={14} aria-hidden="true" />
-              <span>Fill Session With This</span>
-            </button>
+      {isMaxLevel ? (
+        <div className="max-level-reached-banner">
+          <CheckCircle2 size={24} className="good-val" aria-hidden="true" />
+          <div>
+            <strong>Maximum Forge Level Reached</strong>
+            <p>Your Forge mastery is at the Level 100 cap.</p>
           </div>
-        )}
+        </div>
+      ) : (
+        <div className="goal-routes-grid">
+          {routes.map((route) => {
+            const Icon = route.icon;
+            const option = route.option;
+            if (!option) return null;
 
-        {/* Fastest Route */}
-        {fastestOption && (
-          <div className="route-card fast-route">
-            <div className="route-header">
-              <span className="route-tag fast"><FastForward size={13} aria-hidden="true" /> Fastest Route</span>
-              <span className="route-ratio">{(fastestOption.material.expPerSecond * 60).toFixed(0)} EXP / min</span>
-            </div>
-            <div className="route-body">
-              <h3 className="route-mat-name">{fastestOption.material.name}</h3>
-              <p className="route-details">
-                Burn <strong>{fastestOption.quantityNeeded.toLocaleString()}x</strong>
-                {" • "}
-                Est. Cost: <strong>{formatGold(fastestOption.totalCost)}g</strong>
-              </p>
-              <p className="route-subtext">
-                Session time: {formatTime(fastestOption.totalDurationSeconds)}
-              </p>
-              {fastestOption.material.reqLvl > forgeLevel + 10 && (
-                <p className="route-subtext" style={{ color: "var(--text-accent)" }}>
-                  Optimal once you reach Lv. {Math.max(1, fastestOption.material.reqLvl - 10)}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              className="route-action-btn"
-              onClick={() => fillSessionWithMaterial(fastestOption.material.name)}
-            >
-              <Zap size={14} aria-hidden="true" />
-              <span>Fill Session With This</span>
-            </button>
-          </div>
-        )}
-      </div>
+            return (
+              <div key={route.key} className={`route-card ${route.key}-route`}>
+                <div className="route-header">
+                  <div className="route-tag-group">
+                    <span className={`route-tag ${route.tagClass}`}>
+                      <Icon size={13} aria-hidden="true" />
+                      <span>{route.title}</span>
+                    </span>
+                    <span className="route-subtitle">{route.subtitle}</span>
+                  </div>
+                  <div className="route-cost-wrap">
+                    <span className="route-cost-val">
+                      {formatGold(route.totalCost)}
+                      <GoldIcon size={13} />
+                    </span>
+                    {route.totalDurationSeconds > 0 && (
+                      <span className="route-time-val">{formatLongDuration(route.totalDurationSeconds)}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="route-body">
+                  <div className="bracket-steps-container">
+                    <div className="bracket-list">
+                      {route.steps.map((step, idx) => (
+                        <div key={idx} className="bracket-item">
+                          <span className="bracket-level-range">Lv. {step.fromLevel}&ndash;{step.toLevel}</span>
+                          <span className="bracket-material-name">{step.material.name}</span>
+                          <span className="bracket-qty"><strong>{step.quantityNeeded.toLocaleString()}x</strong></span>
+                          <span className="bracket-cost">
+                            {formatGold(step.cost)}
+                            <GoldIcon size={11} />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="route-actions-row">
+                  <button
+                    type="button"
+                    className="route-action-btn"
+                    onClick={() => applyPathToQueue(route.steps)}
+                    aria-label={`Queue entire ${route.title}`}
+                  >
+                    <Layers size={14} aria-hidden="true" />
+                    <span>Queue {route.title}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

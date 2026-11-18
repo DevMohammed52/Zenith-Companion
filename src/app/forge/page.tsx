@@ -13,7 +13,7 @@ export * from "./types";
 export default function ForgePage() {
   const state = useForgeState();
   const lessons = useForgeLessons();
-  const { activeTab, statusMessage } = state;
+  const { statusMessage, activeTab } = state;
 
   return (
     <main className="container forge-page" aria-labelledby="forge-page-title">
@@ -24,8 +24,11 @@ export default function ForgePage() {
       <ForgeTabs state={state} />
 
       <div className="forge-tab-viewport" style={{ minHeight: "480px", contain: "layout" }}>
-        {activeTab === "lessons" && <ForgeLessonsTab lessons={lessons} />}
-        {activeTab === "craft" && <CraftItemTab state={state} />}
+        {activeTab === "craft" ? (
+          <CraftItemTab state={state} />
+        ) : (
+          <ForgeLessonsTab lessons={lessons} />
+        )}
       </div>
 
       <ForgeStyles />

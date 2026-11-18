@@ -40,8 +40,8 @@ export interface ForgeTabDefinition {
 }
 
 export const FORGE_TABS: ForgeTabDefinition[] = [
-  { id: "lessons", label: "Lessons", hint: "Tutorials & forge mastery progression" },
-  { id: "craft", label: "Craft Item", hint: "Saved recipe planning & shopping lists" },
+  { id: "lessons", label: "Lessons", hint: "Training queue & progression roadmap" },
+  { id: "craft", label: "Craft Item", hint: "Recipe planner & shopping list" },
 ];
 
 export const FORGE_OWNED_STORAGE_KEY = "zenith_forge_owned_materials_v1";
@@ -160,6 +160,7 @@ export interface ForgeLessonMaterial {
   timeSeconds: number;
   marketPrice: number;
   mob?: string;
+  imageUrl?: string;
 }
 
 export interface CalculatedLessonMaterial extends ForgeLessonMaterial {
@@ -192,12 +193,18 @@ export interface LessonSessionSummary {
   totalCost: number;
   projectedLevel: number;
   projectedLevelProgress: number;
-  temperPercentGain: number;
-  projectedShards?: number;
-  isFullTemper?: boolean;
   hasOverlevelWarning: boolean;
   hasRareDropWarning: boolean;
   exceedsCap: boolean;
+}
+
+export interface GoalProgressionStep {
+  fromLevel: number;
+  toLevel: number;
+  material: CalculatedLessonMaterial;
+  quantityNeeded: number;
+  cost: number;
+  durationSeconds: number;
 }
 
 export interface GoalEstimateResult {
@@ -210,11 +217,26 @@ export interface GoalEstimateResult {
     totalCost: number;
     totalDurationSeconds: number;
   } | null;
+  bestOption?: {
+    material: CalculatedLessonMaterial;
+    quantityNeeded: number;
+    totalCost: number;
+    totalDurationSeconds: number;
+  } | null;
   fastestOption: {
     material: CalculatedLessonMaterial;
     quantityNeeded: number;
     totalCost: number;
     totalDurationSeconds: number;
   } | null;
+  cheapestSteps?: GoalProgressionStep[];
+  bestSteps?: GoalProgressionStep[];
+  fastestSteps?: GoalProgressionStep[];
+  totalCheapestCost?: number;
+  totalBestCost?: number;
+  totalFastestCost?: number;
+  totalCheapestDurationSeconds?: number;
+  totalBestDurationSeconds?: number;
+  totalFastestDurationSeconds?: number;
 }
 

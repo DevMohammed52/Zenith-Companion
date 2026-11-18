@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import rawMaterials from "@/data/normalized-forge-materials.json";
 import rawXpLevels from "@/data/skill-xp-levels.json";
-import { getProfileSkillLevel, useProfiles } from "@/lib/profiles";
+import { getProfileSkillLevel, isStarterProfile, useProfiles } from "@/lib/profiles";
+import { usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
 import {
@@ -14,6 +15,7 @@ import {
   type ForgeLessonMaterial,
   type ForgeLessonSort,
   type GoalEstimateResult,
+  type GoalProgressionStep,
   type LessonSessionSummary,
   type QueuedLessonItem,
 } from "../types";
@@ -30,15 +32,6 @@ export const FORGE_LESSON_QUEUE_STORAGE_KEY = "zenith_forge_lesson_queue_v1";
 export const FORGE_LESSON_DURATION_STORAGE_KEY = "zenith_forge_lesson_duration_v1";
 export const FORGE_LESSON_BUFFS_STORAGE_KEY = "zenith_forge_lesson_buffs_v1";
 export const FORGE_LESSON_GOAL_STORAGE_KEY = "zenith_forge_lesson_goal_v1";
-
-export function calculateBankedShardsForLevel(level: number): number {
-  const clamped = Math.max(1, Math.min(100, Math.floor(level)));
-  if (clamped <= 1) return 5;
-  if (clamped <= 25) return Math.round(5 + ((clamped - 1) / (25 - 1)) * (12 - 5));
-  if (clamped <= 50) return Math.round(12 + ((clamped - 25) / (50 - 25)) * (25 - 12));
-  if (clamped <= 75) return Math.round(25 + ((clamped - 50) / (75 - 50)) * (50 - 25));
-  return Math.round(50 + ((clamped - 75) / (100 - 75)) * (100 - 50));
-}
 
 const xpTable = rawXpLevels as Record<string, { level: number; expForNextLevel: number; totalExpToReach: number }>;
 
@@ -132,15 +125,6 @@ export function calculateSessionSummary(
   totalForgeExp = Math.floor(totalForgeExp);
   const totalStrengthExp = Math.floor(totalForgeExp * 0.05);
 
-  const avgEfficiency = totalDurationSeconds > 0 ? weightedEffSum / totalDurationSeconds : 1.0;
-  const temperPercentGain = Number(
-    Math.min(100, (totalDurationSeconds / 3600) * 4.0 * avgEfficiency).toFixed(1)
-  );
-
-  const maxBankableShards = calculateBankedShardsForLevel(playerLevel);
-  const projectedShards = Math.round(maxBankableShards * (temperPercentGain / 100));
-  const isFullTemper = temperPercentGain >= 100;
-
   const { projectedLevel, progressPercent } = calculateProjectedLevel(playerLevel, currentLevelXp, totalForgeExp);
 
   const hasOverlevelWarning = queuedItems.some((i) => i.material.hasPenalty);
@@ -157,13 +141,17 @@ export function calculateSessionSummary(
     totalCost,
     projectedLevel,
     projectedLevelProgress: progressPercent,
-    temperPercentGain,
-    projectedShards,
-    isFullTemper,
     hasOverlevelWarning,
     hasRareDropWarning,
     exceedsCap,
   };
+}
+
+// Persistent cache across level changes (invalidated only when market prices or buff multiplier change)
+const levelSolutionCache = new Map<string, CalculatedLessonMaterial>();
+
+export function clearGoalEstimateCache(): void {
+  levelSolutionCache.clear();
 }
 
 export function calculateGoalEstimate(
@@ -172,7 +160,8 @@ export function calculateGoalEstimate(
   allMaterials: ForgeLessonMaterial[],
   buffMultiplier: number = 1.0,
   currentLevelXp: number = 0,
-  marketData?: any
+  marketData?: any,
+  effMultiplier: number = 1.0
 ): GoalEstimateResult {
   const currentEntry = xpTable[String(currentLevel)] || { totalExpToReach: 0, expForNextLevel: 139 };
   const targetEntry = xpTable[String(targetLevel)] || { totalExpToReach: 0, expForNextLevel: 139 };
@@ -186,7 +175,17 @@ export function calculateGoalEstimate(
       targetLevel,
       expNeeded: 0,
       cheapestOption: null,
+      bestOption: null,
       fastestOption: null,
+      cheapestSteps: [],
+      bestSteps: [],
+      fastestSteps: [],
+      totalCheapestCost: 0,
+      totalBestCost: 0,
+      totalFastestCost: 0,
+      totalCheapestDurationSeconds: 0,
+      totalBestDurationSeconds: 0,
+      totalFastestDurationSeconds: 0,
     };
   }
 
@@ -195,21 +194,142 @@ export function calculateGoalEstimate(
     ? Math.min(targetLevel, Math.max(currentLevel, Math.floor((currentLevel + targetLevel) / 2)))
     : currentLevel;
 
-  const calculated = allMaterials.map((m) => {
+  // Pre-resolve prices once to eliminate thousands of repeated lookups
+  const priceMap = new Map<string, number>();
+  for (const m of allMaterials) {
     const safePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : 0;
-    const livePrice = safePrice > 0 ? safePrice : m.marketPrice;
+    priceMap.set(m.name, safePrice > 0 ? safePrice : m.marketPrice);
+  }
+
+  const calculated = allMaterials.map((m) => {
+    const livePrice = priceMap.get(m.name) || m.marketPrice;
     return calculateLessonMaterialEfficiency(m, effectiveClimbLevel, buffMultiplier, livePrice);
   });
 
-  // Cheapest: lowest gold/EXP
+  const firstPrice = priceMap.get(allMaterials[0]?.name || "") || 0;
+  const lastPrice = priceMap.get(allMaterials[allMaterials.length - 1]?.name || "") || 0;
+  const priceSig = `${firstPrice}_${lastPrice}_${priceMap.size}`;
+
+  const getBestAtLevel = (lvl: number, mode: "cheapest" | "fastest" | "best"): CalculatedLessonMaterial => {
+    const cacheKey = `${lvl}_${mode}_${buffMultiplier.toFixed(2)}_${effMultiplier.toFixed(2)}_${priceSig}`;
+    const cached = levelSolutionCache.get(cacheKey);
+    if (cached) return cached;
+
+    let bestMat: CalculatedLessonMaterial | null = null;
+    let bestMetric = mode === "cheapest" ? Infinity : -Infinity;
+
+    for (const m of allMaterials) {
+      const livePrice = priceMap.get(m.name) || m.marketPrice;
+      const calc = calculateLessonMaterialEfficiency(m, lvl, buffMultiplier, livePrice);
+      const effectiveBurnTime = Math.max(1, Math.round(m.timeSeconds / effMultiplier));
+      const effectiveExpPerSec = effectiveBurnTime > 0 ? calc.effectiveExp / effectiveBurnTime : 0;
+
+      let metric: number;
+      if (mode === "cheapest") {
+        metric = calc.goldPerExp;
+        if (metric < bestMetric) {
+          bestMetric = metric;
+          bestMat = calc;
+        }
+      } else if (mode === "fastest") {
+        metric = effectiveExpPerSec;
+        if (metric > bestMetric) {
+          bestMetric = metric;
+          bestMat = calc;
+        }
+      } else {
+        // "best": Pareto efficiency score = effectiveExpPerSec / sqrt(max(0.2, goldPerExp))
+        metric = effectiveExpPerSec / Math.sqrt(Math.max(0.2, calc.goldPerExp));
+        if (calc.hasPenalty) metric *= 0.5;
+        if (metric > bestMetric) {
+          bestMetric = metric;
+          bestMat = calc;
+        }
+      }
+    }
+
+    const result = bestMat || calculated[0];
+    levelSolutionCache.set(cacheKey, result);
+    return result;
+  };
+
+  const solveBracketPath = (mode: "cheapest" | "fastest" | "best"): GoalProgressionStep[] => {
+    const steps: GoalProgressionStep[] = [];
+    let currBracketStart = currentLevel;
+    let currMat = getBestAtLevel(currentLevel, mode);
+    let bracketQtyAcc = 0;
+
+    for (let lvl = currentLevel; lvl < targetLevel; lvl++) {
+      const lvlEntry = xpTable[String(lvl)] || { expForNextLevel: 139 };
+      const xpForThisLvl = lvl === currentLevel ? Math.max(0, lvlEntry.expForNextLevel - currentLevelXp) : lvlEntry.expForNextLevel;
+      const bestMatAtThisLvl = getBestAtLevel(lvl, mode);
+
+      if (bestMatAtThisLvl.name !== currMat.name && lvl > currBracketStart) {
+        const qty = Math.ceil(bracketQtyAcc);
+        const itemDuration = Math.max(1, Math.round(currMat.timeSeconds / effMultiplier));
+        steps.push({
+          fromLevel: currBracketStart,
+          toLevel: lvl,
+          material: currMat,
+          quantityNeeded: qty,
+          cost: qty * currMat.liveMarketPrice,
+          durationSeconds: qty * itemDuration,
+        });
+        currBracketStart = lvl;
+        currMat = bestMatAtThisLvl;
+        bracketQtyAcc = 0;
+      }
+
+      const livePrice = priceMap.get(currMat.name) || currMat.marketPrice;
+      const matAtLvl = calculateLessonMaterialEfficiency(currMat, lvl, buffMultiplier, livePrice);
+      const qtyAtLvl = xpForThisLvl / Math.max(0.1, matAtLvl.effectiveExp);
+      bracketQtyAcc += qtyAtLvl;
+    }
+
+    if (bracketQtyAcc > 0 && currBracketStart < targetLevel) {
+      const qty = Math.ceil(bracketQtyAcc);
+      const itemDuration = Math.max(1, Math.round(currMat.timeSeconds / effMultiplier));
+      steps.push({
+        fromLevel: currBracketStart,
+        toLevel: targetLevel,
+        material: currMat,
+        quantityNeeded: qty,
+        cost: qty * currMat.liveMarketPrice,
+        durationSeconds: qty * itemDuration,
+      });
+    }
+
+    return steps;
+  };
+
+  const cheapestSteps = solveBracketPath("cheapest");
+  const fastestSteps = solveBracketPath("fastest");
+  const bestSteps = solveBracketPath("best");
+
+  const totalCheapestCost = cheapestSteps.reduce((sum, s) => sum + s.cost, 0);
+  const totalFastestCost = fastestSteps.reduce((sum, s) => sum + s.cost, 0);
+  const totalBestCost = bestSteps.reduce((sum, s) => sum + s.cost, 0);
+
+  const totalCheapestDurationSeconds = cheapestSteps.reduce((sum, s) => sum + s.durationSeconds, 0);
+  const totalFastestDurationSeconds = fastestSteps.reduce((sum, s) => sum + s.durationSeconds, 0);
+  const totalBestDurationSeconds = bestSteps.reduce((sum, s) => sum + s.durationSeconds, 0);
+
+  // Single-item fallback references for backwards compatibility
   const sortedByCost = [...calculated].sort((a, b) => a.goldPerExp - b.goldPerExp);
   const bestCheap = sortedByCost[0];
   const cheapQty = Math.ceil(expNeeded / Math.max(0.1, bestCheap.effectiveExp));
 
-  // Fastest: highest EXP per second
   const sortedBySpeed = [...calculated].sort((a, b) => b.expPerSecond - a.expPerSecond);
   const bestFast = sortedBySpeed[0];
   const fastQty = Math.ceil(expNeeded / Math.max(0.1, bestFast.effectiveExp));
+
+  const sortedByBest = [...calculated].sort((a, b) => {
+    const scoreA = (a.expPerSecond / Math.sqrt(Math.max(0.2, a.goldPerExp))) * (a.hasPenalty ? 0.5 : 1);
+    const scoreB = (b.expPerSecond / Math.sqrt(Math.max(0.2, b.goldPerExp))) * (b.hasPenalty ? 0.5 : 1);
+    return scoreB - scoreA;
+  });
+  const bestBalanced = sortedByBest[0];
+  const bestBalancedQty = Math.ceil(expNeeded / Math.max(0.1, bestBalanced.effectiveExp));
 
   return {
     currentLevel,
@@ -219,14 +339,29 @@ export function calculateGoalEstimate(
       material: bestCheap,
       quantityNeeded: cheapQty,
       totalCost: cheapQty * bestCheap.liveMarketPrice,
-      totalDurationSeconds: cheapQty * bestCheap.timeSeconds,
+      totalDurationSeconds: Math.ceil(cheapQty * Math.max(1, Math.round(bestCheap.timeSeconds / effMultiplier))),
+    },
+    bestOption: {
+      material: bestBalanced,
+      quantityNeeded: bestBalancedQty,
+      totalCost: bestBalancedQty * bestBalanced.liveMarketPrice,
+      totalDurationSeconds: Math.ceil(bestBalancedQty * Math.max(1, Math.round(bestBalanced.timeSeconds / effMultiplier))),
     },
     fastestOption: {
       material: bestFast,
       quantityNeeded: fastQty,
       totalCost: fastQty * bestFast.liveMarketPrice,
-      totalDurationSeconds: fastQty * bestFast.timeSeconds,
+      totalDurationSeconds: Math.ceil(fastQty * Math.max(1, Math.round(bestFast.timeSeconds / effMultiplier))),
     },
+    cheapestSteps,
+    bestSteps,
+    fastestSteps,
+    totalCheapestCost,
+    totalBestCost,
+    totalFastestCost,
+    totalCheapestDurationSeconds,
+    totalBestDurationSeconds,
+    totalFastestDurationSeconds,
   };
 }
 
@@ -243,7 +378,15 @@ function useSafeProfiles() {
   try {
     return useProfiles();
   } catch {
-    return { activeProfile: null } as any;
+    return { activeProfile: null, updateProfile: () => {} } as any;
+  }
+}
+
+function useSafePreferences() {
+  try {
+    return usePreferences();
+  } catch {
+    return { preferences: { membership: false } } as any;
   }
 }
 
@@ -253,6 +396,27 @@ function useSafeData() {
   } catch {
     return { marketData: null } as any;
   }
+}
+
+export function getDefaultForgeSessionDuration(
+  profile: any,
+  hasMembership: boolean
+): { hours: number; minutes: number } {
+  if (!profile) {
+    return hasMembership ? { hours: 8, minutes: 0 } : { hours: 6, minutes: 0 };
+  }
+
+  const kind = String(profile.kind || "").toLowerCase();
+  const className = String(profile.className || "").toLowerCase();
+  const isCursedOrBanished = className.includes("cursed") || className.includes("banished");
+
+  // Alts have lower cap (6h with membership, 4h without)
+  // Main, Cursed, Banished have higher cap (8h with membership, 6h without)
+  if (kind === "alt" && !isCursedOrBanished) {
+    return hasMembership ? { hours: 6, minutes: 0 } : { hours: 4, minutes: 0 };
+  }
+
+  return hasMembership ? { hours: 8, minutes: 0 } : { hours: 6, minutes: 0 };
 }
 
 export function detectProfileForgeLevel(profile: any): number {
@@ -277,6 +441,27 @@ export function detectProfileForgeLevel(profile: any): number {
   return 1;
 }
 
+export function detectProfileForgeAscension(profile: any): number {
+  if (!profile?.skills) return 0;
+  const entry = profile.skills.forge || profile.skills["forge"] || null;
+  if (!entry) {
+    if (Array.isArray(profile.skills)) {
+      const found = profile.skills.find(
+        (s: any) => (s?.name || s?.skill || "").toLowerCase() === "forge"
+      );
+      const asc = Number(found?.ascension || found?.ascension_level || found?.ascensionLevel || 0);
+      if (asc > 0) return asc;
+      const lvl = Number(found?.level || 0);
+      return lvl > 100 ? lvl - 100 : 0;
+    }
+    return 0;
+  }
+  const asc = Number(entry.ascension || entry.ascension_level || entry.ascensionLevel || 0);
+  if (asc > 0) return asc;
+  const lvl = Number(entry.level || 0);
+  return lvl > 100 ? lvl - 100 : 0;
+}
+
 export function detectProfileForgeXp(profile: any): number {
   if (!profile?.skills) return 0;
   const entry = profile.skills.forge || profile.skills["forge"] || null;
@@ -294,53 +479,196 @@ export function detectProfileForgeXp(profile: any): number {
 }
 
 export function useForgeLessons() {
-  const { activeProfile } = useSafeProfiles();
+  const { activeProfile, updateProfile } = useSafeProfiles();
+  const { preferences } = useSafePreferences();
   const { marketData } = useSafeData();
 
-  // 1. Level detection from active profile or default to 1
-  const detectedLevel = useMemo(() => {
-    return detectProfileForgeLevel(activeProfile);
+  // 1. Level detection with profile sync and local storage persistence
+  const [forgeLevel, setForgeLevelState] = useState<number>(() => {
+    const fromProfile = detectProfileForgeLevel(activeProfile);
+    if (fromProfile > 1) return fromProfile;
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("zenith_forge_lesson_level");
+        if (stored) {
+          const parsed = parseInt(stored, 10);
+          if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 100) return parsed;
+        }
+      } catch {}
+    }
+    return 1;
+  });
+
+  const profileSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // When active profile loads/switches and has a set level, sync into forgeLevel
+  useEffect(() => {
+    const fromProfile = detectProfileForgeLevel(activeProfile);
+    if (fromProfile > 1) {
+      setForgeLevelState((prev) => (prev !== fromProfile ? fromProfile : prev));
+      setTargetGoalLevel((prev) => (prev <= fromProfile ? Math.min(100, fromProfile + 1) : prev));
+    }
   }, [activeProfile]);
+
+  const setForgeLevel = useCallback((lvl: number) => {
+    const clamped = Math.max(1, Math.min(100, Math.floor(lvl)));
+    setForgeLevelState(clamped);
+    setTargetGoalLevel((prev) => (prev <= clamped ? Math.min(100, clamped + 1) : prev));
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("zenith_forge_lesson_level", String(clamped));
+      } catch {}
+    }
+
+    // Debounce writing to global profile context to eliminate render stutter on stepping
+    if (profileSyncTimerRef.current) {
+      clearTimeout(profileSyncTimerRef.current);
+    }
+
+    if (activeProfile && !isStarterProfile(activeProfile) && typeof updateProfile === "function") {
+      profileSyncTimerRef.current = setTimeout(() => {
+        try {
+          updateProfile(activeProfile.id, {
+            skills: {
+              ...activeProfile.skills,
+              forge: {
+                ...(activeProfile.skills?.forge || { experience: 0 }),
+                level: clamped,
+              },
+            },
+          });
+        } catch {}
+      }, 400);
+    }
+  }, [activeProfile, updateProfile]);
+
+  useEffect(() => {
+    return () => {
+      if (profileSyncTimerRef.current) {
+        clearTimeout(profileSyncTimerRef.current);
+      }
+    };
+  }, []);
 
   const detectedXp = useMemo(() => {
     return detectProfileForgeXp(activeProfile);
   }, [activeProfile]);
 
-  const [forgeLevel, setForgeLevel] = useState<number>(detectedLevel);
+  const forgeAscensionLevel = useMemo(() => {
+    return detectProfileForgeAscension(activeProfile);
+  }, [activeProfile]);
+
+  // 2. Buff toggles & inputs
+  // Automatically detect membership from user preferences if available
+  const membershipFromPrefs = Boolean(preferences?.membership);
+  const [hasMembershipBuff, setHasMembershipBuff] = useState<boolean>(membershipFromPrefs);
 
   useEffect(() => {
-    if (detectedLevel > 1) {
-      setForgeLevel(detectedLevel);
+    if (preferences?.membership !== undefined) {
+      setHasMembershipBuff(Boolean(preferences.membership));
     }
-  }, [detectedLevel]);
+  }, [preferences?.membership]);
 
-  // 2. Buff toggles
-  const [hasMembershipBuff, setHasMembershipBuff] = useState<boolean>(true);
   const [hasCampaignBuff, setHasCampaignBuff] = useState<boolean>(false);
   const [shrineBuffPercent, setShrineBuffPercent] = useState<number>(0);
   const [hasDailyBlessing, setHasDailyBlessing] = useState<boolean>(false);
   const [customBuffPercent, setCustomBuffPercent] = useState<number>(0);
+  // Uncapped Extra EXP and Efficiency inputs
+  const [extraExpBuffPercent, setExtraExpBuffPercent] = useState<number>(0);
+  const [extraEffBuffPercent, setExtraEffBuffPercent] = useState<number>(0);
+
+  // Detect Cursed or Forsaken character profile for default -50% EXP penalty
+  const profileClassName = String(activeProfile?.className || (activeProfile as any)?.class || "").trim();
+  const normalizedClass = profileClassName.toLowerCase();
+  const isCursedOrForsaken = normalizedClass.includes("cursed") || normalizedClass.includes("forsaken");
 
   const totalBuffMultiplier = useMemo(() => {
-    let mult = 1.0;
+    // Base EXP multiplier: Cursed & Forsaken have a default -50% primary EXP penalty (0.50x)
+    let mult = isCursedOrForsaken ? 0.50 : 1.0;
     if (hasMembershipBuff) mult += 0.15;
     if (hasCampaignBuff) mult += 0.15;
     if (shrineBuffPercent > 0) mult += shrineBuffPercent / 100;
     if (hasDailyBlessing) mult += 0.05;
     if (customBuffPercent > 0) mult += customBuffPercent / 100;
-    return mult;
-  }, [hasMembershipBuff, hasCampaignBuff, shrineBuffPercent, hasDailyBlessing, customBuffPercent]);
+    if (extraExpBuffPercent > 0) mult += extraExpBuffPercent / 100;
+    return Number(mult.toFixed(4));
+  }, [isCursedOrForsaken, hasMembershipBuff, hasCampaignBuff, shrineBuffPercent, hasDailyBlessing, customBuffPercent, extraExpBuffPercent]);
 
-  // 3. Duration planner (Hours & Minutes, NO sliders)
-  const [targetHours, setTargetHours] = useState<number>(2);
-  const [targetMinutes, setTargetMinutes] = useState<number>(30);
+  const totalEffMultiplier = useMemo(() => {
+    let mult = 1.0;
+    if (hasMembershipBuff) mult += 0.10;
+    if (extraEffBuffPercent > 0) mult += extraEffBuffPercent / 100;
+    return mult;
+  }, [hasMembershipBuff, extraEffBuffPercent]);
+
+  // 3. Duration planner (Hours & Minutes, NO sliders) with smart defaults and localStorage persistence
+  const getInitialDuration = useCallback(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const profileKey = activeProfile?.id || "default";
+        const stored = localStorage.getItem(`zenith_forge_duration_override_v2_${profileKey}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (typeof parsed?.hours === "number" && typeof parsed?.minutes === "number") {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return getDefaultForgeSessionDuration(activeProfile, hasMembershipBuff);
+  }, [activeProfile, hasMembershipBuff]);
+
+  const [targetHours, setTargetHoursState] = useState<number>(() => getInitialDuration().hours);
+  const [targetMinutes, setTargetMinutesState] = useState<number>(() => getInitialDuration().minutes);
+
+  const setTargetHours = useCallback((h: number) => {
+    const clampedH = Math.max(0, Math.min(12, Math.floor(h)));
+    setTargetHoursState(clampedH);
+    if (typeof window !== "undefined") {
+      try {
+        const profileKey = activeProfile?.id || "default";
+        localStorage.setItem(
+          `zenith_forge_duration_override_v2_${profileKey}`,
+          JSON.stringify({ hours: clampedH, minutes: targetMinutes })
+        );
+      } catch {}
+    }
+  }, [activeProfile?.id, targetMinutes]);
+
+  const setTargetMinutes = useCallback((m: number) => {
+    const clampedM = Math.max(0, Math.min(59, Math.floor(m)));
+    setTargetMinutesState(clampedM);
+    if (typeof window !== "undefined") {
+      try {
+        const profileKey = activeProfile?.id || "default";
+        localStorage.setItem(
+          `zenith_forge_duration_override_v2_${profileKey}`,
+          JSON.stringify({ hours: targetHours, minutes: clampedM })
+        );
+      } catch {}
+    }
+  }, [activeProfile?.id, targetHours]);
+
+  // Sync default when activeProfile or membership changes, IF user has not manually set an override
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const profileKey = activeProfile?.id || "default";
+        const stored = localStorage.getItem(`zenith_forge_duration_override_v2_${profileKey}`);
+        if (stored) return; // Respect saved manual choice
+      } catch {}
+    }
+    const def = getDefaultForgeSessionDuration(activeProfile, hasMembershipBuff);
+    setTargetHoursState(def.hours);
+    setTargetMinutesState(def.minutes);
+  }, [activeProfile, hasMembershipBuff]);
 
   const totalTargetDurationSeconds = useMemo(() => {
     return Math.min(MAX_OFFLINE_SECONDS, targetHours * 3600 + targetMinutes * 60);
   }, [targetHours, targetMinutes]);
 
   // 4. Target Level Goal Estimator
-  const [targetGoalLevel, setTargetGoalLevel] = useState<number>(Math.min(100, Math.max(2, forgeLevel + 10)));
+  const [targetGoalLevel, setTargetGoalLevel] = useState<number>(() => Math.min(100, forgeLevel + 1));
 
   // 5. Search, Filter, Sort
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -364,6 +692,7 @@ export function useForgeLessons() {
   });
 
   const updateOwnedMaterial = useCallback((name: string, quantity: number) => {
+    let nextState: Record<string, number> | null = null;
     setOwnedMaterials((prev) => {
       const next = { ...prev };
       if (quantity <= 0) {
@@ -371,16 +700,21 @@ export function useForgeLessons() {
       } else {
         next[name] = Math.max(0, Math.floor(quantity));
       }
+      nextState = next;
       try {
         localStorage.setItem(FORGE_OWNED_STORAGE_KEY, JSON.stringify(next));
       } catch {
         // quota exceeded guard
       }
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: next }));
-      }
       return next;
     });
+
+    if (typeof window !== "undefined" && nextState) {
+      const payload = nextState;
+      queueMicrotask(() => {
+        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: payload }));
+      });
+    }
   }, []);
 
   const clearOwnedMaterials = useCallback(() => {
@@ -391,7 +725,9 @@ export function useForgeLessons() {
       // guard
     }
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: {} }));
+      queueMicrotask(() => {
+        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: {} }));
+      });
     }
   }, []);
 
@@ -447,9 +783,19 @@ export function useForgeLessons() {
 
     const handleSync = (e: Event) => {
       const customEvent = e as CustomEvent<Record<string, number>>;
-      if (customEvent.detail) {
-        setOwnedMaterials(customEvent.detail);
-      }
+      if (!customEvent.detail) return;
+      const incoming = customEvent.detail;
+      setOwnedMaterials((prev) => {
+        const prevKeys = Object.keys(prev);
+        const incomingKeys = Object.keys(incoming);
+        if (
+          prevKeys.length === incomingKeys.length &&
+          prevKeys.every((k) => prev[k] === incoming[k])
+        ) {
+          return prev;
+        }
+        return incoming;
+      });
     };
 
     window.addEventListener("storage", handleStorage);
@@ -504,13 +850,20 @@ export function useForgeLessons() {
     persistQueue({});
   }, [persistQueue]);
 
-  // 8. Calculate materials catalog with live prices
+  // 8. Calculate materials catalog with live prices and efficiency
   const allCalculatedMaterials = useMemo<CalculatedLessonMaterial[]>(() => {
     return (rawMaterials as ForgeLessonMaterial[]).map((m) => {
       const livePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : m.marketPrice;
-      return calculateLessonMaterialEfficiency(m, forgeLevel, totalBuffMultiplier, livePrice);
+      const baseCalc = calculateLessonMaterialEfficiency(m, forgeLevel, totalBuffMultiplier, livePrice);
+      const adjustedTimeSeconds = Math.max(1, Math.round(baseCalc.timeSeconds / totalEffMultiplier));
+      const adjustedExpPerSec = adjustedTimeSeconds > 0 ? Number((baseCalc.effectiveExp / adjustedTimeSeconds).toFixed(3)) : 0;
+      return {
+        ...baseCalc,
+        timeSeconds: adjustedTimeSeconds,
+        expPerSecond: adjustedExpPerSec,
+      };
     });
-  }, [forgeLevel, totalBuffMultiplier, marketData]);
+  }, [forgeLevel, totalBuffMultiplier, totalEffMultiplier, marketData]);
 
   const materialsByName = useMemo(() => {
     return new Map<string, CalculatedLessonMaterial>(
@@ -643,12 +996,14 @@ export function useForgeLessons() {
       rawMaterials as ForgeLessonMaterial[],
       totalBuffMultiplier,
       detectedXp,
-      marketData
+      marketData,
+      totalEffMultiplier
     );
-  }, [forgeLevel, targetGoalLevel, totalBuffMultiplier, detectedXp, marketData]);
+  }, [forgeLevel, targetGoalLevel, totalBuffMultiplier, detectedXp, marketData, totalEffMultiplier]);
 
   return {
     forgeLevel,
+    forgeAscensionLevel,
     setForgeLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
@@ -660,7 +1015,12 @@ export function useForgeLessons() {
     setHasDailyBlessing,
     customBuffPercent,
     setCustomBuffPercent,
+    extraExpBuffPercent,
+    setExtraExpBuffPercent,
+    extraEffBuffPercent,
+    setExtraEffBuffPercent,
     totalBuffMultiplier,
+    totalEffMultiplier,
 
     targetHours,
     setTargetHours,
@@ -698,6 +1058,8 @@ export function useForgeLessons() {
     fillSessionWithMaterial,
     queueAllOwned,
 
+    isCursedOrForsaken,
+    profileClassName,
     allCalculatedMaterials,
     visibleMaterials,
     sessionSummary,

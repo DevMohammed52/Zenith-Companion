@@ -311,6 +311,43 @@ describe("Gate 2: Adversarial Forge UI & Planner Stress Harness", () => {
       expect(plan.projectedNet).toBe(17_100);
     });
 
+    it("prevents double-counting owned materials across multiple planned recipe lines", () => {
+      // Both lines require Coal: Line 1 requires 60 Coal, Line 2 requires 40 Coal (Total = 100 Coal)
+      // Player owns exactly 50 Coal.
+      // Line 1 should consume 50 owned Coal (missing 10).
+      // Line 2 should have 0 remaining owned Coal (missing 40).
+      // Sum of missing across lines must equal 50 missing Coal, exactly matching global plan.
+      const lines = [
+        { recipeName: "Iron Bar Recipe", quantity: 60, ownedRecipes: 2 },
+        { recipeName: "Iron Bar Recipe", quantity: 40, ownedRecipes: 2 },
+      ];
+      const owned = {
+        "Iron Ore": 300,
+        "Coal": 50,
+      };
+
+      const plan = calculateForgePlanner(lines, owned, recipes, mockMarket, mockDb, {
+        membership: true,
+        barteringBoost: 0,
+      });
+
+      expect(plan.entries).toHaveLength(2);
+      const line1Coal = plan.entries[0].materials.find((m) => m.name === "Coal");
+      const line2Coal = plan.entries[1].materials.find((m) => m.name === "Coal");
+
+      expect(line1Coal?.required).toBe(60);
+      expect(line1Coal?.owned).toBe(50);
+      expect(line1Coal?.missing).toBe(10);
+
+      expect(line2Coal?.required).toBe(40);
+      expect(line2Coal?.owned).toBe(0); // 50 already allocated to line 1
+      expect(line2Coal?.missing).toBe(40);
+
+      // Sum of card material costs must exactly equal global material missing cost
+      const totalEntryMaterialCost = plan.entries.reduce((sum, e) => sum + e.materialCost, 0);
+      expect(totalEntryMaterialCost).toBe(plan.totalMissingCost);
+    });
+
     it("correctly models vendor pricing fallback and bartering multiplier", () => {
       // When market price is absent, vendor price is used for materials
       const vendorOnlyMarket: ForgeMarketData = {

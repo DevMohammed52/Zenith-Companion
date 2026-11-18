@@ -1,9 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { ReceiptText, ShoppingCart } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, Copy, ReceiptText, ShoppingCart } from "lucide-react";
 import QualityText from "@/components/QualityText";
 import { formatGold } from "@/lib/format";
+import { GoldIcon } from "@/components/GoldIcon";
 import { getTrustedGameImageUrl } from "@/lib/trusted-image";
 import type {
   ForgeMaterialNeed,
@@ -71,7 +72,13 @@ export function NeedTable({
               onChange={(value) => onOwnedChange(row.name, value)}
             />
             <div className="need-stat"><span>Missing</span><strong>{row.missing.toLocaleString()}</strong></div>
-            <div className="need-stat"><span>Cost</span><strong>{formatGold(row.totalCost)}g</strong></div>
+            <div className="need-stat">
+              <span>Cost</span>
+              <strong className="cost-with-coin">
+                {formatGold(row.totalCost)}
+                <GoldIcon size={11} />
+              </strong>
+            </div>
           </div>
         ))}
       </div>
@@ -125,7 +132,13 @@ export function RecipeNeedTable({
             <div className="need-stat"><span>Needed</span><strong>{row.copiesNeeded.toLocaleString()}</strong></div>
             <div className="need-stat"><span>Owned</span><strong>{row.ownedCopies.toLocaleString()}</strong></div>
             <div className="need-stat"><span>Missing</span><strong>{row.missingCopies.toLocaleString()}</strong></div>
-            <div className="need-stat"><span>Cost</span><strong>{formatGold(row.totalCost)}g</strong></div>
+            <div className="need-stat">
+              <span>Cost</span>
+              <strong className="cost-with-coin">
+                {formatGold(row.totalCost)}
+                <GoldIcon size={11} />
+              </strong>
+            </div>
           </div>
         ))}
       </div>
@@ -135,11 +148,56 @@ export function RecipeNeedTable({
 
 export function ForgeShoppingSection({ state }: { state: ForgeState }) {
   const { plan, draft, setOwnedMaterial, openItemByName } = state;
+  const [copied, setCopied] = useState(false);
 
   if (plan.entries.length === 0) return null;
 
+  const handleCopyList = () => {
+    const lines: string[] = ["=== IdleMMO Forge Shopping List ==="];
+    const missingMats = plan.materialNeeds.filter((m) => m.missing > 0);
+    if (missingMats.length > 0) {
+      lines.push("\nMaterials Needed:");
+      for (const m of missingMats) {
+        lines.push(`• ${m.name} x${m.missing.toLocaleString()} (${formatGold(m.totalCost)}g)`);
+      }
+    }
+    const missingRecipes = plan.recipeNeeds.filter((r) => r.missingCopies > 0);
+    if (missingRecipes.length > 0) {
+      lines.push("\nRecipe Copies Needed:");
+      for (const r of missingRecipes) {
+        lines.push(`• ${r.recipeName} x${r.missingCopies.toLocaleString()} (${formatGold(r.totalCost)}g)`);
+      }
+    }
+    if (plan.totalMissingCost > 0) {
+      lines.push(`\nTotal Missing Cost: ${formatGold(plan.totalMissingCost)}g`);
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <section className="shopping-layout" aria-label="Shopping lists and missing requirements">
+      <div className="shopping-header-bar">
+        <div className="shopping-title-group">
+          <p className="panel-kicker"><ShoppingCart size={14} aria-hidden="true" /> Shopping Requirements</p>
+          <span className="shopping-subtext">
+            {plan.materialNeeds.filter((m) => m.missing > 0).length} missing materials · {formatGold(plan.totalMissingCost)}g required
+          </span>
+        </div>
+        <button
+          type="button"
+          className="copy-shopping-btn"
+          onClick={handleCopyList}
+          aria-label="Copy shopping list to clipboard"
+        >
+          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+          <span>{copied ? "Copied to Clipboard" : "Copy Shopping List"}</span>
+        </button>
+      </div>
       <NeedTable
         title="Missing Materials"
         icon={<ShoppingCart size={16} />}

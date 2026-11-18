@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, Check, ChevronDown, DollarSign, Flame, Package, Plus, Search, Trash2, TrendingUp, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, ArrowUpDown, Check, ChevronDown, DollarSign, Flame, Package, Plus, Search, Trash2, TrendingUp, X, Zap } from "lucide-react";
 import { formatGold } from "@/lib/format";
+import { GoldIcon } from "@/components/GoldIcon";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
 
 export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn }) {
@@ -13,15 +14,29 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
     allCalculatedMaterials,
     addToQueue,
     queueAllOwned,
+    fillSessionWithMaterial,
   } = lessons;
 
   const [selectedMatName, setSelectedMatName] = useState<string>(allCalculatedMaterials[0]?.name || "Coal Ore");
+  const [comboboxCategory, setComboboxCategory] = useState<"ALL" | "MOB_DROPS" | "ORES" | "BARS" | "LOGS">("ALL");
   const [comboboxSearch, setComboboxSearch] = useState<string>("");
   const [comboboxOpen, setComboboxOpen] = useState<boolean>(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
-  const [addQty, setAddQty] = useState<number>(100);
+  const [rawAddQty, setRawAddQty] = useState<string>("100");
+  const [sortBy, setSortBy] = useState<"exp" | "value" | "count" | "name">("exp");
   const comboboxRef = useRef<HTMLDivElement>(null);
   const popoverMenuRef = useRef<HTMLDivElement>(null);
+
+  const parsedAddQty = useMemo(() => {
+    const val = parseInt(rawAddQty, 10);
+    return Number.isNaN(val) || val <= 0 ? 0 : Math.min(1000000, val);
+  }, [rawAddQty]);
+
+  const handleQuickAdd = (amount: number) => {
+    const current = parsedAddQty || 0;
+    const next = Math.min(1000000, current + amount);
+    setRawAddQty(String(next));
+  };
 
   const materialsMap = useMemo(() => {
     return new Map(allCalculatedMaterials.map((m) => [m.name, m]));
@@ -31,23 +46,38 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
     return materialsMap.get(selectedMatName) || allCalculatedMaterials[0] || null;
   }, [selectedMatName, materialsMap, allCalculatedMaterials]);
 
+  const categoryCounts = useMemo(() => {
+    const counts = { ALL: allCalculatedMaterials.length, MOB_DROPS: 0, ORES: 0, BARS: 0, LOGS: 0 };
+    for (const m of allCalculatedMaterials) {
+      if (m.category === "MOB_DROPS") counts.MOB_DROPS++;
+      else if (m.category === "ORES") counts.ORES++;
+      else if (m.category === "BARS") counts.BARS++;
+      else if (m.category === "LOGS") counts.LOGS++;
+    }
+    return counts;
+  }, [allCalculatedMaterials]);
+
   // Filter materials for the custom combobox
   const filteredComboboxMaterials = useMemo(() => {
-    if (!comboboxSearch.trim()) return allCalculatedMaterials;
+    let list = allCalculatedMaterials;
+    if (comboboxCategory !== "ALL") {
+      list = list.filter((m) => m.category === comboboxCategory);
+    }
+    if (!comboboxSearch.trim()) return list;
     const query = comboboxSearch.toLowerCase().trim();
-    return allCalculatedMaterials.filter((m) => {
+    return list.filter((m) => {
       const matchName = m.name.toLowerCase().includes(query);
       const matchCategory = m.category.toLowerCase().includes(query);
       const matchQuality = m.quality.toLowerCase().includes(query);
       const matchMob = m.mob ? m.mob.toLowerCase().includes(query) : false;
       return matchName || matchCategory || matchQuality || matchMob;
     });
-  }, [allCalculatedMaterials, comboboxSearch]);
+  }, [allCalculatedMaterials, comboboxCategory, comboboxSearch]);
 
   // Reset highlighted index when filter results change
   useEffect(() => {
     setHighlightedIndex(0);
-  }, [comboboxSearch]);
+  }, [comboboxSearch, comboboxCategory]);
 
   // Auto-scroll highlighted item into view in popover
   useEffect(() => {
@@ -66,11 +96,18 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
         setComboboxOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && comboboxOpen) {
+        setComboboxOpen(false);
+      }
+    }
     if (comboboxOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [comboboxOpen]);
 
@@ -123,19 +160,59 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
     };
   }, [ownedMaterials, materialsMap]);
 
+  const sortedRows = useMemo(() => {
+    return [...inventoryAnalysis.rows].sort((a, b) => {
+      if (sortBy === "exp") return b.itemExp - a.itemExp;
+      if (sortBy === "value") return b.netValue - a.netValue;
+      if (sortBy === "count") return b.qty - a.qty;
+      return a.name.localeCompare(b.name);
+    });
+  }, [inventoryAnalysis.rows, sortBy]);
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedMatName || addQty <= 0) return;
+    if (!selectedMatName || parsedAddQty <= 0) return;
     const current = ownedMaterials[selectedMatName] || 0;
-    updateOwnedMaterial(selectedMatName, current + addQty);
+    updateOwnedMaterial(selectedMatName, current + parsedAddQty);
+    setRawAddQty("100");
   };
+
+  // Quick Mob Drop suggestions based on user's current forge level (includes all qualities, sorted by level closeness & efficiency)
+  const quickMobDropSuggestions = useMemo(() => {
+    return allCalculatedMaterials
+      .filter(
+        (m) =>
+          m.category === "MOB_DROPS" &&
+          m.displayedEff >= 80 &&
+          m.reqLvl <= lessons.forgeLevel + 15
+      )
+      .sort((a, b) => {
+        const aDiff = Math.abs(a.reqLvl - lessons.forgeLevel);
+        const bDiff = Math.abs(b.reqLvl - lessons.forgeLevel);
+        return aDiff - bDiff;
+      })
+      .slice(0, 4);
+  }, [allCalculatedMaterials, lessons.forgeLevel]);
+
+  // Quick Ore / Bar / Log suggestions
+  const quickOreBarSuggestions = useMemo(() => {
+    return allCalculatedMaterials
+      .filter(
+        (m) =>
+          m.category !== "MOB_DROPS" &&
+          m.displayedEff >= 80 &&
+          m.reqLvl <= lessons.forgeLevel + 10
+      )
+      .sort((a, b) => Math.abs(a.reqLvl - lessons.forgeLevel) - Math.abs(b.reqLvl - lessons.forgeLevel))
+      .slice(0, 4);
+  }, [allCalculatedMaterials, lessons.forgeLevel]);
 
   return (
     <section className="inventory-optimizer-section" aria-label="Inventory burn vs sell optimizer">
       <div className="inventory-topbar">
         <div className="inventory-title-group">
-          <span className="panel-kicker"><Package size={14} aria-hidden="true" /> Inventory Optimizer</span>
-          <h2>Owned Materials Valuation</h2>
+          <span className="panel-kicker"><Package size={14} aria-hidden="true" /> Inventory <span className="sr-only">Optimizer</span></span>
+          <h2>Owned Materials</h2>
         </div>
 
         {inventoryAnalysis.rows.length > 0 && (
@@ -178,7 +255,19 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
               className="combobox-trigger-shell"
               onClick={() => setComboboxOpen(true)}
             >
-              <Search size={14} className="combobox-search-icon" aria-hidden="true" />
+              {selectedMat && !comboboxOpen && selectedMat.imageUrl ? (
+                <img
+                  src={selectedMat.imageUrl}
+                  alt=""
+                  width={20}
+                  height={20}
+                  loading="lazy"
+                  decoding="async"
+                  className="combobox-selected-icon"
+                />
+              ) : (
+                <Search size={14} className="combobox-search-icon" aria-hidden="true" />
+              )}
               <input
                 id="inventory-mat-search"
                 type="text"
@@ -259,42 +348,113 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
                 role="listbox"
                 aria-label="Available lesson materials"
               >
-                {filteredComboboxMaterials.length === 0 ? (
-                  <div className="combobox-empty-message">No materials found</div>
-                ) : (
-                  filteredComboboxMaterials.map((mat, idx) => {
-                    const isSelected = selectedMat?.name === mat.name;
-                    const isHighlighted = highlightedIndex === idx;
-                    return (
-                      <div
-                        key={mat.name}
-                        id={`combobox-opt-${idx}`}
-                        className={`combobox-item-row ${isSelected ? "selected" : ""} ${isHighlighted ? "highlighted" : ""}`}
-                        onClick={() => {
-                          setSelectedMatName(mat.name);
-                          setComboboxOpen(false);
-                          setComboboxSearch("");
-                        }}
-                        onMouseEnter={() => setHighlightedIndex(idx)}
-                        role="option"
-                        aria-selected={isSelected}
-                      >
-                        <div className="item-title-col">
-                          <span className="item-name">{mat.name}</span>
-                          <span className="item-sub">
-                            Lv. {mat.reqLvl} • {mat.category.replace("_", " ")}
-                          </span>
+                <div className="combobox-cat-bar" role="tablist" aria-label="Filter materials by category">
+                  <button
+                    type="button"
+                    className={`cat-pill ${comboboxCategory === "ALL" ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setComboboxCategory("ALL");
+                    }}
+                  >
+                    All ({categoryCounts.ALL})
+                  </button>
+                  <button
+                    type="button"
+                    className={`cat-pill ${comboboxCategory === "MOB_DROPS" ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setComboboxCategory("MOB_DROPS");
+                    }}
+                  >
+                    Mob Drops ({categoryCounts.MOB_DROPS})
+                  </button>
+                  <button
+                    type="button"
+                    className={`cat-pill ${comboboxCategory === "ORES" ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setComboboxCategory("ORES");
+                    }}
+                  >
+                    Ores ({categoryCounts.ORES})
+                  </button>
+                  <button
+                    type="button"
+                    className={`cat-pill ${comboboxCategory === "BARS" ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setComboboxCategory("BARS");
+                    }}
+                  >
+                    Bars ({categoryCounts.BARS})
+                  </button>
+                  <button
+                    type="button"
+                    className={`cat-pill ${comboboxCategory === "LOGS" ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setComboboxCategory("LOGS");
+                    }}
+                  >
+                    Logs ({categoryCounts.LOGS})
+                  </button>
+                </div>
+
+                <div className="combobox-items-scroll">
+                  {filteredComboboxMaterials.length === 0 ? (
+                    <div className="combobox-empty-message">No materials found</div>
+                  ) : (
+                    filteredComboboxMaterials.map((mat, idx) => {
+                      const isSelected = selectedMat?.name === mat.name;
+                      const isHighlighted = highlightedIndex === idx;
+                      return (
+                        <div
+                          key={mat.name}
+                          id={`combobox-opt-${idx}`}
+                          className={`combobox-item-row ${isSelected ? "selected" : ""} ${isHighlighted ? "highlighted" : ""}`}
+                          onClick={() => {
+                            setSelectedMatName(mat.name);
+                            setComboboxOpen(false);
+                            setComboboxSearch("");
+                          }}
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          role="option"
+                          aria-selected={isSelected}
+                        >
+                          <div className="item-title-col">
+                            {mat.imageUrl && (
+                              <img
+                                src={mat.imageUrl}
+                                alt=""
+                                width={22}
+                                height={22}
+                                loading="lazy"
+                                decoding="async"
+                                className="combobox-item-icon"
+                              />
+                            )}
+                            <div className="item-name-stack">
+                              <span className="item-name">{mat.name}</span>
+                              <span className="item-sub">
+                                Lv. {mat.reqLvl} • {mat.mob || mat.category.replace("_", " ")}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="item-badge-col">
+                            <span className={`item-quality-pill ${mat.quality.toLowerCase()}`}>
+                              {mat.quality}
+                            </span>
+                            <span className="item-market-price">
+                              {formatGold(mat.liveMarketPrice)}
+                              <GoldIcon size={10} />
+                            </span>
+                          </div>
                         </div>
-                        <div className="item-badge-col">
-                          <span className={`item-quality-pill ${mat.quality.toLowerCase()}`}>
-                            {mat.quality}
-                          </span>
-                          <span className="item-market-price">{formatGold(mat.liveMarketPrice)}g</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -306,20 +466,30 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
           <div className="stepper-wrap">
             <input
               id="inventory-qty-input"
-              type="number"
-              min={1}
-              value={addQty}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={rawAddQty}
               onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setAddQty(Number.isNaN(val) ? 1 : Math.max(1, val));
+                const digits = e.target.value.replace(/[^0-9]/g, "");
+                setRawAddQty(digits);
+              }}
+              onBlur={() => {
+                if (!rawAddQty.trim()) {
+                  setRawAddQty("100");
+                } else {
+                  const val = parseInt(rawAddQty, 10);
+                  if (val > 1000000) setRawAddQty("1000000");
+                  else if (val < 1) setRawAddQty("1");
+                }
               }}
               className="inventory-qty-field"
             />
             <div className="quick-qty-pills">
-              <button type="button" aria-label="+10 quantity" onClick={() => setAddQty((q) => q + 10)}>+10</button>
-              <button type="button" aria-label="+50 quantity" onClick={() => setAddQty((q) => q + 50)}>+50</button>
-              <button type="button" aria-label="+100 quantity" onClick={() => setAddQty((q) => q + 100)}>+100</button>
-              <button type="button" aria-label="+1k quantity" onClick={() => setAddQty((q) => q + 1000)}>+1k</button>
+              <button type="button" aria-label="+10 quantity" onClick={() => handleQuickAdd(10)}>+10</button>
+              <button type="button" aria-label="+50 quantity" onClick={() => handleQuickAdd(50)}>+50</button>
+              <button type="button" aria-label="+100 quantity" onClick={() => handleQuickAdd(100)}>+100</button>
+              <button type="button" aria-label="+1k quantity" onClick={() => handleQuickAdd(1000)}>+1k</button>
             </div>
           </div>
         </div>
@@ -344,45 +514,131 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
             </div>
             <div className="inv-summary-card">
               <span className="label">Net Market Value</span>
-              <strong className="good-val">{formatGold(inventoryAnalysis.totalNetMarketValue)}g</strong>
+              <strong className="good-val">
+                {formatGold(inventoryAnalysis.totalNetMarketValue)}
+                <GoldIcon size={12} />
+              </strong>
             </div>
           </div>
 
-          {/* Owned items list */}
+          {/* Sort bar and owned items list */}
+          <div className="inventory-list-header">
+            <span className="list-title">Tracked Items ({sortedRows.length})</span>
+            <div className="inventory-sort-bar">
+              <span className="sort-label"><ArrowUpDown size={12} aria-hidden="true" /> Sort:</span>
+              <button
+                type="button"
+                className={`inv-sort-btn ${sortBy === "exp" ? "active" : ""}`}
+                onClick={() => setSortBy("exp")}
+              >
+                EXP Yield
+              </button>
+              <button
+                type="button"
+                className={`inv-sort-btn ${sortBy === "value" ? "active" : ""}`}
+                onClick={() => setSortBy("value")}
+              >
+                Net Value
+              </button>
+              <button
+                type="button"
+                className={`inv-sort-btn ${sortBy === "count" ? "active" : ""}`}
+                onClick={() => setSortBy("count")}
+              >
+                Count
+              </button>
+              <button
+                type="button"
+                className={`inv-sort-btn ${sortBy === "name" ? "active" : ""}`}
+                onClick={() => setSortBy("name")}
+              >
+                Name
+              </button>
+            </div>
+          </div>
+
           <div className="owned-items-list" aria-label="Owned materials ledger">
-            {inventoryAnalysis.rows.map((row) => (
+            {sortedRows.map((row) => (
               <div key={row.name} className="owned-item-row">
-                <div className="owned-item-main">
-                  <div className="name-and-recommendation">
-                    <strong className="mat-name">{row.name}</strong>
-                    <span className="count-pill">{row.qty.toLocaleString()}x</span>
-                    {row.recommendation === "sell" ? (
-                      <span className="rec-badge sell" title="High market value with level penalty: selling on market yields better gold efficiency">
-                        <DollarSign size={12} aria-hidden="true" />
-                        <span>Sell on Market</span>
+                <div className="owned-item-identity-wrap">
+                  {row.mat.imageUrl && (
+                    <div className="mat-icon-wrapper mini">
+                      <img
+                        src={row.mat.imageUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        loading="lazy"
+                        decoding="async"
+                        className="owned-mat-icon"
+                      />
+                    </div>
+                  )}
+                  <div className="owned-item-main">
+                    <div className="name-and-recommendation">
+                      <strong className="mat-name">{row.name}</strong>
+                      <div className="count-stepper-wrap">
+                        <button
+                          type="button"
+                          className="count-step-btn"
+                          onClick={() => updateOwnedMaterial(row.name, Math.max(0, row.qty - 10))}
+                          aria-label={`Decrease ${row.name} count by 10`}
+                          title="-10"
+                        >
+                          -10
+                        </button>
+                        <span className="count-pill">{row.qty.toLocaleString()}x</span>
+                        <button
+                          type="button"
+                          className="count-step-btn"
+                          onClick={() => updateOwnedMaterial(row.name, Math.min(1000000, row.qty + 10))}
+                          aria-label={`Increase ${row.name} count by 10`}
+                          title="+10"
+                        >
+                          +10
+                        </button>
+                      </div>
+                      {row.recommendation === "sell" ? (
+                        <span className="rec-badge sell" title="High market value with level penalty: selling on market yields better gold efficiency">
+                          <DollarSign size={12} aria-hidden="true" />
+                          <span>Sell on Market</span>
+                        </span>
+                      ) : (
+                        <span className="rec-badge burn" title="Good EXP efficiency: burn in lessons">
+                          <Flame size={12} aria-hidden="true" />
+                          <span>Burn for EXP</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="owned-item-metrics">
+                      <span>Yields: <strong>+{Math.floor(row.itemExp).toLocaleString()} EXP</strong></span>
+                      <span>
+                        Net Sale: <strong>{formatGold(row.netValue)}</strong>
+                        <GoldIcon size={11} />
                       </span>
-                    ) : (
-                      <span className="rec-badge burn" title="Good EXP efficiency: burn in lessons">
-                        <Flame size={12} aria-hidden="true" />
-                        <span>Burn for EXP</span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="owned-item-metrics">
-                    <span>Yields: <strong>+{Math.floor(row.itemExp).toLocaleString()} EXP</strong></span>
-                    <span>Net Sale: <strong>{formatGold(row.netValue)}g</strong></span>
-                    <span>Eff: <strong>{row.mat.displayedEff}%</strong></span>
+                      <span>Eff: <strong>{row.mat.displayedEff}%</strong></span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="owned-item-actions">
                   <button
                     type="button"
+                    className="inv-fill-session-btn"
+                    onClick={() => fillSessionWithMaterial(row.name)}
+                    title={`Fill session duration with ${row.name}`}
+                  >
+                    <Zap size={12} aria-hidden="true" />
+                    <span>Fill Session</span>
+                  </button>
+                  <button
+                    type="button"
                     className="add-to-queue-pill-btn"
                     onClick={() => addToQueue(row.name, row.qty)}
                     title={`Queue all ${row.qty} in active lesson`}
                   >
-                    <span>Queue</span>
+                    <Flame size={12} aria-hidden="true" />
+                    <span>Queue All</span>
                   </button>
                   <button
                     type="button"
@@ -400,8 +656,69 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
       ) : (
         <div className="inventory-empty-hint">
           <p>
-            No owned materials tracked yet. Search materials above or set counts in the catalog to track inventory and compare burn vs. market value.
+            No owned materials tracked yet. Search materials above or pick a level {lessons.forgeLevel} suggestion to track inventory and compare burn vs. market value:
           </p>
+
+          <div className="quick-suggestions-block">
+            {quickMobDropSuggestions.length > 0 && (
+              <div className="quick-suggestions-subgroup">
+                <span className="subgroup-title">
+                  <Flame size={12} aria-hidden="true" />
+                  <span>Popular Mob Drops to Track:</span>
+                </span>
+                <div className="quick-suggestions-row" aria-label="Quick track mob drops">
+                  {quickMobDropSuggestions.map((m) => (
+                    <button
+                      key={m.name}
+                      type="button"
+                      className="quick-suggestion-chip"
+                      onClick={() => {
+                        setSelectedMatName(m.name);
+                        setRawAddQty("100");
+                      }}
+                      title={`Select ${m.name} (Lv. ${m.reqLvl}${m.mob ? ` - Dropped by ${m.mob}` : ""}) with count 100`}
+                    >
+                      {m.imageUrl && (
+                        <img src={m.imageUrl} alt="" width={18} height={18} loading="lazy" decoding="async" className="sugg-icon" />
+                      )}
+                      <span className="sugg-name">{m.name}</span>
+                      <span className={`quality-mini ${m.quality.toLowerCase()}`}>{m.quality.slice(0, 3)}</span>
+                      <span className="sugg-lvl">Lv. {m.reqLvl}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {quickOreBarSuggestions.length > 0 && (
+              <div className="quick-suggestions-subgroup">
+                <span className="subgroup-title">
+                  <Package size={12} aria-hidden="true" />
+                  <span>Ores, Bars & Logs:</span>
+                </span>
+                <div className="quick-suggestions-row" aria-label="Quick track standard materials">
+                  {quickOreBarSuggestions.map((m) => (
+                    <button
+                      key={m.name}
+                      type="button"
+                      className="quick-suggestion-chip"
+                      onClick={() => {
+                        setSelectedMatName(m.name);
+                        setRawAddQty("100");
+                      }}
+                      title={`Select ${m.name} (Lv. ${m.reqLvl}) with count 100`}
+                    >
+                      {m.imageUrl && (
+                        <img src={m.imageUrl} alt="" width={18} height={18} loading="lazy" decoding="async" className="sugg-icon" />
+                      )}
+                      <span className="sugg-name">{m.name}</span>
+                      <span className="sugg-lvl">Lv. {m.reqLvl}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </section>

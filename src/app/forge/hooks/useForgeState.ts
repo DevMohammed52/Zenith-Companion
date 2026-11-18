@@ -111,12 +111,22 @@ export function useForgeState(): ForgeState {
     if (typeof window === "undefined") return;
     const handleSync = (e: Event) => {
       const customEvent = e as CustomEvent<Record<string, number>>;
-      if (customEvent.detail) {
-        setDraft((current) => ({
+      if (!customEvent.detail) return;
+      const sanitized = sanitizeForgeOwnedMaterials(customEvent.detail);
+      setDraft((current) => {
+        const prevKeys = Object.keys(current.ownedMaterials);
+        const nextKeys = Object.keys(sanitized);
+        if (
+          prevKeys.length === nextKeys.length &&
+          prevKeys.every((k) => current.ownedMaterials[k] === sanitized[k])
+        ) {
+          return current;
+        }
+        return {
           ...current,
-          ownedMaterials: sanitizeForgeOwnedMaterials(customEvent.detail),
-        }));
-      }
+          ownedMaterials: sanitized,
+        };
+      });
     };
     window.addEventListener(FORGE_OWNED_SYNC_EVENT, handleSync);
     return () => window.removeEventListener(FORGE_OWNED_SYNC_EVENT, handleSync);
@@ -138,8 +148,15 @@ export function useForgeState(): ForgeState {
     const onPointerDown = (event: PointerEvent) => {
       if (!pickerRef.current?.contains(event.target as Node)) setPickerOpen(false);
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPickerOpen(false);
+    };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -228,20 +245,26 @@ export function useForgeState(): ForgeState {
 
   const setOwnedMaterial = (name: string, value: string) => {
     const clean = sanitizeForgeQuantity(value);
+    let nextOwned: Record<string, number> | null = null;
     setDraft((current) => {
       const next = { ...current.ownedMaterials };
       if (clean === "" || Number(clean || 0) <= 0) delete next[name];
       else next[name] = Number(clean);
+      nextOwned = next;
       try {
         localStorage.setItem(FORGE_OWNED_STORAGE_KEY, JSON.stringify(next));
       } catch {
         // storage guard
       }
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: next }));
-      }
       return { ...current, ownedMaterials: next };
     });
+
+    if (typeof window !== "undefined" && nextOwned) {
+      const payload = nextOwned;
+      queueMicrotask(() => {
+        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: payload }));
+      });
+    }
   };
 
   const clearPlan = () => {
@@ -249,8 +272,8 @@ export function useForgeState(): ForgeState {
       lines: sanitizeForgePlannerLines(draft.lines),
       ownedMaterials: sanitizeForgeOwnedMaterials(draft.ownedMaterials),
     };
-    if (previousDraft.lines.length === 0 && Object.keys(previousDraft.ownedMaterials).length === 0) return;
-    setDraft({ lines: [], ownedMaterials: {} });
+    if (previousDraft.lines.length === 0) return;
+    setDraft((prev) => ({ ...prev, lines: [] }));
     setFocusedEntryKey("");
     setClearedDraft(previousDraft);
     setStatusMessage("Forge plan cleared.");
@@ -260,7 +283,7 @@ export function useForgeState(): ForgeState {
 
   const undoClearPlan = () => {
     if (!clearedDraft) return;
-    setDraft(clearedDraft);
+    setDraft((prev) => ({ ...prev, lines: clearedDraft.lines }));
     setFocusedEntryKey(clearedDraft.lines[0]?.recipeName || "");
     setStatusMessage("Forge plan restored.");
     setClearedDraft(null);
