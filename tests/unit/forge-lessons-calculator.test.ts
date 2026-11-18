@@ -7,6 +7,7 @@ import {
   calculateGoalEstimate,
   calculateSessionBatchCapacity,
   detectProfileForgeLevel,
+  getDefaultForgeSessionDuration,
 } from "@/app/forge/hooks/useForgeLessons";
 import {
   calculateLessonEfficiency,
@@ -708,6 +709,10 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(goal.cheapestOption).toBeDefined();
     expect(goal.fastestOption).toBeDefined();
     expect(goal.cheapestOption?.totalCost).toBeLessThanOrEqual(goal.fastestOption?.totalCost || Infinity);
+
+    // Speed multiplier reduces duration correctly (10% speed buff reduces training duration)
+    const goalWithSpeed = calculateGoalEstimate(1, 25, rawMaterials as ForgeLessonMaterial[], 1.0, 0, null, 1.10);
+    expect(goalWithSpeed.totalCheapestDurationSeconds!).toBeLessThan(goal.totalCheapestDurationSeconds!);
   });
 
   it("calculates offline session capacity up to 12-hour cap", () => {
@@ -836,5 +841,35 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     const eff26 = calculateLessonEfficiency(leadOre.name, leadOre.reqLvl, leadOre.quality, leadOre.category, 26);
     expect(eff26.displayedEff).toBe(99);
     expect(eff26.warningType).toBe("TOO_BASIC");
+  });
+
+  it("verifies default session durations by profile kind and membership", () => {
+    // Alt with membership: 6 hours
+    expect(getDefaultForgeSessionDuration({ kind: "alt" }, true)).toEqual({ hours: 6, minutes: 0 });
+    // Alt without membership: 4 hours
+    expect(getDefaultForgeSessionDuration({ kind: "alt" }, false)).toEqual({ hours: 4, minutes: 0 });
+
+    // Main with membership: 8 hours
+    expect(getDefaultForgeSessionDuration({ kind: "main" }, true)).toEqual({ hours: 8, minutes: 0 });
+    // Main without membership: 6 hours
+    expect(getDefaultForgeSessionDuration({ kind: "main" }, false)).toEqual({ hours: 6, minutes: 0 });
+
+    // Cursed account (even if marked alt): 8h with MS, 6h without MS
+    expect(getDefaultForgeSessionDuration({ kind: "alt", className: "Cursed" }, true)).toEqual({ hours: 8, minutes: 0 });
+    expect(getDefaultForgeSessionDuration({ kind: "alt", className: "Cursed" }, false)).toEqual({ hours: 6, minutes: 0 });
+  });
+
+  it("verifies Cursed & Forsaken experience calculation produces -50% base and -35% with membership", () => {
+    const coal = rawMaterials.find((m) => m.name === "Coal Ore") as ForgeLessonMaterial;
+    expect(coal).toBeDefined();
+
+    // Standard baseline (1.0x) vs Cursed baseline (0.50x)
+    const stdBaseline = calculateLessonMaterialEfficiency(coal, 41, 1.0);
+    const cursedBaseline = calculateLessonMaterialEfficiency(coal, 41, 0.50);
+    expect(cursedBaseline.effectiveExp).toBeCloseTo(stdBaseline.effectiveExp * 0.50, 1);
+
+    // Cursed with membership (0.50 + 0.15 = 0.65x, representing -35% net)
+    const cursedWithMember = calculateLessonMaterialEfficiency(coal, 41, 0.65);
+    expect(cursedWithMember.effectiveExp).toBeCloseTo(stdBaseline.effectiveExp * 0.65, 1);
   });
 });

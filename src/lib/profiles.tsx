@@ -978,6 +978,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   return <ProfilesContext.Provider value={value}>{children}</ProfilesContext.Provider>;
 }
 
+export function useSafeProfiles() {
+  return useContext(ProfilesContext);
+}
+
 export function useProfiles() {
   const context = useContext(ProfilesContext);
   if (!context) throw new Error("useProfiles must be used inside ProfileProvider");

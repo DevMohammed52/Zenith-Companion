@@ -254,6 +254,8 @@ export function calculateForgePlanner(
   const entries: ForgePlanEntry[] = [];
   const warnings = new Set<string>();
 
+  const remainingOwned = { ...cleanOwnedMaterials };
+
   for (const line of cleanLines) {
     const recipe = recipesByName.get(line.recipeName);
     if (!recipe) {
@@ -263,21 +265,24 @@ export function calculateForgePlanner(
 
     const materialRows = recipe.materials.map((material) => {
       const current = materialTotals.get(material.name) || { required: 0, recipeNames: [] };
+      const requiredForLine = material.quantity * line.quantity;
       materialTotals.set(material.name, {
-        required: current.required + material.quantity * line.quantity,
+        required: current.required + requiredForLine,
         recipeNames: current.recipeNames.includes(recipe.resultName)
           ? current.recipeNames
           : [...current.recipeNames, recipe.resultName],
       });
-      const owned = Number(cleanOwnedMaterials[material.name] || 0);
-      const missing = Math.max(0, material.quantity * line.quantity - owned);
+      const available = Number(remainingOwned[material.name] || 0);
+      const allocated = Math.min(available, requiredForLine);
+      remainingOwned[material.name] = available - allocated;
+      const missing = Math.max(0, requiredForLine - allocated);
       const price = getForgeAcquisitionPrice(material.name, marketData, items, settings.customPrices || {});
       return {
         name: material.name,
         imageUrl: material.imageUrl,
         quality: material.quality,
-        required: material.quantity * line.quantity,
-        owned,
+        required: requiredForLine,
+        owned: allocated,
         missing,
         unitPrice: price.value,
         totalCost: missing * price.value,
@@ -320,10 +325,10 @@ export function calculateForgePlanner(
 
     for (const row of materialRows) {
       if (row.missing > 0 && row.source === "missing") entryWarnings.push(`Missing price for ${row.name}`);
-      if (row.adjusted) entryWarnings.push(`${row.name} uses guarded market price`);
+      if (row.adjusted) entryWarnings.push(`${row.name} uses estimated median price (spike protected)`);
     }
     if (copiesMissing > 0 && recipePrice.source === "missing") entryWarnings.push("Recipe copy has no usable price");
-    if (recipePrice.adjusted) entryWarnings.push("Recipe copy uses guarded market price");
+    if (recipePrice.adjusted) entryWarnings.push("Recipe copy uses estimated median price (spike protected)");
     if (outputSource === "market" && liquidity.tone === "thin") entryWarnings.push("Output market is thin");
     if (outputSource === "market" && liquidity.tone === "risk") entryWarnings.push("Output market has spike risk");
     if (outputSource === "missing") entryWarnings.push("Output has no market/vendor value");

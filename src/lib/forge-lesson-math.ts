@@ -138,12 +138,8 @@ export function calculateLessonEfficiency(
   let warningText = "";
 
   if (reqLvl < minGrace) {
-    const playerRate = getForgeHourlyRate(playerLevel);
-    let itemRate = EMPIRICAL_ITEM_IMPLIED_RATES[name];
-    if (!itemRate) {
-      const effectiveLvl = Math.min(playerLevel, reqLvl + 10);
-      itemRate = getForgeHourlyRate(effectiveLvl);
-    }
+    const playerRate = getBaseForgeHourlyRate(playerLevel);
+    const itemRate = getBaseForgeHourlyRate(Math.min(playerLevel, reqLvl + 10));
     penaltyEff = playerRate > 0 ? Math.min(1.0, itemRate / playerRate) : 1.0;
     warningType = "TOO_BASIC";
     warningText = "Too basic for your Forge level, so it gives less EXP.";
@@ -239,42 +235,42 @@ export const CALIBRATED_ITEM_DURATIONS: Record<string, number> = {
 
   // Saqr & Empirical Session Calibrated Mob Drops & Materials
   "Goblin Pouch": 35.13,
-  "Goblin Scraps": 35.13,
-  "Lucky Rabbit Foot": 35.13,
-  "Buffalo Horn": 38.00,
-  "Elk Antler": 38.00,
+  "Goblin Scraps": 62.78,
+  "Lucky Rabbit Foot": 34.85,
+  "Buffalo Horn": 31.46,
+  "Elk Antler": 34.09,
   "Cursed Blade Fragment": 14.51,
   "Copper Bar": 6.76,
   "Iron Bar": 9.33,
   "Steel Bar": 11.90,
   "Silver Bar": 8.42,
   "Tin Bar": 8.07,
-  "Lead Bar": 10.20,
-  "Chromite Bar": 14.80,
-  "Mystic Bar": 17.50,
+  "Lead Bar": 10.55,
+  "Chromite Bar": 14.71,
+  "Mystic Bar": 19.52,
   "Tin Ore": 2.93,
-  "Copper Ore": 3.02,
+  "Copper Ore": 2.07,
   "Iron Ore": 3.22,
   "Lead Ore": 3.78,
   "Silver Ore": 3.08,
   "Steel Ore": 4.34,
-  "Mercury Ore": 4.80,
-  "Chromite Ore": 5.40,
-  "Mystic Ore": 6.80,
+  "Mercury Ore": 5.01,
+  "Chromite Ore": 5.57,
+  "Mystic Ore": 7.66,
   "Spruce Log": 3.22,
-  "Birch Log": 3.40,
+  "Birch Log": 3.75,
   "Long Forgotten Necklace": 4.48,
   "Obsidian Shard": 3.14,
-  "Djinn's Bottle": 5.50,
-  "Minotaurs Horn": 6.00,
-  "Cursed Cloth": 6.00,
-  "Harpy's Wings": 6.00,
-  "Cursed Talisman": 16.50,
-  "Raw Onion": 16.50,
-  "Siren's Scales": 16.50,
-  "Black Bear Pelt": 16.50,
-  "Forbidden Tome": 75.00,
-  "Undying Crest": 85.00,
+  "Djinn's Bottle": 6.01,
+  "Minotaurs Horn": 4.64,
+  "Cursed Cloth": 2.74,
+  "Harpy's Wings": 4.64,
+  "Cursed Talisman": 10.33,
+  "Raw Onion": 13.75,
+  "Siren's Scales": 12.68,
+  "Black Bear Pelt": 18.25,
+  "Forbidden Tome": 94.44,
+  "Undying Crest": 115.09,
 };
 
 export function getItemBurnDuration(
