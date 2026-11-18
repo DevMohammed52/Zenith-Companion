@@ -19,10 +19,10 @@ export function ForgeStyles() {
           .forge-page,
           main.forge-page,
           .container.forge-page {
-            padding: 0.85rem 0.5rem 7rem !important;
+            padding: 0.85rem clamp(0.5rem, 2.5vw, 0.85rem) 7rem !important;
             max-width: 100% !important;
             width: 100% !important;
-            overflow-x: hidden !important;
+            overflow-x: clip !important;
             box-sizing: border-box !important;
           }
         }
@@ -55,7 +55,6 @@ export function ForgeStyles() {
           gap: 0.75rem;
           padding: 0.65rem 1rem;
           position: relative;
-          contain: layout;
           min-width: 0;
           max-width: 100%;
           box-sizing: border-box;
@@ -1194,7 +1193,6 @@ export function ForgeStyles() {
           display: grid;
           gap: 1rem;
           min-height: 520px;
-          contain: layout;
         }
 
         /* 4-View Segmented Navigation */
@@ -1330,31 +1328,35 @@ export function ForgeStyles() {
           font-weight: 700;
         }
         .forge-page .stepper-wrap.compact {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 0.35rem;
-          width: 100%;
+          gap: 0.25rem;
+          width: auto;
           max-width: 100%;
           min-width: 0;
           box-sizing: border-box;
+          flex-shrink: 0;
         }
         .forge-page .stepper-btn.mini {
+          width: 44px;
           min-width: 44px;
           height: 44px;
           min-height: 44px;
-          padding: 0 0.4rem;
+          padding: 0;
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
           background: var(--bg-card);
           color: var(--text-primary);
           font-weight: 800;
-          font-size: 0.95rem;
+          font-size: 1.15rem;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
           flex-shrink: 0;
+          user-select: none;
+          box-sizing: border-box;
         }
         .forge-page .stepper-btn.mini:hover:not(:disabled) {
           border-color: var(--text-accent);
@@ -1365,23 +1367,24 @@ export function ForgeStyles() {
           cursor: not-allowed;
         }
         .forge-page .number-display-wrap.compact {
-          flex: 1;
-          display: flex;
+          flex: 0 1 auto;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 0.25rem;
+          gap: 0.15rem;
           background: rgba(0, 0, 0, 0.35);
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
-          padding: 0 0.5rem;
+          padding: 0 0.35rem;
           height: 44px;
-          min-width: 0;
+          min-width: 48px;
+          max-width: 72px;
           box-sizing: border-box;
         }
         .forge-page .level-prefix {
           font-weight: 800;
           color: var(--text-accent);
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           flex-shrink: 0;
         }
         .forge-page .direct-number-input.compact {
@@ -1389,12 +1392,15 @@ export function ForgeStyles() {
           border: none;
           color: var(--text-primary);
           font-weight: 900;
-          font-size: 1.1rem;
+          font-size: 1rem;
           outline: none;
-          width: 48px;
+          width: 32px;
           min-width: 0;
-          flex: 0 0 auto;
+          max-width: 100%;
+          flex: 0 1 auto;
           text-align: center;
+          padding: 0;
+          box-sizing: border-box;
         }
 
         /* Unified Duration Control */
@@ -1713,17 +1719,38 @@ export function ForgeStyles() {
           border-radius: 8px;
           background: var(--bg-panel);
           padding: 1.25rem;
-          display: grid;
+          display: flex;
+          flex-direction: column;
           gap: 1rem;
           min-height: 275px;
-          contain: layout;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .forge-page .goal-card-topbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           flex-wrap: wrap;
-          gap: 1rem;
+          gap: 0.75rem 1rem;
+          width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+        .forge-page .goal-title-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .forge-page .goal-title-group h2 {
+          margin: 0;
+          font-size: clamp(1.15rem, 3.5vw, 1.45rem);
+          font-weight: 900;
+          color: var(--text-primary);
+          word-break: break-word;
         }
         .forge-page .target-stepper-wrap {
           display: flex;
@@ -1732,18 +1759,23 @@ export function ForgeStyles() {
           flex-wrap: wrap;
           min-width: 0;
           max-width: 100%;
+          box-sizing: border-box;
         }
         .forge-page .target-direct-group {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 0.4rem;
+          gap: 0.65rem;
+          flex-wrap: wrap;
           min-width: 0;
           max-width: 100%;
+          box-sizing: border-box;
         }
         .forge-page .target-label {
-          font-size: 0.8rem;
+          font-size: 0.85rem;
           font-weight: 800;
           color: var(--text-muted);
+          white-space: nowrap;
+          flex-shrink: 0;
         }
         .forge-page .target-milestones {
           display: flex;
@@ -1758,6 +1790,10 @@ export function ForgeStyles() {
           border: 1px solid var(--border-subtle);
           border-radius: 8px;
           background: var(--bg-card);
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .forge-page .exp-metric-block {
           display: flex;
@@ -1795,6 +1831,10 @@ export function ForgeStyles() {
           display: flex;
           flex-direction: column;
           gap: 0.65rem;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .forge-page .route-card.best-route {
           border-color: color-mix(in srgb, var(--quality-unique), var(--border-subtle) 65%);
@@ -1804,11 +1844,17 @@ export function ForgeStyles() {
           align-items: center;
           justify-content: space-between;
           gap: 0.5rem;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .forge-page .route-tag-group {
           display: flex;
           flex-direction: column;
           gap: 0.2rem;
+          min-width: 0;
+          flex: 1 1 auto;
         }
         .forge-page .route-subtitle {
           font-size: 0.72rem;
@@ -1820,6 +1866,7 @@ export function ForgeStyles() {
           flex-direction: column;
           align-items: flex-end;
           gap: 0.15rem;
+          flex-shrink: 0;
         }
         .forge-page .route-cost-val {
           font-family: var(--font-mono);
@@ -1829,6 +1876,7 @@ export function ForgeStyles() {
           display: inline-flex;
           align-items: center;
           gap: 0.25rem;
+          white-space: nowrap;
         }
         .forge-page .gold-coin-inline,
         .gold-coin-inline {
@@ -1844,6 +1892,15 @@ export function ForgeStyles() {
           font-size: 0.72rem;
           color: var(--text-muted);
           font-weight: 600;
+          white-space: nowrap;
+        }
+        .forge-page .route-body {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
         .forge-page .route-tag {
           display: inline-flex;
@@ -4117,20 +4174,37 @@ export function ForgeStyles() {
 
         @media (max-width: 768px) {
           .forge-page .lesson-target-goal-card {
-            padding: 0.85rem;
+            padding: clamp(0.75rem, 3vw, 1rem);
           }
           .forge-page .goal-routes-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.75rem;
+          }
+          .forge-page .route-card {
+            padding: clamp(0.75rem, 2.5vw, 1rem);
+          }
+          .forge-page .route-header {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+          }
+          .forge-page .route-tag-group {
+            min-width: 0;
+            flex: 1 1 auto;
+          }
+          .forge-page .route-cost-wrap {
+            flex-shrink: 0;
+            text-align: right;
           }
           .forge-page .goal-exp-banner {
             flex-direction: column;
             align-items: flex-start;
             gap: 0.5rem;
+            padding: 0.75rem clamp(0.65rem, 2.5vw, 1rem);
           }
           .forge-page .goal-card-topbar {
             flex-direction: column;
             align-items: stretch;
-            gap: 0.65rem;
+            gap: 0.75rem;
           }
           .forge-page .target-stepper-wrap {
             width: 100%;
@@ -4144,6 +4218,7 @@ export function ForgeStyles() {
             align-items: center;
             justify-content: space-between;
             gap: 0.5rem;
+            flex-wrap: wrap;
             min-width: 0;
             box-sizing: border-box;
           }
@@ -4152,14 +4227,25 @@ export function ForgeStyles() {
             white-space: nowrap;
           }
           .forge-page .target-direct-group .stepper-wrap.compact {
-            flex: 1;
+            flex: 0 1 auto;
             width: auto;
             min-width: 0;
-            max-width: 200px;
+            max-width: 100%;
           }
           .forge-page .bracket-item {
             max-width: 100%;
             min-width: 0;
+            padding: 0.35rem clamp(0.35rem, 1.5vw, 0.5rem);
+            gap: clamp(0.2rem, 1vw, 0.5rem);
+          }
+          .forge-page .bracket-material-name {
+            min-width: 0;
+            flex: 1 1 auto;
+          }
+          .forge-page .bracket-level-range,
+          .forge-page .bracket-qty,
+          .forge-page .bracket-cost {
+            flex-shrink: 0;
           }
           .forge-page .target-milestones {
             width: 100%;

@@ -14,7 +14,7 @@ export default function ForgeLessonsPage() {
       <ForgeHeader lessons={lessons} activeTab="lessons" />
       <ForgeTabs activeTab="lessons" />
 
-      <div className="forge-tab-viewport" style={{ minHeight: "480px", contain: "layout" }}>
+      <div className="forge-tab-viewport" style={{ minHeight: "480px" }}>
         <ForgeLessonsTab lessons={lessons} />
       </div>
 

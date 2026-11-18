@@ -19,7 +19,7 @@ export default function ForgeCraftPage() {
       <ForgeHeader state={craftState} />
       <ForgeTabs state={craftState} />
 
-      <div className="forge-tab-viewport" style={{ minHeight: "480px", contain: "layout" }}>
+      <div className="forge-tab-viewport" style={{ minHeight: "480px" }}>
         <CraftItemTab state={craftState} />
       </div>
 

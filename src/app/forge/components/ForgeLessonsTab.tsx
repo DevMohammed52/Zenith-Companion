@@ -32,7 +32,7 @@ export function ForgeLessonsTab({ lessons: externalLessons }: { lessons?: UseFor
       id="forge-tab-panel-lessons"
       role="tabpanel"
       aria-labelledby="forge-tab-lessons"
-      style={{ minHeight: "420px", contain: "layout" }}
+      style={{ minHeight: "420px" }}
     >
       {/* 4-View Segmented Switcher */}
       <nav className="lesson-segmented-nav" aria-label="Forge lesson sections" role="tablist">

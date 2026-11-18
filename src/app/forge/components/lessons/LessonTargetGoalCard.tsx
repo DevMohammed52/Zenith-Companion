@@ -124,8 +124,7 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
         {!isMaxLevel && (
           <div className="target-stepper-wrap">
             <div className="target-direct-group">
-              <label htmlFor="target-level-input" className="sr-only">Target Level</label>
-              <span className="target-label">Target Lv:</span>
+              <label htmlFor="target-level-input" className="target-label">Target Lv:</label>
               <div className="stepper-wrap compact">
                 <button
                   type="button"
