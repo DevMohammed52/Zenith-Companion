@@ -408,7 +408,7 @@ export function getDefaultForgeSessionDuration(
   }
 
   const kind = String(profile.kind || "").toLowerCase();
-  const className = String(profile.className || "").toLowerCase();
+  const className = String(profile.className || (profile as any)?.class || "").toLowerCase();
   const isCursedOrBanished = className.includes("cursed") || className.includes("banished");
 
   // Alts have lower cap (6h with membership, 4h without)
@@ -518,6 +518,9 @@ function readScopedGoal(profile: any, currentLevel: number): number {
     try {
       const profileKey = getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profile?.id);
       let stored = localStorage.getItem(profileKey);
+      if (!stored && !profile?.id) {
+        stored = localStorage.getItem(FORGE_LESSON_GOAL_STORAGE_KEY);
+      }
       if (stored) {
         const parsed = parseInt(stored, 10);
         if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 100) {
