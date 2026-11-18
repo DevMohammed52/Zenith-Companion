@@ -51,7 +51,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/skill-profit", label: "Skill Profit Finder", icon: "skill" },
       { href: "/alchemy/mythic", label: "Mythic Lab", icon: "spark", badge: "LVL 90" },
       { href: "/crafting", label: "Crafting Queue", icon: "crafting" },
-      { href: "/forge", label: "Forge Planner", icon: "forge" },
+      { href: "/forge/lessons", label: "Forge Lessons", icon: "forge" },
+      { href: "/forge/craft", label: "Forge Crafting", icon: "crafting" },
       { href: "/housing", label: "Housing", icon: "housing" },
       { href: "/bis", label: "BiS Recommender", icon: "shield" },
       { href: "/market-alerts", label: "Market Watch", icon: "bell" },
@@ -73,6 +74,12 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export function isNavItemActive(pathname: string, item: NavItem) {
+  if (item.href === "/forge/lessons") {
+    return pathname === "/forge" || pathname === "/forge/lessons" || pathname.startsWith("/forge/lessons/");
+  }
+  if (item.href === "/forge/craft") {
+    return pathname === "/forge/craft" || pathname.startsWith("/forge/craft/");
+  }
   if (item.matchPrefix) return pathname === item.href || pathname.startsWith(item.href + "/");
   return pathname === item.href;
 }
