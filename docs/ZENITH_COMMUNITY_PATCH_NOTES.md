@@ -1,9 +1,10 @@
 # Zenith Companion Patch Notes
 
-* **Skill Profit "Try Sell Price"**: Added a live try-sell price input in the strategy modal with automatic break-even and profit-target price calculation.
-* **New Mythic Pet (Shardback)**: Added Shardback (#048) and the Shardback Egg to the pet database, stats calculator, and comparison matrix.
-* **Reset Stone**: Added the merchant Reset Stone to item lookups, search, and modals.
-* **Teleport Costs**: Updated the formula to match [Patch v0.83.0](https://discord.com/channels/1118502854957727754/1145685700814045394/1551942927012601998) with the 1,500 TL cap, 50g floor, class discounts, and exempt skills (0-coin drift).
-* **Wraithwood Forest Travel**: Added exact travel distances and costs to and from the Eve of Shadows event area, and clarified server boss anti-overlap jitter (10m–3h delay).
-* **New Classes & Idle Hour Caps**: Added support for Alchemist, Blacksmith, Builder, and Monk. Updated alt idle caps to 4h (Free) / 6h (Member), with full 8h kept for Banished and Cursed.
-* **Forge Recipes & Conquest Buffs**: Aligned all forge recipes to metal bars and updated regional conquest assault rewards (up to +25% EXP / +5% Eff).
+* **Forge Lessons & Training Queue**: Dedicated smithing training planner for offline sessions. Automatically batches materials into 4h, 6h, or 8h sessions based on account type (Alt, Main, Cursed, Banished) and membership status.
+* **Complete Forge Catalog (91 Materials)**: Catalogued all 10 ores, 9 bars, 9 logs, and 63 mob drops with verified burn durations, live market prices, and empirical level grace curves (up to Lv. 10 grace).
+* **Progression Roadmap & Goal Planner**: Calculates the cheapest, fastest, and balanced training paths from your current level up to Lv. 100 with 1-click batch queueing.
+* **Inventory Burn vs. Sell Optimizer**: Track your owned materials with live market valuations to instantly see whether burning items for EXP or selling them on the market is more gold-efficient.
+* **Profile-Specific Forge Data**: Isolated character levels, lesson queues, inventories, and session durations per profile, swapping setups immediately on profile switch.
+* **EXP & Speed Buff Modifiers**: Configurable modifiers for Membership (+15% EXP / +10% Speed), Shrines, Campaigns, Blessings, and automatic -50% base EXP scaling for Cursed & Forsaken accounts.
+* **Teleportation Ground-Truth Formula**: Calibrated teleportation costs to the piecewise quadratic formula matching live in-game costs with 0-coin drift, 1,500 TL cap, 50g floor, and Meditation class exemptions.
+* **Profile Skilling & Instant Caching**: Primary skilling and mastery levels now display and update directly in profile overviews, with instant session recovery and edge D1 caching.
