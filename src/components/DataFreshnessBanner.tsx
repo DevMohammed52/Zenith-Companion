@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Clock3, DatabaseZap, RefreshCw } from "lucide-react";
+import { AlertTriangle, Clock3, DatabaseZap, RefreshCw, X } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import {
   formatPublicDataAge,
@@ -50,6 +50,21 @@ export default function DataFreshnessBanner() {
   const [fetchState, setFetchState] = useState<FetchState>("idle");
   const [online, setOnline] = useState(true);
   const [now, setNow] = useState(() => Date.now());
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return sessionStorage.getItem("zenith_freshness_banner_dismissed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem("zenith_freshness_banner_dismissed", "true");
+    } catch {}
+  };
 
   useEffect(() => {
     if (isPublicDataStatus(scraperStatus)) setStatus(scraperStatus);
@@ -110,7 +125,7 @@ export default function DataFreshnessBanner() {
     return { level: baseLevel, progress, ageLabel, timestamp };
   }, [fetchState, now, status]);
 
-  if (!online || model.level === "fresh") return null;
+  if (!online || model.level === "fresh" || dismissed) return null;
 
   const Icon = model.level === "running"
     ? RefreshCw
@@ -145,6 +160,15 @@ export default function DataFreshnessBanner() {
         <strong>{statusTitle}</strong>
         <span className={styles.meta}>{metaText}</span>
       </span>
+      <button
+        type="button"
+        className={styles.closeBtn}
+        onClick={handleDismiss}
+        aria-label="Dismiss data freshness alert"
+        title="Dismiss alert"
+      >
+        <X size={14} aria-hidden="true" />
+      </button>
     </aside>
   );
 }

@@ -9271,6 +9271,7 @@ kbd {
   position: fixed;
   transform: translateX(-50%);
   z-index: 1180;
+  pointer-events: none;
 }
 
 @media (min-width: 1181px) {
@@ -9280,11 +9281,12 @@ kbd {
     flex-direction: column;
     gap: 0.42rem;
     padding: 0.85rem;
-    pointer-events: auto;
+    pointer-events: none;
   }
 }
 
 .desktop-dock {
+  pointer-events: auto;
   align-items: flex-end;
   background:
     radial-gradient(circle at 28% 8%, color-mix(in srgb, var(--text-accent), transparent 74%), transparent 38%),

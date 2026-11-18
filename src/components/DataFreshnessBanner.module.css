@@ -10,7 +10,7 @@
   color: var(--text-primary, #f4f4f5);
   display: grid;
   gap: 0.7rem;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   inset-inline-start: 1rem;
   max-width: min(310px, calc(100vw - 2rem));
   padding: 0.68rem 0.78rem;
@@ -91,6 +91,28 @@
   font-family: var(--font-mono, Consolas, monospace);
   font-size: 0.7rem;
   letter-spacing: 0;
+}
+
+.closeBtn {
+  align-self: start;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #a1a1aa);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 4px;
+  margin-inline-start: 0.25rem;
+  transition: color 0.15s ease, background 0.15s ease;
+  min-height: 24px;
+  min-width: 24px;
+}
+
+.closeBtn:hover {
+  color: var(--text-primary, #f4f4f5);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 1180px) {
