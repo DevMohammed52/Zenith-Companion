@@ -392,11 +392,11 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
           </div>
         </div>
 
-        {/* Section 3: EXP & Speed Buffs */}
+        {/* Section 3: EXP & Efficiency Buffs */}
         <div className="toolbar-section buffs-section">
           <div className="toolbar-section-header">
             <span className="panel-kicker">
-              <Sparkles size={14} aria-hidden="true" /> EXP & Speed Buffs
+              <Sparkles size={14} aria-hidden="true" /> EXP & Efficiency Buffs
             </span>
             <div className={`buff-active-badge-group ${totalExpPercent !== 0 || totalEffPercent !== 0 ? "active" : ""}`}>
               {isCursedOrForsaken && (
@@ -412,9 +412,9 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
                 <strong>{totalExpPercent >= 0 ? `+${totalExpPercent}%` : `${totalExpPercent}%`}</strong> EXP
               </span>
               <span className="buff-badge-dot" aria-hidden="true">·</span>
-              <span className="buff-badge-pill speed" title={`+${totalEffPercent}% Smithing Speed bonus`}>
+              <span className="buff-badge-pill eff" title={`+${totalEffPercent}% Smithing Efficiency bonus`}>
                 <Clock size={10} aria-hidden="true" />
-                <strong>+{totalEffPercent}%</strong> Speed
+                <strong>+{totalEffPercent}%</strong> Eff
               </span>
             </div>
           </div>
@@ -426,17 +426,18 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
               className={`membership-pill-btn ${hasMembershipBuff ? "active" : ""}`}
               onClick={() => setHasMembershipBuff(!hasMembershipBuff)}
               aria-pressed={hasMembershipBuff}
-              title="Membership grants +15% EXP and +10% Speed"
+              title="Membership grants +15% EXP and +10% Efficiency"
             >
               <Shield size={13} aria-hidden="true" />
-              <span>{hasMembershipBuff ? "Membership (+15% EXP · +10% Spd)" : "No Membership"}</span>
+              <span>{hasMembershipBuff ? "Membership (+15% EXP · +10% Eff)" : "No Membership"}</span>
             </button>
 
-            {/* Bonus EXP and Bonus Speed Inputs */}
+            {/* Bonus EXP and Bonus Efficiency Inputs */}
             <div className="buff-extra-inputs-row">
-              <div className="buff-field-group">
+              <div className="buff-field-group" title="Bonus Forge Experience %">
                 <label htmlFor={extraExpInputId} className="buff-field-label">
-                  <Zap size={11} aria-hidden="true" /> Bonus EXP %
+                  <Zap size={11} aria-hidden="true" />
+                  <span>+EXP %</span>
                 </label>
                 <input
                   id={extraExpInputId}
@@ -458,12 +459,14 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
                     }
                   }}
                   className="buff-number-field"
+                  aria-label="Bonus EXP percentage"
                 />
               </div>
 
-              <div className="buff-field-group">
+              <div className="buff-field-group" title="Bonus Smithing Efficiency %">
                 <label htmlFor={extraEffInputId} className="buff-field-label">
-                  <Clock size={11} aria-hidden="true" /> Bonus Speed %
+                  <Clock size={11} aria-hidden="true" />
+                  <span>+Eff %</span>
                 </label>
                 <input
                   id={extraEffInputId}
@@ -485,6 +488,7 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
                     }
                   }}
                   className="buff-number-field"
+                  aria-label="Bonus Efficiency percentage"
                 />
               </div>
             </div>

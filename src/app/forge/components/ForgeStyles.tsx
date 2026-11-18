@@ -1284,17 +1284,26 @@ export function ForgeStyles() {
           flex-direction: column;
           width: 100%;
           max-width: 100%;
-          gap: 1rem;
-          padding: 0.75rem;
+          gap: 0.85rem;
+          padding: 0.75rem clamp(0.65rem, 2vw, 1.15rem);
           box-sizing: border-box;
           min-width: 0;
         }
-        @media (min-width: 860px) {
+        @media (min-width: 768px) and (max-width: 959px) {
           .forge-page .controls-unified-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+          }
+          .forge-page .toolbar-section.buffs-section {
+            grid-column: 1 / -1;
+          }
+        }
+        @media (min-width: 960px) {
+          .forge-page .controls-unified-bar {
+            display: grid;
+            grid-template-columns: auto minmax(240px, 280px) minmax(360px, 1fr);
             gap: 1.25rem;
-            padding: 0.85rem 1.15rem;
             align-items: start;
           }
         }
@@ -1584,8 +1593,8 @@ export function ForgeStyles() {
         }
         .forge-page .buff-inputs-grid {
           display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
+          align-items: center;
+          gap: 0.5rem;
           width: 100%;
           box-sizing: border-box;
           min-width: 0;
@@ -1605,9 +1614,11 @@ export function ForgeStyles() {
           justify-content: center;
           gap: 0.45rem;
           cursor: pointer;
-          width: 100%;
+          flex: 1 1 auto;
+          min-width: 0;
           box-sizing: border-box;
           transition: border-color 0.12s ease, background-color 0.12s ease, color 0.12s ease;
+          white-space: nowrap;
         }
         .forge-page .membership-pill-btn.active {
           border-color: var(--text-accent);
@@ -1615,45 +1626,71 @@ export function ForgeStyles() {
           color: var(--text-accent);
         }
         .forge-page .buff-extra-inputs-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.45rem;
-          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          flex: 0 0 auto;
           box-sizing: border-box;
           min-width: 0;
         }
         .forge-page .buff-field-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.2rem;
-          min-width: 0;
-          box-sizing: border-box;
-        }
-        .forge-page .buff-field-label {
-          font-size: 0.68rem;
-          font-weight: 800;
-          color: var(--text-muted);
-          text-transform: uppercase;
           display: inline-flex;
           align-items: center;
-          gap: 0.25rem;
-        }
-        .forge-page .buff-number-field {
           height: 44px;
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
-          background: rgba(0, 0, 0, 0.35);
-          color: var(--text-primary);
+          background: var(--bg-card);
           padding: 0 0.5rem;
+          gap: 0.35rem;
+          box-sizing: border-box;
+          transition: border-color 0.12s ease;
+          flex-shrink: 0;
+        }
+        .forge-page .buff-field-group:focus-within {
+          border-color: var(--text-accent);
+        }
+        .forge-page .buff-field-label {
+          font-size: 0.72rem;
+          font-weight: 800;
+          color: var(--text-muted);
+          white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          user-select: none;
+          cursor: pointer;
+        }
+        .forge-page .buff-number-field {
+          height: 100%;
+          border: none;
+          background: transparent;
+          color: var(--text-primary);
           font-weight: 900;
           font-size: 0.95rem;
           outline: none;
-          width: 100%;
-          min-width: 0;
+          width: 32px;
+          text-align: center;
+          padding: 0;
           box-sizing: border-box;
         }
-        .forge-page .buff-number-field:focus-visible {
-          border-color: var(--text-accent);
+        @media (max-width: 767px) {
+          .forge-page .buff-inputs-grid {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .forge-page .membership-pill-btn {
+            width: 100%;
+          }
+          .forge-page .buff-extra-inputs-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            width: 100%;
+          }
+          .forge-page .buff-field-group {
+            width: 100%;
+            justify-content: space-between;
+          }
         }
 
         /* Streamlined Rate Context Strip */
@@ -2086,7 +2123,7 @@ export function ForgeStyles() {
         }
         .forge-page .empty-queue-content {
           text-align: center;
-          padding: 2.5rem 1.5rem;
+          padding: 2.5rem 1.5rem clamp(4rem, 8vh, 6rem);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -2107,6 +2144,8 @@ export function ForgeStyles() {
           gap: 0.75rem;
           justify-content: center;
           margin-top: 0.5rem;
+          max-width: 900px;
+          padding-bottom: 1.5rem;
         }
         .forge-page .primary-action-btn {
           min-height: 44px;
@@ -4138,7 +4177,8 @@ export function ForgeStyles() {
           background: color-mix(in srgb, var(--text-danger), transparent 85%);
           color: var(--text-danger);
         }
-        .forge-page .buff-badge-pill.speed {
+        .forge-page .buff-badge-pill.speed,
+        .forge-page .buff-badge-pill.eff {
           color: var(--text-success);
         }
         .forge-page .buff-badge-dot {
