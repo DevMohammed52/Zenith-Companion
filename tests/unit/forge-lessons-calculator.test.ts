@@ -910,4 +910,20 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(goal83to91.expNeeded).toBe(3366238);
     expect(goal83to91.cheapestSteps!.length).toBeGreaterThan(0);
   });
+
+  it("verifies profile forge level detection and profile level syncing", () => {
+    const profileWithForge = {
+      id: "test_profile",
+      skills: {
+        forge: { level: 83, experience: 3515774 },
+      },
+    };
+    expect(detectProfileForgeLevel(profileWithForge)).toBe(83);
+
+    const profileNoForge = {
+      id: "test_profile_2",
+      skills: {},
+    };
+    expect(detectProfileForgeLevel(profileNoForge)).toBe(1);
+  });
 });

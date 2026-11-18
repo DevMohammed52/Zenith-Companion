@@ -22,6 +22,9 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
   const {
     forgeLevel,
     setForgeLevel,
+    profileForgeLevel = 1,
+    isProfileLevelSynced = true,
+    resetToProfileLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
     extraExpBuffPercent = 0,
@@ -210,9 +213,23 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
             <span className="panel-kicker">
               <Flame size={14} aria-hidden="true" /> Forge Skill
             </span>
-            <span className="toolbar-subtext">
-              {forgeAscensionLevel > 0 ? `Synced (Asc. ${forgeAscensionLevel})` : "Synced to Profile"}
-            </span>
+            {profileForgeLevel > 0 && localLevel !== profileForgeLevel ? (
+              <button
+                type="button"
+                className="reset-to-profile-btn"
+                onClick={() => {
+                  commitLevel(profileForgeLevel);
+                }}
+                title={`Reset to profile level ${profileForgeLevel}`}
+                aria-label={`Reset to profile level ${profileForgeLevel}`}
+              >
+                Reset to Lv. {profileForgeLevel}
+              </button>
+            ) : (
+              <span className="toolbar-subtext">
+                {forgeAscensionLevel > 0 ? `Synced (Asc. ${forgeAscensionLevel})` : "Synced to Profile"}
+              </span>
+            )}
           </div>
           <div className="stepper-wrap compact">
             <button
@@ -412,7 +429,7 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
               title="Membership grants +15% EXP and +10% Speed"
             >
               <Shield size={13} aria-hidden="true" />
-              <span>{hasMembershipBuff ? "Membership (+15% EXP)" : "No Membership"}</span>
+              <span>{hasMembershipBuff ? "Membership (+15% EXP · +10% Spd)" : "No Membership"}</span>
             </button>
 
             {/* Bonus EXP and Bonus Speed Inputs */}

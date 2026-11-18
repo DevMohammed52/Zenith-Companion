@@ -6,7 +6,13 @@ import { formatGold } from "@/lib/format";
 import { GoldIcon } from "@/components/GoldIcon";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
 
-export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn }) {
+export function InventoryOptimizer({
+  lessons,
+  onSwitchSubView,
+}: {
+  lessons: UseForgeLessonsReturn;
+  onSwitchSubView?: (view: "session" | "planner" | "catalog" | "inventory") => void;
+}) {
   const {
     ownedMaterials,
     updateOwnedMaterial,
@@ -220,7 +226,11 @@ export function InventoryOptimizer({ lessons }: { lessons: UseForgeLessonsReturn
             <button
               type="button"
               className="queue-all-owned-btn"
-              onClick={() => queueAllOwned()}
+              onClick={() => {
+                queueAllOwned();
+                onSwitchSubView?.("session");
+              }}
+              title="Queue all owned items and open Session Queue"
             >
               <Flame size={13} aria-hidden="true" />
               <span>Queue All in Lesson</span>

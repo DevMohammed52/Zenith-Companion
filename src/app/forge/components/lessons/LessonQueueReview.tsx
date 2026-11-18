@@ -91,7 +91,13 @@ function formatDurationSmart(totalSeconds: number): string {
   return `${minutes}m ${seconds}s`;
 }
 
-export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn }) {
+export function LessonQueueReview({
+  lessons,
+  onSwitchSubView,
+}: {
+  lessons: UseForgeLessonsReturn;
+  onSwitchSubView?: (view: "session" | "planner" | "catalog" | "inventory") => void;
+}) {
   const {
     forgeLevel,
     queuedItems,
@@ -159,9 +165,19 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
           <Flame size={32} className="empty-icon" aria-hidden="true" />
           <h2>No Materials Queued for Lesson</h2>
           <p>
-            Select materials from the catalog below, or pick a recommended training material to fill your offline session.
+            Select materials from the Materials tab, or pick a recommended training material to fill your offline session.
           </p>
           <div className="empty-actions-row">
+            {onSwitchSubView && (
+              <button
+                type="button"
+                className="browse-catalog-action-btn"
+                onClick={() => onSwitchSubView("catalog")}
+                title="Browse all 91 smithing lesson materials in the catalog"
+              >
+                <span>Browse Materials (91) →</span>
+              </button>
+            )}
             {cheapestRec && (
               <button
                 type="button"
@@ -242,6 +258,7 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
           const { material, quantity, totalExp, totalDurationSeconds: itemDuration } = item;
           const itemPerSession = Math.max(1, Math.floor(sessionSeconds / material.timeSeconds));
           const itemSessions = Math.ceil(itemDuration / sessionSeconds);
+          const ownedCount = ownedMaterials[material.name] || 0;
 
           return (
             <article key={material.name} className={`queue-item-card ${material.hasPenalty ? "has-penalty" : ""}`}>
@@ -269,14 +286,48 @@ export function LessonQueueReview({ lessons }: { lessons: UseForgeLessonsReturn 
                   <span className={`quality-badge ${material.quality.toLowerCase()}`}>
                     {material.quality}
                   </span>
+                  <span className={`queue-stock-pill ${ownedCount > 0 ? "has-stock" : "zero"}`} title={`Tracked inventory stock: ${ownedCount.toLocaleString()}`}>
+                    Stock: <strong>{ownedCount.toLocaleString()}</strong>
+                  </span>
+                  {ownedCount > 0 && ownedCount !== quantity && (
+                    <button
+                      type="button"
+                      className="use-stock-inline-btn"
+                      onClick={() => setQueueQuantity(material.name, ownedCount)}
+                      title={`Set queue quantity to owned stock (${ownedCount.toLocaleString()})`}
+                    >
+                      Use Stock
+                    </button>
+                  )}
                 </div>
 
                 <div className="item-stepper-row">
                   <span className="stepper-label">Count:</span>
                   <button
                     type="button"
+                    className="step-quick-pill"
+                    aria-label={`Subtract 100 ${material.name}`}
+                    onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 100))}
+                    disabled={quantity <= 1}
+                    title={`Subtract 100 ${material.name}`}
+                  >
+                    -100
+                  </button>
+                  <button
+                    type="button"
+                    className="step-quick-pill"
+                    aria-label={`Subtract 10 ${material.name}`}
+                    onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 10))}
+                    disabled={quantity <= 1}
+                    title={`Subtract 10 ${material.name}`}
+                  >
+                    -10
+                  </button>
+                  <button
+                    type="button"
                     className="qty-btn"
                     onClick={() => setQueueQuantity(material.name, quantity - 1)}
+                    disabled={quantity <= 1}
                     aria-label={`Decrease ${material.name} quantity`}
                   >
                     -

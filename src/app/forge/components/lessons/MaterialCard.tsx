@@ -27,6 +27,7 @@ function MaterialCardComponent({
   onOpenItem,
   onAddToQueue,
   onFillSession,
+  onUpdateOwned,
 }: MaterialCardProps) {
   const hourlyExp = Math.round(mat.expPerSecond * 3600);
 

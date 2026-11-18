@@ -71,7 +71,7 @@ export function ForgeLessonsTab({ lessons: externalLessons }: { lessons?: UseFor
         className={`lesson-subview-panel ${activeSubView === "session" ? "active" : "hidden"}`}
       >
         <LessonHeaderControls lessons={lessons} />
-        <LessonQueueReview lessons={lessons} />
+        <LessonQueueReview lessons={lessons} onSwitchSubView={setActiveSubView} />
       </div>
 
       <div
@@ -80,7 +80,7 @@ export function ForgeLessonsTab({ lessons: externalLessons }: { lessons?: UseFor
         aria-labelledby="lesson-subtab-planner"
         className={`lesson-subview-panel ${activeSubView === "planner" ? "active" : "hidden"}`}
       >
-        <LessonTargetGoalCard lessons={lessons} />
+        <LessonTargetGoalCard lessons={lessons} onSwitchSubView={setActiveSubView} />
       </div>
 
       <div
@@ -98,7 +98,7 @@ export function ForgeLessonsTab({ lessons: externalLessons }: { lessons?: UseFor
         aria-labelledby="lesson-subtab-inventory"
         className={`lesson-subview-panel ${activeSubView === "inventory" ? "active" : "hidden"}`}
       >
-        <InventoryOptimizer lessons={lessons} />
+        <InventoryOptimizer lessons={lessons} onSwitchSubView={setActiveSubView} />
       </div>
     </div>
   );

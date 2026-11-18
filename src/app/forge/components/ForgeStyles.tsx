@@ -1327,6 +1327,24 @@ export function ForgeStyles() {
           color: var(--text-muted);
           font-weight: 700;
         }
+        .forge-page .reset-to-profile-btn {
+          font-size: 0.72rem;
+          font-weight: 800;
+          color: var(--text-accent);
+          background: color-mix(in srgb, var(--text-accent), transparent 90%);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 75%);
+          border-radius: 4px;
+          padding: 0.15rem 0.5rem;
+          cursor: pointer;
+          transition: background 0.12s ease, border-color 0.12s ease;
+          display: inline-flex;
+          align-items: center;
+          user-select: none;
+        }
+        .forge-page .reset-to-profile-btn:hover {
+          background: color-mix(in srgb, var(--text-accent), transparent 80%);
+          border-color: var(--text-accent);
+        }
         .forge-page .stepper-wrap.compact {
           display: inline-flex;
           align-items: center;
@@ -1928,6 +1946,7 @@ export function ForgeStyles() {
           margin-top: auto;
           display: flex;
           flex-direction: column;
+          gap: 0.5rem;
         }
         .forge-page .route-ratio {
           font-size: 0.75rem;
@@ -2029,6 +2048,32 @@ export function ForgeStyles() {
           border-color: var(--text-accent);
           color: var(--text-accent);
         }
+        .forge-page .route-action-btn.queued {
+          background: color-mix(in srgb, var(--text-success), transparent 82%);
+          border-color: var(--text-success);
+          color: var(--text-success);
+        }
+        .forge-page .route-go-to-queue-btn {
+          min-height: 40px;
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 70%);
+          border-radius: 6px;
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          color: var(--text-accent);
+          font-size: 0.8rem;
+          font-weight: 800;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .forge-page .route-go-to-queue-btn:hover {
+          background: color-mix(in srgb, var(--text-accent), transparent 75%);
+          border-color: var(--text-accent);
+        }
 
         /* 3. Lesson Queue & Review Screen */
         .forge-page .lesson-queue-shell {
@@ -2075,6 +2120,25 @@ export function ForgeStyles() {
           align-items: center;
           gap: 0.45rem;
           cursor: pointer;
+        }
+        .forge-page .browse-catalog-action-btn {
+          min-height: 44px;
+          padding: 0 1.15rem;
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 70%);
+          border-radius: 8px;
+          background: color-mix(in srgb, var(--text-accent), transparent 88%);
+          color: var(--text-accent);
+          font-weight: 800;
+          font-size: 0.82rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .forge-page .browse-catalog-action-btn:hover {
+          background: color-mix(in srgb, var(--text-accent), transparent 75%);
+          border-color: var(--text-accent);
         }
         .forge-page .ghost-action-btn {
           min-height: 44px;
@@ -2237,6 +2301,42 @@ export function ForgeStyles() {
           -webkit-text-fill-color: transparent;
           border-color: color-mix(in srgb, rgb(180, 23, 244), transparent 60%);
         }
+        .forge-page .queue-stock-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: var(--text-muted);
+          background: rgba(0, 0, 0, 0.25);
+          border: 1px solid var(--border-subtle);
+          border-radius: 4px;
+          padding: 0.15rem 0.45rem;
+        }
+        .forge-page .queue-stock-pill.has-stock {
+          color: var(--text-primary);
+          border-color: color-mix(in srgb, var(--text-accent), transparent 75%);
+        }
+        .forge-page .queue-stock-pill.has-stock strong {
+          color: var(--text-accent);
+        }
+        .forge-page .use-stock-inline-btn {
+          font-size: 0.7rem;
+          font-weight: 800;
+          color: var(--text-accent);
+          background: color-mix(in srgb, var(--text-accent), transparent 90%);
+          border: 1px solid color-mix(in srgb, var(--text-accent), transparent 75%);
+          border-radius: 4px;
+          padding: 0.15rem 0.45rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          transition: background 0.12s ease, border-color 0.12s ease;
+        }
+        .forge-page .use-stock-inline-btn:hover {
+          background: color-mix(in srgb, var(--text-accent), transparent 80%);
+          border-color: var(--text-accent);
+        }
 
         .forge-page .item-stepper-row {
           display: flex;
@@ -2270,6 +2370,10 @@ export function ForgeStyles() {
           justify-content: center;
           flex-shrink: 0;
         }
+        .forge-page .qty-btn:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
         .forge-page .qty-input {
           width: 56px;
           min-width: 44px;
@@ -2298,6 +2402,16 @@ export function ForgeStyles() {
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+        }
+        .forge-page .step-quick-pill:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: var(--text-accent);
+          color: var(--text-primary);
+        }
+        .forge-page .step-quick-pill:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
         }
         .forge-page .item-metric-badges {
           display: flex;

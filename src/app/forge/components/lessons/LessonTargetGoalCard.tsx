@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowRight, CheckCircle2, Compass, DollarSign, FastForward, Layers, Sparkles } from "lucide-react";
 import { formatGold } from "@/lib/format";
 import { GoldIcon } from "@/components/GoldIcon";
@@ -26,7 +26,13 @@ function formatLongDuration(totalSeconds: number): string {
   return `${remainingMinutes}m ${Math.floor(totalSeconds % 60)}s`;
 }
 
-export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsReturn }) {
+export function LessonTargetGoalCard({
+  lessons,
+  onSwitchSubView,
+}: {
+  lessons: UseForgeLessonsReturn;
+  onSwitchSubView?: (view: "session" | "planner" | "catalog" | "inventory") => void;
+}) {
   const {
     forgeLevel,
     targetGoalLevel,
@@ -55,11 +61,22 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
   const isMaxLevel = forgeLevel >= 100;
 
   const [rawTargetStr, setRawTargetStr] = useState(String(targetGoalLevel));
+  const [queuedRouteKey, setQueuedRouteKey] = useState<string | null>(null);
+  const queuedTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     setRawTargetStr(String(targetGoalLevel));
   }, [targetGoalLevel]);
 
-  const applyPathToQueue = (steps: GoalProgressionStep[]) => {
+  useEffect(() => {
+    return () => {
+      if (queuedTimerRef.current) {
+        clearTimeout(queuedTimerRef.current);
+      }
+    };
+  }, []);
+
+  const applyPathToQueue = (steps: GoalProgressionStep[], routeKey: string) => {
     const batch: Record<string, number> = {};
     for (const step of steps) {
       if (step.material?.name && step.quantityNeeded > 0) {
@@ -74,6 +91,13 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
           addToQueue(name, qty);
         }
       }
+      setQueuedRouteKey(routeKey);
+      if (queuedTimerRef.current) {
+        clearTimeout(queuedTimerRef.current);
+      }
+      queuedTimerRef.current = setTimeout(() => {
+        setQueuedRouteKey(null);
+      }, 3000);
     }
   };
 
@@ -270,13 +294,32 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
                 <div className="route-actions-row">
                   <button
                     type="button"
-                    className="route-action-btn"
-                    onClick={() => applyPathToQueue(route.steps)}
+                    className={`route-action-btn ${queuedRouteKey === route.key ? "queued" : ""}`}
+                    onClick={() => applyPathToQueue(route.steps, route.key)}
                     aria-label={`Queue entire ${route.title}`}
                   >
-                    <Layers size={14} aria-hidden="true" />
-                    <span>Queue {route.title}</span>
+                    {queuedRouteKey === route.key ? (
+                      <>
+                        <CheckCircle2 size={14} aria-hidden="true" />
+                        <span>✓ Queued to Training!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Layers size={14} aria-hidden="true" />
+                        <span>Queue {route.title}</span>
+                      </>
+                    )}
                   </button>
+                  {queuedRouteKey === route.key && onSwitchSubView && (
+                    <button
+                      type="button"
+                      className="route-go-to-queue-btn"
+                      onClick={() => onSwitchSubView("session")}
+                      title="View queued materials in Session Queue"
+                    >
+                      <span>Go to Session Queue →</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

@@ -608,6 +608,16 @@ export function useForgeLessons() {
     return detectProfileForgeLevel(activeProfile);
   }, [activeProfile]);
 
+  const isProfileLevelSynced = useMemo(() => {
+    return !activeProfile || isStarterProfile(activeProfile) || forgeLevel === profileForgeLevel;
+  }, [activeProfile, forgeLevel, profileForgeLevel]);
+
+  const resetToProfileLevel = useCallback(() => {
+    if (profileForgeLevel > 0) {
+      setForgeLevel(profileForgeLevel);
+    }
+  }, [profileForgeLevel, setForgeLevel]);
+
   // Extract progress into current level from cumulative lifetime XP
   const currentLevelXp = useMemo(() => {
     if (!activeProfile || forgeLevel !== profileForgeLevel) return 0;
@@ -1129,6 +1139,9 @@ export function useForgeLessons() {
   return {
     forgeLevel,
     forgeAscensionLevel,
+    profileForgeLevel,
+    isProfileLevelSynced,
+    resetToProfileLevel,
     setForgeLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
