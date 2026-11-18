@@ -713,6 +713,14 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     // Speed multiplier reduces duration correctly (10% speed buff reduces training duration)
     const goalWithSpeed = calculateGoalEstimate(1, 25, rawMaterials as ForgeLessonMaterial[], 1.0, 0, null, 1.10);
     expect(goalWithSpeed.totalCheapestDurationSeconds!).toBeLessThan(goal.totalCheapestDurationSeconds!);
+
+    // Invariance: Fastest route MUST be strictly faster than or equal to balanced and cheapest routes
+    const goal41to100 = calculateGoalEstimate(41, 100, rawMaterials as ForgeLessonMaterial[], 1.15, 0, null, 1.10);
+    expect(goal41to100.totalFastestDurationSeconds).toBeDefined();
+    expect(goal41to100.totalBestDurationSeconds).toBeDefined();
+    expect(goal41to100.totalCheapestDurationSeconds).toBeDefined();
+    expect(goal41to100.totalFastestDurationSeconds!).toBeLessThanOrEqual(goal41to100.totalBestDurationSeconds!);
+    expect(goal41to100.totalBestDurationSeconds!).toBeLessThanOrEqual(goal41to100.totalCheapestDurationSeconds!);
   });
 
   it("calculates offline session capacity up to 12-hour cap", () => {
@@ -876,7 +884,7 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
   it("verifies forge storage keys isolate per profile scope", async () => {
     const { getProfileStorageKey } = await import("@/lib/profile-storage");
     const { FORGE_OWNED_STORAGE_KEY, FORGE_LESSON_QUEUE_STORAGE_KEY, FORGE_LESSON_GOAL_STORAGE_KEY } = await import("@/app/forge/hooks/useForgeLessons");
-    const { FORGE_PLANNER_STORAGE_KEY } = await import("@/app/forge/types");
+    const { FORGE_PLANNER_STORAGE_KEY } = await import("@/lib/forge-planner");
 
     const profileA = "saqr_alt_1";
     const profileB = "main_char_2";

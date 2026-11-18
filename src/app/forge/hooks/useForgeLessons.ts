@@ -222,7 +222,7 @@ export function calculateGoalEstimate(
     for (const m of allMaterials) {
       const livePrice = priceMap.get(m.name) || m.marketPrice;
       const calc = calculateLessonMaterialEfficiency(m, lvl, buffMultiplier, livePrice);
-      const effectiveBurnTime = Math.max(1, Math.round(m.timeSeconds / effMultiplier));
+      const effectiveBurnTime = Math.max(1, Math.round(calc.timeSeconds / effMultiplier));
       const effectiveExpPerSec = effectiveBurnTime > 0 ? calc.effectiveExp / effectiveBurnTime : 0;
 
       let metric: number;
