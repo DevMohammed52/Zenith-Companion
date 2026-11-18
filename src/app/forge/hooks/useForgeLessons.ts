@@ -7,6 +7,7 @@ import { getProfileSkillLevel, isStarterProfile, useProfiles } from "@/lib/profi
 import { usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
   FORGE_OWNED_STORAGE_KEY,
   FORGE_OWNED_SYNC_EVENT,
@@ -478,45 +479,80 @@ export function detectProfileForgeXp(profile: any): number {
   return Number.isFinite(exp) && exp > 0 ? exp : 0;
 }
 
+function readScopedStorage<T>(baseKey: string, profileId: string | null | undefined, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const profileKey = getProfileStorageKey(baseKey, profileId);
+    let raw = localStorage.getItem(profileKey);
+    if (!raw && !profileId) {
+      raw = localStorage.getItem(baseKey);
+    }
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {}
+  return fallback;
+}
+
+function readScopedLevel(profile: any): number {
+  const fromProfile = detectProfileForgeLevel(profile);
+  if (fromProfile > 1) return fromProfile;
+  if (typeof window !== "undefined") {
+    try {
+      const profileKey = getProfileStorageKey("zenith_forge_lesson_level", profile?.id);
+      let stored = localStorage.getItem(profileKey);
+      if (!stored && !profile?.id) {
+        stored = localStorage.getItem("zenith_forge_lesson_level");
+      }
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 100) return parsed;
+      }
+    } catch {}
+  }
+  return fromProfile || 1;
+}
+
+function readScopedGoal(profile: any, currentLevel: number): number {
+  if (typeof window !== "undefined") {
+    try {
+      const profileKey = getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profile?.id);
+      let stored = localStorage.getItem(profileKey);
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 100) {
+          return Math.max(parsed, Math.min(100, currentLevel + 1));
+        }
+      }
+    } catch {}
+  }
+  return Math.min(100, currentLevel + 1);
+}
+
 export function useForgeLessons() {
   const { activeProfile, updateProfile } = useSafeProfiles();
   const { preferences } = useSafePreferences();
   const { marketData } = useSafeData();
+  const activeProfileId = activeProfile?.id;
 
   // 1. Level detection with profile sync and local storage persistence
   const [forgeLevel, setForgeLevelState] = useState<number>(() => {
-    const fromProfile = detectProfileForgeLevel(activeProfile);
-    if (fromProfile > 1) return fromProfile;
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("zenith_forge_lesson_level");
-        if (stored) {
-          const parsed = parseInt(stored, 10);
-          if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 100) return parsed;
-        }
-      } catch {}
-    }
-    return 1;
+    return readScopedLevel(activeProfile);
+  });
+  const [targetGoalLevel, setTargetGoalLevelState] = useState<number>(() => {
+    return readScopedGoal(activeProfile, forgeLevel);
   });
 
   const profileSyncTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // When active profile loads/switches and has a set level, sync into forgeLevel
-  useEffect(() => {
-    const fromProfile = detectProfileForgeLevel(activeProfile);
-    if (fromProfile > 1) {
-      setForgeLevelState((prev) => (prev !== fromProfile ? fromProfile : prev));
-      setTargetGoalLevel((prev) => (prev <= fromProfile ? Math.min(100, fromProfile + 1) : prev));
-    }
-  }, [activeProfile]);
-
   const setForgeLevel = useCallback((lvl: number) => {
     const clamped = Math.max(1, Math.min(100, Math.floor(lvl)));
     setForgeLevelState(clamped);
-    setTargetGoalLevel((prev) => (prev <= clamped ? Math.min(100, clamped + 1) : prev));
+    setTargetGoalLevelState((prev) => (prev <= clamped ? Math.min(100, clamped + 1) : prev));
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("zenith_forge_lesson_level", String(clamped));
+        const key = getProfileStorageKey("zenith_forge_lesson_level", activeProfile?.id);
+        localStorage.setItem(key, String(clamped));
       } catch {}
     }
 
@@ -541,6 +577,17 @@ export function useForgeLessons() {
       }, 400);
     }
   }, [activeProfile, updateProfile]);
+
+  const setTargetGoalLevel = useCallback((lvl: number) => {
+    const clamped = Math.max(1, Math.min(100, Math.floor(lvl)));
+    setTargetGoalLevelState(clamped);
+    if (typeof window !== "undefined") {
+      try {
+        const key = getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, activeProfile?.id);
+        localStorage.setItem(key, String(clamped));
+      } catch {}
+    }
+  }, [activeProfile?.id]);
 
   useEffect(() => {
     return () => {
@@ -667,32 +714,21 @@ export function useForgeLessons() {
     return Math.min(MAX_OFFLINE_SECONDS, targetHours * 3600 + targetMinutes * 60);
   }, [targetHours, targetMinutes]);
 
-  // 4. Target Level Goal Estimator
-  const [targetGoalLevel, setTargetGoalLevel] = useState<number>(() => Math.min(100, forgeLevel + 1));
-
-  // 5. Search, Filter, Sort
+  // 4. Search, Filter, Sort
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<ForgeLessonCategory>("ALL");
   const [qualityFilter, setQualityFilter] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<ForgeLessonSort>("lowest_gold");
   const [showExpPerItem, setShowExpPerItem] = useState<boolean>(true);
 
-  // 6. Owned inventory state (with localStorage persistence)
+  // 5. Owned inventory state (with profile-scoped localStorage persistence)
   const [ownedMaterials, setOwnedMaterials] = useState<Record<string, number>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const stored = localStorage.getItem(FORGE_OWNED_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // fallback
-    }
-    return {};
+    return readScopedStorage<Record<string, number>>(FORGE_OWNED_STORAGE_KEY, activeProfile?.id, {});
   });
 
   const updateOwnedMaterial = useCallback((name: string, quantity: number) => {
     let nextState: Record<string, number> | null = null;
+    const profileId = activeProfile?.id;
     setOwnedMaterials((prev) => {
       const next = { ...prev };
       if (quantity <= 0) {
@@ -702,7 +738,8 @@ export function useForgeLessons() {
       }
       nextState = next;
       try {
-        localStorage.setItem(FORGE_OWNED_STORAGE_KEY, JSON.stringify(next));
+        const key = getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileId);
+        localStorage.setItem(key, JSON.stringify(next));
       } catch {
         // quota exceeded guard
       }
@@ -710,50 +747,45 @@ export function useForgeLessons() {
     });
 
     if (typeof window !== "undefined" && nextState) {
-      const payload = nextState;
+      const payload = { profileId: profileId || null, materials: nextState };
       queueMicrotask(() => {
         window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: payload }));
       });
     }
-  }, []);
+  }, [activeProfile?.id]);
 
   const clearOwnedMaterials = useCallback(() => {
+    const profileId = activeProfile?.id;
     setOwnedMaterials({});
     try {
-      localStorage.removeItem(FORGE_OWNED_STORAGE_KEY);
+      const key = getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileId);
+      localStorage.removeItem(key);
     } catch {
       // guard
     }
     if (typeof window !== "undefined") {
+      const payload = { profileId: profileId || null, materials: {} };
       queueMicrotask(() => {
-        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: {} }));
+        window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: payload }));
       });
     }
-  }, []);
+  }, [activeProfile?.id]);
 
-  // 7. Active Lesson Queue state (materialName -> quantity) with persistence
+  // 6. Active Lesson Queue state (materialName -> quantity) with persistence
   const [lessonQueue, setLessonQueue] = useState<Record<string, number>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const stored = localStorage.getItem(FORGE_LESSON_QUEUE_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // fallback
-    }
-    return {};
+    return readScopedStorage<Record<string, number>>(FORGE_LESSON_QUEUE_STORAGE_KEY, activeProfile?.id, {});
   });
 
   const [lastReplacedQueue, setLastReplacedQueue] = useState<Record<string, number> | null>(null);
 
   const persistQueue = useCallback((next: Record<string, number>) => {
     try {
-      localStorage.setItem(FORGE_LESSON_QUEUE_STORAGE_KEY, JSON.stringify(next));
+      const key = getProfileStorageKey(FORGE_LESSON_QUEUE_STORAGE_KEY, activeProfile?.id);
+      localStorage.setItem(key, JSON.stringify(next));
     } catch {
       // guard
     }
-  }, []);
+  }, [activeProfile?.id]);
 
   const undoFillQueue = useCallback(() => {
     if (!lastReplacedQueue) return;
@@ -762,17 +794,49 @@ export function useForgeLessons() {
     setLastReplacedQueue(null);
   }, [lastReplacedQueue, persistQueue]);
 
+  // Profile switch synchronization: cleanly swap all local states to the active profile
+  useEffect(() => {
+    const newLevel = readScopedLevel(activeProfile);
+    setForgeLevelState(newLevel);
+
+    const newGoal = readScopedGoal(activeProfile, newLevel);
+    setTargetGoalLevelState(newGoal);
+
+    const profileQueue = readScopedStorage<Record<string, number>>(
+      FORGE_LESSON_QUEUE_STORAGE_KEY,
+      activeProfileId,
+      {}
+    );
+    setLessonQueue(profileQueue);
+    setLastReplacedQueue(null);
+
+    const profileOwned = readScopedStorage<Record<string, number>>(
+      FORGE_OWNED_STORAGE_KEY,
+      activeProfileId,
+      {}
+    );
+    setOwnedMaterials(profileOwned);
+
+    const dur = getInitialDuration();
+    setTargetHoursState(dur.hours);
+    setTargetMinutesState(dur.minutes);
+  }, [activeProfileId, activeProfile, getInitialDuration]);
+
   // Cross-tab storage and in-memory event synchronization
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const profileId = activeProfile?.id;
+    const ownedKey = getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileId);
+    const queueKey = getProfileStorageKey(FORGE_LESSON_QUEUE_STORAGE_KEY, profileId);
+
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === FORGE_OWNED_STORAGE_KEY && e.newValue) {
+      if ((e.key === ownedKey || (!profileId && e.key === FORGE_OWNED_STORAGE_KEY)) && e.newValue) {
         try {
           setOwnedMaterials(JSON.parse(e.newValue));
         } catch {
           // ignore
         }
-      } else if (e.key === FORGE_LESSON_QUEUE_STORAGE_KEY && e.newValue) {
+      } else if ((e.key === queueKey || (!profileId && e.key === FORGE_LESSON_QUEUE_STORAGE_KEY)) && e.newValue) {
         try {
           setLessonQueue(JSON.parse(e.newValue));
         } catch {
@@ -782,19 +846,41 @@ export function useForgeLessons() {
     };
 
     const handleSync = (e: Event) => {
-      const customEvent = e as CustomEvent<Record<string, number>>;
+      const customEvent = e as CustomEvent<
+        | { profileId?: string | null; materials: Record<string, number> }
+        | Record<string, number>
+      >;
       if (!customEvent.detail) return;
-      const incoming = customEvent.detail;
+      const detail = customEvent.detail;
+      const incomingProfileId =
+        typeof detail === "object" && detail !== null && "profileId" in detail
+          ? (detail as any).profileId
+          : undefined;
+
+      let incomingMaterials: Record<string, number> = {};
+      if (typeof detail === "object" && detail !== null) {
+        if ("materials" in detail && typeof (detail as any).materials === "object" && (detail as any).materials !== null) {
+          incomingMaterials = (detail as any).materials;
+        } else {
+          incomingMaterials = detail as Record<string, number>;
+        }
+      }
+
+      // Ignore sync events belonging to a different profile
+      if (incomingProfileId !== undefined && incomingProfileId !== (profileId || null)) {
+        return;
+      }
+
       setOwnedMaterials((prev) => {
         const prevKeys = Object.keys(prev);
-        const incomingKeys = Object.keys(incoming);
+        const incomingKeys = Object.keys(incomingMaterials);
         if (
           prevKeys.length === incomingKeys.length &&
-          prevKeys.every((k) => prev[k] === incoming[k])
+          prevKeys.every((k) => prev[k] === incomingMaterials[k])
         ) {
           return prev;
         }
-        return incoming;
+        return incomingMaterials;
       });
     };
 
@@ -804,7 +890,7 @@ export function useForgeLessons() {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener(FORGE_OWNED_SYNC_EVENT, handleSync);
     };
-  }, []);
+  }, [activeProfile?.id]);
 
   const addToQueue = useCallback((name: string, count: number = 1) => {
     setLessonQueue((prev) => {
@@ -816,6 +902,21 @@ export function useForgeLessons() {
         delete next[name];
       } else {
         next = { ...prev, [name]: nextCount };
+      }
+      persistQueue(next);
+      return next;
+    });
+  }, [persistQueue]);
+
+  const addBatchToQueue = useCallback((batch: Record<string, number>) => {
+    setLessonQueue((prev) => {
+      const next = { ...prev };
+      for (const [name, count] of Object.entries(batch)) {
+        if (count <= 0) {
+          delete next[name];
+        } else {
+          next[name] = (next[name] || 0) + count;
+        }
       }
       persistQueue(next);
       return next;
@@ -853,7 +954,8 @@ export function useForgeLessons() {
   // 8. Calculate materials catalog with live prices and efficiency
   const allCalculatedMaterials = useMemo<CalculatedLessonMaterial[]>(() => {
     return (rawMaterials as ForgeLessonMaterial[]).map((m) => {
-      const livePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : m.marketPrice;
+      const safePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : 0;
+      const livePrice = safePrice > 0 ? safePrice : m.marketPrice;
       const baseCalc = calculateLessonMaterialEfficiency(m, forgeLevel, totalBuffMultiplier, livePrice);
       const adjustedTimeSeconds = Math.max(1, Math.round(baseCalc.timeSeconds / totalEffMultiplier));
       const adjustedExpPerSec = adjustedTimeSeconds > 0 ? Number((baseCalc.effectiveExp / adjustedTimeSeconds).toFixed(3)) : 0;
@@ -1052,6 +1154,7 @@ export function useForgeLessons() {
     lastReplacedQueue,
     undoFillQueue,
     addToQueue,
+    addBatchToQueue,
     setQueueQuantity,
     removeFromQueue,
     clearQueue,
@@ -1060,6 +1163,7 @@ export function useForgeLessons() {
 
     isCursedOrForsaken,
     profileClassName,
+    activeProfile,
     allCalculatedMaterials,
     visibleMaterials,
     sessionSummary,

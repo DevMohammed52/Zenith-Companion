@@ -6,6 +6,7 @@ import { useItemModal } from "@/context/ItemModalContext";
 import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
   buildForgeRecipeOptions,
   calculateForgePlanner,
@@ -90,10 +91,21 @@ export function useForgeState(): ForgeState {
     [allItemsDb, draft.lines, draft.ownedMaterials, marketData, preferences.customPrices, preferences.membership, profileBarteringBoost, recipes],
   );
 
+  // Load profile-specific planner draft when activeProfile switches
   useEffect(() => {
+    const profileId = activeProfile?.id;
     try {
-      const stored = localStorage.getItem(FORGE_PLANNER_STORAGE_KEY);
-      const storedOwned = localStorage.getItem(FORGE_OWNED_STORAGE_KEY);
+      const profilePlannerKey = getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, profileId);
+      const profileOwnedKey = getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileId);
+      let stored = localStorage.getItem(profilePlannerKey);
+      let storedOwned = localStorage.getItem(profileOwnedKey);
+      if (!stored) {
+        // Fallback to legacy global key on first load
+        stored = localStorage.getItem(FORGE_PLANNER_STORAGE_KEY);
+      }
+      if (!storedOwned) {
+        storedOwned = localStorage.getItem(FORGE_OWNED_STORAGE_KEY);
+      }
       const parsed = stored ? (JSON.parse(stored) as Partial<PlannerDraft>) : null;
       const owned = storedOwned ? JSON.parse(storedOwned) : parsed?.ownedMaterials;
       setDraft({
@@ -105,14 +117,38 @@ export function useForgeState(): ForgeState {
     } finally {
       setHasLoaded(true);
     }
-  }, []);
+  }, [activeProfile?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const profileId = activeProfile?.id;
     const handleSync = (e: Event) => {
-      const customEvent = e as CustomEvent<Record<string, number>>;
+      const customEvent = e as CustomEvent<
+        | { profileId?: string | null; materials: Record<string, number> }
+        | Record<string, number>
+      >;
       if (!customEvent.detail) return;
-      const sanitized = sanitizeForgeOwnedMaterials(customEvent.detail);
+      const detail = customEvent.detail;
+      const incomingProfileId =
+        typeof detail === "object" && detail !== null && "profileId" in detail
+          ? (detail as any).profileId
+          : undefined;
+
+      let materials: Record<string, number> = {};
+      if (typeof detail === "object" && detail !== null) {
+        if ("materials" in detail && typeof (detail as any).materials === "object" && (detail as any).materials !== null) {
+          materials = (detail as any).materials;
+        } else {
+          materials = detail as Record<string, number>;
+        }
+      }
+
+      // Ignore sync events belonging to a different profile
+      if (incomingProfileId !== undefined && incomingProfileId !== (profileId || null)) {
+        return;
+      }
+
+      const sanitized = sanitizeForgeOwnedMaterials(materials);
       setDraft((current) => {
         const prevKeys = Object.keys(current.ownedMaterials);
         const nextKeys = Object.keys(sanitized);
@@ -130,19 +166,20 @@ export function useForgeState(): ForgeState {
     };
     window.addEventListener(FORGE_OWNED_SYNC_EVENT, handleSync);
     return () => window.removeEventListener(FORGE_OWNED_SYNC_EVENT, handleSync);
-  }, []);
+  }, [activeProfile?.id]);
 
   useEffect(() => {
     if (!hasLoaded) return;
     try {
-      localStorage.setItem(FORGE_PLANNER_STORAGE_KEY, JSON.stringify({
+      const profilePlannerKey = getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, activeProfile?.id);
+      localStorage.setItem(profilePlannerKey, JSON.stringify({
         lines: sanitizeForgePlannerLines(draft.lines),
         ownedMaterials: sanitizeForgeOwnedMaterials(draft.ownedMaterials),
       }));
     } catch {
       // Storage quota exceeded or disabled in private browsing
     }
-  }, [draft, hasLoaded]);
+  }, [draft, hasLoaded, activeProfile?.id]);
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -245,6 +282,7 @@ export function useForgeState(): ForgeState {
 
   const setOwnedMaterial = (name: string, value: string) => {
     const clean = sanitizeForgeQuantity(value);
+    const profileId = activeProfile?.id;
     let nextOwned: Record<string, number> | null = null;
     setDraft((current) => {
       const next = { ...current.ownedMaterials };
@@ -252,7 +290,8 @@ export function useForgeState(): ForgeState {
       else next[name] = Number(clean);
       nextOwned = next;
       try {
-        localStorage.setItem(FORGE_OWNED_STORAGE_KEY, JSON.stringify(next));
+        const profileOwnedKey = getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileId);
+        localStorage.setItem(profileOwnedKey, JSON.stringify(next));
       } catch {
         // storage guard
       }
@@ -260,7 +299,7 @@ export function useForgeState(): ForgeState {
     });
 
     if (typeof window !== "undefined" && nextOwned) {
-      const payload = nextOwned;
+      const payload = { profileId: profileId || null, materials: nextOwned };
       queueMicrotask(() => {
         window.dispatchEvent(new CustomEvent(FORGE_OWNED_SYNC_EVENT, { detail: payload }));
       });

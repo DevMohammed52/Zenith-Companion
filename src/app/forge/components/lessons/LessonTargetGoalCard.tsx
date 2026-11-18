@@ -33,6 +33,7 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
     setTargetGoalLevel,
     goalEstimate,
     addToQueue,
+    addBatchToQueue,
   } = lessons;
 
   const {
@@ -59,9 +60,19 @@ export function LessonTargetGoalCard({ lessons }: { lessons: UseForgeLessonsRetu
   }, [targetGoalLevel]);
 
   const applyPathToQueue = (steps: GoalProgressionStep[]) => {
+    const batch: Record<string, number> = {};
     for (const step of steps) {
       if (step.material?.name && step.quantityNeeded > 0) {
-        addToQueue(step.material.name, step.quantityNeeded);
+        batch[step.material.name] = (batch[step.material.name] || 0) + step.quantityNeeded;
+      }
+    }
+    if (Object.keys(batch).length > 0) {
+      if (typeof addBatchToQueue === "function") {
+        addBatchToQueue(batch);
+      } else {
+        for (const [name, qty] of Object.entries(batch)) {
+          addToQueue(name, qty);
+        }
       }
     }
   };

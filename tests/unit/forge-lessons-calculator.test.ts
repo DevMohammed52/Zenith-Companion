@@ -872,4 +872,19 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     const cursedWithMember = calculateLessonMaterialEfficiency(coal, 41, 0.65);
     expect(cursedWithMember.effectiveExp).toBeCloseTo(stdBaseline.effectiveExp * 0.65, 1);
   });
+
+  it("verifies forge storage keys isolate per profile scope", async () => {
+    const { getProfileStorageKey } = await import("@/lib/profile-storage");
+    const { FORGE_OWNED_STORAGE_KEY, FORGE_LESSON_QUEUE_STORAGE_KEY, FORGE_LESSON_GOAL_STORAGE_KEY } = await import("@/app/forge/hooks/useForgeLessons");
+    const { FORGE_PLANNER_STORAGE_KEY } = await import("@/app/forge/types");
+
+    const profileA = "saqr_alt_1";
+    const profileB = "main_char_2";
+
+    expect(getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileA)).toBe("zenith_forge_owned_materials_v1__profile__saqr_alt_1");
+    expect(getProfileStorageKey(FORGE_OWNED_STORAGE_KEY, profileB)).toBe("zenith_forge_owned_materials_v1__profile__main_char_2");
+    expect(getProfileStorageKey(FORGE_LESSON_QUEUE_STORAGE_KEY, profileA)).not.toEqual(getProfileStorageKey(FORGE_LESSON_QUEUE_STORAGE_KEY, profileB));
+    expect(getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, profileA)).not.toEqual(getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, profileB));
+    expect(getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profileA)).not.toEqual(getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profileB));
+  });
 });
