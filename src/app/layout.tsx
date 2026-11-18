@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -149,7 +150,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: PRE_PAINT_INIT_SCRIPT }} />
+        <Script
+          id="zenith-pre-paint-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: PRE_PAINT_INIT_SCRIPT }}
+        />
       </head>
       <body>
         <script
