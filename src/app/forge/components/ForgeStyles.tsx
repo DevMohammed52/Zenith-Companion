@@ -1730,11 +1730,15 @@ export function ForgeStyles() {
           align-items: center;
           gap: 0.5rem;
           flex-wrap: wrap;
+          min-width: 0;
+          max-width: 100%;
         }
         .forge-page .target-direct-group {
           display: flex;
           align-items: center;
           gap: 0.4rem;
+          min-width: 0;
+          max-width: 100%;
         }
         .forge-page .target-label {
           font-size: 0.8rem;
@@ -1923,6 +1927,7 @@ export function ForgeStyles() {
         }
         .forge-page .bracket-material-name {
           flex: 1;
+          min-width: 0;
           color: var(--text-primary);
           font-weight: 700;
           overflow: hidden;
@@ -4122,14 +4127,39 @@ export function ForgeStyles() {
             align-items: flex-start;
             gap: 0.5rem;
           }
-          .forge-page .target-stepper-wrap {
+          .forge-page .goal-card-topbar {
             flex-direction: column;
             align-items: stretch;
+            gap: 0.65rem;
+          }
+          .forge-page .target-stepper-wrap {
             width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
           }
           .forge-page .target-direct-group {
             width: 100%;
+            display: flex;
+            align-items: center;
             justify-content: space-between;
+            gap: 0.5rem;
+            min-width: 0;
+            box-sizing: border-box;
+          }
+          .forge-page .target-direct-group .target-label {
+            flex-shrink: 0;
+            white-space: nowrap;
+          }
+          .forge-page .target-direct-group .stepper-wrap.compact {
+            flex: 1;
+            width: auto;
+            min-width: 0;
+            max-width: 200px;
+          }
+          .forge-page .bracket-item {
+            max-width: 100%;
+            min-width: 0;
           }
           .forge-page .target-milestones {
             width: 100%;

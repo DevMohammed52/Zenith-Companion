@@ -604,6 +604,26 @@ export function useForgeLessons() {
     return detectProfileForgeXp(activeProfile);
   }, [activeProfile]);
 
+  const profileForgeLevel = useMemo(() => {
+    return detectProfileForgeLevel(activeProfile);
+  }, [activeProfile]);
+
+  // Extract progress into current level from cumulative lifetime XP
+  const currentLevelXp = useMemo(() => {
+    if (!activeProfile || forgeLevel !== profileForgeLevel) return 0;
+    const rawXp = detectProfileForgeXp(activeProfile);
+    if (!rawXp || rawXp <= 0) return 0;
+
+    const currentLvlEntry = xpTable[String(forgeLevel)];
+    if (!currentLvlEntry) return 0;
+
+    if (rawXp >= currentLvlEntry.totalExpToReach) {
+      const intoLevel = rawXp - currentLvlEntry.totalExpToReach;
+      return Math.min(Math.max(0, currentLvlEntry.expForNextLevel - 1), intoLevel);
+    }
+    return Math.min(Math.max(0, currentLvlEntry.expForNextLevel - 1), rawXp);
+  }, [activeProfile, forgeLevel, profileForgeLevel]);
+
   const forgeAscensionLevel = useMemo(() => {
     return detectProfileForgeAscension(activeProfile);
   }, [activeProfile]);
@@ -1031,8 +1051,8 @@ export function useForgeLessons() {
   }, [lessonQueue, materialsByName]);
 
   const sessionSummary = useMemo<LessonSessionSummary>(() => {
-    return calculateSessionSummary(queuedItems, forgeLevel, detectedXp);
-  }, [queuedItems, forgeLevel, detectedXp]);
+    return calculateSessionSummary(queuedItems, forgeLevel, currentLevelXp);
+  }, [queuedItems, forgeLevel, currentLevelXp]);
 
   // 11. Quick action: Fill session duration with a single material
   const fillSessionWithMaterial = useCallback((materialName: string) => {
@@ -1100,11 +1120,11 @@ export function useForgeLessons() {
       targetGoalLevel,
       rawMaterials as ForgeLessonMaterial[],
       totalBuffMultiplier,
-      detectedXp,
+      currentLevelXp,
       marketData,
       totalEffMultiplier
     );
-  }, [forgeLevel, targetGoalLevel, totalBuffMultiplier, detectedXp, marketData, totalEffMultiplier]);
+  }, [forgeLevel, targetGoalLevel, totalBuffMultiplier, currentLevelXp, marketData, totalEffMultiplier]);
 
   return {
     forgeLevel,
@@ -1170,6 +1190,7 @@ export function useForgeLessons() {
     allCalculatedMaterials,
     visibleMaterials,
     sessionSummary,
+    currentLevelXp,
   };
 }
 

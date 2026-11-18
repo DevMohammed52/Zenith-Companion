@@ -895,4 +895,19 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, profileA)).not.toEqual(getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, profileB));
     expect(getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profileA)).not.toEqual(getProfileStorageKey(FORGE_LESSON_GOAL_STORAGE_KEY, profileB));
   });
+
+  it("correctly calculates EXP needed and routes when character has high level and into-level progress", () => {
+    // Mere: Level 83 with cumulative 3,515,774 XP (313,332 XP into Level 83)
+    const intoLevelXp = 313332;
+
+    const goal83to90 = calculateGoalEstimate(83, 90, rawMaterials as ForgeLessonMaterial[], 1.0, intoLevelXp);
+    expect(goal83to90.expNeeded).toBe(2737988);
+    expect(goal83to90.cheapestSteps!.length).toBeGreaterThan(0);
+    expect(goal83to90.bestSteps!.length).toBeGreaterThan(0);
+    expect(goal83to90.fastestSteps!.length).toBeGreaterThan(0);
+
+    const goal83to91 = calculateGoalEstimate(83, 91, rawMaterials as ForgeLessonMaterial[], 1.0, intoLevelXp);
+    expect(goal83to91.expNeeded).toBe(3366238);
+    expect(goal83to91.cheapestSteps!.length).toBeGreaterThan(0);
+  });
 });
