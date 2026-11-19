@@ -1634,7 +1634,7 @@ async function json(response) {
       });
     }
     if (path.endsWith("/museum")) {
-      const isAlt = path.includes("altHash");
+      const isAlt = path.includes("altHash") || path.includes("dokidexhash");
       return Response.json({
         endpoint_updates_at: "2026-05-15T00:00:00.000Z",
         items: [{
@@ -1688,13 +1688,17 @@ async function json(response) {
     assert.equal(typeof body.result.characters[1].draft.importSource.characterHashDigest, "string");
     assert.equal(body.result.characters[1].draft.importSource.characterHashDigest.length, 64);
     assert.equal(body.result.characters[1].draft.levels.combat, 102);
-    assert.equal(body.result.characters[1].draft.museum.items[0].name, "Root Apron");
+    assert.equal(body.result.characters[1].draft.museum.items[0].name, "Alt Familiar");
+    assert.equal(body.result.characters[1].draft.museum.sourceHashTail, "ltHash123456");
     assert.equal(body.result.characters[1].draft.importSource.importedSections.includes("museum"), true);
     assert.equal(body.result.characters[2].draft.name, "DokiDex");
     assert.equal(body.result.characters[2].draft.importSource.characterHashTail, "dokidexhash");
     assert.equal(typeof body.result.characters[2].draft.importSource.characterHashDigest, "string");
     assert.equal(body.result.characters[2].draft.importSource.characterHashDigest.length, 64);
     assert.equal(body.result.characters[2].draft.levels.combat, 101);
+    assert.equal(body.result.characters[2].draft.museum.items[0].name, "Alt Familiar");
+    assert.equal(body.result.characters[2].draft.museum.sourceHashTail, "dokidexhash");
+    assert.equal(body.result.characters[2].draft.importSource.importedSections.includes("museum"), true);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -3546,7 +3550,8 @@ async function json(response) {
     assert.equal(parsedResult.characters[0].draft.name, "Root Knight");
     assert.equal(parsedResult.characters[0].draft.museum.items[0].name, "Ancient Relic");
     assert.equal(parsedResult.characters[1].draft.name, "Alt Hero");
-    assert.equal(parsedResult.characters[1].draft.museum.items[0].name, "Ancient Relic");
+    assert.equal(parsedResult.characters[1].draft.museum.sourceHashTail, "tHeroHash123");
+    assert.notEqual(parsedResult.characters[1].draft.museum.sourceHashTail, parsedResult.characters[0].draft.museum.sourceHashTail);
     assert.equal(parsedResult.characters[1].draft.importSource.importedSections.includes("museum"), true);
   } finally {
     globalThis.fetch = originalFetch;
@@ -3718,17 +3723,21 @@ async function json(response) {
     const alt2MuseumCalls = altUrls.filter((u) => u.includes("AltTwoHash789") && u.includes("/museum"));
 
     assert.equal(rootMuseumCalls.length, 1, "Root museum must be fetched exactly once");
-    assert.equal(alt1MuseumCalls.length, 0, "Alt 1 museum must NOT be queried (0 redundant calls)");
-    assert.equal(alt2MuseumCalls.length, 0, "Alt 2 museum must NOT be queried (0 redundant calls)");
+    assert.equal(alt1MuseumCalls.length, 1, "Alt 1 museum must be queried for its own personal museum");
+    assert.equal(alt2MuseumCalls.length, 1, "Alt 2 museum must be queried for its own personal museum");
 
-    // Both alts must have the shared museum attached
+    // Alts must have their own personal museum attached, with distinct hash tails
     const statusRes = await handleRequest(new Request(`https://worker.test/profile-import/status/${jobId}`), e);
     const statusBody = await json(statusRes);
     assert.equal(statusBody.status, "done");
     assert.equal(statusBody.result.characters.length, 3);
     assert.equal(statusBody.result.characters[0].draft.museum.items[0].name, "Guild Trophy");
     assert.equal(statusBody.result.characters[1].draft.museum.items[0].name, "Guild Trophy");
+    assert.equal(statusBody.result.characters[1].draft.museum.sourceHashTail, "AltOneHash789".slice(-12));
+    assert.notEqual(statusBody.result.characters[1].draft.museum.sourceHashTail, statusBody.result.characters[0].draft.museum.sourceHashTail);
     assert.equal(statusBody.result.characters[2].draft.museum.items[0].name, "Guild Trophy");
+    assert.equal(statusBody.result.characters[2].draft.museum.sourceHashTail, "AltTwoHash789".slice(-12));
+    assert.notEqual(statusBody.result.characters[2].draft.museum.sourceHashTail, statusBody.result.characters[0].draft.museum.sourceHashTail);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -3909,6 +3918,7 @@ async function json(response) {
     assert.equal(finalRes.status, "complete");
     assert.equal(finalRes.publicResult.characters[0].draft.museum.status, "private");
     assert.equal(finalRes.publicResult.characters[1].draft.museum.status, "private");
+    assert.equal(finalRes.publicResult.characters[1].draft.museum.sourceHashTail, "PrivateAltHash".slice(-12));
   } finally {
     globalThis.fetch = originalFetch;
   }

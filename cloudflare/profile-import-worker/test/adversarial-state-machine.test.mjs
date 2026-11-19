@@ -292,7 +292,9 @@ console.log("\n[CHALLENGE 1] Testing 4-Step Job Advancement & Multi-Alt Chunking
 
     for (let i = 1; i <= 5; i++) {
       assert.equal(finalResult.characters[i].role, "visible_alt");
+      assert.ok(finalResult.characters[i].draft.museum);
       assert.equal(finalResult.characters[i].draft.museum.items.length, 2);
+      assert.notEqual(finalResult.characters[i].draft.museum.sourceHashTail, finalResult.characters[0].draft.museum.sourceHashTail);
       assert.ok(finalResult.characters[i].draft.importSource.importedSections.includes("museum"));
     }
     console.log("  ✓ Multi-step job moved through all 4 steps and 5 alts chunked seamlessly on Real SQLite D1!");
@@ -489,9 +491,9 @@ console.log("\n[CHALLENGE 3] Testing Crashed Isolate Resumption & Expired Lease 
 }
 
 // ============================================================================
-// CHALLENGE 4: Alt Character Import with 0 Redundant Museum Queries
+// CHALLENGE 4: Alt Character Import with Character-Specific Museum Queries
 // ============================================================================
-console.log("\n[CHALLENGE 4] Testing Alt Character Import Zero-Redundant Museum Queries...");
+console.log("\n[CHALLENGE 4] Testing Alt Character Import Character-Specific Museum Queries...");
 {
   const env = makeRealEnv();
   const urls = [];
@@ -523,9 +525,13 @@ console.log("\n[CHALLENGE 4] Testing Alt Character Import Zero-Redundant Museum 
       });
     }
     if (pathName.endsWith("/museum")) {
+      const isAlt1 = pathName.includes("Alt1");
+      const isAlt2 = pathName.includes("Alt2");
+      const isAlt3 = pathName.includes("Alt3");
+      const relicName = isAlt1 ? "Alt 1 Relic" : isAlt2 ? "Alt 2 Relic" : isAlt3 ? "Alt 3 Relic" : "Ancient Relic A";
       return Response.json({
         items: [
-          { id: 9001, name: "Ancient Relic A", category: "COLLECTIBLES" },
+          { id: 9001, name: relicName, category: "COLLECTIBLES" },
           { id: 9002, name: "Ancient Relic B", category: "COLLECTIBLES" },
         ],
         pagination: { current_page: 1, last_page: 1, per_page: 25, total: 2 },
@@ -562,9 +568,9 @@ console.log("\n[CHALLENGE 4] Testing Alt Character Import Zero-Redundant Museum 
     const alt3MuseumQueries = urls.filter((u) => u.includes("Alt3Hash") && u.includes("/museum"));
 
     assert.equal(rootMuseumQueries.length, 1, `Root museum must be queried exactly once. Got: ${rootMuseumQueries.length}`);
-    assert.equal(alt1MuseumQueries.length, 0, `Alt 1 museum queries must be EXACTLY 0. Got: ${alt1MuseumQueries.length}`);
-    assert.equal(alt2MuseumQueries.length, 0, `Alt 2 museum queries must be EXACTLY 0. Got: ${alt2MuseumQueries.length}`);
-    assert.equal(alt3MuseumQueries.length, 0, `Alt 3 museum queries must be EXACTLY 0. Got: ${alt3MuseumQueries.length}`);
+    assert.equal(alt1MuseumQueries.length, 1, `Alt 1 museum must be queried exactly once. Got: ${alt1MuseumQueries.length}`);
+    assert.equal(alt2MuseumQueries.length, 1, `Alt 2 museum must be queried exactly once. Got: ${alt2MuseumQueries.length}`);
+    assert.equal(alt3MuseumQueries.length, 1, `Alt 3 museum must be queried exactly once. Got: ${alt3MuseumQueries.length}`);
 
     // Check payload in status response
     const statusRes = await handleRequest(new Request(`https://worker.test/profile-import/status/${jobId}`), env);
@@ -572,15 +578,28 @@ console.log("\n[CHALLENGE 4] Testing Alt Character Import Zero-Redundant Museum 
     assert.equal(statusBody.status, "done");
     assert.equal(statusBody.result.characters.length, 4);
 
-    for (let i = 0; i < 4; i++) {
-      const char = statusBody.result.characters[i];
-      assert.equal(char.draft.museum.items.length, 2, `Character ${i} (${char.role}) must have 2 museum items attached!`);
-      assert.equal(char.draft.museum.items[0].name, "Ancient Relic A");
-      assert.equal(char.draft.museum.items[1].name, "Ancient Relic B");
-      assert.ok(char.draft.importSource.importedSections.includes("museum"), `Character ${i} must have 'museum' in importedSections`);
-    }
+    const rootChar = statusBody.result.characters[0];
+    assert.equal(rootChar.draft.museum.items.length, 2, "Root character must have 2 museum items attached!");
+    assert.equal(rootChar.draft.museum.items[0].name, "Ancient Relic A");
+    assert.equal(rootChar.draft.museum.items[1].name, "Ancient Relic B");
+    assert.ok(rootChar.draft.importSource.importedSections.includes("museum"));
 
-    console.log("  ✓ Alt museum queries confirmed: EXACTLY 0 redundant museum queries for 3 alts, all alts received shared museum items!");
+    const alt1 = statusBody.result.characters[1];
+    assert.equal(alt1.draft.museum.items[0].name, "Alt 1 Relic", "Alt 1 must have its own museum items!");
+    assert.equal(alt1.draft.museum.sourceHashTail, "Alt1Hash".slice(-12));
+    assert.ok(alt1.draft.importSource.importedSections.includes("museum"));
+
+    const alt2 = statusBody.result.characters[2];
+    assert.equal(alt2.draft.museum.items[0].name, "Alt 2 Relic", "Alt 2 must have its own museum items!");
+    assert.equal(alt2.draft.museum.sourceHashTail, "Alt2Hash".slice(-12));
+    assert.ok(alt2.draft.importSource.importedSections.includes("museum"));
+
+    const alt3 = statusBody.result.characters[3];
+    assert.equal(alt3.draft.museum.items[0].name, "Alt 3 Relic", "Alt 3 must have its own museum items!");
+    assert.equal(alt3.draft.museum.sourceHashTail, "Alt3Hash".slice(-12));
+    assert.ok(alt3.draft.importSource.importedSections.includes("museum"));
+
+    console.log("  ✓ Character-specific alt museum queries confirmed: each character queries and attaches its own genuine museum!");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -687,7 +706,8 @@ console.log("\n[CHALLENGE 5] Testing Boundary Conditions (0 Alts, Private Museum
     assert.equal(finalStep.status, "complete");
     assert.equal(finalStep.publicResult.characters[0].draft.museum.status, "private");
     assert.equal(finalStep.publicResult.characters[1].draft.museum.status, "private");
-    console.log("  ✓ Private museum (403) attaches status: 'private' to all characters without failing job!");
+    assert.equal(finalStep.publicResult.characters[1].draft.museum.sourceHashTail, "PrivateAltHash".slice(-12));
+    console.log("  ✓ Private museum (403) attaches status: 'private' to root character without failing job!");
   } finally {
     globalThis.fetch = originalFetch;
   }
