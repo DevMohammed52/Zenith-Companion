@@ -22,7 +22,7 @@
 }
 
 .heroIntro {
-  background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.012));
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-left: 3px solid color-mix(in srgb, var(--text-accent), transparent 36%);
   border-radius: 8px;
@@ -434,7 +434,7 @@
 .toolField select,
 .numberField input,
 .searchBox input {
-  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-main);
@@ -448,16 +448,11 @@
 .commandBar select,
 .toolField select {
   appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
-    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%),
-    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012));
-  background-position:
-    calc(100% - 16px) 50%,
-    calc(100% - 11px) 50%,
-    0 0;
+  background-color: var(--bg-base);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
   background-repeat: no-repeat;
-  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-size: 14px;
   padding: 0 2.2rem 0 0.65rem;
 }
 
@@ -471,10 +466,7 @@
 
 .commandBar select:focus,
 .toolField select:focus {
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--text-accent) 50%),
-    linear-gradient(135deg, var(--text-accent) 50%, transparent 50%),
-    linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.016));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f5b041' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .toolField {
@@ -521,7 +513,7 @@
 
 .toolTrigger {
   align-items: center;
-  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-main);
@@ -539,7 +531,7 @@
 
 .compactTrigger {
   align-items: center;
-  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-main);
@@ -802,7 +794,7 @@
 
 .searchBox {
   align-items: center;
-  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-muted);
@@ -1336,9 +1328,7 @@
 }
 
 .mobileResultCard {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.014)),
-    var(--bg-panel);
+  background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   color: inherit;
@@ -2134,7 +2124,7 @@
 
 .scenarioInput input,
 .targetProfitField input {
-  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-main);
