@@ -22,10 +22,10 @@
   ```
 * **Production Build Check:** For layout or metadata updates, ensure `npm run build` succeeds cleanly.
 
-## 5. Page Decomposition & Modularization Backlog (18 Remaining)
+## 5. Page Decomposition & Modularization Backlog (16 Remaining)
 *Goal: Decompose monolithic God Pages into modular feature components under `src/app/<route>/components/` and custom hooks under `src/app/<route>/hooks/`, reducing `page.tsx` to an orchestrator (< 200 lines) with strict layout containment (`CLS <= 0.1`) and game math invariance.*
 
-### Completed (7/25)
+### Completed & Archived (9/25)
 - [x] `/housing` (was 4,322 lines $\rightarrow$ 41 lines)
 - [x] `/bosses` (was 2,886 lines $\rightarrow$ 147 lines)
 - [x] `/dungeons` (was 3,131 lines $\rightarrow$ 157 lines)
@@ -33,13 +33,13 @@
 - [x] `/skill-profit` (was 2,525 lines $\rightarrow$ 125 lines)
 - [x] `/items` (was 2,309 lines $\rightarrow$ 142 lines)
 - [x] `/forge` (was 2,633 lines $\rightarrow$ 34 lines)
+- [x] `/combat` (archived to `archive/pages/combat/` — pending verified formula release)
+- [x] `/market-alerts` (archived to `archive/pages/market-alerts/` — vendor arbitrage preserved in `archive/lib/`)
 
-### Tier 1: Mega God Pages (> 2,000 Lines) — 5 Pages
-- [ ] `/market-alerts` (2,518 lines) — Live price triggers, volume filters, notification routing
+### Tier 1: Mega God Pages (> 2,000 Lines) — 3 Pages
 - [ ] `/lore` (2,480 lines) — Lore browser, thread connections, search indexing
 - [ ] `/map` (2,409 lines) — World locations, coordinate routing, travel time calculator
 - [ ] `/weather` (2,154 lines) — Live weather rotation, zone forecasts, enemy affinities
-- [ ] `/combat` (2,072 lines) — Battle simulator, kill time EV, gear damage formulas
 
 ### Tier 2: Heavy Pages (1,000 – 1,999 Lines) — 10 Pages
 - [ ] `/bis` (1,901 lines) — Best-in-slot gear solver, set bonuses, stat prioritization
