@@ -1083,10 +1083,10 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       <style jsx>{`
         .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
         .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(20px) saturate(1.08); animation: modalBackdropFade 0.2s ease-out both; }
-        .modal-card { position: relative; width: 100%; max-width: 1200px; max-height: min(90vh, 920px); background: radial-gradient(circle at 14% 0%, color-mix(in srgb, ${qColor}, transparent 86%), transparent 34%), linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012)), #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 90px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.03) inset; animation: modalCardReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .modal-card { position: relative; width: 100%; max-width: 1200px; max-height: min(90vh, 920px); background: #0d0e12; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 90px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.03) inset; animation: modalCardReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
         .modal-card:focus { outline: none; }
         
-        .modal-header-section { flex-shrink: 0; padding: 2rem 3rem; background: linear-gradient(to bottom, rgba(255,255,255,0.04), transparent); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .modal-header-section { flex-shrink: 0; padding: 2rem 3rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .header-flex { display: flex; align-items: center; justify-content: space-between; }
         .header-left { display: flex; align-items: center; gap: 1.5rem; min-width: 0; }
         .item-icon-large { width: 64px; height: 64px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.28); object-fit: contain; padding: 0.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 26px rgba(0,0,0,0.28); }
@@ -1111,7 +1111,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .bento-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.065); border-radius: 10px; padding: 1.5rem; display: flex; flex-direction: column; flex: 1 1 350px; min-width: 300px; min-height: 180px; }
         button.bento-card { color: inherit; font: inherit; text-align: left; width: auto; }
         .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
-        .skeleton-box { min-height: 168px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(90deg, rgba(255,255,255,0.035), rgba(255,255,255,0.075), rgba(255,255,255,0.035)); background-size: 220% 100%; animation: skeletonPulse 1.2s ease-in-out infinite; }
+        .skeleton-box { min-height: 168px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255, 255, 255, 0.04); animation: skeletonPulse 1.2s ease-in-out infinite; }
         .item-link-card { transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease; }
         .item-link-card:hover { transform: translateY(-2px); }
         .item-link-card:focus-visible,
@@ -1132,7 +1132,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.68); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
         .source-context-note { color: var(--text-muted); font-size: 0.8rem; font-weight: 650; line-height: 1.35; margin: -0.8rem 0 0.9rem; }
 
-        .market-card { flex: 2 1 600px; background: linear-gradient(135deg, rgba(56,189,248,0.08), transparent); }
+        .market-card { flex: 2 1 600px; background: rgba(56, 189, 248, 0.05); }
         .price-row { margin-bottom: 1.5rem; }
         .price-main { font-size: 3rem; font-weight: 900; color: #fff; letter-spacing: -0.04em; }
         .price-sub { font-size: 0.85rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -1168,7 +1168,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           margin-top: 0.1rem;
         }
 
-        .req-card { border-color: rgba(239, 68, 68, 0.2); background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent); flex: 1 1 300px; }
+        .req-card { border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); flex: 1 1 300px; }
         .req-pill { border-color: rgba(239, 68, 68, 0.2); }
         .req-pill .stat-val { color: #f87171; }
 
@@ -1183,11 +1183,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .description-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-style: italic; }
 
         .sell-advisor-card {
-          background:
-            radial-gradient(circle at top left, rgba(56,189,248,0.13), transparent 34%),
-            linear-gradient(135deg, rgba(74,222,128,0.06), transparent),
-            rgba(255,255,255,0.03);
-          border-color: rgba(56,189,248,0.22);
+          background: rgba(255, 255, 255, 0.03);
+          border-color: rgba(56, 189, 248, 0.22);
         }
 
         .sell-advisor-grid {
@@ -1255,17 +1252,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         }
 
         .lore-thread-card {
-          background:
-            linear-gradient(135deg, rgba(245,176,65,0.11), transparent),
-            rgba(255,255,255,0.03);
-          border-color: rgba(245,176,65,0.2);
+          background: rgba(255, 255, 255, 0.03);
+          border-color: rgba(245, 176, 65, 0.2);
         }
 
         .description-lore-card {
-          background:
-            linear-gradient(135deg, rgba(56,189,248,0.09), transparent),
-            rgba(255,255,255,0.025);
-          border-color: rgba(56,189,248,0.18);
+          background: rgba(255, 255, 255, 0.025);
+          border-color: rgba(56, 189, 248, 0.18);
         }
 
         .lore-thread-list {
@@ -1324,7 +1317,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .lore-confidence.inferred { background: rgba(245,176,65,0.13); color: #facc15; }
         .lore-confidence.theory { background: rgba(248,113,113,0.13); color: #fca5a5; }
         
-        .vendor-info-card { background: linear-gradient(135deg, rgba(251,191,36,0.1), transparent); border-color: rgba(251,191,36,0.2); }
+        .vendor-info-card { background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.2); }
         .vendor-message { font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,0.9); }
         .vendor-link { color: #fbbf24; text-decoration: underline; font-weight: 700; }
         .vendor-warning { margin-top: 0.75rem; color: #f87171; font-weight: 600; font-size: 0.9rem; }
@@ -1334,8 +1327,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
         .rest-badge.health { background: rgba(239, 68, 68, 0.15); color: #f87171; }
         .rest-badge.hunger { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
-        .yield-card { background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), transparent); border-color: rgba(168, 85, 247, 0.2); cursor: pointer; }
-        .yield-card:hover { border-color: rgba(168, 85, 247, 0.45); background: linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.02)); }
+        .yield-card { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.2); cursor: pointer; }
+        .yield-card:hover { border-color: rgba(168, 85, 247, 0.45); background: rgba(168, 85, 247, 0.14); }
         .yield-item-name { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
         .yield-details { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
         .yield-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
