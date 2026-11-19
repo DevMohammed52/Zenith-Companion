@@ -30,18 +30,18 @@ function titleForLevel(level: PublicDataFreshnessLevel) {
 
 function copyForLevel(level: PublicDataFreshnessLevel, ageLabel: string) {
   if (level === "running") {
-    return `A generated-data refresh is currently writing core public snapshots. Some pages may mix fresh and previous data until it finishes.`;
+    return "A data refresh is currently in progress. Some values may update while you browse.";
   }
   if (level === "delayed") {
-    return `Last generated-data sync was ${ageLabel}. Most pages still work, but fast-moving market and world state may lag.`;
+    return `Last data sync was ${ageLabel}. Most tools work normally, but fast-moving market prices may lag.`;
   }
   if (level === "stale") {
-    return `Last generated-data sync was ${ageLabel}. Confirm live market listings and game state before acting on planner results.`;
+    return `Last data sync was ${ageLabel}. Check live market listings in-game before committing to large crafts.`;
   }
   if (level === "old") {
-    return `Last generated-data sync was ${ageLabel}. Treat market, boss, pet, conquest, and location views as historical snapshots.`;
+    return `Last data sync was ${ageLabel}. Market prices, boss timers, and conquest data are older snapshots.`;
   }
-  return "Zenith could not verify scraper-status.json. Cached core public data may still load, but freshness is unknown.";
+  return "Could not check data freshness. Cached data may still load, but update status is unknown.";
 }
 
 export default function DataFreshnessBanner() {
