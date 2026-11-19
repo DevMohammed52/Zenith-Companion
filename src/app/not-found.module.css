@@ -10,10 +10,8 @@
 }
 
 .panel {
-  background:
-    linear-gradient(120deg, rgba(14, 18, 29, 0.98), rgba(10, 16, 26, 0.96) 58%, rgba(12, 25, 30, 0.94)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 84px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: grid;
   gap: 1.2rem;
@@ -24,27 +22,11 @@
 }
 
 .panel::before {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
-  background-size: 54px 54px;
-  content: "";
-  inset: 0;
-  opacity: 0.14;
-  pointer-events: none;
-  position: absolute;
+  display: none;
 }
 
 .panel::after {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--text-accent), transparent 54%), transparent);
-  bottom: 0;
-  content: "";
-  height: 2px;
-  left: 0;
-  opacity: 0.9;
-  pointer-events: none;
-  position: absolute;
-  width: 42%;
+  display: none;
 }
 
 .panel > * {

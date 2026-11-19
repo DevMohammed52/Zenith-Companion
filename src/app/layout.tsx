@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -150,9 +149,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script
+        <script
           id="zenith-pre-paint-init"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: PRE_PAINT_INIT_SCRIPT }}
         />
       </head>
@@ -236,9 +234,7 @@ export default function RootLayout({
             margin: clamp(2.5rem, 5vw, 4rem) 0 0;
             padding: 1.15rem clamp(1rem, 2.8vw, 2.4rem) calc(1.15rem + env(safe-area-inset-bottom));
             border-top: 1px solid rgba(148, 163, 184, 0.14);
-            background:
-              linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
-              rgba(5, 8, 15, 0.42);
+            background: rgba(5, 8, 15, 0.6);
             color: var(--text-muted);
           }
           .site-footer-brand {
@@ -345,9 +341,7 @@ export default function RootLayout({
             position: absolute;
             inset: 0;
             z-index: 0;
-            background:
-              linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0) 42%),
-              radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.18), transparent 34%);
+            display: none;
             opacity: 0.6;
             pointer-events: none;
             transition: opacity 180ms ease;

@@ -24,9 +24,7 @@
 
       body {
         align-items: center;
-        background:
-          radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--text-accent), transparent 90%), transparent 36%),
-          var(--bg-base);
+        background: var(--bg-base);
         color: var(--text-main);
         display: flex;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -37,10 +35,8 @@
       }
 
       main {
-        background:
-          linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 95%), transparent 42%),
-          color-mix(in srgb, var(--bg-panel), #000 12%);
-        border: 1px solid color-mix(in srgb, var(--text-accent), transparent 72%);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-subtle);
         border-radius: 8px;
         box-shadow: 0 28px 82px rgba(0, 0, 0, 0.42);
         display: grid;
@@ -52,13 +48,7 @@
       }
 
       main::before {
-        background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 38%), transparent);
-        content: "";
-        height: 1px;
-        left: 0;
-        position: absolute;
-        right: 0;
-        top: 0;
+        display: none;
       }
 
       .brand {
