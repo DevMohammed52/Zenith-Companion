@@ -35,12 +35,9 @@
 .hero,
 .panel,
 .emptyState {
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  background:
-    linear-gradient(135deg, rgba(14, 165, 233, 0.08), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
   border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .hero {
@@ -236,11 +233,9 @@
   justify-content: space-between;
   gap: 0.75rem;
   min-height: 50px;
-  border: 1px solid rgba(56, 189, 248, 0.24);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 55%),
-    rgba(0, 0, 0, 0.18);
+  background: var(--bg-panel);
   color: var(--text-primary);
   padding: 0 0.85rem;
   cursor: pointer;
@@ -314,11 +309,9 @@
 
 .auditCard {
   min-width: 0;
-  border: 1px solid rgba(56, 189, 248, 0.16);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.08), transparent 50%),
-    rgba(255, 255, 255, 0.03);
+  background: var(--bg-panel);
   padding: 0.8rem;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -358,11 +351,9 @@
 
 .contextStrip {
   margin-top: 0.85rem;
-  border: 1px solid rgba(56, 189, 248, 0.16);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(14, 165, 233, 0.1), transparent 55%),
-    rgba(0, 0, 0, 0.2);
+  background: var(--bg-panel);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
@@ -417,9 +408,9 @@
   width: 100%;
   min-width: 0;
   height: 52px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.28));
+  background: var(--bg-panel);
   color: var(--text-primary);
   padding: 0 0.9rem;
   font-size: 1.03rem;
@@ -452,8 +443,8 @@
 
 .menuTrigger:hover,
 .field input:hover {
-  border-color: rgba(56, 189, 248, 0.28);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(0, 0, 0, 0.24));
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+  background: color-mix(in srgb, var(--bg-panel), #fff 3%);
 }
 
 .menuTrigger[aria-expanded="true"] {
@@ -462,12 +453,12 @@
 }
 
 .menuTrigger[aria-expanded="true"] svg,
-.pickerTrigger[aria-expanded="true"] > svg {
+.pickerTrigger[aria-expanded="true"] .triggerChevron svg {
   transform: rotate(180deg);
 }
 
 .menuTrigger svg,
-.pickerTrigger > svg {
+.pickerTrigger .triggerChevron svg {
   transition: transform 180ms var(--compare-ease-press);
 }
 
@@ -545,17 +536,14 @@
   position: relative;
   width: 100%;
   min-height: 78px;
-  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 45%, rgba(255, 255, 255, 0.1));
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent, #38bdf8) 16%, transparent), transparent 45%),
-    rgba(255, 255, 255, 0.035);
+  background: var(--bg-panel);
   color: var(--text-primary);
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  display: flex;
   align-items: center;
-  padding: 0.75rem;
+  gap: 0.75rem;
+  padding: 0.75rem 2.6rem 0.75rem 0.75rem;
   cursor: pointer;
   text-align: left;
   overflow: hidden;
@@ -563,6 +551,10 @@
     border-color 180ms ease,
     background 180ms ease,
     box-shadow 180ms ease;
+}
+
+.pickerTrigger[data-filled="true"] {
+  padding-right: 4.85rem;
 }
 
 .pickerTrigger::before {
@@ -588,11 +580,27 @@
   background: color-mix(in srgb, var(--accent, #38bdf8) 14%, rgba(0, 0, 0, 0.18));
 }
 
-.pickerTrigger span,
+.pickerBody,
 .petOptions button span {
   min-width: 0;
+  flex: 1 1 auto;
   display: grid;
   gap: 0.12rem;
+}
+
+.triggerChevron {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.pickerTrigger:hover .triggerChevron {
+  color: var(--text-primary);
 }
 
 .pickerTrigger strong,
@@ -665,23 +673,42 @@
 
 .clearSlot {
   position: absolute;
-  right: 0.45rem;
-  top: 0.45rem;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  right: 2.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.55);
+  color: var(--text-muted);
+  background: var(--bg-card);
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  z-index: 2;
+}
+
+.clearSlot::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 
 .clearSlot:hover {
   border-color: rgba(248, 113, 113, 0.5);
-  background: rgba(127, 29, 29, 0.55);
+  background: rgba(127, 29, 29, 0.45);
+  color: #fca5a5;
+}
+
+.clearSlot:active {
+  transform: translateY(-50%) scale(0.92);
 }
 
 .pickerPanel {
@@ -855,9 +882,7 @@
 
 .quickPickSelected {
   border-color: rgba(134, 239, 172, 0.42) !important;
-  background:
-    linear-gradient(135deg, rgba(34, 197, 94, 0.12), transparent 58%),
-    rgba(255, 255, 255, 0.04) !important;
+  background: rgba(34, 197, 94, 0.1) !important;
 }
 
 .quickPickSelected svg {
@@ -923,11 +948,9 @@
 .compareCard {
   position: relative;
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--accent, #38bdf8) 55%, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent, #38bdf8) 14%, transparent), transparent 48%),
-    rgba(255, 255, 255, 0.035);
+  background: var(--bg-card);
   padding: 1rem;
   display: grid;
   gap: 0.9rem;
@@ -1109,8 +1132,7 @@
 
 .bestCell {
   color: #86efac;
-  background:
-    linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.04));
+  background: rgba(34, 197, 94, 0.08);
   box-shadow: inset 3px 0 0 rgba(134, 239, 172, 0.58);
 }
 
