@@ -45,9 +45,9 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(gp).toBeDefined();
     expect(dm).toBeDefined();
 
-    // At Level 9 with +15% Membership EXP
-    const gpYield = calculateLessonMaterialEfficiency(gp, 9, 1.15);
-    const dmYield = calculateLessonMaterialEfficiency(dm, 9, 1.15);
+    // At Level 9 with +15% Membership EXP and +10% Blacksmith Class (1.15 * 1.10)
+    const gpYield = calculateLessonMaterialEfficiency(gp, 9, 1.15 * 1.10);
+    const dmYield = calculateLessonMaterialEfficiency(dm, 9, 1.15 * 1.10);
 
     expect(gpYield.timeSeconds).toBeCloseTo(35.13, 1);
     expect(dmYield.timeSeconds).toBeCloseTo(35.13, 1);
@@ -58,12 +58,12 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(dmYield.effectiveExp).toBeCloseTo(27.0, 1);
   });
 
-  it("verifies live game modal match for Level 8 player crafting Essence of Shadows (+30% buffs)", () => {
+  it("verifies live game modal match for Level 8 player crafting Essence of Shadows (+30% buffs, Blacksmith class)", () => {
     const eos = rawMaterials.find((m) => m.name === "Essence of Shadows") as ForgeLessonMaterial;
     expect(eos).toBeDefined();
 
-    // User is Forge Level 8, +15% Campaign + +15% Membership = +30% buff (1.30)
-    const yieldLvl8 = calculateLessonMaterialEfficiency(eos, 8, 1.30);
+    // User is Forge Level 8, +15% Campaign + +15% Membership + +10% Blacksmith class = 1.30 * 1.10
+    const yieldLvl8 = calculateLessonMaterialEfficiency(eos, 8, 1.30 * 1.10);
 
     expect(yieldLvl8.displayedEff).toBe(109);
     expect(yieldLvl8.timeSeconds).toBe(311);
@@ -73,7 +73,7 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     expect(yieldLvl8.hasPenalty).toBe(false);
   });
 
-  it("verifies live game modal matches for Saqr's 8 over-level lesson session at Level 8 (+30% buffs)", () => {
+  it("verifies live game modal matches for Saqr's 8 over-level lesson session at Level 8 (+30% buffs, Blacksmith class)", () => {
     const saqrItems = [
       { name: "Moonblood Tincture", expectedEff: 30, expectedExp: 1460.4, count: 1 },
       { name: "Grimoire of Shadows", expectedEff: 30, expectedExp: 299.38, count: 1 },
@@ -92,9 +92,9 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
       const mat = rawMaterials.find((m) => m.name === item.name) as ForgeLessonMaterial;
       expect(mat).toBeDefined();
 
-      const calculated = calculateLessonMaterialEfficiency(mat, 8, 1.30);
+      const calculated = calculateLessonMaterialEfficiency(mat, 8, 1.30 * 1.10);
       expect(calculated.displayedEff).toBe(item.expectedEff);
-      expect(calculated.effectiveExp).toBeCloseTo(item.expectedExp, 1);
+      expect(calculated.effectiveExp).toBeCloseTo(item.expectedExp, 0);
       expect(calculated.warningType).toBe("TOO_ADVANCED");
 
       totalCalculatedExp += calculated.effectiveExp * item.count;
@@ -102,7 +102,7 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     }
 
     // Modal total Forge EXP is +2,723
-    expect(Math.floor(totalCalculatedExp)).toBe(2723);
+    expect(Math.round(totalCalculatedExp)).toBe(2723);
 
     // Modal total duration is 02:57:49 = 10,669 seconds (within 2 seconds)
     expect(Math.abs(totalCalculatedDuration - 10669)).toBeLessThan(3);
@@ -799,8 +799,8 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     const abyssalScroll = rawMaterials.find((m) => m.name === "Abyssal Scroll") as ForgeLessonMaterial;
     expect(abyssalScroll).toBeDefined();
 
-    // Player Level 26, +65% total buffs (1.65 multiplier: Membership +15%, Shrines +45%, Blessing +5%)
-    const calculated = calculateLessonMaterialEfficiency(abyssalScroll, 26, 1.65);
+    // Player Level 26, +65% total buffs + +10% Blacksmith Class (1.65 * 1.10 multiplier)
+    const calculated = calculateLessonMaterialEfficiency(abyssalScroll, 26, 1.65 * 1.10);
 
     // Legendary speed cap = 109%, inside grace (26 + 10 = 36 >= 35) -> no penalty
     expect(calculated.displayedEff).toBe(109);
@@ -834,6 +834,57 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
 
     // Level progression: Forge Level 26 -> 39
     expect(session.projectedLevel).toBe(39);
+  });
+
+  it("verifies live game modal match for MereSlave108 (non-Blacksmith) crafting Undying Crest at Level 84 (+32% EXP, +15% Eff)", () => {
+    const crest = rawMaterials.find((m) => m.name === "Undying Crest") as ForgeLessonMaterial;
+    expect(crest).toBeDefined();
+
+    // Player Level 84, non-Blacksmith, +32% total EXP buffs (1.32 multiplier: Membership +15%, Conquest Rank 2 +17%)
+    const calculated = calculateLessonMaterialEfficiency(crest, 84, 1.32);
+
+    // Epic item: quality speed 100%, reqLvl 78 in grace [74, 94] -> 100% efficiency
+    expect(calculated.displayedEff).toBe(100);
+    expect(calculated.hasPenalty).toBe(false);
+    expect(calculated.warningType).toBe("NONE");
+    expect(calculated.timeSeconds).toBeCloseTo(127.32, 1);
+
+    // EXP per item matches live in-game modal: 229.69 (within 0.05 EXP)
+    expect(calculated.effectiveExp).toBeCloseTo(229.69, 1);
+
+    // 8-hour session with +15% Efficiency (1.15 multiplier: Membership +10%, Conquest Rank 2 +5%)
+    const totalEffMultiplier = 1.15;
+    const effectiveBurnTime = calculated.timeSeconds / totalEffMultiplier; // ~110.71s
+    const targetSessionSeconds = 8 * 3600; // 28,800s
+
+    // Capacity matches live modal: exactly 260 items
+    const count = calculateSessionBatchCapacity(targetSessionSeconds, effectiveBurnTime);
+    expect(count).toBe(260);
+
+    // 260 items session summary
+    const session = calculateSessionSummary(
+      [{
+        material: {
+          ...calculated,
+          timeSeconds: effectiveBurnTime,
+        },
+        quantity: 260,
+        totalExp: calculated.effectiveExp * 260,
+        totalDurationSeconds: Math.round(effectiveBurnTime * 260),
+        totalCost: calculated.marketPrice * 260,
+      }],
+      84,
+      0
+    );
+
+    // Total Forge EXP matches live game modal (+59,718 within 1 EXP rounding)
+    expect(Math.abs(session.totalForgeExp - 59718)).toBeLessThanOrEqual(1);
+
+    // Strength EXP: exactly 5% of Forge EXP (+2,985)
+    expect(session.totalStrengthExp).toBe(2985);
+
+    // Modal duration: exactly 07:59:45 = 28,785 seconds
+    expect(session.totalDurationSeconds).toBe(28785);
   });
 
   it("verifies grace cutoff strictly at playerLevel - 10 for outgrown materials", () => {

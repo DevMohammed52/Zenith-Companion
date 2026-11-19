@@ -262,4 +262,16 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
     expect(markup).toContain("Inventory Optimizer");
     expect(markup).toContain("Show EXP per item");
   });
+
+  it("verifies sticky forge-tabs has a higher z-index than lesson-header-controls preventing occlusion on scroll", () => {
+    const stylesPath = path.join(componentsDir, "ForgeStyles.tsx");
+    const content = readFileSync(stylesPath, "utf-8");
+    const tabsMatch = content.match(/\.forge-page\s+\.forge-tabs\s*\{[^}]*z-index:\s*(\d+)/);
+    const headerMatch = content.match(/\.forge-page\s+\.lesson-header-controls\s*\{[^}]*z-index:\s*(\d+)/);
+    expect(tabsMatch).not.toBeNull();
+    expect(headerMatch).not.toBeNull();
+    const tabsZ = Number(tabsMatch![1]);
+    const headerZ = Number(headerMatch![1]);
+    expect(tabsZ).toBeGreaterThan(headerZ);
+  });
 });
