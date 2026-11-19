@@ -1,8 +1,6 @@
 .banner {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
-    color-mix(in srgb, var(--bg-panel, #0f0f11), #000 12%);
+  background: var(--bg-panel);
   border: 1px solid color-mix(in srgb, var(--text-accent, #f5b041), transparent 62%);
   border-radius: 8px;
   bottom: calc(1rem + env(safe-area-inset-bottom));
@@ -19,17 +17,7 @@
 }
 
 .banner::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--text-accent, #f5b041), transparent 35%),
-    transparent
-  );
-  content: "";
-  height: 1px;
-  inset-inline: 0;
-  position: absolute;
-  top: 0;
+  display: none;
 }
 
 .banner[data-status="restored"] {
