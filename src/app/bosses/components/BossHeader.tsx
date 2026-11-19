@@ -47,7 +47,7 @@ export function BossHeader({ state }: BossHeaderProps) {
         <>
             <div className="header">
                 <h1 className="header-title">
-                    <ZenithIcon name="boss" size={24} style={{ color: "var(--text-accent)" }} /> ZENITH WORLD BOSSES
+                    <ZenithIcon name="boss" size={24} style={{ color: "var(--text-accent)" }} /> World Bosses
                 </h1>
                 <div className="header-status" aria-live="polite">
                     <div className="status-dot"></div>
@@ -64,7 +64,7 @@ export function BossHeader({ state }: BossHeaderProps) {
                     <p>
                         {nextBoss
                             ? `${nextBoss.statusLabel} at ${nextBoss.location?.name || "Unknown"} - ${nextBoss.countdownLabel} ${formatCountdown(nextBoss.countdownTarget, now)}`
-                            : "Live timing and value model will appear when boss data is loaded."}
+                            : "Live spawn timers and drop values will appear once boss data loads."}
                     </p>
                 </div>
                 <div className="boss-radar-stats">

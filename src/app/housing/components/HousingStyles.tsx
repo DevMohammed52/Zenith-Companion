@@ -39,7 +39,7 @@ export function HousingStyles() {
         .housing-page .housing-panel,
         .housing-page .component-card {
           border: 1px solid var(--border-subtle);
-          background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018));
+          background: var(--bg-card);
           border-radius: 8px;
           box-shadow: 0 16px 45px rgba(0,0,0,0.18);
         }
@@ -89,13 +89,9 @@ export function HousingStyles() {
           pointer-events: none;
           z-index: 1;
         }
-        .housing-page .housing-tabs:before {
-          left: 0;
-          background: linear-gradient(90deg, rgba(5, 10, 13, 0.96), transparent);
-        }
+        .housing-page .housing-tabs:before,
         .housing-page .housing-tabs:after {
-          right: 0;
-          background: linear-gradient(270deg, rgba(5, 10, 13, 0.96), transparent);
+          display: none;
         }
         .housing-page .housing-tabs button {
           min-width: 0;
@@ -475,7 +471,7 @@ export function HousingStyles() {
           justify-content: space-between;
           gap: 0.75rem;
           border: 1px solid var(--border-subtle);
-          background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(0,0,0,0.25));
+          background: var(--bg-card);
           color: #fff;
           border-radius: 8px;
           padding: 0.75rem 0.9rem;
@@ -1972,9 +1968,7 @@ export function HousingStyles() {
           align-items: stretch;
           border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
           border-radius: 8px;
-          background:
-            linear-gradient(145deg, color-mix(in srgb, var(--text-accent), transparent 94%), rgba(10, 16, 20, 0.78)),
-            rgba(5, 10, 13, 0.36);
+          background: var(--bg-panel);
           box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
           margin-bottom: 1rem;
           padding: clamp(1rem, 2.2vw, 1.45rem);
@@ -2078,9 +2072,7 @@ export function HousingStyles() {
         }
         .housing-page .housing-status-card {
           border-color: color-mix(in srgb, var(--housing-sky), transparent 80%);
-          background:
-            linear-gradient(145deg, color-mix(in srgb, var(--housing-sky), transparent 92%), rgba(0, 0, 0, 0.24)),
-            rgba(5, 10, 13, 0.5);
+          background: var(--bg-card);
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 20px 56px rgba(0, 0, 0, 0.22);
         }
         .housing-page .housing-status-details {

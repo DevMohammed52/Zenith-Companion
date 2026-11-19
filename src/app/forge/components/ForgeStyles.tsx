@@ -1125,9 +1125,8 @@ export function ForgeStyles() {
       
 
         .forge-page .forge-tabs {
-          position: sticky;
-          top: 0.75rem;
-          z-index: 20;
+          position: relative;
+          z-index: 50;
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 0.55rem;
@@ -1136,8 +1135,7 @@ export function ForgeStyles() {
           border: 1px solid var(--border-subtle);
           border-radius: 10px;
           background: var(--bg-panel);
-          backdrop-filter: blur(18px);
-          box-shadow: 0 18px 55px rgba(0,0,0,0.18);
+          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
         }
         .forge-page .forge-tabs button {
           min-width: 0;
@@ -1271,7 +1269,7 @@ export function ForgeStyles() {
           box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
           overflow: visible;
           position: relative;
-          z-index: 25;
+          z-index: 10;
           display: flex;
           flex-direction: column;
           width: 100%;

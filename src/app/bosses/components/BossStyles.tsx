@@ -63,9 +63,7 @@ export function BossStyles() {
                 padding: 1.25rem;
                 border: 1px solid rgba(56, 189, 248, 0.18);
                 border-radius: 8px;
-                background:
-                    radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.12), transparent 28rem),
-                    linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(10, 10, 12, 0.88));
+                background: var(--bg-panel);
                 animation: boss-rise 0.4s ease both;
             }
             .bosses-page .boss-radar-main { min-width: 0; }
@@ -223,9 +221,7 @@ export function BossStyles() {
                 padding: 1.25rem;
                 border: 1px solid rgba(74, 222, 128, 0.18);
                 border-radius: 8px;
-                background:
-                    radial-gradient(circle at 95% 0%, rgba(74, 222, 128, 0.1), transparent 24rem),
-                    linear-gradient(135deg, rgba(12, 18, 18, 0.86), rgba(10, 10, 12, 0.92));
+                background: var(--bg-panel);
                 animation: boss-rise 0.45s ease both;
             }
             .bosses-page .boss-routine-header {

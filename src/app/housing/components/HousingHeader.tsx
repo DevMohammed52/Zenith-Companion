@@ -30,7 +30,7 @@ export function HousingHeader({ state }: { state: HousingState }) {
           <p className="eyebrow"><ZenithIcon name="housing" size={16} /> Housing Manager</p>
           <h1 id="housing-page-title">House Planner</h1>
           <p className="muted">
-            Save this character&apos;s own house, guest host, room tiers, repair condition, and ROI assumptions in one local profile.
+            Configure your house, guest host, room tiers, repairs, and upgrade profits in your character profile.
           </p>
           <div className="housing-hero-chips" aria-label="Housing context">
             <span><Users size={14} aria-hidden="true" /> {activeProfileName}</span>

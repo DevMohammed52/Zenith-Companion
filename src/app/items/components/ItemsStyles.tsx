@@ -173,7 +173,7 @@ export function ItemsStyles() {
       }
       .items-db-page .item-select-trigger {
         align-items: center;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)), var(--bg-base);
+        background: var(--bg-base);
         border: 1px solid var(--border-subtle);
         border-radius: 7px;
         color: var(--text-main);
@@ -192,7 +192,7 @@ export function ItemsStyles() {
         width: 100%;
       }
       .items-db-page .item-select-trigger:hover {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018)), var(--bg-base);
+        background: var(--bg-card);
         border-color: rgba(255, 255, 255, 0.14);
       }
       .items-db-page .item-select-trigger:active {
