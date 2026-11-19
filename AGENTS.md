@@ -25,6 +25,14 @@
 ## 5. Page Decomposition & Modularization Backlog (16 Remaining)
 *Goal: Decompose monolithic God Pages into modular feature components under `src/app/<route>/components/` and custom hooks under `src/app/<route>/hooks/`, reducing `page.tsx` to an orchestrator (< 200 lines) with strict layout containment (`CLS <= 0.1`) and game math invariance.*
 
+### Standard Single-Pass Surgical Protocol (Token-Efficient, No Swarms)
+To preserve quota and avoid multi-round drift:
+1. **Graphify Dependency Blueprint**: Run `get_neighbors` on the target page node before editing to map inbound/outbound imports and local symbols.
+2. **Types & Hooks Extraction**: Move local types to `types.ts` and state logic into `hooks/use<Feature>State.ts` with verbatim variable and formula names.
+3. **Mechanical JSX Extraction**: Cut and paste distinct UI panels into `components/<Component>.tsx` verbatim without redesigning CSS, HTML, or props.
+4. **Orchestrator Assembly**: Reduce `page.tsx` to an orchestrator (< 150 lines) calling the custom hook and passing props down.
+5. **Single Verification Gate**: Verify with `npm run test:unit; npm run typecheck; npm run build` in 1 pass.
+
 ### Completed & Archived (9/25)
 - [x] `/housing` (was 4,322 lines $\rightarrow$ 41 lines)
 - [x] `/bosses` (was 2,886 lines $\rightarrow$ 147 lines)
