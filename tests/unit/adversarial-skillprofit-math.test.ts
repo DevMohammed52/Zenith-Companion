@@ -500,6 +500,50 @@ describe("Adversarial Empirical Stress Harness: /skill-profit Math & Calculation
       // getRankedProfitPerHour must fall back to baseProfitPerHour
       expect(getRankedProfitPerHour(row)).toBe(row.baseProfitPerHour);
     });
+
+    it("applies housing idle hours to essence session timers for location-limited member alts (killua scenario)", () => {
+      // Member alt has 6h base idle hours
+      const baseAltHours = 6;
+      // Housing component Angler's Quarters V grants +4h fishing idle time
+      const housingBonusHours = 4;
+      const totalIdleHours = baseAltHours + housingBonusHours; // 10h
+
+      const fishingRecipe: SkillRecipe = {
+        name: "Raw Shark",
+        skill: "Fishing",
+        level: 80,
+        baseDuration: 15,
+        experience: 120,
+        ingredients: [],
+      };
+
+      const essenceSettings: SkillProfitSettings = {
+        ...baseSettings,
+        essenceBySkill: {
+          Fishing: "Deepsea Essence Crystal",
+        },
+        essenceBuffsBySkill: {
+          Fishing: { efficiency: 4, experience: 15 } as any,
+        },
+        essencePricesBySkill: {
+          Fishing: { value: 460, rawValue: 460, source: "market", adjusted: false },
+        },
+        housingIdleHoursBySkill: {
+          Fishing: housingBonusHours,
+        },
+        idleActionHoursBySkill: {
+          Fishing: totalIdleHours,
+        },
+      };
+
+      const row = calculateSkillProfitRow(fishingRecipe, mockMarketData, mockItems, essenceSettings);
+      expect(row.essenceActive).toBe(true);
+      expect(row.housingWindowHours).toBe(4);
+      // Cost per start is 460g
+      expect(row.essenceCostPerStart).toBe(460);
+      // Cost per hour must be 460 / 10 = 46g/hr (NOT 460 / 6 = 76.67g/hr)
+      expect(row.essenceCostPerHour).toBe(46);
+    });
   });
 
   // =========================================================================
