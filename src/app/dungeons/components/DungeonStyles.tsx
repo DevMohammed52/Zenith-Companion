@@ -13,10 +13,7 @@ export function DungeonStyles() {
       }
       .dungeons-page .header {
         align-items: center;
-        background:
-          radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--text-accent), transparent 82%), transparent 36%),
-          linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.012)),
-          rgba(14, 12, 8, 0.72);
+        background: var(--bg-panel);
         border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
         border-radius: 16px;
         box-shadow: 0 24px 70px rgba(0,0,0,0.28);
@@ -29,12 +26,7 @@ export function DungeonStyles() {
         position: relative;
       }
       .dungeons-page .header::after {
-        background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-accent), transparent 70%), transparent);
-        content: "";
-        height: 1px;
-        inset: auto 1rem 0;
-        opacity: 0.75;
-        position: absolute;
+        display: none;
       }
       .dungeons-page .header-title {
         color: #fff;
@@ -66,9 +58,7 @@ export function DungeonStyles() {
         border: 1px solid color-mix(in srgb, var(--text-accent), transparent 72%);
         border-left: 3px solid color-mix(in srgb, var(--text-accent), transparent 36%);
         border-radius: 8px;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,0.034), rgba(255,255,255,0.012)),
-          rgba(10, 13, 15, 0.76);
+        background: var(--bg-card);
       }
       .dungeons-page .dungeon-eyebrow,
       .dungeons-page .control-label {
@@ -185,12 +175,7 @@ export function DungeonStyles() {
         position: relative;
       }
       .dungeons-page .dungeon-control-panel::before {
-        background: linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 42%), transparent);
-        content: "";
-        inset: 0 auto 0 0;
-        opacity: 0.58;
-        position: absolute;
-        width: 2px;
+        display: none;
       }
       .dungeons-page .dungeon-control-panel > .dungeon-planner-field,
       .dungeons-page .dungeon-control-panel > .dungeon-mf-toggle {
@@ -338,7 +323,7 @@ export function DungeonStyles() {
         padding: 0 0.85rem;
         border: 1px solid var(--border-subtle);
         border-radius: 8px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.012)), var(--bg-base);
+        background: var(--bg-base);
         transition: border-color 0.18s ease, box-shadow 0.18s ease;
       }
       .dungeons-page .dungeon-input-icon:focus-within {
@@ -411,25 +396,23 @@ export function DungeonStyles() {
       }
       .dungeons-page .dungeon-advanced-row {
         display: grid;
-        grid-template-columns: minmax(40rem, 1.08fr) minmax(30rem, 0.92fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1.1rem;
         margin-bottom: 1rem;
-        align-items: start;
+        align-items: stretch;
       }
       .dungeons-page .dungeon-modifier-panel {
-        display: grid;
-        grid-template-columns: minmax(15.5rem, 0.68fr) minmax(21rem, 1.32fr);
-        align-items: start;
-        gap: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.85rem;
         min-width: 0;
         min-height: 0;
         margin-bottom: 0;
         padding: 1.05rem 1.1rem;
         border: 1px solid color-mix(in srgb, #a78bfa, transparent 78%);
         border-radius: 8px;
-        background:
-          linear-gradient(135deg, rgba(167,139,250,0.08), transparent 42%),
-          rgba(255,255,255,0.025);
+        background: var(--bg-card);
       }
       .dungeons-page .dungeon-modifier-copy,
       .dungeons-page .dungeon-modifier-pickers {
@@ -457,9 +440,11 @@ export function DungeonStyles() {
       }
       .dungeons-page .dungeon-modifier-pickers {
         display: grid;
-        grid-template-columns: repeat(2, minmax(12rem, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
         gap: 0.75rem;
+        min-width: 0;
+        width: 100%;
       }
       .dungeons-page .dungeon-effect-picker {
         position: relative;
@@ -585,19 +570,17 @@ export function DungeonStyles() {
         grid-column: 2 / -1;
       }
       .dungeons-page .dungeon-valuation-panel {
-        display: grid;
-        grid-template-columns: minmax(14rem, 0.75fr) minmax(0, 1.25fr);
-        align-items: start;
-        gap: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.85rem;
         min-width: 0;
         min-height: 0;
         margin-bottom: 0;
         padding: 1.05rem 1.1rem;
         border: 1px solid color-mix(in srgb, var(--text-accent), transparent 78%);
         border-radius: 8px;
-        background:
-          linear-gradient(135deg, rgba(56,189,248,0.08), transparent 42%),
-          rgba(255,255,255,0.025);
+        background: var(--bg-card);
       }
       .dungeons-page .dungeon-valuation-copy,
       .dungeons-page .dungeon-valuation-controls {
@@ -619,31 +602,33 @@ export function DungeonStyles() {
         line-height: 1.35;
       }
       .dungeons-page .dungeon-valuation-controls {
-        display: grid;
-        grid-template-columns: 1fr;
-        justify-items: start;
-        justify-self: start;
-        max-width: 100%;
-        min-width: min(22rem, 100%);
-        align-items: start;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
         gap: 0.75rem;
       }
       .dungeons-page .dungeon-valuation-segmented {
-        align-self: start;
-        grid-template-columns: repeat(4, max-content);
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         min-height: 44px;
-        width: fit-content;
+        width: 100%;
       }
       .dungeons-page .dungeon-valuation-segmented button {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
         min-height: 44px;
+        text-align: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .dungeons-page .dungeon-manual-value-field {
         display: flex;
         flex-direction: column;
         gap: 0.4rem;
         min-width: 0;
+        width: 100%;
       }
       .dungeons-page .dungeon-manual-value-field .control-input {
         width: 100%;
@@ -712,15 +697,7 @@ export function DungeonStyles() {
         text-transform: uppercase;
       }
       .dungeons-page .dungeon-table-wrapper::after {
-        content: "";
-        position: absolute;
-        top: 1.9rem;
-        right: 0;
-        bottom: 0;
-        z-index: 2;
-        width: 1.6rem;
-        pointer-events: none;
-        background: linear-gradient(90deg, rgba(8,11,18,0), rgba(8,11,18,0.58));
+        display: none;
       }
       .dungeons-page .dungeon-table {
         max-width: 100%;
@@ -1244,12 +1221,6 @@ export function DungeonStyles() {
         .dungeons-page .dungeon-insights {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        .dungeons-page .dungeon-modifier-panel,
-        .dungeons-page .dungeon-valuation-panel,
-        .dungeons-page .dungeon-modifier-pickers,
-        .dungeons-page .dungeon-valuation-controls {
-          grid-template-columns: 1fr;
-        }
         .dungeons-page .dungeon-limits-panel,
         .dungeons-page .dungeon-tuning-panel {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1267,26 +1238,6 @@ export function DungeonStyles() {
         .dungeons-page .dungeon-planner {
           grid-template-areas: none;
           grid-template-columns: minmax(19rem, 0.78fr) minmax(17rem, 0.72fr) minmax(30rem, 1.35fr);
-        }
-        .dungeons-page .dungeon-advanced-row {
-          grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
-        }
-        .dungeons-page .dungeon-modifier-panel {
-          grid-template-columns: 1fr;
-        }
-        .dungeons-page .dungeon-modifier-pickers {
-          grid-template-columns: 1fr;
-        }
-        .dungeons-page .dungeon-valuation-panel {
-          grid-template-columns: 1fr;
-        }
-        .dungeons-page .dungeon-valuation-controls {
-          min-width: 0;
-          width: 100%;
-        }
-        .dungeons-page .dungeon-valuation-segmented {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          width: 100%;
         }
       }
 
@@ -1384,6 +1335,9 @@ export function DungeonStyles() {
         }
         .dungeons-page .dungeon-modifier-panel {
           padding: 0.8rem;
+        }
+        .dungeons-page .dungeon-modifier-pickers {
+          grid-template-columns: 1fr;
         }
         .dungeons-page .dungeon-valuation-segmented {
           grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -86,7 +86,7 @@ export function DungeonHeader({ state }: DungeonHeaderProps) {
           </p>
           {summary.sensitiveDropCount > 0 && (
             <p className="dungeon-risk-note">
-              Modeled market EV includes {summary.sensitiveDropCount} gear or mythic-style drop{summary.sensitiveDropCount === 1 ? "" : "s"} with thin-market risk. Use Vendor, Manual, or Exclude before treating these as fast-sale profit.
+              Market EV includes {summary.sensitiveDropCount} low-volume gear or mythic drop{summary.sensitiveDropCount === 1 ? "" : "s"}. Use Vendor, Manual, or Exclude for conservative estimates.
             </p>
           )}
         </div>
