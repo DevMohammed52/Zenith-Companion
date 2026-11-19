@@ -42,20 +42,7 @@ export function getBaseForgeHourlyRate(playerLevel: number): number {
 }
 
 export function getForgeHourlyRate(playerLevel: number): number {
-  const clamped = Math.max(1, Math.min(100, playerLevel));
-  if (clamped <= 1) return 1300;
-  if (clamped >= 100) return 6050.24;
-
-  for (let i = 0; i < FORGE_RATE_ANCHORS.length - 1; i++) {
-    const cur = FORGE_RATE_ANCHORS[i];
-    const next = FORGE_RATE_ANCHORS[i + 1];
-    if (clamped >= cur.lvl && clamped <= next.lvl) {
-      const fraction = (clamped - cur.lvl) / (next.lvl - cur.lvl);
-      return cur.rate + fraction * (next.rate - cur.rate);
-    }
-  }
-
-  return 6050.24;
+  return getBaseForgeHourlyRate(playerLevel);
 }
 
 export const QUALITY_SPEED_MULTIPLIERS: Record<string, number> = {
@@ -215,6 +202,9 @@ export const CALIBRATED_ITEM_DURATIONS: Record<string, number> = {
   "Golem Core Fragment": 11.21,
   "Vial of Wraith Ectoplasm": 53.14,
 
+  // Mere proven (Level 84, Rank 2 Conquest Buffs)
+  "Undying Crest": 127.32,
+
   // CracheLeCash proven (Level 74)
   "Vial of Spectre Ectoplasm": 166.25,
   "Goblin Crown": 339.78,
@@ -270,7 +260,6 @@ export const CALIBRATED_ITEM_DURATIONS: Record<string, number> = {
   "Siren's Scales": 12.68,
   "Black Bear Pelt": 18.25,
   "Forbidden Tome": 94.44,
-  "Undying Crest": 115.09,
 };
 
 export function getItemBurnDuration(
@@ -346,7 +335,7 @@ export function calculateDynamicMaterialYield(
 ): DynamicMaterialYield {
   const eff = calculateLessonEfficiency(name, reqLvl, quality, category, playerLevel);
   const timeSeconds = getItemBurnDuration(name, category, quality, reqLvl, baseTimeSeconds);
-  const hourlyRate = getForgeHourlyRate(playerLevel);
+  const hourlyRate = getBaseForgeHourlyRate(playerLevel);
 
   const exactEff = eff.penaltyEff * eff.speedMult;
   const displayedExp = Number(
