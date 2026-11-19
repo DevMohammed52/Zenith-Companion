@@ -45,6 +45,29 @@ function notifyCacheUpdate() {
   } catch {}
 }
 
+function sanitizeCachedEntryResult(result: LiveProfileImportResult, rootHashTail?: string): LiveProfileImportResult {
+  if (!result || !Array.isArray(result.characters)) return result;
+  const rootTail = rootHashTail || result.characters[0]?.draft?.importSource?.characterHashTail;
+  const characters = result.characters.map((char, index) => {
+    if (index === 0 || !char?.draft) return char;
+    const draft = { ...char.draft };
+    const altHashTail = draft.importSource?.characterHashTail;
+    const museumTail = draft.museum?.sourceHashTail;
+
+    if (draft.museum && ((rootTail && museumTail === rootTail) || (altHashTail && museumTail && altHashTail !== museumTail))) {
+      draft.museum = undefined;
+      if (draft.importSource?.importedSections) {
+        draft.importSource = {
+          ...draft.importSource,
+          importedSections: draft.importSource.importedSections.filter((section) => section !== "museum"),
+        };
+      }
+    }
+    return { ...char, draft };
+  });
+  return { ...result, characters };
+}
+
 function readStoredEntries(): CachedProfileImportEntry[] {
   if (typeof window === "undefined" && typeof localStorage === "undefined") return [];
   try {
@@ -54,15 +77,20 @@ function readStoredEntries(): CachedProfileImportEntry[] {
     if (!Array.isArray(parsed)) return [];
 
     const now = Date.now();
-    return parsed.filter((entry): entry is CachedProfileImportEntry => {
-      if (!isRecord(entry)) return false;
-      if (typeof entry.characterHash !== "string" || !entry.characterHash.trim()) return false;
-      if (typeof entry.timestamp !== "number" || !Number.isFinite(entry.timestamp)) return false;
-      // Filter expired entries
-      if (now - entry.timestamp > IMPORT_CACHE_TTL_MS) return false;
-      if (!isRecord(entry.result) || !Array.isArray(entry.result.characters) || entry.result.characters.length === 0) return false;
-      return true;
-    });
+    return parsed
+      .filter((entry): entry is CachedProfileImportEntry => {
+        if (!isRecord(entry)) return false;
+        if (typeof entry.characterHash !== "string" || !entry.characterHash.trim()) return false;
+        if (typeof entry.timestamp !== "number" || !Number.isFinite(entry.timestamp)) return false;
+        // Filter expired entries
+        if (now - entry.timestamp > IMPORT_CACHE_TTL_MS) return false;
+        if (!isRecord(entry.result) || !Array.isArray(entry.result.characters) || entry.result.characters.length === 0) return false;
+        return true;
+      })
+      .map((entry) => ({
+        ...entry,
+        result: sanitizeCachedEntryResult(entry.result, entry.characterHashTail),
+      }));
   } catch {
     return [];
   }
@@ -90,7 +118,7 @@ export function saveCachedProfileImport(characterHash: string, result: LiveProfi
   const characters = result.characters.filter((c) => isRecord(c) && isRecord(c.draft));
   if (characters.length === 0) return false;
 
-  const sanitizedResult: LiveProfileImportResult = { characters };
+  const sanitizedResult: LiveProfileImportResult = sanitizeCachedEntryResult({ characters }, cleanHash.slice(-12));
   const mainName = characters[0]?.draft?.name || characters[0]?.name || "Character";
   const classes = characters
     .map((c) => c.draft?.className || c.className || "")

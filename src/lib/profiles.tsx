@@ -689,6 +689,19 @@ export function sanitizeProfile(input: Partial<CharacterProfile> | null | undefi
   }
   next.housing = sanitizeHousing(next.housing);
 
+  if (next.kind === "alt" && next.museum) {
+    const altHashTail = next.importSource?.characterHashTail;
+    const museumTail = next.museum.sourceHashTail;
+    if (altHashTail && museumTail && altHashTail !== museumTail) {
+      next.museum = undefined;
+      if (next.importSource?.importedSections) {
+        next.importSource.importedSections = next.importSource.importedSections.filter(
+          (section) => section !== "museum"
+        );
+      }
+    }
+  }
+
   return next;
 }
 
@@ -698,10 +711,43 @@ export function sanitizeProfilesState(input: Partial<ProfilesState> | null | und
     : [];
   const explicitMainIndex = profiles.findIndex((profile) => profile.kind === "main");
   const mainIndex = explicitMainIndex >= 0 ? explicitMainIndex : 0;
-  const normalizedProfiles = profiles.map((profile, index) => ({
-    ...profile,
-    kind: index === mainIndex ? "main" as const : "alt" as const,
-  }));
+  const mainProfile = profiles[mainIndex];
+  const normalizedProfiles = profiles.map((profile, index) => {
+    const kind = index === mainIndex ? ("main" as const) : ("alt" as const);
+    let nextProfile = { ...profile, kind };
+
+    if (kind === "alt" && nextProfile.museum) {
+      const altHashTail = nextProfile.importSource?.characterHashTail;
+      const altMuseumTail = nextProfile.museum.sourceHashTail;
+      const mainHashTail = mainProfile?.importSource?.characterHashTail;
+      const mainMuseumTail = mainProfile?.museum?.sourceHashTail;
+
+      const isCopiedFromMain = Boolean(
+        mainProfile?.museum &&
+        (altMuseumTail === mainMuseumTail || (mainHashTail && altMuseumTail === mainHashTail)) &&
+        (!altHashTail || altHashTail !== altMuseumTail)
+      );
+
+      const isMismatchedAltHash = Boolean(
+        altHashTail && altMuseumTail && altHashTail !== altMuseumTail
+      );
+
+      if (isCopiedFromMain || isMismatchedAltHash) {
+        nextProfile = {
+          ...nextProfile,
+          museum: undefined,
+          importSource: {
+            ...nextProfile.importSource,
+            importedSections: (nextProfile.importSource?.importedSections || []).filter(
+              (section) => section !== "museum"
+            ),
+          },
+        };
+      }
+    }
+
+    return nextProfile;
+  });
   return {
     schemaVersion: 1,
     activeProfileId: normalizedProfiles.some((profile) => profile.id === input?.activeProfileId)
@@ -877,6 +923,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       id: makeId(),
       name: `${source.name} Copy`.slice(0, 40),
       kind: "alt",
+      museum: undefined,
       createdAt: now,
       updatedAt: now,
     });
