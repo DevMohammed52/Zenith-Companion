@@ -9,7 +9,6 @@ import {
   calculateHousingBuffs,
   formatHours,
   getProfileBaseIdleActionHours,
-  getHousingIdleHoursForActivity,
   getHousingActivityLabel,
 } from "@/lib/housing";
 import {
@@ -79,7 +78,7 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     [configuredProfile?.className, configuredProfile?.housing],
   );
 
-  const rawHousingIdleHoursBySkill = useMemo(() => {
+  const housingIdleHoursBySkill = useMemo(() => {
     const entries = SKILLS.map((skill) => {
       const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
       return [skill, activity ? Number(housingSummary.idleHours[activity] || 0) : 0] as const;
@@ -87,16 +86,10 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
   }, [housingSummary]);
 
-  const hasAnyLocationLimitedHousing = housingSummary.locationLimited
-    && Object.values(rawHousingIdleHoursBySkill).some((hours) => Number(hours || 0) > 0);
+  const rawHousingIdleHoursBySkill = housingIdleHoursBySkill;
 
-  const housingIdleHoursBySkill = useMemo(() => {
-    const entries = SKILLS.map((skill) => {
-      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
-      return [skill, activity ? getHousingIdleHoursForActivity(housingSummary, activity) : 0] as const;
-    });
-    return Object.fromEntries(entries) as Partial<Record<SkillName, number>>;
-  }, [housingSummary]);
+  const hasAnyLocationLimitedHousing = housingSummary.locationLimited
+    && Object.values(housingIdleHoursBySkill).some((hours) => Number(hours || 0) > 0);
 
   const baseIdleActionHours = configuredProfile ? getProfileBaseIdleActionHours(configuredProfile, preferences.membership) : 8;
 
@@ -285,8 +278,8 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
   );
 
   const housingWindowHours = activeSkill !== "All" ? Number(housingIdleHoursBySkill[activeSkill] || 0) : 0;
-  const rawHousingWindowHours = activeSkill !== "All" ? Number(rawHousingIdleHoursBySkill[activeSkill] || 0) : 0;
-  const hasLocationLimitedHousing = housingSummary.locationLimited && rawHousingWindowHours > 0 && housingWindowHours <= 0;
+  const rawHousingWindowHours = housingWindowHours;
+  const hasLocationLimitedHousing = housingSummary.locationLimited && housingWindowHours > 0;
 
   const appliedHousingWindows = useMemo(() => (
     SKILLS.map((skill) => {
@@ -302,21 +295,9 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
       .sort((a, b) => b.hours - a.hours || a.label.localeCompare(b.label))
   ), [housingIdleHoursBySkill]);
 
-  const rawHousingWindows = useMemo(() => (
-    SKILLS.map((skill) => {
-      const activity = SKILL_TO_HOUSING_ACTIVITY[skill];
-      const hours = Number(rawHousingIdleHoursBySkill[skill] || 0);
-      return {
-        skill,
-        label: activity ? getHousingActivityLabel(activity) : skill,
-        hours,
-      };
-    })
-      .filter((entry) => entry.hours > 0)
-      .sort((a, b) => b.hours - a.hours || a.label.localeCompare(b.label))
-  ), [rawHousingIdleHoursBySkill]);
+  const rawHousingWindows = appliedHousingWindows;
 
-  const visibleHousingWindows = appliedHousingWindows.length ? appliedHousingWindows : rawHousingWindows;
+  const visibleHousingWindows = appliedHousingWindows;
   const housingWindowSummary = visibleHousingWindows
     .slice(0, 3)
     .map((entry) => `${entry.label} +${formatHours(entry.hours)}`)
@@ -333,15 +314,13 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
 
   const housingWindowAllScope = visibleHousingWindows.length === 0
     ? ""
-    : appliedHousingWindows.length
-      ? housingSummary.mode === "guest"
-        ? " - guest remote, available anywhere"
-        : housingSummary.availableAnywhere
-          ? " - available anywhere"
-          : ""
-      : housingSummary.mode === "guest"
-        ? " - guest local, not applied"
-        : " - location-limited, not applied";
+    : housingSummary.availableAnywhere
+      ? housingSummary.mode === "guest" ? " - guest remote, available anywhere" : " - available anywhere"
+      : housingSummary.locationLimited
+        ? housingSummary.location
+          ? housingSummary.mode === "guest" ? ` - guest at ${housingSummary.location}` : ` - at ${housingSummary.location}`
+          : housingSummary.mode === "guest" ? " - guest location-limited" : " - location-limited"
+        : "";
 
   const housingWindowAllSub = !configuredProfile
     ? "load a profile"
@@ -354,20 +333,18 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     ? getHousingActivityLabel(activeSkillActivity)
     : activeSkill !== "All" ? activeSkill : "";
   const activeSkillHousingHours = activeSkill !== "All"
-    ? housingWindowHours || (hasLocationLimitedHousing ? rawHousingWindowHours : 0)
+    ? housingWindowHours
     : 0;
 
   const housingWindowSub = !configuredProfile
     ? "profile needed"
-    : hasLocationLimitedHousing
-      ? housingSummary.mode === "guest" ? "guest local, not applied" : "location-limited, not applied"
-      : housingWindowHours <= 0
-        ? "no profile bonus"
-      : housingSummary.mode === "guest"
-        ? "guest remote, available anywhere"
-        : housingSummary.availableAnywhere
-        ? "available anywhere"
-        : "location-limited";
+    : housingWindowHours <= 0
+      ? "no profile bonus"
+      : housingSummary.availableAnywhere
+        ? housingSummary.mode === "guest" ? "guest remote, available anywhere" : "available anywhere"
+        : housingSummary.mode === "guest"
+          ? housingSummary.location ? `guest at ${housingSummary.location}` : "guest location-limited"
+          : housingSummary.location ? `at ${housingSummary.location}` : "location-limited";
 
   const lastUpdated = marketData?._meta?.last_updated;
   const marketAgeMinutes = lastUpdated

@@ -85,6 +85,7 @@ export function SkillProfitFilterBar({ state, calc }: SkillProfitFilterBarProps)
     idleActionHoursBySkill,
     baseIdleActionHours,
     hasAnyLocationLimitedHousing,
+    housingSummary,
     essenceSessionsBySkill,
     allItemsDb,
     marketData,
@@ -431,7 +432,7 @@ export function SkillProfitFilterBar({ state, calc }: SkillProfitFilterBarProps)
           )}
           <p className={styles.essenceNote}>
             {(configuredProfile
-              ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? "; location-limited housing time is not added on this page." : ", plus housing time when it is available anywhere."}`
+              ? `Cost is counted once per idle start. The timer is ${formatHours(baseIdleActionHours)} base${hasAnyLocationLimitedHousing ? `, plus housing time (applies at ${housingSummary.location || "house location"}).` : ", plus housing time when available anywhere."}`
               : "No active profile is loaded, so essence costs use an 8h fallback timer.")}
             {" "}Dungeon, combat, hunting, and world boss potions are future support.
           </p>
