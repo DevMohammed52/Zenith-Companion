@@ -105,9 +105,7 @@ export default function LoreThreadPanel({
 
       <style jsx global>{`
         .lore-thread-panel {
-          background:
-            linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), rgba(255,255,255,0.015)),
-            rgba(255,255,255,0.018);
+          background: var(--bg-card);
           border: 1px solid color-mix(in srgb, var(--text-accent), transparent 72%);
           border-radius: 8px;
           display: grid;
@@ -120,15 +118,7 @@ export default function LoreThreadPanel({
         }
 
         .lore-thread-panel::before {
-          background: radial-gradient(circle, color-mix(in srgb, var(--text-accent), transparent 40%), transparent 60%);
-          content: "";
-          height: 160px;
-          opacity: 0.12;
-          pointer-events: none;
-          position: absolute;
-          right: -55px;
-          top: -80px;
-          width: 160px;
+          display: none;
         }
 
         .lore-thread-panel-header {
