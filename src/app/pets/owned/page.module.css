@@ -150,11 +150,9 @@
   gap: 0.65rem;
   margin-bottom: 1rem;
   padding: 0.75rem;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--text-accent), transparent 91%), transparent 48%),
-    rgba(255,255,255,0.025);
+  background: var(--bg-card);
 }
 
 .importReadiness div {
@@ -452,9 +450,7 @@
 
 .activeCard {
   border-color: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 42%);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 91%), transparent 42%),
-    rgba(255,255,255,0.04);
+  background: color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)) 6%, var(--bg-card));
 }
 
 .cardTop {
@@ -471,9 +467,7 @@
   place-items: center;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 76%);
-  background:
-    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--owned-pet-quality, var(--text-accent)), transparent 78%), transparent 62%),
-    rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .petImage img {
