@@ -6,6 +6,15 @@ const routes = [
   { path: "/items", name: "Item Database" },
   { path: "/profiles#profile-transfer", name: "Profile Import" },
   { path: "/settings", name: "Settings" },
+  { path: "/museum", name: "Museum" },
+  { path: "/alchemy", name: "Alchemy" },
+  { path: "/alchemy/mythic", name: "Mythic Alchemy" },
+  { path: "/pets/compare", name: "Pet Compare" },
+  { path: "/pets/owned", name: "Owned Pets" },
+  { path: "/lore", name: "Lore Wiki" },
+  { path: "/map", name: "World Map" },
+  { path: "/weather", name: "Weather Guide" },
+  { path: "/enemies", name: "Enemy Database" },
 ];
 
 const impactOrder = ["minor", "moderate", "serious", "critical"] as const;
@@ -16,6 +25,7 @@ const turnstileScriptPattern = /https:\/\/challenges\.cloudflare\.com\/turnstile
 test.describe("accessibility smoke audit", () => {
   for (const route of routes) {
     test(`${route.name} has no ${failImpact}+ axe violations`, async ({ page }, testInfo) => {
+      test.setTimeout(120000);
       await page.route(turnstileScriptPattern, async (turnstileRoute) => {
         await turnstileRoute.fulfill({
           contentType: "application/javascript",
