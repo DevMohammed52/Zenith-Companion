@@ -8,9 +8,7 @@
   --border-subtle: rgba(255, 255, 255, 0.06);
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--text-accent), transparent 94%), transparent 50%),
-    var(--bg-base);
+  background: var(--bg-base);
   color: var(--text-main);
   font-family: var(--font-sans);
   margin: 0;
@@ -33,10 +31,8 @@
 }
 
 .panel {
-  background:
-    linear-gradient(120deg, rgba(18, 15, 20, 0.98), rgba(14, 16, 24, 0.96) 58%, rgba(26, 18, 12, 0.94)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 84px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: grid;
   gap: 1.2rem;
@@ -47,27 +43,11 @@
 }
 
 .panel::before {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
-  background-size: 54px 54px;
-  content: "";
-  inset: 0;
-  opacity: 0.14;
-  pointer-events: none;
-  position: absolute;
+  display: none;
 }
 
 .panel::after {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--text-accent), transparent 54%), transparent);
-  bottom: 0;
-  content: "";
-  height: 2px;
-  left: 0;
-  opacity: 0.9;
-  pointer-events: none;
-  position: absolute;
-  width: 42%;
+  display: none;
 }
 
 .panel > * {
