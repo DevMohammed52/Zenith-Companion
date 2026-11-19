@@ -2168,7 +2168,7 @@ async function executeStepRootBaseline(job, stepData, requestedOptions, env, bud
 
   const visibleAlts = includeVisibleAlts ? extractVisibleAlts(root.charactersPayload) : [];
   const remainingRequests = Math.max(0, requestCap - tracker.requestCount);
-  const minimumRequestsPerAlt = 3; // info, metrics, pets (museum is 0 calls for alts)
+  const minimumRequestsPerAlt = includeMuseum ? 4 : 3; // info, metrics, pets + museum (1 page min)
   const maxAltCount = Math.floor(remainingRequests / minimumRequestsPerAlt);
   const altsToFetch = visibleAlts.slice(0, maxAltCount);
   const warnings = [...(stepData.warnings || [])];
@@ -2306,8 +2306,14 @@ async function executeStepAltCharacters(job, stepData, requestedOptions, env, bu
   const completedAlts = Array.isArray(stepData.completedAlts) ? [...stepData.completedAlts] : [];
   const warnings = [...(stepData.warnings || [])];
 
-  // Process slice: in test/0-delay mode process all; otherwise up to 2 alts (<=11s)
-  const sliceSize = delayMs === 0 ? visibleAlts.length : Math.max(1, Math.min(2, Math.floor(12000 / (3 * Math.max(1, delayMs)))));
+  const includeMuseum = requestedOptions.includeMuseum !== false;
+  const museumMaxPages = readPositiveInt(
+    requestedOptions.museumMaxPagesPerCharacter,
+    readPositiveInt(env.IMPORT_MUSEUM_MAX_PAGES_PER_CHARACTER, DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER),
+  );
+
+  // Process slice: in test/0-delay mode process all; otherwise 1 alt per slice to remain safely within the 25s lease window
+  const sliceSize = delayMs === 0 ? visibleAlts.length : 1;
   const endIndex = Math.min(visibleAlts.length, currentIndex + sliceSize);
 
   while (currentIndex < endIndex) {
@@ -2316,10 +2322,11 @@ async function executeStepAltCharacters(job, stepData, requestedOptions, env, bu
     const altHash = cleanString(alt?.hashed_id || alt?.hash || alt?.hashedId, 100);
     if (!HASH_PATTERN.test(altHash) || altHash === stepData.rootHash) continue;
 
-    // Fetch alt baseline with includeMuseum: false (0 redundant museum queries!)
+    // Fetch alt baseline and personal museum directly for this alt
     const imported = await fetchCharacterBaseline(altHash, "visible_alt", importedAt, env, tracker, {
       includeCharacters: false,
-      includeMuseum: false,
+      includeMuseum,
+      museumMaxPagesPerCharacter: museumMaxPages,
       requestCap,
       delayMs,
       jobId: job.id,
@@ -2397,26 +2404,9 @@ async function executeStepFinalAssembly(job, stepData, requestedOptions, env, bu
 
   const characters = [{ role: "root", draft: rootDraft }];
 
-  // Attach the same account museum snapshot to all visible alts (0 redundant queries!)
+  // IdleMMO museums are character-specific; alts do not inherit the root character's museum
   for (const alt of (stepData.completedAlts || [])) {
-    const altDraft = { ...alt.draft };
-    if (museumSnapshot) {
-      altDraft.museum = museumSnapshot;
-      const altImportSource = { ...(altDraft.importSource || {}) };
-      const importedSections = Array.isArray(altImportSource.importedSections)
-        ? [...altImportSource.importedSections]
-        : [];
-      if (!importedSections.includes("museum")) importedSections.push("museum");
-      altImportSource.importedSections = importedSections;
-      if (museumMissing.length) {
-        altImportSource.missingOrPrivate = [
-          ...(altImportSource.missingOrPrivate || []),
-          ...museumMissing,
-        ];
-      }
-      altDraft.importSource = altImportSource;
-    }
-    characters.push({ role: alt.role || "visible_alt", draft: altDraft });
+    characters.push({ role: alt.role || "visible_alt", draft: { ...alt.draft } });
   }
 
   const finalStepDurations = {
