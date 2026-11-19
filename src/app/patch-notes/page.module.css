@@ -16,10 +16,7 @@
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--border-subtle), var(--text-accent) 18%);
   border-radius: 10px;
-  background:
-    radial-gradient(circle at 10% 4%, color-mix(in srgb, var(--text-accent), transparent 88%), transparent 34%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.014)),
-    rgba(12, 10, 7, 0.78);
+  background: var(--bg-panel);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -70,16 +67,14 @@
 .loadingCard {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022));
+  background: var(--bg-card);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .heroStats div {
   min-width: 0;
   padding: 0.85rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
-    rgba(0, 0, 0, 0.18);
+  background: var(--bg-card);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
@@ -109,9 +104,7 @@
   grid-template-columns: minmax(260px, 1fr) minmax(180px, 0.28fr) minmax(140px, 0.2fr) auto;
   gap: 0.75rem;
   padding: 0.65rem;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-panel), transparent 6%), color-mix(in srgb, var(--bg-card), transparent 4%)),
-    rgba(0, 0, 0, 0.4);
+  background: var(--bg-panel);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
@@ -211,9 +204,7 @@
   padding: 0.35rem;
   border: 1px solid color-mix(in srgb, var(--text-accent), transparent 62%);
   border-radius: 8px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg-panel), #000 18%), color-mix(in srgb, var(--bg-card), #000 16%)),
-    rgba(0, 0, 0, 0.92);
+  background: var(--bg-panel);
   box-shadow:
     0 14px 34px rgba(0, 0, 0, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.055);
@@ -288,9 +279,7 @@
   min-width: 7.3rem;
   padding: 0 1rem;
   border-color: color-mix(in srgb, var(--text-accent), transparent 58%);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--text-accent), transparent 88%), color-mix(in srgb, var(--text-accent), transparent 94%)),
-    rgba(0, 0, 0, 0.24);
+  background: color-mix(in srgb, var(--text-accent), transparent 90%);
   white-space: nowrap;
 }
 
@@ -309,9 +298,7 @@
   align-items: center;
   padding: 1rem;
   border-color: color-mix(in srgb, var(--text-accent), transparent 80%);
-  background:
-    radial-gradient(circle at 7% 18%, color-mix(in srgb, var(--text-accent), transparent 84%), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  background: var(--bg-panel);
 }
 
 .latestPanel h2 {
@@ -453,15 +440,13 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--text-accent), rgba(56, 189, 248, 0.6));
+  background: var(--text-accent);
   opacity: 0.38;
 }
 
 .noteCard[data-expanded="true"] {
   border-color: color-mix(in srgb, var(--text-accent), transparent 68%);
-  background:
-    radial-gradient(circle at 4% 0%, color-mix(in srgb, var(--text-accent), transparent 88%), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022));
+  background: var(--bg-panel);
 }
 
 .noteHeader {
@@ -633,11 +618,7 @@
 .loadingCard span::after,
 .loadingCard strong::after,
 .loadingCard p::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-  animation: patchShimmer 1.4s ease-in-out infinite;
+  display: none;
 }
 
 .page mark {
