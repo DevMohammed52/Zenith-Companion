@@ -1,8 +1,6 @@
 .block {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
-    color-mix(in srgb, var(--bg-panel, #0f0f11), #000 8%);
+  background: var(--bg-panel);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
   color: var(--text-primary, #f4f4f5);
@@ -17,16 +15,7 @@
 }
 
 .block::before {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--text-accent, #f5b041), transparent 58%),
-    transparent
-  );
-  content: "";
-  height: 1px;
-  inset-inline: 0;
-  position: absolute;
-  top: 0;
+  display: none;
 }
 
 .compact {
@@ -118,10 +107,6 @@
   border-color: color-mix(in srgb, var(--text-accent, #f5b041), transparent 76%);
 }
 
-.error::before {
-  background: linear-gradient(90deg, rgba(248, 113, 113, 0.72), transparent);
-}
-
 .error .iconShell {
   background: rgba(248, 113, 113, 0.1);
   border-color: rgba(248, 113, 113, 0.32);
@@ -141,10 +126,6 @@
 
 .permission {
   border-color: rgba(148, 163, 184, 0.28);
-}
-
-.permission::before {
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.62), transparent);
 }
 
 .permission .iconShell {
