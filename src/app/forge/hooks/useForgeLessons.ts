@@ -222,7 +222,7 @@ export function calculateGoalEstimate(
     for (const m of allMaterials) {
       const livePrice = priceMap.get(m.name) || m.marketPrice;
       const calc = calculateLessonMaterialEfficiency(m, lvl, buffMultiplier, livePrice);
-      const effectiveBurnTime = Math.max(1, Math.round(calc.timeSeconds / effMultiplier));
+      const effectiveBurnTime = Math.max(0.1, calc.timeSeconds / effMultiplier);
       const effectiveExpPerSec = effectiveBurnTime > 0 ? calc.effectiveExp / effectiveBurnTime : 0;
 
       let metric: number;
@@ -267,14 +267,14 @@ export function calculateGoalEstimate(
 
       if (bestMatAtThisLvl.name !== currMat.name && lvl > currBracketStart) {
         const qty = Math.ceil(bracketQtyAcc);
-        const itemDuration = Math.max(1, Math.round(currMat.timeSeconds / effMultiplier));
+        const itemDuration = Math.max(0.1, currMat.timeSeconds / effMultiplier);
         steps.push({
           fromLevel: currBracketStart,
           toLevel: lvl,
           material: currMat,
           quantityNeeded: qty,
           cost: qty * currMat.liveMarketPrice,
-          durationSeconds: qty * itemDuration,
+          durationSeconds: Math.round(qty * itemDuration),
         });
         currBracketStart = lvl;
         currMat = bestMatAtThisLvl;
@@ -289,14 +289,14 @@ export function calculateGoalEstimate(
 
     if (bracketQtyAcc > 0 && currBracketStart < targetLevel) {
       const qty = Math.ceil(bracketQtyAcc);
-      const itemDuration = Math.max(1, Math.round(currMat.timeSeconds / effMultiplier));
+      const itemDuration = Math.max(0.1, currMat.timeSeconds / effMultiplier);
       steps.push({
         fromLevel: currBracketStart,
         toLevel: targetLevel,
         material: currMat,
         quantityNeeded: qty,
         cost: qty * currMat.liveMarketPrice,
-        durationSeconds: qty * itemDuration,
+        durationSeconds: Math.round(qty * itemDuration),
       });
     }
 
@@ -340,19 +340,19 @@ export function calculateGoalEstimate(
       material: bestCheap,
       quantityNeeded: cheapQty,
       totalCost: cheapQty * bestCheap.liveMarketPrice,
-      totalDurationSeconds: Math.ceil(cheapQty * Math.max(1, Math.round(bestCheap.timeSeconds / effMultiplier))),
+      totalDurationSeconds: Math.round(cheapQty * Math.max(0.1, bestCheap.timeSeconds / effMultiplier)),
     },
     bestOption: {
       material: bestBalanced,
       quantityNeeded: bestBalancedQty,
       totalCost: bestBalancedQty * bestBalanced.liveMarketPrice,
-      totalDurationSeconds: Math.ceil(bestBalancedQty * Math.max(1, Math.round(bestBalanced.timeSeconds / effMultiplier))),
+      totalDurationSeconds: Math.round(bestBalancedQty * Math.max(0.1, bestBalanced.timeSeconds / effMultiplier)),
     },
     fastestOption: {
       material: bestFast,
       quantityNeeded: fastQty,
       totalCost: fastQty * bestFast.liveMarketPrice,
-      totalDurationSeconds: Math.ceil(fastQty * Math.max(1, Math.round(bestFast.timeSeconds / effMultiplier))),
+      totalDurationSeconds: Math.round(fastQty * Math.max(0.1, bestFast.timeSeconds / effMultiplier)),
     },
     cheapestSteps,
     bestSteps,
@@ -657,14 +657,16 @@ export function useForgeLessons() {
   const [extraExpBuffPercent, setExtraExpBuffPercent] = useState<number>(0);
   const [extraEffBuffPercent, setExtraEffBuffPercent] = useState<number>(0);
 
-  // Detect Cursed or Forsaken character profile for default -50% EXP penalty
+  // Detect Cursed/Forsaken penalty or Blacksmith (+10% EXP, +10% Eff) bonuses
   const profileClassName = String(activeProfile?.className || (activeProfile as any)?.class || "").trim();
   const normalizedClass = profileClassName.toLowerCase();
   const isCursedOrForsaken = normalizedClass.includes("cursed") || normalizedClass.includes("forsaken");
+  const isBlacksmith = normalizedClass.includes("blacksmith");
 
   const totalBuffMultiplier = useMemo(() => {
     // Base EXP multiplier: Cursed & Forsaken have a default -50% primary EXP penalty (0.50x)
     let mult = isCursedOrForsaken ? 0.50 : 1.0;
+    if (isBlacksmith) mult += 0.10;
     if (hasMembershipBuff) mult += 0.15;
     if (hasCampaignBuff) mult += 0.15;
     if (shrineBuffPercent > 0) mult += shrineBuffPercent / 100;
@@ -672,14 +674,15 @@ export function useForgeLessons() {
     if (customBuffPercent > 0) mult += customBuffPercent / 100;
     if (extraExpBuffPercent > 0) mult += extraExpBuffPercent / 100;
     return Number(mult.toFixed(4));
-  }, [isCursedOrForsaken, hasMembershipBuff, hasCampaignBuff, shrineBuffPercent, hasDailyBlessing, customBuffPercent, extraExpBuffPercent]);
+  }, [isCursedOrForsaken, isBlacksmith, hasMembershipBuff, hasCampaignBuff, shrineBuffPercent, hasDailyBlessing, customBuffPercent, extraExpBuffPercent]);
 
   const totalEffMultiplier = useMemo(() => {
     let mult = 1.0;
+    if (isBlacksmith) mult += 0.10;
     if (hasMembershipBuff) mult += 0.10;
     if (extraEffBuffPercent > 0) mult += extraEffBuffPercent / 100;
     return mult;
-  }, [hasMembershipBuff, extraEffBuffPercent]);
+  }, [isBlacksmith, hasMembershipBuff, extraEffBuffPercent]);
 
   // 3. Duration planner (Hours & Minutes, NO sliders) with smart defaults and localStorage persistence
   const getInitialDuration = useCallback(() => {
@@ -990,7 +993,7 @@ export function useForgeLessons() {
       const safePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : 0;
       const livePrice = safePrice > 0 ? safePrice : m.marketPrice;
       const baseCalc = calculateLessonMaterialEfficiency(m, forgeLevel, totalBuffMultiplier, livePrice);
-      const adjustedTimeSeconds = Math.max(1, Math.round(baseCalc.timeSeconds / totalEffMultiplier));
+      const adjustedTimeSeconds = Math.max(0.1, Number((baseCalc.timeSeconds / totalEffMultiplier).toFixed(4)));
       const adjustedExpPerSec = adjustedTimeSeconds > 0 ? Number((baseCalc.effectiveExp / adjustedTimeSeconds).toFixed(3)) : 0;
       return {
         ...baseCalc,
@@ -1053,7 +1056,7 @@ export function useForgeLessons() {
         material: mat,
         quantity: qty,
         totalExp: Number((mat.effectiveExp * qty).toFixed(2)),
-        totalDurationSeconds: mat.timeSeconds * qty,
+        totalDurationSeconds: Math.round(mat.timeSeconds * qty),
         totalCost: mat.liveMarketPrice * qty,
       });
     }
@@ -1198,6 +1201,7 @@ export function useForgeLessons() {
     queueAllOwned,
 
     isCursedOrForsaken,
+    isBlacksmith,
     profileClassName,
     activeProfile,
     allCalculatedMaterials,

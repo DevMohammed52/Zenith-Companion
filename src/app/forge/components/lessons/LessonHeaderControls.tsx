@@ -38,6 +38,7 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
     targetMinutes,
     setTargetMinutes,
     isCursedOrForsaken,
+    isBlacksmith,
     profileClassName,
   } = lessons;
 
@@ -402,6 +403,11 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
               {isCursedOrForsaken && (
                 <span className="buff-badge-pill penalty-tag" title="Cursed / Forsaken class -50% base EXP penalty">
                   {profileClassName || "Cursed"}
+                </span>
+              )}
+              {isBlacksmith && (
+                <span className="buff-badge-pill exp" title="Blacksmith class +10% Forge EXP & +10% Efficiency">
+                  Blacksmith (+10%)
                 </span>
               )}
               <span
