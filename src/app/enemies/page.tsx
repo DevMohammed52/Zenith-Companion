@@ -427,7 +427,6 @@ function EnemyDetailModal({
 
           <div className="detail-links">
             <Link href={`/map?location=${encodeURIComponent(enemy.locationKey)}`}><MapPin size={14} /> Map location <ExternalLink size={12} /></Link>
-            <Link href={`/combat?search=${encodeURIComponent(enemy.name)}`}><Swords size={14} /> Combat details <ExternalLink size={12} /></Link>
           </div>
         </div>
       </div>

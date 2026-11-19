@@ -109,8 +109,8 @@ describe("dashboard command center contracts", () => {
 
   it("replaces secondary strip placeholders with live data and updates MODULE_GROUPS for Patch Notes and Pet tools", () => {
     const pageContent = readFileSync(pagePath, "utf-8");
-    expect(pageContent).toContain("MARKET_WATCH_STORAGE_KEY");
-    expect(pageContent).toContain("sanitizeMarketWatchRules");
+    expect(pageContent).toContain('href="/forge/lessons"');
+    expect(pageContent).toContain("Forge Lessons");
     expect(pageContent).not.toContain("<strong>Open</strong>");
     expect(pageContent).not.toContain("<strong>Snapshot rules</strong>");
     expect(pageContent).not.toContain("<strong>Forecasts</strong>");

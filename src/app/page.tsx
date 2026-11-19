@@ -13,11 +13,6 @@ import {
   type ForgePlannerLine,
 } from "@/lib/forge-planner";
 import { formatGold } from "@/lib/format";
-import {
-  MARKET_WATCH_RULES_EVENT,
-  MARKET_WATCH_STORAGE_KEY,
-  sanitizeMarketWatchRules,
-} from "@/lib/market-alerts";
 import { usePreferences } from "@/lib/preferences";
 import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
@@ -167,7 +162,6 @@ const MODULE_GROUPS: ModuleGroup[] = [
       { href: "/items", label: "Items", icon: "items" },
       { href: "/alchemy", label: "Alchemy", icon: "alchemy" },
       { href: "/crafting", label: "Queue", icon: "crafting" },
-      { href: "/market-alerts", label: "Market Watch", icon: "bell" },
     ],
   },
   {
@@ -180,12 +174,13 @@ const MODULE_GROUPS: ModuleGroup[] = [
       { href: "/pets", label: "Pets", icon: "pets" },
       { href: "/pets/owned", label: "Owned Pets", icon: "pets" },
       { href: "/pets/compare", label: "Pet Compare", icon: "pets" },
-      { href: "/forge", label: "Forge", icon: "forge" },
+      { href: "/forge/lessons", label: "Lessons", icon: "forge" },
+      { href: "/forge/craft", label: "Forge Craft", icon: "forge" },
       { href: "/bis", label: "BiS", icon: "shield" },
     ],
   },
   {
-    title: "Combat & World",
+    title: "World & Encounters",
     text: "Drop tables, dungeon requirements, world bosses, weather, and map routes.",
     icon: "world",
     links: [
@@ -194,7 +189,6 @@ const MODULE_GROUPS: ModuleGroup[] = [
       { href: "/enemies", label: "Enemies", icon: "enemy" },
       { href: "/dungeons", label: "Dungeons", icon: "castle" },
       { href: "/bosses", label: "Bosses", icon: "boss" },
-      { href: "/combat", label: "Combat", icon: "combat" },
     ],
   },
   {
@@ -232,7 +226,6 @@ export default function DashboardPage() {
   const [now, setNow] = useState(() => Date.now());
   const [activeMythicNames, setActiveMythicNames] = useState<string[]>([]);
   const [forgeLines, setForgeLines] = useState<ForgePlannerLine[]>([]);
-  const [marketWatchCount, setMarketWatchCount] = useState(0);
   const [persistedSkillProfit, setPersistedSkillProfit] = useState<PersistedSkillProfitDashboardState>(
     DEFAULT_PERSISTED_SKILL_PROFIT,
   );
@@ -279,14 +272,6 @@ export default function DashboardPage() {
       setForgeLines([]);
     }
 
-    try {
-      const savedWatch = localStorage.getItem(MARKET_WATCH_STORAGE_KEY);
-      const rules = sanitizeMarketWatchRules(savedWatch ? JSON.parse(savedWatch) : []);
-      setMarketWatchCount(rules.length);
-    } catch {
-      setMarketWatchCount(0);
-    }
-
     setPersistedSkillProfit(
       readSkillProfitStateFromKey(skillProfitStorageKey)
         ?? readSkillProfitStateFromKey(SKILL_PROFIT_STORAGE_KEY)
@@ -302,7 +287,6 @@ export default function DashboardPage() {
         event.key === activeMythicStorageKey ||
         event.key === MYTHIC_ACTIVE_RECIPES_STORAGE_KEY ||
         event.key === FORGE_PLANNER_STORAGE_KEY ||
-        event.key === MARKET_WATCH_STORAGE_KEY ||
         event.key === skillProfitStorageKey ||
         event.key === SKILL_PROFIT_STORAGE_KEY
       ) {
@@ -310,10 +294,8 @@ export default function DashboardPage() {
       }
     };
     window.addEventListener("storage", handleStorage);
-    window.addEventListener(MARKET_WATCH_RULES_EVENT, syncLocalDashboardStorage);
     return () => {
       window.removeEventListener("storage", handleStorage);
-      window.removeEventListener(MARKET_WATCH_RULES_EVENT, syncLocalDashboardStorage);
     };
   }, [activeMythicStorageKey, skillProfitStorageKey, syncLocalDashboardStorage]);
 
@@ -594,10 +576,10 @@ export default function DashboardPage() {
           <span>Mythic Lab</span>
           <strong>{activeMythicNames.length} active</strong>
         </Link>
-        <Link href="/market-alerts" className="command-mini-card">
-          <ZenithIcon name="bell" size={17} />
-          <span>Market Watch</span>
-          <strong>{marketWatchCount} rule{marketWatchCount === 1 ? "" : "s"}</strong>
+        <Link href="/forge/lessons" className="command-mini-card">
+          <ZenithIcon name="forge" size={17} />
+          <span>Forge Lessons</span>
+          <strong>Training roadmap</strong>
         </Link>
         <Link href="/weather" className="command-mini-card">
           <ZenithIcon name="weather" size={17} />

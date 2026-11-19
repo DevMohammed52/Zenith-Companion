@@ -89,11 +89,15 @@ const pageNotices: Record<string, ZenithNotification> = {
   },
   "/forge": {
     title: "Forge tip",
-    body: "Saved recipes can reuse your custom prices and profile settings for cleaner planning.",
+    body: "Use goal planning and session queueing to map material costs and optimize offline training.",
   },
-  "/combat": {
-    title: "Combat tip",
-    body: "Combat planning is estimate-first. Confirm enemy stacks and food needs in game.",
+  "/forge/lessons": {
+    title: "Forge lessons tip",
+    body: "Queue materials to fill your offline session duration and preview guaranteed EXP gains.",
+  },
+  "/forge/craft": {
+    title: "Forge craft tip",
+    body: "Build shopping lists and recipe batches with live market prices and scroll requirements.",
   },
   "/bosses": {
     title: "Boss route tip",
@@ -129,15 +133,11 @@ const pageNotices: Record<string, ZenithNotification> = {
   },
   "/weather": {
     title: "Weather tip",
-    body: "Check weather windows before choosing long skilling or combat sessions.",
+    body: "Check weather windows before choosing long skilling or hunting sessions.",
   },
   "/map": {
     title: "Map tip",
     body: "Use locations and weather together when route planning across regions.",
-  },
-  "/market-alerts": {
-    title: "Market Watch tip",
-    body: "Browser alerts only run while Zenith can stay active in this browser.",
   },
   "/bis": {
     title: "BiS tip",

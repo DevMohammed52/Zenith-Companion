@@ -94,7 +94,7 @@ const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase()
 
 const getSourceRoute = (source: AcquisitionSource) => {
   const type = normalizeSourceType(source.type);
-  const target = type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : type === 'ENEMY' ? 'enemies' : 'combat';
+  const target = type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : 'enemies';
   return `/${target}?search=${encodeURIComponent(source.name || '')}`;
 };
 

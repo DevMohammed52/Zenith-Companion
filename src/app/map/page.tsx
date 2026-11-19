@@ -822,7 +822,6 @@ function MapPageContent() {
             </div>
 
             <div className="quick-links">
-              <Link href={`/combat?search=${encodeURIComponent(selectedLocation.name)}`}><Swords size={14} /> Combat <ExternalLink size={12} /></Link>
               <Link href={`/enemies?location=${encodeURIComponent(selectedLocation.key)}`}><Swords size={14} /> Enemies <ExternalLink size={12} /></Link>
               <Link href={`/dungeons?search=${encodeURIComponent(selectedLocation.name)}`}><Castle size={14} /> Dungeons <ExternalLink size={12} /></Link>
               <Link href={`/bosses?search=${encodeURIComponent(selectedLocation.name)}`}><Skull size={14} /> Bosses <ExternalLink size={12} /></Link>
@@ -2436,7 +2435,7 @@ function SourceColumn({
   title: string;
   icon: ReactNode;
   rows: any[];
-  hrefBase: "/combat" | "/enemies" | "/dungeons" | "/bosses";
+  hrefBase: "/enemies" | "/dungeons" | "/bosses";
 }) {
   const sourceKind = getSourceKind(title);
   return (
