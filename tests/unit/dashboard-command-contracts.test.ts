@@ -6,6 +6,27 @@ import { calculateEssenceSession, type EssenceItemLookup } from "@/lib/essences"
 
 describe("dashboard command center contracts", () => {
   const pagePath = path.join(process.cwd(), "src", "app", "page.tsx");
+  const hookPath = path.join(process.cwd(), "src", "app", "hooks", "useDashboardState.ts");
+  const typesPath = path.join(process.cwd(), "src", "app", "types.ts");
+  const priorityToolsPath = path.join(process.cwd(), "src", "app", "components", "DashboardPriorityTools.tsx");
+  const quickLinksPath = path.join(process.cwd(), "src", "app", "components", "DashboardQuickLinks.tsx");
+  const heroPath = path.join(process.cwd(), "src", "app", "components", "DashboardHero.tsx");
+  const moduleGridPath = path.join(process.cwd(), "src", "app", "components", "DashboardModuleGrid.tsx");
+  const setupReminderPath = path.join(process.cwd(), "src", "app", "components", "DashboardSetupReminder.tsx");
+
+  function getDashboardFilesContent(): string {
+    return [
+      readFileSync(pagePath, "utf-8"),
+      existsSync(hookPath) ? readFileSync(hookPath, "utf-8") : "",
+      existsSync(typesPath) ? readFileSync(typesPath, "utf-8") : "",
+      existsSync(priorityToolsPath) ? readFileSync(priorityToolsPath, "utf-8") : "",
+      existsSync(quickLinksPath) ? readFileSync(quickLinksPath, "utf-8") : "",
+      existsSync(heroPath) ? readFileSync(heroPath, "utf-8") : "",
+      existsSync(moduleGridPath) ? readFileSync(moduleGridPath, "utf-8") : "",
+      existsSync(setupReminderPath) ? readFileSync(setupReminderPath, "utf-8") : "",
+    ].join("\n");
+  }
+
   const layoutPath = path.join(process.cwd(), "src", "app", "layout.tsx");
   const globalsCssPath = path.join(process.cwd(), "src", "app", "globals.css");
   const bannerCssPath = path.join(process.cwd(), "src", "components", "DataFreshnessBanner.module.css");
@@ -25,7 +46,7 @@ describe("dashboard command center contracts", () => {
   }
 
   it("does not offer redundant local backup export in onboarding prompt", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).not.toContain("Export local backup");
     expect(pageContent).not.toMatch(/dashboard-setup-actions[\s\S]*?Upload/);
   });
@@ -69,7 +90,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("wires Forge Planner card to FORGE_PLANNER_STORAGE_KEY and keeps activeMythicNames on /alchemy/mythic", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     const forgeCard = pageContent.match(/<Link\s+href="\/forge"[\s\S]*?<\/Link>/)?.[0] ?? "";
     const mythicCard = pageContent.match(/<Link\s+href="\/alchemy\/mythic"[\s\S]*?<\/Link>/)?.[0] ?? "";
     expect(pageContent).toContain("FORGE_PLANNER_STORAGE_KEY");
@@ -80,7 +101,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("syncs Best Skill Route with configuredProfile, persisted skill-profit settings, essence sessions, and vendor-safe liquidity filtering", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain("const configuredProfile = activeProfile && !isStarterProfile(activeProfile) ? activeProfile : null;");
     expect(pageContent).toContain("zenith_skill_profit_finder");
     expect(pageContent).toContain("calculateEssenceSession");
@@ -91,7 +112,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("passes profileClassName into calculateHousingBuffs and handles foundation, empty buffs, and local zone limits", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).toMatch(/calculateHousingBuffs\(activeProfile\?\.housing,\s*\{\s*profileClassName:\s*activeProfile\?\.className\s*\}\)/);
     expect(pageContent).toContain("Foundation needed");
     expect(pageContent).toContain("No active buffs");
@@ -99,7 +120,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("guards formatAge against NaN, uses DATA_DELAYED_AFTER_MS, and makes Item index and Active profile clickable links", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain("!Number.isFinite(minutes)");
     expect(pageContent).toContain("DATA_DELAYED_AFTER_MS");
     expect(pageContent).toContain('<div className="command-status-grid" role="group" aria-label="App status">');
@@ -108,7 +129,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("replaces secondary strip placeholders with live data and updates MODULE_GROUPS for Patch Notes and Pet tools", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain('href="/forge/lessons"');
     expect(pageContent).toContain("Forge Lessons");
     expect(pageContent).not.toContain("<strong>Open</strong>");
@@ -120,7 +141,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("prevents hydration CLS in page.tsx, layout.tsx, and globals.css and provides root OpenGraph/Twitter image routes", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     const layoutContent = readFileSync(layoutPath, "utf-8");
     const css = readFileSync(globalsCssPath, "utf-8");
     const bannerCss = readFileSync(bannerCssPath, "utf-8");
@@ -182,7 +203,7 @@ describe("dashboard command center contracts", () => {
   });
 
   it("loads market data via shared DataContext.ensureMarketLoaded, loads allItemsDb when essences are configured, and passes (queue, marketData, allItemsDb) to calculateCraftingQueuePlan", () => {
-    const pageContent = readFileSync(pagePath, "utf-8");
+    const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain("const { marketData, allItemsDb, ensureMarketLoaded } = useData({ autoLoad: false });");
     expect(pageContent).toContain("void ensureMarketLoaded();");
     expect(pageContent).toContain("if (hasConfiguredEssence && !allItemsDb)");
