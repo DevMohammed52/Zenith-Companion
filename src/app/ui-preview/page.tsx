@@ -8,6 +8,7 @@ import {
   Card,
   ModalSheet,
   Badge,
+  Icon,
   type ButtonVariant,
   type ButtonSize,
 } from "@/components/ui";
@@ -416,6 +417,112 @@ export default function UIPreviewPage() {
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Current Combat XP:</span>
             <div className="tabular-nums" style={{ fontSize: 20, fontWeight: 700, color: "var(--text-main)", marginTop: 4 }}>
               482,109 / 500,000
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 8. Icon Primitive & Semantic Map Showcase */}
+      <Card
+        title="8. Icon Primitive & Semantic Registry (One Icon, One Meaning)"
+        subtitle="Auditable central concept mapping with optical scaling, 1.75px crisp stroke weight, and WCAG 2.2 SC 1.1.1 accessibility."
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Optical Size Scale */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Optical Sizing Scale (xs: 12px, sm: 14px, md: 16px, lg: 20px, xl: 24px)
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 24, padding: "12px 16px", background: "var(--bg-input)", borderRadius: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="combat" size="xs" />
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>xs (12px)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="combat" size="sm" />
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>sm (14px)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="combat" size="md" />
+                <span style={{ fontSize: 14, color: "var(--text-main)", fontWeight: 500 }}>md (16px default)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="combat" size="lg" />
+                <span style={{ fontSize: 15, color: "var(--text-main)" }}>lg (20px)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Icon name="combat" size="xl" />
+                <span style={{ fontSize: 16, color: "var(--text-main)", fontWeight: 600 }}>xl (24px)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* IdleMMO Game Domains */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Domain System Mappings
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8 }}>
+              {[
+                { name: "combat", label: "Combat" },
+                { name: "boss", label: "Bosses" },
+                { name: "dungeon", label: "Dungeons" },
+                { name: "alchemy", label: "Alchemy" },
+                { name: "forge", label: "Forge" },
+                { name: "skillProfit", label: "Skill Profit" },
+                { name: "weather", label: "Weather" },
+                { name: "housing", label: "Housing" },
+                { name: "pets", label: "Pets" },
+                { name: "museum", label: "Museum" },
+                { name: "conquest", label: "Conquest" },
+                { name: "lore", label: "Lore" },
+                { name: "items", label: "Items" },
+                { name: "gold", label: "Economy (Gold)" },
+                { name: "xp", label: "Essence / XP" },
+                { name: "timer", label: "Timer / Clock" },
+              ].map((item) => (
+                <div
+                  key={item.name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    background: "var(--bg-input)",
+                    borderRadius: 6,
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <Icon name={item.name as any} size="md" />
+                  <span style={{ fontSize: 13, color: "var(--text-main)", fontWeight: 500 }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Accessibility Demonstration */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              WCAG 2.2 SC 1.1.1 Non-Text Content Compliance
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "var(--bg-input)", borderRadius: 6 }}>
+                <Icon name="search" label="Search Database" size="md" />
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Informative Icon (Accessible Name via visually hidden text)</span>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Icon name="filter" size="sm" />}
+              >
+                Filter Results
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="copy" size="sm" />}
+                aria-label="Copy Data"
+              />
             </div>
           </div>
         </div>

@@ -12,3 +12,5 @@ export {
   type ModalSheetMaxWidth,
 } from "./ModalSheet";
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./Badge";
+export { Icon, type IconProps } from "./Icon";
+

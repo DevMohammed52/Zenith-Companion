@@ -8,7 +8,10 @@ import {
   Card,
   Badge,
   ModalSheet,
+  Icon,
 } from "@/components/ui";
+import { CONCEPT_ICONS, ICON_SIZES, type IconConcept } from "@/lib/icons";
+
 
 describe("Primitive 1: Button", () => {
   it("renders with default secondary variant and children", () => {
@@ -314,3 +317,76 @@ describe("Primitive 6: Badge", () => {
     expect(uniqueHtml).toContain("Unique Artifact");
   });
 });
+
+describe("Primitive 7: Icon & Centralized Semantics", () => {
+  it("renders decorative icon with aria-hidden='true' by default", () => {
+    const html = renderToStaticMarkup(
+      createElement(Icon, { name: "combat" })
+    );
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("srOnly");
+    expect(html).not.toContain('role="img"');
+  });
+
+  it("renders accessible label with role='img' and visually hidden text when label is provided", () => {
+    const html = renderToStaticMarkup(
+      createElement(Icon, { name: "boss", label: "World Boss Indicator" })
+    );
+    expect(html).not.toContain('aria-hidden="true"');
+    expect(html).toContain('role="img"');
+    expect(html).toContain("srOnly");
+    expect(html).toContain("World Boss Indicator");
+  });
+
+  it("applies optical size tokens correctly", () => {
+    const mdHtml = renderToStaticMarkup(createElement(Icon, { name: "settings", size: "md" }));
+    expect(mdHtml).toContain('width="16"');
+    expect(mdHtml).toContain('height="16"');
+
+    const xsHtml = renderToStaticMarkup(createElement(Icon, { name: "chevronDown", size: "xs" }));
+    expect(xsHtml).toContain('width="12"');
+    expect(xsHtml).toContain('height="12"');
+
+    const lgHtml = renderToStaticMarkup(createElement(Icon, { name: "dungeon", size: "lg" }));
+    expect(lgHtml).toContain('width="20"');
+    expect(lgHtml).toContain('height="20"');
+
+    const customHtml = renderToStaticMarkup(createElement(Icon, { name: "gold", size: 32 }));
+    expect(customHtml).toContain('width="32"');
+    expect(customHtml).toContain('height="32"');
+  });
+
+  it("maps core IdleMMO domain concepts to valid SVG components", () => {
+    const coreConcepts: IconConcept[] = [
+      "combat",
+      "boss",
+      "dungeon",
+      "alchemy",
+      "forge",
+      "skillProfit",
+      "weather",
+      "housing",
+      "pets",
+      "museum",
+      "conquest",
+      "lore",
+      "items",
+      "gold",
+      "xp",
+      "timer",
+      "favorite",
+      "filter",
+      "sort",
+      "copy",
+      "refresh",
+    ];
+
+    for (const concept of coreConcepts) {
+      expect(CONCEPT_ICONS[concept]).toBeDefined();
+      const html = renderToStaticMarkup(createElement(Icon, { name: concept }));
+      expect(html).toContain("<svg");
+    }
+  });
+});
+

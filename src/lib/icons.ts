@@ -1,0 +1,167 @@
+import type { ComponentType, SVGProps } from "react";
+import {
+  House,
+  LayoutDashboard,
+  Settings,
+  Search,
+  Menu,
+  X,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  User,
+  Users,
+  Swords,
+  Skull,
+  Key,
+  FlaskConical,
+  Hammer,
+  TrendingUp,
+  CloudSun,
+  Warehouse,
+  PawPrint,
+  Landmark,
+  Shield,
+  BookOpen,
+  Package,
+  Compass,
+  Coins,
+  Sparkles,
+  Clock,
+  Bookmark,
+  Lock,
+  Unlock,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Copy,
+  RefreshCw,
+  Download,
+  Upload,
+  Trash2,
+  Pencil,
+  Check,
+  Plus,
+  Minus,
+  Info,
+  AlertTriangle,
+  AlertCircle,
+  HelpCircle,
+  Target,
+  Calculator,
+  Wand2,
+  ShieldCheck,
+  Zap,
+  Heart,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+
+/**
+ * Zenith Companion Centralized Icon Registry
+ *
+ * Rules (codified from NN/g, Apple HIG, M3, Carbon, Atlassian, Polaris, Fluent 2, Lucide, WCAG 2.2):
+ * 1. One icon, one meaning. Never reuse an icon for a different concept.
+ * 2. Pick icons by searching Lucide's functional tags, not by visual aesthetics.
+ * 3. Decorative icons like sparkles do not belong on functional controls.
+ * 4. Icon-only buttons must have an accessible name (via aria-label or .sr-only span).
+ * 5. Outlined by default, filled only for selected states or high-emphasis navigation.
+ */
+
+export const CONCEPT_ICONS = {
+  // Navigation & Shell
+  home: House,
+  dashboard: LayoutDashboard,
+  settings: Settings,
+  search: Search,
+  menu: Menu,
+  close: X,
+  chevronDown: ChevronDown,
+  chevronUp: ChevronUp,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  externalLink: ExternalLink,
+  profile: User,
+  profileSwitch: Users,
+
+  // Game Systems & Routes
+  combat: Swords,
+  boss: Skull,
+  dungeon: Key,
+  alchemy: FlaskConical,
+  forge: Hammer,
+  skillProfit: TrendingUp,
+  weather: CloudSun,
+  housing: Warehouse,
+  pets: PawPrint,
+  museum: Landmark,
+  conquest: Shield,
+  lore: BookOpen,
+  items: Package,
+  guilds: Users,
+  map: Compass,
+  bis: Target,
+  calculator: Calculator,
+
+  // Combat Stats & Attributes
+  magic: Wand2,
+  defense: ShieldCheck,
+  speed: Zap, // Strictly combat attack speed / haste, NOT for generic button flair
+  health: Heart,
+
+  // Game Economy & Progression
+  gold: Coins,
+  xp: Sparkles, // Strictly experience points / essence tiers, NOT for generic UI actions
+  timer: Clock,
+  favorite: Bookmark,
+  locked: Lock,
+  unlocked: Unlock,
+
+  // Common UI Actions & Controls
+  filter: SlidersHorizontal,
+  sort: ArrowUpDown,
+  copy: Copy,
+  refresh: RefreshCw,
+  download: Download,
+  upload: Upload,
+  trash: Trash2,
+  edit: Pencil,
+  check: Check,
+  plus: Plus,
+  minus: Minus,
+  view: Eye,
+  hide: EyeOff,
+
+  // Feedback & Status
+  info: Info,
+  warning: AlertTriangle,
+  error: AlertCircle,
+  help: HelpCircle,
+} as const;
+
+export type IconConcept = keyof typeof CONCEPT_ICONS;
+
+export type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
+
+export const ICON_SIZES: Record<IconSize, number> = {
+  xs: 12, // Small contained badges, validation chevrons (Atlassian/Fluent standard)
+  sm: 14, // Compact table cells, inline metadata
+  md: 16, // Default baseline for body text & standard controls (Carbon/Atlassian/Polaris standard)
+  lg: 20, // Primary buttons, subheaders, mobile dock items
+  xl: 24, // Hero headers, drawer headings, empty state icons
+};
+
+export const DEFAULT_ICON_STROKE = 1.75;
+
+export type LucideIconComponent = ComponentType<
+  SVGProps<SVGSVGElement> & {
+    size?: string | number;
+    strokeWidth?: string | number;
+    color?: string;
+  }
+>;
+
+export function getConceptIcon(concept: IconConcept): LucideIconComponent {
+  return CONCEPT_ICONS[concept] as unknown as LucideIconComponent;
+}
