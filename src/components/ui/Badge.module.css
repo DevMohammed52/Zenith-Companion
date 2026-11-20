@@ -1,0 +1,96 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--font-feature-tnum);
+  border: 1px solid transparent;
+}
+
+/* Sizes */
+.sm {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.md {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+/* Neutral */
+.neutral {
+  color: var(--text-muted);
+  background-color: rgba(148, 163, 184, 0.10);
+  border-color: rgba(148, 163, 184, 0.20);
+}
+
+/* Two-Tier Text-Safe Item Rarities */
+.standard {
+  color: var(--quality-standard, #d1d5db);
+  background-color: rgba(209, 213, 219, 0.10);
+  border-color: rgba(209, 213, 219, 0.22);
+}
+
+.refined {
+  color: var(--quality-refined-text, #60a5fa);
+  background-color: rgba(77, 118, 214, 0.15);
+  border-color: rgba(96, 165, 250, 0.32);
+}
+
+.premium {
+  color: var(--quality-premium, #1fd60b);
+  background-color: rgba(31, 214, 11, 0.12);
+  border-color: rgba(31, 214, 11, 0.28);
+}
+
+.epic {
+  color: var(--quality-epic-text, #f87171);
+  background-color: rgba(192, 57, 43, 0.16);
+  border-color: rgba(248, 113, 113, 0.32);
+}
+
+.legendary {
+  color: var(--quality-legendary, #f7bd1e);
+  background-color: rgba(247, 189, 30, 0.15);
+  border-color: rgba(247, 189, 30, 0.35);
+}
+
+.mythic {
+  color: var(--quality-mythic, #f48a00);
+  background-color: rgba(244, 138, 0, 0.15);
+  border-color: rgba(244, 138, 0, 0.35);
+}
+
+.unique {
+  color: var(--quality-unique-text, #c084fc);
+  background-color: rgba(180, 23, 244, 0.15);
+  border-color: rgba(192, 132, 252, 0.35);
+}
+
+/* Functional status */
+.success {
+  color: var(--text-success, #4ade80);
+  background-color: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+.danger {
+  color: var(--text-danger, #f87171);
+  background-color: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

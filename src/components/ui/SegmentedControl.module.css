@@ -1,0 +1,121 @@
+.track {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--bg-input, #0d121d);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  user-select: none;
+  min-height: 44px; /* Mobile touch friendly */
+  position: relative;
+}
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  padding: 0 var(--space-3, 12px);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: color var(--duration-fast, 150ms) ease,
+              background-color var(--duration-fast, 150ms) ease,
+              transform 100ms var(--ease-spring);
+  min-height: 38px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  .tab {
+    min-height: 40px;
+  }
+}
+
+.fullWidth .tab {
+  flex: 1 1 0%;
+}
+
+.tab:hover:not(.active) {
+  color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.tab:active {
+  transform: scale(0.98);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+/* Active State (High Contrast Neutral Pillar) */
+.active {
+  background-color: var(--btn-primary-bg, #f8fafc);
+  color: var(--btn-primary-text, #0a0d14);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.active:hover {
+  background-color: var(--btn-primary-bg, #f8fafc);
+  color: var(--btn-primary-text, #0a0d14);
+}
+
+/* Sizes */
+.sm {
+  min-height: 38px;
+  padding: 2px;
+}
+
+.sm .tab {
+  min-height: 32px;
+  font-size: 12px;
+  padding: 0 var(--space-2, 8px);
+}
+
+@media (max-width: 640px) {
+  .sm {
+    min-height: 44px;
+  }
+  .sm .tab {
+    min-height: 38px;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 10px;
+  background-color: rgba(148, 163, 184, 0.2);
+  color: inherit;
+}
+
+.active .badge {
+  background-color: rgba(10, 13, 20, 0.15);
+  color: #0a0d14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+    transform: none;
+  }
+}
