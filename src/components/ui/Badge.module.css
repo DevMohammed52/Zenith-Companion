@@ -82,6 +82,12 @@
   border-color: rgba(74, 222, 128, 0.25);
 }
 
+.warning {
+  color: #fbbf24;
+  background-color: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.30);
+}
+
 .danger {
   color: var(--text-danger, #f87171);
   background-color: rgba(248, 113, 113, 0.12);

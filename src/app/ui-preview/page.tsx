@@ -15,6 +15,7 @@ import {
 export default function UIPreviewPage() {
   // Button interactive states
   const [btnLoading, setBtnLoading] = useState(false);
+  const [btnSuccess, setBtnSuccess] = useState(false);
   const [btnVariant, setBtnVariant] = useState<ButtonVariant>("primary");
   const [btnSize, setBtnSize] = useState<ButtonSize>("md");
 
@@ -37,6 +38,13 @@ export default function UIPreviewPage() {
     setBtnLoading(true);
     setTimeout(() => {
       setBtnLoading(false);
+    }, 2000);
+  };
+
+  const simulateSuccessAction = () => {
+    setBtnSuccess(true);
+    setTimeout(() => {
+      setBtnSuccess(false);
     }, 2000);
   };
 
@@ -110,6 +118,15 @@ export default function UIPreviewPage() {
             <Button
               variant={btnVariant}
               size={btnSize}
+              success={btnSuccess}
+              onClick={simulateSuccessAction}
+            >
+              {btnSuccess ? "Saved Successfully!" : "Click for Success State"}
+            </Button>
+
+            <Button
+              variant={btnVariant}
+              size={btnSize}
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -152,6 +169,15 @@ export default function UIPreviewPage() {
           <TextInput
             id="preview-price"
             label="Custom Item Price (Gold)"
+            labelAction={
+              <button
+                type="button"
+                onClick={() => setHasError(!hasError)}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 11, padding: 0 }}
+              >
+                {hasError ? "Clear Error" : "Toggle Error"}
+              </button>
+            }
             type="number"
             inputMode="numeric"
             value={priceValue}
@@ -159,15 +185,6 @@ export default function UIPreviewPage() {
             error={hasError ? "Price must be below current market cap (50,000,000 gold)" : undefined}
             helperText={!hasError ? "Overrides global market price for alchemy and forge EV" : undefined}
             leftIcon={<span style={{ fontSize: 13, fontWeight: 700, color: "var(--quality-legendary)" }}>G</span>}
-            rightSlot={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setHasError(!hasError)}
-              >
-                {hasError ? "Clear Error" : "Trigger Error"}
-              </Button>
-            }
           />
         </div>
       </Card>
@@ -191,6 +208,7 @@ export default function UIPreviewPage() {
                 { value: "weapons", label: "Weapons", badge: 48 },
                 { value: "armor", label: "Armor", badge: 86 },
                 { value: "alchemy", label: "Alchemy", badge: 19 },
+                { value: "archived", label: "Archived", disabled: true },
               ]}
             />
           </div>
@@ -236,6 +254,17 @@ export default function UIPreviewPage() {
         >
           <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
             Ideal for formula parameters, raw JSON payloads, and embedded code blocks.
+          </p>
+        </Card>
+
+        <Card
+          accent="legendary"
+          title="Legendary Accent"
+          subtitle="3px high-contrast left border"
+          action={<Badge variant="legendary">Accent</Badge>}
+        >
+          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+            Visual indicator for drop tiers, danger alerts, or important notices.
           </p>
         </Card>
 
@@ -317,6 +346,7 @@ export default function UIPreviewPage() {
         </div>
 
         <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <Badge variant="warning">Warning (10.28:1)</Badge>
           <Badge variant="success">In Progress</Badge>
           <Badge variant="danger">High Danger</Badge>
           <Badge variant="neutral">Muted Status</Badge>

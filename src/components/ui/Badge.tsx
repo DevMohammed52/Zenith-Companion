@@ -11,6 +11,7 @@ export type BadgeVariant =
   | "mythic"
   | "unique"
   | "success"
+  | "warning"
   | "danger";
 
 export type BadgeSize = "sm" | "md";

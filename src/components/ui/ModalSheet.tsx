@@ -14,6 +14,8 @@ export interface ModalSheetProps {
   children?: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: ModalSheetMaxWidth;
+  closeOnBackdrop?: boolean;
+  closeOnEscape?: boolean;
   className?: string;
 }
 
@@ -25,6 +27,8 @@ export function ModalSheet({
   children,
   footer,
   maxWidth = "md",
+  closeOnBackdrop = true,
+  closeOnEscape = true,
   className = "",
 }: ModalSheetProps) {
   const [mounted, setMounted] = useState(false);
@@ -80,7 +84,7 @@ export function ModalSheet({
     }, 50);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && closeOnEscape) {
         e.preventDefault();
         onClose();
         return;
@@ -126,14 +130,14 @@ export function ModalSheet({
         previousActiveElement.current.focus();
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnEscape]);
 
   if (!mounted || !isRendering) {
     return null;
   }
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget && !isClosing) {
+    if (e.target === e.currentTarget && !isClosing && closeOnBackdrop) {
       onClose();
     }
   };

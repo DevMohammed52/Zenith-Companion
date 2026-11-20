@@ -111,6 +111,14 @@
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
+    .card.accent-legendary {
+      border-left: 3px solid var(--quality-legendary);
+    }
+
+    .card.accent-danger {
+      border-left: 3px solid var(--text-danger);
+    }
+
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -198,6 +206,16 @@
 
     .btn-danger:hover {
       background-color: rgba(248, 113, 113, 0.22);
+    }
+
+    .btn-success {
+      background-color: rgba(74, 222, 128, 0.12);
+      color: var(--text-success);
+      border-color: rgba(74, 222, 128, 0.40);
+    }
+
+    .btn-success:hover {
+      background-color: rgba(74, 222, 128, 0.22);
     }
 
     .btn:disabled {
@@ -332,6 +350,12 @@
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
 
+    .segmented-tab.disabled {
+      opacity: 0.40;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     /* Badge */
     .badge {
       display: inline-flex;
@@ -393,6 +417,12 @@
       color: var(--text-success);
       background-color: rgba(74, 222, 128, 0.12);
       border-color: rgba(74, 222, 128, 0.25);
+    }
+
+    .badge-warning {
+      color: #fbbf24;
+      background-color: rgba(251, 191, 36, 0.14);
+      border-color: rgba(251, 191, 36, 0.30);
     }
 
     .badge-neutral {
@@ -544,6 +574,9 @@
         <button class="btn btn-secondary" onclick="alert('Secondary utility clicked!')">Secondary Action</button>
         <button class="btn btn-ghost" onclick="alert('Ghost action clicked!')">Ghost Action</button>
         <button class="btn btn-danger" onclick="alert('Danger action clicked!')">Danger Action</button>
+        <button class="btn btn-secondary" id="success-btn" onclick="simulateSuccess()">
+          <span>Click for Success</span>
+        </button>
         <button class="btn btn-primary" id="async-btn" onclick="simulateAsync()">
           <span>Click for 2s Async Spinner</span>
         </button>
@@ -598,6 +631,7 @@
           <button class="segmented-tab" onclick="switchTab(this)">Weapons (48)</button>
           <button class="segmented-tab" onclick="switchTab(this)">Armor (86)</button>
           <button class="segmented-tab" onclick="switchTab(this)">Alchemy (19)</button>
+          <button class="segmented-tab disabled" disabled>Archived (0)</button>
         </div>
       </div>
     </div>
@@ -618,6 +652,14 @@
           <span class="badge badge-neutral">Sunken</span>
         </div>
         <p style="font-size: 13px; color: var(--text-muted);">Recessed depth (--bg-input) for code or formula inputs.</p>
+      </div>
+
+      <div class="card accent-legendary">
+        <div class="card-header">
+          <h3 class="card-title">Legendary Accent</h3>
+          <span class="badge badge-legendary">Accent</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">Card with 3px high-contrast left border indicator for drop tiers.</p>
       </div>
 
       <div class="card interactive" onclick="cardClick(this)">
@@ -660,6 +702,8 @@
         <span class="badge badge-legendary">Legendary (10.01:1)</span>
         <span class="badge badge-mythic">Mythic (6.93:1)</span>
         <span class="badge badge-unique">Unique Text Safe (6.50:1)</span>
+        <span class="badge badge-warning">Warning Amber (10.28:1)</span>
+        <span class="badge badge-success">Success (9.85:1)</span>
       </div>
     </div>
 
@@ -727,6 +771,16 @@
   </div>
 
   <script>
+    function simulateSuccess() {
+      const btn = document.getElementById('success-btn');
+      btn.classList.add('btn-success');
+      btn.innerHTML = '<span>✓ Saved Successfully!</span>';
+      setTimeout(() => {
+        btn.classList.remove('btn-success');
+        btn.innerHTML = '<span>Click for Success</span>';
+      }, 2000);
+    }
+
     function simulateAsync() {
       const btn = document.getElementById('async-btn');
       btn.classList.add('is-loading');

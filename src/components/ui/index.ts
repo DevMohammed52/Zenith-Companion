@@ -5,7 +5,7 @@ export {
   type SegmentedControlProps,
   type SegmentedControlOption,
 } from "./SegmentedControl";
-export { Card, type CardProps, type CardPadding, type CardVariant } from "./Card";
+export { Card, type CardProps, type CardPadding, type CardVariant, type CardAccent } from "./Card";
 export {
   ModalSheet,
   type ModalSheetProps,

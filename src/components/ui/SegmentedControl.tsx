@@ -8,6 +8,7 @@ export interface SegmentedControlOption<T extends string | number> {
   label: string;
   icon?: React.ReactNode;
   badge?: string | number;
+  disabled?: boolean;
 }
 
 export interface SegmentedControlProps<T extends string | number> {
@@ -35,16 +36,29 @@ export function SegmentedControl<T extends string | number>({
     let targetIndex = -1;
 
     if (e.key === "ArrowRight") {
-      targetIndex = (index + 1) % options.length;
+      let next = (index + 1) % options.length;
+      while (options[next]?.disabled && next !== index) {
+        next = (next + 1) % options.length;
+      }
+      targetIndex = next;
     } else if (e.key === "ArrowLeft") {
-      targetIndex = (index - 1 + options.length) % options.length;
+      let prev = (index - 1 + options.length) % options.length;
+      while (options[prev]?.disabled && prev !== index) {
+        prev = (prev - 1 + options.length) % options.length;
+      }
+      targetIndex = prev;
     } else if (e.key === "Home") {
-      targetIndex = 0;
+      targetIndex = options.findIndex((o) => !o.disabled);
     } else if (e.key === "End") {
-      targetIndex = options.length - 1;
+      for (let i = options.length - 1; i >= 0; i--) {
+        if (!options[i]?.disabled) {
+          targetIndex = i;
+          break;
+        }
+      }
     }
 
-    if (targetIndex !== -1) {
+    if (targetIndex !== -1 && !options[targetIndex]?.disabled) {
       e.preventDefault();
       const targetOption = options[targetIndex];
       onChange(targetOption.value);
@@ -72,6 +86,7 @@ export function SegmentedControl<T extends string | number>({
         const tabClasses = [
           styles.tab,
           isActive ? styles.active : "",
+          opt.disabled ? styles.disabled : "",
         ]
           .filter(Boolean)
           .join(" ");
@@ -85,9 +100,13 @@ export function SegmentedControl<T extends string | number>({
             type="button"
             role="tab"
             aria-selected={isActive}
-            tabIndex={isActive ? 0 : -1}
+            aria-disabled={opt.disabled ? "true" : undefined}
+            disabled={opt.disabled}
+            tabIndex={isActive && !opt.disabled ? 0 : -1}
             className={tabClasses}
-            onClick={() => onChange(opt.value)}
+            onClick={() => {
+              if (!opt.disabled) onChange(opt.value);
+            }}
             onKeyDown={(e) => handleKeyDown(e, idx)}
           >
             {opt.icon && <span aria-hidden="true">{opt.icon}</span>}

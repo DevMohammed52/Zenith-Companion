@@ -3,6 +3,15 @@ import styles from "./Card.module.css";
 
 export type CardPadding = "none" | "sm" | "md" | "lg";
 export type CardVariant = "default" | "sunken" | "elevated" | "interactive";
+export type CardAccent =
+  | "refined"
+  | "epic"
+  | "legendary"
+  | "mythic"
+  | "unique"
+  | "danger"
+  | "success"
+  | "warning";
 
 export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   title?: React.ReactNode;
@@ -11,6 +20,7 @@ export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "t
   footer?: React.ReactNode;
   padding?: CardPadding;
   variant?: CardVariant;
+  accent?: CardAccent;
   interactive?: boolean;
   children?: React.ReactNode;
 }
@@ -23,6 +33,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     footer,
     padding = "md",
     variant = "default",
+    accent,
     interactive = false,
     className = "",
     children,
@@ -49,6 +60,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     styles.card,
     paddingClass,
     styles[variant],
+    accent ? styles[`accent_${accent}`] : "",
     isClickable ? styles.interactive : "",
     className,
   ]

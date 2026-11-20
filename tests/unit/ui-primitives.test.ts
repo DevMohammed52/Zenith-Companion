@@ -59,6 +59,15 @@ describe("Primitive 1: Button", () => {
     expect(html).toContain('id="trailing"');
     expect(html).toContain("Navigate");
   });
+
+  it("renders success state with checkmark icon", () => {
+    const html = renderToStaticMarkup(
+      createElement(Button, { success: true }, "Copied!")
+    );
+    expect(html).toContain("isSuccess");
+    expect(html).toContain("polyline");
+    expect(html).toContain("Copied!");
+  });
 });
 
 describe("Primitive 2: TextInput", () => {
@@ -102,6 +111,20 @@ describe("Primitive 2: TextInput", () => {
     expect(html).toContain('aria-describedby="search-input-helper"');
     expect(html).toContain('id="search-input-helper"');
     expect(html).toContain("Enter an item name or ID");
+  });
+
+  it("renders labelAction when provided in the label row", () => {
+    const actionEl = createElement("button", { id: "reset-btn" }, "Reset");
+    const html = renderToStaticMarkup(
+      createElement(TextInput, {
+        id: "with-action",
+        label: "Price Ceiling",
+        labelAction: actionEl,
+      })
+    );
+    expect(html).toContain('id="reset-btn"');
+    expect(html).toContain("Reset");
+    expect(html).toContain("Price Ceiling");
   });
 
   it("renders inputMode attribute for mobile numeric optimization", () => {
@@ -152,6 +175,23 @@ describe("Primitive 3: SegmentedControl", () => {
     expect(html).toContain("4");
     expect(html).toContain('aria-selected="false"');
   });
+
+  it("handles disabled options with aria-disabled and disabled attribute", () => {
+    const disabledOptions = [
+      { value: "unlocked", label: "Unlocked" },
+      { value: "locked", label: "Locked", disabled: true },
+    ];
+    const html = renderToStaticMarkup(
+      createElement(SegmentedControl, {
+        options: disabledOptions,
+        value: "unlocked",
+        onChange: () => {},
+        ariaLabel: "Locked state test",
+      })
+    );
+    expect(html).toContain('aria-disabled="true"');
+    expect(html).toContain("disabled");
+  });
 });
 
 describe("Primitive 4: Card", () => {
@@ -191,6 +231,14 @@ describe("Primitive 4: Card", () => {
     );
     expect(html).toContain('role="button"');
     expect(html).toContain('tabindex="0"');
+  });
+
+  it("renders accent styling when accent prop is set", () => {
+    const html = renderToStaticMarkup(
+      createElement(Card, { accent: "legendary" }, "Legendary Drop")
+    );
+    expect(html).toContain("accent_legendary");
+    expect(html).toContain("Legendary Drop");
   });
 });
 
@@ -234,6 +282,12 @@ describe("Primitive 6: Badge", () => {
     );
     expect(uniqueHtml).toContain("unique");
     expect(uniqueHtml).toContain("Unique");
+
+    const warningHtml = renderToStaticMarkup(
+      createElement(Badge, { variant: "warning" }, "Despawning Soon")
+    );
+    expect(warningHtml).toContain("warning");
+    expect(warningHtml).toContain("Despawning Soon");
   });
 
   it("renders with icon and children", () => {

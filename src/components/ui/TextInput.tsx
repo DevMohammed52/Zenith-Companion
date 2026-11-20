@@ -3,6 +3,7 @@ import styles from "./TextInput.module.css";
 
 export interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: React.ReactNode;
+  labelAction?: React.ReactNode;
   helperText?: string;
   error?: string;
   leftIcon?: React.ReactNode;
@@ -14,6 +15,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
   {
     id: externalId,
     label,
+    labelAction,
     helperText,
     error,
     leftIcon,
@@ -49,12 +51,15 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
 
   return (
     <div className={`${styles.fieldGroup} ${containerClassName}`.trim()}>
-      {label && (
+      {(label || labelAction) && (
         <div className={styles.labelRow}>
-          <label htmlFor={inputId} className={styles.label}>
-            {label}
-            {required && <span className={styles.required} aria-hidden="true">*</span>}
-          </label>
+          {label ? (
+            <label htmlFor={inputId} className={styles.label}>
+              {label}
+              {required && <span className={styles.required} aria-hidden="true">*</span>}
+            </label>
+          ) : <span />}
+          {labelAction && <div className={styles.labelAction}>{labelAction}</div>}
         </div>
       )}
 

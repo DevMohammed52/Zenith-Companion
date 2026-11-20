@@ -107,6 +107,39 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* Accent Borders */
+.accent_refined {
+  border-left: 3px solid var(--quality-refined-text, #60a5fa);
+}
+
+.accent_epic {
+  border-left: 3px solid var(--quality-epic-text, #f87171);
+}
+
+.accent_legendary {
+  border-left: 3px solid var(--quality-legendary, #f7bd1e);
+}
+
+.accent_mythic {
+  border-left: 3px solid var(--quality-mythic, #f48a00);
+}
+
+.accent_unique {
+  border-left: 3px solid var(--quality-unique-text, #c084fc);
+}
+
+.accent_danger {
+  border-left: 3px solid var(--text-danger, #f87171);
+}
+
+.accent_success {
+  border-left: 3px solid var(--text-success, #4ade80);
+}
+
+.accent_warning {
+  border-left: 3px solid #fbbf24;
+}
+
 /* Interactive Card */
 .interactive {
   cursor: pointer;

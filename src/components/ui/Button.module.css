@@ -116,6 +116,18 @@
   pointer-events: none;
 }
 
+.isSuccess {
+  border-color: rgba(74, 222, 128, 0.45) !important;
+  color: var(--text-success, #4ade80) !important;
+  background-color: rgba(74, 222, 128, 0.12) !important;
+}
+
+.successIcon {
+  display: inline-block;
+  flex-shrink: 0;
+  stroke: var(--text-success, #4ade80);
+}
+
 .spinner {
   animation: spin 750ms linear infinite;
   display: inline-block;

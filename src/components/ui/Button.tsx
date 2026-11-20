@@ -8,6 +8,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  success?: boolean;
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconTrailing?: React.ReactNode;
@@ -19,6 +20,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     variant = "secondary",
     size = "md",
     loading = false,
+    success = false,
     fullWidth = false,
     icon,
     iconTrailing,
@@ -36,6 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     styles[size],
     fullWidth ? styles.fullWidth : "",
     loading ? styles.isLoading : "",
+    success ? styles.isSuccess : "",
     disabled ? styles.disabled : "",
     className,
   ]
@@ -66,11 +69,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         >
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
+      ) : success ? (
+        <svg
+          className={styles.successIcon}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
       ) : (
         icon && <span className={styles.icon}>{icon}</span>
       )}
       {children && <span className={styles.label}>{children}</span>}
-      {!loading && iconTrailing && <span className={styles.iconTrailing}>{iconTrailing}</span>}
+      {!loading && !success && iconTrailing && (
+        <span className={styles.iconTrailing}>{iconTrailing}</span>
+      )}
     </button>
   );
 });
