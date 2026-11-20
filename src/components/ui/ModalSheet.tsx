@@ -28,6 +28,8 @@ export function ModalSheet({
   className = "",
 }: ModalSheetProps) {
   const [mounted, setMounted] = useState(false);
+  const [isRendering, setIsRendering] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -37,6 +39,20 @@ export function ModalSheet({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsRendering(true);
+      setIsClosing(false);
+    } else if (isRendering) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsRendering(false);
+        setIsClosing(false);
+      }, 140);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isRendering]);
 
   // Handle focus trapping, restoration, Escape key, and body scroll lock
   useEffect(() => {
@@ -112,12 +128,12 @@ export function ModalSheet({
     };
   }, [isOpen, onClose]);
 
-  if (!mounted || !isOpen) {
+  if (!mounted || !isRendering) {
     return null;
   }
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isClosing) {
       onClose();
     }
   };
@@ -125,14 +141,22 @@ export function ModalSheet({
   const sheetClasses = [
     styles.sheet,
     styles[maxWidth],
+    isClosing ? styles.sheetClosing : "",
     className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const overlayClasses = [
+    styles.overlay,
+    isClosing ? styles.overlayClosing : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   const modalContent = (
     <div
-      className={styles.overlay}
+      className={overlayClasses}
       onClick={handleBackdropClick}
       role="presentation"
     >

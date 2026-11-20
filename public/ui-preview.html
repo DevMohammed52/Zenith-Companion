@@ -408,6 +408,7 @@
       inset: 0;
       background-color: rgba(5, 7, 13, 0.75);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -416,6 +417,11 @@
 
     .modal-overlay.open {
       display: flex;
+      animation: fadeIn 150ms ease forwards;
+    }
+
+    .modal-overlay.closing {
+      animation: fadeOut 120ms ease forwards;
     }
 
     .modal-sheet {
@@ -428,6 +434,11 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      animation: scaleUp 180ms var(--ease-spring) forwards;
+    }
+
+    .modal-overlay.closing .modal-sheet {
+      animation: scaleDown 120ms ease forwards;
     }
 
     @media (max-width: 640px) {
@@ -438,6 +449,43 @@
       .modal-sheet {
         border-radius: 16px 16px 0 0;
         border-bottom: none;
+        animation: slideUp 200ms var(--ease-spring) forwards;
+      }
+      .modal-overlay.closing .modal-sheet {
+        animation: slideDown 140ms ease forwards;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    @keyframes scaleUp {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes scaleDown {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.96); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideDown {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(100%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .modal-overlay,
+      .modal-sheet {
+        animation: none !important;
+        transition: none !important;
       }
     }
 
@@ -709,12 +757,25 @@
       document.getElementById('click-counter').textContent = clicks + ' clicks';
     }
 
+    let modalClosing = false;
     function openModal() {
-      document.getElementById('demo-modal').classList.add('open');
+      const modal = document.getElementById('demo-modal');
+      modal.classList.remove('closing');
+      modal.classList.add('open');
+      modalClosing = false;
     }
 
     function closeModal() {
-      document.getElementById('demo-modal').classList.remove('open');
+      if (modalClosing) return;
+      const modal = document.getElementById('demo-modal');
+      if (!modal.classList.contains('open')) return;
+      modalClosing = true;
+      modal.classList.add('closing');
+      setTimeout(() => {
+        modal.classList.remove('open');
+        modal.classList.remove('closing');
+        modalClosing = false;
+      }, 120);
     }
 
     function closeModalOnBackdrop(e) {
