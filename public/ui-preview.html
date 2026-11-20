@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Astral — UI Primitives Standalone Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Zenith Astral Palette */
+      --bg-base: #0a0d14;
+      --bg-panel: #101522;
+      --bg-card: #151b2b;
+      --bg-card-hover: #1c2438;
+      --bg-input: #0d121d;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --text-success: #4ade80;
+      --text-danger: #f87171;
+
+      --btn-primary-bg: #f8fafc;
+      --btn-primary-text: #0a0d14;
+      --btn-primary-hover: #e2e8f0;
+
+      --border-subtle: rgba(148, 163, 184, 0.10);
+      --border-strong: rgba(148, 163, 184, 0.22);
+      --border-focus: rgba(248, 250, 252, 0.50);
+
+      --quality-standard: #d1d5db;
+      --quality-refined-text: #60a5fa;
+      --quality-premium: #1fd60b;
+      --quality-epic-text: #f87171;
+      --quality-legendary: #f7bd1e;
+      --quality-mythic: #f48a00;
+      --quality-unique-text: #c084fc;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 40px 20px 100px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    p.subhead {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin-bottom: 16px;
+    }
+
+    /* Card */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: background-color 150ms ease, border-color 150ms ease, transform 100ms var(--ease-spring);
+    }
+
+    .card.interactive {
+      cursor: pointer;
+    }
+
+    .card.interactive:hover {
+      background-color: var(--bg-card-hover);
+      border-color: var(--border-strong);
+    }
+
+    .card.interactive:active {
+      transform: scale(0.99);
+    }
+
+    .card.sunken {
+      background-color: var(--bg-input);
+      border-color: rgba(148, 163, 184, 0.08);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      min-height: 44px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: background-color 150ms ease, border-color 150ms ease, transform 100ms var(--ease-spring);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background-color: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      font-weight: 600;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--btn-primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-card-hover);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      color: var(--text-main);
+    }
+
+    .btn-ghost:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-danger {
+      background-color: rgba(248, 113, 113, 0.12);
+      color: var(--text-danger);
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(248, 113, 113, 0.22);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn.is-loading {
+      pointer-events: none;
+    }
+
+    .spinner {
+      animation: spin 750ms linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* TextInput */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      min-height: 44px;
+      padding: 0 12px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    .input-wrapper.error {
+      border-color: var(--text-danger) !important;
+      box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.3) !important;
+    }
+
+    .input-field {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .input-field::placeholder {
+      color: var(--text-dim);
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .error-text {
+      font-size: 12px;
+      color: var(--text-danger);
+      font-weight: 500;
+    }
+
+    /* SegmentedControl */
+    .segmented-control {
+      display: inline-flex;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+      min-height: 44px;
+      align-items: center;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .segmented-control::-webkit-scrollbar {
+      display: none;
+    }
+
+    .segmented-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 14px;
+      min-height: 38px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 150ms ease, background-color 150ms ease, transform 100ms var(--ease-spring);
+    }
+
+    .segmented-tab:active {
+      transform: scale(0.98);
+    }
+
+    .segmented-tab.active {
+      background-color: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum" 1;
+    }
+
+    .badge-standard {
+      color: var(--quality-standard);
+      background-color: rgba(209, 213, 219, 0.10);
+      border-color: rgba(209, 213, 219, 0.22);
+    }
+
+    .badge-refined {
+      color: var(--quality-refined-text);
+      background-color: rgba(77, 118, 214, 0.15);
+      border-color: rgba(96, 165, 250, 0.32);
+    }
+
+    .badge-premium {
+      color: var(--quality-premium);
+      background-color: rgba(31, 214, 11, 0.12);
+      border-color: rgba(31, 214, 11, 0.28);
+    }
+
+    .badge-epic {
+      color: var(--quality-epic-text);
+      background-color: rgba(192, 57, 43, 0.16);
+      border-color: rgba(248, 113, 113, 0.32);
+    }
+
+    .badge-legendary {
+      color: var(--quality-legendary);
+      background-color: rgba(247, 189, 30, 0.15);
+      border-color: rgba(247, 189, 30, 0.35);
+    }
+
+    .badge-mythic {
+      color: var(--quality-mythic);
+      background-color: rgba(244, 138, 0, 0.15);
+      border-color: rgba(244, 138, 0, 0.35);
+    }
+
+    .badge-unique {
+      color: var(--quality-unique-text);
+      background-color: rgba(180, 23, 244, 0.15);
+      border-color: rgba(192, 132, 252, 0.35);
+    }
+
+    .badge-success {
+      color: var(--text-success);
+      background-color: rgba(74, 222, 128, 0.12);
+      border-color: rgba(74, 222, 128, 0.25);
+    }
+
+    .badge-neutral {
+      color: var(--text-muted);
+      background-color: rgba(148, 163, 184, 0.10);
+      border-color: rgba(148, 163, 184, 0.20);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(5, 7, 13, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-sheet {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    @media (max-width: 640px) {
+      .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+      }
+      .modal-sheet {
+        border-radius: 16px 16px 0 0;
+        border-bottom: none;
+      }
+    }
+
+    .modal-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background-color: var(--bg-panel);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum" 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <span class="badge badge-neutral">Design System Lab</span>
+        <span class="badge badge-legendary">Zenith Astral</span>
+      </div>
+      <h1>UI Primitives Standalone Demo</h1>
+      <p class="subhead">Interactive standalone demo of the new Zenith Astral atomic components. Test micro-interactions, active press states, focus rings, and contrast.</p>
+    </div>
+
+    <!-- 1. Buttons -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">1. Button Primitive (Apple HIG + Linear Craft)</h2>
+          <p class="card-subtitle">Active press scale 0.98, visible focus ring, monochromatic high-contrast chrome.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <button class="btn btn-primary" onclick="alert('Primary action clicked!')">Primary Action (18.57:1 AAA)</button>
+        <button class="btn btn-secondary" onclick="alert('Secondary utility clicked!')">Secondary Action</button>
+        <button class="btn btn-ghost" onclick="alert('Ghost action clicked!')">Ghost Action</button>
+        <button class="btn btn-danger" onclick="alert('Danger action clicked!')">Danger Action</button>
+        <button class="btn btn-primary" id="async-btn" onclick="simulateAsync()">
+          <span>Click for 2s Async Spinner</span>
+        </button>
+        <button class="btn btn-secondary" disabled>Disabled State</button>
+      </div>
+    </div>
+
+    <!-- 2. Text Inputs -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">2. TextInput Primitive</h2>
+          <p class="card-subtitle">Recessed well depth (--bg-input), bound label, error state, and mobile 44px touch height.</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <div class="field-group">
+          <label class="field-label" for="char-id">Character ID</label>
+          <div class="input-wrapper">
+            <input class="input-field" id="char-id" value="48291" placeholder="e.g. 48291" />
+          </div>
+          <span class="helper-text">IdleMMO numeric player ID for profile sync</span>
+        </div>
+
+        <div class="field-group">
+          <div style="display: flex; justify-content: space-between;">
+            <label class="field-label" for="custom-price">Custom Price (Gold)</label>
+            <button class="btn btn-ghost" style="min-height: 20px; padding: 0 4px; font-size: 11px;" onclick="toggleInputError()">Toggle Error</button>
+          </div>
+          <div class="input-wrapper" id="price-wrapper">
+            <input class="input-field" id="custom-price" type="number" inputmode="numeric" value="850000" />
+          </div>
+          <span class="error-text" id="price-error" style="display: none;">Price exceeds maximum allowed trade ceiling (50M).</span>
+          <span class="helper-text" id="price-helper">Overrides live market median in calculations.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Segmented Control -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">3. SegmentedControl Primitive</h2>
+          <p class="card-subtitle">W3C ARIA tablist pattern with high-contrast active pill highlight.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="segmented-control" role="tablist">
+          <button class="segmented-tab active" onclick="switchTab(this)">All Items (342)</button>
+          <button class="segmented-tab" onclick="switchTab(this)">Weapons (48)</button>
+          <button class="segmented-tab" onclick="switchTab(this)">Armor (86)</button>
+          <button class="segmented-tab" onclick="switchTab(this)">Alchemy (19)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Card Variants -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Default Surface</h3>
+          <span class="badge badge-standard">Surface</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">Standard structural elevation (--bg-card) with subtle border.</p>
+      </div>
+
+      <div class="card sunken">
+        <div class="card-header">
+          <h3 class="card-title">Sunken Well</h3>
+          <span class="badge badge-neutral">Sunken</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">Recessed depth (--bg-input) for code or formula inputs.</p>
+      </div>
+
+      <div class="card interactive" onclick="cardClick(this)">
+        <div class="card-header">
+          <h3 class="card-title">Interactive Card</h3>
+          <span class="badge badge-success" id="click-counter">0 clicks</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted);">Click to test hover lift and 0.99 press spring scale.</p>
+      </div>
+    </div>
+
+    <!-- 5. ModalSheet -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">5. ModalSheet Primitive</h2>
+          <p class="card-subtitle">Desktop centered dialog, mobile slide-up bottom sheet, with focus lock and Escape key dismiss.</p>
+        </div>
+      </div>
+
+      <div>
+        <button class="btn btn-primary" onclick="openModal()">Open Modal Sheet</button>
+      </div>
+    </div>
+
+    <!-- 6. Item Rarities -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">6. Two-Tier Item Rarity System</h2>
+          <p class="card-subtitle">Computed text-safe tints satisfying WCAG AA (>= 4.5:1 ratio) on card surfaces.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="badge badge-standard">Standard (11.65:1)</span>
+        <span class="badge badge-refined">Refined Text Safe (6.75:1)</span>
+        <span class="badge badge-premium">Premium (8.73:1)</span>
+        <span class="badge badge-epic">Epic Text Safe (6.20:1)</span>
+        <span class="badge badge-legendary">Legendary (10.01:1)</span>
+        <span class="badge badge-mythic">Mythic (6.93:1)</span>
+        <span class="badge badge-unique">Unique Text Safe (6.50:1)</span>
+      </div>
+    </div>
+
+    <!-- 7. Tabular Figures -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">7. Tabular Numerics on Proportional Font</h2>
+          <p class="card-subtitle">Columns stay rock-solid without layout shift as numbers update.</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div style="background: var(--bg-input); padding: 12px; border-radius: 6px;">
+          <div style="font-size: 12px; color: var(--text-muted);">Live Gold / Hour:</div>
+          <div class="tabular-nums" style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-top: 4px;">
+            1,842,910 <span style="font-size: 13px; color: var(--quality-legendary);">gold</span>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-input); padding: 12px; border-radius: 6px;">
+          <div style="font-size: 12px; color: var(--text-muted);">Boss Despawn Timer:</div>
+          <div class="tabular-nums" style="font-size: 20px; font-weight: 700; color: var(--text-main); margin-top: 4px;">
+            00:14:52
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Sheet Dialog -->
+  <div class="modal-overlay" id="demo-modal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 600;">Pricing Override Settings</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">Fine-tune calculation assumptions</p>
+        </div>
+        <button class="btn btn-ghost" style="min-height: 36px; padding: 0 8px;" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field-group">
+          <label class="field-label" for="tax-discount">Guild Market Tax Discount (%)</label>
+          <div class="input-wrapper">
+            <input class="input-field" id="tax-discount" type="number" value="5" />
+          </div>
+          <span class="helper-text">Applied when selling items on the IdleMMO market</span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="min-margin">Minimum Profit Threshold (Gold)</label>
+          <div class="input-wrapper">
+            <input class="input-field" id="min-margin" type="number" value="25000" />
+          </div>
+          <span class="helper-text">Hides skilling recipes yielding below this amount</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="closeModal()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function simulateAsync() {
+      const btn = document.getElementById('async-btn');
+      btn.classList.add('is-loading');
+      btn.innerHTML = '<span class="spinner">⏳</span> <span>Processing (2s)...</span>';
+      setTimeout(() => {
+        btn.classList.remove('is-loading');
+        btn.innerHTML = '<span>Done! Click again</span>';
+      }, 2000);
+    }
+
+    function toggleInputError() {
+      const wrapper = document.getElementById('price-wrapper');
+      const err = document.getElementById('price-error');
+      const helper = document.getElementById('price-helper');
+      const isErr = wrapper.classList.toggle('error');
+      err.style.display = isErr ? 'block' : 'none';
+      helper.style.display = isErr ? 'none' : 'block';
+    }
+
+    function switchTab(btn) {
+      document.querySelectorAll('.segmented-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    let clicks = 0;
+    function cardClick(card) {
+      clicks++;
+      document.getElementById('click-counter').textContent = clicks + ' clicks';
+    }
+
+    function openModal() {
+      document.getElementById('demo-modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('demo-modal').classList.remove('open');
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'demo-modal') {
+        closeModal();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

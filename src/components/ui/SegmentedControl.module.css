@@ -9,6 +9,14 @@
   user-select: none;
   min-height: 44px; /* Mobile touch friendly */
   position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
 }
 
 .fullWidth {
