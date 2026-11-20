@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generatedAt": "2026-11-20T12:14:12.535Z",
+    "generatedAt": "2026-11-20T13:56:18.513Z",
     "verificationStatus": "research",
     "counts": {
       "pets": 47,
       "petsWithStats": 47,
       "petsWithEggs": 41,
-      "petsWithExchangeListings": 37,
-      "exchangeListings": 616,
-      "exchangeSpecies": 43
+      "petsWithExchangeListings": 38,
+      "exchangeListings": 617,
+      "exchangeSpecies": 44
     },
     "sources": [
       "game_info/05_pets/Chapter II - Pets.xlsx",
@@ -22782,7 +22782,30 @@
           }
         ]
       },
-      "exchange": null,
+      "exchange": {
+        "petId": 31,
+        "listingCount": 1,
+        "minPrice": 4375000,
+        "maxPrice": 4375000,
+        "byQuality": {
+          "LEGENDARY": {
+            "count": 1,
+            "min_price": 4375000,
+            "max_price": 4375000,
+            "total_price": 4375000,
+            "average_price": 4375000
+          }
+        },
+        "averagePrice": 4375000,
+        "medianPrice": 4375000,
+        "sampleListings": [
+          {
+            "level": 51,
+            "quality": "LEGENDARY",
+            "price": 4375000
+          }
+        ]
+      },
       "battle": {
         "zones": [
           {
@@ -100135,9 +100158,9 @@
     ]
   },
   "exchange": {
-    "fetchedAt": "2026-11-20T12:14:12.511Z",
-    "listingCount": 616,
-    "speciesCount": 43,
+    "fetchedAt": "2026-11-20T13:56:18.499Z",
+    "listingCount": 617,
+    "speciesCount": 44,
     "pageCount": 25
   }
 }
