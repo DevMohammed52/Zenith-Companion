@@ -413,6 +413,34 @@
       border-color: rgba(192, 132, 252, 0.35);
     }
 
+    /* IdleMMO Text Gradients */
+    .text-gradient-mythic {
+      background: linear-gradient(90deg, #f48a00, #da5b00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .text-gradient-unique {
+      background: linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .text-gradient-unique-safe {
+      background: linear-gradient(90deg, #e879f9, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
+      font-weight: 600;
+    }
+
     .badge-success {
       color: var(--text-success);
       background-color: rgba(74, 222, 128, 0.12);
@@ -704,6 +732,31 @@
         <span class="badge badge-unique">Unique Text Safe (6.50:1)</span>
         <span class="badge badge-warning">Warning Amber (10.28:1)</span>
         <span class="badge badge-success">Success (9.85:1)</span>
+      </div>
+
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 12px;">
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">Official IdleMMO Text Gradients (Item Titles):</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+          <div>
+            <span class="text-gradient-mythic" style="font-size: 16px;">Cosmic Barrier</span>
+            <span style="font-size: 11px; color: var(--text-muted); display: block;">linear-gradient(90deg, #f48a00, #da5b00)</span>
+          </div>
+
+          <div>
+            <span class="text-gradient-unique" style="font-size: 16px;">First Birthday Cake</span>
+            <span style="font-size: 11px; color: var(--text-muted); display: block;">linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181))</span>
+          </div>
+
+          <div>
+            <span class="text-gradient-unique-safe" style="font-size: 16px;">First Birthday Cake (Text Safe)</span>
+            <span style="font-size: 11px; color: var(--text-muted); display: block;">linear-gradient(90deg, #e879f9, #c084fc)</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+          <span class="badge badge-mythic"><span class="text-gradient-mythic">Mythic Gradient Badge</span></span>
+          <span class="badge badge-unique"><span class="text-gradient-unique">Unique Gradient Badge</span></span>
+        </div>
       </div>
     </div>
 

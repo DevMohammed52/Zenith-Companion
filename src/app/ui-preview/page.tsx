@@ -351,6 +351,45 @@ export default function UIPreviewPage() {
           <Badge variant="danger">High Danger</Badge>
           <Badge variant="neutral">Muted Status</Badge>
         </div>
+
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", gap: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-main)" }}>
+            Official IdleMMO Text Gradients (Item Titles):
+          </span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "center" }}>
+            <div>
+              <span className="text-gradient-mythic" style={{ fontSize: 16, fontWeight: 600 }}>
+                Cosmic Barrier
+              </span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>
+                linear-gradient(90deg, #f48a00, #da5b00)
+              </span>
+            </div>
+
+            <div>
+              <span className="text-gradient-unique" style={{ fontSize: 16, fontWeight: 600 }}>
+                First Birthday Cake
+              </span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>
+                linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181))
+              </span>
+            </div>
+
+            <div>
+              <span className="text-gradient-unique-safe" style={{ fontSize: 16, fontWeight: 600 }}>
+                First Birthday Cake (Text Safe)
+              </span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>
+                linear-gradient(90deg, #e879f9, #c084fc)
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+            <Badge variant="mythic" gradient>Mythic Gradient Badge</Badge>
+            <Badge variant="unique" gradient>Unique Gradient Badge</Badge>
+          </div>
+        </div>
       </Card>
 
       {/* 7. Tabular Numerics Demonstration */}

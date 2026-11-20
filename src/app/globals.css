@@ -47,6 +47,11 @@
   --quality-unique: var(--unique);
   --quality-unique-text: #c084fc;
 
+  /* Official IdleMMO Item Rarity Gradients */
+  --gradient-mythic: linear-gradient(90deg, #f48a00, #da5b00);
+  --gradient-unique: linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181));
+  --gradient-unique-text-safe: linear-gradient(90deg, #e879f9, #c084fc);
+
   /* 8px Spacing Grid Scale (Carbon & Material) */
   --space-1: 4px;
   --space-2: 8px;
@@ -138,6 +143,31 @@ button.preview-item-row {
 [data-tabular="true"] {
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--font-feature-tnum);
+}
+
+/* Official IdleMMO Item Rarity Text Gradients */
+.text-gradient-mythic {
+  background: var(--gradient-mythic);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+.text-gradient-unique {
+  background: var(--gradient-unique);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+.text-gradient-unique-safe {
+  background: var(--gradient-unique-text-safe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
 }
 
 * {

@@ -94,6 +94,23 @@
   border-color: rgba(248, 113, 113, 0.25);
 }
 
+/* Gradient Text Support */
+.mythicGradient {
+  background: var(--gradient-mythic, linear-gradient(90deg, #f48a00, #da5b00));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.uniqueGradient {
+  background: var(--gradient-unique, linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
 .icon {
   display: inline-flex;
   align-items: center;

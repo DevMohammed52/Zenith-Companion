@@ -19,6 +19,7 @@ export type BadgeSize = "sm" | "md";
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
   size?: BadgeSize;
+  gradient?: boolean;
   icon?: React.ReactNode;
   children?: React.ReactNode;
 }
@@ -26,6 +27,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export function Badge({
   variant = "neutral",
   size = "md",
+  gradient = false,
   icon,
   className = "",
   children,
@@ -40,10 +42,17 @@ export function Badge({
     .filter(Boolean)
     .join(" ");
 
+  const labelClass =
+    gradient && variant === "mythic"
+      ? styles.mythicGradient
+      : gradient && variant === "unique"
+      ? styles.uniqueGradient
+      : undefined;
+
   return (
     <span className={badgeClasses} {...props}>
       {icon && <span className={styles.icon}>{icon}</span>}
-      <span>{children}</span>
+      <span className={labelClass}>{children}</span>
     </span>
   );
 }

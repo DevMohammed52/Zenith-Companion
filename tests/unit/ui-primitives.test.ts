@@ -299,4 +299,18 @@ describe("Primitive 6: Badge", () => {
     expect(html).toContain("Legendary Sword");
     expect(html).toContain("legendary");
   });
+
+  it("renders gradient classes on label span when gradient prop is set", () => {
+    const mythicHtml = renderToStaticMarkup(
+      createElement(Badge, { variant: "mythic", gradient: true }, "Mythic Relic")
+    );
+    expect(mythicHtml).toContain("mythicGradient");
+    expect(mythicHtml).toContain("Mythic Relic");
+
+    const uniqueHtml = renderToStaticMarkup(
+      createElement(Badge, { variant: "unique", gradient: true }, "Unique Artifact")
+    );
+    expect(uniqueHtml).toContain("uniqueGradient");
+    expect(uniqueHtml).toContain("Unique Artifact");
+  });
 });
