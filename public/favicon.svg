@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="100%" height="100%">
+  <!-- Dark squircle ground -->
+  <rect width="32" height="32" rx="7" fill="#0a0d14" />
+  
+  <g transform="translate(3.5, 3.5) scale(0.09765625)">
+    <!-- Celestial Arc (thickened for 16px/32px tab readability) -->
+    <path d="M 18 116 Q 64 42 128 34 Q 192 42 238 116 Q 192 52 128 44 Q 64 52 18 116 Z" fill="#94a3b8" />
+    <!-- Apex Star (strengthened core and arms) -->
+    <path d="M 128 10 L 136 56 L 160 66 L 136 76 L 128 104 L 120 76 L 96 66 L 120 56 Z" fill="#f8fafc" />
+    <!-- Upper Z Polygon -->
+    <path d="M 84 102 L 212 102 L 98 204 L 26 214 L 92 172 L 164 122 L 84 122 L 52 144 Z" fill="#f8fafc" />
+    <!-- Lower Z Wing -->
+    <path d="M 112 204 L 188 204 L 228 160 L 194 178 L 146 178 Z" fill="#f8fafc" />
+  </g>
+</svg>
