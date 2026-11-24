@@ -1,21 +1,22 @@
 "use client";
 
-import { createPortal } from "react-dom";
+import React from "react";
 import {
-  BadgeInfo,
-  Database,
+  Coins,
   Egg,
+  ExternalLink,
   Gauge,
   Search,
   Shield,
   Swords,
-  X,
   Zap,
 } from "lucide-react";
+import { ModalSheet } from "@/components/ui/ModalSheet";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { GameImage } from "@/components/GameImage";
 import { useItemModal } from "@/context/ItemModalContext";
-import { useModalA11y } from "@/lib/use-modal-a11y";
-import { getQualityTextStyle } from "@/lib/quality";
+import { getQualityPalette } from "@/lib/quality";
 import {
   BATTLE_PROFIT_OPTIONS,
   STAT_LABELS,
@@ -35,6 +36,7 @@ import {
   secondsToDuration,
 } from "../utils/pet-helpers";
 import { PetImage } from "./PetImage";
+import styles from "./PetDetailModal.module.css";
 
 export function PetDetailModal({
   selectedRow,
@@ -50,277 +52,209 @@ export function PetDetailModal({
   onSelectBattle: (selection: BattleSelection) => void;
 }) {
   const { openItem, openItemByName } = useItemModal();
-  const petDetailDialogRef = useModalA11y<HTMLDivElement>(true, onClose);
+  const pet = selectedRow.pet;
+  const bestZone = getBestBattleZone(pet, battleProfitMode, foodPolicy);
 
-  return createPortal(
-    <div className="pet-modal-backdrop" role="presentation" onClick={onClose}>
-      <div
-        className="pet-detail pet-modal"
-        aria-labelledby="pet-detail-title"
-        aria-modal="true"
-        ref={petDetailDialogRef}
-        role="dialog"
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <button
-          className="pet-detail-close"
-          type="button"
-          aria-label="Close pet details"
-          onClick={onClose}
-          title="Close pet details"
-        >
-          <X size={16} />
-        </button>
-        <div className="pet-detail-head">
-          <PetImage pet={selectedRow.pet} />
-          <div>
-            <span
-              className="pet-quality-line"
-              style={getQualityTextStyle(selectedRow.pet.quality)}
-            >
-              {qualityLabel(selectedRow.pet.quality)}
+  return (
+    <ModalSheet
+      isOpen={true}
+      onClose={onClose}
+      title={pet.name}
+      maxWidth="md"
+    >
+      <div className={styles.modalContent}>
+        {/* 1. Hero Block */}
+        <div className={styles.heroBlock}>
+          <div className={styles.heroAvatar}>
+            <PetImage pet={pet} />
+          </div>
+          <div className={styles.heroInfo}>
+            <div className={styles.heroNameRow}>
+              <h2 className={styles.heroTitle}>{pet.name}</h2>
+              {(() => {
+                const palette = getQualityPalette(pet.quality);
+                return (
+                  <Badge
+                    variant="neutral"
+                    size="sm"
+                    style={{
+                      color: palette.color,
+                      borderColor: palette.border,
+                      backgroundColor: palette.background,
+                    }}
+                  >
+                    {qualityLabel(pet.quality)}
+                  </Badge>
+                );
+              })()}
+            </div>
+            <p className={styles.heroSubtitle}>{getPetSourceLabel(pet)}</p>
+          </div>
+        </div>
+
+        {/* 2. Key Metrics Banner */}
+        <div className={styles.metricsGrid}>
+          <div className={styles.metricTile}>
+            <span className={styles.metricLabel}>
+              <Swords size={13} aria-hidden="true" /> Total Power
             </span>
-            <h2 id="pet-detail-title">{selectedRow.pet.name}</h2>
-            <p>{getPetSourceLabel(selectedRow.pet)}</p>
+            <span className={styles.metricValue}>{formatNumber(selectedRow.totalPower)}</span>
+          </div>
+
+          <div className={styles.metricTile}>
+            <span className={styles.metricLabel}>
+              <Gauge size={13} aria-hidden="true" /> Movement
+            </span>
+            <span className={styles.metricValue}>{formatNumber(selectedRow.stats.movement_speed, 2)}m/s</span>
+          </div>
+
+          <div className={styles.metricTile}>
+            <span className={styles.metricLabel}>
+              <Search size={13} aria-hidden="true" /> Hunt Duration
+            </span>
+            <span className={styles.metricValue}>{secondsToDuration(selectedRow.huntingTime)}</span>
           </div>
         </div>
 
-        <div className="pet-detail-metrics">
-          <div>
-            <Swords size={15} />
-            <span>Total Power</span>
-            <strong>{formatNumber(selectedRow.totalPower)}</strong>
-          </div>
-          <div>
-            <Gauge size={15} />
-            <span>Movement</span>
-            <strong>{formatNumber(selectedRow.stats.movement_speed, 2)}m/s</strong>
-          </div>
-          <div>
-            <Search size={15} />
-            <span>Hunt Time</span>
-            <strong>{secondsToDuration(selectedRow.huntingTime)}</strong>
-          </div>
-        </div>
-
-        <div className="pet-detail-section">
-          <h3>
-            <Shield size={15} /> Stats
+        {/* 3. Combat Stats (All 9 Core Attributes) */}
+        <section className={styles.section} aria-label="Combat statistics">
+          <h3 className={styles.sectionTitle}>
+            <Shield size={14} aria-hidden="true" /> Combat Attributes
           </h3>
-          <div className="pet-stat-grid">
+          <div className={styles.statGrid}>
             {(Object.keys(STAT_LABELS) as StatKey[]).map((key) => (
-              <div key={key}>
-                <span>{STAT_LABELS[key]}</span>
-                <strong>
+              <div key={key} className={styles.statBox}>
+                <span className={styles.statBoxLabel}>{STAT_LABELS[key]}</span>
+                <span className={styles.statBoxValue}>
                   {key === "movement_speed" ||
                   key === "critical_damage" ||
                   key === "critical_chance"
                     ? formatNumber(selectedRow.stats[key], 2)
                     : formatNumber(selectedRow.stats[key])}
-                </strong>
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="pet-detail-section">
-          <h3>
-            <Egg size={15} /> Source
+        {/* 4. Acquisition & Egg Bridge */}
+        <section className={styles.section} aria-label="Acquisition and egg details">
+          <h3 className={styles.sectionTitle}>
+            <Egg size={14} aria-hidden="true" /> Acquisition & Egg
           </h3>
-          {selectedRow.pet.egg ? (
+
+          {pet.egg ? (
             <button
-              className="pet-egg-button"
+              type="button"
+              className={styles.eggCard}
               onClick={() => {
-                const egg = selectedRow.pet.egg;
-                if (!egg) return;
                 onClose();
-                if (egg.hashedId) openItem(egg.hashedId);
-                else openItemByName(egg.name);
+                if (pet.egg?.hashedId) openItem(pet.egg.hashedId);
+                else if (pet.egg?.name) openItemByName(pet.egg.name);
               }}
+              aria-label={`Open item details for ${pet.egg.name}`}
             >
-              <GameImage
-                src={selectedRow.pet.egg.imageUrl}
-                alt=""
-                width={34}
-                height={34}
-                sizes="34px"
-                fallback={<Egg size={18} />}
-              />
-              <span>{selectedRow.pet.egg.name}</span>
-              <strong>
-                {selectedRow.pet.egg.worldBosses?.map((boss) => boss.name).join(", ") ||
-                  "Open item"}
-              </strong>
+              <div className={styles.eggLeft}>
+                <GameImage
+                  src={pet.egg.imageUrl}
+                  alt=""
+                  width={34}
+                  height={34}
+                  sizes="34px"
+                  fallback={<Egg size={18} />}
+                />
+                <div>
+                  <div className={styles.eggName}>{pet.egg.name}</div>
+                  <div className={styles.eggBoss}>
+                    {pet.egg.worldBosses?.map((b) => b.name).join(", ") || "Hatchable Egg"}
+                  </div>
+                </div>
+              </div>
+              <ExternalLink size={14} style={{ color: "var(--text-tertiary)" }} />
             </button>
           ) : (
-            <p className="pet-muted">No linked egg item in the current public item database.</p>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 13, margin: 0 }}>
+              No linked egg item found in the active catalog.
+            </p>
           )}
-          {selectedRow.pet.sourceOverride ? (
-            <div className="pet-source-override">
-              <span>{selectedRow.pet.sourceOverride.label}</span>
-              {selectedRow.pet.sourceOverride.merchant?.url ? (
-                <a
-                  href={selectedRow.pet.sourceOverride.merchant.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {getMerchantPrice(selectedRow.pet.sourceOverride)}
-                </a>
-              ) : null}
-              {selectedRow.pet.sourceOverride.notes?.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
-            </div>
-          ) : null}
-          {selectedRow.pet.acquisition?.length ? (
-            <div className="pet-source-list">
-              {selectedRow.pet.acquisition.map((entry, index) => (
-                <div key={`${entry.egg}-${index}`}>
-                  <span>{entry.boss || entry.location || "Unknown source"}</span>
-                  <strong>
-                    {entry.chancePercent ? `${entry.chancePercent}%` : "Chance pending"} -{" "}
-                    {entry.levelRequirement || "No level data"}
-                  </strong>
+
+          {pet.acquisition?.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              {pet.acquisition.map((entry, idx) => (
+                <div key={`${entry.boss || entry.location}-${idx}`} className={styles.acquisitionRow}>
+                  <span className={styles.acquisitionSource}>
+                    {entry.boss || entry.location || "World Encounter"}
+                  </span>
+                  <span className={styles.acquisitionDetail}>
+                    {entry.chancePercent ? `${entry.chancePercent}% drop chance` : "Chance pending"} · {entry.levelRequirement || "No level requirement"}
+                  </span>
                 </div>
               ))}
             </div>
           ) : null}
-        </div>
+        </section>
 
-        <div className="pet-detail-section">
-          <h3>
-            <Database size={15} /> Exchange Listings
+        {/* 5. Companion Exchange Marketplace */}
+        <section className={styles.section} aria-label="Exchange market data">
+          <h3 className={styles.sectionTitle}>
+            <Coins size={14} aria-hidden="true" /> Companion Exchange
           </h3>
-          <p className="pet-section-note">
-            These are Companion Exchange listing snapshots, not guaranteed sale prices. Use
-            the lowest listing as a market floor and the median/average as context when enough
-            listings exist.
-          </p>
-          <div className="pet-source-list">
-            <div>
-              <span>Companion Exchange listings</span>
-              <strong>{selectedRow.pet.exchange?.listingCount || 0}</strong>
+          <div className={styles.exchangeGrid}>
+            <div className={styles.exchangeBox}>
+              <span className={styles.exchangeBoxLabel}>Active Listings</span>
+              <span className={styles.exchangeBoxValue}>{pet.exchange?.listingCount || 0}</span>
             </div>
-            <div>
-              <span>Lowest listing</span>
-              <strong>{formatGold(selectedRow.pet.exchange?.minPrice)}</strong>
+            <div className={styles.exchangeBox}>
+              <span className={styles.exchangeBoxLabel}>Lowest Listing</span>
+              <span className={styles.exchangeBoxValue}>{formatGold(pet.exchange?.minPrice)}</span>
             </div>
-            <div>
-              <span>Median listing</span>
-              <strong>{formatGold(selectedRow.pet.exchange?.medianPrice)}</strong>
+            <div className={styles.exchangeBox}>
+              <span className={styles.exchangeBoxLabel}>Median Listing</span>
+              <span className={styles.exchangeBoxValue}>{formatGold(pet.exchange?.medianPrice)}</span>
             </div>
-            <div>
-              <span>Average listing</span>
-              <strong>{formatGold(selectedRow.pet.exchange?.averagePrice)}</strong>
+            <div className={styles.exchangeBox}>
+              <span className={styles.exchangeBoxLabel}>Average Listing</span>
+              <span className={styles.exchangeBoxValue}>{formatGold(pet.exchange?.averagePrice)}</span>
             </div>
           </div>
-          {selectedRow.pet.valuation ? (
-            <div className="pet-source-list pet-source-list-spaced">
-              <div>
-                <span>Value model egg price</span>
-                <strong>{formatGold(selectedRow.pet.valuation.eggPrice)}</strong>
-              </div>
-              <div>
-                <span>Level 100 bonus</span>
-                <strong>{formatGold(selectedRow.pet.valuation.level100Bonus)}</strong>
-              </div>
-              <div>
-                <span>Sample estimate</span>
-                <strong>
-                  {formatGold(selectedRow.pet.valuation.samples?.[0]?.roughEstimate)}
-                </strong>
+        </section>
+
+        {/* 6. Battle Combat Preview */}
+        <section className={styles.section} aria-label="Combat zone analysis">
+          <h3 className={styles.sectionTitle}>
+            <Zap size={14} aria-hidden="true" /> Combat Zones
+          </h3>
+          {pet.battle?.zones?.length ? (
+            <div className={styles.battleCard}>
+              <div className={styles.battleHeader}>
+                <div>
+                  <span className={styles.battleZoneName}>{bestZone?.zone || "Citadel"}</span>
+                  <p className={styles.battleNotice}>
+                    Recommended zone for {BATTLE_PROFIT_OPTIONS.find((o) => o.value === battleProfitMode)?.label}
+                  </p>
+                </div>
+                {bestZone && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<Zap size={13} />}
+                    onClick={() => {
+                      onClose();
+                      onSelectBattle({ pet, zone: bestZone });
+                    }}
+                  >
+                    Open Combat Data
+                  </Button>
+                )}
               </div>
             </div>
-          ) : null}
-        </div>
-
-        <div className="pet-detail-section">
-          <h3>
-            <Zap size={15} /> Battle Context
-          </h3>
-          <p className="pet-section-note">
-            Zone rows are deeper research data, not standalone pet ROI. They are useful for
-            comparing pet fit, but actual profit depends more on the character doing combat than
-            on the pet alone.
-          </p>
-          {selectedRow.pet.battle?.zones?.length ? (
-            (() => {
-              const bestZone = getBestBattleZone(selectedRow.pet, battleProfitMode, foodPolicy);
-              return (
-                <>
-                  <div className="pet-battle-preview">
-                    <div>
-                      <span>Best sample zone</span>
-                      <strong>{bestZone?.zone || "Sample pending"}</strong>
-                    </div>
-                    <div>
-                      <span>Selected mode</span>
-                      <strong>
-                        {
-                          BATTLE_PROFIT_OPTIONS.find((option) => option.value === battleProfitMode)
-                            ?.label
-                        }
-                      </strong>
-                    </div>
-                    {bestZone ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onClose();
-                          onSelectBattle({ pet: selectedRow.pet, zone: bestZone });
-                        }}
-                      >
-                        Open best zone
-                      </button>
-                    ) : null}
-                  </div>
-                  <details className="pet-battle-details">
-                    <summary>
-                      <span>
-                        {selectedRow.pet.battle.zones.length} zone
-                        {selectedRow.pet.battle.zones.length === 1 ? "" : "s"} with battle samples
-                      </span>
-                      <strong>View all zones</strong>
-                    </summary>
-                    <div className="pet-zone-list">
-                      {selectedRow.pet.battle.zones.map((zone) => (
-                        <button
-                          type="button"
-                          className="pet-zone-button"
-                          key={zone.zone}
-                          onClick={() => {
-                            onClose();
-                            onSelectBattle({ pet: selectedRow.pet, zone });
-                          }}
-                        >
-                          <span>{zone.zone}</span>
-                          <strong>
-                            {secondsToDuration(zone.battleTimeSeconds)} -{" "}
-                            {zone.enemiesBattled || "-"} enemies
-                          </strong>
-                        </button>
-                      ))}
-                    </div>
-                  </details>
-                </>
-              );
-            })()
           ) : (
-            <p className="pet-muted">No battle data is available for this pet yet.</p>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 13, margin: 0 }}>
+              No combat zone data available for this companion.
+            </p>
           )}
-        </div>
-
-        <div className="pet-research-note">
-          <BadgeInfo size={15} />
-          <span>
-            Pet stats update from the scenario controls above. Listing prices, value estimates,
-            and battle returns are separate data sources and should not be read as the same type
-            of value.
-          </span>
-        </div>
+        </section>
       </div>
-    </div>,
-    document.body,
+    </ModalSheet>
   );
 }

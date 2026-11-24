@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProfiles, type ProfileOwnedPet } from "@/lib/profiles";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, getPetRecordMatchKey } from "@/lib/pets";
 import { getQualityRank } from "@/lib/quality";
@@ -34,6 +35,7 @@ import {
 } from "../utils/pet-helpers";
 
 export function usePetsState() {
+  const searchParams = useSearchParams();
   const [database, setDatabase] = useState<PetDatabase | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,12 +53,17 @@ export function usePetsState() {
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
   const [beastmaster, setBeastmaster] = useState(false);
   const [openPetSelect, setOpenPetSelect] = useState<string | null>(null);
-  const [selectedPetName, setSelectedPetName] = useState<string | null>(null);
+  const [selectedPetName, setSelectedPetNameState] = useState<string | null>(null);
   const [selectedBattle, setSelectedBattle] = useState<BattleSelection | null>(null);
   const [hasLoadedStoredState, setHasLoadedStoredState] = useState(false);
   const [modalRootReady, setModalRootReady] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
-  const [visiblePetCount, setVisiblePetCount] = useState(MOBILE_PET_BATCH_SIZE);
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+
+  // Pagination state (default 24 per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const { activeProfile } = useProfiles();
@@ -65,6 +72,7 @@ export function usePetsState() {
     setModalRootReady(true);
   }, []);
 
+  // Viewport tracking
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
     const syncViewport = () => setIsCompactViewport(media.matches);
@@ -73,6 +81,20 @@ export function usePetsState() {
     return () => media.removeEventListener("change", syncViewport);
   }, []);
 
+  // Scroll listener for floating Back-to-Top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Load stored state
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(PET_DATABASE_STORAGE_KEY);
@@ -102,6 +124,7 @@ export function usePetsState() {
     }
   }, []);
 
+  // Persist state
   useEffect(() => {
     if (!hasLoadedStoredState) return;
     const stored: StoredPetState = {
@@ -139,6 +162,7 @@ export function usePetsState() {
     beastmaster,
   ]);
 
+  // Fetch pet database
   useEffect(() => {
     let cancelled = false;
     fetch("/pet-database.json")
@@ -155,6 +179,7 @@ export function usePetsState() {
     };
   }, []);
 
+  // Keyboard navigation & modal dismiss
   useEffect(() => {
     if (!selectedPetName && !selectedBattle) return;
     document.body.classList.add("pet-modal-open");
@@ -170,26 +195,31 @@ export function usePetsState() {
     };
   }, [selectedPetName, selectedBattle]);
 
+  // Deep-linking: auto-select pet from URL param on load
   useEffect(() => {
-    if (!openPetSelect) return;
+    const petParam = searchParams?.get("pet");
+    if (!petParam || !database?.pets) return;
+    const match = database.pets.find(
+      (p) => p.name.toLowerCase() === petParam.toLowerCase() || String(p.id) === petParam,
+    );
+    if (match) {
+      setSelectedPetNameState(match.name);
+    }
+  }, [database, searchParams]);
 
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Element | null;
-      if (!target?.closest(".pet-dropdown")) {
-        setOpenPetSelect(null);
+  // Synchronize URL query parameter when selectedPetName changes
+  const setSelectedPetName = (petName: string | null) => {
+    setSelectedPetNameState(petName);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (petName) {
+        url.searchParams.set("pet", petName);
+      } else {
+        url.searchParams.delete("pet");
       }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenPetSelect(null);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [openPetSelect]);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   const masteryBonus = useMemo(() => getMasteryBonus(database, masteryLevel), [database, masteryLevel]);
   const petMatchLookup = useMemo(() => buildPetMatchLookup(database?.pets || []), [database?.pets]);
@@ -278,17 +308,24 @@ export function usePetsState() {
     ownedPetsByPetKey,
   ]);
 
+  // Reset pagination to page 1 on filter or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredSearchTerm, qualityFilter, sourceFilter, sortBy, sortDesc, pageSize]);
+
+  // Paginated slice
+  const totalPages = Math.max(1, Math.ceil(petRows.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedRows = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize;
+    return petRows.slice(start, start + pageSize);
+  }, [petRows, safeCurrentPage, pageSize]);
+
   const selectedRow = useMemo(
     () => (selectedPetName ? petRows.find((row) => row.pet.name === selectedPetName) || null : null),
     [petRows, selectedPetName],
   );
 
-  useEffect(() => {
-    setVisiblePetCount(MOBILE_PET_BATCH_SIZE);
-  }, [deferredSearchTerm, qualityFilter, sourceFilter, sortBy, sortDesc]);
-
-  const visiblePetRows = isCompactViewport ? petRows.slice(0, visiblePetCount) : petRows;
-  const hiddenPetCount = Math.max(0, petRows.length - visiblePetRows.length);
   const selectedBattleDrops = useMemo(
     () => selectedBattle?.zone.drops?.filter(isDisplayableBattleDrop) || [],
     [selectedBattle],
@@ -321,11 +358,9 @@ export function usePetsState() {
     battleProfitMode !== "withSleep" ||
     foodPolicy !== "standard" ||
     beastmaster;
-  const scenarioLabel = `Scenario: Lv ${petLevel} / Mastery ${masteryLevel} / Evo ${evolutionStage}`;
+  const scenarioLabel = `Lv ${petLevel} · Mastery ${masteryLevel} · Evo ${evolutionStage}`;
   const resultAnnouncement = petRows.length
-    ? hiddenPetCount
-      ? `${visiblePetRows.length} of ${petRows.length} pets shown.`
-      : `${petRows.length} pet${petRows.length === 1 ? "" : "s"} shown.`
+    ? `Showing ${paginatedRows.length} of ${petRows.length} pets (Page ${safeCurrentPage} of ${totalPages}).`
     : "No pets match the current filters.";
 
   const clearPetFilters = () => {
@@ -387,16 +422,22 @@ export function usePetsState() {
     setSelectedBattle,
     modalRootReady,
     isCompactViewport,
-    visiblePetCount,
-    setVisiblePetCount,
+    isSetupOpen,
+    setIsSetupOpen,
+    currentPage: safeCurrentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    paginatedRows,
+    showBackToTop,
+    scrollToTop,
     activeProfile,
     masteryBonus,
     ownedSpeciesCount,
     ownedPetCount,
     petRows,
     selectedRow,
-    visiblePetRows,
-    hiddenPetCount,
     selectedBattleDrops,
     counts,
     bestHunter,

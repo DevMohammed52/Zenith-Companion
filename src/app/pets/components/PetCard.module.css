@@ -1,0 +1,176 @@
+/* ============================================================================
+   Zenith PetCard Component Styles (Scoped CSS Module)
+   ============================================================================ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-4, 16px);
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  position: relative;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  width: 100%;
+  color: inherit;
+  font-family: inherit;
+  outline: none;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--quality-accent, var(--border-default));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--border-focus, #38bdf8);
+  outline-offset: 2px;
+}
+
+/* Header Row: Image, Name, Badges */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+}
+
+.avatarWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md, 8px);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.petInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.petName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.petSource {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badgeStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ownedBadge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text-accent, #38bdf8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Key Stats Strip */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 8px);
+  padding: 8px 10px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+/* Footer Strip: Market & Combat Zone */
+.footerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-2, 8px);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.marketInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.marketLabel {
+  color: var(--text-tertiary);
+}
+
+.marketPrice {
+  color: var(--text-gold, #fbbf24);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.zoneIndicator {
+  color: var(--text-secondary);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoneIndicatorActive {
+  color: var(--text-accent, #7dd3fc);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none !important;
+  }
+}

@@ -1,15 +1,12 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
-import { NoResultsState } from "@/components/StateBlock";
-import {
-  MOBILE_PET_BATCH_SIZE,
-  SOURCE_OPTIONS,
-  type PetRow,
-  type Quality,
-  type SourceFilter,
-  type ViewMode,
-} from "../types";
+import React from "react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Pagination } from "@/components/ui/Pagination";
+import { getQualityPalette } from "@/lib/quality";
+import type { PetRow, ViewMode } from "../types";
 import {
   formatBattleZoneCount,
   formatGold,
@@ -20,53 +17,60 @@ import {
 } from "../utils/pet-helpers";
 import { PetCard } from "./PetCard";
 import { PetImage } from "./PetImage";
+import styles from "../Pets.module.css";
 
 export function PetGrid({
   petRows,
-  visiblePetRows,
-  hiddenPetCount,
+  paginatedRows,
   viewMode,
   hasActiveFilters,
-  searchTerm,
-  qualityFilter,
-  sourceFilter,
   clearPetFilters,
   setSelectedPetName,
-  setVisiblePetCount,
+  currentPage,
+  totalPages,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
 }: {
   petRows: PetRow[];
-  visiblePetRows: PetRow[];
-  hiddenPetCount: number;
+  paginatedRows: PetRow[];
   viewMode: ViewMode;
   hasActiveFilters: boolean;
-  searchTerm: string;
-  qualityFilter: Quality | "ALL";
-  sourceFilter: SourceFilter;
   clearPetFilters: () => void;
   setSelectedPetName: (name: string | null) => void;
-  setVisiblePetCount: Dispatch<SetStateAction<number>>;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  onPageSizeChange: (size: number) => void;
 }) {
+  if (petRows.length === 0) {
+    return (
+      <EmptyState
+        variant="search-empty"
+        title="No companions found"
+        description={
+          hasActiveFilters
+            ? "No pets match your current search query or filter combination."
+            : "The pet database loaded, but no companion records matched."
+        }
+        action={
+          hasActiveFilters
+            ? {
+                label: "Reset filters",
+                onClick: clearPetFilters,
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
   return (
-    <section className="pets-list" aria-label="Pet results">
-      {petRows.length === 0 ? (
-        <NoResultsState
-          title="No pets found"
-          description={
-            hasActiveFilters
-              ? `Search "${searchTerm || "any"}" with ${qualityFilter === "ALL" ? "all qualities" : qualityLabel(qualityFilter)} and ${SOURCE_OPTIONS.find((option) => option.value === sourceFilter)?.label || "all sources"}.`
-              : "The pet database loaded, but no rows matched the current view."
-          }
-          action={
-            hasActiveFilters ? (
-              <button type="button" onClick={clearPetFilters}>
-                Clear filters
-              </button>
-            ) : null
-          }
-        />
-      ) : viewMode === "cards" ? (
-        <div className="pets-card-grid">
-          {visiblePetRows.map((row) => (
+    <section className={styles.resultsSection} aria-label="Pet catalog">
+      {viewMode === "cards" ? (
+        <div className={styles.cardGrid}>
+          {paginatedRows.map((row) => (
             <PetCard
               key={row.pet.name}
               pet={row.pet}
@@ -79,62 +83,83 @@ export function PetGrid({
           ))}
         </div>
       ) : (
-        <div className="pets-table-wrap">
-          <table className="pets-table">
+        <div className={styles.tableCard}>
+          <table className={styles.petTable}>
             <thead>
               <tr>
-                <th>Pet</th>
+                <th>Companion</th>
                 <th>Quality</th>
-                <th>Power</th>
-                <th>Move</th>
-                <th>Hunter</th>
-                <th>Battle Samples</th>
+                <th style={{ textAlign: "right" }}>Power</th>
+                <th style={{ textAlign: "right" }}>Speed</th>
+                <th style={{ textAlign: "right" }}>Hunt Time</th>
+                <th>Zones</th>
                 <th>Owned</th>
                 <th>Source</th>
-                <th>Exchange</th>
+                <th style={{ textAlign: "right" }}>Floor Price</th>
               </tr>
             </thead>
             <tbody>
-              {visiblePetRows.map((row) => (
-                <tr key={row.pet.name}>
+              {paginatedRows.map((row) => (
+                <tr
+                  key={row.pet.name}
+                  className={styles.petTableRow}
+                  onClick={() => setSelectedPetName(row.pet.name)}
+                >
                   <td>
-                    <span className="table-pet-cell">
-                      <PetImage pet={row.pet} />
-                      <span>{row.pet.name}</span>
-                      <button
-                        type="button"
-                        aria-label={`Open details for ${row.pet.name}`}
-                        onClick={() => setSelectedPetName(row.pet.name)}
-                      >
-                        Open details
-                      </button>
-                    </span>
+                    <div className={styles.tablePetCell}>
+                      <div style={{ width: 32, height: 32, flexShrink: 0 }}>
+                        <PetImage pet={row.pet} />
+                      </div>
+                      <span className={styles.tableName}>{row.pet.name}</span>
+                    </div>
                   </td>
-                  <td>{qualityLabel(row.pet.quality)}</td>
-                  <td>{formatNumber(row.totalPower)}</td>
-                  <td>{formatNumber(row.stats.movement_speed, 2)}m/s</td>
-                  <td>{secondsToDuration(row.huntingTime)}</td>
+                  <td>
+                    {(() => {
+                      const palette = getQualityPalette(row.pet.quality);
+                      return (
+                        <Badge
+                          variant="neutral"
+                          size="sm"
+                          style={{
+                            color: palette.color,
+                            borderColor: palette.border,
+                            backgroundColor: palette.background,
+                          }}
+                        >
+                          {qualityLabel(row.pet.quality)}
+                        </Badge>
+                      );
+                    })()}
+                  </td>
+                  <td className={styles.numCell}>{formatNumber(row.totalPower)}</td>
+                  <td className={styles.numCell}>{formatNumber(row.stats.movement_speed, 2)}m/s</td>
+                  <td className={styles.numCell}>{secondsToDuration(row.huntingTime)}</td>
                   <td>{formatBattleZoneCount(row.pet)}</td>
-                  <td>{row.ownedPets.length ? `${row.ownedPets.length} saved` : "-"}</td>
+                  <td>{row.ownedPets.length > 0 ? `${row.ownedPets.length} owned` : "None"}</td>
                   <td>{getPetSourceLabel(row.pet)}</td>
-                  <td>{formatGold(row.pet.exchange?.minPrice)}</td>
+                  <td className={`${styles.numCell} ${styles.goldText}`}>
+                    {formatGold(row.pet.exchange?.minPrice)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      {hiddenPetCount > 0 && (
-        <div className="pet-load-more" role="status">
-          <span>
-            Showing {visiblePetRows.length.toLocaleString()} of {petRows.length.toLocaleString()} pets on mobile.
-          </span>
-          <button
-            type="button"
-            onClick={() => setVisiblePetCount((count) => count + MOBILE_PET_BATCH_SIZE)}
-          >
-            Show {Math.min(MOBILE_PET_BATCH_SIZE, hiddenPetCount).toLocaleString()} more
-          </button>
+
+      {/* Centralized Bounded Pagination */}
+      {totalPages > 1 && (
+        <div className={styles.paginationWrap}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            pageSize={pageSize}
+            onPageSizeChange={onPageSizeChange}
+            pageSizeOptions={[12, 24, 48]}
+            showPageSize={true}
+            itemLabel="pets"
+          />
         </div>
       )}
     </section>

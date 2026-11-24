@@ -1,17 +1,22 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import React, { type Dispatch, type SetStateAction } from "react";
 import {
   ArrowDownUp,
   ChevronDown,
-  ChevronsUp,
-  Database,
-  HeartPulse,
-  PawPrint,
+  ChevronsUpDown,
   RotateCcw,
-  Search,
   SlidersHorizontal,
+  Sparkles,
+  User,
+  X,
 } from "lucide-react";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Select } from "@/components/ui/Select";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Button } from "@/components/ui/Button";
+import { NumberInput } from "@/components/ui/NumberInput";
+import { Switch } from "@/components/ui/Switch";
 import type { CharacterProfile } from "@/lib/profiles";
 import {
   BATTLE_PROFIT_OPTIONS,
@@ -28,18 +33,12 @@ import {
   type StatKey,
   type ViewMode,
 } from "../types";
-import { PetNumberField } from "./PetNumberField";
-import { PetSelect } from "./PetSelect";
+import { qualityLabel } from "../utils/pet-helpers";
+import styles from "../Pets.module.css";
 
 export function PetFilters({
-  hasActiveFilters,
-  activeFilterCount,
-  visibleCount,
-  primaryControlsModified,
-  resetPetControls,
   searchTerm,
   setSearchTerm,
-  isCompactViewport,
   qualityFilter,
   setQualityFilter,
   sourceFilter,
@@ -48,8 +47,6 @@ export function PetFilters({
   setSortBy,
   sortDesc,
   setSortDesc,
-  openPetSelect,
-  setOpenPetSelect,
   viewMode,
   setViewMode,
   petLevel,
@@ -70,16 +67,17 @@ export function PetFilters({
   setBeastmaster,
   activeProfile,
   applyProfilePet,
-  ownedPetCount,
+  hasActiveFilters,
+  clearPetFilters,
+  primaryControlsModified,
+  resetPetControls,
+  scenarioIsModified,
+  scenarioLabel,
+  isSetupOpen,
+  setIsSetupOpen,
 }: {
-  hasActiveFilters: boolean;
-  activeFilterCount: number;
-  visibleCount: number;
-  primaryControlsModified: boolean;
-  resetPetControls: () => void;
   searchTerm: string;
   setSearchTerm: (value: string) => void;
-  isCompactViewport: boolean;
   qualityFilter: Quality | "ALL";
   setQualityFilter: (value: Quality | "ALL") => void;
   sourceFilter: SourceFilter;
@@ -88,8 +86,6 @@ export function PetFilters({
   setSortBy: (value: SortKey) => void;
   sortDesc: boolean;
   setSortDesc: Dispatch<SetStateAction<boolean>>;
-  openPetSelect: string | null;
-  setOpenPetSelect: (value: string | null) => void;
   viewMode: ViewMode;
   setViewMode: (value: ViewMode) => void;
   petLevel: number;
@@ -110,187 +106,304 @@ export function PetFilters({
   setBeastmaster: Dispatch<SetStateAction<boolean>>;
   activeProfile: CharacterProfile | null;
   applyProfilePet: () => void;
-  ownedPetCount: number;
+  hasActiveFilters: boolean;
+  clearPetFilters: () => void;
+  primaryControlsModified: boolean;
+  resetPetControls: () => void;
+  scenarioIsModified: boolean;
+  scenarioLabel: string;
+  isSetupOpen: boolean;
+  setIsSetupOpen: Dispatch<SetStateAction<boolean>>;
 }) {
+  const qualitySelectOptions = QUALITY_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
+
+  const sourceSelectOptions = SOURCE_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
+
+  const sortSelectOptions = SORT_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  }));
+
+  const viewModeOptions = [
+    { value: "cards", label: "Cards" },
+    { value: "table", label: "Table" },
+  ];
+
   return (
-    <>
-      <section className="pets-toolbar">
-        <div className="pet-toolbar-title">
-          <span>
-            <SlidersHorizontal size={15} aria-hidden="true" /> Filters
-          </span>
-          <small>
-            {hasActiveFilters
-              ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
-              : `${visibleCount.toLocaleString()} visible`}
-          </small>
-          <button
-            type="button"
-            onClick={resetPetControls}
-            disabled={!primaryControlsModified}
-            aria-label="Reset pet filters and sorting"
-          >
-            <RotateCcw size={14} aria-hidden="true" />
-            Reset
-          </button>
-        </div>
-        <label className="pet-search">
-          <Search size={18} />
-          <input
-            aria-label="Search pets"
+    <div className={styles.toolbarCard}>
+      {/* 1. Primary Filter Controls Row */}
+      <div className={styles.toolbarRow}>
+        <div className={styles.searchWrap}>
+          <SearchInput
             value={searchTerm}
+            onChange={setSearchTerm}
+            onClear={() => setSearchTerm("")}
             placeholder="Search pets, eggs, bosses, sources..."
-            onChange={(event) => setSearchTerm(event.target.value)}
+            ariaLabel="Search pets"
+            showShortcutHint={false}
           />
-        </label>
-        <details className="pet-filter-panel" open={!isCompactViewport ? true : undefined}>
-          <summary>
-            <span>
-              <SlidersHorizontal size={15} aria-hidden="true" /> Pet filters
-            </span>
-            <small>{primaryControlsModified ? "Customized" : "Default"}</small>
-            <ChevronDown size={16} aria-hidden="true" />
-          </summary>
-          <div className="pet-filter-grid">
-            <PetSelect
-              label="Quality"
-              value={qualityFilter}
-              options={QUALITY_OPTIONS}
-              onChange={setQualityFilter}
-              open={openPetSelect === "quality"}
-              onOpenChange={(open) => setOpenPetSelect(open ? "quality" : null)}
-            />
-            <PetSelect
-              label="Source"
-              value={sourceFilter}
-              options={SOURCE_OPTIONS}
-              onChange={setSourceFilter}
-              open={openPetSelect === "source"}
-              onOpenChange={(open) => setOpenPetSelect(open ? "source" : null)}
-            />
-            <PetSelect
-              label="Sort"
+        </div>
+
+        <div className={styles.filterControls}>
+          <Select
+            value={qualityFilter}
+            onChange={(val) => setQualityFilter(val as Quality | "ALL")}
+            options={qualitySelectOptions}
+            aria-label="Filter by quality"
+            className={styles.filterSelect}
+          />
+
+          <Select
+            value={sourceFilter}
+            onChange={(val) => setSourceFilter(val as SourceFilter)}
+            options={sourceSelectOptions}
+            aria-label="Filter by source"
+            className={styles.filterSelect}
+          />
+
+          <div className={styles.sortGroup}>
+            <Select
               value={sortBy}
-              options={SORT_OPTIONS}
-              onChange={setSortBy}
-              open={openPetSelect === "sort"}
-              onOpenChange={(open) => setOpenPetSelect(open ? "sort" : null)}
+              onChange={(val) => setSortBy(val as SortKey)}
+              options={sortSelectOptions}
+              aria-label="Sort pets by"
+              className={styles.filterSelect}
             />
+
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setSortDesc((prev) => !prev)}
+              aria-label={`Toggle sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
+              title={`Sort direction: ${sortDesc ? "Descending" : "Ascending"}`}
+              icon={<ArrowDownUp size={16} />}
+              className={styles.sortDirectionButton}
+            >
+              {sortDesc ? "Desc" : "Asc"}
+            </Button>
+          </div>
+
+          {primaryControlsModified && (
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={resetPetControls}
+              aria-label="Reset filters and sorting"
+              icon={<RotateCcw size={14} />}
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+
+        <div className={styles.viewModeWrap}>
+          <SegmentedControl
+            value={viewMode}
+            onChange={(val) => setViewMode(val as ViewMode)}
+            options={viewModeOptions}
+            ariaLabel="View mode"
+          />
+        </div>
+      </div>
+
+      {/* 2. Active Filter Chips Row */}
+      {hasActiveFilters && (
+        <div className={styles.activeFilterBar} aria-label="Active filters">
+          <span className={styles.activeFilterLabel}>Active filters:</span>
+          {searchTerm.trim() !== "" && (
             <button
               type="button"
-              className="pet-icon-button"
-              aria-pressed={sortDesc}
-              aria-label={`Toggle sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
-              onClick={() => setSortDesc((value) => !value)}
-              title="Toggle sort direction"
+              className={styles.filterChip}
+              onClick={() => setSearchTerm("")}
+              aria-label={`Remove search filter: ${searchTerm}`}
             >
-              <ArrowDownUp size={17} />
-              <span>{sortDesc ? "Desc" : "Asc"}</span>
+              <span>Search: "{searchTerm}"</span>
+              <X size={12} aria-hidden="true" />
             </button>
-          </div>
-        </details>
-        <div className="pet-segment" aria-label="View mode">
-          <button
-            type="button"
-            className={viewMode === "cards" ? "active" : ""}
-            aria-pressed={viewMode === "cards"}
-            onClick={() => setViewMode("cards")}
-          >
-            Cards
-          </button>
-          <button
-            type="button"
-            className={viewMode === "table" ? "active" : ""}
-            aria-pressed={viewMode === "table"}
-            onClick={() => setViewMode("table")}
-          >
-            Table
-          </button>
-        </div>
-      </section>
+          )}
 
-      <details className="pets-calculator">
-        <summary className="calculator-title">
-          <ChevronsUp size={18} />
-          <div>
-            <strong>Pet setup</strong>
-            <span>
-              Lv {petLevel} / Mastery {masteryLevel} / Evo {evolutionStage} /{" "}
-              {battleProfitMode === "noSleep" ? "No sleep" : "With sleep"}
-            </span>
-          </div>
-        </summary>
-        <div className="calculator-fields">
-          <PetNumberField label="Pet Level" value={petLevel} min={1} max={100} onChange={setPetLevel} />
-          <PetNumberField label="Pet Mastery" value={masteryLevel} min={1} max={100} onChange={setMasteryLevel} />
-          <PetNumberField label="Evolution" value={evolutionStage} min={0} max={5} onChange={setEvolutionStage} />
-          <PetSelect
-            label="Evolution stat"
-            value={evolutionStat}
-            options={EVOLUTION_STAT_OPTIONS}
-            onChange={setEvolutionStat}
-            open={openPetSelect === "evolution"}
-            onOpenChange={(open) => setOpenPetSelect(open ? "evolution" : null)}
-          />
-          <PetSelect
-            label="Battle sample mode"
-            value={battleProfitMode}
-            options={BATTLE_PROFIT_OPTIONS}
-            onChange={setBattleProfitMode}
-            open={openPetSelect === "profit"}
-            onOpenChange={(open) => setOpenPetSelect(open ? "profit" : null)}
-          />
-          <PetSelect
-            label="Food"
-            value={foodPolicy}
-            options={FOOD_OPTIONS}
-            onChange={setFoodPolicy}
-            open={openPetSelect === "food"}
-            onOpenChange={(open) => setOpenPetSelect(open ? "food" : null)}
-          />
-          <button
-            className={`pet-toggle ${patBonus ? "active" : ""}`}
-            aria-label="Toggle pet pat bonus"
-            aria-pressed={patBonus}
-            onClick={() => setPatBonus((value) => !value)}
-          >
-            <HeartPulse size={16} />
-            Pat +5%
-          </button>
-          <button
-            className={`pet-toggle ${beastmaster ? "active" : ""}`}
-            aria-label="Toggle Beastmaster context"
-            aria-pressed={beastmaster}
-            onClick={() => setBeastmaster((value) => !value)}
-          >
-            <PawPrint size={16} />
-            Beastmaster
-          </button>
-          {activeProfile?.pet?.species ? (
-            <button className="pet-toggle" onClick={applyProfilePet}>
-              <Database size={16} />
-              Use profile pet
-            </button>
-          ) : null}
-          {ownedPetCount > 0 ? (
+          {qualityFilter !== "ALL" && (
             <button
-              className={`pet-toggle ${sourceFilter === "OWNED" ? "active" : ""}`}
-              aria-label="Show owned pets from the active profile"
-              aria-pressed={sourceFilter === "OWNED"}
-              onClick={() => {
-                setSourceFilter("OWNED");
-                setSearchTerm("");
-              }}
+              type="button"
+              className={styles.filterChip}
+              onClick={() => setQualityFilter("ALL")}
+              aria-label={`Remove quality filter: ${qualityLabel(qualityFilter)}`}
             >
-              <PawPrint size={16} />
-              Owned pets
+              <span>Quality: {qualityLabel(qualityFilter)}</span>
+              <X size={12} aria-hidden="true" />
             </button>
-          ) : null}
+          )}
+
+          {sourceFilter !== "ALL" && (
+            <button
+              type="button"
+              className={styles.filterChip}
+              onClick={() => setSourceFilter("ALL")}
+              aria-label={`Remove source filter`}
+            >
+              <span>Source: {SOURCE_OPTIONS.find((o) => o.value === sourceFilter)?.label || sourceFilter}</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            className={styles.clearAllButton}
+            onClick={clearPetFilters}
+          >
+            Clear all
+          </button>
         </div>
-        <div className="pet-effect-note">
-          Stats update from this setup. Market values and battle notes stay separate.
+      )}
+
+      {/* 3. Collapsible Pet Setup Simulator */}
+      <div className={styles.setupCard}>
+        <button
+          type="button"
+          className={styles.setupHeader}
+          onClick={() => setIsSetupOpen((prev) => !prev)}
+          aria-expanded={isSetupOpen}
+          aria-controls="pet-setup-accordion"
+        >
+          <div className={styles.setupHeaderTitle}>
+            <div className={styles.setupIcon}>
+              <SlidersHorizontal size={16} />
+            </div>
+            <div className={styles.setupTitleText}>
+              <span className={styles.setupTitleMain}>Pet Simulator Setup</span>
+              <span className={styles.setupTitleSub}>
+                {scenarioLabel}
+                {scenarioIsModified && (
+                  <span className={styles.setupTitleModified}> · Custom Setup Active</span>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className={`${styles.setupChevron} ${isSetupOpen ? styles.setupChevronOpen : ""}`}>
+            <ChevronDown size={18} />
+          </div>
+        </button>
+
+        <div
+          id="pet-setup-accordion"
+          className={`${styles.setupAccordionContent} ${isSetupOpen ? styles.setupAccordionOpen : ""}`}
+        >
+          <div className={styles.setupInnerWrapper}>
+            <div className={styles.setupFieldsGrid}>
+              <NumberInput
+                label="Pet Level"
+                value={petLevel}
+                min={1}
+                max={100}
+                onChange={setPetLevel}
+              />
+              <NumberInput
+                label="Pet Mastery"
+                value={masteryLevel}
+                min={1}
+                max={100}
+                onChange={setMasteryLevel}
+              />
+              <NumberInput
+                label="Evolution Stage"
+                value={evolutionStage}
+                min={0}
+                max={5}
+                onChange={setEvolutionStage}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                  Evolution Focus
+                </label>
+                <Select
+                  ariaLabel="Evolution Focus"
+                  value={evolutionStat}
+                  options={EVOLUTION_STAT_OPTIONS}
+                  onChange={(val) => setEvolutionStat(val as StatKey | "all")}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                  Food Buff
+                </label>
+                <Select
+                  ariaLabel="Food Buff"
+                  value={foodPolicy}
+                  options={FOOD_OPTIONS}
+                  onChange={(val) => setFoodPolicy(val as FoodPolicy)}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                  Battle Sample Mode
+                </label>
+                <Select
+                  ariaLabel="Battle Sample Mode"
+                  value={battleProfitMode}
+                  options={BATTLE_PROFIT_OPTIONS}
+                  onChange={(val) => setBattleProfitMode(val as BattleProfitMode)}
+                />
+              </div>
+            </div>
+
+            <div className={styles.setupSwitchGroup}>
+              <Switch
+                checked={patBonus}
+                onChange={(e) => setPatBonus(e.target.checked)}
+                label="Pat Buff (+5% stats)"
+              />
+              <Switch
+                checked={beastmaster}
+                onChange={(e) => setBeastmaster(e.target.checked)}
+                label="Beastmaster Context"
+              />
+            </div>
+
+            <div className={styles.setupActionsRow}>
+              <span>Adjusting setup updates pet stats dynamically across all cards and tables.</span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {activeProfile?.pet?.species && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<User size={14} />}
+                    onClick={applyProfilePet}
+                  >
+                    Use my pet's setup
+                  </Button>
+                )}
+                {scenarioIsModified && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<RotateCcw size={14} />}
+                    onClick={() => {
+                      setPetLevel(100);
+                      setMasteryLevel(100);
+                      setEvolutionStage(0);
+                      setEvolutionStat("all");
+                      setPatBonus(false);
+                      setBattleProfitMode("withSleep");
+                      setFoodPolicy("standard");
+                      setBeastmaster(false);
+                    }}
+                  >
+                    Reset setup
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </details>
-    </>
+      </div>
+    </div>
   );
 }

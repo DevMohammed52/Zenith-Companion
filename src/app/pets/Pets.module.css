@@ -1,0 +1,511 @@
+/* ============================================================================
+   Zenith Pets Directory Styles (Scoped CSS Module)
+   Astral Slate Monochromatic Tokens & Hardware-Accelerated Micro-Interactions
+   ============================================================================ */
+
+.page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-6, 24px) var(--space-6, 24px) calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 32px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+  min-height: 100dvh;
+}
+
+/* 1. Hero Section */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-accent, #7dd3fc);
+}
+
+.title {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 640px;
+}
+
+/* Inline Metadata Strip (Eliminating 10 Cluttered Metric Boxes) */
+.metaStrip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  padding-top: var(--space-1, 4px);
+}
+
+.metaPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.metaPill strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.metaPillActive {
+  border-color: rgba(125, 211, 252, 0.3);
+  background: rgba(125, 211, 252, 0.06);
+  color: var(--text-accent, #7dd3fc);
+}
+
+/* 2. Filter Toolbar */
+.toolbarCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-4, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  width: 100%;
+}
+
+.searchWrap {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.filterControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  flex-shrink: 0;
+}
+
+.filterSelect {
+  width: 130px;
+  min-width: 110px;
+}
+
+.sortGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  flex-shrink: 0;
+}
+
+.sortGroup .filterSelect {
+  width: 130px;
+}
+
+.sortDirectionButton {
+  min-width: 76px;
+  height: 44px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.viewModeWrap {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .toolbarRow {
+    flex-wrap: wrap;
+  }
+
+  .searchWrap {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .filterControls {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbarRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2, 8px);
+  }
+
+  .searchWrap {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .filterControls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2, 8px);
+    width: 100%;
+  }
+
+  .filterSelect {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .sortGroup {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--space-2, 8px);
+    width: 100%;
+  }
+
+  .sortGroup .filterSelect {
+    flex: 1 1 auto;
+    width: 100% !important;
+  }
+
+  .sortDirectionButton {
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .viewModeWrap {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+/* Active Filters Chips Bar */
+.activeFilterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  padding-top: var(--space-2, 8px);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.activeFilterLabel {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.filterChip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--border-strong);
+}
+
+.clearAllButton {
+  background: none;
+  border: none;
+  color: var(--text-accent, #7dd3fc);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm, 6px);
+  transition: opacity 150ms ease;
+}
+
+.clearAllButton:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* 3. Pet Setup Simulator Accordion */
+.setupCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  transition: border-color 150ms ease;
+}
+
+.setupCard:hover {
+  border-color: var(--border-default);
+}
+
+.setupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: 12px var(--space-4, 16px);
+  background: rgba(255, 255, 255, 0.015);
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+}
+
+.setupHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setupIcon {
+  color: var(--text-accent, #7dd3fc);
+  display: flex;
+  align-items: center;
+}
+
+.setupTitleText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setupTitleMain {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.setupTitleSub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.setupTitleModified {
+  color: var(--text-accent, #7dd3fc);
+  font-weight: 500;
+}
+
+.setupChevron {
+  color: var(--text-tertiary);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+}
+
+.setupChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Accordion Smooth Expansion using CSS Grid 0fr -> 1fr */
+.setupAccordionContent {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.setupAccordionOpen {
+  grid-template-rows: 1fr;
+}
+
+.setupInnerWrapper {
+  overflow: hidden;
+}
+
+.setupFieldsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px);
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.setupSwitchGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3, 12px);
+  padding: 0 var(--space-4, 16px) var(--space-3, 12px);
+}
+
+.setupActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  padding: 10px var(--space-4, 16px);
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* 4. Results Section */
+.resultsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+/* Table View */
+.tableCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 12px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.petTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.petTable th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.petTable td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.petTableRow {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.petTableRow:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.tablePetCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tableName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.numCell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.goldText {
+  color: var(--text-gold, #fbbf24);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 5. Pagination and Floating Back to Top */
+.paginationWrap {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-2, 8px);
+}
+
+.backToTopButton {
+  position: fixed;
+  bottom: calc(var(--bottom-dock-height, 74px) + env(safe-area-inset-bottom, 0px) + 20px);
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 45;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.backToTopButton:hover {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+@media (min-width: 768px) {
+  .backToTopButton {
+    bottom: 24px;
+    right: 24px;
+  }
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .setupChevron,
+  .setupAccordionContent,
+  .backToTopButton,
+  .filterChip {
+    transition: none !important;
+  }
+}

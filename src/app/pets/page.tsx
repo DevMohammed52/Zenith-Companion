@@ -1,35 +1,34 @@
 "use client";
 
+import React, { Suspense } from "react";
+import { ArrowUp } from "lucide-react";
 import { ErrorState, LoadingState } from "@/components/StateBlock";
 import { usePetsState } from "./hooks/usePetsState";
 import { PetHero } from "./components/PetHero";
 import { PetFilters } from "./components/PetFilters";
-import { PetSignalRow } from "./components/PetSignalRow";
 import { PetGrid } from "./components/PetGrid";
 import { PetDetailModal } from "./components/PetDetailModal";
 import { PetBattleModal } from "./components/PetBattleModal";
+import styles from "./Pets.module.css";
 
-export default function PetsPage() {
+function PetsContent() {
   const state = usePetsState();
 
   return (
-    <main className="pets-page">
+    <main className={styles.page}>
       <PetHero
         database={state.database}
         counts={state.counts}
         masteryBonus={state.masteryBonus}
+        ownedPetCount={state.ownedPetCount}
         ownedSpeciesCount={state.ownedSpeciesCount}
+        filteredCount={state.petRows.length}
+        hasActiveFilters={state.hasActiveFilters}
       />
 
       <PetFilters
-        hasActiveFilters={state.hasActiveFilters}
-        activeFilterCount={state.activeFilterCount}
-        visibleCount={state.petRows.length}
-        primaryControlsModified={state.primaryControlsModified}
-        resetPetControls={state.resetPetControls}
         searchTerm={state.searchTerm}
         setSearchTerm={state.setSearchTerm}
-        isCompactViewport={state.isCompactViewport}
         qualityFilter={state.qualityFilter}
         setQualityFilter={state.setQualityFilter}
         sourceFilter={state.sourceFilter}
@@ -38,8 +37,6 @@ export default function PetsPage() {
         setSortBy={state.setSortBy}
         sortDesc={state.sortDesc}
         setSortDesc={state.setSortDesc}
-        openPetSelect={state.openPetSelect}
-        setOpenPetSelect={state.setOpenPetSelect}
         viewMode={state.viewMode}
         setViewMode={state.setViewMode}
         petLevel={state.petLevel}
@@ -60,58 +57,52 @@ export default function PetsPage() {
         setBeastmaster={state.setBeastmaster}
         activeProfile={state.activeProfile}
         applyProfilePet={state.applyProfilePet}
-        ownedPetCount={state.ownedPetCount}
+        hasActiveFilters={state.hasActiveFilters}
+        clearPetFilters={state.clearPetFilters}
+        primaryControlsModified={state.primaryControlsModified}
+        resetPetControls={state.resetPetControls}
+        scenarioIsModified={state.scenarioIsModified}
+        scenarioLabel={state.scenarioLabel}
+        isSetupOpen={state.isSetupOpen}
+        setIsSetupOpen={state.setIsSetupOpen}
       />
 
       {state.loadError && (
         <ErrorState title="Pet database unavailable" description={state.loadError} />
       )}
+
       {!state.database && !state.loadError && (
         <LoadingState
           title="Loading pet database"
-          description="Preparing pet stats, exchange listings, ownership matches, and battle samples."
+          description="Preparing companion stats, evolution formulas, and exchange prices."
         />
       )}
 
       {state.database && (
         <>
-          <PetSignalRow
-            petRowsCount={state.petRows.length}
-            bestHunter={state.bestHunter}
-            battleResearchPetCount={state.battleResearchPetCount}
-            bestMarket={state.bestMarket}
-            ownedPetCount={state.ownedPetCount}
-            ownedSpeciesCount={state.ownedSpeciesCount}
-            resultAnnouncement={state.resultAnnouncement}
-            scenarioIsModified={state.scenarioIsModified}
-            scenarioLabel={state.scenarioLabel}
+          <PetGrid
+            petRows={state.petRows}
+            paginatedRows={state.paginatedRows}
+            viewMode={state.viewMode}
+            hasActiveFilters={state.hasActiveFilters}
+            clearPetFilters={state.clearPetFilters}
+            setSelectedPetName={state.setSelectedPetName}
+            currentPage={state.currentPage}
+            totalPages={state.totalPages}
+            onPageChange={state.setCurrentPage}
+            pageSize={state.pageSize}
+            onPageSizeChange={state.setPageSize}
           />
 
-          <div className="pets-content">
-            <PetGrid
-              petRows={state.petRows}
-              visiblePetRows={state.visiblePetRows}
-              hiddenPetCount={state.hiddenPetCount}
-              viewMode={state.viewMode}
-              hasActiveFilters={state.hasActiveFilters}
-              searchTerm={state.searchTerm}
-              qualityFilter={state.qualityFilter}
-              sourceFilter={state.sourceFilter}
-              clearPetFilters={state.clearPetFilters}
-              setSelectedPetName={state.setSelectedPetName}
-              setVisiblePetCount={state.setVisiblePetCount}
+          {state.modalRootReady && state.selectedRow && (
+            <PetDetailModal
+              selectedRow={state.selectedRow}
+              battleProfitMode={state.battleProfitMode}
+              foodPolicy={state.foodPolicy}
+              onClose={() => state.setSelectedPetName(null)}
+              onSelectBattle={(selection) => state.setSelectedBattle(selection)}
             />
-
-            {state.modalRootReady && state.selectedRow && (
-              <PetDetailModal
-                selectedRow={state.selectedRow}
-                battleProfitMode={state.battleProfitMode}
-                foodPolicy={state.foodPolicy}
-                onClose={() => state.setSelectedPetName(null)}
-                onSelectBattle={(selection) => state.setSelectedBattle(selection)}
-              />
-            )}
-          </div>
+          )}
 
           {state.modalRootReady && state.selectedBattle && (
             <PetBattleModal
@@ -123,8 +114,29 @@ export default function PetsPage() {
               onClose={() => state.setSelectedBattle(null)}
             />
           )}
+
+          {/* Floating Back-to-Top Button with Mobile Dock Clearance */}
+          {state.showBackToTop && (
+            <button
+              type="button"
+              className={styles.backToTopButton}
+              onClick={state.scrollToTop}
+              aria-label="Scroll back to top"
+              title="Back to top"
+            >
+              <ArrowUp size={18} />
+            </button>
+          )}
         </>
       )}
     </main>
+  );
+}
+
+export default function PetsPage() {
+  return (
+    <Suspense fallback={null}>
+      <PetsContent />
+    </Suspense>
   );
 }
