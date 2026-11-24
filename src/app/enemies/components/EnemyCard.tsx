@@ -1,5 +1,6 @@
 import React from "react";
 import { Cloud, Skull } from "lucide-react";
+import { GameImage } from "@/components/GameImage";
 import {
   getWeatherPreferenceLabel,
   type EnrichedEnemy,
@@ -15,44 +16,49 @@ export function EnemyCard({
   index: number;
   onSelect: (enemy: EnrichedEnemy) => void;
 }) {
+  const tone = matchTone(enemy.currentWeatherMatch);
+
   return (
     <button
       type="button"
-      className={`enemy-card ${matchTone(enemy.currentWeatherMatch)}`}
+      className={`enemy-card ${tone}`}
       onClick={() => onSelect(enemy)}
       aria-label={getEnemyCardLabel(enemy)}
     >
       <span className="enemy-card-art">
-        {enemy.imageUrl ? (
-          <img
-            src={enemy.imageUrl}
-            alt=""
-            width={42}
-            height={42}
-            loading={index < 8 ? "eager" : "lazy"}
-            decoding="async"
-          />
-        ) : (
-          <Skull size={28} />
-        )}
+        <GameImage
+          src={enemy.imageUrl}
+          alt={enemy.name}
+          width={48}
+          height={48}
+          priority={index < 8}
+          className="enemy-sprite"
+          fallback={<Skull size={26} className="enemy-card-skull" aria-hidden="true" />}
+        />
       </span>
+
       <span className="enemy-card-main">
-        <span className="enemy-title-row">
-          <strong>{enemy.name}</strong>
-          <em>Lv.{enemy.level}</em>
+        <span className="enemy-card-header">
+          <strong className="enemy-name">{enemy.name}</strong>
+          <span className="enemy-level-badge">Lv. {enemy.level}</span>
         </span>
-        <small>{enemy.locationName}</small>
-        <span className={`match-chip ${matchTone(enemy.currentWeatherMatch)}`}>
-          {enemy.currentWeather?.name || "Unknown"}: {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
-        </span>
-        <span className="enemy-card-window">
-          <Cloud size={13} aria-hidden="true" />
-          {formatWindow(enemy)}
+
+        <span className="enemy-location">{enemy.locationName}</span>
+
+        <span className="enemy-card-weather-row">
+          <span className={`match-chip ${tone}`}>
+            {enemy.currentWeather?.name || "Unknown"}: {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
+          </span>
+          <span className="enemy-card-window">
+            <Cloud size={12} aria-hidden="true" />
+            <span>{formatWindow(enemy)}</span>
+          </span>
         </span>
       </span>
+
       <span className="enemy-card-stats">
-        <span>{enemy.lootCount} drops</span>
-        <strong>{formatGold(enemy.lootEv)}</strong>
+        <span className="enemy-drop-count">{enemy.lootCount} drops</span>
+        <strong className="enemy-loot-ev">{formatGold(enemy.lootEv)}</strong>
       </span>
     </button>
   );

@@ -1,10 +1,11 @@
 import React from "react";
 import {
-  ArrowDownUp,
-  ChevronDown,
+  ArrowDownNarrowWide,
+  ArrowUpNarrowWide,
   RotateCcw,
   Search,
   SlidersHorizontal,
+  X,
 } from "lucide-react";
 import {
   LEVEL_OPTIONS,
@@ -35,7 +36,6 @@ export function EnemiesControls({
   hasActiveControls,
   resetControls,
   filteredCount,
-  isCompactViewport,
 }: {
   query: string;
   setQuery: (val: string) => void;
@@ -55,86 +55,162 @@ export function EnemiesControls({
   hasActiveControls: boolean;
   resetControls: () => void;
   filteredCount: number;
-  isCompactViewport: boolean;
+  isCompactViewport?: boolean;
 }) {
-  return (
-    <section className="enemy-controls" aria-label="Enemy filters">
-      <div className="controls-heading">
-        <span><SlidersHorizontal size={15} aria-hidden="true" /> Filters</span>
-        <small>
-          {activeFilterCount > 0
-            ? `${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`
-            : `${filteredCount.toLocaleString()} visible`}
-        </small>
-        <button
-          type="button"
-          onClick={resetControls}
-          disabled={!hasActiveControls}
-          aria-label="Reset enemy filters and sorting"
-        >
-          <RotateCcw size={14} aria-hidden="true" />
-          Reset
-        </button>
-      </div>
+  const selectedLocationObj = locationOptions.find((opt) => opt.value === selectedLocation);
+  const selectedWeatherObj = MATCH_OPTIONS.find((opt) => opt.value === matchFilter);
+  const selectedLevelObj = LEVEL_OPTIONS.find((opt) => opt.value === levelFilter);
+  const selectedSortObj = SORT_OPTIONS.find((opt) => opt.value === sortKey);
 
-      <label className="search-control">
-        <span>Search</span>
-        <div>
-          <span className="search-icon" aria-hidden="true">
+  return (
+    <section className="enemy-controls" aria-label="Enemy filters and search">
+      <div className="search-control" role="search">
+        <label htmlFor="enemy-search-input" className="search-label">
+          Search Enemies
+        </label>
+        <div className="search-input-wrap">
+          <span className="search-icon-box" aria-hidden="true">
             <Search size={16} />
           </span>
           <input
-            aria-label="Search enemies, locations, drops, or weather"
+            id="enemy-search-input"
+            type="search"
+            aria-label="Search enemies by name, location, drop, or weather"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Enemy, location, drop, weather..."
+            placeholder="Search enemy, location, loot, weather..."
+            autoComplete="off"
+            spellCheck={false}
           />
+          {query.length > 0 && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={() => setQuery("")}
+              aria-label="Clear search input"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
         </div>
-      </label>
+      </div>
 
-      <details className="enemy-filter-panel" open={!isCompactViewport ? true : undefined}>
-        <summary tabIndex={0}>
-          <span><SlidersHorizontal size={15} aria-hidden="true" /> Filters and sort</span>
-          <small>{activeFilterCount > 0 || hasCustomSort ? "Customized" : "Default"}</small>
-          <ChevronDown size={16} aria-hidden="true" />
-        </summary>
-        <div className="enemy-filter-grid">
-          <CustomSelect
-            label="Location"
-            value={selectedLocation}
-            options={locationOptions}
-            onChange={setSelectedLocation}
-          />
-          <CustomSelect
-            label="Weather"
-            value={matchFilter}
-            options={MATCH_OPTIONS}
-            onChange={setMatchFilter}
-          />
-          <CustomSelect
-            label="Level"
-            value={levelFilter}
-            options={LEVEL_OPTIONS}
-            onChange={setLevelFilter}
-          />
-          <CustomSelect
-            label="Sort"
-            value={sortKey}
-            options={SORT_OPTIONS}
-            onChange={setSortKey}
-          />
+      <div className="enemy-filter-grid">
+        <CustomSelect
+          label="Location"
+          value={selectedLocation}
+          options={locationOptions}
+          onChange={setSelectedLocation}
+        />
+        <CustomSelect
+          label="Weather"
+          value={matchFilter}
+          options={MATCH_OPTIONS}
+          onChange={setMatchFilter}
+        />
+        <CustomSelect
+          label="Level Band"
+          value={levelFilter}
+          options={LEVEL_OPTIONS}
+          onChange={setLevelFilter}
+        />
+        <CustomSelect
+          label="Sort By"
+          value={sortKey}
+          options={SORT_OPTIONS}
+          onChange={setSortKey}
+        />
+        <div className="sort-direction-wrap">
+          <label className="sort-direction-label">Direction</label>
           <button
             type="button"
             className="sort-direction"
             aria-pressed={sortDesc}
-            aria-label={`Change sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
+            aria-label={`Sort direction: currently ${sortDesc ? "descending" : "ascending"}. Click to reverse.`}
             onClick={() => setSortDesc((prev) => !prev)}
           >
-            <ArrowDownUp size={16} />
-            {sortDesc ? "Desc" : "Asc"}
+            {sortDesc ? (
+              <ArrowDownNarrowWide size={15} aria-hidden="true" />
+            ) : (
+              <ArrowUpNarrowWide size={15} aria-hidden="true" />
+            )}
+            <span>{sortDesc ? "Desc" : "Asc"}</span>
           </button>
         </div>
-      </details>
+      </div>
+
+      {hasActiveControls && (
+        <div className="active-filters-strip" aria-label="Active filters summary">
+          <span className="active-filters-heading">Active:</span>
+          {query.trim().length > 0 && (
+            <button
+              type="button"
+              className="active-filter-chip"
+              onClick={() => setQuery("")}
+              aria-label={`Remove search filter: ${query}`}
+            >
+              <span>Search: "{query}"</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+          {selectedLocation !== "all" && (
+            <button
+              type="button"
+              className="active-filter-chip"
+              onClick={() => setSelectedLocation("all")}
+              aria-label={`Remove location filter: ${selectedLocationObj?.label}`}
+            >
+              <span>{selectedLocationObj?.label || selectedLocation}</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+          {matchFilter !== "all" && (
+            <button
+              type="button"
+              className="active-filter-chip"
+              onClick={() => setMatchFilter("all")}
+              aria-label={`Remove weather filter: ${selectedWeatherObj?.label}`}
+            >
+              <span>Weather: {selectedWeatherObj?.label || matchFilter}</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+          {levelFilter !== "all" && (
+            <button
+              type="button"
+              className="active-filter-chip"
+              onClick={() => setLevelFilter("all")}
+              aria-label={`Remove level filter: ${selectedLevelObj?.label}`}
+            >
+              <span>Level: {selectedLevelObj?.label || levelFilter}</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+          {(sortKey !== "level" || sortDesc) && (
+            <button
+              type="button"
+              className="active-filter-chip"
+              onClick={() => {
+                setSortKey("level");
+                setSortDesc(false);
+              }}
+              aria-label="Reset sort order to default level ascending"
+            >
+              <span>Sort: {selectedSortObj?.label} ({sortDesc ? "Desc" : "Asc"})</span>
+              <X size={12} aria-hidden="true" />
+            </button>
+          )}
+          <button
+            type="button"
+            className="clear-all-filters-btn"
+            onClick={resetControls}
+            aria-label="Clear all active filters"
+          >
+            <RotateCcw size={12} aria-hidden="true" />
+            <span>Clear all</span>
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { EnemiesHeader } from "./components/EnemiesHeader";
 import { EnemiesControls } from "./components/EnemiesControls";
 import { EnemiesGrid } from "./components/EnemiesGrid";
 import { EnemyDetailModal } from "./components/EnemyDetailModal";
+import { EnemiesBackToTop } from "./components/EnemiesBackToTop";
 import { EnemiesStyles } from "./components/EnemiesStyles";
 
 function EnemiesContent() {
@@ -49,15 +50,22 @@ function EnemiesContent() {
           loading={state.loading}
           enemiesCount={state.enemies.length}
           filteredEnemies={state.filteredEnemies}
+          paginatedEnemies={state.paginatedEnemies}
           hasActiveControls={state.hasActiveControls}
           resetControls={state.resetControls}
           onSelectEnemy={state.setSelectedEnemy}
+          currentPage={state.currentPage}
+          totalPages={state.totalPages}
+          pageSize={state.pageSize}
+          onPageChange={state.setCurrentPage}
+          onPageSizeChange={state.setPageSize}
         />
       </div>
 
       {state.selectedEnemy && (
         <EnemyDetailModal
           enemy={state.selectedEnemy}
+          marketData={state.marketData}
           onClose={() => state.setSelectedEnemy(null)}
           onOpenItem={(name) => {
             state.setSelectedEnemy(null);
@@ -66,6 +74,7 @@ function EnemiesContent() {
         />
       )}
 
+      <EnemiesBackToTop />
       <EnemiesStyles />
     </main>
   );
@@ -76,7 +85,7 @@ export default function EnemiesPage() {
     <Suspense
       fallback={(
         <main className="enemy-db-page">
-          <div className="enemy-empty">Loading enemy database...</div>
+          <div className="enemy-empty">Loading enemy bestiary...</div>
         </main>
       )}
     >

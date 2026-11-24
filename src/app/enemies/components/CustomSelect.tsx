@@ -142,26 +142,40 @@ export function CustomSelect<T extends string>({
   return (
     <div className={`custom-select ${open ? "open" : ""} ${open && placement === "up" ? "open-up" : ""}`} ref={rootRef}>
       <label id={labelId}>{label}</label>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="select-trigger"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-labelledby={`${labelId} ${selectId}-value`}
-        aria-controls={open ? `${selectId}-menu` : undefined}
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-          } else {
-            openMenu(selectedIndex);
-          }
-        }}
-        onKeyDown={handleTriggerKeyDown}
-      >
-        <span id={`${selectId}-value`}>{selected.label}</span>
-        <ChevronDown size={16} />
-      </button>
+      <div className="select-control-box">
+        <button
+          ref={triggerRef}
+          type="button"
+          className="select-trigger"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={`${labelId} ${selectId}-value`}
+          aria-controls={open ? `${selectId}-menu` : undefined}
+          onClick={() => {
+            if (open) {
+              setOpen(false);
+            } else {
+              openMenu(selectedIndex);
+            }
+          }}
+          onKeyDown={handleTriggerKeyDown}
+        >
+          <span id={`${selectId}-value`}>{selected.label}</span>
+          <ChevronDown size={16} />
+        </button>
+        <select
+          className="mobile-native-select"
+          value={value}
+          aria-label={label}
+          onChange={(e) => onChange(e.target.value as T)}
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {open && (
         <div
           id={`${selectId}-menu`}

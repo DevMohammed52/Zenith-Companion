@@ -23,16 +23,22 @@ export function useEnemiesState() {
   const searchParams = useSearchParams();
   const { staticData, worldLocations, marketData, loading } = useData();
   const { openItemByName } = useItemModal();
-  const [query, setQuery] = useState("");
+  const searchParamVal = searchParams.get("search") ?? "";
+  const locationParamVal = searchParams.get("location") ?? "all";
+  const [query, setQuery] = useState(() => searchParamVal);
   const deferredQuery = useDeferredValue(query);
-  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState(() => locationParamVal);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("level");
   const [sortDesc, setSortDesc] = useState(false);
-  const [selectedEnemy, setSelectedEnemy] = useState<EnrichedEnemy | null>(null);
+  const [selectedEnemy, setSelectedEnemyState] = useState<EnrichedEnemy | null>(null);
   const [weatherNow, setWeatherNow] = useState(() => Date.now());
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+
+  // Pagination state (default: 24 enemies per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
 
   useEffect(() => {
     const interval = window.setInterval(() => setWeatherNow(Date.now()), 60000);
@@ -53,9 +59,57 @@ export function useEnemiesState() {
   );
 
   useEffect(() => {
-    setQuery(searchParams.get("search") ?? "");
-    setSelectedLocation(searchParams.get("location") ?? "all");
+    const currentSearch = searchParams.get("search") ?? "";
+    const currentLocation = searchParams.get("location") ?? "all";
+    if (query !== currentSearch) setQuery(currentSearch);
+    if (selectedLocation !== currentLocation) setSelectedLocation(currentLocation);
   }, [searchParams]);
+
+  // Synchronize search and location params to URL for deep linking
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (deferredQuery.trim()) {
+      url.searchParams.set("search", deferredQuery.trim());
+    } else {
+      url.searchParams.delete("search");
+    }
+    if (selectedLocation !== "all") {
+      url.searchParams.set("location", selectedLocation);
+    } else {
+      url.searchParams.delete("location");
+    }
+    window.history.replaceState(null, "", url.toString());
+  }, [deferredQuery, selectedLocation]);
+
+  // Deep-linking: auto-select enemy from URL param if present
+  useEffect(() => {
+    const enemyParam = searchParams.get("enemy");
+    if (!enemyParam || enemies.length === 0) return;
+    const match = enemies.find(
+      (e) =>
+        e.name.toLowerCase() === enemyParam.toLowerCase() ||
+        String(e.id) === enemyParam ||
+        e.key.toLowerCase() === enemyParam.toLowerCase(),
+    );
+    if (match) {
+      setSelectedEnemyState(match);
+    }
+  }, [enemies, searchParams]);
+
+  // Synchronize URL query parameter when selectedEnemy changes
+  const setSelectedEnemy = (enemy: EnrichedEnemy | null) => {
+    setSelectedEnemyState(enemy);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (enemy) {
+        url.searchParams.set("enemy", enemy.name);
+      } else {
+        url.searchParams.delete("enemy");
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   const locationOptions = useMemo<Option<string>[]>(() => {
     const locations = Array.from(new Map(enemies.map((enemy) => [enemy.locationKey, enemy.locationName])).entries())
@@ -87,6 +141,25 @@ export function useEnemiesState() {
     return rows;
   }, [deferredQuery, enemies, levelFilter, matchFilter, selectedLocation, sortDesc, sortKey]);
 
+  // Reset to page 1 whenever filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredQuery, selectedLocation, matchFilter, levelFilter, sortKey, sortDesc]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEnemies.length / pageSize));
+
+  // Clamp currentPage if out of bounds
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedEnemies = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredEnemies.slice(start, start + pageSize);
+  }, [currentPage, filteredEnemies, pageSize]);
+
   const stats = useMemo(() => ({
     enemies: enemies.length,
     locations: new Set(enemies.map((enemy) => enemy.locationKey)).size,
@@ -111,6 +184,7 @@ export function useEnemiesState() {
     setLevelFilter("all");
     setSortKey("level");
     setSortDesc(false);
+    setCurrentPage(1);
   };
 
   return {
@@ -133,11 +207,18 @@ export function useEnemiesState() {
     enemies,
     locationOptions,
     filteredEnemies,
+    paginatedEnemies,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
     stats,
     activeFilterCount,
     hasCustomSort,
     hasActiveControls,
     resetControls,
     openItemByName,
+    marketData,
   };
 }
