@@ -1,11 +1,11 @@
 {
   "name": "zenith-web",
-  "version": "0.1.0",
+  "version": "2026.11.24",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "dev:full": "concurrently \"node --env-file=.env scraper.mjs\" \"next dev\"",
-    "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs && next build",
+    "build": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs && node scripts/build-zenith-changelog.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --incremental false",
@@ -17,7 +17,7 @@
     "audit:deadcode": "knip --exclude exports,types",
     "audit:cache-headers": "node scripts/audit-cache-headers.mjs",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
-    "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs",
+    "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs && node scripts/build-zenith-changelog.mjs",
     "scrape": "node --env-file=.env scraper.mjs --once",
     "scrape:priority": "node --env-file=.env scraper.mjs --priority --once",
     "scrape:pets": "node --env-file=.env scraper.mjs --pets-only --once",
