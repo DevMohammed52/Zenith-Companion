@@ -39,20 +39,6 @@
   gap: var(--space-3, 12px);
 }
 
-.avatarWrap {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md, 8px);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-  position: relative;
-}
-
 .petInfo {
   flex: 1 1 auto;
   min-width: 0;
@@ -103,8 +89,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.025);
   border-radius: var(--radius-md, 8px);
   padding: 8px 10px;
 }

@@ -317,7 +317,7 @@ export function PetFilters({
                 max={5}
                 onChange={setEvolutionStage}
               />
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div className={styles.setupField}>
                 <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
                   Evolution Focus
                 </label>
@@ -329,7 +329,7 @@ export function PetFilters({
                 />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div className={styles.setupField}>
                 <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
                   Food Buff
                 </label>
@@ -341,7 +341,7 @@ export function PetFilters({
                 />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div className={styles.setupField}>
                 <label style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
                   Battle Sample Mode
                 </label>
@@ -363,7 +363,7 @@ export function PetFilters({
               <Switch
                 checked={beastmaster}
                 onChange={(e) => setBeastmaster(e.target.checked)}
-                label="Beastmaster Context"
+                label="Beastmaster Class"
               />
             </div>
 

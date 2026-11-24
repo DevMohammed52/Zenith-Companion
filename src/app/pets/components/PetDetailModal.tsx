@@ -65,9 +65,7 @@ export function PetDetailModal({
       <div className={styles.modalContent}>
         {/* 1. Hero Block */}
         <div className={styles.heroBlock}>
-          <div className={styles.heroAvatar}>
-            <PetImage pet={pet} />
-          </div>
+          <PetImage pet={pet} size={56} />
           <div className={styles.heroInfo}>
             <div className={styles.heroNameRow}>
               <h2 className={styles.heroTitle}>{pet.name}</h2>

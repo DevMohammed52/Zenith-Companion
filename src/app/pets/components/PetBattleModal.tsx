@@ -54,9 +54,7 @@ export function PetBattleModal({
       <div className={styles.modalContent}>
         {/* 1. Header */}
         <div className={styles.heroBlock}>
-          <div className={styles.heroAvatar}>
-            <PetImage pet={pet} />
-          </div>
+          <PetImage pet={pet} size={52} />
           <div className={styles.heroInfo}>
             <h2 className={styles.heroTitle}>{pet.name}</h2>
             <p className={styles.heroSubtitle}>{zone.zone}</p>

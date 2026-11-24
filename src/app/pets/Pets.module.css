@@ -126,7 +126,8 @@
 }
 
 .sortGroup .filterSelect {
-  width: 130px;
+  width: 160px;
+  min-width: 155px;
 }
 
 .sortDirectionButton {
@@ -264,15 +265,9 @@
 
 /* 3. Pet Setup Simulator Accordion */
 .setupCard {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg, 12px);
-  overflow: hidden;
-  transition: border-color 150ms ease;
-}
-
-.setupCard:hover {
-  border-color: var(--border-default);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3, 12px);
+  margin-top: var(--space-1, 4px);
 }
 
 .setupHeader {
@@ -280,8 +275,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3, 12px);
-  padding: 12px var(--space-4, 16px);
-  background: rgba(255, 255, 255, 0.015);
+  padding: 8px 4px;
+  background: transparent;
   cursor: pointer;
   user-select: none;
   width: 100%;
@@ -289,6 +284,12 @@
   color: inherit;
   font-family: inherit;
   text-align: left;
+  border-radius: var(--radius-md, 8px);
+  transition: background-color 150ms ease;
+}
+
+.setupHeader:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .setupHeaderTitle {
@@ -348,24 +349,38 @@
 }
 
 .setupInnerWrapper {
+  min-height: 0;
   overflow: hidden;
+}
+
+.setupAccordionOpen .setupInnerWrapper {
+  overflow: visible;
 }
 
 .setupFieldsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-3, 12px);
-  padding: var(--space-4, 16px);
-  border-top: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.15);
+  padding: var(--space-3, 12px) 0;
+}
+
+.setupField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.setupField:focus-within {
+  z-index: 30;
 }
 
 .setupSwitchGroup {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-3, 12px);
-  padding: 0 var(--space-4, 16px) var(--space-3, 12px);
+  gap: var(--space-4, 16px);
+  padding: 0 0 var(--space-3, 12px) 0;
 }
 
 .setupActionsRow {
@@ -374,8 +389,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2, 8px);
-  padding: 10px var(--space-4, 16px);
-  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 0 0 0;
   border-top: 1px solid var(--border-subtle);
   font-size: 12px;
   color: var(--text-tertiary);
@@ -405,6 +419,7 @@
 
 .petTable {
   width: 100%;
+  min-width: 820px;
   border-collapse: collapse;
   text-align: left;
   font-size: 13px;
@@ -442,7 +457,8 @@
 .tablePetCell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  min-width: 140px;
 }
 
 .tableName {

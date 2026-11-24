@@ -44,9 +44,7 @@ export function PetCard({
     >
       {/* 1. Header: Avatar, Name, Source & Badges */}
       <div className={styles.cardHeader}>
-        <div className={styles.avatarWrap}>
-          <PetImage pet={pet} />
-        </div>
+        <PetImage pet={pet} size={44} />
         <div className={styles.petInfo}>
           <span className={styles.petName}>{pet.name}</span>
           <span className={styles.petSource}>{getPetSourceLabel(pet)}</span>

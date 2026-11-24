@@ -17,19 +17,6 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.heroAvatar {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md, 8px);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
 .heroInfo {
   display: flex;
   flex-direction: column;
@@ -56,8 +43,7 @@
 }
 
 .metricBox {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-sm, 6px);
   padding: 8px 10px;
   display: flex;

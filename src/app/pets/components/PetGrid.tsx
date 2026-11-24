@@ -107,9 +107,7 @@ export function PetGrid({
                 >
                   <td>
                     <div className={styles.tablePetCell}>
-                      <div style={{ width: 32, height: 32, flexShrink: 0 }}>
-                        <PetImage pet={row.pet} />
-                      </div>
+                      <PetImage pet={row.pet} size={32} />
                       <span className={styles.tableName}>{row.pet.name}</span>
                     </div>
                   </td>
