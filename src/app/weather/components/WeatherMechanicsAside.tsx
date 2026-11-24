@@ -1,74 +1,60 @@
 import React from "react";
-import {
-  Calendar,
-  Clock,
-  Info,
-  Map as MapIcon,
-  ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Icon } from "@/components/ui/Icon";
 
 export function WeatherMechanicsAside() {
   return (
     <aside className="mechanics-panel">
-      <div className="mechanics-card">
+      <Card variant="default" className="mechanics-card">
         <div className="card-header">
-          <Info size={18} color="var(--text-accent)" />
+          <Icon name="info" size="md" />
           <h3>Weather Mechanics</h3>
         </div>
         <div className="mechanics-content">
           <div className="mech-item">
-            <MapIcon size={16} />
+            <Icon name="map" size="sm" />
             <div>
               <h4>Regional Geography</h4>
-              <p>Weather isn&apos;t global. It changes depending on where you are, based on the area&apos;s geography and the current season.</p>
+              <p>Weather is regional. It rotates based on area geography and northern hemisphere seasons.</p>
             </div>
           </div>
           <div className="mech-item">
-            <Calendar size={16} />
+            <Icon name="calendar" size="sm" />
             <div>
               <h4>Seasonal Dates</h4>
-              <p>Seasons follow real-world northern hemisphere dates. Winter (Dec-Feb) sees heavy snow in places like <strong>Skyreach Peak</strong>, which ease up in summer.</p>
+              <p>Seasons follow northern hemisphere dates. Winter (Dec&ndash;Feb) brings snow to mountain areas like <strong>Skyreach Peak</strong>.</p>
             </div>
           </div>
           <div className="mech-item">
-            <TrendingUp size={16} />
+            <Icon name="skillProfit" size="sm" />
             <div>
               <h4>Additive Modifiers</h4>
-              <p>Efficiency is additive. You can offset some of the negatives with things like <strong>potions</strong>.</p>
+              <p>Modifiers sum directly. For example, a +10% bonus and a -5% penalty result in a net +5% modifier.</p>
             </div>
           </div>
           <div className="mech-item">
-            <Users size={16} />
+            <Icon name="timer" size="sm" />
             <div>
-              <h4>Creature Behavior</h4>
-              <p>Enemy preferences are mapped from confirmed in-game reactions and are shown below each weather type.</p>
+              <h4>Action Start Lock-in</h4>
+              <p>Idle tasks snapshot weather at the moment the action begins. Modifiers remain active for the full session until restarted.</p>
+            </div>
+          </div>
+          <div className="mech-item">
+            <Icon name="combat" size="sm" />
+            <div>
+              <h4>Creature Reactions</h4>
+              <p>Enemies that love or like a weather condition spawn more often during active windows.</p>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div className="weather-tip">
-        <Sparkles size={16} color="var(--text-accent)" />
-        <p>Magic Storms are rare conditions that boost magic find for battles, dungeons, and world bosses.</p>
-      </div>
-
-      <div className="confidence-card">
-        <div className="confidence-row">
-          <ShieldCheck size={16} />
-          <span>Known skill modifiers</span>
+      <Card variant="default" className="weather-tip">
+        <div className="weather-tip-content">
+          <Icon name="weatherMagicStorm" size="md" />
+          <p>Magic Storms are rare worldwide conditions that grant Magic Find bonuses across battles, dungeons, and world bosses.</p>
         </div>
-        <div className="confidence-row">
-          <Users size={16} />
-          <span>Confirmed enemy reactions</span>
-        </div>
-        <div className="confidence-row">
-          <Clock size={16} />
-          <span>Forecast windows refresh with game data</span>
-        </div>
-      </div>
+      </Card>
     </aside>
   );
 }

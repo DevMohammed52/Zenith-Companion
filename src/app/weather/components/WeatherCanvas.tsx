@@ -2,41 +2,87 @@
 
 import React, { useEffect, useRef, type CSSProperties } from "react";
 
-type WeatherParticle = {
+const WEATHER_CANVAS_STYLE: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: -1,
+  pointerEvents: "none",
+};
+
+interface Particle {
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
-  opacity: number;
-  angle: number;
-  spin: number;
-  wave: number;
-  vortexAngle: number;
-  layer: number;
-  length: number;
-  life: number;
-  kind?: "drop" | "flake" | "mist" | "spark" | "ray" | "leaf" | "wisp" | "cloud" | "ember";
+  alpha: number;
+  maxAlpha: number;
+  phase: number;
+  speed: number;
+  layer: number; // 0: deep, 1: mid, 2: foreground
+  length?: number;
+  rotation?: number;
+  spin?: number;
   color?: string;
-  drift?: number;
-  pulse?: number;
-  isFlare?: boolean;
-  isLeaf?: boolean;
-  isDebris?: boolean;
-  isWisp?: boolean;
-  isCloud?: boolean;
-  turbulence?: number;
-  waveFreq?: number;
-  isGlint?: boolean;
-};
+}
 
-/* --- CANVAS ATMOSPHERE ENGINE --- */
-const WEATHER_CANVAS_STYLE: CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  zIndex: 0,
-  pointerEvents: 'none',
-};
+interface Streamline {
+  x: number;
+  y: number;
+  length: number;
+  width: number;
+  speed: number;
+  curve: number;
+  alpha: number;
+  maxAlpha: number;
+  phase: number;
+}
+
+interface LightningFlash {
+  active: boolean;
+  intensity: number;
+  decay: number;
+  nextTriggerTime: number;
+  boltPoints: { x: number; y: number }[] | null;
+}
+
+// Offscreen stamp generator for zero-allocation rendering
+function createOffscreenCanvas(width: number, height: number) {
+  const c = document.createElement("canvas");
+  c.width = width;
+  c.height = height;
+  return c;
+}
+
+function renderSoftBokehStamp(colorRgb: string, size: number) {
+  const stamp = createOffscreenCanvas(size, size);
+  const ctx = stamp.getContext("2d");
+  if (!ctx) return stamp;
+  const radius = size / 2;
+  const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+  grad.addColorStop(0, `rgba(${colorRgb}, 1)`);
+  grad.addColorStop(0.35, `rgba(${colorRgb}, 0.7)`);
+  grad.addColorStop(0.7, `rgba(${colorRgb}, 0.2)`);
+  grad.addColorStop(1, `rgba(${colorRgb}, 0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  return stamp;
+}
+
+function renderCloudPuffStamp(colorRgb: string, size: number) {
+  const stamp = createOffscreenCanvas(size, size);
+  const ctx = stamp.getContext("2d");
+  if (!ctx) return stamp;
+  const radius = size / 2;
+  const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+  grad.addColorStop(0, `rgba(${colorRgb}, 0.5)`);
+  grad.addColorStop(0.5, `rgba(${colorRgb}, 0.22)`);
+  grad.addColorStop(0.8, `rgba(${colorRgb}, 0.06)`);
+  grad.addColorStop(1, `rgba(${colorRgb}, 0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  return stamp;
+}
 
 export function WeatherCanvas({ weatherId }: { weatherId: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,503 +90,922 @@ export function WeatherCanvas({ weatherId }: { weatherId: string }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
-    const drawCtx = ctx;
 
-    let animationFrameId = 0;
-    let particles: WeatherParticle[] = [];
+    let animId = 0;
     let width = window.innerWidth;
     let height = window.innerHeight;
-    let resizeFrameId: number | null = null;
+    let lastTime = performance.now();
     let isVisible = !document.hidden;
-    let isHeroInView = window.scrollY < window.innerHeight * 1.15;
-    let isActivelyScrolling = false;
-    let lastScrollAt = 0;
-    let scrollIdleTimeout: number | null = null;
-    let frameSkip = 0;
-    let lastPaintAt = 0;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const countByWeather: Record<string, number> = {
-      clear: 82,
-      fog: 56,
-      heatwave: 96,
-      "magic-storm": 150,
-      overcast: 64,
-      rain: 230,
-      snow: 190,
-      storm: 280,
-      windy: 120,
+    let isHeroInView = window.scrollY < height * 1.35;
+    let resizeTimer: number | null = null;
+
+    // Camera parallax state (smoothed via lerp)
+    let camX = 0;
+    let camY = 0;
+    let targetCamX = 0;
+    let targetCamY = 0;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Theme palette definition
+    const themes: Record<string, {
+      skyTop: string;
+      skyBottom: string;
+      glowColor: string;
+      glowX: number;
+      glowY: number;
+      glowRadius: number;
+      glowAlpha: number;
+      accentColor: string;
+      accentAlpha: number;
+      hasMountains: boolean;
+      mountainColor: string;
+    }> = {
+      clear: {
+        skyTop: "#080b15",
+        skyBottom: "#0f1629",
+        glowColor: "245, 158, 11",
+        glowX: 0.85,
+        glowY: 0.1,
+        glowRadius: 0.7,
+        glowAlpha: 0.16,
+        accentColor: "251, 191, 36",
+        accentAlpha: 0.08,
+        hasMountains: true,
+        mountainColor: "#05070e",
+      },
+      rain: {
+        skyTop: "#060a14",
+        skyBottom: "#0b1220",
+        glowColor: "59, 130, 246",
+        glowX: 0.5,
+        glowY: 0.2,
+        glowRadius: 0.75,
+        glowAlpha: 0.1,
+        accentColor: "147, 197, 253",
+        accentAlpha: 0.05,
+        hasMountains: false,
+        mountainColor: "#04070d",
+      },
+      storm: {
+        skyTop: "#04060c",
+        skyBottom: "#080c16",
+        glowColor: "96, 165, 250",
+        glowX: 0.6,
+        glowY: 0.15,
+        glowRadius: 0.85,
+        glowAlpha: 0.12,
+        accentColor: "191, 219, 254",
+        accentAlpha: 0.06,
+        hasMountains: false,
+        mountainColor: "#030408",
+      },
+      "magic-storm": {
+        skyTop: "#080616",
+        skyBottom: "#0e0a26",
+        glowColor: "147, 51, 234",
+        glowX: 0.3,
+        glowY: 0.25,
+        glowRadius: 0.7,
+        glowAlpha: 0.18,
+        accentColor: "34, 211, 238",
+        accentAlpha: 0.11,
+        hasMountains: true,
+        mountainColor: "#05030e",
+      },
+      snow: {
+        skyTop: "#070a12",
+        skyBottom: "#0d1322",
+        glowColor: "148, 163, 184",
+        glowX: 0.5,
+        glowY: 0.1,
+        glowRadius: 0.65,
+        glowAlpha: 0.1,
+        accentColor: "226, 232, 240",
+        accentAlpha: 0.06,
+        hasMountains: true,
+        mountainColor: "#04070e",
+      },
+      heatwave: {
+        skyTop: "#120707",
+        skyBottom: "#1c0b0d",
+        glowColor: "239, 68, 68",
+        glowX: 0.5,
+        glowY: 0.85,
+        glowRadius: 0.75,
+        glowAlpha: 0.16,
+        accentColor: "245, 158, 11",
+        accentAlpha: 0.1,
+        hasMountains: false,
+        mountainColor: "#0b0404",
+      },
+      fog: {
+        skyTop: "#060911",
+        skyBottom: "#0a101b",
+        glowColor: "100, 116, 139",
+        glowX: 0.5,
+        glowY: 0.5,
+        glowRadius: 0.95,
+        glowAlpha: 0.12,
+        accentColor: "148, 163, 184",
+        accentAlpha: 0.07,
+        hasMountains: false,
+        mountainColor: "#04060b",
+      },
+      overcast: {
+        skyTop: "#05080e",
+        skyBottom: "#090d18",
+        glowColor: "71, 85, 105",
+        glowX: 0.5,
+        glowY: 0.3,
+        glowRadius: 0.8,
+        glowAlpha: 0.09,
+        accentColor: "148, 163, 184",
+        accentAlpha: 0.05,
+        hasMountains: false,
+        mountainColor: "#04060c",
+      },
+      windy: {
+        skyTop: "#050c0e",
+        skyBottom: "#081519",
+        glowColor: "34, 197, 94",
+        glowX: 0.7,
+        glowY: 0.3,
+        glowRadius: 0.7,
+        glowAlpha: 0.09,
+        accentColor: "56, 189, 248",
+        accentAlpha: 0.06,
+        hasMountains: true,
+        mountainColor: "#03080a",
+      },
     };
 
-    const weatherPalette: Record<string, { base: string; glow: string; haze: string; shadow: string }> = {
-      clear: { base: "251, 191, 36", glow: "245, 158, 11", haze: "56, 189, 248", shadow: "15, 23, 42" },
-      fog: { base: "148, 163, 184", glow: "203, 213, 225", haze: "100, 116, 139", shadow: "15, 23, 42" },
-      heatwave: { base: "248, 113, 113", glow: "251, 146, 60", haze: "251, 191, 36", shadow: "69, 10, 10" },
-      "magic-storm": { base: "167, 139, 250", glow: "139, 92, 246", haze: "34, 211, 238", shadow: "49, 46, 129" },
-      overcast: { base: "148, 163, 184", glow: "71, 85, 105", haze: "203, 213, 225", shadow: "2, 6, 23" },
-      rain: { base: "96, 165, 250", glow: "59, 130, 246", haze: "125, 211, 252", shadow: "8, 47, 73" },
-      snow: { base: "226, 232, 240", glow: "255, 255, 255", haze: "147, 197, 253", shadow: "15, 23, 42" },
-      storm: { base: "56, 189, 248", glow: "125, 211, 252", haze: "129, 140, 248", shadow: "12, 18, 36" },
-      windy: { base: "74, 222, 128", glow: "34, 197, 94", haze: "187, 247, 208", shadow: "5, 46, 22" },
+    const theme = themes[weatherId] ?? themes.clear;
+
+    // Broadcast ambient colors to container
+    const container = canvas.parentElement;
+    if (container) {
+      container.style.setProperty("--weather-glow-rgb", theme.glowColor);
+      container.style.setProperty("--weather-accent-rgb", theme.accentColor);
+    }
+
+    // Pre-rendered offscreen stamp cache
+    let bokehStamp: HTMLCanvasElement | null = null;
+    let cloudStamp: HTMLCanvasElement | null = null;
+    let flareStamp: HTMLCanvasElement | null = null;
+
+    const buildStamps = () => {
+      bokehStamp = renderSoftBokehStamp(theme.accentColor, 48);
+      cloudStamp = renderCloudPuffStamp(theme.glowColor, 128);
+      flareStamp = renderSoftBokehStamp(theme.glowColor, 64);
     };
+
+    // Parallax Mountain Ridge Silhouettes (Deep Horizon Plane)
+    let mountainPoints: { x: number; y: number }[] = [];
+    const buildMountains = () => {
+      mountainPoints = [];
+      const segments = 12;
+      const baseHeight = height * 0.78;
+      for (let i = 0; i <= segments; i++) {
+        const x = (i / segments) * (width + 100) - 50;
+        // Natural pseudo-random ridge profile
+        const peak = Math.sin(i * 1.4) * 45 + Math.cos(i * 2.8) * 25;
+        mountainPoints.push({ x, y: baseHeight + peak });
+      }
+    };
+
+    // Elements
+    let particles: Particle[] = [];
+    let streamlines: Streamline[] = [];
+    const lightning: LightningFlash = {
+      active: false,
+      intensity: 0,
+      decay: 0.9,
+      nextTriggerTime: performance.now() + 3500 + Math.random() * 4500,
+      boltPoints: null,
+    };
+
+    const sunbeams = [
+      { angle: 0.68, width: 160, alpha: 0.055, speed: 0.1, offset: 0 },
+      { angle: 0.76, width: 240, alpha: 0.042, speed: 0.07, offset: 2.1 },
+      { angle: 0.84, width: 200, alpha: 0.048, speed: 0.12, offset: 4.3 },
+    ];
 
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(width * pixelRatio);
-      canvas.height = Math.floor(height * pixelRatio);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildStamps();
+      buildMountains();
       init();
-    };
-
-    const scheduleResize = () => {
-      if (resizeFrameId !== null) cancelAnimationFrame(resizeFrameId);
-      resizeFrameId = requestAnimationFrame(() => {
-        resizeFrameId = null;
-        resize();
-        isHeroInView = window.scrollY < height * 1.15;
-        if (reducedMotion) drawReducedMotionFrame();
-      });
-    };
-
-    const handleScroll = () => {
-      isHeroInView = window.scrollY < height * 1.15;
-      isActivelyScrolling = true;
-      lastScrollAt = performance.now();
-      if (scrollIdleTimeout !== null) window.clearTimeout(scrollIdleTimeout);
-      scrollIdleTimeout = window.setTimeout(() => {
-        isActivelyScrolling = false;
-        scrollIdleTimeout = null;
-      }, 140);
     };
 
     const init = () => {
       particles = [];
+      streamlines = [];
       const isMobile = width < 768;
-      const multiplier = reducedMotion ? 0.16 : isMobile ? 0.38 : 1;
-      const count = Math.floor((countByWeather[weatherId] ?? 72) * multiplier);
-      
-      for (let i = 0; i < count; i++) {
-        particles.push(createParticle());
-      }
-    };
-
-    const createParticle = (seedFromEdge = false): WeatherParticle => {
-      const isMobile = width < 768;
-      const p: WeatherParticle = {
-        x: seedFromEdge ? Math.random() * width : Math.random() * width,
-        y: seedFromEdge ? -80 - Math.random() * 160 : Math.random() * height,
-        vx: 0,
-        vy: 0,
-        size: 0,
-        opacity: Math.random() * 0.5 + 0.1,
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.2,
-        wave: Math.random() * Math.PI * 2,
-        vortexAngle: Math.random() * Math.PI * 2,
-        layer: Math.random(),
-        length: 0,
-        life: Math.random(),
-      };
-
-      if (weatherId === 'rain' || weatherId === 'storm') {
-        p.kind = "drop";
-        p.vy = (Math.random() * 16 + (weatherId === 'storm' ? 16 : 11)) * (isMobile ? 0.8 : 1);
-        p.vx = (weatherId === 'storm' ? 5.5 : 2.1) * (isMobile ? 0.8 : 1) * (0.7 + p.layer);
-        p.size = Math.random() * 1.4 + 0.65 + p.layer * 1.1;
-        p.length = Math.random() * 20 + (weatherId === 'storm' ? 18 : 10);
-        p.opacity = Math.random() * 0.32 + 0.16;
-      } else if (weatherId === 'snow') {
-        p.kind = "flake";
-        p.vy = Math.random() * 1.35 + 0.45 + p.layer * 0.65;
-        p.vx = Math.random() * 1.5 - 0.75;
-        p.size = Math.random() * 3.6 + 1.1 + p.layer * 1.3;
-        p.drift = Math.random() * 1.75 + 0.4;
-        p.opacity = Math.random() * 0.5 + 0.22;
-      } else if (weatherId === 'magic-storm') {
-        p.kind = Math.random() > 0.78 ? "ray" : "spark";
-        p.vx = (Math.random() - 0.5) * (isMobile ? 3.2 : 5.2);
-        p.vy = (Math.random() - 0.5) * (isMobile ? 3.2 : 5.2);
-        p.size = Math.random() * 3.8 + 1.1 + p.layer * 2;
-        p.pulse = Math.random() * 0.12 + 0.03;
-        p.isFlare = Math.random() > 0.9;
-      } else if (weatherId === 'windy') {
-        p.kind = Math.random() > 0.62 ? "leaf" : Math.random() > 0.42 ? "wisp" : "cloud";
-        p.vx = (Math.random() * 11 + 7) * (isMobile ? 0.7 : 1) * (0.65 + p.layer);
-        p.vy = (Math.random() - 0.5) * 4;
-        p.size = Math.random() * 5 + 2 + p.layer * 3;
-        p.length = Math.random() * 80 + 60;
-        p.isLeaf = p.kind === "leaf";
-        p.isWisp = p.kind === "wisp";
-        p.isCloud = p.kind === "cloud";
-        p.turbulence = Math.random() * 0.08 + 0.035;
-      } else if (weatherId === 'fog') {
-        p.kind = "mist";
-        p.vx = Math.random() * 0.26 + 0.06;
-        p.vy = (Math.random() - 0.5) * 0.08;
-        p.size = Math.random() * (isMobile ? 130 : 260) + (isMobile ? 100 : 140);
-        p.opacity = Math.random() * 0.055 + 0.025;
-      } else if (weatherId === 'heatwave') {
-        p.kind = Math.random() > 0.55 ? "ember" : "ray";
-        p.vy = Math.random() * -1.6 - 0.45;
-        p.vx = (Math.random() - 0.5) * 1;
-        p.size = Math.random() * 2.3 + 0.8 + p.layer;
-        p.opacity = Math.random() * 0.28 + 0.08;
-        p.length = Math.random() * 48 + 18;
-        p.waveFreq = Math.random() * 0.05 + 0.02;
-      } else if (weatherId === 'overcast') {
-        p.kind = "cloud";
-        p.vx = Math.random() * 0.32 + 0.06;
-        p.vy = (Math.random() - 0.5) * 0.05;
-        p.size = Math.random() * (isMobile ? 120 : 240) + 120;
-        p.opacity = Math.random() * 0.045 + 0.022;
-      } else if (weatherId === 'clear') {
-        p.kind = Math.random() > 0.82 ? "ray" : "spark";
-        p.vx = (Math.random() - 0.5) * 0.42;
-        p.vy = (Math.random() - 0.5) * 0.36;
-        p.size = Math.random() * 1.7 + 0.45 + p.layer * 0.8;
-        p.opacity = Math.random() * 0.36 + 0.08;
-        p.isGlint = Math.random() > 0.8;
-      }
-      
-      return p;
-    };
-
-    const drawSoftOrb = (x: number, y: number, radius: number, color: string, alpha: number) => {
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient.addColorStop(0, `rgba(${color}, ${alpha})`);
-      gradient.addColorStop(0.45, `rgba(${color}, ${alpha * 0.35})`);
-      gradient.addColorStop(1, `rgba(${color}, 0)`);
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    };
-
-    const drawAtmosphere = (now: number, intensity = 1) => {
-      const palette = weatherPalette[weatherId] ?? weatherPalette.clear;
-      const t = now * 0.001;
-      ctx.save();
-      ctx.globalCompositeOperation = "source-over";
-      const vertical = ctx.createLinearGradient(0, 0, width, height);
-      vertical.addColorStop(0, `rgba(${palette.shadow}, ${0.16 * intensity})`);
-      vertical.addColorStop(0.45, `rgba(${palette.base}, ${0.055 * intensity})`);
-      vertical.addColorStop(1, `rgba(${palette.shadow}, ${0.24 * intensity})`);
-      ctx.fillStyle = vertical;
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.globalCompositeOperation = "screen";
-      const driftX = Math.sin(t * 0.18) * width * 0.04;
-      drawSoftOrb(width * 0.78 + driftX, height * 0.08, Math.min(width, height) * 0.52, palette.glow, weatherId === "clear" ? 0.16 : 0.08);
-      drawSoftOrb(width * 0.18 - driftX, height * 0.62, Math.min(width, height) * 0.62, palette.base, 0.06);
 
       if (weatherId === "clear") {
-        ctx.translate(width * 0.74, -height * 0.08);
-        ctx.rotate(-0.16 + Math.sin(t * 0.12) * 0.025);
-        for (let i = 0; i < 5; i++) {
-          const ray = ctx.createLinearGradient(0, 0, 0, height * 1.45);
-          ray.addColorStop(0, "rgba(251, 191, 36, 0.10)");
-          ray.addColorStop(0.45, "rgba(251, 191, 36, 0.035)");
-          ray.addColorStop(1, "rgba(251, 191, 36, 0)");
-          ctx.fillStyle = ray;
-          ctx.beginPath();
-          ctx.moveTo(i * 58 - 130, 0);
-          ctx.lineTo(i * 58 - 220, height * 1.45);
-          ctx.lineTo(i * 58 - 70, height * 1.45);
-          ctx.fill();
+        // Multi-depth floating golden sun motes
+        const count = isMobile ? 18 : 32;
+        for (let i = 0; i < count; i++) {
+          const layer = i < count * 0.4 ? 0 : i < count * 0.75 ? 1 : 2;
+          const size = layer === 2 ? Math.random() * 8 + 6 : layer === 1 ? Math.random() * 2 + 1.2 : Math.random() * 1.2 + 0.6;
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * (layer === 2 ? 8 : 12),
+            vy: -Math.random() * (layer === 2 ? 14 : 8) - 4,
+            size,
+            alpha: 0,
+            maxAlpha: layer === 2 ? Math.random() * 0.25 + 0.1 : Math.random() * 0.5 + 0.2,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.6 + 0.4,
+            layer,
+          });
         }
-      } else if (weatherId === "heatwave") {
-        for (let i = 0; i < 8; i++) {
-          const x = (i / 8) * width + Math.sin(t * 0.9 + i) * 18;
-          const shimmer = ctx.createLinearGradient(x, 0, x + 34, height);
-          shimmer.addColorStop(0, "rgba(251, 146, 60, 0)");
-          shimmer.addColorStop(0.5, "rgba(251, 191, 36, 0.055)");
-          shimmer.addColorStop(1, "rgba(248, 113, 113, 0)");
-          ctx.fillStyle = shimmer;
-          ctx.fillRect(x - 16, 0, 46, height);
+      } else if (weatherId === "rain" || weatherId === "storm") {
+        // Multi-plane rain threads + lens droplets
+        const count = weatherId === "storm" ? (isMobile ? 48 : 80) : isMobile ? 36 : 60;
+        for (let i = 0; i < count; i++) {
+          const layer = Math.random();
+          const speedFactor = 0.55 + layer * 0.9;
+          const isNear = layer > 0.8;
+          particles.push({
+            x: Math.random() * (width + 300) - 150,
+            y: Math.random() * height,
+            vx: (weatherId === "storm" ? 150 : 70) * speedFactor,
+            vy: (weatherId === "storm" ? 980 : 750) * speedFactor,
+            size: isNear ? 1.8 : 0.8 + layer * 0.8,
+            length: (weatherId === "storm" ? 32 : 22) * speedFactor * (isNear ? 1.4 : 1),
+            alpha: 0.1 + layer * 0.25,
+            maxAlpha: 0.1 + layer * 0.25,
+            phase: 0,
+            speed: speedFactor,
+            layer: isNear ? 2 : layer > 0.4 ? 1 : 0,
+          });
+        }
+      } else if (weatherId === "snow") {
+        // Multi-depth soft bokeh snowflakes
+        const count = isMobile ? 30 : 54;
+        for (let i = 0; i < count; i++) {
+          const layer = Math.floor(Math.random() * 3);
+          const size = layer === 2 ? Math.random() * 12 + 8 : layer === 1 ? Math.random() * 2.5 + 1.8 : Math.random() * 1.2 + 0.8;
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 16,
+            vy: (layer + 1) * 24 + Math.random() * 18,
+            size,
+            alpha: layer === 2 ? 0.2 : layer === 1 ? 0.48 : 0.25,
+            maxAlpha: layer === 2 ? 0.2 : layer === 1 ? 0.48 : 0.25,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.6 + 0.6,
+            layer,
+          });
         }
       } else if (weatherId === "magic-storm") {
-        drawSoftOrb(width * 0.5 + Math.sin(t * 0.3) * 70, height * 0.34, Math.min(width, height) * 0.46, "167, 139, 250", 0.18);
-        drawSoftOrb(width * 0.7, height * 0.74, Math.min(width, height) * 0.34, "34, 211, 238", 0.08);
-      } else if (weatherId === "storm") {
-        const flash = Math.sin(t * 7.7) > 0.985 ? 0.2 : 0;
-        if (flash) {
-          ctx.fillStyle = `rgba(226, 232, 240, ${flash})`;
-          ctx.fillRect(0, 0, width, height);
+        // Cosmic stardust & plasma motes
+        const count = isMobile ? 26 : 46;
+        for (let i = 0; i < count; i++) {
+          const layer = Math.floor(Math.random() * 3);
+          const isCyan = Math.random() > 0.5;
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * (layer === 2 ? 28 : 18),
+            vy: (Math.random() - 0.5) * (layer === 2 ? 28 : 18),
+            size: layer === 2 ? Math.random() * 10 + 6 : Math.random() * 2.5 + 1.2,
+            alpha: 0,
+            maxAlpha: layer === 2 ? 0.22 : 0.55,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.8 + 0.4,
+            layer,
+            color: isCyan ? "34, 211, 238" : "167, 139, 250",
+          });
+        }
+      } else if (weatherId === "heatwave") {
+        // Rising thermal embers
+        const count = isMobile ? 22 : 38;
+        for (let i = 0; i < count; i++) {
+          const layer = Math.floor(Math.random() * 3);
+          particles.push({
+            x: Math.random() * width,
+            y: height + Math.random() * 120,
+            vx: (Math.random() - 0.5) * 28,
+            vy: -Math.random() * 50 - 30,
+            size: layer === 2 ? Math.random() * 8 + 4 : Math.random() * 2.2 + 1,
+            alpha: 0,
+            maxAlpha: layer === 2 ? 0.35 : 0.65,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.8 + 0.4,
+            layer,
+            color: Math.random() > 0.4 ? "251, 146, 60" : "239, 68, 68",
+          });
+        }
+      } else if (weatherId === "windy") {
+        // Aerodynamic streamlines
+        const streamCount = isMobile ? 4 : 7;
+        for (let i = 0; i < streamCount; i++) {
+          streamlines.push({
+            x: -Math.random() * width,
+            y: Math.random() * height,
+            length: Math.random() * 320 + 200,
+            width: Math.random() * 1.8 + 0.8,
+            speed: Math.random() * 320 + 240,
+            curve: (Math.random() - 0.5) * 45,
+            alpha: 0,
+            maxAlpha: Math.random() * 0.22 + 0.08,
+            phase: Math.random() * Math.PI * 2,
+          });
+        }
+
+        // Tumble leaves
+        const leafCount = isMobile ? 8 : 15;
+        for (let i = 0; i < leafCount; i++) {
+          const layer = Math.random() > 0.7 ? 2 : 1;
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: Math.random() * 140 + 90,
+            vy: Math.random() * 45 + 20,
+            size: layer === 2 ? Math.random() * 7 + 5 : Math.random() * 3.5 + 2.5,
+            alpha: layer === 2 ? 0.35 : 0.55,
+            maxAlpha: 0.6,
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.6 + 0.8,
+            layer,
+            rotation: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 4.5,
+          });
         }
       } else if (weatherId === "fog" || weatherId === "overcast") {
-        ctx.globalCompositeOperation = "source-over";
-        const veil = ctx.createLinearGradient(0, height * 0.1, width, height * 0.88);
-        veil.addColorStop(0, `rgba(${palette.haze}, ${weatherId === "fog" ? 0.07 : 0.04})`);
-        veil.addColorStop(0.55, `rgba(${palette.base}, ${weatherId === "fog" ? 0.11 : 0.07})`);
-        veil.addColorStop(1, "rgba(2, 6, 23, 0)");
-        ctx.fillStyle = veil;
-        ctx.fillRect(0, 0, width, height);
+        // Volumetric mist puffs
+        const count = isMobile ? 5 : 9;
+        for (let i = 0; i < count; i++) {
+          const layer = i % 3;
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (layer + 1) * 6 + Math.random() * 4,
+            vy: (Math.random() - 0.5) * 2,
+            size: (layer === 2 ? 260 : layer === 1 ? 200 : 140),
+            alpha: 0,
+            maxAlpha: weatherId === "fog" ? (layer === 2 ? 0.07 : 0.11) : (layer === 2 ? 0.04 : 0.07),
+            phase: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.3 + 0.2,
+            layer,
+          });
+        }
       }
+    };
+
+    const generateLightningBolt = (startX: number, startY: number, endY: number) => {
+      const points = [{ x: startX, y: startY }];
+      let currentX = startX;
+      let currentY = startY;
+      while (currentY < endY) {
+        currentY += Math.random() * 45 + 25;
+        currentX += (Math.random() - 0.5) * 65;
+        points.push({ x: currentX, y: currentY });
+      }
+      return points;
+    };
+
+    // Deep Horizon Rendering (Plane 1 - 0.04x parallax offset)
+    const drawDeepHorizon = (now: number, pX: number, pY: number) => {
+      const t = now * 0.001;
+
+      // Base atmospheric gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+      skyGrad.addColorStop(0, theme.skyTop);
+      skyGrad.addColorStop(1, theme.skyBottom);
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Distant mountain silhouette (Clear, Snow, Magic Storm, Windy)
+      if (theme.hasMountains && mountainPoints.length > 1) {
+        ctx.save();
+        ctx.fillStyle = theme.mountainColor;
+        ctx.beginPath();
+        ctx.moveTo(-60 + pX * 0.03, height);
+        mountainPoints.forEach((pt) => {
+          ctx.lineTo(pt.x + pX * 0.03, pt.y + pY * 0.02);
+        });
+        ctx.lineTo(width + 60 + pX * 0.03, height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Celestial primary atmospheric bloom
+      const pulse = 1 + Math.sin(t * 0.3) * 0.07;
+      const gX = width * theme.glowX + pX * 0.04 + Math.cos(t * 0.2) * 25;
+      const gY = height * theme.glowY + pY * 0.04 + Math.sin(t * 0.25) * 20;
+      const gRadius = Math.max(width, height) * theme.glowRadius * pulse;
+
+      const radialGrad = ctx.createRadialGradient(gX, gY, 0, gX, gY, gRadius);
+      radialGrad.addColorStop(0, `rgba(${theme.glowColor}, ${theme.glowAlpha})`);
+      radialGrad.addColorStop(0.5, `rgba(${theme.glowColor}, ${theme.glowAlpha * 0.3})`);
+      radialGrad.addColorStop(1, `rgba(${theme.glowColor}, 0)`);
+      ctx.fillStyle = radialGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Secondary counter-bloom
+      const aX = width * (1 - theme.glowX) - pX * 0.04 + Math.sin(t * 0.18) * 35;
+      const aY = height * (1 - theme.glowY) - pY * 0.04 + Math.cos(t * 0.22) * 25;
+      const aRadius = Math.max(width, height) * 0.55;
+      const accentGrad = ctx.createRadialGradient(aX, aY, 0, aX, aY, aRadius);
+      accentGrad.addColorStop(0, `rgba(${theme.accentColor}, ${theme.accentAlpha})`);
+      accentGrad.addColorStop(1, `rgba(${theme.accentColor}, 0)`);
+      ctx.fillStyle = accentGrad;
+      ctx.fillRect(0, 0, width, height);
+    };
+
+    // Clear Weather (Sunbeams + Motes with bokeh)
+    const renderClearWeather = (now: number, dt: number, pX: number, pY: number) => {
+      const t = now * 0.001;
+
+      // Volumetric Sunbeam Shafts (Midground - 0.22x parallax)
+      ctx.save();
+      const originX = width * 0.9 + pX * 0.18;
+      const originY = -50 + pY * 0.12;
+      sunbeams.forEach((beam) => {
+        const angle = beam.angle + Math.sin(t * beam.speed + beam.offset) * 0.035;
+        const beamAlpha = beam.alpha * (0.85 + Math.sin(t * 0.35 + beam.offset) * 0.15);
+        const length = height * 1.6;
+
+        ctx.beginPath();
+        ctx.moveTo(originX, originY);
+        const x1 = originX - Math.cos(angle - 0.09) * length;
+        const y1 = originY + Math.sin(angle - 0.09) * length;
+        const x2 = originX - Math.cos(angle + 0.09) * length;
+        const y2 = originY + Math.sin(angle + 0.09) * length;
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+
+        const grad = ctx.createRadialGradient(originX, originY, 0, originX, originY, length);
+        grad.addColorStop(0, `rgba(245, 158, 11, ${beamAlpha})`);
+        grad.addColorStop(0.5, `rgba(251, 191, 36, ${beamAlpha * 0.45})`);
+        grad.addColorStop(1, "rgba(251, 191, 36, 0)");
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
       ctx.restore();
+
+      // Golden light motes across parallax planes
+      particles.forEach((p) => {
+        p.x += p.vx * dt + Math.sin(t * p.speed + p.phase) * 0.4;
+        p.y += p.vy * dt;
+        p.phase += dt * p.speed;
+        p.alpha = Math.sin(p.phase) * p.maxAlpha;
+
+        if (p.alpha > 0.01) {
+          const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+          const drawX = p.x + pX * depthOffset;
+          const drawY = p.y + pY * depthOffset;
+
+          if (p.layer === 2 && bokehStamp) {
+            // Lens foreground bokeh
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.drawImage(bokehStamp, drawX - p.size, drawY - p.size, p.size * 2, p.size * 2);
+            ctx.restore();
+          } else {
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(251, 191, 36, ${p.alpha})`;
+            ctx.fill();
+          }
+        }
+
+        if (p.y < -30) {
+          p.y = height + 15;
+          p.x = Math.random() * width;
+        }
+        if (p.x < -30) p.x = width + 15;
+        if (p.x > width + 30) p.x = -15;
+      });
     };
 
-    const recycleParticle = (p: WeatherParticle) => {
-      const next = createParticle(true);
-      Object.assign(p, next);
-      if (weatherId === "rain" || weatherId === "storm") {
-        p.x = Math.random() * (width + 220) - 110;
-        p.y = -80 - Math.random() * 160;
-      } else if (weatherId === "windy") {
-        p.x = -140 - Math.random() * 220;
-        p.y = Math.random() * height;
-      } else if (weatherId === "heatwave") {
-        p.x = Math.random() * width;
-        p.y = height + 60 + Math.random() * 120;
-      }
+    // Rain Weather (Rain sheets + crisp streaks + glass condensation)
+    const renderRainWeather = (now: number, dt: number, pX: number, pY: number) => {
+      ctx.lineWidth = 1;
+      ctx.lineCap = "round";
+
+      particles.forEach((p) => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+        const drawX = p.x + pX * depthOffset;
+        const drawY = p.y + pY * depthOffset;
+
+        ctx.strokeStyle = weatherId === "storm"
+          ? `rgba(186, 230, 253, ${p.alpha})`
+          : `rgba(147, 197, 253, ${p.alpha})`;
+        ctx.lineWidth = p.size;
+        ctx.beginPath();
+        ctx.moveTo(drawX, drawY);
+        ctx.lineTo(drawX - (p.vx / p.vy) * (p.length || 20), drawY - (p.length || 20));
+        ctx.stroke();
+
+        if (p.y > height + 40 || p.x > width + 100) {
+          p.y = -40;
+          p.x = Math.random() * (width + 200) - 100;
+        }
+      });
     };
 
-    const update = () => {
-      if (!isVisible) {
-        animationFrameId = requestAnimationFrame(update);
-        return;
-      }
-      if (isActivelyScrolling && performance.now() - lastScrollAt > 180) {
-        isActivelyScrolling = false;
-      }
-      if (isActivelyScrolling) {
-        frameSkip = (frameSkip + 1) % 2;
-        if (frameSkip !== 0) {
-          animationFrameId = requestAnimationFrame(update);
-          return;
-        }
-      }
-      if (!isHeroInView) {
-        frameSkip = (frameSkip + 1) % 3;
-        if (frameSkip !== 0) {
-          animationFrameId = requestAnimationFrame(update);
-          return;
+    // Storm Weather (Sheet lightning + bolts + heavy rain)
+    const renderStormWeather = (now: number, dt: number, pX: number, pY: number) => {
+      if (!lightning.active && now > lightning.nextTriggerTime) {
+        lightning.active = true;
+        lightning.intensity = Math.random() * 0.32 + 0.14;
+        lightning.decay = 0.88;
+        lightning.nextTriggerTime = now + 4000 + Math.random() * 5500;
+
+        if (Math.random() < 0.28) {
+          lightning.boltPoints = generateLightningBolt(
+            width * (0.2 + Math.random() * 0.6) + pX * 0.05,
+            height * 0.05,
+            height * (0.45 + Math.random() * 0.3)
+          );
+        } else {
+          lightning.boltPoints = null;
         }
       }
 
-      const now = performance.now();
-      const targetFrameMs = width < 768 ? 32 : 16;
-      if (now - lastPaintAt < targetFrameMs) {
-        animationFrameId = requestAnimationFrame(update);
-        return;
-      }
-      lastPaintAt = now;
-      ctx.clearRect(0, 0, width, height);
-      drawAtmosphere(now);
+      if (lightning.active) {
+        ctx.fillStyle = `rgba(186, 230, 253, ${lightning.intensity * 0.55})`;
+        ctx.fillRect(0, 0, width, height);
 
-      particles.forEach(p => {
-        if (weatherId === 'rain' || weatherId === 'storm') {
-          p.y += p.vy;
-          p.x += p.vx;
-          ctx.strokeStyle = weatherId === "storm"
-            ? `rgba(125, 211, 252, ${p.opacity + 0.08})`
-            : `rgba(96, 165, 250, ${p.opacity})`;
-          ctx.lineWidth = p.size;
+        if (lightning.boltPoints && lightning.boltPoints.length > 1) {
+          ctx.save();
+          ctx.strokeStyle = `rgba(224, 242, 254, ${lightning.intensity * 1.3})`;
+          ctx.lineWidth = 2;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(lightning.boltPoints[0].x, lightning.boltPoints[0].y);
+          for (let i = 1; i < lightning.boltPoints.length; i++) {
+            ctx.lineTo(lightning.boltPoints[i].x, lightning.boltPoints[i].y);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        lightning.intensity *= lightning.decay;
+        if (lightning.intensity < 0.01) {
+          lightning.active = false;
+          lightning.boltPoints = null;
+        }
+      }
+
+      renderRainWeather(now, dt, pX, pY);
+    };
+
+    // Snow Weather (Multi-depth bokeh snowflakes)
+    const renderSnowWeather = (now: number, dt: number, pX: number, pY: number) => {
+      const t = now * 0.001;
+
+      particles.forEach((p) => {
+        p.y += p.vy * dt;
+        p.x += Math.sin(t * p.speed + p.phase) * (p.layer + 1) * 16 * dt;
+
+        const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+        const drawX = p.x + pX * depthOffset;
+        const drawY = p.y + pY * depthOffset;
+
+        if (p.layer === 2 && bokehStamp) {
+          // Large soft out-of-focus snowflake
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.drawImage(bokehStamp, drawX - p.size, drawY - p.size, p.size * 2, p.size * 2);
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(241, 245, 249, ${p.alpha})`;
+          ctx.fill();
+        }
+
+        if (p.y > height + 30) {
+          p.y = -20;
+          p.x = Math.random() * width;
+        }
+        if (p.x < -30) p.x = width + 15;
+        if (p.x > width + 30) p.x = -15;
+      });
+    };
+
+    // Magic Storm (Cosmic aurora ribbons + swirling stardust)
+    const renderMagicStormWeather = (now: number, dt: number, pX: number, pY: number) => {
+      const t = now * 0.001;
+
+      // Arcane plasma curves (Midground - 0.22x parallax)
+      ctx.save();
+      const waveAlpha = 0.05 + Math.sin(t * 0.45) * 0.02;
+      const grad = ctx.createLinearGradient(0, height * 0.2 + pY * 0.15, width, height * 0.65 + pY * 0.15);
+      grad.addColorStop(0, "rgba(147, 51, 234, 0)");
+      grad.addColorStop(0.5, `rgba(147, 51, 234, ${waveAlpha})`);
+      grad.addColorStop(1, "rgba(34, 211, 238, 0)");
+
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.35 + Math.sin(t * 0.4) * 45 + pY * 0.15);
+      ctx.bezierCurveTo(
+        width * 0.3 + pX * 0.15, height * 0.2 + Math.cos(t * 0.3) * 65 + pY * 0.15,
+        width * 0.7 + pX * 0.15, height * 0.5 + Math.sin(t * 0.35) * 55 + pY * 0.15,
+        width, height * 0.3 + Math.cos(t * 0.4) * 45 + pY * 0.15
+      );
+      ctx.lineTo(width, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+
+      // Swirling stardust
+      particles.forEach((p) => {
+        p.phase += dt * p.speed;
+        p.alpha = Math.sin(p.phase) * p.maxAlpha;
+        p.x += p.vx * dt + Math.cos(p.phase) * 20 * dt;
+        p.y += p.vy * dt + Math.sin(p.phase) * 20 * dt;
+
+        if (p.alpha > 0.01) {
+          const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+          const drawX = p.x + pX * depthOffset;
+          const drawY = p.y + pY * depthOffset;
+
+          if (p.layer === 2 && flareStamp) {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.drawImage(flareStamp, drawX - p.size, drawY - p.size, p.size * 2, p.size * 2);
+            ctx.restore();
+          } else {
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${p.color || "167, 139, 250"}, ${p.alpha})`;
+            ctx.fill();
+          }
+        }
+
+        if (p.x < -40 || p.x > width + 40 || p.y < -40 || p.y > height + 40) {
+          p.x = Math.random() * width;
+          p.y = Math.random() * height;
+        }
+      });
+    };
+
+    // Heatwave (Thermal mirage shimmer + rising embers)
+    const renderHeatwaveWeather = (now: number, dt: number, pX: number, pY: number) => {
+      const t = now * 0.001;
+
+      // Thermal mirage shimmer band
+      ctx.save();
+      const shimmerHeight = height * 0.38;
+      const mirageGrad = ctx.createLinearGradient(0, height - shimmerHeight, 0, height);
+      mirageGrad.addColorStop(0, "rgba(239, 68, 68, 0)");
+      mirageGrad.addColorStop(1, "rgba(245, 158, 11, 0.08)");
+      ctx.fillStyle = mirageGrad;
+      ctx.fillRect(0, height - shimmerHeight, width, shimmerHeight);
+      ctx.restore();
+
+      // Rising embers
+      particles.forEach((p) => {
+        p.y += p.vy * dt;
+        p.x += p.vx * dt + Math.sin(t * 1.5 + p.phase) * 22 * dt;
+        p.phase += dt * p.speed;
+
+        const progress = Math.max(0, p.y / height);
+        p.alpha = Math.sin(p.phase) * p.maxAlpha * progress;
+
+        if (p.alpha > 0.01) {
+          const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+          const drawX = p.x + pX * depthOffset;
+          const drawY = p.y + pY * depthOffset;
+
+          if (p.layer === 2 && flareStamp) {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.drawImage(flareStamp, drawX - p.size, drawY - p.size, p.size * 2, p.size * 2);
+            ctx.restore();
+          } else {
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${p.color || "251, 146, 60"}, ${p.alpha})`;
+            ctx.fill();
+          }
+        }
+
+        if (p.y < height * 0.12 || p.x < -30 || p.x > width + 30) {
+          p.y = height + 10 + Math.random() * 50;
+          p.x = Math.random() * width;
+        }
+      });
+    };
+
+    // Windy Weather (Streamlines + 3D tumbling leaves)
+    const renderWindyWeather = (now: number, dt: number, pX: number, pY: number) => {
+      // Streamlines
+      streamlines.forEach((s) => {
+        s.x += s.speed * dt;
+        s.phase += dt * 1.2;
+        s.alpha = Math.max(0, Math.sin(s.phase) * s.maxAlpha);
+
+        if (s.alpha > 0.005) {
+          const drawX = s.x + pX * 0.22;
+          const drawY = s.y + pY * 0.22;
+          ctx.save();
+          ctx.strokeStyle = `rgba(56, 189, 248, ${s.alpha})`;
+          ctx.lineWidth = s.width;
           ctx.lineCap = "round";
           ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x + p.vx * 0.9, p.y + p.length);
+          ctx.moveTo(drawX, drawY);
+          ctx.quadraticCurveTo(drawX + s.length * 0.5, drawY + s.curve, drawX + s.length, drawY);
           ctx.stroke();
-          if (p.layer > 0.82 && weatherId === "rain") {
-            ctx.strokeStyle = `rgba(191, 219, 254, ${p.opacity * 0.24})`;
-            ctx.beginPath();
-            ctx.ellipse(p.x, height - 12 - p.layer * 18, p.size * 8, p.size * 1.7, 0, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-        } else if (weatherId === 'snow') {
-          p.angle += 0.02;
-          p.y += p.vy;
-          p.x += Math.sin(p.angle) * (p.drift ?? 0);
-          ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
-          ctx.shadowBlur = p.layer > 0.7 ? 10 : 0;
-          ctx.shadowColor = "#dbeafe";
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        } else if (weatherId === 'magic-storm') {
-          p.vortexAngle += 0.035 + (p.pulse ?? 0);
-          p.x += p.vx + Math.cos(p.vortexAngle) * (1.2 + p.layer * 2.5);
-          p.y += p.vy + Math.sin(p.vortexAngle) * (1.2 + p.layer * 2.5);
-          
-          if (p.kind === "ray") {
-            ctx.strokeStyle = `rgba(34, 211, 238, ${0.11 + p.opacity * 0.24})`;
-            ctx.lineWidth = 1 + p.layer * 1.4;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.quadraticCurveTo(p.x + Math.sin(p.wave) * 28, p.y - 22, p.x + p.vx * 12, p.y + p.vy * 12);
-            ctx.stroke();
-          } else {
-            const pulse = Math.abs(Math.sin(now * 0.004 + p.wave));
-            ctx.fillStyle = p.isFlare
-              ? `rgba(167, 139, 250, ${0.18 + pulse * 0.22})`
-              : `rgba(167, 139, 250, ${p.opacity})`;
-            ctx.shadowBlur = p.isFlare ? 24 : 12;
-            ctx.shadowColor = p.layer > 0.65 ? "#22d3ee" : "#8b5cf6";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size + pulse * (p.isFlare ? 5 : 1.5), 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          }
-        } else if (weatherId === 'windy') {
-          p.angle += p.spin;
-          p.wave += p.turbulence ?? 0;
-          const gustVy = Math.sin(p.wave) * 3;
-          
-          p.x += p.vx;
-          p.y += p.vy + gustVy;
-          
-          if (p.isLeaf) {
+          ctx.restore();
+        }
+
+        if (s.x > width + 120) {
+          s.x = -s.length - Math.random() * 220;
+          s.y = Math.random() * height;
+        }
+      });
+
+      // 3D tumbling leaves
+      particles.forEach((p) => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.rotation !== undefined && p.spin !== undefined) {
+          p.rotation += p.spin * dt;
+        }
+
+        const depthOffset = p.layer === 2 ? 0.75 : 0.25;
+        const drawX = p.x + pX * depthOffset;
+        const drawY = p.y + pY * depthOffset;
+
+        ctx.save();
+        ctx.translate(drawX, drawY);
+        ctx.rotate(p.rotation || 0);
+        // 3D tumble perspective scaling
+        const scaleY = Math.cos((p.rotation || 0) * 1.5) * 0.65 + 0.35;
+        ctx.scale(1, Math.max(0.18, Math.abs(scaleY)));
+
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(34, 197, 94, ${p.alpha})`;
+        ctx.fill();
+        ctx.restore();
+
+        if (p.x > width + 40 || p.y > height + 40) {
+          p.x = -40;
+          p.y = Math.random() * (height * 0.75);
+        }
+      });
+    };
+
+    // Fog & Overcast Weather (Layered volumetric mist masses)
+    const renderFogWeather = (now: number, dt: number, pX: number, pY: number) => {
+      particles.forEach((p) => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.phase += dt * p.speed;
+        p.alpha = (Math.sin(p.phase) * 0.5 + 0.5) * p.maxAlpha;
+
+        if (p.alpha > 0.005) {
+          const depthOffset = p.layer === 2 ? 0.75 : p.layer === 1 ? 0.22 : 0.05;
+          const drawX = p.x + pX * depthOffset;
+          const drawY = p.y + pY * depthOffset;
+
+          if (cloudStamp) {
             ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.angle);
-            ctx.fillStyle = `rgba(74, 222, 128, ${p.opacity + 0.08})`;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, p.size, p.size / 2.5, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.globalAlpha = p.alpha;
+            ctx.drawImage(cloudStamp, drawX - p.size, drawY - p.size, p.size * 2, p.size * 2);
             ctx.restore();
-          } else if (p.isDebris) {
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.angle);
-            ctx.fillStyle = `rgba(148, 163, 184, ${p.opacity})`;
-            ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
-            ctx.restore();
-          } else if (p.isCloud) {
-            const cloudSize = p.size * 22;
-            const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, cloudSize);
-            grad.addColorStop(0, `rgba(187, 247, 208, ${p.opacity * 0.08})`);
-            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, cloudSize, 0, Math.PI * 2);
-            ctx.fill();
-            p.x -= p.vx * 0.68;
-          } else {
-            ctx.strokeStyle = `rgba(187, 247, 208, ${p.opacity * 0.34})`;
-            ctx.lineWidth = 1 + p.layer * 1.5;
-            ctx.lineCap = "round";
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.bezierCurveTo(p.x - p.length * 0.2, p.y - 12, p.x - p.length * 0.65, p.y + 18, p.x - p.length, p.y - gustVy);
-            ctx.stroke();
-          }
-        } else if (weatherId === 'fog' || weatherId === 'overcast') {
-          p.x += p.vx;
-          p.y += p.vy;
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-          grad.addColorStop(0, weatherId === "fog" ? `rgba(203, 213, 225, ${p.opacity})` : `rgba(148, 163, 184, ${p.opacity})`);
-          grad.addColorStop(0.55, `rgba(148, 163, 184, ${p.opacity * 0.35})`);
-          grad.addColorStop(1, 'rgba(148, 163, 184, 0)');
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.ellipse(p.x, p.y, p.size * 1.4, p.size * 0.55, Math.sin(p.wave) * 0.12, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (weatherId === 'heatwave') {
-          p.y += p.vy;
-          p.wave += p.waveFreq ?? 0;
-          p.x += Math.sin(p.wave) * (1.2 + p.layer * 2.4);
-          if (p.kind === "ember") {
-            ctx.fillStyle = `rgba(251, 146, 60, ${p.opacity})`;
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = "#fb923c";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          } else {
-            ctx.strokeStyle = `rgba(251, 191, 36, ${p.opacity * 0.48})`;
-            ctx.lineWidth = 1 + p.layer;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.bezierCurveTo(p.x + 12, p.y + p.length * 0.25, p.x - 10, p.y + p.length * 0.65, p.x + Math.sin(p.wave) * 18, p.y + p.length);
-            ctx.stroke();
-          }
-        } else if (weatherId === 'clear') {
-          p.x += p.vx;
-          p.y += p.vy;
-          if (p.isGlint) {
-            p.opacity = Math.abs(Math.sin(now * 0.002 + p.wave)) * 0.48 + 0.08;
-          }
-          if (p.kind === "ray") {
-            ctx.strokeStyle = `rgba(251, 191, 36, ${p.opacity * 0.32})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(p.x - p.size * 4, p.y);
-            ctx.lineTo(p.x + p.size * 4, p.y);
-            ctx.moveTo(p.x, p.y - p.size * 4);
-            ctx.lineTo(p.x, p.y + p.size * 4);
-            ctx.stroke();
-          } else {
-            ctx.fillStyle = `rgba(251, 191, 36, ${p.opacity})`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fill();
           }
         }
 
-        if (p.y > height + 130 || p.x > width + 180 || p.x < -180 || p.y < -160) recycleParticle(p);
+        if (p.x > width + p.size) {
+          p.x = -p.size;
+          p.y = Math.random() * height;
+        }
       });
-
-      animationFrameId = requestAnimationFrame(update);
     };
 
-    function drawReducedMotionFrame() {
-      drawCtx.clearRect(0, 0, width, height);
-      drawAtmosphere(performance.now(), 0.72);
-      particles.forEach((p) => {
-        const size = weatherId === 'fog' || weatherId === "overcast" ? Math.min(p.size, 150) : Math.max(p.size, 2);
-        const gradient = drawCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
-        const color = weatherId === 'rain' || weatherId === 'storm'
-          ? '56, 189, 248'
-          : weatherId === 'snow'
-            ? '255, 255, 255'
-            : weatherId === 'magic-storm'
-              ? '167, 139, 250'
-              : weatherId === 'heatwave'
-                ? '251, 191, 36'
-                : weatherId === 'windy'
-                  ? '148, 163, 184'
-                  : weatherId === 'fog' || weatherId === "overcast"
-                    ? '148, 163, 184'
-                  : '251, 191, 36';
-        gradient.addColorStop(0, `rgba(${color}, ${Math.min(p.opacity, 0.16)})`);
-        gradient.addColorStop(1, `rgba(${color}, 0)`);
-        drawCtx.fillStyle = gradient;
-        drawCtx.beginPath();
-        drawCtx.arc(p.x, p.y, size, 0, Math.PI * 2);
-        drawCtx.fill();
-      });
-    }
+    const drawStaticReducedMotionFrame = () => {
+      drawDeepHorizon(0, 0, 0);
+      if (weatherId === "clear") {
+        renderClearWeather(1000, 0, 0, 0);
+      } else if (weatherId === "snow") {
+        renderSnowWeather(1000, 0, 0, 0);
+      } else if (weatherId === "magic-storm") {
+        renderMagicStormWeather(1000, 0, 0, 0);
+      }
+    };
 
-    const handleVisibilityChange = () => {
+    const frame = (time: number) => {
+      if (!isVisible || !isHeroInView) {
+        lastTime = time;
+        animId = requestAnimationFrame(frame);
+        return;
+      }
+
+      const dt = Math.min((time - lastTime) * 0.001, 0.1);
+      lastTime = time;
+
+      // Smooth camera lerp towards target
+      camX += (targetCamX - camX) * 0.045;
+      camY += (targetCamY - camY) * 0.045;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Plane 1: Deep Horizon
+      drawDeepHorizon(time, camX, camY);
+
+      // Plane 2 & 3: Weather System
+      if (weatherId === "clear") {
+        renderClearWeather(time, dt, camX, camY);
+      } else if (weatherId === "rain") {
+        renderRainWeather(time, dt, camX, camY);
+      } else if (weatherId === "storm") {
+        renderStormWeather(time, dt, camX, camY);
+      } else if (weatherId === "snow") {
+        renderSnowWeather(time, dt, camX, camY);
+      } else if (weatherId === "magic-storm") {
+        renderMagicStormWeather(time, dt, camX, camY);
+      } else if (weatherId === "heatwave") {
+        renderHeatwaveWeather(time, dt, camX, camY);
+      } else if (weatherId === "windy") {
+        renderWindyWeather(time, dt, camX, camY);
+      } else if (weatherId === "fog" || weatherId === "overcast") {
+        renderFogWeather(time, dt, camX, camY);
+      }
+
+      animId = requestAnimationFrame(frame);
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      // Normalize cursor coordinate between -1 and +1, scaled to max 35px parallax travel
+      const normX = (e.clientX / width - 0.5) * 2;
+      const normY = (e.clientY / height - 0.5) * 2;
+      targetCamX = normX * 35;
+      targetCamY = normY * 25;
+    };
+
+    const onMouseLeave = () => {
+      targetCamX = 0;
+      targetCamY = 0;
+    };
+
+    const onScroll = () => {
+      isHeroInView = window.scrollY < height * 1.35;
+    };
+
+    const onVisibility = () => {
       isVisible = !document.hidden;
+      if (isVisible) lastTime = performance.now();
     };
 
-    window.addEventListener('resize', scheduleResize);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const onResize = () => {
+      if (resizeTimer !== null) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        resize();
+        if (reducedMotion) drawStaticReducedMotionFrame();
+      }, 100);
+    };
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    document.addEventListener("mouseleave", onMouseLeave);
+    document.addEventListener("visibilitychange", onVisibility);
+
     resize();
     if (reducedMotion) {
-      drawReducedMotionFrame();
+      drawStaticReducedMotionFrame();
     } else {
-      update();
+      animId = requestAnimationFrame(frame);
     }
 
     return () => {
-      window.removeEventListener('resize', scheduleResize);
-      window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (scrollIdleTimeout !== null) window.clearTimeout(scrollIdleTimeout);
-      if (resizeFrameId !== null) cancelAnimationFrame(resizeFrameId);
-      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (resizeTimer !== null) window.clearTimeout(resizeTimer);
+      cancelAnimationFrame(animId);
     };
   }, [weatherId]);
 
   return <canvas ref={canvasRef} className="weather-canvas" aria-hidden="true" style={WEATHER_CANVAS_STYLE} />;
 }
-

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { WEATHER_DATA, type WeatherData } from "@/constants/weatherData";
 import { useData } from "@/context/DataContext";
+import { useProfiles } from "@/lib/profiles";
 import {
   buildEnrichedEnemies,
   buildEnrichedLocations,
@@ -19,8 +20,15 @@ import {
 
 export function useWeatherState() {
   const { staticData, worldLocations, marketData, allItemsDb } = useData();
+  const { activeProfile } = useProfiles();
   const [activeWeather, setActiveWeather] = useState<WeatherData>(WEATHER_DATA[0]);
   const [weatherRefreshTick, setWeatherRefreshTick] = useState(0);
+  const [filterByLevel, setFilterByLevel] = useState(false);
+
+  const characterCombatLevel = useMemo(() => {
+    const lvl = activeProfile?.levels?.combat;
+    return typeof lvl === "number" && lvl > 0 ? lvl : null;
+  }, [activeProfile?.levels?.combat]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setWeatherRefreshTick((tick) => tick + 1), 60_000);
@@ -65,6 +73,64 @@ export function useWeatherState() {
   const favoredPreferenceCount = activeWeatherEnemies.loves.length + activeWeatherEnemies.likes.length;
   const penalizedPreferenceCount = activeWeatherEnemies.dislikes.length + activeWeatherEnemies.hates.length;
 
+  const magicStormWeather = useMemo(() => WEATHER_DATA.find((w) => w.id === "magic-storm") || null, []);
+  const magicStormAlert = useMemo(() => {
+    if (!magicStormWeather) return null;
+    const activeLoc = locations.find((l) => weatherMatches(l.currentWeather, magicStormWeather));
+    if (activeLoc) {
+      return {
+        type: "active" as const,
+        location: activeLoc,
+        weather: activeLoc.currentWeather,
+      };
+    }
+    const upcomingLoc = locations.find((l) => weatherMatches(l.nextWeather, magicStormWeather));
+    if (upcomingLoc) {
+      return {
+        type: "upcoming" as const,
+        location: upcomingLoc,
+        weather: upcomingLoc.nextWeather,
+      };
+    }
+    return null;
+  }, [locations, magicStormWeather]);
+
+  const currentSeason = useMemo(() => {
+    const month = new Date().getMonth();
+    if (month === 11 || month === 0 || month === 1) {
+      return { name: "Winter", months: "Dec – Feb", note: "Heavy snow in alpine peaks." };
+    }
+    if (month >= 2 && month <= 4) {
+      return { name: "Spring", months: "Mar – May", note: "Mild winds and variable showers." };
+    }
+    if (month >= 5 && month <= 7) {
+      return { name: "Summer", months: "Jun – Aug", note: "Heatwaves common in arid zones." };
+    }
+    return { name: "Autumn", months: "Sep – Nov", note: "Frequent rain and coastal fog." };
+  }, []);
+
+  const displayedActiveWeatherEnemies = useMemo(() => {
+    if (!filterByLevel || characterCombatLevel === null) {
+      return activeWeatherEnemies;
+    }
+    return {
+      loves: activeWeatherEnemies.loves.filter((e) => e.level <= characterCombatLevel),
+      likes: activeWeatherEnemies.likes.filter((e) => e.level <= characterCombatLevel),
+      dislikes: activeWeatherEnemies.dislikes.filter((e) => e.level <= characterCombatLevel),
+      hates: activeWeatherEnemies.hates.filter((e) => e.level <= characterCombatLevel),
+    };
+  }, [activeWeatherEnemies, filterByLevel, characterCombatLevel]);
+
+  const displayedCurrentEnemyContext = useMemo(() => {
+    if (!filterByLevel || characterCombatLevel === null) {
+      return currentWeatherEnemyContext;
+    }
+    return {
+      favored: currentWeatherEnemyContext.favored.filter((e) => e.level <= characterCombatLevel),
+      penalized: currentWeatherEnemyContext.penalized.filter((e) => e.level <= characterCombatLevel),
+    };
+  }, [currentWeatherEnemyContext, filterByLevel, characterCombatLevel]);
+
   const weatherAccent = {
     "--accent": activeWeather.theme.primary,
     "--accent-2": activeWeather.theme.secondary,
@@ -74,12 +140,20 @@ export function useWeatherState() {
     activeWeather,
     setActiveWeather,
     activeWeatherEnemies,
+    displayedActiveWeatherEnemies,
     currentWeatherLocations,
     nextWeatherLocations,
     locationWeatherCounts,
     currentWeatherEnemyContext,
+    displayedCurrentEnemyContext,
     favoredPreferenceCount,
     penalizedPreferenceCount,
     weatherAccent,
+    characterCombatLevel,
+    characterName: activeProfile?.name || null,
+    filterByLevel,
+    setFilterByLevel,
+    magicStormAlert,
+    currentSeason,
   };
 }

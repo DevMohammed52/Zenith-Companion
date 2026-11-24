@@ -19,7 +19,7 @@ export default function WeatherPage() {
     <main className="weather-container" style={state.weatherAccent}>
       <WeatherCanvas weatherId={state.activeWeather.id} />
 
-      <div className="content-wrapper">
+      <div className="weather-content-wrapper">
         <WeatherHeader
           activeWeather={state.activeWeather}
           setActiveWeather={state.setActiveWeather}
@@ -27,6 +27,8 @@ export default function WeatherPage() {
           nextWeatherLocationsCount={state.nextWeatherLocations.length}
           favoredPreferenceCount={state.favoredPreferenceCount}
           penalizedPreferenceCount={state.penalizedPreferenceCount}
+          magicStormAlert={state.magicStormAlert}
+          currentSeason={state.currentSeason}
         />
 
         <div className="main-grid">
@@ -48,14 +50,18 @@ export default function WeatherPage() {
               />
               <CurrentEnemyContext
                 activeWeather={state.activeWeather}
-                favoredEnemies={state.currentWeatherEnemyContext.favored}
-                penalizedEnemies={state.currentWeatherEnemyContext.penalized}
+                favoredEnemies={state.displayedCurrentEnemyContext.favored}
+                penalizedEnemies={state.displayedCurrentEnemyContext.penalized}
+                characterCombatLevel={state.filterByLevel ? state.characterCombatLevel : null}
               />
             </div>
 
             <EnemyPreferences
               weatherName={state.activeWeather.name}
-              enemies={state.activeWeatherEnemies}
+              enemies={state.displayedActiveWeatherEnemies}
+              characterCombatLevel={state.characterCombatLevel}
+              filterByLevel={state.filterByLevel}
+              onToggleLevelFilter={state.setFilterByLevel}
             />
           </section>
 

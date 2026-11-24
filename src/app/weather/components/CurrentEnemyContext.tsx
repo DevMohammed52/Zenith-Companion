@@ -1,22 +1,27 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Activity, Swords } from "lucide-react";
 import type { WeatherData } from "@/constants/weatherData";
 import {
   getWeatherPreferenceLabel,
   type EnrichedEnemy,
 } from "@/lib/world-intelligence";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getEnemyWeatherLabel } from "../types";
 
 export function CurrentEnemyContext({
   activeWeather,
   favoredEnemies,
   penalizedEnemies,
+  characterCombatLevel,
 }: {
   activeWeather: WeatherData;
   favoredEnemies: EnrichedEnemy[];
   penalizedEnemies: EnrichedEnemy[];
+  characterCombatLevel?: number | null;
 }) {
   const renderEnemy = (enemy: EnrichedEnemy, tone: "favored" | "penalized") => (
     <Link
@@ -25,43 +30,86 @@ export function CurrentEnemyContext({
       className={`current-enemy-link ${tone}`}
       aria-label={getEnemyWeatherLabel(enemy, `${tone} by current ${activeWeather.name}`)}
     >
-      {enemy.imageUrl ? <Image src={enemy.imageUrl} alt="" width={34} height={34} unoptimized /> : <Swords size={18} />}
-      <span>
-        <strong>{enemy.name}</strong>
-        <small>{enemy.locationName} - {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}</small>
-      </span>
-      <em>{tone === "favored" ? "Boosted" : "Risk"}</em>
+      <div className="enemy-avatar-shell">
+        {enemy.imageUrl ? (
+          <Image src={enemy.imageUrl} alt="" width={36} height={36} unoptimized />
+        ) : (
+          <Icon name="combat" size="md" />
+        )}
+      </div>
+      <div className="enemy-info-col">
+        <div className="enemy-info-top">
+          <strong>{enemy.name}</strong>
+          <Badge variant="neutral" size="sm">
+            Lv.{enemy.level}
+          </Badge>
+        </div>
+        <div className="enemy-info-bottom">
+          <small>
+            {enemy.locationName} &middot; {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
+          </small>
+          <Badge variant={tone === "favored" ? "success" : "danger"} size="sm">
+            {tone === "favored" ? "Boosted" : "Penalty"}
+          </Badge>
+        </div>
+      </div>
     </Link>
   );
 
   return (
-    <div className="current-enemy-card">
+    <Card variant="default" className="current-enemy-card">
       <div className="card-header compact">
-        <Activity size={18} />
-        <h3>Current Enemy Match</h3>
+        <Icon name="combat" size="md" />
+        <div className="card-header-title-row">
+          <h3>Current Enemy Match</h3>
+          {characterCombatLevel && (
+            <Badge variant="neutral" size="sm">
+              Capped to Lv.{characterCombatLevel}
+            </Badge>
+          )}
+        </div>
       </div>
       <div className="current-enemy-grid">
-        <section>
+        <section className="current-enemy-lane">
           <div className="forecast-lane-title good">
             <span>Favored by {activeWeather.name}</span>
-            <strong>{favoredEnemies.length}</strong>
+            <Badge variant="success" size="sm">
+              {favoredEnemies.length}
+            </Badge>
           </div>
           <div className="current-enemy-list">
             {favoredEnemies.slice(0, 5).map((enemy) => renderEnemy(enemy, "favored"))}
-            {favoredEnemies.length === 0 && <p className="forecast-empty">No current favorable enemy match.</p>}
+            {favoredEnemies.length === 0 && (
+              <EmptyState
+                variant="no-data"
+                title="No favored enemies found"
+                description={`No active location currently spawns enemies that favor ${activeWeather.name}.`}
+                size="sm"
+              />
+            )}
           </div>
         </section>
-        <section>
+
+        <section className="current-enemy-lane">
           <div className="forecast-lane-title bad">
             <span>Penalized by {activeWeather.name}</span>
-            <strong>{penalizedEnemies.length}</strong>
+            <Badge variant="danger" size="sm">
+              {penalizedEnemies.length}
+            </Badge>
           </div>
           <div className="current-enemy-list">
             {penalizedEnemies.slice(0, 5).map((enemy) => renderEnemy(enemy, "penalized"))}
-            {penalizedEnemies.length === 0 && <p className="forecast-empty">No current penalty match.</p>}
+            {penalizedEnemies.length === 0 && (
+              <EmptyState
+                variant="no-data"
+                title="No penalized enemies"
+                description={`No current enemies in these locations suffer spawn penalties from ${activeWeather.name}.`}
+                size="sm"
+              />
+            )}
           </div>
         </section>
       </div>
-    </div>
+    </Card>
   );
 }

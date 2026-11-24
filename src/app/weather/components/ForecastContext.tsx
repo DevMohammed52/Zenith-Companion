@@ -1,11 +1,15 @@
 import React from "react";
 import Link from "next/link";
-import { MapPin, Sparkles, Swords } from "lucide-react";
 import type { WeatherData } from "@/constants/weatherData";
 import type { EnrichedLocation } from "@/lib/world-intelligence";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   formatForecastAriaLabel,
   formatForecastTime,
+  formatRelativeCountdown,
   type LocationWeatherCounts,
 } from "../types";
 
@@ -19,24 +23,33 @@ function ForecastLocationCard({
   counts: LocationWeatherCounts;
 }) {
   const weather = mode === "current" ? location.currentWeather : location.nextWeather;
+  const countdown = formatRelativeCountdown(weather);
+
   return (
     <Link
       href={`/map?location=${encodeURIComponent(location.key)}`}
       className="forecast-location-card"
       aria-label={formatForecastAriaLabel(weather?.name || "Weather", mode === "current" ? "now" : "next", location, weather)}
     >
-      <div>
+      <div className="forecast-location-top">
         <strong>{location.name}</strong>
-        <small>{formatForecastTime(weather)}</small>
+        <span className="forecast-countdown-pill">{countdown.label}</span>
       </div>
-      <span>
-        <Sparkles size={13} />
-        {counts.favored} favored
-      </span>
-      <span className="penalty">
-        <Swords size={13} />
-        {counts.penalized} penalized
-      </span>
+      <div className="forecast-location-bottom">
+        <small>{formatForecastTime(weather)}</small>
+        <div className="forecast-location-badges">
+          {counts.favored > 0 && (
+            <Badge variant="success" size="sm" icon={<Icon name="xp" size="xs" />} title={`${counts.favored} favored enemies`}>
+              {counts.favored}
+            </Badge>
+          )}
+          {counts.penalized > 0 && (
+            <Badge variant="danger" size="sm" icon={<Icon name="combat" size="xs" />} title={`${counts.penalized} penalized enemies`}>
+              {counts.penalized}
+            </Badge>
+          )}
+        </div>
+      </div>
     </Link>
   );
 }
@@ -55,37 +68,56 @@ export function ForecastContext({
   const getCounts = (location: EnrichedLocation) => locationWeatherCounts.get(location.key) || { favored: 0, penalized: 0 };
 
   return (
-    <div className="forecast-context-card">
+    <Card variant="default" className="forecast-context-card">
       <div className="card-header compact">
-        <MapPin size={18} />
+        <Icon name="map" size="md" />
         <h3>Location Forecast</h3>
       </div>
       <div className="forecast-lanes">
-        <section>
+        <section className="forecast-lane">
           <div className="forecast-lane-title">
             <span>Active now</span>
-            <strong>{currentLocations.length}</strong>
+            <Badge variant="success" size="sm">
+              {currentLocations.length}
+            </Badge>
           </div>
           <div className="forecast-location-list">
             {currentLocations.slice(0, 4).map((location) => (
               <ForecastLocationCard key={`current-${location.key}`} location={location} mode="current" counts={getCounts(location)} />
             ))}
-            {currentLocations.length === 0 && <p className="forecast-empty">No location currently has {activeWeather.name}.</p>}
+            {currentLocations.length === 0 && (
+              <EmptyState
+                variant="no-data"
+                title={`No active ${activeWeather.name} regions`}
+                description="Check upcoming windows or select another weather pattern."
+                size="sm"
+              />
+            )}
           </div>
         </section>
-        <section>
+
+        <section className="forecast-lane">
           <div className="forecast-lane-title">
             <span>Coming next</span>
-            <strong>{nextLocations.length}</strong>
+            <Badge variant="neutral" size="sm">
+              {nextLocations.length}
+            </Badge>
           </div>
           <div className="forecast-location-list">
             {nextLocations.slice(0, 4).map((location) => (
               <ForecastLocationCard key={`next-${location.key}`} location={location} mode="next" counts={getCounts(location)} />
             ))}
-            {nextLocations.length === 0 && <p className="forecast-empty">No next-window match for {activeWeather.name}.</p>}
+            {nextLocations.length === 0 && (
+              <EmptyState
+                variant="no-data"
+                title={`No upcoming ${activeWeather.name} regions`}
+                description="Forecast cycle does not project this weather in the next window."
+                size="sm"
+              />
+            )}
           </div>
         </section>
       </div>
-    </div>
+    </Card>
   );
 }

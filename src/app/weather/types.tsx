@@ -1,15 +1,5 @@
-import React, { type ReactNode } from "react";
-import {
-  Cloud,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  Sun,
-  ThermometerSun,
-  Wind,
-  Zap,
-} from "lucide-react";
+import React from "react";
+import type { IconConcept } from "@/lib/icons";
 import { WEATHER_DATA, type WeatherData } from "@/constants/weatherData";
 import {
   isFavorableWeather,
@@ -57,7 +47,7 @@ export function preferenceIncludes(enemy: EnrichedEnemy, kind: WeatherPreference
   return preference[kind].some((weather) => normalizeWeatherKey(weather) === weatherKey);
 }
 
-export function createWeatherBuckets(): WeatherEnemyBuckets {
+function createWeatherBuckets(): WeatherEnemyBuckets {
   return { loves: [], likes: [], dislikes: [], hates: [] };
 }
 
@@ -129,17 +119,64 @@ export function getEnemyWeatherLabel(enemy: EnrichedEnemy, context: string) {
   return `${enemy.name}, level ${enemy.level}, ${enemy.locationName}, ${context}`;
 }
 
-export function getWeatherIcon(icon: string, size = 18): ReactNode {
-  switch (icon) {
-    case "sun": return <Sun size={size} />;
-    case "cloud-fog": return <CloudFog size={size} />;
-    case "thermometer-sun": return <ThermometerSun size={size} />;
-    case "zap": return <Zap size={size} />;
-    case "cloud": return <Cloud size={size} />;
-    case "cloud-rain": return <CloudRain size={size} />;
-    case "cloud-snow": return <CloudSnow size={size} />;
-    case "cloud-lightning": return <CloudLightning size={size} />;
-    case "wind": return <Wind size={size} />;
-    default: return <Sun size={size} />;
+export function formatRelativeCountdown(weather: ForecastWeather | null | undefined, now = Date.now()) {
+  if (!weather?.starts_at || !weather?.ends_at) {
+    return { label: weather?.window || "Window pending", isLive: false, mode: "pending" as const };
+  }
+  const start = new Date(weather.starts_at).getTime();
+  const end = new Date(weather.ends_at).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    return { label: weather.window || "Window pending", isLive: false, mode: "pending" as const };
+  }
+  if (start <= now && now < end) {
+    const mins = Math.max(1, Math.round((end - now) / 60_000));
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const label = h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+    return { label, isLive: true, mode: "active" as const };
+  }
+  if (now < start) {
+    const mins = Math.max(1, Math.round((start - now) / 60_000));
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const label = h > 0 ? `Starts in ${h}h ${m}m` : `Starts in ${m}m`;
+    return { label, isLive: false, mode: "upcoming" as const };
+  }
+  return { label: "Window ended", isLive: false, mode: "ended" as const };
+}
+
+export function getWeatherConcept(weatherIdOrIcon: string): IconConcept {
+  switch (weatherIdOrIcon) {
+    case "clear":
+    case "sun":
+      return "weatherClear";
+    case "overcast":
+    case "cloud":
+      return "weatherOvercast";
+    case "rain":
+    case "cloud-rain":
+      return "weatherRain";
+    case "fog":
+    case "cloud-fog":
+      return "weatherFog";
+    case "storm":
+    case "cloud-lightning":
+      return "weatherStorm";
+    case "magic-storm":
+    case "zap":
+      return "weatherMagicStorm";
+    case "windy":
+    case "wind":
+      return "weatherWindy";
+    case "snow":
+    case "cloud-snow":
+      return "weatherSnow";
+    case "heatwave":
+    case "thermometer-sun":
+      return "weatherHeatwave";
+    default:
+      return "weather";
   }
 }
+
+
