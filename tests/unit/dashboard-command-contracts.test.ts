@@ -29,7 +29,7 @@ describe("dashboard command center contracts", () => {
 
   const layoutPath = path.join(process.cwd(), "src", "app", "layout.tsx");
   const globalsCssPath = path.join(process.cwd(), "src", "app", "globals.css");
-  const bannerCssPath = path.join(process.cwd(), "src", "components", "DataFreshnessBanner.module.css");
+  const indicatorCssPath = path.join(process.cwd(), "src", "components", "DataFreshnessIndicator.module.css");
   const ogImagePath = path.join(process.cwd(), "src", "app", "opengraph-image.tsx");
   const twitterImagePath = path.join(process.cwd(), "src", "app", "twitter-image.tsx");
 
@@ -144,7 +144,7 @@ describe("dashboard command center contracts", () => {
     const pageContent = getDashboardFilesContent();
     const layoutContent = readFileSync(layoutPath, "utf-8");
     const css = readFileSync(globalsCssPath, "utf-8");
-    const bannerCss = readFileSync(bannerCssPath, "utf-8");
+    const indicatorCss = readFileSync(indicatorCssPath, "utf-8");
 
     expect(pageContent).toContain("if (!profilesLoaded || typeof document === \"undefined\") return;");
     expect(layoutContent).toContain("dataset.profileSetup");
@@ -159,7 +159,7 @@ describe("dashboard command center contracts", () => {
     expect(css).toContain('html[data-profile-setup="ready"] .dashboard-setup-state');
     expect(css).toContain('html[data-mobile-navigation="command"] .mobile-menu-btn');
     expect(css).toMatch(/\.command-wheel-group\s+strong,\s*\.command-wheel-group\s+small\s*\{[^}]*text-overflow:\s*ellipsis/);
-    expect(bannerCss).toContain("inset-inline-start: 5.75rem;");
+    expect(indicatorCss).toContain(".trigger");
   });
 
   it("isolates PRE_PAINT_INIT_SCRIPT preferences and profiles parsing and matches sanitizeProfile starter defaults", () => {

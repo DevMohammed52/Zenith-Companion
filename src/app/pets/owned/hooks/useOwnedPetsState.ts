@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { type ProfileOwnedPet, useProfiles } from "@/lib/profiles";
+import { useToast } from "@/components/ui/Toast";
 import { buildPetMatchLookup, findPetRecordForOwnedPet, type PetRecord } from "@/lib/pets";
 import {
   SORT_OPTIONS,
@@ -18,10 +19,9 @@ import {
 } from "../utils/owned-pet-helpers";
 
 export function useOwnedPetsState() {
+  const { toast } = useToast();
   const { activeProfile, updateProfile } = useProfiles();
   const [petDb, setPetDb] = useState<PetRecord[]>([]);
-  const [toast, setToast] = useState("");
-  const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval | null>(null);
   const [query, setQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("level");
@@ -53,15 +53,6 @@ export function useOwnedPetsState() {
       cancelled = true;
     };
   }, [ownedPets.length]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(() => {
-      setToast("");
-      setPendingRemoval(null);
-    }, 5200);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
 
   const petMatchLookup = useMemo(() => buildPetMatchLookup(petDb), [petDb]);
 
@@ -121,42 +112,48 @@ export function useOwnedPetsState() {
     setSortDirection("desc");
   };
 
-  const updateOwnedPets = (nextPets: ProfileOwnedPet[], message: string) => {
+  const updateOwnedPets = (nextPets: ProfileOwnedPet[]) => {
     if (!activeProfile) return;
     updateProfile(activeProfile.id, { ownedPets: nextPets }, { source: "manual", fieldPaths: ["ownedPets"] });
-    setToast(message);
   };
 
   const addCurrentPet = () => {
     if (!activeProfile) return;
     const ownedPet = activePetToOwnedPet(activeProfile);
     if (!ownedPet) {
-      setToast("Select a pet on the profile page first.");
+      toast.warning("Select a pet on the profile page first.");
       return;
     }
     const duplicate = ownedPets.some((pet) => petKey(pet) === petKey(ownedPet));
     if (duplicate) {
-      setToast("That pet setup is already saved.");
+      toast.info("That pet setup is already saved.");
       return;
     }
-    updateOwnedPets([...ownedPets, ownedPet], "Current profile pet saved.");
+    updateOwnedPets([...ownedPets, ownedPet]);
+    toast.success("Current profile pet saved.");
   };
 
   const removePet = (ownedPet: ProfileOwnedPet) => {
     const index = ownedPets.findIndex((pet) => pet.id === ownedPet.id);
     if (index < 0) return;
-    setPendingRemoval({ pet: ownedPet, index });
-    updateOwnedPets(ownedPets.filter((pet) => pet.id !== ownedPet.id), `${ownedPet.nickname || ownedPet.species} removed.`);
+    const petLabel = ownedPet.nickname || ownedPet.species;
+    updateOwnedPets(ownedPets.filter((pet) => pet.id !== ownedPet.id));
+    toast({
+      title: `${petLabel} removed.`,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          if (!activeProfile) return;
+          const nextPets = [...ownedPets];
+          nextPets.splice(Math.min(index, nextPets.length), 0, ownedPet);
+          updateProfile(activeProfile.id, { ownedPets: nextPets }, { source: "manual", fieldPaths: ["ownedPets"] });
+          toast.success(`${petLabel} restored.`);
+        },
+      },
+    });
   };
 
-  const undoRemovePet = () => {
-    if (!activeProfile || !pendingRemoval) return;
-    const nextPets = [...ownedPets];
-    nextPets.splice(Math.min(pendingRemoval.index, nextPets.length), 0, pendingRemoval.pet);
-    updateProfile(activeProfile.id, { ownedPets: nextPets }, { source: "manual", fieldPaths: ["ownedPets"] });
-    setToast(`${pendingRemoval.pet.nickname || pendingRemoval.pet.species} restored.`);
-    setPendingRemoval(null);
-  };
+  const undoRemovePet = () => {};
 
   const handleUseAsActivePet = (ownedPet: ProfileOwnedPet) => {
     if (!activeProfile) return;
@@ -176,7 +173,7 @@ export function useOwnedPetsState() {
       },
       { source: "manual", fieldPaths: ["pet", "ownedPets"] },
     );
-    setToast(`${ownedPet.nickname || ownedPet.species} is now the active pet for ${activeProfile.name}.`);
+    toast.success(`${ownedPet.nickname || ownedPet.species} is now the active pet for ${activeProfile.name}.`);
   };
 
   return {
@@ -205,8 +202,8 @@ export function useOwnedPetsState() {
     controlsModified,
     sourceFilterLabel,
     sortLabel,
-    toast,
-    pendingRemoval,
+    toast: "",
+    pendingRemoval: null,
     resetControls,
     addCurrentPet,
     removePet,

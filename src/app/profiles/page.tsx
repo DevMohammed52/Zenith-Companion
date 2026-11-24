@@ -2,7 +2,6 @@
 
 import React from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
-import { Toast } from "./components/ProfileControls";
 import { ProfileHeader, ProfileListPanel } from "./components/ProfileHeader";
 import { ProfileIdentitySection } from "./components/ProfileIdentitySection";
 import { ProfileLevelsSection } from "./components/ProfileLevelsSection";
@@ -62,7 +61,6 @@ export default function ProfilesPage() {
         if (!(event.target as HTMLElement).closest(".profile-picker")) ps.setOpenPicker(null);
       }}
     >
-      <Toast message={ps.toast} onClose={() => ps.setToast("")} />
       <ProfileHeader
         profilesCount={state.profiles.length}
         activeProfileSection={ps.activeProfileSection}

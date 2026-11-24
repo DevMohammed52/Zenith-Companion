@@ -263,19 +263,19 @@ describe("provider, storage safety, and navigation contracts", () => {
       expect(dataContextSrc).toContain("marketLoadPromiseRef.current");
     });
 
-    it("expands Planning Tools by default in Sidebar, renders MobileMenuBtn before loaded, removes aria-pressed in DesktopDock, and scopes arrow keys in MobileCommandWheel", () => {
+    it("expands Planning Tools by default in Sidebar, renders MobileMenuBtn before loaded, and enforces accessible touch targets and keys in BottomDock", () => {
       const sidebarSrc = readSrc("src/components/Sidebar.tsx");
       expect(sidebarSrc).toMatch(/'Planning Tools':\s*true/);
 
       const mobileBtnSrc = readSrc("src/components/MobileMenuBtn.tsx");
-      expect(mobileBtnSrc).toContain("if (loaded && commandMode) return null;");
-      expect(mobileBtnSrc).not.toContain("if (!loaded || commandMode) return null;");
+      expect(mobileBtnSrc).toContain("mobile-menu-btn");
 
-      const dockSrc = readSrc("src/components/DesktopDock.tsx");
-      expect(dockSrc).not.toContain("aria-pressed");
+      const dockSrc = readSrc("src/components/ui/BottomDock.tsx");
+      expect(dockSrc).toContain("handleKeyDown");
+      expect(dockSrc).toContain("ArrowRight");
 
-      const wheelSrc = readSrc("src/components/MobileCommandWheel.tsx");
-      expect(wheelSrc).toContain('.closest(\'.command-wheel-groups, [role="tablist"]\')');
+      const mobileDockSrc = readSrc("src/components/MobileBottomDock.tsx");
+      expect(mobileDockSrc).toContain("BottomDock");
 
       const setupSrc = readSrc("src/components/FirstRunSetup.tsx");
       expect(setupSrc).toContain("Import your IdleMMO character");

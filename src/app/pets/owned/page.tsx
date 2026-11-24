@@ -12,7 +12,6 @@ import { OwnedPetSummary } from "./components/OwnedPetSummary";
 import { OwnedPetImportReadiness } from "./components/OwnedPetImportReadiness";
 import { OwnedPetControls } from "./components/OwnedPetControls";
 import { OwnedPetCard } from "./components/OwnedPetCard";
-import { OwnedPetToast } from "./components/OwnedPetToast";
 import styles from "./page.module.css";
 
 export default function OwnedPetsPage() {
@@ -118,12 +117,6 @@ export default function OwnedPetsPage() {
           }
         />
       )}
-
-      <OwnedPetToast
-        toast={state.toast}
-        hasPendingRemoval={Boolean(state.pendingRemoval)}
-        onUndo={state.undoRemovePet}
-      />
     </main>
   );
 }

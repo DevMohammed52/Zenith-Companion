@@ -33,7 +33,7 @@ describe("Adversarial Empirical Stress Harness: /profiles Deconstruction", () =>
       const content = readFileSync(pageFile, "utf-8");
       const lineCount = content.split(/\r?\n/).length;
       expect(lineCount).toBeLessThan(250);
-      expect(lineCount).toBe(214);
+      expect(lineCount).toBe(212);
     });
 
     it("page.tsx functions purely as an orchestrator with zero inline calculation engines", () => {

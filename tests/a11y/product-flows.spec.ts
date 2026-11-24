@@ -143,17 +143,20 @@ test.describe("core product flows", () => {
     expect(startRequests).toEqual([]);
   });
 
-  test("settings persist theme changes and expose install/offline controls", async ({ page }, testInfo) => {
+  test("settings persist preference changes and expose install/offline controls", async ({ page }, testInfo) => {
     test.skip(!/desktop/i.test(testInfo.project.name), "Settings persistence smoke runs once on desktop.");
 
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
 
-    await page.getByRole("radio", { name: "Arcane" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "arcane");
-    await expect(page.locator(".theme-option.theme-option-active")).toContainText("Arcane");
-    await expect(page.getByRole("radio", { name: "Arcane" })).toHaveAttribute("aria-checked", "true");
-    await expect.poll(async () => page.evaluate(() => JSON.parse(window.localStorage.getItem("zenith_preferences") || "{}").theme))
-      .toBe("arcane");
+    await page.getByRole("tab", { name: "Zenith Dock" }).click();
+    await expect(page.getByRole("tab", { name: "Zenith Dock" })).toHaveAttribute("aria-selected", "true");
+    await expect.poll(async () => page.evaluate(() => JSON.parse(window.localStorage.getItem("zenith_preferences") || "{}").desktopNavigationStyle))
+      .toBe("dock");
+
+    await page.getByRole("tab", { name: "Active Member (12% Tax)" }).click();
+    await expect(page.getByRole("tab", { name: "Active Member (12% Tax)" })).toHaveAttribute("aria-selected", "true");
+    await expect.poll(async () => page.evaluate(() => JSON.parse(window.localStorage.getItem("zenith_preferences") || "{}").membership))
+      .toBe(true);
 
     const installPanel = page.locator(".settings-install-panel");
     await expect(installPanel.getByRole("heading", { name: "Install App" })).toBeVisible();

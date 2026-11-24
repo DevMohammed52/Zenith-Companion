@@ -14,6 +14,7 @@ import {
   type ProfilesState,
 } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
+import { useToast } from "@/components/ui/Toast";
 import {
   calculatePetStats,
   calculateProfileSecondaryStats,
@@ -179,10 +180,24 @@ export function useProfileState(): UseProfileStateReturn {
     importProfiles,
   } = useProfiles();
 
+  const { toast: toastApi } = useToast();
   const [transferText, setTransferText] = useState("");
   const [profileHashDraft, setProfileHashDraft] = useState("");
-  const [toast, setToast] = useState("");
   const [lastBackupAt, setLastBackupAt] = useState(0);
+
+  const setToast = useCallback((message: string) => {
+    if (!message) return;
+    const lower = message.toLowerCase();
+    if (lower.includes("failed") || lower.includes("limit") || lower.includes("valid") || lower.includes("error")) {
+      toastApi.error(message);
+    } else if (lower.includes("empty") || lower.includes("paste")) {
+      toastApi.warning(message);
+    } else if (lower.includes("copied") || lower.includes("saved") || lower.includes("imported") || lower.includes("deleted") || lower.includes("added") || lower.includes("created") || lower.includes("restored") || lower.includes("duplicated")) {
+      toastApi.success(message);
+    } else {
+      toastApi.info(message);
+    }
+  }, [toastApi]);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<"restore" | "delete" | null>(null);
   const [activeProfileSection, setActiveProfileSection] = useState<ProfileSectionId>("identity");
@@ -217,12 +232,6 @@ export function useProfileState(): UseProfileStateReturn {
       cancelled = true;
     };
   }, [needsPetData, petDb]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(""), 3500);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
 
   useEffect(() => {
     setLastBackupAt(getLastProfileBackupAt());
@@ -661,7 +670,7 @@ export function useProfileState(): UseProfileStateReturn {
     activeProfileSection,
     setActiveProfileSection,
     openProfileSection,
-    toast,
+    toast: "",
     setToast,
     openPicker,
     setOpenPicker,
