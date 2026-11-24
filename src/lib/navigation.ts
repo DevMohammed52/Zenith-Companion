@@ -29,32 +29,32 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Databases",
     eyebrow: "Reference",
-    icon: "items",
+    icon: "database",
     items: [
       { href: "/items", label: "Items Database", icon: "items", matchPrefix: true },
       { href: "/enemies", label: "Enemy Database", icon: "enemy" },
       { href: "/pets", label: "Pet Database", icon: "pets" },
-      { href: "/pets/owned", label: "Owned Pets", icon: "pets" },
-      { href: "/pets/compare", label: "Pet Comparison", icon: "skill" },
+      { href: "/pets/owned", label: "Owned Pets", icon: "petsOwned" },
+      { href: "/pets/compare", label: "Pet Comparison", icon: "petCompare" },
       { href: "/guilds", label: "Guild Database", icon: "guild" },
       { href: "/museum", label: "Museum", icon: "museum" },
-      { href: "/lore", label: "Lore Wiki", icon: "archive", matchPrefix: true },
-      { href: "/patch-notes", label: "IdleMMO Patch Notes", icon: "archive" },
+      { href: "/lore", label: "Lore Wiki", icon: "lore", matchPrefix: true },
+      { href: "/patch-notes", label: "IdleMMO Patch Notes", icon: "patchNotes" },
     ],
   },
   {
     label: "Planning Tools",
     eyebrow: "Calculators",
-    icon: "alchemy",
+    icon: "calculator",
     items: [
       { href: "/alchemy", label: "Alchemy Profit", icon: "alchemy" },
-      { href: "/skill-profit", label: "Skill Profit Finder", icon: "skill" },
+      { href: "/skill-profit", label: "Skill Profit Finder", icon: "skillProfit" },
       { href: "/alchemy/mythic", label: "Mythic Lab", icon: "spark", badge: "LVL 90" },
-      { href: "/crafting", label: "Crafting Queue", icon: "crafting" },
-      { href: "/forge/lessons", label: "Forge Lessons", icon: "forge" },
-      { href: "/forge/craft", label: "Forge Crafting", icon: "crafting" },
+      { href: "/crafting", label: "Crafting Queue", icon: "craftingQueue" },
+      { href: "/forge/lessons", label: "Forge Lessons", icon: "forgeLessons" },
+      { href: "/forge/craft", label: "Forge Crafting", icon: "forgeCraft" },
       { href: "/housing", label: "Housing", icon: "housing" },
-      { href: "/bis", label: "BiS Recommender", icon: "shield" },
+      { href: "/bis", label: "BiS Recommender", icon: "bis" },
     ],
   },
   {
@@ -84,4 +84,14 @@ export function isNavItemActive(pathname: string, item: NavItem) {
 
 export function getActiveNavGroup(pathname: string) {
   return NAV_GROUPS.find((group) => group.items.some((item) => isNavItemActive(pathname, item)));
+}
+
+export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+
+export const DOCKABLE_NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS.filter(
+  (item) => item.href !== "/" && item.href !== "/settings",
+);
+
+export function findNavItemByHref(href: string): NavItem | undefined {
+  return ALL_NAV_ITEMS.find((item) => item.href === href);
 }
