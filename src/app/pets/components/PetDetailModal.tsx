@@ -76,7 +76,7 @@ export function PetDetailModal({
                     variant="neutral"
                     size="sm"
                     style={{
-                      color: palette.color,
+                      color: palette.textColor,
                       borderColor: palette.border,
                       backgroundColor: palette.background,
                     }}

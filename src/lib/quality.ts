@@ -15,6 +15,7 @@ export type QualityName = (typeof QUALITY_ORDER)[number];
 
 type QualityPaletteEntry = {
   color: string;
+  textColor: string;
   border: string;
   background: string;
   textGradient?: string;
@@ -24,36 +25,43 @@ type QualityPaletteEntry = {
 export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   UNKNOWN: {
     color: "#94a3b8",
+    textColor: "#94a3b8",
     border: "rgba(148, 163, 184, 0.32)",
     background: "#111827",
   },
   STANDARD: {
     color: "#d1d5db",
+    textColor: "#d1d5db",
     border: "#37415166",
     background: "#161d2a",
   },
   REFINED: {
     color: "#4d76d6",
+    textColor: "#60a5fa",
     border: "#4d76d64d",
     background: "#152951",
   },
   PREMIUM: {
     color: "#1fd60b",
+    textColor: "#1fd60b",
     border: "#1fd60b4d",
     background: "#16382b",
   },
   EPIC: {
     color: "#c0392b",
+    textColor: "#f87171",
     border: "#c0392b4d",
     background: "#421d25",
   },
   LEGENDARY: {
     color: "#f7bd1e",
+    textColor: "#f7bd1e",
     border: "#f7bd1e4d",
     background: "#3d3222",
   },
   MYTHIC: {
     color: "#f48a00",
+    textColor: "#fb923c",
     border: "#c2410c4d",
     background: "#492f31",
     textGradient: "linear-gradient(90deg, #f48a00, #da5b00)",
@@ -61,6 +69,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   UNIQUE: {
     color: "#b417f4",
+    textColor: "#d8b4fe",
     border: "#7e22ce4d",
     background: "#4e2760",
     textGradient: "linear-gradient(90deg, #b417f4, #8006b5)",
