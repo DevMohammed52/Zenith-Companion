@@ -75,6 +75,7 @@ const revalidatedAssetHeaders = [
 
 const nextConfig: NextConfig = {
   /* config options here */
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   devIndicators: false,
   poweredByHeader: false,
   outputFileTracingExcludes: {
