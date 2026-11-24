@@ -1,0 +1,58 @@
+.kbdGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background-color: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-strong, rgba(148, 163, 184, 0.22));
+  border-bottom: 2px solid var(--border-strong, rgba(148, 163, 184, 0.35));
+  border-radius: 4px;
+  padding: 2px 6px;
+  min-width: 20px;
+  min-height: 20px;
+  vertical-align: middle;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.sizeSm {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  min-width: 16px;
+  min-height: 16px;
+}
+
+.sizeMd {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+.sizeLg {
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  min-width: 26px;
+  min-height: 26px;
+}
+
+.separator {
+  color: var(--text-dim, #64748b);
+  font-size: 0.65rem;
+  margin: 0 2px;
+}

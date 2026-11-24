@@ -1,0 +1,75 @@
+.separator {
+  border: none;
+  background-color: var(--border-subtle, rgba(148, 163, 184, 0.12));
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.horizontal {
+  width: 100%;
+  height: 1px;
+}
+
+.vertical {
+  width: 1px;
+  height: 100%;
+  min-height: 16px;
+  align-self: stretch;
+}
+
+/* Margin tokens */
+.marginNone {
+  margin: 0;
+}
+
+.marginSm.horizontal {
+  margin: 8px 0;
+}
+
+.marginSm.vertical {
+  margin: 0 8px;
+}
+
+.marginMd.horizontal {
+  margin: 16px 0;
+}
+
+.marginMd.vertical {
+  margin: 0 16px;
+}
+
+.marginLg.horizontal {
+  margin: 24px 0;
+}
+
+.marginLg.vertical {
+  margin: 0 24px;
+}
+
+/* Interactive splitter */
+.interactive {
+  background-color: var(--border-strong, rgba(148, 163, 184, 0.22));
+  cursor: col-resize;
+  transition: background-color 150ms ease;
+  outline: none;
+}
+
+.interactive.vertical {
+  cursor: col-resize;
+  width: 3px;
+}
+
+.interactive.horizontal {
+  cursor: row-resize;
+  height: 3px;
+}
+
+.interactive:hover {
+  background-color: var(--border-focus, #f8fafc);
+}
+
+.interactive:focus-visible {
+  background-color: var(--border-focus, #f8fafc);
+  outline: 2px solid var(--border-focus, #f8fafc);
+  outline-offset: 2px;
+}

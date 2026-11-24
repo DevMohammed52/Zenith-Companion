@@ -1,0 +1,276 @@
+/* Table.module.css - Zenith Data Table & Dense Data Grid Primitive */
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-card);
+  transition: border-color 150ms ease;
+}
+
+.container:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Lea Verou Pure CSS Scrolling Shadows (Dark Mode Theme) */
+.scrollShadows {
+  background:
+    /* Left cover (scrolls with content) */
+    linear-gradient(to right, var(--bg-card) 30%, rgba(21, 27, 43, 0)),
+    /* Right cover (scrolls with content) */
+    linear-gradient(to right, rgba(21, 27, 43, 0), var(--bg-card) 70%) 100% 0,
+    /* Left shadow (fixed to viewport) */
+    radial-gradient(farthest-side at 0% 50%, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0)),
+    /* Right shadow (fixed to viewport) */
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0)) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 3em 100%, 3em 100%, 1.25em 100%, 1.25em 100%;
+  background-position: 0 0, 100% 0, 0 0, 100% 0;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  text-align: left;
+}
+
+/* Row Densities */
+.densityCompact th,
+.densityCompact td {
+  padding: 6px 10px;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+.densityNormal th,
+.densityNormal td {
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.densityRelaxed th,
+.densityRelaxed td {
+  padding: 14px 18px;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+}
+
+/* Caption */
+.caption {
+  caption-side: top;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: left;
+}
+
+.captionVisuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Header Styles */
+.thead {
+  background-color: var(--bg-card);
+}
+
+.stickyHeader th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--bg-card);
+}
+
+.th {
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+  background-color: var(--bg-card);
+  user-select: none;
+}
+
+/* Pinned (Sticky First Column) */
+.thPinned,
+.tdPinned {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: var(--bg-card);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.4), 1px 0 0 var(--border-subtle);
+}
+
+/* Ensure pinned cell ALWAYS stays opaque even when striped, hovered, or selected */
+.striped tbody tr:nth-child(even) .tdPinned {
+  background-color: #171f32;
+}
+
+.hoverable tbody tr:hover .tdPinned {
+  background-color: var(--bg-card-hover, #1c2438);
+}
+
+.selected .tdPinned {
+  background-color: #1c2336;
+}
+
+/* Top-Left Intersection Corner Header */
+.stickyHeader .thPinned,
+.stickyHeader th:first-child.thPinned {
+  z-index: 4;
+  background-color: var(--bg-card);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.4), 1px 0 0 var(--border-strong), 0 1px 0 var(--border-strong);
+}
+
+/* Alignments */
+.alignLeft {
+  text-align: left;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+/* Numeric Tabular Cells */
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--font-feature-tnum, "tnum" 1);
+}
+
+/* Text Truncation */
+.truncate {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Body & Rows */
+.td {
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  transition: background-color 100ms ease;
+}
+
+.tr:last-child .td {
+  border-bottom: none;
+}
+
+/* Hover & Striping */
+.striped tbody tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.hoverable tbody tr:hover td {
+  background-color: var(--bg-card-hover);
+}
+
+.interactive {
+  cursor: pointer;
+}
+
+.selected td {
+  background-color: rgba(248, 250, 252, 0.06);
+}
+
+/* Footer */
+.tfoot {
+  background-color: var(--bg-card);
+  border-top: 2px solid var(--border-strong);
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.tfoot td {
+  border-bottom: none;
+}
+
+/* Sortable Header Button */
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 150ms ease;
+}
+
+.sortButton:hover {
+  color: var(--text-main);
+}
+
+.sortButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.sortButton.alignLeft {
+  justify-content: flex-start;
+}
+
+.sortButton.alignCenter {
+  justify-content: center;
+}
+
+.sortButton.alignRight {
+  justify-content: flex-end;
+}
+
+.sortIndicator {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.sortIndicatorInactive {
+  opacity: 0.35;
+}
+
+.sortIndicatorActive {
+  opacity: 1;
+  color: var(--text-main);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container,
+  .td,
+  .sortButton,
+  .sortIndicator {
+    transition: none;
+  }
+}

@@ -1,0 +1,228 @@
+/* EmptyState.module.css - Zenith Design System */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  border-radius: 10px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Size Variants */
+.sizeSm {
+  padding: var(--space-4, 16px) var(--space-3, 12px);
+  min-height: 140px;
+}
+
+.sizeMd {
+  padding: var(--space-8, 32px) var(--space-6, 24px);
+  min-height: 220px;
+}
+
+.sizeLg {
+  padding: var(--space-12, 48px) var(--space-8, 32px);
+  min-height: 320px;
+}
+
+/* Category Variants */
+.variantDefault {
+  background-color: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-subtle);
+}
+
+.variantNoData {
+  background-color: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-subtle);
+}
+
+.variantSearchEmpty {
+  background-color: color-mix(in srgb, var(--bg-card, #151b2b), transparent 25%);
+  border: 1px dashed var(--border-strong, rgba(148, 163, 184, 0.22));
+}
+
+.variantError {
+  background-color: color-mix(in srgb, var(--text-danger, #f87171) 4%, var(--bg-card, #151b2b));
+  border: 1px solid color-mix(in srgb, var(--text-danger, #f87171) 35%, var(--border-subtle));
+}
+
+.variantOffline {
+  background-color: color-mix(in srgb, #f59e0b 4%, var(--bg-card, #151b2b));
+  border: 1px solid color-mix(in srgb, #f59e0b 35%, var(--border-subtle));
+}
+
+/* Icon Presentation */
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: var(--space-3, 12px);
+  flex-shrink: 0;
+  transition: transform var(--duration-fast, 150ms) ease;
+}
+
+.iconWrapperSm {
+  width: 36px;
+  height: 36px;
+}
+
+.iconWrapperMd {
+  width: 48px;
+  height: 48px;
+}
+
+.iconWrapperLg {
+  width: 60px;
+  height: 60px;
+}
+
+.iconDefault {
+  background-color: rgba(148, 163, 184, 0.08);
+  color: var(--text-muted, #94a3b8);
+}
+
+.iconNoData {
+  background-color: rgba(148, 163, 184, 0.08);
+  color: var(--text-muted, #94a3b8);
+}
+
+.iconSearchEmpty {
+  background-color: rgba(148, 163, 184, 0.08);
+  color: var(--text-muted, #94a3b8);
+}
+
+.iconError {
+  background-color: rgba(248, 113, 113, 0.12);
+  color: var(--text-danger, #f87171);
+}
+
+.iconOffline {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+/* Content Layout */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 460px;
+  width: 100%;
+}
+
+.title {
+  color: var(--text-main, #f8fafc);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-2, 8px) 0;
+  line-height: 1.35;
+}
+
+.titleSm {
+  font-size: 14px;
+}
+
+.titleMd {
+  font-size: 16px;
+}
+
+.titleLg {
+  font-size: 18px;
+}
+
+.description {
+  color: var(--text-muted, #94a3b8);
+  margin: 0;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.descriptionSm {
+  font-size: 12px;
+}
+
+.descriptionMd {
+  font-size: 13px;
+}
+
+.descriptionLg {
+  font-size: 14px;
+}
+
+/* Echoed Search Query */
+.queryBadge {
+  display: inline-block;
+  padding: 1px 6px;
+  margin: 0 3px;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.95em;
+  color: var(--text-accent, #f8fafc);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+/* Actions Section */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-4, 16px);
+}
+
+.secondaryButton {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color var(--duration-fast, 150ms) ease,
+              background-color var(--duration-fast, 150ms) ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  color: var(--text-main, #f8fafc);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.secondaryButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Custom Extra Slot */
+.extraSlot {
+  margin-top: var(--space-3, 12px);
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconWrapper,
+  .secondaryButton {
+    transition: none;
+  }
+}

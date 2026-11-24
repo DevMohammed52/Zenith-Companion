@@ -1,0 +1,97 @@
+.statCard {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+  margin: 0;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.statCard:hover {
+  border-color: var(--border-strong);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.iconSlot {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.unit {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.delta_positive {
+  color: var(--text-success, #4ade80);
+  background-color: rgba(74, 222, 128, 0.1);
+}
+
+.delta_negative {
+  color: var(--text-danger, #f87171);
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+.delta_neutral {
+  color: var(--text-dim, #64748b);
+  background-color: rgba(100, 116, 139, 0.1);
+}
+
+.context {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
