@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import {
   clampNumber,
   formatCompactGold,
@@ -18,11 +19,13 @@ describe("pets architecture and modularization contracts", () => {
   const hookPath = path.join(petsDir, "hooks", "usePetsState.ts");
   const componentsDir = path.join(petsDir, "components");
 
-  it("orchestrator page.tsx exists and is under 150 lines", () => {
-    expect(existsSync(pagePath)).toBe(true);
-    const content = readFileSync(pagePath, "utf-8");
-    const lines = content.split(/\r?\n/).length;
-    expect(lines).toBeLessThan(150);
+  it("orchestrator page.tsx exists, stays under 150 lines, and uses clean CSS modules without style jsx", () => {
+    assertCleanMigratedRoute({
+      routeSubpath: "pets",
+      maxPageLines: 150,
+      allowStateBlock: true,
+      allowDirectLucide: true,
+    });
   });
 
   it("exports dedicated custom hook usePetsState", () => {

@@ -15,6 +15,7 @@
     "test:prod:routes": "playwright test --config=playwright.production.config.ts",
     "test:prelive": "npm run test:unit && npm run typecheck && npm run test:a11y && npm run test:prod && npm run audit:deadcode",
     "audit:deadcode": "knip --exclude exports,types",
+    "audit:route": "node scripts/audit-route.mjs",
     "audit:cache-headers": "node scripts/audit-cache-headers.mjs",
     "audit:lighthouse": "node scripts/run-lighthouse-audit.mjs",
     "rebuild": "node scripts/build-item-lore-signals.mjs && node scripts/build-enemy-weather-preferences.mjs && node scripts/rebuild-usage-map.mjs && node scripts/build-offline-cache-manifest.mjs && node scripts/build-zenith-changelog.mjs",
