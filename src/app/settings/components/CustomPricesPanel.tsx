@@ -1,8 +1,14 @@
 "use client";
 
-import { Coins, Plus, Trash2, X } from "lucide-react";
+import { Coins, Plus, Trash2 } from "lucide-react";
 import { getSafeMarketValue } from "@/lib/market-pricing";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Banner } from "@/components/ui/Banner";
+import { ModalSheet } from "@/components/ui/ModalSheet";
+import { TextInput } from "@/components/ui/TextInput";
 import type { UseSettingsStateReturn } from "../types";
+import styles from "../Settings.module.css";
 
 export default function CustomPricesPanel({
   state,
@@ -59,156 +65,191 @@ export default function CustomPricesPanel({
     clearCustomPrices,
     confirmClearOpen,
     setConfirmClearOpen,
-    confirmCancelRef,
-    confirmModalRef,
     confirmClearCustomPrices,
   } = state;
 
   return (
-    <div className="settings-panel settings-panel-wide">
-      <h2><Coins size={17} /> Custom Item Prices</h2>
-      <p className="settings-panel-note">
-        Custom prices override market cache values everywhere. Use whole gold values; safe market pricing still filters suspicious market outliers before comparisons.
-      </p>
-      <div className="custom-price-builder">
-        <label className="custom-price-item-field">
-          <span>Item</span>
-          <div className="custom-price-combobox">
-            <input
-              className="control-input"
-              placeholder="Search item name"
-              value={customItemName}
-              role="combobox"
-              aria-autocomplete="list"
-              aria-expanded={itemSearchOpen && itemSuggestions.length > 0}
-              aria-controls={itemSuggestionsId}
-              aria-activedescendant={
-                itemSearchOpen && activeSuggestionIndex >= 0
-                  ? `${itemSuggestionsId}-${activeSuggestionIndex}`
-                  : undefined
-              }
-              onBlur={() => window.setTimeout(closeItemSearch, 120)}
-              onChange={(e) => {
-                setCustomItemName(e.target.value);
-                setItemSearchOpen(true);
-                setActiveSuggestionIndex(0);
-              }}
-              onFocus={() => setItemSearchOpen(true)}
-              onKeyDown={handleCustomItemKeyDown}
-            />
-            {itemSearchOpen && itemSuggestions.length > 0 && (
-              <div className="custom-price-suggestions" id={itemSuggestionsId} role="listbox" aria-label="Item suggestions">
-                {itemSuggestions.map((name, index) => {
-                  const item = allItemsDb?.[name];
-                  return (
-                    <button
-                      key={name}
-                      id={`${itemSuggestionsId}-${index}`}
-                      type="button"
-                      role="option"
-                      aria-label={`${name}, ${item?.type ? String(item.type).replace(/_/g, " ") : "Item"}`}
-                      aria-selected={index === activeSuggestionIndex}
-                      className={index === activeSuggestionIndex ? "custom-price-suggestion-active" : ""}
-                      onMouseEnter={() => setActiveSuggestionIndex(index)}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => selectCustomItem(name)}
-                    >
-                      <span>{name}</span>
-                      <small>{item?.type ? String(item.type).replace(/_/g, " ") : "Item"}</small>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </label>
-        <label className="custom-price-value-field">
-          <span>Custom value</span>
-          <input
-            className="control-input"
-            min="0"
-            type="number"
-            value={customItemPrice}
-            onChange={(e) => setCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))}
-            placeholder="Gold each"
+    <Card
+      className={`settings-panel settings-panel-wide ${styles.fullWidth}`}
+      title={
+        <h2 className={styles.cardTitle}>
+          <Coins size={18} style={{ color: "var(--text-accent)" }} />
+          Custom Item Prices
+        </h2>
+      }
+      subtitle={
+        <p className={styles.cardSubtitle}>
+          Override live market cache values with custom gold prices across all calculators and crafting recipes.
+        </p>
+      }
+    >
+      <div className={styles.customPriceForm}>
+        <div className={styles.customPriceCombobox}>
+          <TextInput
+            label="Item Name"
+            placeholder="Search item to override..."
+            value={customItemName}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={itemSearchOpen && itemSuggestions.length > 0}
+            aria-controls={itemSuggestionsId}
+            aria-activedescendant={
+              itemSearchOpen && activeSuggestionIndex >= 0
+                ? `${itemSuggestionsId}-${activeSuggestionIndex}`
+                : undefined
+            }
+            onBlur={() => window.setTimeout(closeItemSearch, 150)}
+            onChange={(e) => {
+              setCustomItemName(e.target.value);
+              setItemSearchOpen(true);
+              setActiveSuggestionIndex(0);
+            }}
+            onFocus={() => setItemSearchOpen(true)}
+            onKeyDown={handleCustomItemKeyDown}
           />
-        </label>
-        <button className="control-input custom-price-add" type="button" onClick={saveCustomPrice}>
-          <Plus size={14} /> Add
-        </button>
+
+          {itemSearchOpen && itemSuggestions.length > 0 && (
+            <div
+              className={`custom-price-suggestions ${styles.customPriceSuggestions}`}
+              id={itemSuggestionsId}
+              role="listbox"
+              aria-label="Item search suggestions"
+            >
+              {itemSuggestions.map((name, index) => {
+                const item = allItemsDb?.[name];
+                const isActive = index === activeSuggestionIndex;
+                return (
+                  <button
+                    key={name}
+                    id={`${itemSuggestionsId}-${index}`}
+                    type="button"
+                    role="option"
+                    aria-label={`${name}, ${item?.type ? String(item.type).replace(/_/g, " ") : "Item"}`}
+                    aria-selected={isActive}
+                    className={`${styles.suggestionOption} ${
+                      isActive ? `custom-price-suggestion-active ${styles.suggestionOptionActive}` : ""
+                    }`}
+                    onMouseEnter={() => setActiveSuggestionIndex(index)}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectCustomItem(name)}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{name}</span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                      {item?.type ? String(item.type).replace(/_/g, " ") : "Item"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <TextInput
+            label="Custom Value (Gold)"
+            type="number"
+            min="0"
+            placeholder="e.g. 15000"
+            value={customItemPrice}
+            onChange={(e) =>
+              setCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))
+            }
+          />
+        </div>
+
+        <Button
+          variant="primary"
+          icon={<Plus size={15} />}
+          onClick={saveCustomPrice}
+          style={{ height: "42px", marginBottom: "2px" }}
+        >
+          Add Override
+        </Button>
       </div>
-      <div className="settings-actions-row custom-price-actions">
-        <span>{customPriceRows.length.toLocaleString()} active override{customPriceRows.length === 1 ? "" : "s"}</span>
-        <button
-          type="button"
-          className="settings-link-button settings-danger-link"
+
+      <div className={styles.customPriceActionsRow}>
+        <span className={styles.customPriceCount}>
+          {customPriceRows.length.toLocaleString()} active override
+          {customPriceRows.length === 1 ? "" : "s"}
+        </span>
+        <Button
+          variant="danger"
+          size="sm"
           onClick={clearCustomPrices}
           disabled={customPriceRows.length === 0}
         >
           Clear All Overrides
-        </button>
+        </Button>
       </div>
 
+      {suspiciousCustomRows.length > 0 && (
+        <Banner variant="warning" style={{ marginTop: "1rem" }}>
+          {suspiciousCustomRows.length} price override is over 5x higher than safe market value. Verify values to avoid skewing profit calculations.
+        </Banner>
+      )}
+
       {customPriceRows.length === 0 ? (
-        <p className="settings-empty-note">No custom prices yet. Calculators will use safe market, recipe, or vendor values.</p>
+        <p className={styles.storageStatusNote}>
+          No custom prices set yet. All calculators will use safe market, recipe, or vendor values.
+        </p>
       ) : (
-        <div className="custom-price-list">
+        <div className={styles.customPriceList}>
           {customPriceRows.map(([name, price]) => {
             const market = getSafeMarketValue(marketData?.[name]);
             return (
-              <div className="custom-price-row" key={name}>
-                <span>
-                  <strong>{name}</strong>
-                  <small>{market > 0 ? `Safe market ${market.toLocaleString()}g` : "No safe market price"}</small>
-                </span>
-                <em>{Number(price).toLocaleString()}g</em>
-                <button type="button" onClick={() => removeCustomPrice(name)} aria-label={`Remove ${name}`}>
-                  <Trash2 size={14} />
-                </button>
+              <div className={styles.customPriceRow} key={name}>
+                <div className={styles.customPriceItemInfo}>
+                  <strong className={styles.customPriceItemName}>{name}</strong>
+                  <span className={styles.customPriceItemRef}>
+                    {market > 0
+                      ? `Safe market: ${market.toLocaleString()}g`
+                      : "No safe market price recorded"}
+                  </span>
+                </div>
+
+                <div className={styles.customPriceValues}>
+                  <span className={styles.customPriceGold}>
+                    {Number(price).toLocaleString()}g
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<Trash2 size={14} />}
+                    onClick={() => removeCustomPrice(name)}
+                    aria-label={`Remove override for ${name}`}
+                  />
+                </div>
               </div>
             );
           })}
         </div>
       )}
-      {suspiciousCustomRows.length > 0 && (
-        <p className="settings-warning-note">
-          {suspiciousCustomRows.length} custom price override is far above safe market. That may be intentional, but it will override every calculator.
-        </p>
-      )}
 
       {confirmClearOpen && (
-        <div className="modal-overlay settings-confirm-overlay" role="presentation" onClick={() => setConfirmClearOpen(false)}>
-          <div
-            ref={confirmModalRef}
-            className="modal-content settings-confirm-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="settings-clear-prices-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h2 id="settings-clear-prices-title">Clear Custom Prices</h2>
-              <button className="close-btn" type="button" aria-label="Close confirmation" onClick={() => setConfirmClearOpen(false)}>
-                <X size={18} />
-              </button>
+        <ModalSheet
+          isOpen={confirmClearOpen}
+          onClose={() => setConfirmClearOpen(false)}
+          title="Clear All Custom Prices"
+          description={`Remove all ${customPriceRows.length.toLocaleString()} custom price overrides? All calculators will return to default market values.`}
+          maxWidth="sm"
+          footer={
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", width: "100%" }}>
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmClearOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={confirmClearCustomPrices}
+              >
+                Clear Overrides
+              </Button>
             </div>
-            <div className="modal-body">
-              <p className="settings-panel-note">
-                Remove all {customPriceRows.length.toLocaleString()} custom price override{customPriceRows.length === 1 ? "" : "s"}?
-                Calculators will immediately return to safe market, recipe, or vendor values.
-              </p>
-              <div className="settings-confirm-actions">
-                <button type="button" ref={confirmCancelRef} className="settings-link-button" onClick={() => setConfirmClearOpen(false)} autoFocus>
-                  Cancel
-                </button>
-                <button type="button" className="settings-link-button settings-danger-link" onClick={confirmClearCustomPrices}>
-                  Clear overrides
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          }
+        />
       )}
-    </div>
+    </Card>
   );
 }

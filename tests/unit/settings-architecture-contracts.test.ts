@@ -6,7 +6,6 @@ import {
   formatBytes,
   formatPercent,
   initialOfflineStorageState,
-  themes,
 } from "../../src/app/settings/types";
 
 describe("Settings Architecture & Helper Contracts", () => {
@@ -56,16 +55,7 @@ describe("Settings Architecture & Helper Contracts", () => {
     });
   });
 
-  describe("Theme and Storage Defaults", () => {
-    it("provides the four supported themes with color palettes", () => {
-      expect(themes.length).toBe(4);
-      const themeNames = themes.map((t) => t.value);
-      expect(themeNames).toEqual(["ember", "forest", "arcane", "frost"]);
-      themes.forEach((t) => {
-        expect(t.colors.length).toBe(3);
-      });
-    });
-
+  describe("Storage Defaults", () => {
     it("has safe initial offline storage defaults", () => {
       expect(initialOfflineStorageState.cacheEntries).toBeNull();
       expect(initialOfflineStorageState.cacheEntriesChecked).toBe(false);
@@ -87,14 +77,10 @@ describe("Settings Architecture & Helper Contracts", () => {
       const expectedFiles = [
         "src/app/settings/types.ts",
         "src/app/settings/hooks/useSettingsState.ts",
-        "src/app/settings/components/ToolPicker.tsx",
         "src/app/settings/components/OfflineStoragePanel.tsx",
         "src/app/settings/components/SettingsOverview.tsx",
         "src/app/settings/components/AccountPanel.tsx",
         "src/app/settings/components/AppearancePanel.tsx",
-        "src/app/settings/components/FallbackToolsPanel.tsx",
-        "src/app/settings/components/ActiveProfilePanel.tsx",
-        "src/app/settings/components/PrivacyPanel.tsx",
         "src/app/settings/components/CustomPricesPanel.tsx",
         "src/app/settings/components/DataCachePanel.tsx",
         "src/app/settings/components/ShortcutsPanel.tsx",

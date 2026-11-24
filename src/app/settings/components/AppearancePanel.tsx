@@ -1,7 +1,13 @@
 "use client";
 
-import { Bell, Compass, Palette } from "lucide-react";
-import { themes, type UseSettingsStateReturn } from "../types";
+import { useMemo } from "react";
+import { Bell, Smartphone, SlidersHorizontal, Volume2 } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { DOCKABLE_NAV_ITEMS } from "@/lib/navigation";
+import { DEFAULT_DOCK_TABS } from "@/lib/route-history";
+import type { UseSettingsStateReturn } from "../types";
+import styles from "../Settings.module.css";
 
 export default function AppearancePanel({
   state,
@@ -10,152 +16,136 @@ export default function AppearancePanel({
 }) {
   const { preferences, setPreferences } = state;
 
+  const hasCustomTabs = Array.isArray(preferences.mobileDockTabs) && preferences.mobileDockTabs.length === 3;
+  const activeTabs = useMemo(() => {
+    return hasCustomTabs ? preferences.mobileDockTabs : DEFAULT_DOCK_TABS;
+  }, [hasCustomTabs, preferences.mobileDockTabs]);
+
+  const handleTabChange = (index: number, newHref: string) => {
+    const updated = [...activeTabs];
+    updated[index] = newHref;
+    setPreferences({ mobileDockTabs: updated });
+  };
+
   return (
-    <div className="settings-panel">
-      <h2><Palette size={17} /> Appearance</h2>
-      <div className="theme-grid" role="radiogroup" aria-label="Color theme">
-        {themes.map((theme) => (
-          <button
-            type="button"
-            key={theme.value}
-            role="radio"
-            aria-checked={preferences.theme === theme.value}
-            className={`theme-option ${preferences.theme === theme.value ? "theme-option-active" : ""}`}
-            onClick={() => setPreferences({ theme: theme.value })}
-          >
-            <span>{theme.label}</span>
-            <div className="theme-swatch-row">
-              {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
-            </div>
-          </button>
-        ))}
-      </div>
-      <div className="settings-nav-style settings-desktop-only" aria-label="Desktop navigation style">
-        <span><Compass size={15} /> Desktop navigation</span>
-        <div>
-          {([
-            ["sidebar", "Sidebar"],
-            ["dock", "Zenith Dock"],
-          ] as const).map(([style, label]) => (
-            <button
-              type="button"
-              key={style}
-              className={preferences.desktopNavigationStyle === style ? "settings-nav-style-active" : ""}
-              aria-pressed={preferences.desktopNavigationStyle === style}
-              onClick={() => setPreferences({ desktopNavigationStyle: style })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {preferences.desktopNavigationStyle === "dock" && (
-        <div className="settings-nav-style settings-nav-style-three settings-desktop-only" aria-label="Desktop dock position">
-          <span><Compass size={15} /> Dock position</span>
-          <div>
-            {(["bottom", "left", "right"] as const).map((position) => (
-              <button
-                key={position}
-                type="button"
-                className={(preferences.desktopDockPosition ?? "bottom") === position ? "settings-nav-style-active" : ""}
-                aria-pressed={(preferences.desktopDockPosition ?? "bottom") === position}
-                onClick={() => setPreferences({ desktopDockPosition: position })}
-              >
-                {position[0].toUpperCase() + position.slice(1)}
-              </button>
+    <Card
+      className={`settings-panel ${styles.panel}`}
+      title={
+        <h2 className={styles.cardTitle}>
+          <SlidersHorizontal size={18} style={{ color: "var(--text-accent)" }} />
+          Interface & Feedback
+        </h2>
+      }
+      subtitle={
+        <p className={styles.cardSubtitle}>
+          Customise mobile navigation tabs, touch haptics, and interaction audio cues.
+        </p>
+      }
+    >
+      <div className={`settings-mobile-only ${styles.settingGroup}`}>
+        <span className={styles.settingLabel}>
+          <Smartphone size={14} style={{ color: "var(--text-accent)" }} />
+          Mobile Navigation Dock
+        </span>
+        <SegmentedControl
+          ariaLabel="Mobile dock tabs mode"
+          value={hasCustomTabs ? "custom" : "auto"}
+          onChange={(val) => {
+            if (val === "auto") {
+              setPreferences({ mobileDockTabs: [] });
+            } else {
+              setPreferences({ mobileDockTabs: DEFAULT_DOCK_TABS });
+            }
+          }}
+          options={[
+            { value: "auto", label: "Top 3 Visited (Dynamic)" },
+            { value: "custom", label: "Custom 3 Tabs" },
+          ]}
+          fullWidth
+        />
+        {hasCustomTabs ? (
+          <div className={styles.dockTabGrid}>
+            {[0, 1, 2].map((slotIdx) => (
+              <div key={slotIdx} className={styles.dockSlotRow}>
+                <span className={styles.dockSlotLabel}>Tab {slotIdx + 1}</span>
+                <select
+                  className={styles.dockSelect}
+                  aria-label={`Mobile dock tab slot ${slotIdx + 1}`}
+                  value={activeTabs[slotIdx]}
+                  onChange={(e) => handleTabChange(slotIdx, e.target.value)}
+                >
+                  {DOCKABLE_NAV_ITEMS.map((item) => (
+                    <option key={item.href} value={item.href}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             ))}
           </div>
-        </div>
-      )}
-      <div className="settings-nav-style settings-mobile-only" aria-label="Mobile navigation style">
-        <span><Compass size={15} /> Mobile navigation</span>
-        <div>
-          <button
-            type="button"
-            className={preferences.mobileNavigationStyle !== "command" ? "settings-nav-style-active" : ""}
-            aria-pressed={preferences.mobileNavigationStyle !== "command"}
-            onClick={() => setPreferences({ mobileNavigationStyle: "standard" })}
-          >
-            Standard
-          </button>
-          <button
-            type="button"
-            className={preferences.mobileNavigationStyle === "command" ? "settings-nav-style-active" : ""}
-            aria-pressed={preferences.mobileNavigationStyle === "command"}
-            onClick={() => setPreferences({ mobileNavigationStyle: "command" })}
-          >
-            Radial menu
-          </button>
-        </div>
+        ) : (
+          <p className={styles.settingHelp}>
+            Automatically prioritises the 3 tools and databases you visit most often in your browsing session.
+          </p>
+        )}
       </div>
-      {preferences.mobileNavigationStyle === "command" && (
-        <div className="settings-nav-style settings-mobile-only" aria-label="Radial menu thumb side">
-          <span><Compass size={15} /> Radial reach</span>
-          <div>
-            <button
-              type="button"
-              className={(preferences.mobileCommandTriggerSide ?? "left") === "left" ? "settings-nav-style-active" : ""}
-              aria-pressed={(preferences.mobileCommandTriggerSide ?? "left") === "left"}
-              onClick={() => setPreferences({ mobileCommandTriggerSide: "left" })}
-            >
-              Left thumb
-            </button>
-            <button
-              type="button"
-              className={preferences.mobileCommandTriggerSide === "right" ? "settings-nav-style-active" : ""}
-              aria-pressed={preferences.mobileCommandTriggerSide === "right"}
-              onClick={() => setPreferences({ mobileCommandTriggerSide: "right" })}
-            >
-              Right thumb
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="settings-nav-style settings-mobile-only" aria-label="Mobile haptic feedback">
-        <span><Compass size={15} /> Touch feedback</span>
-        <div>
-          <button
-            type="button"
-            className={preferences.mobileHaptics ? "settings-nav-style-active" : ""}
-            aria-pressed={preferences.mobileHaptics}
-            onClick={() => setPreferences({ mobileHaptics: true })}
-          >
-            Subtle
-          </button>
-          <button
-            type="button"
-            className={!preferences.mobileHaptics ? "settings-nav-style-active" : ""}
-            aria-pressed={!preferences.mobileHaptics}
-            onClick={() => setPreferences({ mobileHaptics: false })}
-          >
-            Off
-          </button>
-        </div>
+
+      <div className={`settings-mobile-only ${styles.settingGroup}`} style={{ marginTop: "1rem" }}>
+        <span className={styles.settingLabel}>
+          <Smartphone size={14} style={{ color: "var(--text-accent)" }} />
+          Touch Feedback (Haptics)
+        </span>
+        <SegmentedControl
+          ariaLabel="Mobile touch feedback"
+          value={preferences.mobileHaptics ? "subtle" : "off"}
+          onChange={(val) => setPreferences({ mobileHaptics: val === "subtle" })}
+          options={[
+            { value: "subtle", label: "Subtle Haptics" },
+            { value: "off", label: "Off" },
+          ]}
+          fullWidth
+        />
       </div>
-      <div className="settings-nav-style" aria-label="In-app notification tips">
-        <span><Bell size={15} /> Tips and notices</span>
-        <div>
-          <button
-            type="button"
-            className={preferences.inAppNotifications ? "settings-nav-style-active" : ""}
-            aria-pressed={preferences.inAppNotifications}
-            onClick={() => setPreferences({ inAppNotifications: true })}
-          >
-            Enabled
-          </button>
-          <button
-            type="button"
-            className={!preferences.inAppNotifications ? "settings-nav-style-active" : ""}
-            aria-pressed={!preferences.inAppNotifications}
-            onClick={() => setPreferences({ inAppNotifications: false })}
-          >
-            Disabled
-          </button>
-        </div>
+
+      <div className={styles.settingGroup} style={{ marginTop: "1rem" }}>
+        <span className={styles.settingLabel}>
+          <Volume2 size={14} style={{ color: "var(--text-accent)" }} />
+          Interaction Sounds
+        </span>
+        <SegmentedControl
+          ariaLabel="Interface audio cues"
+          value={preferences.soundEffects ? "enabled" : "muted"}
+          onChange={(val) => {
+            const enabled = val === "enabled";
+            setPreferences({
+              soundEffects: enabled,
+              notificationSounds: enabled,
+            });
+          }}
+          options={[
+            { value: "enabled", label: "Enabled" },
+            { value: "muted", label: "Muted" },
+          ]}
+          fullWidth
+        />
       </div>
-      <p className="settings-panel-note">
-        These are in-app notices only. Browser notification permission is requested only from Market Watch after you press its permission button.
-      </p>
-    </div>
+
+      <div className={styles.settingGroup} style={{ marginTop: "1rem" }}>
+        <span className={styles.settingLabel}>
+          <Bell size={14} style={{ color: "var(--text-accent)" }} />
+          In-App Guidance Tips
+        </span>
+        <SegmentedControl
+          ariaLabel="In-app guidance tips"
+          value={preferences.inAppNotifications ? "enabled" : "disabled"}
+          onChange={(val) => setPreferences({ inAppNotifications: val === "enabled" })}
+          options={[
+            { value: "enabled", label: "Enabled" },
+            { value: "disabled", label: "Disabled" },
+          ]}
+          fullWidth
+        />
+      </div>
+    </Card>
   );
 }

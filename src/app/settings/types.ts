@@ -1,14 +1,6 @@
 import type React from "react";
-import type { Preferences, ThemeName } from "@/lib/preferences";
-import type { ToolSkill } from "@/lib/skill-profit";
+import type { Preferences } from "@/lib/preferences";
 import type { CharacterProfile } from "@/lib/profiles";
-
-export const themes: { value: ThemeName; label: string; colors: string[] }[] = [
-  { value: "ember", label: "Ember", colors: ["#f5b041", "#4ade80", "#f87171"] },
-  { value: "forest", label: "Forest", colors: ["#65a30d", "#22c55e", "#38bdf8"] },
-  { value: "arcane", label: "Arcane", colors: ["#a78bfa", "#34d399", "#fb7185"] },
-  { value: "frost", label: "Frost", colors: ["#38bdf8", "#a7f3d0", "#f472b6"] },
-];
 
 export function formatAge(value?: string): string {
   if (!value) return "Waiting for cache";
@@ -117,9 +109,7 @@ export type UseSettingsStateReturn = {
   customPriceRows: [string, number][];
   suspiciousCustomRows: [string, number][];
 
-  // Tool Picker & Modals
-  openToolPicker: ToolSkill | null;
-  setOpenToolPicker: React.Dispatch<React.SetStateAction<ToolSkill | null>>;
+  // Modals
   confirmClearOpen: boolean;
   setConfirmClearOpen: (open: boolean) => void;
   confirmCancelRef: React.RefObject<HTMLButtonElement | null>;

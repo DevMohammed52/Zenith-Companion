@@ -10,7 +10,6 @@ import {
 import { usePreferences } from "@/lib/preferences";
 import { isStarterProfile, useProfiles } from "@/lib/profiles";
 import { useData } from "@/context/DataContext";
-import type { ToolSkill } from "@/lib/skill-profit";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
 import {
   barteringBuffPercent,
@@ -29,7 +28,6 @@ export function useSettingsState(): UseSettingsStateReturn {
   const [customItemPrice, setCustomItemPrice] = useState<number | "">("");
   const [itemSearchOpen, setItemSearchOpen] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
-  const [openToolPicker, setOpenToolPicker] = useState<ToolSkill | null>(null);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
   const confirmModalRef = useRef<HTMLDivElement | null>(null);
@@ -233,8 +231,6 @@ export function useSettingsState(): UseSettingsStateReturn {
     itemSuggestions,
     customPriceRows,
     suspiciousCustomRows,
-    openToolPicker,
-    setOpenToolPicker,
     confirmClearOpen,
     setConfirmClearOpen,
     confirmCancelRef,
