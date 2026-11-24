@@ -53,6 +53,8 @@ export function useItemsFilter({
   const [viewMode, setViewModeState] = useState<ViewMode>('table');
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [visibleCount, setVisibleCount] = useState(DESKTOP_ITEM_BATCH_SIZE);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const itemBatchSize = isCompactViewport ? MOBILE_ITEM_BATCH_SIZE : DESKTOP_ITEM_BATCH_SIZE;
@@ -81,6 +83,7 @@ export function useItemsFilter({
 
   useEffect(() => {
     setVisibleCount(itemBatchSize);
+    setCurrentPage(1);
   }, [
     itemBatchSize,
     searchTerm,
@@ -196,10 +199,21 @@ export function useItemsFilter({
     sortDesc,
   ]);
 
-  const visibleItems = useMemo(
-    () => filteredItems.slice(0, visibleCount),
-    [filteredItems, visibleCount],
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const pageItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage, pageSize]);
+
+  // Aliased to pageItems to maintain 50-item bounded memory footprint
+  const visibleItems = pageItems;
 
   const showCardLayout = isCompactViewport || viewMode === 'cards';
   const showTableLayout = !isCompactViewport && viewMode === 'table';
@@ -241,6 +255,16 @@ export function useItemsFilter({
     setSortDesc(true);
   };
 
+  const handlePageChange = (page: number) => {
+    const targetPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(targetPage);
+  };
+
+  const handlePageSizeChange = (nextSize: number) => {
+    setPageSize(nextSize);
+    setCurrentPage(1);
+  };
+
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedType('ALL');
@@ -250,10 +274,13 @@ export function useItemsFilter({
     setHideNonMarket(false);
     setSortBy('volume');
     setSortDesc(true);
+    setCurrentPage(1);
   };
 
   const loadMore = () => {
-    setVisibleCount((count) => count + itemBatchSize);
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
   };
 
   return {
@@ -283,6 +310,14 @@ export function useItemsFilter({
     visibleCount,
     setVisibleCount,
     itemBatchSize,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    pageItems,
+    handlePageChange,
+    handlePageSizeChange,
     filteredItems,
     visibleItems,
     showCardLayout,

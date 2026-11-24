@@ -188,7 +188,7 @@ export function ItemFilterPicker<T extends string>({
         onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span>{renderOptionLabel(selected)}</span>
+        <span className="item-select-label">{renderOptionLabel(selected)}</span>
         <ChevronDown size={15} aria-hidden="true" />
       </button>
       {open && (

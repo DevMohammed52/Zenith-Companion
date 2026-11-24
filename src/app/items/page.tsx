@@ -6,6 +6,8 @@ import { ItemsHeader } from './components/ItemsHeader';
 import { ItemsFilterBar } from './components/ItemsFilterBar';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemsCardGrid } from './components/ItemsCardGrid';
+import { ItemsPagination } from './components/ItemsPagination';
+import { BackToTopButton } from './components/BackToTopButton';
 import { ItemsStyles } from './components/ItemsStyles';
 import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
 
@@ -52,6 +54,14 @@ export type {
 function ItemsArchiveContent() {
   const state = useItemsState();
 
+  const metaCountText =
+    state.filteredItems.length > state.pageSize
+      ? `Showing ${(state.currentPage - 1) * state.pageSize + 1}–${Math.min(
+          state.currentPage * state.pageSize,
+          state.filteredItems.length,
+        ).toLocaleString()} of ${state.filteredItems.length.toLocaleString()} items`
+      : `${state.filteredItems.length.toLocaleString()} items`;
+
   return (
     <main className="container items-db-page" aria-label="Item Database">
       <ItemsStyles />
@@ -69,7 +79,10 @@ function ItemsArchiveContent() {
       )}
 
       {!state.loadError && (state.loading || state.index.length === 0) && (
-        <LoadingState title="Loading item data" description="Preparing the item index, market rows, and relationship map." />
+        <LoadingState
+          title="Loading item data"
+          description="Preparing the item index, market rows, and relationship map."
+        />
       )}
 
       {!state.loadError && state.index.length > 0 && state.filteredItems.length === 0 && (
@@ -91,13 +104,13 @@ function ItemsArchiveContent() {
       {!state.loadError && state.filteredItems.length > 0 && (
         <div style={{ minHeight: '640px', contain: 'layout' }}>
           <div className="result-meta">
-            <span>{state.visibleItems.length.toLocaleString()} of {state.filteredItems.length.toLocaleString()} shown</span>
+            <span>{metaCountText}</span>
             <span>Sorted by {state.currentSortLabel}</span>
           </div>
 
           {state.showTableLayout && (
             <ItemsTable
-              items={state.visibleItems}
+              items={state.pageItems}
               sortBy={state.sortBy}
               sortDesc={state.sortDesc}
               onSort={state.handleSort}
@@ -107,22 +120,23 @@ function ItemsArchiveContent() {
 
           {state.showCardLayout && (
             <ItemsCardGrid
-              items={state.visibleItems}
+              items={state.pageItems}
               onOpenItem={state.openItemById}
             />
           )}
 
-          {state.visibleItems.length < state.filteredItems.length && (
-            <button
-              type="button"
-              className="load-more"
-              onClick={state.loadMore}
-            >
-              Load {state.itemBatchSize} more
-            </button>
-          )}
+          <ItemsPagination
+            currentPage={state.currentPage}
+            totalPages={state.totalPages}
+            pageSize={state.pageSize}
+            totalItems={state.filteredItems.length}
+            onPageChange={state.handlePageChange}
+            onPageSizeChange={state.handlePageSizeChange}
+          />
         </div>
       )}
+
+      <BackToTopButton />
     </main>
   );
 }

@@ -85,7 +85,7 @@ export function useItemsData() {
   useEffect(() => {
     if (index.length === 0) return;
     try {
-      const idParam = searchParams.get('id');
+      const idParam = searchParams.get('item') || searchParams.get('id');
       const nameParam = searchParams.get('name') || searchParams.get('q');
 
       if (idParam && idParam.trim()) {

@@ -460,7 +460,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Ancient Parchment",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -476,7 +476,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Ancient Parchment (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -492,7 +492,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Bloodmoon Bow",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -508,7 +508,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Celestial Scroll",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -524,7 +524,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Celestial Scroll (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -540,7 +540,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Cursed Ticket (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -556,7 +556,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Ethereal Gem",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -572,7 +572,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Ethereal Gem (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -588,7 +588,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Radiance",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -604,7 +604,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Radiance Recipe",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -620,7 +620,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Stone",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -636,7 +636,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Stone (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -652,7 +652,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Ticket",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -668,7 +668,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Ticket (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -684,7 +684,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunar Ticket (Untradable)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -700,7 +700,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunarweave Boots",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -716,7 +716,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunarweave Gloves",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -732,7 +732,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Lunarweave Leggings",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -748,7 +748,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonblood Tincture",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -764,7 +764,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonlance",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -780,7 +780,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonlight Essence",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -796,7 +796,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonlight Essence (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -812,7 +812,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonlit Chalice",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -828,7 +828,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonlit Chalice (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -844,7 +844,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonshadow",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -860,7 +860,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonshadow Guard",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -876,7 +876,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonshadow Vestment",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -892,7 +892,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonshot",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -908,7 +908,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonstone Ink",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -924,7 +924,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Moonstone Ink (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -1053,7 +1053,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Starfire Plate",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -1069,7 +1069,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Starglitter",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -1085,7 +1085,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Starlight Gem",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",
@@ -1101,7 +1101,7 @@ export const ITEM_LORE_DESCRIPTION_SIGNALS = [
   {
     "itemName": "Starlight Gem (2024)",
     "entryIds": [
-      "world-the-celestial-system-of-valaron",
+      "world-celestial-system",
       "concepts-cults"
     ],
     "reason": "The item description uses sky, lunar, or star language that can support celestial-system research.",

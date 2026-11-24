@@ -6,45 +6,28 @@ import type { ItemDbStats } from '../types';
 
 export interface ItemsHeaderProps {
   totalCataloged: number;
-  stats: ItemDbStats;
+  stats?: ItemDbStats;
   filteredCount: number;
 }
 
-export function ItemsHeader({ totalCataloged, stats, filteredCount }: ItemsHeaderProps) {
-  return (
-    <>
-      <div className="header">
-        <h1 className="header-title">
-          <ZenithIcon name="items" size={24} style={{ color: 'var(--text-accent)' }} /> Item Database
-        </h1>
-        <div className="header-status">
-          <div className="status-dot" />
-          <span className="mono">{totalCataloged.toLocaleString()} ITEMS CATALOGED</span>
-        </div>
-      </div>
+export function ItemsHeader({ totalCataloged, filteredCount }: ItemsHeaderProps) {
+  const isFiltered = filteredCount !== totalCataloged;
 
-      <section aria-label="Item database summary metrics" className="db-summary" tabIndex={0}>
-        <div>
-          <span className="summary-label">Market listed</span>
-          <strong>{stats.marketListed.toLocaleString()}</strong>
-        </div>
-        <div>
-          <span className="summary-label">Craftable</span>
-          <strong>{stats.craftable.toLocaleString()}</strong>
-        </div>
-        <div>
-          <span className="summary-label">Recipe uses</span>
-          <strong>{stats.used.toLocaleString()}</strong>
-        </div>
-        <div>
-          <span className="summary-label">Lore linked</span>
-          <strong>{stats.loreLinked.toLocaleString()}</strong>
-        </div>
-        <div>
-          <span className="summary-label">Filtered items</span>
-          <strong>{filteredCount.toLocaleString()}</strong>
-        </div>
-      </section>
-    </>
+  return (
+    <div className="header">
+      <div className="header-brand-row">
+        <h1 className="header-title">
+          <ZenithIcon name="items" size={24} style={{ color: 'var(--text-accent)' }} /> Item Directory
+        </h1>
+        <span className="items-count-badge">
+          {isFiltered
+            ? `${filteredCount.toLocaleString()} of ${totalCataloged.toLocaleString()} items`
+            : `${totalCataloged.toLocaleString()} items`}
+        </span>
+      </div>
+      <p className="header-description">
+        Browse equipment, materials, potions, and recipes with live market values, drop sources, and crafting costs.
+      </p>
+    </div>
   );
 }
