@@ -31,7 +31,8 @@ export function useMapState() {
   const mapStageRef = useRef<HTMLDivElement | null>(null);
   const dossierRef = useRef<HTMLElement | null>(null);
   const intelRef = useRef<HTMLElement | null>(null);
-  const [selectedKey, setSelectedKey] = useState("");
+  const locationParam = normalizeLocationKey(searchParams.get("location"));
+  const [selectedKey, setSelectedKey] = useState(() => locationParam);
   const [query, setQuery] = useState("");
   const [activeForecastKey, setActiveForecastKey] = useState<string | null>(null);
 
@@ -122,9 +123,16 @@ export function useMapState() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (selectedKey && locations.some((location) => location.key === selectedKey)) return;
-    if (locations.length > 0) setSelectedKey(locations[0].key);
-  }, [locations, selectedKey]);
+    if (locations.length === 0) return;
+    const targetKey = selectedKey || normalizeLocationKey(searchParams.get("location"));
+    if (targetKey && locations.some((location) => location.key === targetKey)) {
+      if (selectedKey !== targetKey) setSelectedKey(targetKey);
+      return;
+    }
+    if (!selectedKey && locations.length > 0) {
+      setSelectedKey(locations[0].key);
+    }
+  }, [locations, searchParams, selectedKey]);
 
   useEffect(() => {
     setActiveForecastKey(null);
