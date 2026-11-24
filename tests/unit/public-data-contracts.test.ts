@@ -87,6 +87,10 @@ const reviewedPublicJsonFiles: Record<string, { maxBytes: number; whyPublic: str
     maxBytes: 200_000,
     whyPublic: "derived world map/location data",
   },
+  "zenith-changelog.json": {
+    maxBytes: 200_000,
+    whyPublic: "pre-compiled Zenith Companion changelog archive for What's New page",
+  },
 };
 
 const secretPatterns = [
