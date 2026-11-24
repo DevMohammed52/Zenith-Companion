@@ -15754,7 +15754,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Aegis of the Seraph Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Long Forgotten Necklace",
           "amount": 20
@@ -15778,7 +15778,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ashenfire Ward Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 30
@@ -15802,7 +15802,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodbane Barrier Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 40
@@ -15834,7 +15834,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Brute Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Totem",
           "amount": 50
@@ -15862,7 +15862,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Celestial Aegis Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 30
@@ -15881,7 +15881,26 @@
   "Chromite Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Colossus": {
     "dropped_by": [],
@@ -15891,7 +15910,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Colossus Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 10
@@ -15918,7 +15937,26 @@
   "Copper Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Deathgate": {
     "dropped_by": [],
@@ -15928,7 +15966,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Deathgate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 45
@@ -15952,7 +15990,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Essenceweave Shield Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 50
@@ -15976,7 +16014,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Flamebreaker Buckler Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 40
@@ -16000,7 +16038,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Frostbite Guard Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 25
@@ -16024,7 +16062,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Glimmersteel Ward Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Water Elemental Essence",
           "amount": 15
@@ -16051,7 +16089,26 @@
   "Iron Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Ironbark Protector": {
     "dropped_by": [],
@@ -16061,7 +16118,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Ironbark Protector Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 75
@@ -16088,12 +16145,50 @@
   "Lead Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mercury Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Moonshadow Guard": {
     "dropped_by": [],
@@ -16103,7 +16198,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Moonshadow Guard Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Dwarven Whetstone",
           "amount": 35
@@ -16130,7 +16225,26 @@
   "Mystic Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Phoenixguard Shield": {
     "dropped_by": [],
@@ -16140,7 +16254,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenixguard Shield Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 80
@@ -16164,7 +16278,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Runebound Bulwark Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaurs Horn",
           "amount": 75
@@ -16188,7 +16302,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Sentinel's Bulwark Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 10
@@ -16212,7 +16326,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Shadewalker Bulwark Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 20
@@ -16240,7 +16354,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Shadowbound Ward Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 25
@@ -16264,7 +16378,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Soulshield of Redemption Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 10
@@ -16296,7 +16410,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Soulward Barrier Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 10
@@ -16315,7 +16429,26 @@
   "Steel Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbringer Buckler": {
     "dropped_by": [],
@@ -16325,7 +16458,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Stormbringer Buckler Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 20
@@ -16353,7 +16486,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Stormguard Shield Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Umbral Claw",
           "amount": 20
@@ -16377,7 +16510,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Thunderstrike Barrier Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 20
@@ -16396,7 +16529,26 @@
   "Tin Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Twilight Sanctum": {
     "dropped_by": [],
@@ -16406,7 +16558,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Twilight Sanctum Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ivory",
           "amount": 20
@@ -16429,7 +16581,26 @@
   "Uranium Shield": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Verdant Sentinel": {
     "dropped_by": [],
@@ -16439,7 +16610,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Verdant Sentinel Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 12
@@ -16463,7 +16634,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ashenfire Crown Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Cloth",
           "amount": 70
@@ -16491,7 +16662,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Balthazar's Head Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Claw of the Alpha",
           "amount": 20
@@ -16515,7 +16686,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodforged Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Cloth",
           "amount": 50
@@ -16539,7 +16710,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Celestial Crown Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Black Bear Pelt",
           "amount": 15
@@ -16562,12 +16733,50 @@
   "Chromite Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Emberfire Helm": {
     "dropped_by": [],
@@ -16577,7 +16786,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Emberfire Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Chest of Scraps",
           "amount": 12
@@ -16601,7 +16810,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Fortune Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Claw of the Alpha",
           "amount": 50
@@ -16629,7 +16838,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Frostguard Visage Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 20
@@ -16653,7 +16862,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Glimmersteel Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Water Elemental Essence",
           "amount": 15
@@ -16672,12 +16881,50 @@
   "Iron Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lead Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lunar Radiance": {
     "dropped_by": [],
@@ -16687,7 +16934,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Lunar Radiance Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaurs Horn",
           "amount": 60
@@ -16710,12 +16957,50 @@
   "Mercury Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mystic Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nightshade Mask": {
     "dropped_by": [],
@@ -16725,7 +17010,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Nightshade Mask Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Dwarven Whetstone",
           "amount": 50
@@ -16749,7 +17034,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Otto's Mask Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Scales",
           "amount": 25
@@ -16773,7 +17058,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenix Crown Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Grimoire of Shadows",
           "amount": 3
@@ -16797,7 +17082,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Radiant Crest Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 6
@@ -16821,7 +17106,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Runebound Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 15
@@ -16845,7 +17130,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Sentinel's Gaze Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 15
@@ -16869,7 +17154,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Shadow Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Totem",
           "amount": 30
@@ -16893,7 +17178,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Shadowbane Visor Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 50
@@ -16917,7 +17202,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Soul Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 20
@@ -16936,7 +17221,26 @@
   "Steel Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbreaker Helm": {
     "dropped_by": [],
@@ -16946,7 +17250,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Stormbreaker Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Abyssal Scroll",
           "amount": 7
@@ -16966,7 +17270,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Thunder Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Basilisk Venom Vial",
           "amount": 4
@@ -16990,7 +17294,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Thunder Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 35
@@ -17009,12 +17313,50 @@
   "Tin Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Uranium Helmet": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Verdant Guardian Helm": {
     "dropped_by": [],
@@ -17024,7 +17366,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Verdant Guardian Helm Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 35
@@ -17052,7 +17394,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Voidwalker Cowl Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 20
@@ -17076,7 +17418,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Whispersong Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Aetherial Feather Quill",
           "amount": 100
@@ -17100,7 +17442,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Windborne Casque Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 20
@@ -17124,7 +17466,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Ashenplate Cuirass Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Black Bear Pelt",
           "amount": 60
@@ -17152,7 +17494,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodforged Harness Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Cloth",
           "amount": 300
@@ -17172,7 +17514,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Celestial Radiance Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 30
@@ -17195,12 +17537,50 @@
   "Chromite Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Corruption": {
     "dropped_by": [],
@@ -17210,7 +17590,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Corruption Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Air Elemental Essence",
           "amount": 50
@@ -17242,7 +17622,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Crystalheart Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 20
@@ -17270,7 +17650,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Dragonheart Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Essence of Shadows",
           "amount": 2
@@ -17307,7 +17687,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Echosteel Breastplate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaur Hide",
           "amount": 50
@@ -17331,7 +17711,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Flameguard Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 100
@@ -17359,7 +17739,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Frostbite Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 30
@@ -17391,7 +17771,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Guardian's Valor Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 25
@@ -17410,7 +17790,26 @@
   "Iron Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Ironbark Cuirass": {
     "dropped_by": [],
@@ -17420,7 +17819,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Ironbark Cuirass Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Abyssal Scroll",
           "amount": 1
@@ -17447,12 +17846,50 @@
   "Lead Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mercury Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Moonshadow Vestment": {
     "dropped_by": [],
@@ -17462,7 +17899,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Moonshadow Vestment Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 5
@@ -17493,7 +17930,26 @@
   "Mystic Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Phoenix Soulplate": {
     "dropped_by": [],
@@ -17503,7 +17959,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenix Soulplate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 40
@@ -17531,7 +17987,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Sentinel's Embrace Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 15
@@ -17559,7 +18015,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Serpent Scale Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 15
@@ -17591,7 +18047,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Shadeweave Raiment Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 10
@@ -17623,7 +18079,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Shadowcloak Vestments Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Swamp Juice",
           "amount": 30
@@ -17652,7 +18108,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Starfire Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 15
@@ -17679,7 +18135,26 @@
   "Steel Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbreaker Mail": {
     "dropped_by": [],
@@ -17689,7 +18164,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Stormbreaker Mail Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 50
@@ -17717,7 +18192,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Stormguard Plate Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 10
@@ -17736,7 +18211,26 @@
   "Tin Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Twilight": {
     "dropped_by": [],
@@ -17746,7 +18240,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Twilight Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Orb of Elemental Conjuring",
           "amount": 30
@@ -17773,7 +18267,26 @@
   "Uranium Chestplate": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Verdant Chainmail": {
     "dropped_by": [],
@@ -17783,7 +18296,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Verdant Chainmail Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 10
@@ -17815,7 +18328,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Windrider Harness Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 9
@@ -17847,7 +18360,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodforged Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Scraps",
           "amount": 40
@@ -17871,7 +18384,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Celestial Touch Gloves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 40
@@ -17894,12 +18407,50 @@
   "Chromite Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Dragonfire Grasp": {
     "dropped_by": [],
@@ -17909,7 +18460,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Dragonfire Grasp Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Totem",
           "amount": 50
@@ -17933,7 +18484,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Emberfist Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 3
@@ -17973,7 +18524,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Fists of Fury Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Aetherial Feather Quill",
           "amount": 50
@@ -17997,7 +18548,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Flameguard Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 45
@@ -18025,7 +18576,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Frostbite Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Long Forgotten Necklace",
           "amount": 10
@@ -18053,7 +18604,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Gloves of the Protector Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 40
@@ -18085,7 +18636,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Grasps of Protection Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 10
@@ -18104,7 +18655,26 @@
   "Iron Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Ironclad Gauntlets": {
     "dropped_by": [],
@@ -18114,7 +18684,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Ironclad Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 3
@@ -18133,7 +18703,26 @@
   "Lead Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lunarweave Gloves": {
     "dropped_by": [],
@@ -18143,7 +18732,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Lunarweave Gloves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 40
@@ -18170,12 +18759,50 @@
   "Mercury Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mystic Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nature's Grip": {
     "dropped_by": [],
@@ -18185,7 +18812,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Nature's Grip Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 10
@@ -18213,7 +18840,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Nightshade Grips Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Scales",
           "amount": 100
@@ -18245,7 +18872,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenixclaw Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Essence of Shadows",
           "amount": 16
@@ -18265,7 +18892,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Sacred Grasp Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 5
@@ -18293,7 +18920,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Sentinel's Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 60
@@ -18321,7 +18948,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Shadowstep Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 20
@@ -18345,7 +18972,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Shadowstrike Grips Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Scales",
           "amount": 40
@@ -18377,7 +19004,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Soulgrasp Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 40
@@ -18400,7 +19027,26 @@
   "Steel Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbreaker Gauntlets": {
     "dropped_by": [],
@@ -18410,7 +19056,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Stormbreaker Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Bone Fragment",
           "amount": 30
@@ -18442,7 +19088,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Thunderclap Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 10
@@ -18469,7 +19115,26 @@
   "Tin Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Titan's Embrace": {
     "dropped_by": [],
@@ -18479,7 +19144,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Titan's Embrace Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 9
@@ -18494,7 +19159,26 @@
   "Uranium Gauntlets": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Voidrend Gauntlets": {
     "dropped_by": [],
@@ -18504,7 +19188,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Voidrend Gauntlets Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 1
@@ -18536,7 +19220,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Warfists Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Talisman",
           "amount": 67
@@ -18568,7 +19252,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Windrider Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaur Hide",
           "amount": 50
@@ -18600,7 +19284,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ashenfire Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 10
@@ -18632,7 +19316,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodforged Legguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 5
@@ -18656,7 +19340,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Celestial Striders Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 10
@@ -18675,12 +19359,50 @@
   "Chromite Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Dirella's Protection": {
     "dropped_by": [],
@@ -18690,7 +19412,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Dirella's Protection Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaur Hide",
           "amount": 25
@@ -18718,7 +19440,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Emberfoot Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 20
@@ -18742,7 +19464,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Frostbite Legguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Scraps",
           "amount": 15
@@ -18766,7 +19488,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Glimmersteel Pathguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 15
@@ -18793,12 +19515,50 @@
   "Iron Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lead Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lunarweave Leggings": {
     "dropped_by": [],
@@ -18808,7 +19568,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Lunarweave Leggings Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 10
@@ -18827,12 +19587,50 @@
   "Mercury Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mystic Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nightshade Greaves": {
     "dropped_by": [],
@@ -18842,7 +19640,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Nightshade Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 15
@@ -18878,7 +19676,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenix Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 50
@@ -18914,7 +19712,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Runebound Shinplates Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 50
@@ -18938,7 +19736,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Sentinel's Resolve Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 10
@@ -18966,7 +19764,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Shadowbane Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 5
@@ -18998,7 +19796,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Shadowstep Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 15
@@ -19018,7 +19816,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Soulforge Legplates Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Spectre Ectoplasm",
           "amount": 10
@@ -19038,7 +19836,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Soulshield Legplates Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 30
@@ -19069,7 +19867,26 @@
   "Steel Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbreaker Treads": {
     "dropped_by": [],
@@ -19079,7 +19896,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Stormbreaker Treads Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 6
@@ -19115,7 +19932,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Stormbringer Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 5
@@ -19147,7 +19964,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Stormstrider Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Long Forgotten Necklace",
           "amount": 50
@@ -19171,7 +19988,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Thunderclash Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ducks Mouth",
           "amount": 60
@@ -19186,7 +20003,26 @@
   "Tin Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Twilight Veilguards": {
     "dropped_by": [],
@@ -19196,7 +20032,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Twilight Veilguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Scales",
           "amount": 100
@@ -19219,7 +20055,26 @@
   "Uranium Greaves": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Verdant Greaves": {
     "dropped_by": [],
@@ -19229,7 +20084,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Verdant Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 420
@@ -19249,7 +20104,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Voidwalker Striders Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Polar Bear Pelt",
           "amount": 50
@@ -19277,7 +20132,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Whisperstep Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ivory",
           "amount": 45
@@ -19305,7 +20160,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Windrider Greaves Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 100
@@ -19333,7 +20188,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ashenfire Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 15
@@ -19357,7 +20212,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodforged Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Air Elemental Essence",
           "amount": 20
@@ -19389,7 +20244,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Celestial Ascenders Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 3
@@ -19408,12 +20263,50 @@
   "Chromite Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Emberfoot Boots": {
     "dropped_by": [],
@@ -19423,7 +20316,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Emberfoot Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 30
@@ -19447,7 +20340,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Fatebreaker Footguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 25
@@ -19483,7 +20376,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Frostbite Walkers Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 2
@@ -19507,7 +20400,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Glimmersteel Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 10
@@ -19539,7 +20432,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Guardian's Stride Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 5
@@ -19562,12 +20455,50 @@
   "Iron Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lead Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lunarweave Boots": {
     "dropped_by": [],
@@ -19577,7 +20508,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Lunarweave Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 30
@@ -19604,12 +20535,50 @@
   "Mercury Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mystic Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nightshade Boots": {
     "dropped_by": [],
@@ -19619,7 +20588,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Nightshade Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 3
@@ -19655,7 +20624,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Phoenix Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Air Elemental Essence",
           "amount": 25
@@ -19679,7 +20648,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Runebound Footwraps Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Talisman",
           "amount": 20
@@ -19703,7 +20672,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Shadowbane Footguards Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 4
@@ -19727,7 +20696,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Shadowstep Footwear Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 25
@@ -19747,7 +20716,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Soulshield Treads Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 16
@@ -19779,7 +20748,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Soulwalkers Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Scraps",
           "amount": 10
@@ -19798,7 +20767,26 @@
   "Steel Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbreaker Boots": {
     "dropped_by": [],
@@ -19808,7 +20796,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Stormbreaker Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 5
@@ -19840,7 +20828,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Stormbringer Striders Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 56
@@ -19872,7 +20860,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Swiftwind Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 4
@@ -19892,7 +20880,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Thunderstrike Steps Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Umbral Claw",
           "amount": 25
@@ -19911,7 +20899,26 @@
   "Tin Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Twilight Veilwalkers": {
     "dropped_by": [],
@@ -19921,7 +20928,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Twilight Veilwalkers Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Harpy's Wings",
           "amount": 76
@@ -19944,7 +20951,26 @@
   "Uranium Boots": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Verdant Boots": {
     "dropped_by": [],
@@ -19954,7 +20980,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Verdant Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 15
@@ -19978,7 +21004,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Voidstep Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 30
@@ -20006,7 +21032,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Whisperwind Boots Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 100
@@ -20030,7 +21056,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Windrider Striders Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 5
@@ -20148,7 +21174,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Bloodmoon Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 45
@@ -20172,7 +21198,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Bloodthirst Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 50
@@ -20196,7 +21222,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Celestial Edge Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ivory",
           "amount": 10
@@ -20215,12 +21241,50 @@
   "Chromite Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Dawnbreaker Sword": {
     "dropped_by": [],
@@ -20230,7 +21294,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Dawnbreaker Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 30
@@ -20262,7 +21326,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Death's Embrace Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 30
@@ -20294,7 +21358,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Doomblade Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Talisman",
           "amount": 10
@@ -20322,7 +21386,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Emberfang Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 5
@@ -20354,7 +21418,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Everflame Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Black Bear Pelt",
           "amount": 50
@@ -20382,7 +21446,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Excalibur Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Grimoire of Shadows",
           "amount": 4
@@ -20414,7 +21478,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Frostbite Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Snakes Head",
           "amount": 20
@@ -20438,7 +21502,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Grimslayer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 30
@@ -20457,22 +21521,98 @@
   "Iron Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lead Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mercury Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mystic Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nightfall Sword": {
     "dropped_by": [],
@@ -20482,7 +21622,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Nightfall Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 60
@@ -20506,7 +21646,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Phoenix Requiem Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 3
@@ -20538,7 +21678,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Runeblade Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 42
@@ -20566,7 +21706,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Serpentstrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 10
@@ -20594,7 +21734,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Shadowbane Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Spectre Ectoplasm",
           "amount": 3
@@ -20618,7 +21758,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Silverthorn Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 35
@@ -20654,7 +21794,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Soulrender Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 5
@@ -20682,7 +21822,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Starshard Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 20
@@ -20701,7 +21841,26 @@
   "Steel Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Stormbringer": {
     "dropped_by": [],
@@ -20711,7 +21870,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Stormbringer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 20
@@ -20735,7 +21894,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Sunfire Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 15
@@ -20763,7 +21922,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Tempest's Fury Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 30
@@ -20787,7 +21946,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Thunderstrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Pirates Code",
           "amount": 30
@@ -20810,12 +21969,50 @@
   "Tin Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Uranium Sword": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Voidslayer": {
     "dropped_by": [],
@@ -20825,7 +22022,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Voidslayer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Abyssal Scroll",
           "amount": 3
@@ -20853,7 +22050,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Whisperwind Sword Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Grimoire of Shadows",
           "amount": 1
@@ -20877,7 +22074,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Bloodletter Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Djinn's Bottle",
           "amount": 15
@@ -20901,7 +22098,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Bloodthorn Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 15
@@ -20924,12 +22121,50 @@
   "Chromite Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Chromite Bar",
+          "item_name": "Chromite Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Copper Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Copper Bar",
+          "item_name": "Copper Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Dreadspike": {
     "dropped_by": [],
@@ -20939,7 +22174,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Dreadspike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Long Forgotten Necklace",
           "amount": 31
@@ -20971,7 +22206,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Duskblade Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 40
@@ -20999,7 +22234,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Eclipse Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 5
@@ -21031,7 +22266,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Emberstrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 10
@@ -21059,7 +22294,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Fatebreaker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 61
@@ -21091,7 +22326,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Flamebrand Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 20
@@ -21115,7 +22350,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ghostwalker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 10
@@ -21142,17 +22377,74 @@
   "Iron Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Lead Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Lead Bar",
+          "item_name": "Lead Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Mercury Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mercury Bar",
+          "item_name": "Mercury Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Moonlance": {
     "dropped_by": [],
@@ -21162,7 +22454,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Moonlance Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaurs Horn",
           "amount": 20
@@ -21190,7 +22482,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Moonshadow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Chest of Scraps",
           "amount": 20
@@ -21213,7 +22505,26 @@
   "Mystic Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystic Bar",
+          "item_name": "Mystic Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Night's Whisper": {
     "dropped_by": [],
@@ -21223,7 +22534,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Night's Whisper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 5
@@ -21251,7 +22562,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Nightfall Dagger Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Harpy's Wings",
           "amount": 10
@@ -21283,7 +22594,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Quickstrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 20
@@ -21307,7 +22618,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Runeblade Dagger Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 11
@@ -21331,7 +22642,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Serpent's Kiss Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Essence of Shadows",
           "amount": 3
@@ -21355,7 +22666,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Shadowfang Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 40
@@ -21383,7 +22694,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Shadowstrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 10
@@ -21407,7 +22718,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Silent Reaper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 30
@@ -21431,7 +22742,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Silvermist Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Scraps",
           "amount": 23
@@ -21467,7 +22778,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Soulshard Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lucky Rabbit Foot",
           "amount": 30
@@ -21491,7 +22802,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Starglitter Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Polar Bear Pelt",
           "amount": 10
@@ -21514,17 +22825,74 @@
   "Steel Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Steel Bar",
+          "item_name": "Steel Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Tin Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Tin Bar",
+          "item_name": "Tin Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Uranium Dagger": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Uranium Bar",
+          "item_name": "Uranium Bar",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Venomfang": {
     "dropped_by": [],
@@ -21534,7 +22902,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Venomfang Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 15
@@ -21558,7 +22926,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Whisperblade Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 10
@@ -21582,7 +22950,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Widow's Kiss Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Chest of Scraps",
           "amount": 70
@@ -21610,7 +22978,7 @@
       "skill": "Forge",
       "level": 94,
       "recipe_name": "Archdemon Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Petrifying Gaze Crystal",
           "amount": 3
@@ -21638,7 +23006,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Ashenwind Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 12
@@ -21661,12 +23029,50 @@
   "Banyan Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Banyan Log",
+          "item_name": "Banyan Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Birch Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Birch Log",
+          "item_name": "Birch Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Bloodmoon Bow": {
     "dropped_by": [],
@@ -21676,7 +23082,7 @@
       "skill": "Forge",
       "level": 91,
       "recipe_name": "Bloodmoon Bow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 30
@@ -21708,7 +23114,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Dawnbreaker Bow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 10
@@ -21736,7 +23142,7 @@
       "skill": "Forge",
       "level": 92,
       "recipe_name": "Death's Touch Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Blade Fragment",
           "amount": 60
@@ -21772,7 +23178,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Divinity Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moonblood Tincture",
           "amount": 1
@@ -21792,7 +23198,7 @@
       "skill": "Forge",
       "level": 79,
       "recipe_name": "Emberheart Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Pirates Code",
           "amount": 5
@@ -21828,7 +23234,7 @@
       "skill": "Forge",
       "level": 74,
       "recipe_name": "Frostbite Shot Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Bone Fragment",
           "amount": 25
@@ -21864,7 +23270,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Fury Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 10
@@ -21896,7 +23302,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Grimwood Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Djinn's Bottle",
           "amount": 10
@@ -21923,12 +23329,50 @@
   "Mahogany Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mahogany Log",
+          "item_name": "Mahogany Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Maple Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 35,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Maple Log",
+          "item_name": "Maple Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Moonshot": {
     "dropped_by": [],
@@ -21938,7 +23382,7 @@
       "skill": "Forge",
       "level": 77,
       "recipe_name": "Moonshot Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 10
@@ -21965,7 +23409,26 @@
   "Mystical Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Mystical Log",
+          "item_name": "Mystical Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Nightshade Bow": {
     "dropped_by": [],
@@ -21975,7 +23438,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Nightshade Bow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 50
@@ -22006,7 +23469,26 @@
   "Oak Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Oak Log",
+          "item_name": "Oak Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Piercer": {
     "dropped_by": [],
@@ -22016,7 +23498,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Piercer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 5
@@ -22056,7 +23538,7 @@
       "skill": "Forge",
       "level": 75,
       "recipe_name": "Serpent's Arrow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 15
@@ -22088,7 +23570,7 @@
       "skill": "Forge",
       "level": 73,
       "recipe_name": "Shadow Shot Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 10
@@ -22124,7 +23606,7 @@
       "skill": "Forge",
       "level": 90,
       "recipe_name": "Silverthorn Bow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 4
@@ -22152,7 +23634,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Soulstring Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Fire Elemental Essence",
           "amount": 15
@@ -22175,7 +23657,26 @@
   "Spruce Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Spruce Log",
+          "item_name": "Spruce Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Starshower": {
     "dropped_by": [],
@@ -22185,7 +23686,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Starshower Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 10
@@ -22217,7 +23718,7 @@
       "skill": "Forge",
       "level": 95,
       "recipe_name": "Sting Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Basilisk Venom Vial",
           "amount": 2
@@ -22249,7 +23750,7 @@
       "skill": "Forge",
       "level": 72,
       "recipe_name": "Stormcaster Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 20
@@ -22281,7 +23782,7 @@
       "skill": "Forge",
       "level": 78,
       "recipe_name": "Stormsong Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Spectre Ectoplasm",
           "amount": 6
@@ -22317,7 +23818,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Sunseeker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 15
@@ -22349,7 +23850,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Thundershot Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 5
@@ -22381,7 +23882,7 @@
       "skill": "Forge",
       "level": 76,
       "recipe_name": "Viper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 20
@@ -22421,7 +23922,7 @@
       "skill": "Forge",
       "level": 71,
       "recipe_name": "Whisperwind Bow Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lucky Rabbit Foot",
           "amount": 20
@@ -22448,12 +23949,50 @@
   "Willow Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Willow Log",
+          "item_name": "Willow Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Yew Bow": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_FORGE",
+      "skill": "FORGE",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Forge craft",
+      "materials": [
+        {
+          "name": "Yew Log",
+          "item_name": "Yew Log",
+          "amount": 10
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 5
+        }
+      ]
+    }
   },
   "Aqua Reaper": {
     "dropped_by": [],
@@ -22463,7 +24002,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Aqua Reaper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 4
@@ -22487,7 +24026,7 @@
       "skill": "Forge",
       "level": 45,
       "recipe_name": "Hydra's Coil Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Djinn's Bottle",
           "amount": 8
@@ -22515,7 +24054,7 @@
       "skill": "Forge",
       "level": 5,
       "recipe_name": "Improved Fishing Rod Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lucky Rabbit Foot",
           "amount": 3
@@ -22539,7 +24078,7 @@
       "skill": "Forge",
       "level": 85,
       "recipe_name": "Kraken's Grasp Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 2
@@ -22567,7 +24106,7 @@
       "skill": "Forge",
       "level": 35,
       "recipe_name": "Moonshimmer Hook Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 3
@@ -22591,7 +24130,7 @@
       "skill": "Forge",
       "level": 60,
       "recipe_name": "Ocean's Whisper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Pirates Code",
           "amount": 4
@@ -22619,7 +24158,7 @@
       "skill": "Forge",
       "level": 10,
       "recipe_name": "Rivertamer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 5
@@ -22635,7 +24174,7 @@
       "skill": "Forge",
       "level": 70,
       "recipe_name": "Rune-etched Reeler Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 5
@@ -22663,7 +24202,7 @@
       "skill": "Forge",
       "level": 20,
       "recipe_name": "Seasong's Lure Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 3
@@ -22692,7 +24231,7 @@
       "skill": "Forge",
       "level": 35,
       "recipe_name": "Boulder Breaker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 4
@@ -22716,7 +24255,7 @@
       "skill": "Forge",
       "level": 85,
       "recipe_name": "Boulder's Bane Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 5
@@ -22744,7 +24283,7 @@
       "skill": "Forge",
       "level": 70,
       "recipe_name": "Corestrike Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ivory",
           "amount": 3
@@ -22772,7 +24311,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Earth Destroyer Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 3
@@ -22796,7 +24335,7 @@
       "skill": "Forge",
       "level": 45,
       "recipe_name": "Earthshaker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Spectre Ectoplasm",
           "amount": 1
@@ -22820,7 +24359,7 @@
       "skill": "Forge",
       "level": 5,
       "recipe_name": "Improved Pickaxe Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 3
@@ -22840,7 +24379,7 @@
       "skill": "Forge",
       "level": 20,
       "recipe_name": "Ironbite Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -22869,7 +24408,7 @@
       "skill": "Forge",
       "level": 60,
       "recipe_name": "Stone Splinter Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Chest of Scraps",
           "amount": 4
@@ -22897,7 +24436,7 @@
       "skill": "Forge",
       "level": 10,
       "recipe_name": "Veinseeker Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -22913,7 +24452,7 @@
       "skill": "Forge",
       "level": 85,
       "recipe_name": "Arboreal Ender Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 2
@@ -22937,7 +24476,7 @@
       "skill": "Forge",
       "level": 60,
       "recipe_name": "Branchbane Hatchet Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 8
@@ -22961,7 +24500,7 @@
       "skill": "Forge",
       "level": 96,
       "recipe_name": "Forest Reaver Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 3
@@ -22985,7 +24524,7 @@
       "skill": "Forge",
       "level": 45,
       "recipe_name": "Grove Cleaver Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 4
@@ -23009,7 +24548,7 @@
       "skill": "Forge",
       "level": 5,
       "recipe_name": "Improved Felling axe Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ducks Mouth",
           "amount": 3
@@ -23029,7 +24568,7 @@
       "skill": "Forge",
       "level": 35,
       "recipe_name": "Leafblade Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Essence of Shadows",
           "amount": 1
@@ -23053,7 +24592,7 @@
       "skill": "Forge",
       "level": 70,
       "recipe_name": "Silvan Splitter Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Umbral Claw",
           "amount": 5
@@ -23082,7 +24621,7 @@
       "skill": "Forge",
       "level": 10,
       "recipe_name": "Timberfall Talon Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 2
@@ -23098,7 +24637,7 @@
       "skill": "Forge",
       "level": 20,
       "recipe_name": "Wildwood Chopper Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 2
@@ -23136,6 +24675,12 @@
         "type": "FORGE",
         "name": "Thundershot Recipe",
         "amount": 200
+      },
+      {
+        "type": "FORGE",
+        "name": "Banyan Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23187,6 +24732,12 @@
         "type": "FORGE",
         "name": "Viper Recipe",
         "amount": 200
+      },
+      {
+        "type": "FORGE",
+        "name": "Birch Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23213,6 +24764,12 @@
         "type": "FORGE",
         "name": "Starshower Recipe",
         "amount": 500
+      },
+      {
+        "type": "FORGE",
+        "name": "Mahogany Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23224,6 +24781,12 @@
         "type": "FORGE",
         "name": "Nightshade Bow Recipe",
         "amount": 300
+      },
+      {
+        "type": "FORGE",
+        "name": "Maple Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23265,6 +24828,12 @@
         "type": "FORGE",
         "name": "Sting Recipe",
         "amount": 13500
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystical Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23291,6 +24860,12 @@
         "type": "FORGE",
         "name": "Whisperwind Bow Recipe",
         "amount": 200
+      },
+      {
+        "type": "FORGE",
+        "name": "Oak Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23327,6 +24902,12 @@
         "type": "FORGE",
         "name": "Viper Recipe",
         "amount": 300
+      },
+      {
+        "type": "FORGE",
+        "name": "Spruce Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23343,6 +24924,12 @@
         "type": "FORGE",
         "name": "Nightshade Bow Recipe",
         "amount": 200
+      },
+      {
+        "type": "FORGE",
+        "name": "Willow Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
@@ -23364,78 +24951,182 @@
         "type": "FORGE",
         "name": "Whisperwind Bow Recipe",
         "amount": 200
+      },
+      {
+        "type": "FORGE",
+        "name": "Yew Bow",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
   },
   "Cod": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Cod",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Crab": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Crab",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Great White Shark": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Great White Shark",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Herring": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Herring",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Lantern Fish": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Lantern Fish",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Lobster": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Lobster",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Perch": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Perch",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Salmon": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Salmon",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Sardines": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Sardines",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Stingray": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Stingray",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Trout": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Trout",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Tuna": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Tuna",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Turtle": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "COOKING",
+        "name": "Cooked Turtle",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      }
+    ],
     "shops": []
   },
   "Chromite Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Chromite Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Coal Ore": {
@@ -23445,48 +25136,722 @@
         "type": "FORGE",
         "name": "Emberfist Recipe",
         "amount": 25
+      },
+      {
+        "type": "SMELTING",
+        "name": "Tin Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Copper Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Iron Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Lead Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Steel Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Mercury Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Chromite Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Uranium Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "SMELTING",
+        "name": "Mystic Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Cod",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Salmon",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Tuna",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Trout",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Perch",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Herring",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Sardines",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Lobster",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Crab",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Turtle",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Stingray",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Lantern Fish",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "COOKING",
+        "name": "Cooked Great White Shark",
+        "amount": 1,
+        "source": "DEFAULT_COOKING"
+      },
+      {
+        "type": "FORGE",
+        "name": "Oak Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Yew Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Spruce Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Birch Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Banyan Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Maple Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Willow Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mahogany Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystical Bow",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Sword",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Dagger",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Shield",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Helmet",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Chestplate",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Greaves",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Boots",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Gauntlets",
+        "amount": 5,
+        "source": "DEFAULT_FORGE"
       }
     ],
     "shops": []
   },
   "Copper Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Copper Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Iron Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Iron Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Lead Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Lead Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Mercury Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Mercury Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Mystic Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Mystic Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Steel Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Steel Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Tin Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Tin Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Uranium Ore": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "SMELTING",
+        "name": "Uranium Bar",
+        "amount": 1,
+        "source": "DEFAULT_SMELTING"
+      }
+    ],
     "shops": []
   },
   "Chromite Bar": {
@@ -23696,14 +26061,149 @@
         "type": "FORGE",
         "name": "Windrider Striders Recipe",
         "amount": 150
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Chromite Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 60,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Chromite Ore",
+          "item_name": "Chromite Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Copper Bar": {
     "dropped_by": [],
-    "required_for": [],
-    "shops": []
+    "required_for": [
+      {
+        "type": "FORGE",
+        "name": "Copper Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Copper Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      }
+    ],
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Copper Ore",
+          "item_name": "Copper Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Iron Bar": {
     "dropped_by": [],
@@ -23712,9 +26212,76 @@
         "type": "FORGE",
         "name": "Radiant Crest Recipe",
         "amount": 150
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Iron Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Iron Ore",
+          "item_name": "Iron Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Lead Bar": {
     "dropped_by": [],
@@ -23733,9 +26300,76 @@
         "type": "FORGE",
         "name": "Shadow Helm Recipe",
         "amount": 150
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Lead Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Lead Ore",
+          "item_name": "Lead Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Mercury Bar": {
     "dropped_by": [],
@@ -24039,9 +26673,76 @@
         "type": "FORGE",
         "name": "Windborne Casque Recipe",
         "amount": 150
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mercury Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 40,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Mercury Ore",
+          "item_name": "Mercury Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Mystic Bar": {
     "dropped_by": [],
@@ -24325,9 +27026,76 @@
         "type": "FORGE",
         "name": "Windrider Recipe",
         "amount": 2000
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Mystic Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 90,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Mystic Ore",
+          "item_name": "Mystic Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Steel Bar": {
     "dropped_by": [],
@@ -24346,14 +27114,149 @@
         "type": "FORGE",
         "name": "Emberfist Recipe",
         "amount": 75
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Steel Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Steel Ore",
+          "item_name": "Steel Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Tin Bar": {
     "dropped_by": [],
-    "required_for": [],
-    "shops": []
+    "required_for": [
+      {
+        "type": "FORGE",
+        "name": "Tin Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Tin Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      }
+    ],
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Tin Ore",
+          "item_name": "Tin Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Uranium Bar": {
     "dropped_by": [],
@@ -24547,9 +27450,76 @@
         "type": "FORGE",
         "name": "Voidrend Gauntlets Recipe",
         "amount": 150
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Sword",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Dagger",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Shield",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Helmet",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Chestplate",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Greaves",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Boots",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "FORGE",
+        "name": "Uranium Gauntlets",
+        "amount": 10,
+        "source": "DEFAULT_FORGE"
       }
     ],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_SMELTING",
+      "skill": "SMELTING",
+      "level": 70,
+      "recipe_name": null,
+      "recipe_label": "Default Smelting craft",
+      "materials": [
+        {
+          "name": "Uranium Ore",
+          "item_name": "Uranium Ore",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Ancient Parchment": {
     "dropped_by": [],
@@ -25074,7 +28044,26 @@
   "Cooked Cod": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Cod",
+          "item_name": "Cod",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Cod (Untradable)": {
     "dropped_by": [],
@@ -25084,62 +28073,290 @@
   "Cooked Crab": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 40,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Crab",
+          "item_name": "Crab",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Great White Shark": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 90,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Great White Shark",
+          "item_name": "Great White Shark",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Herring": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Herring",
+          "item_name": "Herring",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Lantern Fish": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 80,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Lantern Fish",
+          "item_name": "Lantern Fish",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Lobster": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 30,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Lobster",
+          "item_name": "Lobster",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Perch": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 11,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Perch",
+          "item_name": "Perch",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Salmon": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 3,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Salmon",
+          "item_name": "Salmon",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Sardines": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 25,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Sardines",
+          "item_name": "Sardines",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Stingray": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 60,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Stingray",
+          "item_name": "Stingray",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Trout": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 8,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Trout",
+          "item_name": "Trout",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Tuna": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 5,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Tuna",
+          "item_name": "Tuna",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Cooked Turtle": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_COOKING",
+      "skill": "COOKING",
+      "level": 50,
+      "recipe_name": null,
+      "recipe_label": "Default Cooking craft",
+      "materials": [
+        {
+          "name": "Turtle",
+          "item_name": "Turtle",
+          "amount": 1
+        },
+        {
+          "name": "Coal Ore",
+          "item_name": "Coal Ore",
+          "amount": 1
+        }
+      ]
+    }
   },
   "Attack Power Potion": {
     "dropped_by": [],
@@ -25149,7 +28366,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Attack Power Potion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 20
@@ -25180,7 +28397,7 @@
       "level": 1,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Lucky Rabbit Foot",
           "amount": 2
@@ -25205,7 +28422,7 @@
       "skill": "Alchemy",
       "level": 35,
       "recipe_name": "Bladeburst Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Scales",
           "amount": 4
@@ -25234,7 +28451,7 @@
       "skill": "Alchemy",
       "level": 35,
       "recipe_name": "Bulwark Brew Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 20
@@ -25258,7 +28475,7 @@
       "skill": "Alchemy",
       "level": 85,
       "recipe_name": "Cosmic Tear Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Harpy's Wings",
           "amount": 40
@@ -25282,7 +28499,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Dragon's Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Wraith Ectoplasm",
           "amount": 30
@@ -25306,7 +28523,7 @@
       "skill": "Alchemy",
       "level": 80,
       "recipe_name": "Dragonblood Tonic Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Minotaurs Horn",
           "amount": 25
@@ -25332,7 +28549,7 @@
       "level": 50,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Lions Teeth",
           "amount": 11
@@ -25354,7 +28571,7 @@
       "level": 10,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -25379,7 +28596,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Fallen Star Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Basilisk Venom Vial",
           "amount": 3
@@ -25413,7 +28630,7 @@
       "skill": "Alchemy",
       "level": 70,
       "recipe_name": "Frenzy Potion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Wolf Pelt",
           "amount": 14
@@ -25437,7 +28654,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Guardian's Soul Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Petrifying Gaze Crystal",
           "amount": 5
@@ -25461,7 +28678,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Phoenix Ashes Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Grimoire of Shadows",
           "amount": 2
@@ -25485,7 +28702,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Potion of the Gods Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moonblood Tincture",
           "amount": 1
@@ -25514,7 +28731,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Elixir of Life Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 7
@@ -25543,7 +28760,7 @@
       "skill": "Alchemy",
       "level": 20,
       "recipe_name": "Protection Potion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raw Onion",
           "amount": 13
@@ -25573,7 +28790,7 @@
       "skill": "Alchemy",
       "level": 65,
       "recipe_name": "Shieldbearer's Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 8
@@ -25607,7 +28824,7 @@
       "skill": "Alchemy",
       "level": 45,
       "recipe_name": "Strike Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Siren's Soulstone",
           "amount": 6
@@ -25627,7 +28844,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Sun's Light Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 25
@@ -25656,7 +28873,7 @@
       "skill": "Alchemy",
       "level": 85,
       "recipe_name": "Thunderfury Brew Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Black Bear Pelt",
           "amount": 25
@@ -25680,7 +28897,7 @@
       "skill": "Alchemy",
       "level": 28,
       "recipe_name": "Vortex Brew Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Venom Extract",
           "amount": 1
@@ -25709,7 +28926,7 @@
       "skill": "Alchemy",
       "level": 80,
       "recipe_name": "Wraithbane Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 15
@@ -25738,7 +28955,7 @@
       "skill": "Alchemy",
       "level": 45,
       "recipe_name": "Acrobatic's Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Moose Antler",
           "amount": 10
@@ -25760,7 +28977,7 @@
       "level": 4,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 1
@@ -25780,7 +28997,7 @@
       "skill": "Alchemy",
       "level": 15,
       "recipe_name": "Bastion Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Boar Tusk",
           "amount": 2
@@ -25802,7 +29019,7 @@
       "level": 6,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Scraps",
           "amount": 2
@@ -25822,7 +29039,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Cosmic Barrier Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Vial of Spectre Ectoplasm",
           "amount": 15
@@ -25851,7 +29068,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Cosmic Nectar Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Abyssal Scroll",
           "amount": 8
@@ -25880,7 +29097,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Cosmic Finesse Tonic Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Abyssal Scroll",
           "amount": 5
@@ -25911,7 +29128,7 @@
       "level": 13,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Ruined Robes",
           "amount": 10
@@ -25931,7 +29148,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Divine Nectar Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 13
@@ -25960,7 +29177,7 @@
       "skill": "Alchemy",
       "level": 55,
       "recipe_name": "Earthcore Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Parchment",
           "amount": 6
@@ -25989,7 +29206,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Essence of a Kraken Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 12
@@ -26018,7 +29235,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Eternal Feast Tonic Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 6
@@ -26047,7 +29264,7 @@
       "skill": "Alchemy",
       "level": 15,
       "recipe_name": "Falcon's Grace Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Snakes Head",
           "amount": 10
@@ -26067,7 +29284,7 @@
       "skill": "Alchemy",
       "level": 20,
       "recipe_name": "Felling Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Djinn's Bottle",
           "amount": 23
@@ -26087,7 +29304,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Flash Velocity Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Oceanic Essence",
           "amount": 20
@@ -26118,7 +29335,7 @@
       "level": 17,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Snakes Head",
           "amount": 5
@@ -26142,7 +29359,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Fortified Protection Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Buffalo Horn",
           "amount": 8
@@ -26162,7 +29379,7 @@
       "skill": "Alchemy",
       "level": 15,
       "recipe_name": "Galeforce Speed Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Forbidden Tome",
           "amount": 2
@@ -26182,7 +29399,7 @@
       "skill": "Alchemy",
       "level": 80,
       "recipe_name": "Gourmet Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 12
@@ -26208,7 +29425,7 @@
       "level": 15,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Snakes Head",
           "amount": 12
@@ -26228,7 +29445,7 @@
       "skill": "Alchemy",
       "level": 15,
       "recipe_name": "Herculean Strength Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -26248,7 +29465,7 @@
       "skill": "Alchemy",
       "level": 45,
       "recipe_name": "Impenetrable Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Totem",
           "amount": 7
@@ -26272,7 +29489,7 @@
       "skill": "Alchemy",
       "level": 40,
       "recipe_name": "Ironclad Tonic Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -26296,7 +29513,7 @@
       "skill": "Alchemy",
       "level": 65,
       "recipe_name": "Lightning Sprint Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Broken Dwarven Plate",
           "amount": 7
@@ -26322,7 +29539,7 @@
       "level": 2,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Totem",
           "amount": 6
@@ -26342,7 +29559,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Magma Vein Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Earth Elemental Essence",
           "amount": 6
@@ -26371,7 +29588,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Merfolk Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Chest of Scraps",
           "amount": 12
@@ -26393,7 +29610,7 @@
       "level": 3,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Ducks Mouth",
           "amount": 2
@@ -26413,7 +29630,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Mjolnir's Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 12
@@ -26442,7 +29659,7 @@
       "skill": "Alchemy",
       "level": 27,
       "recipe_name": "Molten Core Tonic Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Long Forgotten Necklace",
           "amount": 38
@@ -26467,7 +29684,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Neptune's Soul Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Water Elemental Essence",
           "amount": 45
@@ -26496,7 +29713,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Omnipotent Might Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Essence of Shadows",
           "amount": 10
@@ -26525,7 +29742,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Oreseeker Essence Crystal Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Swamp Juice",
           "amount": 12
@@ -26550,7 +29767,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Precision Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Bone Fragment",
           "amount": 30
@@ -26570,7 +29787,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Primordial Timber Crystal Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Void Essence",
           "amount": 8
@@ -26599,7 +29816,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Quickstep Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Pirates Code",
           "amount": 4
@@ -26623,7 +29840,7 @@
       "skill": "Alchemy",
       "level": 60,
       "recipe_name": "Riverbend Infusion Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Polar Bear Pelt",
           "amount": 20
@@ -26654,7 +29871,7 @@
       "level": 12,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Cursed Talisman",
           "amount": 5
@@ -26676,7 +29893,7 @@
       "level": 5,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Pouch",
           "amount": 3
@@ -26696,7 +29913,7 @@
       "skill": "Alchemy",
       "level": 30,
       "recipe_name": "Spicefinder Essence Crystal Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Umbral Claw",
           "amount": 11
@@ -26721,7 +29938,7 @@
       "skill": "Alchemy",
       "level": 65,
       "recipe_name": "Stoneheart Solution Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Raccoon Fur",
           "amount": 10
@@ -26745,7 +29962,7 @@
       "skill": "Alchemy",
       "level": 62,
       "recipe_name": "Tampering Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Golem Core Fragment",
           "amount": 25
@@ -26771,7 +29988,7 @@
       "level": 10,
       "recipe_name": null,
       "recipe_label": "Default Alchemy craft",
-      "mats": [
+      "materials": [
         {
           "name": "Deer Antler",
           "amount": 5
@@ -26791,7 +30008,7 @@
       "skill": "Alchemy",
       "level": 25,
       "recipe_name": "Titan Power Brew Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Slime Extract",
           "amount": 38
@@ -26816,7 +30033,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Titans Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Fire Elemental Essence",
           "amount": 13
@@ -26845,7 +30062,7 @@
       "skill": "Alchemy",
       "level": 90,
       "recipe_name": "Titanwood Crystal Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Stoneheart Core",
           "amount": 6
@@ -26878,7 +30095,7 @@
       "skill": "Alchemy",
       "level": 65,
       "recipe_name": "Twinstrike Elixir Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Dwarven Whetstone",
           "amount": 35
@@ -26902,7 +30119,7 @@
       "skill": "Alchemy",
       "level": 65,
       "recipe_name": "Unyielding Fortitude Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Enigmatic Stone",
           "amount": 15
@@ -26931,7 +30148,7 @@
       "skill": "Alchemy",
       "level": 45,
       "recipe_name": "Windrider Essence Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Elk Antler",
           "amount": 9
@@ -26951,7 +30168,7 @@
       "skill": "Alchemy",
       "level": 52,
       "recipe_name": "Yggdrasil Nectar Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Goblin Crown",
           "amount": 1
@@ -29089,7 +32306,7 @@
       "skill": "Forge",
       "level": 80,
       "recipe_name": "Dreadbane Armor Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Undying Crest",
           "amount": 5
@@ -29125,7 +32342,7 @@
       "skill": "Forge",
       "level": 93,
       "recipe_name": "Soulguard Armor Recipe",
-      "mats": [
+      "materials": [
         {
           "name": "Arcane Starstone",
           "amount": 8
