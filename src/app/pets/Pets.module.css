@@ -351,10 +351,14 @@
 .setupInnerWrapper {
   min-height: 0;
   overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0ms linear 200ms;
 }
 
 .setupAccordionOpen .setupInnerWrapper {
   overflow: visible;
+  visibility: visible;
+  transition-delay: 0ms;
 }
 
 .setupFieldsGrid {

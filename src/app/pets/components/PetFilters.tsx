@@ -155,7 +155,7 @@ export function PetFilters({
             value={qualityFilter}
             onChange={(val) => setQualityFilter(val as Quality | "ALL")}
             options={qualitySelectOptions}
-            aria-label="Filter by quality"
+            ariaLabel="Filter by quality"
             className={styles.filterSelect}
           />
 
@@ -163,7 +163,7 @@ export function PetFilters({
             value={sourceFilter}
             onChange={(val) => setSourceFilter(val as SourceFilter)}
             options={sourceSelectOptions}
-            aria-label="Filter by source"
+            ariaLabel="Filter by source"
             className={styles.filterSelect}
           />
 
@@ -172,7 +172,7 @@ export function PetFilters({
               value={sortBy}
               onChange={(val) => setSortBy(val as SortKey)}
               options={sortSelectOptions}
-              aria-label="Sort pets by"
+              ariaLabel="Sort pets by"
               className={styles.filterSelect}
             />
 
@@ -292,6 +292,8 @@ export function PetFilters({
 
         <div
           id="pet-setup-accordion"
+          aria-hidden={!isSetupOpen}
+          inert={!isSetupOpen ? true : undefined}
           className={`${styles.setupAccordionContent} ${isSetupOpen ? styles.setupAccordionOpen : ""}`}
         >
           <div className={styles.setupInnerWrapper}>
