@@ -106,11 +106,12 @@
 .label {
   display: inline-flex;
   align-items: center;
-  line-height: 1;
+  line-height: 1.35;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 2px 0;
 }
 
 .icon,
