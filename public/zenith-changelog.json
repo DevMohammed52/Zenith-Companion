@@ -238,9 +238,28 @@
             "raw": "- **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button."
           }
         ]
+      },
+      {
+        "category": "Fixed",
+        "items": [
+          {
+            "id": "Unreleased-Fixed-0",
+            "title": "Pet Setup Controls",
+            "description": "Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields.",
+            "subItems": [],
+            "raw": "- **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields."
+          },
+          {
+            "id": "Unreleased-Fixed-1",
+            "title": "Pet Table & Modal Layout",
+            "description": "Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls.",
+            "subItems": [],
+            "raw": "- **Pet Table & Modal Layout**: Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls."
+          }
+        ]
       }
     ],
-    "totalChanges": 4
+    "totalChanges": 6
   },
   "meta": {
     "totalReleases": 4,
@@ -248,9 +267,9 @@
     "latestDate": "2026-11-24",
     "categories": [
       "Changed",
-      "Added",
-      "Fixed"
+      "Fixed",
+      "Added"
     ],
-    "generatedAt": "2026-11-24T18:35:08.739Z"
+    "generatedAt": "2026-11-24T19:31:31.409Z"
   }
 }

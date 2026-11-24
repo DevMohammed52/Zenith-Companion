@@ -11,6 +11,10 @@ Updates are organized chronologically by release date.
 - **Bounded Page Navigation**: Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing.
 - **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.
 
+### Fixed
+- **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed "Beastmaster Context" to "Beastmaster Class", and stopped simulator dropdowns from clipping or sitting behind nearby fields.
+- **Pet Table & Modal Layout**: Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls.
+
 ## [2026-11-24]
 
 ### Added
