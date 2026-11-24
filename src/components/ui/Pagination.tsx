@@ -81,9 +81,14 @@ export function Pagination({
     }
   };
 
+  const hasSummary = showSummary && totalItems !== undefined;
+
   return (
-    <nav aria-label="Pagination" className={`${styles.pagination} ${className}`.trim()}>
-      {showSummary && totalItems !== undefined && (
+    <nav
+      aria-label="Pagination"
+      className={`${styles.pagination} ${!hasSummary ? styles.paginationCentered : ""} ${className}`.trim()}
+    >
+      {hasSummary && (
         <div aria-live="polite" aria-atomic="true" className={styles.summary}>
           <span>
             Showing <span className={styles.tabular}>{startItem}&ndash;{endItem}</span> of{" "}

@@ -151,8 +151,16 @@ export function NumberInput({
   }, []);
 
   const handleStep = (direction: 1 | -1) => {
-    commitValue(currentVal + direction * step);
-    inputRef.current?.focus();
+    const next = currentVal + direction * step;
+    let clamped = next;
+    if (min !== undefined) clamped = Math.max(min, clamped);
+    if (max !== undefined) clamped = Math.min(max, clamped);
+
+    if (controlledValue === undefined) {
+      setInternalValue(clamped);
+    }
+    setRawText(String(clamped));
+    onChange?.(clamped);
   };
 
   const isMin = min !== undefined && currentVal <= min;

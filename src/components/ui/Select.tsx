@@ -236,7 +236,7 @@ export function Select({
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${className}`.trim()}
+      className={`${styles.container} ${isOpen ? styles.containerOpen : ""} ${className}`.trim()}
     >
       {/* Hidden input for form submission integration */}
       {name && (
