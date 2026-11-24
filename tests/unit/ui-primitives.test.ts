@@ -1242,6 +1242,7 @@ describe("Pagination Primitive", () => {
     );
     expect(htmlLastPage).toContain('disabled=""');
     expect(htmlLastPage).toContain('aria-label="Next page"');
+    expect(htmlLastPage).toContain('paginationCentered');
   });
 });
 
