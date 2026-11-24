@@ -1,0 +1,214 @@
+.dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background-color: rgba(16, 21, 34, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.14));
+  padding-top: 6px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  padding-left: max(12px, env(safe-area-inset-left, 12px));
+  padding-right: max(12px, env(safe-area-inset-right, 12px));
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5), 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.mobileOnly {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .mobileOnly {
+    display: none;
+  }
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  list-style: none;
+  padding: 0;
+}
+
+.item {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 4px 10px;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: none;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 150ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+              background-color 150ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+              transform 100ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.link:hover:not(.active) {
+  color: var(--text-main, #f8fafc);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.link:active {
+  transform: scale(0.92);
+}
+
+.iconWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 28px;
+  border-radius: 9999px;
+  transition: background-color 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1)),
+              transform 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  transition: transform 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 68px;
+  line-height: 1.1;
+  transition: color 150ms ease, font-weight 150ms ease;
+}
+
+/* Active State with Monochromatic Frost Capsule */
+.active {
+  color: var(--text-main, #f8fafc);
+  font-weight: 700;
+}
+
+.active .iconWrapper {
+  background-color: rgba(248, 250, 252, 0.12);
+  box-shadow: 0 0 12px rgba(248, 250, 252, 0.06);
+}
+
+.active .icon {
+  transform: scale(1.12);
+}
+
+.active .label {
+  color: var(--text-main, #f8fafc);
+  font-weight: 700;
+}
+
+/* Active bottom indicator pill */
+.active::after {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 2.5px;
+  border-radius: 9999px;
+  background-color: var(--btn-primary-bg, #f8fafc);
+  margin-top: 1px;
+  animation: dockPillEntrance 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes dockPillEntrance {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Badge on icon */
+.badge {
+  position: absolute;
+  top: -3px;
+  right: 0px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background-color: var(--text-danger, #ef4444);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--bg-panel, #101522);
+  animation: badgePop 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes badgePop {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.badgeDot {
+  position: absolute;
+  top: 0px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: var(--text-danger, #ef4444);
+  box-shadow: 0 0 0 2px var(--bg-panel, #101522);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .iconWrapper,
+  .icon,
+  .active::after,
+  .badge {
+    transition: none;
+    animation: none;
+  }
+}
