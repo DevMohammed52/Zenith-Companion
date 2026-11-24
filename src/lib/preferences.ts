@@ -35,6 +35,7 @@ export type Preferences = {
   ambientMusic: boolean;
   audioVolume: number;
   mobileHaptics: boolean;
+  mobileDockTabs: string[];
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -63,6 +64,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ambientMusic: false,
   audioVolume: 35,
   mobileHaptics: true,
+  mobileDockTabs: [],
 };
 
 export const PREFERENCE_STORAGE_KEY = "zenith_preferences";
@@ -181,6 +183,11 @@ export const readPreferences = (): Preferences => {
           next.customPrices = cleanCustomPrices;
         } else {
           next.customPrices = {};
+        }
+        if (Array.isArray(parsed.mobileDockTabs)) {
+          next.mobileDockTabs = parsed.mobileDockTabs.filter((t): t is string => typeof t === "string" && t.startsWith("/")).slice(0, 3);
+        } else {
+          next.mobileDockTabs = [];
         }
       }
     } catch {

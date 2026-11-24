@@ -9,6 +9,7 @@ import {
 } from '@/lib/crafting-queue';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileStorageKey } from '@/lib/profile-storage';
+import { useToast } from '@/components/ui/Toast';
 
 interface CraftingContextType {
   queue: Record<string, number>;
@@ -21,6 +22,7 @@ interface CraftingContextType {
 const CraftingContext = createContext<CraftingContextType | undefined>(undefined);
 
 export function CraftingProvider({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
   const { activeProfile } = useProfiles();
   const activeProfileId = activeProfile?.id || null;
   const storageKey = useMemo(() => getProfileStorageKey(CRAFTING_QUEUE_STORAGE_KEY, activeProfile?.id), [activeProfile?.id]);
@@ -66,7 +68,17 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       [name]: sanitizeQueueQty((prev[name] || 0) + safeQty)
     }));
-  }, []);
+    toast.success(`Added ${safeQty}x ${name} to crafting queue.`, {
+      action: {
+        label: "View Queue",
+        onClick: () => {
+          if (typeof window !== "undefined") {
+            window.location.href = "/crafting";
+          }
+        },
+      },
+    });
+  }, [toast]);
 
   const removeFromQueue = useCallback((name: string) => {
     setQueue(prev => {
@@ -91,7 +103,8 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
 
   const clearQueue = useCallback(() => {
     setQueue({});
-  }, []);
+    toast.info("Crafting queue cleared.");
+  }, [toast]);
 
   const value = useMemo(() => ({
     queue,

@@ -1,30 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Zenith Companion">
   <defs>
-    <linearGradient id="bg" x1="9" y1="5" x2="56" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#111827"/>
-      <stop offset=".62" stop-color="#05070d"/>
-      <stop offset="1" stop-color="#010208"/>
+    <!-- Background Squircle Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#141a29"/>
+      <stop offset="60%" stop-color="#0a0d14"/>
+      <stop offset="100%" stop-color="#05070a"/>
     </linearGradient>
-    <linearGradient id="gold" x1="18" y1="12" x2="47" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff1ad"/>
-      <stop offset=".38" stop-color="#f4c14f"/>
-      <stop offset=".7" stop-color="#c98a23"/>
-      <stop offset="1" stop-color="#7b4a10"/>
+    <linearGradient id="zGradUpper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f1f5f9"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
     </linearGradient>
-    <linearGradient id="rim" x1="12" y1="9" x2="52" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe39a" stop-opacity=".8"/>
-      <stop offset=".55" stop-color="#b7791f" stop-opacity=".45"/>
-      <stop offset="1" stop-color="#5b350b" stop-opacity=".35"/>
+    <linearGradient id="zGradLower" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="60%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#ffffff"/>
     </linearGradient>
-    <filter id="shadow" x="-35%" y="-35%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity=".48"/>
-    </filter>
+    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(148, 163, 184, 0.2)"/>
+      <stop offset="50%" stop-color="rgba(248, 250, 252, 0.95)"/>
+      <stop offset="100%" stop-color="rgba(148, 163, 184, 0.2)"/>
+    </linearGradient>
   </defs>
 
-  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
-  <rect x="5.5" y="5.5" width="53" height="53" rx="12" fill="none" stroke="#26334b" stroke-opacity=".72"/>
-  <path d="M32 9.5 49.5 20.5v23L32 54.5 14.5 43.5v-23L32 9.5Z" fill="#070910" stroke="url(#rim)" stroke-width="2.2" filter="url(#shadow)"/>
-  <path d="M22 21.2 26.7 14.8 32 21.2l5.3-6.4 4.7 6.4-2.1 4.3H24.1L22 21.2Z" fill="url(#gold)"/>
-  <path d="M20.5 31h23L25.2 45h19.6" fill="none" stroke="url(#gold)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M23.2 31h17.2L27.6 40.8h14.1" fill="none" stroke="#fff4c1" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>
+  <!-- Container Squircle with subtle border -->
+  <rect width="64" height="64" rx="14" fill="url(#bgGrad)"/>
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5"/>
+
+  <!-- Centered Zenith Mark (scaled from 256x256 to 48x48) -->
+  <g transform="translate(8, 8) scale(0.1875)">
+    <!-- Celestial Horizon Arc -->
+    <path d="M 18 116 Q 64 42 128 34 Q 192 42 238 116 Q 192 52 128 44 Q 64 52 18 116 Z" fill="url(#arcGrad)"/>
+    <!-- Apex Star -->
+    <path d="M 128 10 L 136 56 L 160 66 L 136 76 L 128 104 L 120 76 L 96 66 L 120 56 Z" fill="#ffffff"/>
+    <!-- Upper Z Polygon -->
+    <path d="M 84 102 L 212 102 L 98 204 L 26 214 L 92 172 L 164 122 L 84 122 L 52 144 Z" fill="url(#zGradUpper)"/>
+    <!-- Lower Z Wing -->
+    <path d="M 112 204 L 188 204 L 228 160 L 194 178 L 146 178 Z" fill="url(#zGradLower)"/>
+  </g>
 </svg>

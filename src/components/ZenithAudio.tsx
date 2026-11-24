@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { ZENITH_SOUND_EVENT, ZenithSoundCue, ZenithSoundRequest } from "@/lib/audio";
+import { ZENITH_SOUND_EVENT, type ZenithSoundCue, type ZenithSoundRequest } from "@/lib/audio";
 import { usePreferences } from "@/lib/preferences";
 
 const interactiveSelector = [
@@ -29,13 +29,11 @@ const sfxSources: Record<Exclude<ZenithSoundCue, "lofi">, string> = {
   contact: "/audio/ui/contact.ogg",
 };
 
-const musicSource = "/audio/music/lofi-loop.ogg";
 const notificationCues = new Set<ZenithSoundCue>(["notify", "success", "warning", "contact"]);
 
 export default function ZenithAudio() {
   const { preferences, loaded } = usePreferences();
   const sfxRef = useRef<Partial<Record<Exclude<ZenithSoundCue, "lofi">, HTMLAudioElement>>>({});
-  const musicRef = useRef<HTMLAudioElement | null>(null);
   const lastCueRef = useRef<Record<string, number>>({});
   const prefsRef = useRef(preferences);
   const activeRef = useRef(true);
@@ -48,7 +46,6 @@ export default function ZenithAudio() {
     Object.values(sfxRef.current).forEach((audio) => {
       if (audio) audio.volume = currentVolume(0.78);
     });
-    if (musicRef.current) musicRef.current.volume = currentVolume(0.48);
   }, [currentVolume]);
 
   const getSfx = useCallback((cue: Exclude<ZenithSoundCue, "lofi">) => {
@@ -61,44 +58,18 @@ export default function ZenithAudio() {
     return sfxRef.current[cue];
   }, [currentVolume]);
 
-  const stopMusic = useCallback(() => {
-    if (!musicRef.current) return;
-    musicRef.current.pause();
-  }, []);
-
-  const startMusic = useCallback(() => {
-    if (!activeRef.current) return;
-    if (!musicRef.current) {
-      const audio = new Audio(musicSource);
-      audio.loop = true;
-      audio.preload = "auto";
-      audio.volume = currentVolume(0.48);
-      musicRef.current = audio;
-    }
-    refreshVolumes();
-    void musicRef.current.play().catch(() => {});
-  }, [currentVolume, refreshVolumes]);
-
   const releaseAudio = useCallback(() => {
-    stopMusic();
     Object.values(sfxRef.current).forEach((audio) => {
       if (!audio) return;
       audio.pause();
       audio.src = "";
     });
     sfxRef.current = {};
-    if (musicRef.current) {
-      musicRef.current.src = "";
-      musicRef.current = null;
-    }
-  }, [stopMusic]);
+  }, []);
 
   const playCue = useCallback((cue: ZenithSoundCue, options: { force?: boolean } = {}) => {
     if (!activeRef.current) return;
-    if (cue === "lofi") {
-      startMusic();
-      return;
-    }
+    if (cue === "lofi") return;
     if (!options.force && notificationCues.has(cue) && !prefsRef.current.notificationSounds) return;
     if (!options.force && !notificationCues.has(cue) && !prefsRef.current.soundEffects) return;
 
@@ -107,30 +78,21 @@ export default function ZenithAudio() {
     if (now - (lastCueRef.current[cue] ?? 0) < throttle) return;
     lastCueRef.current[cue] = now;
 
-    const audio = getSfx(cue);
+    const audio = getSfx(cue as Exclude<ZenithSoundCue, "lofi">);
     if (!audio) return;
     refreshVolumes();
     audio.currentTime = 0;
     void audio.play().catch(() => {});
-  }, [getSfx, refreshVolumes, startMusic]);
+  }, [getSfx, refreshVolumes]);
 
   useEffect(() => {
     prefsRef.current = preferences;
     refreshVolumes();
-    if (!loaded) return;
-    if (preferences.ambientMusic && activeRef.current) startMusic();
-    else stopMusic();
-  }, [loaded, preferences, preferences.audioVolume, refreshVolumes, startMusic, stopMusic]);
+  }, [loaded, preferences, refreshVolumes]);
 
   useEffect(() => {
     const refreshActiveState = () => {
-      const active = !document.hidden && document.hasFocus();
-      activeRef.current = active;
-      if (!active) {
-        stopMusic();
-        return;
-      }
-      if (prefsRef.current.ambientMusic) startMusic();
+      activeRef.current = !document.hidden && document.hasFocus();
     };
 
     const handleSound = (event: Event) => {
@@ -163,7 +125,7 @@ export default function ZenithAudio() {
       document.removeEventListener("pointerdown", handlePointerDown, true);
       releaseAudio();
     };
-  }, [playCue, releaseAudio, startMusic, stopMusic]);
+  }, [playCue, releaseAudio]);
 
   return null;
 }

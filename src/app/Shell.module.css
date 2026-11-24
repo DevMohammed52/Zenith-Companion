@@ -1,0 +1,46 @@
+.layoutRoot {
+  display: flex;
+  min-height: 100vh;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: var(--sidebar-width, 260px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: calc(100% - var(--sidebar-width, 260px));
+  transition: margin-left 200ms cubic-bezier(0.16, 1, 0.3, 1), width 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:global(html[data-sidebar-rail="true"]) .mainContent {
+  margin-left: 64px;
+  width: calc(100% - 64px);
+}
+
+.contentWrapper {
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (max-width: 1180px) {
+  .mainContent,
+  :global(html[data-sidebar-rail="true"]) .mainContent {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .contentWrapper {
+    padding-bottom: calc(64px + max(12px, env(safe-area-inset-bottom, 12px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mainContent {
+    transition: none;
+  }
+}

@@ -30,7 +30,8 @@ const caches: Record<string, CacheEntry> = {
   itemsMap: { data: null, mtime: 0 },
   allItems: { data: null, mtime: 0 },
   market: { data: null, mtime: 0 },
-  usage: { data: null, mtime: 0 }
+  usage: { data: null, mtime: 0 },
+  staticData: { data: null, mtime: 0 },
 };
 const itemNameCache: ItemNameCacheEntry = { data: null, mtime: 0, sourceKey: "" };
 
@@ -69,38 +70,79 @@ function normalizeRecipeDropName(value: unknown) {
     .toLowerCase();
 }
 
-function isAlchemyRecipeItem(item: JsonObject) {
-  return item?.type === "RECIPE" && String(item?.recipe?.skill || "").trim().toLowerCase() === "alchemy";
-}
-
-function getFirstDungeonSource(chest: JsonObject) {
-  const dungeons = chest?.where_to_find?.dungeons;
-  return Array.isArray(dungeons) && dungeons.length > 0 ? dungeons[0] : null;
-}
-
-function getAlchemyChestSourcesForRecipe(item: JsonObject, allItems: JsonObject | null, itemsMap: JsonObject | null) {
-  if (!isAlchemyRecipeItem(item)) return [];
+function getRecipeDungeonSources(
+  item: JsonObject,
+  allItems: JsonObject | null,
+  itemsMap: JsonObject | null,
+  staticData: JsonObject | null
+) {
+  if (item?.type !== "RECIPE") return [];
 
   const recipeKey = normalizeRecipeDropName(item.name);
-  const chests = Object.values({ ...(allItems || {}), ...(itemsMap || {}) }).filter((candidate: any) => (
-    candidate?.type === "CHEST" && /Alchemy Chest/i.test(String(candidate?.name || ""))
-  ));
+  const dungeons: any[] = staticData?.dungeons || [];
+  const sources: any[] = [];
+  const seen = new Set<string>();
 
-  return chests.flatMap((chest: any) => {
+  // 1. Direct dungeon completion drops
+  for (const dungeon of dungeons) {
+    const lootList: any[] = dungeon.loot || [];
+    const directDrop = lootList.find(
+      (loot: any) => normalizeRecipeDropName(loot?.name || loot?.item_name) === recipeKey
+    );
+    if (directDrop) {
+      const key = `DUNGEON:${dungeon.name}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        sources.push({
+          type: "DUNGEON",
+          name: dungeon.name,
+          chance: directDrop.chance ?? "Unknown",
+          location: dungeon.location?.name || "Dungeon",
+          source_item_name: dungeon.name,
+          note: "Earned as a dungeon completion reward drop.",
+        });
+      }
+    }
+  }
+
+  // 2. Chest drops (both Alchemy chests and standard Recipe containers)
+  const chests = Object.values({ ...(allItems || {}), ...(itemsMap || {}) }).filter(
+    (candidate: any) => candidate?.type === "CHEST"
+  );
+
+  for (const chest of chests) {
     const drops = [...(chest.loot_table || []), ...(chest.chest_drops || [])];
-    const matchingDrop = drops.find((drop: any) => normalizeRecipeDropName(drop?.item_name || drop?.name) === recipeKey);
-    if (!matchingDrop) return [];
+    const matchingDrop = drops.find(
+      (drop: any) => normalizeRecipeDropName(drop?.item_name || drop?.name) === recipeKey
+    );
+    if (!matchingDrop) continue;
 
-    const dungeon = getFirstDungeonSource(chest);
-    return [{
-      type: "DUNGEON_CHEST",
-      name: chest.name,
-      chance: matchingDrop.chance ?? "Unknown",
-      location: dungeon ? { id: dungeon.id, name: dungeon.name } : "Dungeon reward chest",
-      source_item_name: chest.name,
-      note: "Dropped from an alchemy chest earned through dungeons.",
-    }];
-  });
+    // Resolve which dungeon this chest originates from
+    const parentDungeon = dungeons.find((d: any) =>
+      (d.loot || []).some(
+        (l: any) => normalizeRecipeDropName(l?.name || l?.item_name) === normalizeRecipeDropName(chest.name)
+      )
+    );
+
+    const dungeonLocation = parentDungeon
+      ? `${parentDungeon.name}${parentDungeon.location?.name ? ` (${parentDungeon.location.name})` : ''}`
+      : chest?.where_to_find?.dungeons?.[0]?.name || "Dungeon Chest";
+
+    const key = `DUNGEON_CHEST:${chest.name}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      sources.push({
+        type: "DUNGEON_CHEST",
+        name: chest.name,
+        chance: matchingDrop.chance ?? "Unknown",
+        location: dungeonLocation,
+        source_item_name: chest.name,
+        note: `Dropped inside ${chest.name} from dungeons.`,
+      });
+    }
+  }
+
+  return sources;
 }
 
 export async function GET(
@@ -120,6 +162,7 @@ export async function GET(
     const allItems = getCachedData(path.join(dataDir, 'all-items-db.json'), 'allItems');
     const marketData = getCachedData(path.join(dataDir, 'market-data.json'), 'market');
     const usageMap = getCachedData(path.join(dataDir, 'usage-map.json'), 'usage');
+    const staticData = getCachedData(path.join(dataDir, 'static-data.json'), 'staticData');
     const itemsByName = getItemsByName(allItems, itemsMap);
 
     // 3. Lookup Item (clone to prevent cache mutation)
@@ -146,13 +189,13 @@ export async function GET(
       }
     }
 
-    const alchemyChestSources = getAlchemyChestSourcesForRecipe(item, allItems, itemsMap);
-    if (alchemyChestSources.length > 0) {
+    const recipeDungeonSources = getRecipeDungeonSources(item, allItems, itemsMap, staticData);
+    if (recipeDungeonSources.length > 0) {
       const existingSources = Array.isArray(item.dropped_by) ? item.dropped_by : [];
       const existingKeys = new Set(existingSources.map((source: any) => `${source?.type || ""}:${source?.name || ""}`));
       item.dropped_by = [
         ...existingSources,
-        ...alchemyChestSources.filter((source) => !existingKeys.has(`${source.type}:${source.name}`)),
+        ...recipeDungeonSources.filter((source) => !existingKeys.has(`${source.type}:${source.name}`)),
       ];
     }
 
@@ -169,6 +212,7 @@ export async function GET(
       const marketItem = marketData[item.name];
       if (marketItem) {
         Object.assign(item, marketItem);
+        item.market_price = getSafeMarketValue(marketItem) || marketItem.price || 0;
       }
 
       // Inject pricing into direct recipe
@@ -193,7 +237,14 @@ export async function GET(
       if (item.produced_from) {
         if (item.produced_from.mats) {
           item.produced_from.mats = item.produced_from.mats.map((mat: any) => {
-            const name = mat.name;
+            const name = mat.name || mat.item_name;
+            const matMarket = marketData[name] || {};
+            return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketValue(matMarket) || 0 };
+          });
+        }
+        if (item.produced_from.materials) {
+          item.produced_from.materials = item.produced_from.materials.map((mat: any) => {
+            const name = mat.name || mat.item_name;
             const matMarket = marketData[name] || {};
             return { ...mat, price: getMerchantBuyPrice(name) || getSafeMarketValue(matMarket) || 0 };
           });

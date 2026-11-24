@@ -14,6 +14,7 @@ export function GameImage({
   fallback = null,
   fallbackSrc,
   src,
+  unoptimized = true,
   ...imageProps
 }: GameImageProps) {
   const imageSrc = getTrustedGameImageUrl(src) || getTrustedGameImageUrl(fallbackSrc);
@@ -22,5 +23,5 @@ export function GameImage({
     return <>{fallback}</>;
   }
 
-  return <Image {...imageProps} alt={alt} src={imageSrc} />;
+  return <Image unoptimized={unoptimized} {...imageProps} alt={alt} src={imageSrc} />;
 }

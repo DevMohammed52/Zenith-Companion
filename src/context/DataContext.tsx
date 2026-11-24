@@ -97,10 +97,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const forceMarket = Boolean(options?.forceMarket);
     const [market, staticPayload, status, items, worldLocationsPayload] = await Promise.all([
       loadMarketData(forceMarket),
-      fetchJson<StaticData>("/static-data.json"),
+      fetchJson<StaticData>("/static-data.json", { cache: "no-cache" }),
       fetchJson<ScraperStatus>(`/scraper-status.json?t=${Date.now()}`, { cache: "no-store" }),
-      fetchJson<ItemLookup>("/all-items-db.json"),
-      fetchJson<{ locations?: WorldLocation[] }>("/world-locations.json"),
+      fetchJson<ItemLookup>("/all-items-db.json", { cache: "no-cache" }),
+      fetchJson<{ locations?: WorldLocation[] }>("/world-locations.json", { cache: "no-cache" }),
     ]);
 
     if (market) {
