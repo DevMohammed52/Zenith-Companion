@@ -1,0 +1,60 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-main, #f8fafc);
+  font-family: var(--font-sans, inherit);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 120ms ease;
+  outline: none;
+}
+
+.trigger:hover:not(:disabled) {
+  background-color: var(--bg-card-hover, rgba(255, 255, 255, 0.05));
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  transition: transform 150ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.content {
+  overflow: hidden;
+  transition: opacity 150ms ease;
+}
+
+.contentClosed {
+  display: none;
+}

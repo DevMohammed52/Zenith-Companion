@@ -1,0 +1,67 @@
+.content {
+  position: absolute;
+  z-index: 1050;
+  min-width: 220px;
+  max-width: 380px;
+  width: max-content;
+  background-color: var(--bg-panel, #101522);
+  border: 1px solid var(--border-strong, rgba(148, 163, 184, 0.22));
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.12);
+  color: var(--text-main, #f8fafc);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  outline: none;
+  animation: popoverFadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: var(--bg-panel, #101522);
+  border: 1px solid var(--border-strong, rgba(148, 163, 184, 0.22));
+  transform: rotate(45deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.arrowTop {
+  bottom: -6px;
+  border-top: none;
+  border-left: none;
+}
+
+.arrowBottom {
+  top: -6px;
+  border-bottom: none;
+  border-right: none;
+}
+
+.triggerWrapper {
+  display: inline-flex;
+}
+
+@media (max-width: 480px) {
+  .content {
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content {
+    animation: none;
+  }
+}
