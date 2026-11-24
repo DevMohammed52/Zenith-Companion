@@ -28,14 +28,17 @@ Before modifying code, understand the game reality, map architectural dependenci
 * Inspect corresponding datasets in `public/` and `src/data/`.
 * Audit field names, optional properties, and null value behavior (items with no active market price, uncraftable items, zero drop chance entries).
 
-### Step 1.4: Graphify Dependency and God Node Blast Radius Audit
-* Run `graphify query "<target route>"` to map inbound and outbound relationships.
-* Identify couplings to God Nodes (`useProfiles`, `DataContext`, `useData`, `useSettings`).
-* Verify whether local state or global context drives the page to prevent accidental cascading re-renders or broken state across routes.
+### Step 1.4: Automated Route & Dependency Audit
+* Run the route audit command before inspecting files manually:
+  ```powershell
+  npm run audit:route -- <route-path>
+  ```
+  (for example `npm run audit:route -- pets/compare`). This immediately inventories `<style jsx>` debt, `globals.css` selector matches, `StateBlock` / `lucide-react` bypasses, bespoke UI clones, God Node couplings (`useProfiles`, `useData`, `usePreferences`), and existing test coverage.
+* Also query `graphify-local` MCP (`query_graph`, `get_node`, `god_nodes`) to verify inbound/outbound blast radius and ensure local state changes do not cascade across unrelated routes.
 
 ### Step 1.5: Route Architecture Contract Safety Net
 * Locate existing test suites targeting the page in `tests/unit/*<page>*.test.ts`.
-* If a dedicated architecture contract test does not exist, author a baseline characterization test (`tests/unit/<route>-architecture-contracts.test.ts`). This guarantees subsequent dead code removal does not silently break logic or layout contracts.
+* If a dedicated architecture contract test does not exist, author `tests/unit/<route>-architecture-contracts.test.ts` calling `assertCleanMigratedRoute({ routeSubpath: "<route>" })` from `tests/unit/helpers/route-contract-audit.ts` alongside calculation invariance tests. For new migrations, keep strict defaults (`allowStateBlock: false`, `allowDirectLucide: false`).
 
 **Exit Gate 1**: Verified game facts, mapped architecture blast radius, and a 100% passing baseline test suite.
 
@@ -49,12 +52,13 @@ Classify the page into one of three primary interaction modes:
 2. **Route Planner** (1 to 5 minutes): The player optimizes training queues or profitability (Forge lessons, Alchemy EV). Primary recommendations sit at the top; secondary overrides and filters live in progressive disclosure containers.
 3. **Ambient Tracker** (Persistent background): The player tracks respawns or events (World Boss timers, Weather forecasts). High-contrast timers, stable layout, and non-intrusive alerts.
 
-### Step 2.2: Cross-Feature Relational Deep Linking
-* Map entity relationships that can bridge player navigation:
+### Step 2.2: Cross-Feature Deep Linking and Shared Entity Extraction
+* Map entity relationships that bridge player navigation:
   * Items with gathering sources link directly to `/map?location=...`.
   * Enemies with item drops open `ItemModal` on click.
   * Gear items offer a direct jump to combat or simulator views.
   * Lore references deep-link to corresponding game entities.
+* **Shared Domain Extraction**: When related routes share an entity (for example `/pets`, `/pets/compare`, and `/pets/owned` sharing pet images or setup controls), extract a single shared component rather than maintaining three route-local copies.
 
 ### Step 2.3: Decluttering and Information Hierarchy
 * Review every container, card, and metric box on the legacy page.
@@ -115,9 +119,9 @@ Clean the foundation before building new features.
 * Remove obsolete metric boxes, dead helper functions, unused state hooks, and route-local bespoke controls (such as ad-hoc `NumberField`, `OptionMenu`, or custom select/modal clones) once mapped to `src/components/ui/`.
 * Purge leftover route-specific classes from `src/app/globals.css` (and verify no global class like `.pet-avatar` leaks styles onto CSS Module wrappers).
 
-### Step 4.2: Compile and Test Sanity
-* Run `npm run typecheck` to verify the stripped file compiles without errors.
-* Run `npm run test:unit` to verify baseline tests remain green.
+### Step 4.2: Dead-Code and Compile Sanity
+* Run `npx knip --include files` to confirm no orphaned component files remain on disk after removing dead widgets.
+* Run `npm run typecheck` and `npm run test:unit` to verify the stripped foundation compiles cleanly with zero failing contracts.
 
 **Exit Gate 4**: Minimal, clean code foundation with zero TypeScript or test errors.
 
@@ -207,11 +211,13 @@ Verify that calculation outputs, economy values, and drop rates match production
 * Run `npm run typecheck` to verify zero TypeScript errors.
 * Run `npm run build` to verify the production Next.js compiler generates all static routes and catches metadata errors.
 
-### Gate 5: Interactive Verification and Visual Evidence Across Breakpoints
-* Run interactive Playwright verification across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports rather than passive initial-load snapshots alone:
+### Gate 5: Interactive Verification, Seeded States & Visual Evidence Across Breakpoints
+* Author or update a route Playwright spec using `tests/a11y/fixtures/route-helpers.ts` (`seedPopulatedProfile`, `attachRuntimeMonitors`, `assertAxeClean(..., "serious")`, `assertNoHorizontalOverflow`, `openUnclippedListboxOption`).
+* Test across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports in both **Populated** (seeded character/owned items) and **Empty** states:
   * Click numeric steppers (`+` / `-`) and confirm values update in the DOM.
   * Open `Select` / `Combobox` dropdowns inside panels/accordions and confirm zero clipping or z-index occlusion.
-  * Toggle every view mode (Cards and Table) on both desktop and 375px mobile, verifying avatars do not collide with labels, table `min-width` prevents cramped numbers, and no unintended page-level horizontal scroll occurs (`scrollWidth <= clientWidth`).
+  * Toggle every view mode (Cards and Table) on both desktop and 375px mobile, verifying avatars clear labels, table `min-width` prevents cramped numbers, and `scrollWidth <= innerWidth`.
+  * Assert zero `console.error` / `pageerror`, zero failed same-origin requests, `CLS <= 0.1`, and zero `serious` or `critical` axe violations.
 * Save screenshots to the artifacts directory and inspect for layout clipping, descender truncation, nested outline clutter, awkward line wraps, or touch clearance issues.
 
 ## 8. Stage 7: Release Engineering and Production Deployment Pipeline
@@ -249,7 +255,7 @@ Verify that calculation outputs, economy values, and drop rates match production
 * Run `git push origin main`.
 * Verify the push finishes with exit code 0.
 
-### Step 8.7: Mirror Workspace Parity Sync
-* Switch to the mirror workspace directory: `c:\Data\Programming Projects\Zenith Companion`.
-* Run `git fetch origin main; git reset --hard origin/main; git status`.
-* Confirm both workspaces are at identical commit hashes and have clean working trees.
+### Step 8.7: Dual-Workspace Parity Sync
+* Primary working directory: `C:\Data\Programming Projects\Zenith Companion` (backup: `c:\Data\IdleMMO related stuff\02_Tools\AlchemyCalculator\Zenith Companion`).
+* Run `git fetch origin main; git reset --hard origin/main; git status` in the other checkout and mirror any updated local-only files (`AGENTS.md`, `DESIGN.md`, `.agents/`, `graphify-out/`).
+* Confirm both workspaces sit at identical commit hashes with clean working trees.
