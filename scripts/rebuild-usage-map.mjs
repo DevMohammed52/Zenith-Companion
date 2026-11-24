@@ -2,6 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeProductName, getRecipeUses } from '../src/lib/logic-core.mjs';
 import { DEFAULT_ALCHEMY_RECIPES } from '../src/lib/default-alchemy-recipes.mjs';
+import {
+  DEFAULT_SMELTING_RECIPES,
+  DEFAULT_COOKING_RECIPES,
+  DEFAULT_FORGE_BOW_RECIPES,
+  DEFAULT_FORGE_GEAR_RECIPES,
+} from '../src/lib/default-base-recipes.mjs';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
@@ -149,7 +155,7 @@ async function rebuild() {
             skill: item.recipe.skill || 'CRAFTING',
             level: item.recipe.level_required || item.recipe.level || 1,
             recipe_name: item.name, // Link back to the preferred blueprint
-            mats: mats.map(m => ({
+            materials: mats.map(m => ({
               name: m.item_name || m.name,
               amount: m.quantity || m.amount || 1
             }))
@@ -199,7 +205,7 @@ async function rebuild() {
       level: recipe.level || 1,
       recipe_name: null,
       recipe_label: 'Default Alchemy craft',
-      mats,
+      materials: mats,
     };
 
     mats.forEach((mat) => {
@@ -214,6 +220,46 @@ async function rebuild() {
       }
     });
   });
+
+  // 2c. Map default Smelting, Cooking, Forge Bows, and Forge Gear crafts
+  const registerBaseCrafts = (recipes, skill, source, labelPrefix) => {
+    Object.entries(recipes).forEach(([productName, recipe]) => {
+      const productEntry = getEntry(productName);
+      if (productEntry.produced_from) return;
+
+      const mats = recipe.materials.map(m => ({
+        name: m.name,
+        item_name: m.name,
+        amount: m.amount,
+      }));
+
+      productEntry.produced_from = {
+        source,
+        skill,
+        level: recipe.level || 1,
+        recipe_name: null,
+        recipe_label: `${labelPrefix} craft`,
+        materials: mats,
+      };
+
+      mats.forEach((mat) => {
+        const matEntry = getEntry(mat.name);
+        if (!matEntry.required_for.find(r => r.name === productName && r.type === skill)) {
+          matEntry.required_for.push({
+            type: skill,
+            name: productName,
+            amount: mat.amount,
+            source,
+          });
+        }
+      });
+    });
+  };
+
+  registerBaseCrafts(DEFAULT_SMELTING_RECIPES, 'SMELTING', 'DEFAULT_SMELTING', 'Default Smelting');
+  registerBaseCrafts(DEFAULT_COOKING_RECIPES, 'COOKING', 'DEFAULT_COOKING', 'Default Cooking');
+  registerBaseCrafts(DEFAULT_FORGE_BOW_RECIPES, 'FORGE', 'DEFAULT_FORGE', 'Default Forge');
+  registerBaseCrafts(DEFAULT_FORGE_GEAR_RECIPES, 'FORGE', 'DEFAULT_FORGE', 'Default Forge');
 
   // 3. Build Search Index
   const searchIndex = Object.values(allItemsDb).map(item => ({

@@ -5,7 +5,7 @@ const ROOT = process.cwd();
 const KNOWLEDGE_DIR = path.join(ROOT, ".agents", "knowledge", "idlemmo");
 const WIKI_DIR = path.join(KNOWLEDGE_DIR, "wiki");
 
-const WIKI_SITEMAP_URL = "https://wiki.idle-mmo.com/sitemap.xml";
+const SUPPORT_BASE_URL = "https://support.idle-mmo.com";
 const TRELLO_ROADMAP_URL = "https://trello.com/b/CxIn7i5B.json";
 const PATCH_NOTES_PATH = path.join(ROOT, "public", "idlemmo-patch-notes.json");
 
@@ -17,105 +17,18 @@ function ensureDir(dir) {
   }
 }
 
-function cleanHtmlToMarkdown(html, pageTitle = "", pageUrl = "") {
-  // Extract main element if present
-  let content = html;
-  const mainMatch = html.match(/<main[\s\S]*?<\/main>/i);
-  if (mainMatch) {
-    content = mainMatch[0];
-  }
-
-  // Remove scripts, styles, SVGs, and nav bars
-  content = content.replace(/<script[\s\S]*?<\/script>/gi, "");
-  content = content.replace(/<style[\s\S]*?<\/style>/gi, "");
-  content = content.replace(/<svg[\s\S]*?<\/svg>/gi, "");
-  content = content.replace(/<nav[\s\S]*?<\/nav>/gi, "");
-  content = content.replace(/<button[\s\S]*?<\/button>/gi, "");
-
-  // Convert tables to Markdown
-  content = content.replace(/<table[\s\S]*?<\/table>/gi, (tableHtml) => {
-    const rows = [];
-    const trMatches = [...tableHtml.matchAll(/<tr[\s\S]*?<\/tr>/gi)];
-    for (const trMatch of trMatches) {
-      const tr = trMatch[0];
-      const cells = [];
-      const cellMatches = [...tr.matchAll(/<(th|td)[^>]*>([\s\S]*?)<\/\1>/gi)];
-      for (const cm of cellMatches) {
-        const text = cm[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-        cells.push(text);
-      }
-      if (cells.length > 0) {
-        rows.push(cells);
-      }
-    }
-    if (rows.length === 0) return "";
-    const colCount = Math.max(...rows.map((r) => r.length));
-    const header = rows[0].map((c) => c || "-");
-    while (header.length < colCount) header.push("-");
-    const divider = Array(colCount).fill("---");
-    const bodyRows = rows.slice(1).map((r) => {
-      const padded = [...r];
-      while (padded.length < colCount) padded.push("");
-      return `| ${padded.join(" | ")} |`;
-    });
-    return `\n| ${header.join(" | ")} |\n| ${divider.join(" | ")} |\n${bodyRows.join("\n")}\n`;
-  });
-
-  // Convert headings
-  content = content.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, (_, text) => `\n# ${stripTags(text)}\n`);
-  content = content.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, text) => `\n## ${stripTags(text)}\n`);
-  content = content.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, (_, text) => `\n### ${stripTags(text)}\n`);
-  content = content.replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, (_, text) => `\n#### ${stripTags(text)}\n`);
-  content = content.replace(/<h5[^>]*>([\s\S]*?)<\/h5>/gi, (_, text) => `\n##### ${stripTags(text)}\n`);
-  content = content.replace(/<h6[^>]*>([\s\S]*?)<\/h6>/gi, (_, text) => `\n###### ${stripTags(text)}\n`);
-
-  // Convert list items
-  content = content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_, text) => `\n* ${stripTags(text)}`);
-
-  // Convert bold and italic
-  content = content.replace(/<(strong|b)[^>]*>([\s\S]*?)<\/\1>/gi, (_, __, text) => `**${stripTags(text)}**`);
-  content = content.replace(/<(em|i)[^>]*>([\s\S]*?)<\/\1>/gi, (_, __, text) => `*${stripTags(text)}*`);
-  content = content.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, text) => `\`${stripTags(text)}\``);
-
-  // Convert paragraphs and linebreaks
-  content = content.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, text) => `\n\n${stripTags(text)}\n\n`);
-  content = content.replace(/<br\s*\/?>/gi, "\n");
-  content = content.replace(/<hr\s*\/?>/gi, "\n---\n");
-
-  // Strip all remaining HTML tags
-  content = stripTags(content);
-
-  // Clean excessive whitespace and zero-width characters
-  content = content.replace(/[\u200B-\u200D\uFEFF]/g, "");
-  content = content.replace(/[ \t]+/g, " ");
-  content = content.replace(/\n\s+\n/g, "\n\n");
-  content = content.replace(/\n{3,}/g, "\n\n").trim();
-
-  // Add frontmatter
-  const frontmatter = [
-    "---",
-    `title: ${JSON.stringify(pageTitle)}`,
-    `source: ${JSON.stringify(pageUrl)}`,
-    `last_ingested: ${JSON.stringify(new Date().toISOString())}`,
-    "---",
-    "",
-  ].join("\n");
-
-  return `${frontmatter}\n${content}\n`;
-}
-
-function stripTags(html) {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-}
-
-async function fetchWithRetry(url, retries = 3, delay = 500) {
+async function fetchWithRetry(url, options = {}, retries = 3, delay = 500) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "ZenithCompanionKnowledgeIngest/1.0" },
+        headers: {
+          "User-Agent": "ZenithCompanionKnowledgeIngest/2.0",
+          ...(options.headers || {}),
+        },
+        signal: AbortSignal.timeout(10000),
+        ...options,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-      return await res.text();
+      return res;
     } catch (err) {
       if (attempt === retries) throw err;
       await sleep(delay * attempt);
@@ -126,13 +39,14 @@ async function fetchWithRetry(url, retries = 3, delay = 500) {
 async function ingestRoadmap() {
   console.log("Fetching IdleMMO Public Roadmap from Trello...");
   try {
-    const raw = await fetchWithRetry(TRELLO_ROADMAP_URL);
-    const data = JSON.parse(raw);
+    const res = await fetchWithRetry(TRELLO_ROADMAP_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     const listsMap = new Map((data.lists || []).map((l) => [l.id, l.name]));
 
     const cardsByList = new Map();
     for (const card of data.cards || []) {
-      if (card.closed) continue; // skip closed
+      if (card.closed) continue;
       const listName = listsMap.get(card.idList) || "Other";
       if (!cardsByList.has(listName)) cardsByList.set(listName, []);
       cardsByList.get(listName).push(card);
@@ -173,7 +87,6 @@ async function ingestPatchNotesSummary() {
   const parsed = JSON.parse(raw);
   const notes = Array.isArray(parsed) ? parsed : (parsed.patchNotes || []);
 
-  // Group notes by category and recent major updates
   const categoryCounts = {};
   for (const note of notes) {
     for (const cat of note.categories || []) {
@@ -207,93 +120,166 @@ async function ingestPatchNotesSummary() {
   console.log(`Saved patch notes summary to ${outPath}.`);
 }
 
-async function ingestWiki() {
-  console.log("Fetching IdleMMO Wiki sitemap...");
-  const sitemapXml = await fetchWithRetry(WIKI_SITEMAP_URL);
-  const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-  console.log(`Discovered ${urls.length} wiki URLs.`);
+async function discoverAllArticles() {
+  console.log("Discovering all official articles from support.idle-mmo.com...");
+  const articles = [];
+  const sections = ["wiki", "knowledge-base"];
 
-  ensureDir(WIKI_DIR);
+  for (const sec of sections) {
+    try {
+      const res = await fetchWithRetry(`${SUPPORT_BASE_URL}/${sec}`);
+      if (!res.ok) continue;
+      const html = await res.text();
+      const m = html.match(/data-page="([^"]+)"/);
+      if (!m) continue;
+      const data = JSON.parse(m[1].replace(/&quot;/g, '"'));
+      const categories = data.props?.categories || [];
 
-  const indexEntries = [];
-  const CONCURRENCY = 6;
-
-  for (let i = 0; i < urls.length; i += CONCURRENCY) {
-    const chunk = urls.slice(i, i + CONCURRENCY);
-    await Promise.all(
-      chunk.map(async (url) => {
+      for (const cat of categories) {
+        const catUrl = `${SUPPORT_BASE_URL}${cat.path}`;
         try {
-          const html = await fetchWithRetry(url);
-          const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-          let title = titleMatch ? titleMatch[1].replace(/\s*\|\s*IdleMMO Wiki.*$/i, "").trim() : "";
-          if (!title) {
-            const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-            title = h1Match ? stripTags(h1Match[1]) : "IdleMMO Wiki Article";
+          const catRes = await fetchWithRetry(catUrl);
+          if (!catRes.ok) continue;
+          const catHtml = await catRes.text();
+          const catM = catHtml.match(/data-page="([^"]+)"/);
+          if (!catM) continue;
+          const catData = JSON.parse(catM[1].replace(/&quot;/g, '"'));
+          const catObj = catData.props?.category || {};
+          const catArticles = catObj.articles?.data || catObj.articles || cat.articles || [];
+
+          for (const a of catArticles) {
+            const slug = a.slug;
+            const categoryFolder = cat.path.replace(/^\/(wiki|knowledge-base)\/?/, "").replace(/^\/|\/$/g, "");
+            const title = a.title || (a.title_html ? a.title_html.replace(/<[^>]+>/g, "").trim() : slug);
+            articles.push({
+              section: sec,
+              categoryName: cat.name || categoryFolder,
+              categoryFolder,
+              slug,
+              title,
+              url: `${SUPPORT_BASE_URL}${cat.path}/${slug}`,
+              mdUrl: `${SUPPORT_BASE_URL}${cat.path}/${slug}.md`,
+            });
           }
+        } catch (err) {
+          console.warn(`Failed to inspect category ${cat.path}: ${err.message}`);
+        }
+      }
+    } catch (err) {
+      console.warn(`Failed to inspect section ${sec}: ${err.message}`);
+    }
+  }
 
-          const u = new URL(url);
-          const pathname = u.pathname.replace(/^\/|\/$/g, "");
-          const parts = pathname.split("/").filter(Boolean);
+  console.log(`Discovered ${articles.length} total articles across all categories.`);
+  return articles;
+}
 
-          let relativeFilePath;
-          if (parts.length === 0) {
-            relativeFilePath = "home.md";
-          } else if (parts.length === 1) {
-            relativeFilePath = `${parts[0]}.md`;
+async function ingestWiki() {
+  ensureDir(WIKI_DIR);
+  const articles = await discoverAllArticles();
+  const indexEntries = [];
+  const CONCURRENCY = 8;
+  let successCount = 0;
+  let failCount = 0;
+
+  console.log(`Downloading clean Markdown for ${articles.length} articles...`);
+
+  for (let i = 0; i < articles.length; i += CONCURRENCY) {
+    const chunk = articles.slice(i, i + CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (art) => {
+        try {
+          const res = await fetchWithRetry(art.mdUrl);
+          let body = "";
+          if (res.ok) {
+            body = await res.text();
           } else {
-            const folder = parts.slice(0, -1).join(path.sep);
-            const file = `${parts[parts.length - 1]}.md`;
-            relativeFilePath = path.join(folder, file);
+            // Fallback to HTML
+            const htmlRes = await fetchWithRetry(art.url);
+            if (!htmlRes.ok) throw new Error(`HTTP ${res.status}`);
+            const html = await htmlRes.text();
+            body = stripHtmlFallback(html);
           }
 
-          const fullFilePath = path.join(WIKI_DIR, relativeFilePath);
-          ensureDir(path.dirname(fullFilePath));
+          // Use H1 from body if available
+          const h1Match = body.match(/^#\s+(.+)$/m);
+          const finalTitle = h1Match ? h1Match[1].trim() : art.title;
 
-          const mdContent = cleanHtmlToMarkdown(html, title, url);
-          fs.writeFileSync(fullFilePath, mdContent, "utf-8");
+          // Build clean file with metadata frontmatter
+          const frontmatter = [
+            "---",
+            `title: ${JSON.stringify(finalTitle)}`,
+            `category: ${JSON.stringify(art.categoryName)}`,
+            `section: ${JSON.stringify(art.section)}`,
+            `source: ${JSON.stringify(art.url)}`,
+            `last_ingested: ${JSON.stringify(new Date().toISOString())}`,
+            "---",
+            "",
+            "",
+          ].join("\n");
 
+          const targetDir = path.join(WIKI_DIR, art.categoryFolder);
+          ensureDir(targetDir);
+          const targetFile = path.join(targetDir, `${art.slug}.md`);
+
+          fs.writeFileSync(targetFile, frontmatter + body.trim() + "\n", "utf-8");
+          successCount++;
+
+          const relPath = `wiki/${art.categoryFolder}/${art.slug}.md`;
           indexEntries.push({
-            title,
-            url,
-            path: `wiki/${relativeFilePath.replace(/\\/g, "/")}`,
+            title: finalTitle,
+            category: art.categoryName,
+            categoryFolder: art.categoryFolder,
+            path: relPath,
           });
 
           process.stdout.write(".");
         } catch (err) {
-          console.error(`\nFailed to fetch ${url}:`, err.message);
+          failCount++;
+          console.warn(`\nFailed to download ${art.url}: ${err.message}`);
         }
       })
     );
-    await sleep(100);
+    await sleep(50);
   }
 
-  console.log("\nFinished downloading all wiki pages.");
+  console.log(`\nFinished: ${successCount} articles saved successfully (${failCount} failures).`);
 
-  // Generate INDEX.md
+  // Build master index
   indexEntries.sort((a, b) => a.title.localeCompare(b.title));
   let indexMd = `# IdleMMO Game Knowledge Base — Master Index\n\n`;
-  mdIndexSection(indexEntries);
-  fs.writeFileSync(path.join(KNOWLEDGE_DIR, "INDEX.md"), indexMd, "utf-8");
-  console.log("Generated master knowledge index.");
+  indexMd += `> Source: Official IdleMMO Support & Knowledge Base (https://support.idle-mmo.com)\n`;
+  indexMd += `> Last Ingested: ${new Date().toISOString()}\n`;
+  indexMd += `> Total Articles: ${indexEntries.length}\n\n`;
+  indexMd += `## Quick Reference by System\n\n`;
 
-  function mdIndexSection(entries) {
-    indexMd += `Total Articles: ${entries.length}\n\n`;
-    indexMd += `## Quick Reference by System\n\n`;
-    const groups = new Map();
-    for (const entry of entries) {
-      const topFolder = entry.path.split("/")[1] || "general";
-      if (!groups.has(topFolder)) groups.set(topFolder, []);
-      groups.get(topFolder).push(entry);
-    }
-
-    for (const [group, items] of groups.entries()) {
-      indexMd += `### ${group.toUpperCase().replace(/-/g, " ")}\n\n`;
-      for (const item of items) {
-        indexMd += `* [${item.title}](${item.path})\n`;
-      }
-      indexMd += `\n`;
-    }
+  const groups = new Map();
+  for (const entry of indexEntries) {
+    if (!groups.has(entry.category)) groups.set(entry.category, []);
+    groups.get(entry.category).push(entry);
   }
+
+  for (const [groupName, items] of Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+    indexMd += `### ${groupName} (${items.length})\n\n`;
+    for (const item of items) {
+      indexMd += `* [${item.title}](${item.path})\n`;
+    }
+    indexMd += "\n";
+  }
+
+  const indexFilePath = path.join(KNOWLEDGE_DIR, "INDEX.md");
+  fs.writeFileSync(indexFilePath, indexMd, "utf-8");
+  console.log(`Saved master index to ${indexFilePath}.`);
+}
+
+function stripHtmlFallback(html) {
+  let text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "");
+  const main = text.match(/<main[\s\S]*?<\/main>/i)?.[0] || text;
+  return main.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 async function main() {

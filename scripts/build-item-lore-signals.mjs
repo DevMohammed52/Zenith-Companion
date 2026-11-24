@@ -115,7 +115,7 @@ const RULES = [
     id: 'celestial-system',
     pattern: /\b(celestial system|lunar vigil|lunar|moonlit|moonlight|stars?|starlight)\b/i,
     terms: ['celestial system', 'lunar', 'stars'],
-    entryIds: ['world-the-celestial-system-of-valaron', 'concepts-cults'],
+    entryIds: ['world-celestial-system', 'concepts-cults'],
     confidence: 'theory',
     reason: 'The item description uses sky, lunar, or star language that can support celestial-system research.',
   },
