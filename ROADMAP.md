@@ -109,7 +109,9 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 - [x] **/enemies**: Monster bestiary, zone filtering, combat drop tables.
 
 ### Tier 5: Reference Pages
-- [ ] **/pets**: Pet collection, two-tier stat curve graphs, passive ability comparisons.
+- [x] **[2026-11-25 00:05] /pets**: Complete redesign of the companion directory with scoped CSS modules, UI primitives (`SearchInput`, `Select`, `SegmentedControl`, `NumberInput`, `Switch`, `Button`, `EmptyState`, `Pagination`, `Badge`, `ModalSheet`), zero CLS, mobile bottom-sheet ergonomics, and clean gamer copy. Stripped 10 redundant metric tiles, simplified simulator setup into a collapsible panel with CSS Grid row animations (`0fr -> 1fr`), implemented bounded pagination (12, 24, 48 items), egg acquisition links to `ItemModal`, URL deep-linking (`?pet=`), floating back-to-top button with 20px mobile dock clearance, and purged 1,781 lines of legacy global pet styles from `globals.css`. Passed all 5 verification gates: strict logic invariance, 791 unit tests passing across 56 files (`tests/unit/pets-architecture-contracts.test.ts`), 0 TypeScript errors, clean production build across 42 routes, and Playwright 3-tier captures (375px mobile, 1024px tablet, 1440px desktop).
+- [ ] **/pets/compare**: Side-by-side companion comparisons and stat diffs.
+- [ ] **/pets/owned**: Owned companion roster and investment tracking.
 - [ ] **/housing**: Room tiers, furniture bonuses, gold upgrade costs.
 - [ ] **/conquest**: Guild conquest territories, territory buffs, time-to-conquer calculators.
 - [ ] **/museum**: Character-isolated item completion tracker, donation progress.
@@ -139,7 +141,7 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 | **Phase 3** | Tier 2: `/settings` | Completed | Scoped CSS Module, SegmentedControl groups, ModalSheet, 44px touch targets, zero a11y violations |
 | **Phase 4** | Tier 3: Shell Chrome | Completed | Sidebar, Header, Mobile BottomDock, Toast, Sound Spec, Refactoring Protocol |
 | **Phase 5** | Tier 4: `/items` & Global Modals | Completed | `/items`, `ItemModal` & `/enemies` completed |
-| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets` next |
+| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets` done; `/pets/compare` next |
 | **Phase 7** | Tier 6: Economy Engines | Planned | Profiles, Bosses, Dungeons, Skill Profit, Forge, Alchemy |
 | **Phase 8** | Tier 7: Home Dashboard | Planned | Final aggregator route polish |
 

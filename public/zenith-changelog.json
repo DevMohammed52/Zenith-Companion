@@ -205,18 +205,52 @@
     "date": null,
     "rawHeading": "## [Unreleased]",
     "isUnreleased": true,
-    "sections": [],
-    "totalChanges": 0
+    "sections": [
+      {
+        "category": "Changed",
+        "items": [
+          {
+            "id": "Unreleased-Changed-0",
+            "title": "Pet Directory Redesign",
+            "description": "Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links.",
+            "subItems": [],
+            "raw": "- **Pet Directory Redesign**: Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links."
+          },
+          {
+            "id": "Unreleased-Changed-1",
+            "title": "Pet Setup Simulator",
+            "description": "Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates.",
+            "subItems": [],
+            "raw": "- **Pet Setup Simulator**: Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates."
+          },
+          {
+            "id": "Unreleased-Changed-2",
+            "title": "Bounded Page Navigation",
+            "description": "Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing.",
+            "subItems": [],
+            "raw": "- **Bounded Page Navigation**: Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing."
+          },
+          {
+            "id": "Unreleased-Changed-3",
+            "title": "Mobile Sheet Ergonomics",
+            "description": "Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.",
+            "subItems": [],
+            "raw": "- **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button."
+          }
+        ]
+      }
+    ],
+    "totalChanges": 4
   },
   "meta": {
     "totalReleases": 4,
     "latestVersion": "2026-11-24",
     "latestDate": "2026-11-24",
     "categories": [
+      "Changed",
       "Added",
-      "Fixed",
-      "Changed"
+      "Fixed"
     ],
-    "generatedAt": "2026-11-24T17:09:01.032Z"
+    "generatedAt": "2026-11-24T18:35:08.739Z"
   }
 }
