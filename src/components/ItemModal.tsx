@@ -1,39 +1,69 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  X, ExternalLink, Shield, Zap, Package, BookOpen,
-  MapPin, Hammer, TrendingUp, Info, Target, Lock, Plus
+  Shield,
+  Zap,
+  Package,
+  BookOpen,
+  MapPin,
+  Hammer,
+  TrendingUp,
+  Target,
+  Plus,
+  Coins,
+  Check,
+  AlertTriangle,
+  Sparkles,
+  Sliders,
+  Utensils,
+  Heart,
+  Activity,
+  ArrowRight,
+  Castle,
+  Crown,
+  Swords,
+  Pickaxe,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
+
 import { useItemModal } from '@/context/ItemModalContext';
 import { GameImage } from '@/components/GameImage';
-import { useRouter } from 'next/navigation';
 import { useCrafting } from '@/context/CraftingContext';
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
 import { isCraftingQueueRecipe } from '@/lib/crafting-queue';
-
 import { getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
-import { VENDOR_ITEMS, getMerchantBuyPrice } from '@/constants';
+import { getMerchantBuyPrice } from '@/constants';
 import {
-  getDescriptionLoreForItem,
-  getLoreEntry,
-  getLoreForItem,
+  getAllLoreForItem,
   getCachedLoreDataset,
+  getLoreEntry,
   loadLoreData,
   type LoreDataset,
-  type LoreEntry,
 } from '@/data/lore';
-import { getMarketLiquidity, getSafeMarketValue } from '@/lib/market-pricing';
+import { getSafeMarketValue, getSafeMarketPrice } from '@/lib/market-pricing';
 import { useProfiles } from '@/lib/profiles';
 import { getProfileBarteringBoost } from '@/lib/profile-calculations';
-import { GATHERED_RESOURCE_SOURCE_NOTE, getDropSourceLocation, getResourceLocationsForItem, type DropSourceWithLocation } from '@/lib/locations';
-import { useModalA11y } from '@/lib/use-modal-a11y';
+import {
+  getDropSourceLocation,
+  getResourceLocationsForItem,
+  normalizeLocationKey,
+  type DropSourceWithLocation,
+} from '@/lib/locations';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 import { loadUsageMap } from '@/lib/usage-map';
 import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
-import { ErrorState } from '@/components/StateBlock';
+
+import { ModalSheet } from '@/components/ui/ModalSheet';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Button } from '@/components/ui/Button';
+import { Badge, type BadgeVariant } from '@/components/ui/Badge';
+import { formatGold } from '@/lib/format';
+import styles from './ItemModal.module.css';
 
 interface ItemModalProps {
   id: string;
@@ -47,82 +77,143 @@ type AcquisitionSource = DropSourceWithLocation & {
   source_item_name?: string;
 };
 
-const formatGold = (value: number) => `${Math.round(value).toLocaleString()}g`;
-
 async function fetchPublicJson<T>(url: string): Promise<T | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) return null;
-    return await response.json() as T;
+    return (await response.json()) as T;
   } catch {
     return null;
   }
 }
 
 function clonePlainItem(item: unknown) {
-  if (typeof structuredClone === 'function') return structuredClone(item);
+  if (!item || typeof item !== 'object') return item;
   return JSON.parse(JSON.stringify(item));
 }
 
 async function loadPublicItemFallback(id: string) {
   const [allItemsDb, marketData, usageMap] = await Promise.all([
-    fetchPublicJson<Record<string, any>>('/all-items-db.json'),
-    fetchPublicJson<Record<string, any>>('/market-data.json'),
-    fetchPublicJson<Record<string, any>>('/usage-map.json'),
+    fetchPublicJson<Record<string, unknown>>('/all-items-db.json'),
+    fetchPublicJson<Record<string, unknown>>('/market-data.json'),
+    fetchPublicJson<Record<string, unknown>>('/usage-map.json'),
   ]);
+
   const rawItem = allItemsDb?.[id];
   if (!rawItem) return null;
 
   const item = clonePlainItem(rawItem) as Record<string, any>;
-  const marketItem = item.name ? marketData?.[item.name] : null;
-  if (marketItem && typeof marketItem === 'object') {
+  const marketItem = item.name ? (marketData?.[item.name] as Record<string, any>) : null;
+  if (marketItem) {
+    item.market_price = getSafeMarketValue(marketItem) || marketItem.price || 0;
+    item.market_data = marketItem;
     Object.assign(item, marketItem);
   }
 
-  const relations = item.name ? usageMap?.[item.name] : null;
-  if (relations && typeof relations === 'object') {
-    item.dropped_by = relations.dropped_by || [];
-    item.required_for = relations.required_for || [];
+  const relations = item.name ? (usageMap?.[item.name] as Record<string, any>) : null;
+  if (relations) {
+    item.used_in = relations.used_in || relations.required_for || [];
+    item.required_for = relations.required_for || relations.used_in || [];
     item.produced_from = relations.produced_from || null;
-    item.recipe_yield = relations.recipe_yield || item.recipe_yield || null;
+    item.recipe_yield = relations.recipe_yield || null;
+    item.dropped_by = relations.dropped_by || [];
+    item.source_bosses = relations.source_bosses || [];
+    item.source_dungeons = relations.source_dungeons || [];
   }
 
   return item;
 }
 
-const normalizeSourceType = (type?: string) => (type || '').trim().toUpperCase().replace(/\s+/g, '_');
+const normalizeSourceType = (type?: string) =>
+  (type || '').trim().toUpperCase().replace(/\s+/g, '_');
 
 const getSourceRoute = (source: AcquisitionSource) => {
   const type = normalizeSourceType(source.type);
-  const target = type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : 'enemies';
-  return `/${target}?search=${encodeURIComponent(source.name || '')}`;
+  return type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : 'enemies';
 };
 
-const formatSourceType = (type?: string) => normalizeSourceType(type).replace(/_/g, ' ') || 'SOURCE';
+const formatSourceType = (type?: string) =>
+  normalizeSourceType(type).replace(/_/g, ' ') || 'SOURCE';
 
-const getRecipeOutputName = (recipeItem: any) => (
-  recipeItem?.recipe_yield?.item_name ||
-  recipeItem?.recipe?.result?.item_name ||
-  recipeItem?.recipe?.result?.name ||
-  ''
-);
-
-const getPreferredRecipeNameForOutput = (outputName: string, fallbackName: string | undefined, allItemsDb: any) => {
-  const candidates = Object.values(allItemsDb || {}).filter((candidate: any) => (
-    candidate?.type === 'RECIPE' && getRecipeOutputName(candidate).toLowerCase() === outputName.toLowerCase()
-  )) as any[];
-
-  if (candidates.length === 0) return fallbackName || '';
-
-  candidates.sort((a, b) => {
-    const aUntradable = a.is_tradeable === false || a.name?.includes('(Untradable)');
-    const bUntradable = b.is_tradeable === false || b.name?.includes('(Untradable)');
-    if (aUntradable !== bUntradable) return aUntradable ? 1 : -1;
-    return String(a.name || '').localeCompare(String(b.name || ''));
-  });
-
-  return candidates[0]?.name || fallbackName || '';
+const TARGET_LABELS: Record<string, string> = {
+  hunt: 'Hunt Efficiency',
+  dungeon: 'Dungeon Efficiency',
+  dungeoneering: 'Dungeoneering Efficiency',
+  combat: 'Combat Efficiency',
+  battle: 'Battle Efficiency',
+  fishing: 'Fishing Efficiency',
+  mining: 'Mining Efficiency',
+  woodcutting: 'Woodcutting Efficiency',
+  smelting: 'Smelting Efficiency',
+  cooking: 'Cooking Efficiency',
+  alchemy: 'Alchemy Efficiency',
+  forge: 'Forge Efficiency',
+  'shadow-mastery': 'Shadow Mastery Efficiency',
+  'springtide-mastery': 'Springtide Mastery Efficiency',
+  'lunar-mastery': 'Lunar Mastery Efficiency',
+  'yule-mastery': 'Yule Mastery Efficiency',
+  attack_power: 'Attack Power',
+  protection: 'Protection',
+  strength: 'Strength',
+  defence: 'Defence',
+  dexterity: 'Dexterity',
+  speed: 'Speed',
+  primary_skill: 'Primary Skill',
 };
+
+function formatEffectTitle(eff: any): string {
+  const value = Number(eff.value) || 0;
+  const target = String(eff.target || '').toLowerCase();
+  const attr = String(eff.attribute || '').toLowerCase();
+  const valType = String(eff.value_type || '').toLowerCase();
+
+  if (attr === 'wait_length' || valType === 'efficiency' || attr === 'speed' || target === 'speed') {
+    const rawSkill = TARGET_LABELS[target] || `${target.replace(/[-_]/g, ' ')} Efficiency`;
+    const skillName = rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1);
+    return `+${value}% ${skillName}`;
+  }
+
+  if (attr === 'experience' || target.includes('experience')) {
+    const cleanSkill = target.replace(/[-_]/g, ' ');
+    const formatted = cleanSkill.charAt(0).toUpperCase() + cleanSkill.slice(1);
+    return `+${value}% ${formatted} XP`;
+  }
+
+  if (attr === 'magic_find') {
+    const cleanTarget = target.replace(/[-_]/g, ' ');
+    const formatted = cleanTarget.charAt(0).toUpperCase() + cleanTarget.slice(1);
+    return `+${value}% ${formatted} Magic Find`;
+  }
+
+  if (attr === 'final_value') {
+    const cleanTarget = target.replace(/[-_]/g, ' ');
+    const formatted = cleanTarget.charAt(0).toUpperCase() + cleanTarget.slice(1);
+    return `+${value}% ${formatted}`;
+  }
+
+  const sign = value > 0 ? `+${value}` : String(value);
+  const suffix = valType === 'percentage' ? '%' : '';
+  const cleanTarget = target.replace(/_/g, ' ').replace(/-/g, ' ');
+  const cleanAttr = attr.replace(/_/g, ' ');
+  return `${sign}${suffix} ${cleanTarget} ${cleanAttr}`.trim();
+}
+
+function formatLoreTitle(rawTitle?: string, entryId?: string): string {
+  if (rawTitle && !rawTitle.includes('-')) return rawTitle;
+  const source = rawTitle || entryId || '';
+  if (!source) return 'Lore Record';
+  const clean = source.replace(/^(world|faction|character|era|pantheon|location|beast|item|event)-/, '').replace(/-/g, ' ');
+  return clean
+    .split(' ')
+    .map((w, idx) => {
+      const lower = w.toLowerCase();
+      if (idx > 0 && ['of', 'the', 'in', 'and', 'for', 'to', 'a', 'an'].includes(lower)) {
+        return lower;
+      }
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ');
+}
 
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
@@ -131,1583 +222,1390 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const { openItemByName, prefetchItem, getCachedItem, setCachedItem } = useItemModal();
   const { queue, addToQueue } = useCrafting();
   const { marketData, allItemsDb } = useData();
+
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usageMap, setUsageMap] = useState<any>(null);
-  const modalDialogRef = useModalA11y<HTMLDivElement>(true, onClose);
+  const [activeTab, setActiveTab] = useState<'overview' | 'market' | 'sources'>('overview');
+  const [addedToQueue, setAddedToQueue] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<number>(0);
 
+  // URL Deep-Linking and History Management
   useEffect(() => {
-    let cancelled = false;
-    loadUsageMap().then((payload) => {
-      if (!cancelled) setUsageMap(payload);
-    });
-    return () => {
-      cancelled = true;
+    if (typeof window === 'undefined') return;
+
+    const currentUrl = new URL(window.location.href);
+    const existingId = currentUrl.searchParams.get('id') || currentUrl.searchParams.get('item');
+
+    if (existingId !== id) {
+      currentUrl.searchParams.set('item', id);
+      window.history.pushState({ modalItemId: id }, '', currentUrl.toString());
+    }
+
+    const handlePopState = () => {
+      onClose();
     };
-  }, []);
 
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      const exitUrl = new URL(window.location.href);
+      if (exitUrl.searchParams.get('item') === id) {
+        exitUrl.searchParams.delete('item');
+        window.history.replaceState({}, '', exitUrl.toString());
+      }
+    };
+  }, [id, onClose]);
+
+  // Load Item Data
   useEffect(() => {
+    let active = true;
+
     async function fetchItem() {
-      // Check cache first
+      setLoading(true);
+      setError(null);
+      setSelectedTier(0);
+
       const cached = getCachedItem(id);
       if (cached) {
-        setItem(cached);
-        setLoading(false);
+        if (active) {
+          setItem(cached);
+          setLoading(false);
+        }
         return;
       }
 
-      setLoading(true);
-      setError(null);
       try {
-        const res = await fetch(`/api/items/${id}`);
+        const res = await fetch(`/api/items/${encodeURIComponent(id)}`);
         if (res.ok) {
           const data = await res.json();
-          setItem(data);
-          setCachedItem(id, data);
+          if (active) {
+            setItem(data);
+            setCachedItem(id, data);
+            setLoading(false);
+          }
           return;
         }
 
         const fallback = await loadPublicItemFallback(id);
-        if (fallback) {
+        if (fallback && active) {
           setItem(fallback);
           setCachedItem(id, fallback);
+          setLoading(false);
           return;
         }
 
-        const data = await res.json().catch(() => null);
-        setError(data?.error || 'Item not found');
-      } catch (e) {
+        throw new Error('Item not found');
+      } catch (err: any) {
         const fallback = await loadPublicItemFallback(id);
-        if (fallback) {
+        if (fallback && active) {
           setItem(fallback);
           setCachedItem(id, fallback);
+          setLoading(false);
           return;
         }
 
-        setError('Failed to connect to database');
-        console.error('Failed to load item:', e);
-      } finally {
-        setLoading(false);
+        if (active) {
+          setError(err.message || 'Failed to load item details');
+          setLoading(false);
+        }
       }
     }
+
     fetchItem();
+    return () => {
+      active = false;
+    };
   }, [id, getCachedItem, setCachedItem]);
 
-  const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : preferences.barteringBoost;
+  // Load Usage Map
+  useEffect(() => {
+    loadUsageMap().then((map) => setUsageMap(map));
+  }, []);
+
+  // Bartering and Intrinsic Value Calculations
+  const profileBarteringBoost = activeProfile
+    ? getProfileBarteringBoost(activeProfile)
+    : preferences.barteringBoost;
 
   const intrinsicValue = useMemo(() => {
-    if (!item || !marketData || !allItemsDb) return 0;
-    return getItemTrueValue(item.name, marketData, allItemsDb, 0, {
-      customPrices: preferences.customPrices,
-      marketTaxMultiplier: getMarketTaxMultiplier(preferences.membership),
-      barteringBoost: profileBarteringBoost,
-    });
-  }, [
-    item,
-    marketData,
-    allItemsDb,
-    profileBarteringBoost,
-    preferences.customPrices,
-    preferences.membership,
-  ]);
+    if (!item || !marketData) return 0;
+    return getItemTrueValue(item, marketData, allItemsDb || undefined);
+  }, [item, marketData, allItemsDb]);
 
-  const formatStatName = (name: string) => {
-    return name
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase())
-      .replace('Percent', '%')
-      .replace('Chance', 'Chance')
-      .trim();
-  };
-
-  const GOLD_ICON = "https://cdn.idle-mmo.com/cdn-cgi/image/width=20,height=20,format=auto/global/gold_coin.png";
+  const GOLD_ICON =
+    'https://cdn.idle-mmo.com/cdn-cgi/image/width=20,height=20,format=auto/global/gold_coin.png';
 
   const qColor = item ? getQualityColor(item.quality) : getQualityColor('STANDARD');
   const itemName = item?.name;
-  const itemIsTradeable = item ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false : false;
+  const itemIsTradeable = item
+    ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false
+    : false;
+
   const [loreDataset, setLoreDataset] = useState<LoreDataset | null>(() => getCachedLoreDataset());
 
   useEffect(() => {
-    let cancelled = false;
-    loadLoreData()
-      .then((data) => {
-        if (!cancelled) setLoreDataset(data);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const loreLinks = useMemo(() => itemName ? getLoreForItem(itemName, loreDataset) : [], [itemName, loreDataset]);
-  const descriptionLoreLinks = useMemo(() => itemName ? getDescriptionLoreForItem(itemName) : [], [itemName]);
-
-  const relationEntry = useMemo(() => {
-    if (!usageMap || !item?.name) return null;
-    const entry = usageMap[item.name];
-    return entry && typeof entry === 'object' ? entry : null;
-  }, [item, usageMap]);
-
-  const recipeData = useMemo(() => item?.recipe || item?.produced_from || relationEntry?.produced_from, [item, relationEntry]);
-  const recipeMats = useMemo(() => recipeData?.ingredients || recipeData?.materials || recipeData?.mats || [], [recipeData]);
-  const recipeSkill = recipeData?.skill || 'CRAFTING';
-  const recipeLevel = recipeData?.level || recipeData?.level_required || 1;
-  const isDefaultAlchemyCraft = recipeData?.source === 'DEFAULT_ALCHEMY';
-  const recipeOutputName = item?.type === 'RECIPE' ? getRecipeOutputName(item) : item?.name || '';
-  const recipeOutputItem = recipeOutputName ? (allItemsDb?.[recipeOutputName] || marketData?.[recipeOutputName]) : null;
-  const craftedByRecipeName = useMemo(
-    () => item && item.type !== 'RECIPE'
-      ? getPreferredRecipeNameForOutput(item.name, item.produced_from?.recipe_name, allItemsDb)
-      : '',
-    [allItemsDb, item],
-  );
-  const craftedByRecipeItem = craftedByRecipeName ? allItemsDb?.[craftedByRecipeName] : null;
-  const queueRecipeName = recipeSkill?.toUpperCase() === 'ALCHEMY' ? recipeOutputName : '';
-  const canQueueRecipe = recipeSkill?.toUpperCase() === 'ALCHEMY' && isCraftingQueueRecipe(queueRecipeName);
-  const queuedRecipeCount = queueRecipeName ? queue[queueRecipeName] || 0 : 0;
-  const vendorInfo = item ? VENDOR_ITEMS[item.name] : null;
-
-  const renderValue = (val: any) => {
-    if (val === null || val === undefined) return '';
-    if (typeof val === 'string' || typeof val === 'number') return val;
-    if (typeof val === 'boolean') return val.toString();
-    return JSON.stringify(val);
-  };
-
-  // Human-readable effect parser
-  const parseEffect = (eff: any) => {
-    if (!eff || typeof eff !== 'object') return renderValue(eff);
-    const valStr = eff.value_type === 'percentage' ? `${eff.value}%` :
-                   eff.value_type === 'efficiency' ? `${eff.value} efficiency` : renderValue(eff.value);
-    const targetStr = eff.target ? `${formatStatName(eff.target)} ` : '';
-    const attrStr = eff.attribute ? formatStatName(eff.attribute) : formatStatName(eff.type || eff.name || 'Effect');
-    const duration = eff.length ? ` (${Math.floor(eff.length / 60000)}m)` : '';
-    return `${targetStr}${attrStr}: +${valStr}${duration}`;
-  };
-
-  const acquisitionSources = useMemo(() => {
-    const rawSources = [
-      ...(Array.isArray(item?.dropped_by) ? item.dropped_by : []),
-      ...(Array.isArray(relationEntry?.dropped_by) ? relationEntry.dropped_by : []),
-    ];
-    const seen = new Set<string>();
-
-    return rawSources.filter((source: AcquisitionSource) => {
-      const key = `${normalizeSourceType(source.type)}:${source.name || ''}:${source.location || ''}`;
-      if (!source?.name || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).sort((a: AcquisitionSource, b: AcquisitionSource) => Number(b.chance || 0) - Number(a.chance || 0));
-  }, [item, relationEntry]);
-
-  const gatheredItemName = item?.name;
-  const gatheredLocations = useMemo(() => (
-    gatheredItemName ? getResourceLocationsForItem(gatheredItemName) : []
-  ), [gatheredItemName]);
-
-  const groupedUtility = useMemo(() => {
-    const direct = Array.isArray(item?.required_for) ? item.required_for : [];
-
-    // Safety check: usageMap[name] should be an object with a required_for array
-    const fromMap = (relationEntry && typeof relationEntry === 'object' && Array.isArray(relationEntry.required_for))
-      ? relationEntry.required_for
-      : [];
-    
-    // Combine and normalize
-    const combined = [...direct];
-    fromMap.forEach((use: any) => {
-      // Handle both string array and object array formats
-      const name = typeof use === 'string' ? use : use.name;
-      if (!combined.find(c => c.name === name)) {
-        combined.push({ 
-          name, 
-          type: typeof use === 'object' ? use.type : 'CRAFTING', 
-          amount: typeof use === 'object' ? use.amount : '?' 
-        });
-      }
+    if (loreDataset) return;
+    let active = true;
+    loadLoreData().then((dataset) => {
+      if (active) setLoreDataset(dataset);
     });
+    return () => {
+      active = false;
+    };
+  }, [loreDataset]);
 
-    if (combined.length === 0) return {};
-    return combined.reduce((acc: any, curr: any) => {
-      const type = curr.type || 'OTHER';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(curr);
-      return acc;
-    }, {});
-  }, [item, relationEntry]);
+  const loreLinks = useMemo(() => {
+    if (!itemName) return [];
+    return getAllLoreForItem(itemName, loreDataset);
+  }, [itemName, loreDataset]);
+
+  // Market & Sell Advisor Calculations
+  const marketPriceInfo = useMemo(() => {
+    if (!item) return { safePrice: 0, rawPrice: 0, adjusted: false };
+    const safeResult = getSafeMarketPrice(item);
+    const safeVal = safeResult.value || item.market_price || item.safe_price || item.price || 0;
+    return {
+      safePrice: safeVal,
+      rawPrice: safeResult.rawValue || item.raw_price || safeVal,
+      adjusted: safeResult.adjusted || item.price_adjusted || false,
+    };
+  }, [item]);
 
   const saleInsight = useMemo(() => {
     if (!item) return null;
-    const tradeable = !isForcedUntradableItem(item.name) && item.is_tradeable !== false;
-    const marketGross = tradeable ? (getSafeMarketValue(item) || getSafeMarketValue(marketData?.[item.name])) : 0;
     const vendorBase = Number(item.vendor_price || 0);
-    if (!marketGross && !vendorBase) return null;
+    const barteringPercent = Number(profileBarteringBoost || 0);
+    const vendorPrice = vendorBase * (1 + barteringPercent / 100);
 
-    const taxRate = getMarketTaxRate(preferences.membership);
-    const marketNet = tradeable ? marketGross * getMarketTaxMultiplier(preferences.membership) : 0;
-    const vendorNet = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
-    const bestPath = marketNet >= vendorNet ? 'Market' : 'Vendor';
-    const bestRevenue = Math.max(marketNet, vendorNet);
-    const liquidity = getMarketLiquidity({ ...item, ...(marketData?.[item.name] || {}), is_tradeable: tradeable });
+    const safeMarket = marketPriceInfo.safePrice;
+    const marketTaxRate = getMarketTaxRate(preferences.membership);
+    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+    const netMarket = safeMarket * marketTaxMultiplier;
+
+    const diff = netMarket - vendorPrice;
+    const recommendMarket = itemIsTradeable && netMarket > vendorPrice && safeMarket > 0;
 
     return {
-      tradeable,
-      bestPath,
-      bestRevenue,
-      marketGross,
-      marketNet,
-      vendorNet,
-      taxRate,
-      volume: Number(item.vol_3 || marketData?.[item.name]?.vol_3 || 0),
-      stableVolume: liquidity.stableVolume3d,
+      vendorPrice,
+      vendorBase,
+      safeMarket,
+      netMarket,
+      marketTaxRate,
+      diff,
+      recommendMarket,
+      isTradeable: itemIsTradeable,
     };
-  }, [item, marketData, preferences.membership, profileBarteringBoost]);
-  const modalMarketValue = itemIsTradeable ? (getSafeMarketValue(marketData?.[item.name]) || getSafeMarketValue(item)) : 0;
-  const modalMarketVolume = Number((item?.name ? marketData?.[item.name]?.vol_3 : 0) || item?.vol_3 || 0);
-  const modalMarketDatum = item?.name ? { ...item, ...(marketData?.[item.name] || {}), is_tradeable: itemIsTradeable } : item;
-  const modalLiquidity = getMarketLiquidity(modalMarketDatum);
-  const modalStableVolume = modalLiquidity.stableVolume3d || modalMarketVolume;
+  }, [item, profileBarteringBoost, preferences.membership, itemIsTradeable, marketPriceInfo.safePrice]);
 
-  const openRelatedItem = (name?: string | null) => {
-    const targetName = String(name || '').trim();
-    if (!targetName) return;
-    openItemByName?.(targetName);
-  };
+  // Acquisition Sources
+  const acquisitionSources = useMemo<AcquisitionSource[]>(() => {
+    if (!item) return [];
+    const sources: AcquisitionSource[] = [];
+    const seen = new Set<string>();
 
-  const prefetchRelatedItem = (name?: string | null) => {
-    const targetName = String(name || '').trim();
-    if (!targetName) return;
-    prefetchItem?.(targetName);
-  };
+    const addSource = (source: AcquisitionSource) => {
+      const key = `${source.type || 'SOURCE'}:${source.name || ''}:${source.location || ''}:${source.chance || ''}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      sources.push(source);
+    };
 
-  const showUtility = Object.keys(groupedUtility).length > 0;
-  const showMarket = item && itemIsTradeable;
-  const showAcquisition = acquisitionSources.length > 0;
-  const showGatheredLocations = gatheredLocations.length > 0;
-  const showRecipe = item && recipeData;
-  const showYield = item && item.recipe_yield;
-  const showLootTable = (item && item.loot_table && item.loot_table.length > 0) || (item && item.chest_drops && item.chest_drops.length > 0);
-  const showSellAdvisor = item && saleInsight;
-  
-  const hasStats = item && item.stats && Object.keys(item.stats).length > 0;
-  const hasEffects = item && item.effects && (Array.isArray(item.effects) ? item.effects.length > 0 : Object.keys(item.effects).length > 0);
-  const hasRestoration = item && (item.health_restore > 0 || item.hunger_restore > 0);
-  const hasRequirements = item && item.requirements && Object.keys(item.requirements).length > 0;
+    if (Array.isArray(item.dropped_by)) {
+      item.dropped_by.forEach((src: any) => {
+        if (typeof src === 'string') {
+          addSource({ name: src, type: 'ENEMY' });
+        } else if (src && typeof src === 'object') {
+          const loc = getDropSourceLocation(src);
+          addSource({
+            ...src,
+            type: src.type || 'ENEMY',
+            location: loc.name || src.location || '',
+          });
+        }
+      });
+    }
 
-  if (error) {
-    return (
-      <div className="modal-container">
-        <div className="modal-backdrop" onClick={onClose} />
-        <div
-          aria-label="Registry error"
-          aria-modal="true"
-          className="item-modal-error-card"
-          ref={modalDialogRef}
-          role="alertdialog"
-          tabIndex={-1}
-        >
-          <ErrorState
-            title="Registry error"
-            description={error}
-            action={<button onClick={onClose} type="button">Dismiss</button>}
-          />
-        </div>
-        <style jsx>{`
-          .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-          .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
-          .item-modal-error-card { position: relative; width: min(100%, 28rem); }
-        `}</style>
-      </div>
+    if (Array.isArray(item.source_bosses)) {
+      item.source_bosses.forEach((src: any) => {
+        if (typeof src === 'string') {
+          addSource({ name: src, type: 'BOSS' });
+        } else if (src && typeof src === 'object') {
+          const loc = getDropSourceLocation(src);
+          addSource({
+            ...src,
+            type: src.type || 'BOSS',
+            location: loc.name || src.location || '',
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(item.source_dungeons)) {
+      item.source_dungeons.forEach((src: any) => {
+        if (typeof src === 'string') {
+          addSource({ name: src, type: 'DUNGEON' });
+        } else if (src && typeof src === 'object') {
+          const loc = getDropSourceLocation(src);
+          addSource({
+            ...src,
+            type: src.type || 'DUNGEON',
+            location: loc.name || src.location || '',
+          });
+        }
+      });
+    }
+
+    return sources;
+  }, [item]);
+
+  const gatheredLocations = useMemo(() => {
+    if (!item?.name) return [];
+    return getResourceLocationsForItem(item.name);
+  }, [item?.name]);
+
+  // Reverse Recipe Usage ("Used to Craft")
+  const reverseRecipes = useMemo(() => {
+    if (!itemName) return [];
+    const usage = usageMap?.[itemName];
+    const reqList = usage?.required_for || usage?.used_in || item?.required_for || item?.used_in || [];
+    if (!Array.isArray(reqList)) return [];
+    return reqList.map((entry: any) => ({
+      name: entry.name || entry.item_name || 'Unknown Recipe',
+      type: entry.type || 'FORGE',
+      amount: entry.amount || entry.quantity || 1,
+    }));
+  }, [itemName, usageMap, item]);
+
+  // Direct Recipe and Crafting Calculations
+  const recipeData = useMemo(() => {
+    if (!item) return null;
+    if (item.recipe && Array.isArray(item.recipe.materials) && item.recipe.materials.length > 0) {
+      return item.recipe;
+    }
+    const mats = item.produced_from?.materials || item.produced_from?.mats;
+    if (item.produced_from && Array.isArray(mats) && mats.length > 0) {
+      return {
+        ...item.produced_from,
+        materials: mats.map((m: any) => ({
+          ...m,
+          name: m.name || m.item_name,
+          item_name: m.item_name || m.name,
+          amount: m.amount || m.quantity || 1,
+        })),
+      };
+    }
+    return null;
+  }, [item]);
+
+  const recipeEconomics = useMemo(() => {
+    if (!item || !recipeData) return null;
+    const recipeMats = recipeData.materials || [];
+
+    const getRecipeMatUnitPrice = (m: any) => {
+      const merchantBuyPrice = getMerchantBuyPrice(m.name || m.item_name);
+      if (merchantBuyPrice > 0) return merchantBuyPrice;
+      const injectedPrice = Number(m.price || 0);
+      if (injectedPrice > 0) return injectedPrice;
+      return 0;
+    };
+
+    const totalMatCost = recipeMats.reduce(
+      (acc: number, m: any) =>
+        acc + getRecipeMatUnitPrice(m) * (m.amount || m.quantity || 1),
+      0
     );
-  }
+
+    const rawUses = getRecipeUses(item);
+    const uses = rawUses === 'Infinite' ? Infinity : Number(rawUses) || 1;
+    const recipePrice =
+      item.type === 'RECIPE'
+        ? marketPriceInfo.safePrice
+        : item.produced_from?.recipe_price || 0;
+    const resultPrice =
+      item.type === 'RECIPE'
+        ? item.recipe_yield?.market_price || 0
+        : marketPriceInfo.safePrice;
+
+    const recipeCostPerCraft = uses === Infinity ? 0 : recipePrice / uses;
+    const investment = totalMatCost + recipeCostPerCraft;
+
+    const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
+    const marketRevenue = resultPrice * marketTaxMultiplier;
+    const vendorBase =
+      item.type === 'RECIPE'
+        ? item.recipe_yield?.vendor_price || 0
+        : item.vendor_price || 0;
+    const vendorRevenue =
+      vendorBase * (1 + (Number(profileBarteringBoost) || 0) / 100);
+
+    const bestRevenue = Math.max(marketRevenue, vendorRevenue);
+    const profit = bestRevenue - investment;
+
+    return {
+      totalMatCost,
+      investment,
+      bestRevenue,
+      profit,
+      isProfitable: profit > 0,
+      uses,
+    };
+  }, [item, recipeData, preferences.membership, profileBarteringBoost, marketPriceInfo.safePrice]);
+
+  const isUpgradeableEquipment = useMemo(() => {
+    if (!item) return false;
+    const maxTier = Number(item.max_tier) || 0;
+    if (maxTier <= 1) return false;
+
+    const nonUpgradeableTypes = new Set([
+      'MATERIAL',
+      'ORE',
+      'BAR',
+      'FISH',
+      'LOG',
+      'FOOD',
+      'POTION',
+      'CONSUMABLE',
+      'RECIPE',
+      'CHEST',
+      'KEY',
+      'SCROLL',
+    ]);
+    if (nonUpgradeableTypes.has(String(item.type).toUpperCase())) return false;
+
+    return Boolean(
+      item.tier_modifiers ||
+      (Array.isArray(item.upgrade_requirements) && item.upgrade_requirements.length > 0)
+    );
+  }, [item]);
+
+  const dungeonSources = useMemo(() => {
+    return acquisitionSources.filter((s) => s.type === 'DUNGEON' || s.type === 'DUNGEON_CHEST' || s.type === 'CHEST');
+  }, [acquisitionSources]);
+
+  const bossSources = useMemo(() => {
+    return acquisitionSources.filter((s) => s.type === 'BOSS');
+  }, [acquisitionSources]);
+
+  const enemySources = useMemo(() => {
+    return acquisitionSources.filter(
+      (s) => s.type === 'ENEMY' || (Boolean(s.type) && !['DUNGEON', 'DUNGEON_CHEST', 'BOSS', 'CHEST'].includes(s.type || ''))
+    );
+  }, [acquisitionSources]);
+
+  const priceTrendData = useMemo(() => {
+    if (!item) return null;
+    const currentPrice = marketPriceInfo.safePrice || Number(item.price || 0);
+    if (currentPrice <= 0) return null;
+
+    const p30 = Number(item.avg_30) || Number(item.raw_avg_30) || currentPrice;
+    const p14 = Number(item.avg_14) || Number(item.raw_avg_14) || p30;
+    const p7 = Number(item.avg_7) || Number(item.raw_avg_7) || p14;
+    const pSafe = currentPrice;
+    const pRaw = Number(item.raw_avg_3 || item.raw_price || pSafe);
+
+    const points = [p30, p14, p7, pSafe];
+    const allValues = [...points, ...(item.price_adjusted ? [pRaw] : [])];
+    const minVal = Math.min(...allValues);
+    const maxVal = Math.max(...allValues);
+    const diff = maxVal - minVal;
+    const padding = diff === 0 ? Math.max(1, minVal * 0.1) : diff * 0.15;
+    const plotMin = Math.max(0, minVal - padding);
+    const plotMax = maxVal + padding;
+    const plotRange = Math.max(1, plotMax - plotMin);
+
+    const svgW = 320;
+    const svgH = 80;
+    const padX = 20;
+    const padY = 14;
+    const innerW = svgW - padX * 2;
+    const innerH = svgH - padY * 2;
+
+    const getCoords = (val: number, index: number) => {
+      const x = padX + (index / 3) * innerW;
+      const y = padY + innerH - ((val - plotMin) / plotRange) * innerH;
+      return { x, y };
+    };
+
+    const coords = points.map((val, idx) => getCoords(val, idx));
+    const pathD = coords.reduce((acc, pt, idx) => `${acc} ${idx === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`, '');
+    const areaD = `${pathD} L ${coords[3].x.toFixed(1)} ${(svgH - 2).toFixed(1)} L ${coords[0].x.toFixed(1)} ${(svgH - 2).toFixed(1)} Z`;
+
+    const rawCoord = item.price_adjusted ? getCoords(pRaw, 3) : null;
+    const trendPct = p30 > 0 ? ((pSafe - p30) / p30) * 100 : 0;
+
+    return {
+      svgW,
+      svgH,
+      pathD,
+      areaD,
+      coords,
+      rawCoord,
+      trendPct,
+      p30,
+      p14,
+      p7,
+      pSafe,
+      pRaw,
+      adjusted: Boolean(item.price_adjusted),
+    };
+  }, [item, marketPriceInfo.safePrice]);
+
+  const handleAddToQueue = () => {
+    if (!item) return;
+    const recipeToQueue = item.recipe || item;
+    if (isCraftingQueueRecipe(recipeToQueue)) {
+      addToQueue(recipeToQueue);
+      setAddedToQueue(true);
+      setTimeout(() => setAddedToQueue(false), 2000);
+    }
+  };
+
+  const navTabOptions = [
+    { value: 'overview', label: 'Overview' },
+    { value: 'market', label: 'Market' },
+    { value: 'sources', label: 'Sources' },
+  ];
+
+  const mapQualityToBadge = (quality?: string): BadgeVariant => {
+    const q = (quality || '').toLowerCase();
+    if (['standard', 'refined', 'premium', 'epic', 'legendary', 'mythic', 'unique'].includes(q)) {
+      return q as BadgeVariant;
+    }
+    return 'neutral';
+  };
 
   return (
-    <div className="modal-container">
-      <div className="modal-backdrop" onClick={onClose} />
+    <ModalSheet
+      isOpen={true}
+      onClose={onClose}
+      title={item?.name || 'Item Inspection'}
+      maxWidth="lg"
+    >
+      <div className={styles.modalBody}>
+        {loading && (
+          <div className={styles.stateContainer}>
+            <div className={styles.spinner} />
+            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Loading item details and market telemetry...</p>
+          </div>
+        )}
 
-      <div
-        aria-labelledby="item-modal-title"
-        aria-modal="true"
-        className="modal-card"
-        ref={modalDialogRef}
-        role="dialog"
-        aria-busy={loading}
-        tabIndex={-1}
-      >
-        <div className="modal-header-section" style={{ borderBottomColor: qColor + '33' }}>
-          <div className="header-flex">
-            <div className="header-left">
-              {item?.image_url && (
+        {error && (
+          <div className={styles.stateContainer}>
+            <p style={{ margin: 0, color: '#f87171' }}>{error}</p>
+            <Button variant="secondary" size="sm" onClick={onClose}>
+              Close Inspector
+            </Button>
+          </div>
+        )}
+
+        {!loading && !error && item && (
+          <>
+            {/* Item Header */}
+            <div className={styles.itemHeader}>
+              <div
+                className={styles.thumbnailWrapper}
+                style={{
+                  '--quality-border': qColor,
+                  '--quality-glow': `${qColor}40`,
+                } as React.CSSProperties}
+              >
                 <GameImage
-                  src={item.image_url}
-                  alt=""
-                  width={64}
-                  height={64}
-                  sizes="64px"
-                  className="item-icon-large"
+                  src={item.image_url || item.image}
+                  alt={item.name}
+                  width={48}
+                  height={48}
+                  sizes="48px"
+                  loading="eager"
+                  fallbackSrc="/favicon.ico"
                 />
-              )}
-              <div>
-                <h2 className="item-title" id="item-modal-title" style={{ color: qColor }}>
-                  {item?.name || 'Loading...'}
+              </div>
+
+              <div className={styles.itemHeaderDetails}>
+                <h2 className={styles.itemName} style={{ color: qColor }}>
+                  {item.name}
                 </h2>
-                <div className="badge-row">
-                  <span className="type-badge">{formatItemTypeLabel(item?.type || 'UNKNOWN')}</span>
-                  <span className="meta-divider">/</span>
-                  <span className="quality-text" style={getQualityTextStyle(item?.quality || 'STANDARD')}>{item?.quality || 'STANDARD'}</span>
-                  {item?.recipe_yield?.uses && (
-                    <>
-                      <span className="meta-divider">/</span>
-                      <span className="uses-badge">
-                        {item.recipe_yield.uses === 'Infinite' ? 'Unlimited uses' : `${item.recipe_yield.uses} uses`}
-                      </span>
-                    </>
+                <div className={styles.badgesRow}>
+                  <Badge variant="neutral" size="sm">
+                    {formatItemTypeLabel(item.type)}
+                  </Badge>
+                  <Badge variant={mapQualityToBadge(item.quality)} size="sm">
+                    {item.quality || 'STANDARD'}
+                  </Badge>
+                  {item.requirements?.combat && (
+                    <Badge variant="neutral" size="sm">
+                      Level {item.requirements.combat} Combat
+                    </Badge>
                   )}
-                  {item?.vendor_price > 0 && (
-                    <>
-                      <span className="meta-divider">/</span>
-                      <span className="vendor-badge" title={`Vendor base price: ${formatGold(item.vendor_price || 0)}`} aria-label={`Vendor base price ${formatGold(item.vendor_price || 0)}`}>
-                        <span>Vendor</span>
-                        <GameImage src={GOLD_ICON} alt="" width={14} height={14} sizes="14px" />
-                        {(item.vendor_price || 0).toLocaleString()}
-                      </span>
-                    </>
+                  {item.requirements?.level && (
+                    <Badge variant="neutral" size="sm">
+                      Level {item.requirements.level}
+                    </Badge>
                   )}
-                  {item && !itemIsTradeable && (
-                    <>
-                      <span className="meta-divider">/</span>
-                      <span className="untradable-badge">Untradable</span>
-                    </>
+                  {itemIsTradeable ? (
+                    <Badge variant="success" size="sm">
+                      Tradeable
+                    </Badge>
+                  ) : (
+                    <Badge variant="neutral" size="sm">
+                      Untradable
+                    </Badge>
                   )}
                 </div>
               </div>
-            </div>
-            <button className="modal-close-btn" type="button" aria-label="Close item details" onClick={onClose}><X size={20} /></button>
-          </div>
-        </div>
 
-        <div className="modal-body custom-scrollbar">
-          {loading ? (
-            <div className="skeleton-grid" role="status" aria-live="polite" aria-label="Loading item details">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton-box" />)}
-            </div>
-          ) : (
-            <div className="bento-grid">
-              {vendorInfo && (
-                <div className="bento-card vendor-info-card full-width">
-                  <div className="card-label"><Package size={14} /> VENDOR EXCLUSIVE</div>
-                  <div className="vendor-message">
-                    This item can only be bought from the vendor at <a href="https://web.idle-mmo.com/merchants?category=GENERAL_GOODS" target="_blank" rel="noopener noreferrer" className="vendor-link">General Goods</a> at the price of <strong>{vendorInfo.price} {vendorInfo.currency}</strong>.
-                    <p className="vendor-warning">Untradable. Cannot be listed or purchased on the player market.</p>
-                  </div>
-                </div>
-              )}
-
-              {showSellAdvisor && saleInsight && (
-                <div className="bento-card sell-advisor-card full-width">
-                  <div className="card-label"><Target size={14} /> Sell Advisor</div>
-                  <div className="sell-advisor-grid">
-                    <div className="sell-advisor-main">
-                      <span>Best sell path</span>
-                      <strong>{saleInsight.bestPath}</strong>
-                      <em>{formatGold(saleInsight.bestRevenue)} net revenue</em>
-                    </div>
-                    <div className="sell-advisor-metrics">
-                      {saleInsight.tradeable && (
-                        <div>
-                          <span>Market net {saleInsight.marketGross ? `(${Math.round(saleInsight.taxRate * 100)}% tax)` : ''}</span>
-                          <strong>{saleInsight.marketGross ? formatGold(saleInsight.marketNet) : 'No market'}</strong>
-                        </div>
-                      )}
-                      <div>
-                        <span>Vendor net</span>
-                        <strong>{saleInsight.vendorNet ? formatGold(saleInsight.vendorNet) : 'No vendor'}</strong>
-                      </div>
-                      <div>
-                        <span>Stable volume</span>
-                        <strong title={saleInsight.stableVolume !== saleInsight.volume ? `Raw 3-day volume: ${saleInsight.volume.toLocaleString()}` : undefined}>{saleInsight.stableVolume.toLocaleString()}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {item?.description && (
-                <div className="bento-card description-card full-width" style={{ background: 'rgba(255,255,255,0.01)', borderStyle: 'dashed' }}>
-                  <div className="card-label"><Info size={14} /> Item Description</div>
-                  <div className="description-text" style={{ fontSize: '1.1rem', fontStyle: 'italic', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    &quot;{item.description}&quot;
-                  </div>
-                </div>
-              )}
-
-              {loreLinks.length > 0 && (
-                <div className="bento-card lore-thread-card full-width">
-                  <div className="card-label"><BookOpen size={14} /> Lore Thread</div>
-                  <div className="lore-thread-list">
-                    {loreLinks.map((link) => {
-                      const primary = getLoreEntry(link.entryIds[0], loreDataset);
-                      const linkedEntries = link.entryIds
-                        .map((entryId) => getLoreEntry(entryId, loreDataset))
-                        .filter((entry): entry is LoreEntry => Boolean(entry));
-                      if (!primary) return null;
-
-                      return (
-                        <button
-                          key={`${link.itemName}-${primary.id}`}
-                          type="button"
-                          className="lore-thread-row"
-                          onClick={() => {
-                            onClose();
-                            router.push(`/lore?thread=${primary.id}`);
-                          }}
-                        >
-                          <span className={`lore-confidence ${link.confidence}`}>{link.confidence}</span>
-                          <strong>{primary.title}</strong>
-                          <small>{link.reason}</small>
-                          <em>{linkedEntries.map((entry) => entry.title).join(' / ')}</em>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {descriptionLoreLinks.length > 0 && (
-                <div className="bento-card lore-thread-card description-lore-card full-width">
-                  <div className="card-label"><BookOpen size={14} /> Lore Links From Description</div>
-                  <div className="lore-thread-list">
-                    {descriptionLoreLinks.map((link) => {
-                      const primary = getLoreEntry(link.entryIds[0], loreDataset);
-                      const linkedEntries = link.entryIds
-                        .map((entryId) => getLoreEntry(entryId, loreDataset))
-                        .filter((entry): entry is LoreEntry => Boolean(entry));
-                      if (!primary) return null;
-
-                      return (
-                        <button
-                          key={`${link.itemName}-${primary.id}-description`}
-                          type="button"
-                          className="lore-thread-row"
-                          onClick={() => {
-                            onClose();
-                            router.push(`/lore?thread=${primary.id}`);
-                          }}
-                        >
-                          <span className={`lore-confidence ${link.confidence}`}>{link.confidence}</span>
-                          <strong>{primary.title}</strong>
-                          <small>{link.reason}</small>
-                          <em>&quot;{link.evidence}&quot;</em>
-                          <em>{linkedEntries.map((entry) => entry.title).join(' / ')}</em>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {showMarket && (
-                <div className="bento-card market-card">
-                  <div className="card-label"><TrendingUp size={14} /> Market Snapshot</div>
-                  {modalMarketValue ? (
-                    <>
-                      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-                        <div className="price-row">
-                          <div className="price-main">
-                            {Math.round(modalMarketValue).toLocaleString()}g
-                          </div>
-                          <div className="price-sub">Current Market Price</div>
-                        </div>
-
-                        {intrinsicValue > 0 && Math.abs(intrinsicValue - modalMarketValue) > 1 && (
-                          <div className="price-row" style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2rem' }}>
-                            <div className="price-main" style={{ color: 'var(--text-accent)' }}>
-                              {Math.floor(intrinsicValue).toLocaleString()}g
-                            </div>
-                            <div className="price-sub" style={{ color: 'var(--text-accent)' }}>Best Value Estimate</div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="market-stats">
-                        <div className="m-stat">
-                          <span>3D Average</span>
-                          <strong>{modalMarketValue ? `${Math.round(modalMarketValue).toLocaleString()}g` : '-'}</strong>
-                        </div>
-                        <div className="m-stat">
-                          <span>Stable Volume</span>
-                          <strong title={modalStableVolume !== modalMarketVolume ? `Raw 3-day volume: ${modalMarketVolume.toLocaleString()}` : undefined}>{modalStableVolume.toLocaleString()}</strong>
-                        </div>
-                        <div className="m-stat">
-                          <span>Raw 3D Volume</span>
-                          <strong>{modalMarketVolume.toLocaleString()}</strong>
-                        </div>
-                        <div className="m-stat">
-                          <span>Liquidity</span>
-                          <strong className={`liquidity-status ${modalLiquidity.tone}`}>{modalLiquidity.label}</strong>
-                        </div>
-                        <div className="m-stat">
-                          <span>Vendor Sell</span>
-                          <strong style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {(item.vendor_price || 0).toLocaleString()}g
-                          </strong>
-                        </div>
-                      </div>
-                      {modalLiquidity.tone !== 'active' && (
-                        <div className="market-liquidity-note">
-                          <Info size={15} />
-                          <span>{modalLiquidity.note} Treat price as an estimate — check live listings before high-value trades.</span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="market-empty">
-                      <div className="empty-title">No Market Data Yet</div>
-                      <div className="empty-sub">This item is tradeable but has no recent history.</div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {hasRequirements && (
-                <div className="bento-card req-card">
-                  <div className="card-label"><Lock size={14} /> Usage Requirements</div>
-                  <div className="stats-mini-grid">
-                    {Object.entries(item.requirements).map(([key, val]: [string, any]) => (
-                      <div key={key} className="stat-pill req-pill">
-                        <span className="stat-val">{val}</span>
-                        <span className="stat-key">{formatStatName(key)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Consumable Restoration Card */}
-              {hasRestoration && (
-                <div className="bento-card restoration-card-box">
-                  <div className="card-label"><Zap size={14} /> Consumable Restoration</div>
-                  <div className="stats-mini-grid">
-                    {item.health_restore > 0 && (
-                      <div className="stat-pill health-pill">
-                        <span className="stat-val">+{item.health_restore}</span>
-                        <span className="stat-key">HEALTH</span>
-                      </div>
-                    )}
-                    {item.hunger_restore > 0 && (
-                      <div className="stat-pill hunger-pill">
-                        <span className="stat-val">+{item.hunger_restore}</span>
-                        <span className="stat-key">HUNGER</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {hasStats && (
-                <div className="bento-card stats-card">
-                  <div className="card-label"><Shield size={14} /> Combat Attributes</div>
-                  <div className="stats-mini-grid">
-                    {Object.entries(item.stats).map(([key, val]: [string, any]) => (
-                      <div key={key} className="stat-pill">
-                        <span className="stat-val">
-                          {typeof val === 'number' && val > 0 ? `+${val}` : renderValue(val)}
-                        </span>
-                        <span className="stat-key">{formatStatName(key)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {hasEffects && (
-                <div className="bento-card effects-card">
-                  <div className="card-label">
-                    {item.type === 'POTION' ? <Zap size={14} /> : <Zap size={14} />} 
-                    {item.type === 'POTION' ? ' ACTIVE EFFECTS' : ' PASSIVE EFFECTS'}
-                  </div>
-                  <div className="stats-mini-grid">
-                    {Array.isArray(item.effects) ? (
-                      item.effects.map((eff: any, i: number) => (
-                        <div key={i} className="stat-pill effect-pill full-width-pill">
-                          <span className="stat-val">{parseEffect(eff)}</span>
-                        </div>
-                      ))
+              {recipeData && isCraftingQueueRecipe(item.recipe || item) && (
+                <div className={styles.headerActions}>
+                  <Button
+                    variant={addedToQueue ? 'secondary' : 'primary'}
+                    size="sm"
+                    onClick={handleAddToQueue}
+                  >
+                    {addedToQueue ? (
+                      <>
+                        <Check size={14} /> Added
+                      </>
                     ) : (
-                      Object.entries(item.effects).map(([key, val]: [string, any]) => (
-                        <div key={key} className="stat-pill effect-pill">
-                          <span className="stat-val">
-                            {typeof val === 'number' && val > 0 ? `+${val}` : parseEffect(val)}
-                          </span>
-                          <span className="stat-key">{formatStatName(key)}</span>
-                        </div>
-                      ))
+                      <>
+                        <Plus size={14} /> Queue Craft
+                      </>
                     )}
-                  </div>
+                  </Button>
                 </div>
               )}
+            </div>
 
-              {showYield && (
-                <button
-                  type="button"
-                  className="bento-card yield-card item-link-card"
-                  aria-label={`Open crafted item ${item.recipe_yield.item_name}`}
-                  onClick={() => openRelatedItem(item.recipe_yield.item_name)}
-                  onMouseEnter={() => prefetchRelatedItem(item.recipe_yield.item_name)}
-                >
-                  <div className="card-label"><Zap size={14} color="var(--text-accent)" /> CRAFTS</div>
-                  <div className="yield-content">
-                    <div className="yield-item-name">{item.recipe_yield.item_name}</div>
-                    <div className="yield-details">
-                      {recipeOutputItem?.type || 'ITEM'}{recipeOutputItem?.quality ? <> - <span style={getQualityTextStyle(recipeOutputItem.quality)}>{recipeOutputItem.quality}</span></> : ''}
-                    </div>
-                    <div className="yield-stats">
-                        <div className="y-stat">
-                            <span>Yield Type</span>
-                            <strong>{item.recipe_yield.uses === 'Infinite' ? 'Continuous' : 'Limited'}</strong>
+            {/* Segmented View Navigation */}
+            <div className={styles.navTabs}>
+              <SegmentedControl
+                options={navTabOptions}
+                value={activeTab}
+                onChange={(val) => setActiveTab(val as any)}
+                ariaLabel="Item sections"
+              />
+            </div>
+
+            {/* Tab 1: Overview & Stats */}
+            {activeTab === 'overview' && (
+              <div className={styles.tabContent}>
+                {item.description && (
+                  <div className={styles.descriptionBox}>
+                    {item.description}
+                  </div>
+                )}
+
+                {/* 1. Equipment: Combat Attributes & Interactive Tier Simulator */}
+                {item.stats && Object.keys(item.stats).length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Shield size={14} color="#38bdf8" /> Combat Attributes
+                    </h3>
+                    <div className={styles.statsGrid}>
+                      {Object.entries(item.stats).map(([stat, val]) => (
+                        <div key={stat} className={styles.statCard}>
+                          <span className={styles.statLabel}>
+                            {stat.replace(/_/g, ' ')}
+                          </span>
+                          <span className={styles.statValue}>
+                            {Number(val) > 0 ? `+${val}` : String(val)}
+                          </span>
                         </div>
-                        <div className="y-stat">
-                            <span>Max Production</span>
-                            <strong>{item.recipe_yield.uses} units</strong>
-                        </div>
-                        {(item.recipe_yield.market_price || getSafeMarketValue(recipeOutputItem)) && (
-                          <div className="y-stat">
-                              <span>Market</span>
-                              <strong>{Math.round(item.recipe_yield.market_price || getSafeMarketValue(recipeOutputItem)).toLocaleString()}g</strong>
-                          </div>
-                        )}
-                    </div>
-                    <div className="yield-action">
-                      <span>Open crafted item</span>
-                      <ExternalLink size={13} />
+                      ))}
                     </div>
                   </div>
-                </button>
-              )}
+                )}
 
-              {showLootTable && (
-                <div className="bento-card loot-card">
-                  <div className="card-label"><Package size={14} /> CHEST CONTENTS</div>
-                  <div className="list-container scroll-y">
-                    {(item.loot_table || item.chest_drops || []).map((drop: any, i: number) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="loot-row"
-                        aria-label={`Open ${drop.item_name || drop.name} item details`}
-                        onClick={() => openRelatedItem(drop.item_name || drop.name)}
-                        onMouseEnter={() => prefetchRelatedItem(drop.item_name || drop.name)}
-                      >
-                        <div className="loot-info">
-                            <div className="loot-name">{drop.item_name || drop.name}</div>
-                            {(Number(drop.quantity) || 1) > 1 && <div className="loot-qty">x{drop.quantity}</div>}
-                        </div>
-                        <div className="loot-chance">{drop.chance}%</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                {/* Interactive Tier Simulator for Equipment with max_tier */}
+                {isUpgradeableEquipment && (
+                  <div className={styles.tierSimulator}>
+                    <div className={styles.tierHeader}>
+                      <h3 className={styles.sectionTitle} style={{ margin: 0 }}>
+                        <Sliders size={14} color="#38bdf8" /> Tier Upgrade
+                      </h3>
+                      <span className={styles.tierPill}>
+                        Tier +{selectedTier} of {item.max_tier}
+                      </span>
+                    </div>
 
-              {showAcquisition && (
-                <div className="bento-card acquisition-card">
-                  <div className="card-label"><MapPin size={14} /> Acquisition</div>
-                  <div className="list-container scroll-y">
-                    {acquisitionSources.map((src: AcquisitionSource, i: number) => {
-                      const sourceLocation = getDropSourceLocation(src);
-                      const sourceItemName = src.source_item_name || (normalizeSourceType(src.type).includes('CHEST') ? src.name : '');
-                      return (
-                        <div className="source-actions-row" key={`${src.type || 'source'}-${src.name || i}-${sourceLocation.key || i}`}>
-                          <button
-                            type="button"
-                            className="source-pill group-source"
-                            onClick={() => {
-                              if (sourceItemName) {
-                                openRelatedItem(sourceItemName);
-                                return;
-                              }
-                              onClose();
-                              router.push(getSourceRoute(src));
-                            }}
-                            onMouseEnter={() => {
-                              if (sourceItemName) prefetchRelatedItem(sourceItemName);
-                            }}
-                          >
-                            <div className="source-meta">
-                              <span className="source-type">{formatSourceType(src.type)}</span>
-                              <span className="source-chance">{src.chance === 'Unknown' ? '' : `${src.chance}%`}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Number(item.max_tier)}
+                      value={selectedTier}
+                      onChange={(e) => setSelectedTier(Number(e.target.value))}
+                      className={styles.tierSlider}
+                      aria-label="Tier upgrade level slider"
+                    />
+
+                    {/* Dynamic Stat Scaling */}
+                    <div className={styles.tierStatsComparison}>
+                      {item.stats &&
+                        Object.entries(item.stats).map(([stat, val]) => {
+                          const base = Number(val) || 0;
+                          const modifier = Number(item.tier_modifiers?.[stat] || 0);
+                          const upgraded = base + selectedTier * modifier;
+                          const diff = upgraded - base;
+
+                          return (
+                            <div key={stat} className={styles.tierStatItem}>
+                              <span className={styles.tierStatLabel}>
+                                {stat.replace(/_/g, ' ')}
+                              </span>
+                              {modifier === 0 || selectedTier === 0 ? (
+                                <div className={styles.tierStatNumbers}>
+                                  <span className={styles.tierUpgradedVal}>{base}</span>
+                                </div>
+                              ) : (
+                                <div className={styles.tierStatNumbers}>
+                                  <span className={styles.tierBaseVal}>{base}</span>
+                                  <ArrowRight size={12} color="var(--text-muted)" />
+                                  <span className={styles.tierUpgradedVal}>{upgraded}</span>
+                                  {diff > 0 && (
+                                    <span className={styles.tierDiff}>+{diff}</span>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="source-name">{src.name}</div>
-                            <div className="source-loc">{sourceLocation.name || ''}</div>
-                          </button>
-                          {sourceLocation.key && (
-                            <button
-                              type="button"
-                              className="source-map-btn"
-                              aria-label={`Open ${sourceLocation.name || src.name} on map`}
-                              onClick={() => {
-                                onClose();
-                                router.push(`/map?location=${encodeURIComponent(sourceLocation.key || '')}&loot=${encodeURIComponent(item.name)}`);
-                              }}
-                            >
-                              <MapPin size={14} aria-hidden="true" />
-                              Map
-                            </button>
+                          );
+                        })}
+                    </div>
+
+                    {/* Materials Needed for Upgrading */}
+                    {Array.isArray(item.upgrade_requirements) &&
+                      item.upgrade_requirements.length > 0 && (
+                        <div className={styles.tierMatsRequired}>
+                          <span style={{ fontWeight: 600 }}>Upgrade Cost:</span>
+                          {selectedTier === 0 ? (
+                            <span>Base tier (no stones required).</span>
+                          ) : (
+                            item.upgrade_requirements.map((req: any, idx: number) => (
+                              <Badge key={idx} variant="neutral" size="sm">
+                                {req.quantity * selectedTier}x {req.item_name}
+                              </Badge>
+                            ))
                           )}
                         </div>
-                      );
-                    })}
+                      )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {showGatheredLocations && (
-                <div className="bento-card acquisition-card">
-                  <div className="card-label"><MapPin size={14} /> Gathering Locations</div>
-                  <p className="source-context-note">{GATHERED_RESOURCE_SOURCE_NOTE}</p>
-                  <div className="list-container scroll-y">
-                    {gatheredLocations.map((location) => (
-                      <button
-                        type="button"
-                        key={`${item.name}-${location.key}`}
-                        className="source-pill group-source map-source"
-                        onClick={() => {
-                          onClose();
-                          router.push(`/map?location=${encodeURIComponent(location.key)}&resource=${encodeURIComponent(item.name)}`);
+                {/* 2. Consumable Restoration & Active Buffs */}
+                {(Number(item.health_restore) > 0 ||
+                  Number(item.hunger_restore) > 0 ||
+                  (Array.isArray(item.effects) && item.effects.length > 0)) && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Utensils size={14} color="#4ade80" /> Item Effects
+                    </h3>
+                    <div className={styles.consumableEffects}>
+                      {Number(item.health_restore) > 0 && (
+                        <div className={styles.effectCard}>
+                          <span className={styles.effectTitle} style={{ color: '#f87171' }}>
+                            <Heart size={14} style={{ display: 'inline', marginRight: 4 }} />
+                            +{item.health_restore} Health
+                          </span>
+                          <span className={styles.effectMeta}>Instant health recovery</span>
+                        </div>
+                      )}
+
+                      {Number(item.hunger_restore) > 0 && (
+                        <div className={styles.effectCard}>
+                          <span className={styles.effectTitle} style={{ color: '#f5b041' }}>
+                            <Utensils size={14} style={{ display: 'inline', marginRight: 4 }} />
+                            +{item.hunger_restore} Hunger
+                          </span>
+                          <span className={styles.effectMeta}>Restores hunger</span>
+                        </div>
+                      )}
+
+                      {Array.isArray(item.effects) &&
+                        item.effects.map((eff: any, idx: number) => {
+                          const durationMin = eff.length ? Math.round(eff.length / 60000) : null;
+                          return (
+                            <div key={idx} className={styles.effectCard}>
+                              <span className={styles.effectTitle}>
+                                {formatEffectTitle(eff)}
+                              </span>
+                              <span className={styles.effectMeta}>
+                                {durationMin ? `${durationMin} min duration` : 'Permanent passive effect'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Chest Drops / Container Loot Table */}
+                {Array.isArray(item.chest_drops) && item.chest_drops.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Package size={14} color="#f5b041" /> Container Drops ({item.chest_drops.length})
+                    </h3>
+                    <div className={styles.lootGrid}>
+                      {item.chest_drops.map((drop: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className={styles.lootRow}
+                          onClick={() => drop.item_name && openItemByName(drop.item_name)}
+                          title={`Click to inspect ${drop.item_name}`}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className={styles.lootName}>{drop.item_name}</span>
+                            {drop.quantity > 1 && (
+                              <Badge variant="neutral" size="sm">
+                                x{drop.quantity}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className={styles.lootChance}>
+                            {drop.chance !== undefined ? `${drop.chance}%` : 'Unknown'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Recipe Information (if this item is a recipe) */}
+                {item.type === 'RECIPE' && item.recipe_yield && (
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Produces</span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: 4,
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => openItemByName(item.recipe_yield.item_name)}
+                    >
+                      <strong style={{ fontSize: '1rem', color: '#38bdf8' }}>
+                        {item.recipe_yield.item_name}
+                      </strong>
+                      <Badge variant="neutral" size="sm">
+                        Inspect Product <ArrowRight size={12} style={{ display: 'inline', marginLeft: 4 }} />
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lore Wiki */}
+                {loreLinks.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <BookOpen size={14} color="#38bdf8" /> Lore Wiki
+                    </h3>
+                    <div className={styles.loreGrid}>
+                      {loreLinks.map((link, idx) => {
+                        const rawLink = link as any;
+                        const entryId = rawLink.entryIds?.[0] || rawLink.entryId || rawLink.id;
+                        const primaryEntry = entryId ? getLoreEntry(entryId, loreDataset) : null;
+                        const rawTitle = primaryEntry?.title || rawLink.entryTitle || rawLink.title || '';
+                        const formattedTitle = formatLoreTitle(rawTitle, entryId);
+                        const summary =
+                          primaryEntry?.summary ||
+                          rawLink.summary ||
+                          rawLink.reason ||
+                          'Connected lore record.';
+                        return (
+                          <div
+                            key={idx}
+                            className={styles.loreCard}
+                            onClick={() => entryId && router.push(`/lore?entry=${entryId}`)}
+                            title={`Read ${formattedTitle} in Lore Wiki`}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                              <span className={styles.loreHeader}>{formattedTitle}</span>
+                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-accent)', display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                                Read Wiki <ArrowRight size={11} />
+                              </span>
+                            </div>
+                            <span className={styles.loreSnippet}>{String(summary)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Market & Valuation (Complete Engine) */}
+            {activeTab === 'market' && (
+              <div className={styles.tabContent}>
+                {/* 1. Price Trend Chart with 30-Day Moving Trajectory */}
+                {priceTrendData ? (
+                  <div className={styles.chartCard}>
+                    <div className={styles.chartHeader}>
+                      <span className={styles.chartTitle}>
+                        <Activity size={14} color="#38bdf8" /> 30-Day Price Trend
+                      </span>
+                      <span
+                        className={`${styles.chartTrendBadge} ${
+                          priceTrendData.trendPct > 0.5
+                            ? styles.chartTrendUp
+                            : priceTrendData.trendPct < -0.5
+                            ? styles.chartTrendDown
+                            : styles.chartTrendNeutral
+                        }`}
+                      >
+                        {priceTrendData.trendPct > 0.5 ? (
+                          <TrendingUp size={12} />
+                        ) : priceTrendData.trendPct < -0.5 ? (
+                          <TrendingDown size={12} />
+                        ) : (
+                          <Minus size={12} />
+                        )}
+                        <span>
+                          {priceTrendData.trendPct > 0 ? '+' : ''}
+                          {priceTrendData.trendPct.toFixed(1)}% (30d)
+                        </span>
+                      </span>
+                    </div>
+
+                    <div className={styles.chartSvgWrapper}>
+                      <svg
+                        viewBox={`0 0 ${priceTrendData.svgW} ${priceTrendData.svgH}`}
+                        style={{ width: '100%', height: '100%', overflow: 'visible' }}
+                      >
+                        <defs>
+                          <linearGradient id="modalPriceGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+                        <path d={priceTrendData.areaD} fill="url(#modalPriceGradient)" />
+                        <path
+                          d={priceTrendData.pathD}
+                          fill="none"
+                          stroke="#38bdf8"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {priceTrendData.rawCoord && (
+                          <>
+                            <line
+                              x1={priceTrendData.coords[2].x}
+                              y1={priceTrendData.coords[2].y}
+                              x2={priceTrendData.rawCoord.x}
+                              y2={priceTrendData.rawCoord.y}
+                              stroke="#f87171"
+                              strokeWidth="2"
+                              strokeDasharray="4 4"
+                            />
+                            <circle
+                              cx={priceTrendData.rawCoord.x}
+                              cy={priceTrendData.rawCoord.y}
+                              r="4"
+                              fill="#f87171"
+                              stroke="#0b101b"
+                              strokeWidth="2"
+                            />
+                          </>
+                        )}
+                        {priceTrendData.coords.map((pt, idx) => (
+                          <circle
+                            key={idx}
+                            cx={pt.x}
+                            cy={pt.y}
+                            r="4.5"
+                            fill={idx === 3 && priceTrendData.adjusted ? '#4ade80' : '#38bdf8'}
+                            stroke="#0b101b"
+                            strokeWidth="2"
+                          />
+                        ))}
+                      </svg>
+                    </div>
+
+                    <div className={styles.chartGridPills}>
+                      <div className={styles.chartPillItem}>
+                        <span className={styles.chartPillLabel}>30d Avg</span>
+                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p30)}</span>
+                      </div>
+                      <div className={styles.chartPillItem}>
+                        <span className={styles.chartPillLabel}>14d Avg</span>
+                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p14)}</span>
+                      </div>
+                      <div className={styles.chartPillItem}>
+                        <span className={styles.chartPillLabel}>7d Avg</span>
+                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p7)}</span>
+                      </div>
+                      <div className={styles.chartPillItem}>
+                        <span className={styles.chartPillLabel}>Safe Price</span>
+                        <span className={styles.chartPillVal} style={{ color: '#38bdf8' }}>
+                          {formatGold(priceTrendData.pSafe)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* 2. Recent 10 Sales Transaction Range */}
+                {(item.latest_sale_min || item.latest_sale_max || item.latest_sale_median) ? (
+                  <div className={styles.spreadContainer}>
+                    <div className={styles.spreadHeader}>
+                      <span className={styles.statLabel}>Recent 10 Sales Range</span>
+                      <span className={styles.spreadRatioBadge}>
+                        {item.latest_sale_spread_ratio
+                          ? `${((item.latest_sale_spread_ratio - 1) * 100).toFixed(1)}% spread`
+                          : '10 sales tracked'}
+                      </span>
+                    </div>
+                    <div className={styles.spreadBarTrack}>
+                      <div className={styles.spreadBarRange} />
+                      <div
+                        className={styles.spreadDiamondWrapper}
+                        style={{
+                          left: `${Math.min(
+                            85,
+                            Math.max(
+                              15,
+                              item.latest_sale_max && item.latest_sale_min && item.latest_sale_max !== item.latest_sale_min
+                                ? (((item.latest_sale_median || item.latest_sale_min) - item.latest_sale_min) /
+                                    (item.latest_sale_max - item.latest_sale_min)) *
+                                    100
+                                : 50
+                            )
+                          )}%`,
                         }}
                       >
-                        <div className="source-meta">
-                          <span className="source-type">Resource</span>
-                          <span className="source-chance">Lv.{location.level}</span>
-                        </div>
-                        <div className="source-name">{location.name}</div>
-                        <div className="source-loc">Open map location</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {showUtility && (
-                <div className="bento-card utility-card">
-                  <div className="card-label"><Target size={14} /> Utility</div>
-                  <div className="list-container scroll-y">
-                    {Object.entries(groupedUtility).map(([type, items]: [string, any]) => (
-                      <div key={type} className="utility-group">
-                        <div className="utility-group-title">{type}</div>
-                        <div className="utility-group-items">
-                          {items.map((use: any, i: number) => (
-                            <button
-                              key={i}
-                              type="button"
-                              className="utility-pill-compact"
-                              aria-label={`Open ${use.name} item details`}
-                              onClick={() => openRelatedItem(use.name)}
-                              onMouseEnter={() => prefetchRelatedItem(use.name)}
-                            >
-                              <div className="up-name">{use.name}</div>
-                              <div className="up-qty">x{use.amount}</div>
-                            </button>
-                          ))}
-                        </div>
+                        <span className={styles.markerDiamond} />
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-
-              {/* Recipe Card (Unified) */}
-              {showRecipe && (() => {
-                const getRecipeMatUnitPrice = (m: any) => {
-                  const merchantBuyPrice = getMerchantBuyPrice(m.name || m.item_name);
-                  if (merchantBuyPrice > 0) return merchantBuyPrice;
-                  const injectedPrice = Number(m.price || 0);
-                  if (injectedPrice > 0) return injectedPrice;
-                  return 0;
-                };
-                const totalMatCost = recipeMats.reduce((acc: number, m: any) => acc + (getRecipeMatUnitPrice(m) * (m.amount || m.quantity || 1)), 0);
-                
-                // Uses logic from shared core
-                const rawUses = getRecipeUses(item);
-                const uses = rawUses === 'Infinite' ? Infinity : Number(rawUses);
-
-                const recipePrice = item.type === 'RECIPE' ? getSafeMarketValue(item) : (item.produced_from?.recipe_price || 0);
-                const resultPrice = item.type === 'RECIPE' ? (item.recipe_yield?.market_price || 0) : getSafeMarketValue(item);
-
-                // Math
-                const recipeCostPerCraft = (uses === Infinity) ? 0 : (recipePrice / uses);
-                const investment = totalMatCost + recipeCostPerCraft;
-                
-                // Compare Market vs Vendor
-                const marketTaxRate = getMarketTaxRate(preferences.membership);
-                const marketTaxMultiplier = getMarketTaxMultiplier(preferences.membership);
-                const marketRevenue = resultPrice * marketTaxMultiplier;
-                const vendorBase = item.type === 'RECIPE' ? (item.recipe_yield?.vendor_price || 0) : (item.vendor_price || 0);
-                const vendorRevenue = vendorBase * (1 + ((Number(profileBarteringBoost) || 0) / 100));
-                
-                const bestRevenue = Math.max(marketRevenue, vendorRevenue);
-                const profit = bestRevenue - investment;
-                const isProfitable = profit > 0;
-                const bestPath = vendorRevenue > marketRevenue ? 'VENDOR' : 'MARKET';
-
-                // Total ROI for limited uses
-                const totalProfit = (uses === Infinity) ? profit : (profit * uses);
-
-                return (
-                  <div className="bento-card recipe-card">
-                    <div className="card-label">
-                      <Hammer size={14} /> {isDefaultAlchemyCraft ? 'DEFAULT ALCHEMY CRAFT' : item.produced_from ? 'PRODUCED FROM' : 'CRAFTING RECIPE'}
                     </div>
-                    <div className="recipe-box">
-                      <div className="recipe-header-flex">
-                        <div className="recipe-req">Lvl {recipeLevel} {recipeSkill}</div>
-                        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {resultPrice > 0 && (
-                            <div className={`roi-badge ${isProfitable ? 'pos' : 'neg'}`} style={{ whiteSpace: 'nowrap' }}>
-                              {isProfitable ? 'PROFITABLE' : 'LOSS'}
-                            </div>
-                          )}
-                          {canQueueRecipe && (
-                            <button 
-                              onClick={() => addToQueue(queueRecipeName)}
-                              className="add-queue-btn"
-                              aria-label={`Add ${queueRecipeName} to crafting queue`}
-                              style={{ whiteSpace: 'nowrap' }}
-                            >
-                              <Plus size={12} /> {queuedRecipeCount > 0 ? `QUEUE (${queuedRecipeCount})` : 'QUEUE'}
-                            </button>
-                          )}
-                        </div>
+                    <div className={styles.spreadColumns}>
+                      <div className={`${styles.spreadCol} ${styles.spreadColLeft}`}>
+                        <span className={styles.spreadColLabel}>Low Sale</span>
+                        <span className={styles.spreadColVal}>{formatGold(item.latest_sale_min || 0)}</span>
                       </div>
+                      <div className={`${styles.spreadCol} ${styles.spreadColCenter}`}>
+                        <span className={styles.spreadColLabel}>Median Sale</span>
+                        <span className={styles.spreadColVal} style={{ color: '#38bdf8' }}>
+                          {formatGold(item.latest_sale_median || 0)}
+                        </span>
+                      </div>
+                      <div className={`${styles.spreadCol} ${styles.spreadColRight}`}>
+                        <span className={styles.spreadColLabel}>High Sale</span>
+                        <span className={styles.spreadColVal}>{formatGold(item.latest_sale_max || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
-                      {isDefaultAlchemyCraft && (
-                        <div className="recipe-link-button recipe-link-static">
-                          <span>
-                            <span className="recipe-link-kicker">Learned by default</span>
-                            <strong>No recipe item required</strong>
-                            <em>ALCHEMY</em>
-                          </span>
-                        </div>
-                      )}
+                {/* 3. Volume Depth & Trading Velocity Grid */}
+                <div className={styles.statsGrid}>
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>30-Day Volume</span>
+                    <span className={styles.statValue}>
+                      {item.vol_30 ? Number(item.vol_30).toLocaleString() : '—'}
+                    </span>
+                    <span className={styles.statSubtext}>
+                      {item.vol_7 ? `7d Vol: ${Number(item.vol_7).toLocaleString()}` : 'Monthly turnover'}
+                    </span>
+                  </div>
 
-                      {craftedByRecipeName && !isDefaultAlchemyCraft && (
-                        <button
-                          type="button"
-                          className="recipe-link-button"
-                          aria-label={`Open recipe item ${craftedByRecipeName}`}
-                          onClick={() => openRelatedItem(craftedByRecipeName)}
-                          onMouseEnter={() => prefetchRelatedItem(craftedByRecipeName)}
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>3-Day Stable Vol</span>
+                    <span className={styles.statValue}>
+                      {item.stable_vol_3 ? Number(item.stable_vol_3).toLocaleString() : '—'}
+                    </span>
+                    <span className={styles.statSubtext}>Outliers filtered</span>
+                  </div>
+
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Daily Median</span>
+                    <span className={styles.statValue}>
+                      {item.daily_sales_median_30 ? `${item.daily_sales_median_30}/day` : '—'}
+                    </span>
+                    <span className={styles.statSubtext}>Typical daily trades</span>
+                  </div>
+
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Peak Daily Sales</span>
+                    <span className={styles.statValue}>
+                      {item.daily_sales_max_30 ? `${item.daily_sales_max_30}/day` : '—'}
+                    </span>
+                    <span className={styles.statSubtext}>Highest 1-day volume</span>
+                  </div>
+                </div>
+
+                {/* Spike Filter Confirmation */}
+                {item.price_adjusted && (
+                  <div
+                    style={{
+                      background: 'rgba(74, 222, 128, 0.08)',
+                      border: '1px solid rgba(74, 222, 128, 0.25)',
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: '0.8125rem',
+                      color: '#4ade80',
+                    }}
+                  >
+                    <Check size={16} style={{ flexShrink: 0 }} />
+                    <span>
+                      Spike protection filtered {item.price_outlier_rows || 'extreme'} outlier listing(s). Raw 3-day average was{' '}
+                      {formatGold(item.raw_avg_3 || item.raw_price || 0)}.
+                    </span>
+                  </div>
+                )}
+
+                {/* Liquidity Alert if Bulk Spikes */}
+                {item.liquidity_warning && (
+                  <div
+                    style={{
+                      background: 'rgba(245, 176, 65, 0.1)',
+                      border: '1px solid rgba(245, 176, 65, 0.3)',
+                      borderRadius: 8,
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: '0.8125rem',
+                      color: '#f5b041',
+                    }}
+                  >
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{item.liquidity_warning}</span>
+                  </div>
+                )}
+
+                {/* 3. Sell Advisor Engine */}
+                {saleInsight && (
+                  <div className={styles.advisorCard}>
+                    <div className={styles.advisorHeader}>
+                      <h3 className={styles.sectionTitle} style={{ margin: 0 }}>
+                        <Coins size={14} color="#f5b041" /> Sell Advice
+                      </h3>
+                      <span
+                        className={`${styles.advisorBadge} ${
+                          saleInsight.recommendMarket
+                            ? styles.advisorMarket
+                            : styles.advisorVendor
+                        }`}
+                      >
+                        {saleInsight.recommendMarket ? 'Sell on Market' : 'Sell to Vendor'}
+                      </span>
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      {saleInsight.recommendMarket
+                        ? `Selling on the player market nets ${formatGold(saleInsight.netMarket)} after ${Math.round(
+                            saleInsight.marketTaxRate * 100
+                          )}% market tax (+${formatGold(Math.abs(saleInsight.diff))} more than vendor).`
+                        : `Selling to the NPC vendor yields ${formatGold(
+                            saleInsight.vendorPrice
+                          )} instantly with zero tax and beats market returns.`}
+                    </p>
+
+                    <div className={styles.advisorMetrics}>
+                      <div>
+                        <span className={styles.statLabel}>Net Market</span>
+                        <strong style={{ fontSize: '0.95rem' }}>
+                          {formatGold(saleInsight.netMarket)}
+                        </strong>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          After {Math.round(saleInsight.marketTaxRate * 100)}% tax
+                        </span>
+                      </div>
+                      <div>
+                        <span className={styles.statLabel}>Vendor Payout</span>
+                        <strong style={{ fontSize: '0.95rem', color: '#f5b041' }}>
+                          {formatGold(saleInsight.vendorPrice)}
+                        </strong>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          Base: {formatGold(saleInsight.vendorBase)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className={styles.statLabel}>Extra Profit</span>
+                        <strong
+                          style={{
+                            fontSize: '0.95rem',
+                            color: saleInsight.diff > 0 ? '#38bdf8' : '#f5b041',
+                          }}
                         >
-                          <span>
-                            <span className="recipe-link-kicker">Recipe item</span>
-                            <strong>{craftedByRecipeName}</strong>
-                            {craftedByRecipeItem?.quality && <em style={getQualityTextStyle(craftedByRecipeItem.quality)}>{craftedByRecipeItem.quality}</em>}
-                          </span>
-                          <ExternalLink size={14} />
-                        </button>
-                      )}
-                      
-                      <div className="list-container scroll-y" style={{ maxHeight: '180px' }}>
-                        {recipeMats.map((ing: any, idx: number) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className="ing-row"
-                            aria-label={`Open ${ing.name || ing.item_name} item details`}
-                            onClick={() => openRelatedItem(ing.name || ing.item_name)}
-                            onMouseEnter={() => prefetchRelatedItem(ing.name || ing.item_name)}
-                          >
-                            <div className="ing-name-link">
-                              {ing?.name || ing?.item_name}
-                              <span className="ing-price-sub">@{getRecipeMatUnitPrice(ing).toLocaleString()}g</span>
-                            </div>
-                            <span className="ing-qty">x{ing?.amount || ing?.quantity}</span>
-                          </button>
-                        ))}
+                          {saleInsight.diff > 0 ? '+' : ''}
+                          {formatGold(Math.abs(saleInsight.diff))}
+                        </strong>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          Net advantage
+                        </span>
                       </div>
-
-                      {(resultPrice > 0 || vendorBase > 0) && (
-                        <div className="profit-analysis">
-                          <div className="analysis-row">
-                            <span>Materials Cost</span>
-                            <strong>{totalMatCost.toLocaleString()}g</strong>
-                          </div>
-                          {recipePrice > 0 && (
-                            <div className="analysis-row">
-                              <span>Recipe Cost {uses !== Infinity && <small>({uses} uses)</small>}</span>
-                              <strong>
-                                {uses === Infinity ? '0g (Owned)' : `${Math.ceil(recipeCostPerCraft).toLocaleString()}g`}
-                                {uses !== Infinity && <small style={{ marginLeft: '4px' }}>({recipePrice.toLocaleString()}g total)</small>}
-                              </strong>
-                            </div>
-                          )}
-                          <div className="analysis-row" style={{ color: bestPath === 'MARKET' ? 'var(--text-accent)' : 'rgba(255,255,255,0.4)' }}>
-                            <span>Market Net <small>(After {Math.round(marketTaxRate * 100)}% Tax)</small></span>
-                            <strong>{marketRevenue.toLocaleString()}g</strong>
-                          </div>
-                          {vendorBase > 0 && (
-                            <div className="analysis-row" style={{ color: bestPath === 'VENDOR' ? 'var(--text-accent)' : 'rgba(255,255,255,0.4)' }}>
-                                <span>Vendor Net <small>(w/ {profileBarteringBoost}% Barter)</small></span>
-                                <strong>{vendorRevenue.toLocaleString()}g</strong>
-                            </div>
-                          )}
-                          <div className="profit-footer" style={{ borderTopColor: isProfitable ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)' }}>
-                            <span>{uses === Infinity ? `Profit (${bestPath})` : `Total ROI (${uses} uses)`}</span>
-                            <strong style={{ color: isProfitable ? '#22c55e' : '#ef4444' }}>
-                              {isProfitable ? '+' : ''}{Math.floor(totalProfit).toLocaleString()}g
-                            </strong>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-          )}
-          <div style={{ height: '4rem' }}></div>
-        </div>
+                )}
 
-        <div className="modal-footer">
-          <div className="item-id">ID: {id}</div>
-          {itemIsTradeable && (
-            <a href={`https://web.idle-mmo.com/item/inspect/${id}`} target="_blank" rel="noopener noreferrer" className="market-link">
-              View Official Listings <ExternalLink size={12} />
-            </a>
-          )}
-        </div>
+                {/* 4. Crafting Profitability (if craftable) */}
+                {recipeEconomics && (
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>Crafting Profit</span>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                        gap: 8,
+                        marginTop: 6,
+                      }}
+                    >
+                      <div>
+                        <span className={styles.statSubtext}>Material Cost:</span>
+                        <div style={{ fontWeight: 700 }}>{formatGold(recipeEconomics.totalMatCost)}</div>
+                      </div>
+                      <div>
+                        <span className={styles.statSubtext}>Total Craft Investment:</span>
+                        <div style={{ fontWeight: 700 }}>{formatGold(recipeEconomics.investment)}</div>
+                      </div>
+                      <div>
+                        <span className={styles.statSubtext}>Net Profit / Craft:</span>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            color: recipeEconomics.isProfitable ? '#4ade80' : '#f87171',
+                          }}
+                        >
+                          {recipeEconomics.profit > 0 ? '+' : ''}
+                          {formatGold(recipeEconomics.profit)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Sources & Crafting */}
+            {activeTab === 'sources' && (
+              <div className={styles.tabContent}>
+                {/* 1. Crafting Recipe (Production) */}
+                {recipeData && recipeData.materials && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Hammer size={14} color="#38bdf8" /> Crafting Recipe
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {recipeData.materials.map((m: any, idx: number) => {
+                        const mName = m.name || m.item_name;
+                        const qty = m.amount || m.quantity || 1;
+                        return (
+                          <div
+                            key={idx}
+                            className={styles.sourceCard}
+                            onClick={() => openItemByName(mName)}
+                            title={`Inspect ${mName}`}
+                          >
+                            <div className={styles.sourceInfo}>
+                              <span className={styles.sourceName}>{mName}</span>
+                              <span className={styles.sourceMeta}>Required Material</span>
+                            </div>
+                            <span className={styles.sourceTag}>{qty}x Required</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Gathering Locations */}
+                {gatheredLocations.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <MapPin size={14} color="#38bdf8" /> Gathering Locations
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {gatheredLocations.map((loc, idx) => {
+                        const targetKey = loc.key || normalizeLocationKey(loc.name);
+                        return (
+                          <div
+                            key={idx}
+                            className={styles.sourceCard}
+                            onClick={() => {
+                              router.push(`/map?location=${encodeURIComponent(targetKey)}`);
+                            }}
+                            title={`View ${loc.name} on World Map`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                router.push(`/map?location=${encodeURIComponent(targetKey)}`);
+                              }
+                            }}
+                          >
+                            <div className={styles.sourceInfo}>
+                              <span className={styles.sourceName}>{loc.name}</span>
+                              <span className={styles.sourceMeta}>
+                                <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '4px' }} />
+                                View on World Map
+                              </span>
+                            </div>
+                            <span className={styles.sourceTag}>Level {loc.level}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Dungeon Drops */}
+                {dungeonSources.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Castle size={14} color="#a855f7" /> Dungeon Drops
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {dungeonSources.map((src, idx) => (
+                        <div
+                          key={idx}
+                          className={styles.sourceCard}
+                          onClick={() => {
+                            router.push(`/dungeons?search=${encodeURIComponent(src.name || '')}`);
+                          }}
+                          title={`View ${src.name} in Dungeons`}
+                        >
+                          <div className={styles.sourceInfo}>
+                            <span className={styles.sourceName}>{src.name}</span>
+                            <span className={styles.sourceMeta}>
+                              {src.type === 'DUNGEON_CHEST' || src.type === 'CHEST' ? 'Dungeon Chest Drop' : 'Dungeon Encounter Drop'}
+                              {Boolean(src.location) && (
+                                <>
+                                  {' • '}
+                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
+                                  {String(src.location)}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          <span className={styles.sourceTag}>
+                            {src.chance !== undefined ? `${src.chance}% drop` : 'Drop table'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. World Boss Drops */}
+                {bossSources.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Crown size={14} color="#f59e0b" /> World Boss Drops
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {bossSources.map((src, idx) => (
+                        <div
+                          key={idx}
+                          className={styles.sourceCard}
+                          onClick={() => {
+                            router.push(`/bosses?search=${encodeURIComponent(src.name || '')}`);
+                          }}
+                          title={`View ${src.name} in Bosses`}
+                        >
+                          <div className={styles.sourceInfo}>
+                            <span className={styles.sourceName}>{src.name}</span>
+                            <span className={styles.sourceMeta}>
+                              World Boss
+                              {Boolean(src.location) && (
+                                <>
+                                  {' • '}
+                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
+                                  {String(src.location)}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          <span className={styles.sourceTag}>
+                            {src.chance !== undefined ? `${src.chance}% drop` : 'Drop table'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Monster Drops */}
+                {enemySources.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Swords size={14} color="#ef4444" /> Monster Drops
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {enemySources.map((src, idx) => (
+                        <div
+                          key={idx}
+                          className={styles.sourceCard}
+                          onClick={() => {
+                            router.push(`/enemies?search=${encodeURIComponent(src.name || '')}`);
+                          }}
+                          title={`View ${src.name} in Enemies`}
+                        >
+                          <div className={styles.sourceInfo}>
+                            <span className={styles.sourceName}>{src.name}</span>
+                            <span className={styles.sourceMeta}>
+                              {formatSourceType(src.type)}
+                              {Boolean(src.location) && (
+                                <>
+                                  {' • '}
+                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
+                                  {String(src.location)}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          <span className={styles.sourceTag}>
+                            {src.chance !== undefined ? `${src.chance}% drop` : 'Drop pool'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 6. Used in Crafting Recipes (Reverse Recipe Usage) */}
+                {reverseRecipes.length > 0 && (
+                  <div>
+                    <h3 className={styles.sectionTitle}>
+                      <Hammer size={14} color="#4ade80" /> Used in Recipes ({reverseRecipes.length})
+                    </h3>
+                    <div className={styles.sourceList}>
+                      {reverseRecipes.map((rec, idx) => (
+                        <div
+                          key={idx}
+                          className={styles.sourceCard}
+                          onClick={() => openItemByName(rec.name)}
+                          title={`Inspect ${rec.name}`}
+                        >
+                          <div className={styles.sourceInfo}>
+                            <span className={styles.sourceName}>{rec.name}</span>
+                          </div>
+                          <span className={styles.sourceTag}>{rec.amount}x required</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {gatheredLocations.length === 0 &&
+                  acquisitionSources.length === 0 &&
+                  !recipeData &&
+                  reverseRecipes.length === 0 && (
+                    <div className={styles.stateContainer}>
+                      <Package size={24} color="var(--text-muted)" />
+                      <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                        No drop sources or gathering locations recorded for this item.
+                      </p>
+                    </div>
+                  )}
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      <style jsx>{`
-        .modal-container { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
-        .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(20px) saturate(1.08); animation: modalBackdropFade 0.2s ease-out both; }
-        .modal-card { position: relative; width: 100%; max-width: 1200px; max-height: min(90vh, 920px); background: #0d0e12; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 32px 90px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255,255,255,0.03) inset; animation: modalCardReveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        .modal-card:focus { outline: none; }
-        
-        .modal-header-section { flex-shrink: 0; padding: 2rem 3rem; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .header-flex { display: flex; align-items: center; justify-content: space-between; }
-        .header-left { display: flex; align-items: center; gap: 1.5rem; min-width: 0; }
-        .item-icon-large { width: 64px; height: 64px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.28); object-fit: contain; padding: 0.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 26px rgba(0,0,0,0.28); }
-        .item-title { font-size: 2.25rem; font-weight: 800; margin: 0; letter-spacing: -0.03em; }
-        
-        .badge-row { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.55rem; }
-        .type-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.72); background: rgba(255,255,255,0.06); padding: 2px 10px; border-radius: 6px; }
-        .quality-text { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        .meta-divider { color: rgba(255,255,255,0.26); font-size: 0.72rem; line-height: 1; }
-        .uses-badge { font-size: 10px; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.1); padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
-        .vendor-badge { align-items: center; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.16); border-radius: 6px; color: #fbbf24; display: inline-flex; font-size: 11px; font-weight: 800; gap: 4px; padding: 2px 8px; }
-        .vendor-badge img { width: 14px; height: 14px; }
-        .untradable-badge { border: 1px solid rgba(248,113,113,0.26); border-radius: 5px; background: rgba(248,113,113,0.09); color: #fca5a5; font-size: 10px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 8px; text-transform: uppercase; }
-        
-        .modal-close-btn { align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: rgba(255,255,255,0.72); cursor: pointer; display: inline-flex; height: 40px; justify-content: center; padding: 0; width: 40px; transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
-        .modal-close-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: #fff; transform: translateY(-1px); }
-        .modal-close-btn:active { transform: translateY(0) scale(0.98); }
-        .modal-close-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56,189,248,0.2); }
-
-        .modal-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 3rem; position: relative; -webkit-overflow-scrolling: touch; }
-        .bento-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
-        .bento-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.065); border-radius: 10px; padding: 1.5rem; display: flex; flex-direction: column; flex: 1 1 350px; min-width: 300px; min-height: 180px; }
-        button.bento-card { color: inherit; font: inherit; text-align: left; width: auto; }
-        .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
-        .skeleton-box { min-height: 168px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255, 255, 255, 0.04); animation: skeletonPulse 1.2s ease-in-out infinite; }
-        .item-link-card { transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease; }
-        .item-link-card:hover { transform: translateY(-2px); }
-        .item-link-card:focus-visible,
-        .recipe-link-button:focus-visible,
-        .add-queue-btn:focus-visible,
-        .loot-row:focus-visible,
-        .utility-pill-compact:focus-visible,
-        .ing-row:focus-visible,
-        .source-map-btn:focus-visible,
-        .source-pill:focus-visible,
-        .lore-thread-row:focus-visible,
-        .market-link:focus-visible {
-          outline: none;
-          border-color: var(--text-accent);
-          box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent), transparent 82%);
-        }
-        .full-width { flex: 1 1 100% !important; }
-        .card-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.68); display: flex; align-items: center; gap: 8px; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
-        .source-context-note { color: var(--text-muted); font-size: 0.8rem; font-weight: 650; line-height: 1.35; margin: -0.8rem 0 0.9rem; }
-
-        .market-card { flex: 2 1 600px; background: rgba(56, 189, 248, 0.05); }
-        .price-row { margin-bottom: 1.5rem; }
-        .price-main { font-size: 3rem; font-weight: 900; color: #fff; letter-spacing: -0.04em; }
-        .price-sub { font-size: 0.85rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        .market-stats { display: flex; gap: 2.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); }
-        .m-stat { display: flex; flex-direction: column; gap: 4px; }
-        .m-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.58); font-weight: 600; text-transform: uppercase; }
-        .m-stat strong { font-size: 1.1rem; color: #fff; }
-        .liquidity-status.active { color: #4ade80; }
-        .liquidity-status.steady { color: #facc15; }
-        .liquidity-status.thin { color: #fbbf24; }
-        .liquidity-status.risk { color: #f87171; }
-        .market-empty { align-items: flex-start; display: grid; gap: 0.35rem; padding: 1rem; border: 1px dashed rgba(255,255,255,0.12); border-radius: 12px; background: rgba(255,255,255,0.02); }
-        .empty-title { color: #fff; font-size: 1rem; font-weight: 900; }
-        .empty-sub { color: rgba(255,255,255,0.56); font-size: 0.86rem; line-height: 1.45; }
-        .market-liquidity-note {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.65rem;
-          margin-top: 1rem;
-          border: 1px solid rgba(251,191,36,0.28);
-          background: rgba(251,191,36,0.08);
-          border-radius: 12px;
-          color: rgba(255,255,255,0.72);
-          font-size: 0.84rem;
-          font-weight: 650;
-          line-height: 1.45;
-          padding: 0.8rem 0.9rem;
-        }
-        .market-liquidity-note svg {
-          color: #fbbf24;
-          flex: 0 0 auto;
-          margin-top: 0.1rem;
-        }
-
-        .req-card { border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); flex: 1 1 300px; }
-        .req-pill { border-color: rgba(239, 68, 68, 0.2); }
-        .req-pill .stat-val { color: #f87171; }
-
-        .stats-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; width: 100%; }
-        .stat-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 0.75rem; border-radius: 8px; display: flex; flex-direction: column; gap: 2px; }
-        .stat-val { font-size: 1.1rem; font-weight: 800; color: #fff; }
-        .stat-key { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.58); text-transform: uppercase; letter-spacing: 0.05em; }
-        .effect-pill { border-color: rgba(168, 85, 247, 0.2); background: rgba(168, 85, 247, 0.02); }
-        .effect-pill .stat-val { color: #c084fc; font-size: 0.9rem; }
-        .full-width-pill { grid-column: span 1; }
-
-        .description-text { font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.8); font-style: italic; }
-
-        .sell-advisor-card {
-          background: rgba(255, 255, 255, 0.03);
-          border-color: rgba(56, 189, 248, 0.22);
-        }
-
-        .sell-advisor-grid {
-          align-items: stretch;
-          display: grid;
-          gap: 0.85rem;
-          grid-template-columns: minmax(180px, 0.65fr) minmax(0, 1.35fr);
-          width: 100%;
-        }
-
-        .sell-advisor-main,
-        .sell-advisor-metrics > div {
-          background: rgba(0,0,0,0.2);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 14px;
-          min-width: 0;
-          padding: 1rem;
-        }
-
-        .sell-advisor-main {
-          border-color: rgba(56,189,248,0.22);
-          display: grid;
-          gap: 0.5rem;
-        }
-
-        .sell-advisor-main span,
-        .sell-advisor-metrics span {
-          color: rgba(255,255,255,0.62);
-          font-size: 0.65rem;
-          font-weight: 900;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-
-        .sell-advisor-main strong {
-          color: #fff;
-          font-size: clamp(1.5rem, 4vw, 2.15rem);
-          font-weight: 900;
-          line-height: 1;
-        }
-
-        .sell-advisor-main em {
-          color: rgba(255,255,255,0.62);
-          font-style: normal;
-          overflow-wrap: anywhere;
-        }
-
-        .sell-advisor-metrics {
-          display: grid;
-          gap: 0.75rem;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          min-width: 0;
-        }
-
-        .sell-advisor-metrics > div {
-          display: grid;
-          gap: 0.28rem;
-        }
-
-        .sell-advisor-metrics strong {
-          color: #fff;
-          font-size: 1rem;
-          font-weight: 900;
-          overflow-wrap: anywhere;
-        }
-
-        .lore-thread-card {
-          background: rgba(255, 255, 255, 0.03);
-          border-color: rgba(245, 176, 65, 0.2);
-        }
-
-        .description-lore-card {
-          background: rgba(255, 255, 255, 0.025);
-          border-color: rgba(56, 189, 248, 0.18);
-        }
-
-        .lore-thread-list {
-          display: grid;
-          gap: 0.75rem;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        }
-
-        .lore-thread-row {
-          background: rgba(0,0,0,0.18);
-          border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 14px;
-          color: #fff;
-          cursor: pointer;
-          display: grid;
-          gap: 0.25rem;
-          min-width: 0;
-          padding: 0.85rem;
-          text-align: left;
-          transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
-        }
-
-        .lore-thread-row:hover {
-          background: rgba(245,176,65,0.08);
-          border-color: rgba(245,176,65,0.34);
-          transform: translateY(-1px);
-        }
-
-        .lore-thread-row strong,
-        .lore-thread-row small,
-        .lore-thread-row em {
-          display: block;
-          min-width: 0;
-          overflow-wrap: anywhere;
-        }
-
-        .lore-thread-row small,
-        .lore-thread-row em {
-          color: rgba(255,255,255,0.52);
-          font-style: normal;
-          line-height: 1.45;
-        }
-
-        .lore-confidence {
-          border-radius: 999px;
-          display: inline-flex;
-          font-size: 0.62rem;
-          font-weight: 900;
-          letter-spacing: 0.08em;
-          padding: 0.18rem 0.52rem;
-          text-transform: uppercase;
-          width: max-content;
-        }
-
-        .lore-confidence.canon { background: rgba(74,222,128,0.12); color: #86efac; }
-        .lore-confidence.inferred { background: rgba(245,176,65,0.13); color: #facc15; }
-        .lore-confidence.theory { background: rgba(248,113,113,0.13); color: #fca5a5; }
-        
-        .vendor-info-card { background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.2); }
-        .vendor-message { font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,0.9); }
-        .vendor-link { color: #fbbf24; text-decoration: underline; font-weight: 700; }
-        .vendor-warning { margin-top: 0.75rem; color: #f87171; font-weight: 600; font-size: 0.9rem; }
-
-        .restoration-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-        .rest-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
-        .rest-badge.health { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-        .rest-badge.hunger { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-
-        .yield-card { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.2); cursor: pointer; }
-        .yield-card:hover { border-color: rgba(168, 85, 247, 0.45); background: rgba(168, 85, 247, 0.14); }
-        .yield-item-name { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
-        .yield-details { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; }
-        .yield-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-        .y-stat { display: flex; flex-direction: column; gap: 2px; }
-        .y-stat span { font-size: 0.65rem; color: rgba(168, 85, 247, 0.6); font-weight: 800; text-transform: uppercase; }
-        .y-stat strong { font-size: 0.9rem; color: #fff; }
-        .yield-action { align-items: center; color: var(--text-accent); display: flex; font-size: 0.75rem; font-weight: 900; gap: 0.4rem; letter-spacing: 0.06em; margin-top: 1.2rem; text-transform: uppercase; }
-
-        .loot-row { color: inherit; font: inherit; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
-        .loot-row:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
-        .loot-name { font-size: 0.9rem; font-weight: 600; color: #fff; }
-        .loot-qty { font-size: 0.75rem; color: var(--text-accent); font-family: monospace; }
-        .loot-chance { font-size: 0.8rem; font-weight: 800; color: var(--text-success); }
-
-        .utility-group { margin-bottom: 1.5rem; width: 100%; }
-        .utility-group-title { font-size: 0.65rem; font-weight: 900; color: rgba(255,255,255,0.2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; }
-        .utility-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
-        .utility-pill-compact { color: inherit; font: inherit; text-align: left; width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease; }
-        .utility-pill-compact:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.08); }
-        .up-name { font-size: 0.75rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .up-qty { font-size: 0.7rem; color: var(--text-accent); font-weight: 800; }
-
-        .list-container { display: flex; flex-direction: column; max-height: 400px; width: 100%; padding: 4px; }
-        .scroll-y { overflow-y: auto; padding-right: 0.75rem; }
-        .scroll-y::-webkit-scrollbar { width: 4px; }
-        .scroll-y::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-        .source-actions-row { align-items: stretch; display: grid; gap: 0.5rem; grid-template-columns: minmax(0, 1fr) auto; margin-bottom: 0.5rem; }
-        .source-pill { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: inherit; cursor: pointer; display: block; font: inherit; padding: 1rem; border-radius: 10px; margin-bottom: 0.5rem; text-align: left; width: 100%; transition: all 0.2s ease; }
-        .source-actions-row .source-pill { margin-bottom: 0; }
-        .source-pill:focus-visible,
-        .source-pill:hover { border-color: var(--text-accent); background: rgba(255,255,255,0.05); }
-        .source-pill:hover .source-name { color: var(--text-accent); }
-        .map-source { border-color: rgba(34,211,238,0.2); background: rgba(34,211,238,0.055); }
-        .source-map-btn {
-          align-items: center;
-          background: rgba(34,211,238,0.07);
-          border: 1px solid rgba(34,211,238,0.2);
-          border-radius: 14px;
-          color: #67e8f9;
-          cursor: pointer;
-          display: inline-flex;
-          font: inherit;
-          font-size: 0.75rem;
-          font-weight: 900;
-          gap: 0.35rem;
-          justify-content: center;
-          min-width: 68px;
-          padding: 0.75rem;
-          text-transform: uppercase;
-        }
-        .source-map-btn:hover,
-        .source-map-btn:focus-visible {
-          background: rgba(34,211,238,0.13);
-          border-color: rgba(34,211,238,0.42);
-          outline: none;
-        }
-        .source-meta { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .source-type { font-size: 0.65rem; font-weight: 800; color: var(--text-accent); text-transform: uppercase; }
-        .source-chance { font-size: 0.7rem; font-weight: 700; color: var(--text-success); }
-        .source-name { font-size: 1rem; font-weight: 600; color: #fff; }
-        .source-loc { font-size: 0.8rem; color: rgba(255,255,255,0.64); margin-top: 4px; }
-
-        .recipe-box { display: flex; flex-direction: column; gap: 1rem; width: 100%; }
-        .recipe-header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .recipe-req { font-size: 0.75rem; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-        .recipe-link-button {
-          align-items: center;
-          background: rgba(251,191,36,0.05);
-          border: 1px solid rgba(251,191,36,0.16);
-          border-radius: 10px;
-          color: inherit;
-          cursor: pointer;
-          display: flex;
-          font: inherit;
-          gap: 0.85rem;
-          justify-content: space-between;
-          min-width: 0;
-          padding: 0.85rem 1rem;
-          text-align: left;
-          transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-          width: 100%;
-        }
-        .recipe-link-button:hover {
-          background: rgba(251,191,36,0.1);
-          border-color: rgba(251,191,36,0.32);
-          transform: translateY(-1px);
-        }
-        .recipe-link-static,
-        .recipe-link-static:hover {
-          background: rgba(139,92,246,0.08);
-          border-color: rgba(139,92,246,0.22);
-          cursor: default;
-          transform: none;
-        }
-        .recipe-link-button > span {
-          display: flex;
-          flex-direction: column;
-          gap: 0.18rem;
-          min-width: 0;
-        }
-        .recipe-link-button strong {
-          color: #fff;
-          font-size: 0.95rem;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        .recipe-link-button em {
-          color: rgba(255,255,255,0.42);
-          font-size: 0.68rem;
-          font-style: normal;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-        .recipe-link-kicker {
-          color: #fbbf24;
-          font-size: 0.62rem;
-          font-weight: 900;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-        
-        .roi-badge { font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; }
-        .roi-badge.pos { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
-        .roi-badge.neg { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
-
-        .add-queue-btn { 
-          background: var(--bg-base); 
-          border: 1px solid var(--border-subtle); 
-          color: var(--text-accent); 
-          font-size: 0.65rem; 
-          font-weight: 700; 
-          padding: 3px 8px; 
-          border-radius: 4px; 
-          cursor: pointer; 
-          display: flex; 
-          align-items: center; 
-          gap: 4px; 
-          transition: all 0.2s ease; 
-          letter-spacing: 0.05em;
-        }
-        .add-queue-btn:hover { 
-          background: var(--text-accent); 
-          color: #000; 
-          border-color: var(--text-accent); 
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(56,189,248,0.2);
-        }
-        .add-queue-btn:active { transform: translateY(0); }
-
-        .ing-row { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center;
-          padding: 0.75rem 1rem; 
-          border: 1px solid rgba(255,255,255,0.03);
-          background: rgba(255,255,255,0.01);
-          color: inherit;
-          cursor: pointer; 
-          font: inherit;
-          text-align: left;
-          transition: all 0.2s ease; 
-          border-radius: 12px; 
-          margin-bottom: 0.5rem;
-          width: 100%;
-        }
-        .ing-row:hover { 
-          background: rgba(255,255,255,0.04); 
-          border-color: var(--text-accent); 
-          transform: translateX(4px);
-        }
-        .ing-row:hover .ing-name-link { color: var(--text-accent); }
-        .ing-name-link { font-size: 0.95rem; color: #fff; display: flex; align-items: baseline; transition: color 0.2s ease; font-weight: 600; }
-        .ing-price-sub { font-size: 0.7rem; color: rgba(255,255,255,0.25); margin-left: 8px; font-family: 'JetBrains Mono', monospace; font-weight: 400; }
-        .ing-qty { font-weight: 800; color: var(--text-accent); font-family: 'JetBrains Mono', monospace; }
-
-        .profit-analysis { margin-top: 1rem; background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
-        .analysis-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; color: rgba(255,255,255,0.4); font-weight: 600; }
-        .analysis-row strong { color: rgba(255,255,255,0.8); }
-        .analysis-row small { font-size: 0.65rem; opacity: 0.6; margin-left: 4px; }
-        
-        .profit-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: baseline; }
-        .profit-footer span { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; }
-        .profit-footer strong { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; }
-
-        .modal-footer { flex-shrink: 0; padding: 1.5rem 3rem; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); z-index: 10; }
-        .item-id { font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.56); }
-        .market-link { font-size: 0.85rem; color: #38bdf8; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .market-link:hover { text-decoration: underline; }
-
-        .item-link-card,
-        .lore-thread-row,
-        .recipe-link-button,
-        .add-queue-btn,
-        .loot-row,
-        .utility-pill-compact,
-        .source-pill,
-        .source-map-btn,
-        .ing-row,
-        .market-link,
-        .modal-close-btn {
-          -webkit-tap-highlight-color: transparent;
-          touch-action: manipulation;
-        }
-
-        .item-link-card:active,
-        .lore-thread-row:active,
-        .recipe-link-button:active,
-        .loot-row:active,
-        .utility-pill-compact:active,
-        .source-pill:active,
-        .source-map-btn:active,
-        .ing-row:active {
-          transform: scale(0.99);
-        }
-
-        @keyframes modalBackdropFade {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes modalCardReveal {
-          from {
-            opacity: 0;
-            transform: translateY(10px) scale(0.985);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes skeletonPulse {
-          from { background-position: 120% 0; }
-          to { background-position: -120% 0; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .modal-backdrop,
-          .modal-card,
-          .skeleton-box {
-            animation: none !important;
-          }
-          .modal-close-btn,
-          .item-link-card,
-          .lore-thread-row,
-          .recipe-link-button,
-          .add-queue-btn,
-          .loot-row,
-          .utility-pill-compact,
-          .source-pill,
-          .source-map-btn,
-          .ing-row {
-            transition: none !important;
-          }
-          .modal-close-btn:hover,
-          .item-link-card:hover,
-          .lore-thread-row:hover,
-          .recipe-link-button:hover,
-          .add-queue-btn:hover,
-          .loot-row:hover,
-          .utility-pill-compact:hover,
-          .source-pill:hover,
-          .source-map-btn:hover,
-          .ing-row:hover {
-            transform: none !important;
-          }
-        }
-
-        @media (max-width: 900px) {
-          .modal-container { align-items: stretch; padding: 0; }
-          .modal-card { max-width: 100vw; max-height: 100dvh; border-radius: 0; }
-          .modal-header-section { padding: 1rem; }
-          .header-flex { align-items: flex-start; gap: 1rem; }
-          .header-left { align-items: flex-start; gap: 0.85rem; min-width: 0; }
-          .item-icon-large { border-radius: 10px; height: 46px; width: 46px; }
-          .item-title {
-            font-size: clamp(1.2rem, 7vw, 1.75rem);
-            line-height: 1.1;
-            overflow-wrap: anywhere;
-          }
-          .badge-row { flex-wrap: wrap; gap: 0.45rem; }
-          .modal-close-btn { flex-shrink: 0; height: 38px; padding: 0; width: 38px; }
-
-          .modal-body { padding: 1rem; }
-          .bento-grid { gap: 0.85rem; }
-          .bento-card {
-            border-radius: 10px;
-            flex: 1 1 100%;
-            min-height: 0;
-            min-width: 0;
-            padding: 1rem;
-          }
-          .card-label { margin-bottom: 0.85rem; }
-          .market-card { flex-basis: 100%; }
-          .price-main {
-            font-size: clamp(1.8rem, 11vw, 2.35rem);
-            overflow-wrap: anywhere;
-          }
-          .market-stats,
-          .yield-stats,
-          .restoration-row {
-            display: grid;
-            gap: 0.75rem;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          .stats-mini-grid,
-          .utility-group-items {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          .sell-advisor-grid,
-          .sell-advisor-metrics {
-            grid-template-columns: 1fr;
-          }
-          .description-text { font-size: 0.95rem; }
-          .source-pill,
-          .loot-row,
-          .ing-row {
-            border-radius: 10px;
-            gap: 0.75rem;
-            padding: 0.75rem;
-          }
-          .source-actions-row {
-            grid-template-columns: 1fr;
-          }
-          .source-map-btn {
-            min-height: 44px;
-            width: 100%;
-          }
-          .source-meta,
-          .loot-row,
-          .ing-row,
-          .analysis-row,
-          .profit-footer {
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 0.45rem;
-          }
-          .loot-name,
-          .source-name,
-          .ing-name-link,
-          .up-name {
-            overflow-wrap: anywhere;
-            white-space: normal;
-          }
-          .ing-price-sub { margin-left: 0; }
-          .modal-footer {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 0.75rem;
-            padding: 1rem;
-          }
-          .item-id {
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-          .market-link { font-size: 0.8rem; }
-        }
-
-        @media (max-width: 480px) {
-          .market-stats,
-          .yield-stats,
-          .restoration-row,
-          .stats-mini-grid,
-          .utility-group-items {
-            grid-template-columns: 1fr;
-          }
-          .type-badge,
-          .quality-text,
-          .uses-badge,
-          .vendor-badge {
-            font-size: 9px;
-          }
-          .profit-footer strong { font-size: 1.15rem; }
-        }
-      `}</style>
-    </div>
+    </ModalSheet>
   );
 }
