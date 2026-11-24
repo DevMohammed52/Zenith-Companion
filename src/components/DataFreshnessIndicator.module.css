@@ -1,0 +1,295 @@
+/* ==========================================================================
+   Zenith Data Freshness Indicator Module
+   Design System: Monochromatic Neutral Astral Slate (WCAG 2.2 AA, 0 CLS)
+   ========================================================================== */
+
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  min-height: 34px;
+  background-color: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 9999px;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  white-space: nowrap;
+}
+
+.trigger:hover {
+  background-color: var(--bg-card-hover, #1c2438);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
+  color: var(--text-main, #f8fafc);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Subtle Semantic Status Dots (No artificial glow) */
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot[data-level="fresh"] {
+  background-color: #22c55e;
+}
+
+.dot[data-level="running"] {
+  background-color: #94a3b8;
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+.dot[data-level="delayed"] {
+  background-color: #f59e0b;
+}
+
+.dot[data-level="stale"] {
+  background-color: #f97316;
+}
+
+.dot[data-level="old"] {
+  background-color: #f43f5e;
+}
+
+.dot[data-level="unavailable"] {
+  background-color: #64748b;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+.label {
+  display: inline-block;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.iconOnly {
+  display: none;
+}
+
+/* Popover Content (Astral Slate Architecture) */
+.popoverCard {
+  width: 310px;
+  max-width: calc(100vw - 32px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background-color: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+}
+
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.iconShell {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.iconShell[data-level="fresh"] {
+  color: #4ade80;
+}
+
+.iconShell[data-level="delayed"],
+.iconShell[data-level="stale"] {
+  color: #fbbf24;
+}
+
+.iconShell[data-level="old"] {
+  color: #f87171;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  line-height: 1.2;
+}
+
+.syncAge {
+  font-size: 0.7rem;
+  color: var(--text-dim, #64748b);
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.popoverBody {
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.copyText {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* Subtle in-progress indicator when actively running */
+.progressBarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: var(--text-dim, #64748b);
+  font-family: var(--font-mono, monospace);
+}
+
+.progressBarTrack {
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+  transition: width 200ms ease;
+}
+
+.popoverFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: 0 0 10px 10px;
+}
+
+.exactTimestamp {
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-dim, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settingsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.74rem;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: none;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 150ms ease, background-color 150ms ease;
+  white-space: nowrap;
+}
+
+.settingsLink:hover {
+  color: var(--text-main, #f8fafc);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1180px) {
+  .trigger {
+    padding: 0.4rem;
+    min-height: 40px;
+    min-width: 40px;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .trigger > .dot {
+    display: none;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .iconOnly {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .badgeDot {
+    display: block !important;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 1.5px solid var(--bg-card, #121824);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot[data-level="running"],
+  .spin {
+    animation: none;
+  }
+}
