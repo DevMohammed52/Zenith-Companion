@@ -60,7 +60,7 @@
 
 .ghost:hover:not(:disabled):not(.isLoading) {
   background-color: rgba(255, 255, 255, 0.06);
-  border-color: var(--border-subtle);
+  border-color: var(--border-strong);
 }
 
 .danger {
@@ -103,12 +103,45 @@
   width: 100%;
 }
 
+.label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon,
+.iconTrailing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.icon svg,
+.iconTrailing svg {
+  display: block;
+}
+
 /* States */
 .disabled,
 .button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+.ariaDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ariaDisabled:active {
+  transform: none;
 }
 
 .isLoading {

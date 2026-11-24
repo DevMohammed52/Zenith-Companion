@@ -1,0 +1,108 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+}
+
+.label {
+  color: var(--text-main);
+  font-weight: 500;
+  user-select: none;
+}
+
+.value {
+  color: var(--text-main);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.trackContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px; /* provides comfortable tap boundary */
+  touch-action: pan-y;
+  cursor: pointer;
+  user-select: none;
+}
+
+.trackContainer.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background-color: var(--border-subtle, #334155);
+  border-radius: 9999px;
+  overflow: visible;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--text-main, #f8fafc);
+  border-radius: 9999px;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(248, 250, 252, 0.3);
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 2px solid #0a0d14;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  outline: none;
+  transition: transform 120ms var(--ease-spring), box-shadow 150ms ease;
+  z-index: 2;
+}
+
+.thumb:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8);
+}
+
+.thumb:active {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.9);
+}
+
+.thumb:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(248, 250, 252, 0.25);
+}
+
+/* 44x44px accessible touch target */
+.thumb::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}

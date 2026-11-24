@@ -9,6 +9,7 @@ export interface TextInputProps extends React.InputHTMLAttributes<HTMLInputEleme
   leftIcon?: React.ReactNode;
   rightSlot?: React.ReactNode;
   containerClassName?: string;
+  onEscape?: () => void;
 }
 
 export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function TextInput(
@@ -24,6 +25,8 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
     containerClassName = "",
     disabled,
     required,
+    onKeyDown,
+    onEscape,
     ...props
   },
   ref
@@ -33,11 +36,16 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
   const errorId = `${inputId}-error`;
   const helperId = `${inputId}-helper`;
 
-  const describedBy = error
-    ? errorId
-    : helperText
-    ? helperId
-    : undefined;
+  const describedBy = [error ? errorId : null, helperText ? helperId : null]
+    .filter(Boolean)
+    .join(" ") || undefined;
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      onEscape?.();
+    }
+    onKeyDown?.(e);
+  };
 
   const wrapperClasses = [
     styles.inputWrapper,
@@ -73,20 +81,26 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
           required={required}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
+          onKeyDown={handleKeyDown}
           {...props}
         />
         {rightSlot && <div className={styles.rightSlot}>{rightSlot}</div>}
       </div>
 
-      {error ? (
-        <p id={errorId} className={styles.errorText} role="alert">
-          {error}
-        </p>
-      ) : helperText ? (
-        <p id={helperId} className={styles.helperText}>
-          {helperText}
-        </p>
-      ) : null}
+      {(error || helperText) && (
+        <div className={styles.messageRow}>
+          {error && (
+            <p id={errorId} className={styles.errorText} role="alert">
+              {error}
+            </p>
+          )}
+          {helperText && (
+            <p id={helperId} className={styles.helperText}>
+              {helperText}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 });

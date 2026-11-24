@@ -1,0 +1,121 @@
+.tabsContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+
+.tabList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tabList.pillVariant {
+  border-bottom: none;
+  background-color: var(--bg-panel);
+  padding: 4px;
+  border-radius: 8px;
+  gap: 2px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+  touch-action: manipulation;
+  outline: none;
+  margin-bottom: -1px;
+}
+
+@media (max-width: 639px) {
+  .tab {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+
+.tab:hover:not(.isSelected):not(:disabled) {
+  color: var(--text-main);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.tab.isSelected {
+  color: var(--text-main);
+  border-bottom-color: var(--btn-primary-bg, #f8fafc);
+  font-weight: 600;
+}
+
+.pillVariant .tab {
+  border-bottom: none;
+  border-radius: 6px;
+  margin-bottom: 0;
+}
+
+.pillVariant .tab.isSelected {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: 9999px;
+  background-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.isSelected .tabBadge {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.tabPanel {
+  padding-top: 16px;
+  outline: none;
+}
+
+.tabPanel:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

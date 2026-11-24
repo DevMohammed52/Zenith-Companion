@@ -37,16 +37,24 @@ export function SegmentedControl<T extends string | number>({
 
     if (e.key === "ArrowRight") {
       let next = (index + 1) % options.length;
-      while (options[next]?.disabled && next !== index) {
+      let count = 0;
+      while (options[next]?.disabled && count < options.length) {
         next = (next + 1) % options.length;
+        count++;
       }
-      targetIndex = next;
+      if (count < options.length && !options[next]?.disabled) {
+        targetIndex = next;
+      }
     } else if (e.key === "ArrowLeft") {
       let prev = (index - 1 + options.length) % options.length;
-      while (options[prev]?.disabled && prev !== index) {
+      let count = 0;
+      while (options[prev]?.disabled && count < options.length) {
         prev = (prev - 1 + options.length) % options.length;
+        count++;
       }
-      targetIndex = prev;
+      if (count < options.length && !options[prev]?.disabled) {
+        targetIndex = prev;
+      }
     } else if (e.key === "Home") {
       targetIndex = options.findIndex((o) => !o.disabled);
     } else if (e.key === "End") {

@@ -10,6 +10,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean;
   success?: boolean;
   fullWidth?: boolean;
+  ariaDisabled?: boolean;
   icon?: React.ReactNode;
   iconTrailing?: React.ReactNode;
   children?: React.ReactNode;
@@ -22,16 +23,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     loading = false,
     success = false,
     fullWidth = false,
+    ariaDisabled = false,
     icon,
     iconTrailing,
     disabled = false,
     type = "button",
     className = "",
+    onClick,
     children,
     ...props
   },
   ref
 ) {
+  const isEffectivelyDisabled = disabled || ariaDisabled;
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isEffectivelyDisabled || loading) {
+      e.preventDefault();
+      return;
+    }
+    onClick?.(e);
+  };
+
   const classNames = [
     styles.button,
     styles[variant],
@@ -39,7 +52,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     fullWidth ? styles.fullWidth : "",
     loading ? styles.isLoading : "",
     success ? styles.isSuccess : "",
-    disabled ? styles.disabled : "",
+    disabled ? styles.disabled : ariaDisabled ? styles.ariaDisabled : "",
     className,
   ]
     .filter(Boolean)
@@ -51,7 +64,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       className={classNames}
       disabled={disabled || loading}
+      aria-disabled={ariaDisabled ? "true" : undefined}
       aria-busy={loading ? "true" : undefined}
+      onClick={handleClick}
       {...props}
     >
       {loading ? (

@@ -1,0 +1,144 @@
+.searchWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  max-width: 380px;
+  min-width: 28ch;
+}
+
+@media (max-width: 640px) {
+  .searchWrapper {
+    max-width: 100%;
+    min-width: 100%;
+  }
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  background-color: var(--bg-input, #0d121d);
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.1));
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.inputWrapper:hover {
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.22));
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+.leadingIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main, #f8fafc);
+  font-family: var(--font-sans, inherit);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration,
+.input::-webkit-search-results-button,
+.input::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+}
+
+.input::placeholder {
+  color: var(--text-dim, #64748b);
+}
+
+/* Hide native search cancel button in Webkit since we provide custom accessible clear button */
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration,
+.input::-webkit-search-results-button,
+.input::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+}
+
+.trailingAffordance {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.clearButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: color 100ms ease, background-color 100ms ease;
+}
+
+.clearButton:hover {
+  color: var(--text-main, #f8fafc);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.clearButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.kbdHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--text-dim, #64748b);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.12));
+  border-radius: 4px;
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .kbdHint {
+    display: none;
+  }
+}

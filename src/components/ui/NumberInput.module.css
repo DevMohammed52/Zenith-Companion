@@ -1,0 +1,128 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.controlsWrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.controlsWrap:hover {
+  border-color: var(--border-strong);
+}
+
+.controlsWrap.isFocused {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+.controlsWrap.isError {
+  border-color: var(--accent-danger, #f87171);
+}
+
+.stepperBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background-color: var(--bg-panel);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: background-color 150ms ease, color 150ms ease;
+  touch-action: manipulation;
+}
+
+@media (max-width: 639px) {
+  .stepperBtn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.stepperBtn:hover:not(:disabled) {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.stepperBtn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.stepperBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+}
+
+.adornment {
+  color: var(--text-dim);
+  font-size: 0.8125rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  padding: 0 6px;
+  outline: none;
+}
+
+@media (max-width: 639px) {
+  .input {
+    height: 44px;
+  }
+}
+
+.helperText {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.errorText {
+  font-size: 0.75rem;
+  color: var(--accent-danger, #f87171);
+}

@@ -1,0 +1,175 @@
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.legend {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.helperText {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0 0 4px 0;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionsList.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Default option row */
+.optionLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  min-height: 44px; /* Mobile ergonomics */
+  box-sizing: border-box;
+  transition: background-color 150ms ease;
+  user-select: none;
+}
+
+.optionLabel:hover:not(.disabled) {
+  background-color: var(--bg-card-hover, rgba(255, 255, 255, 0.04));
+}
+
+.optionLabel.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Card variant */
+.optionCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #222c44);
+  background-color: var(--bg-card, #141b2d);
+  min-height: 52px;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  user-select: none;
+}
+
+.optionCard:hover:not(.disabled) {
+  border-color: var(--border-strong, #3b82f6);
+  background-color: var(--bg-card-hover, #1a233a);
+}
+
+.optionCard.selected {
+  border-color: var(--btn-primary-bg, #f8fafc);
+  background-color: var(--bg-card-hover, #1c2438);
+  box-shadow: 0 0 0 1px var(--btn-primary-bg, #f8fafc);
+}
+
+.optionCard.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background-color: var(--bg-base, #0b0f19);
+}
+
+/* Hidden native radio */
+.nativeRadio {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Custom radio circle */
+.radioCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong, #475569);
+  background-color: var(--bg-base, #0b0f19);
+  transition: border-color 150ms ease, background-color 150ms ease;
+  box-sizing: border-box;
+}
+
+.nativeRadio:focus-visible + .radioCircle,
+.optionCard:has(.nativeRadio:focus-visible) {
+  outline: 2px solid var(--border-focus, rgba(248, 250, 252, 0.5));
+  outline-offset: 2px;
+}
+
+.selected .radioCircle,
+.optionLabel:has(.nativeRadio:checked) .radioCircle {
+  border-color: var(--btn-primary-bg, #f8fafc);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--btn-primary-bg, #f8fafc);
+  transform: scale(0);
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.selected .dot,
+.optionLabel:has(.nativeRadio:checked) .dot {
+  transform: scale(1);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.labelTitle {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.description {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
+}
+
+.disabledReason {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--accent-danger, #f87171);
+  font-weight: 500;
+  margin-top: 2px;
+}

@@ -22,6 +22,9 @@ export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "t
   variant?: CardVariant;
   accent?: CardAccent;
   interactive?: boolean;
+  pressed?: boolean;
+  overflowVisible?: boolean;
+  headingLevel?: "h2" | "h3" | "h4" | "h5" | "h6";
   children?: React.ReactNode;
 }
 
@@ -35,6 +38,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     variant = "default",
     accent,
     interactive = false,
+    pressed,
+    overflowVisible = false,
+    headingLevel = "h3",
     className = "",
     children,
     onClick,
@@ -62,6 +68,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     styles[variant],
     accent ? styles[`accent_${accent}`] : "",
     isClickable ? styles.interactive : "",
+    overflowVisible ? styles.overflowVisible : "",
     className,
   ]
     .filter(Boolean)
@@ -77,6 +84,8 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
 
   const hasHeader = Boolean(title || subtitle || action);
 
+  const HeadingTag = headingLevel;
+
   return (
     <div
       ref={ref}
@@ -85,6 +94,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       onKeyDown={handleKeyDown}
       tabIndex={isClickable ? tabIndex ?? 0 : tabIndex}
       role={isClickable ? role ?? "button" : role}
+      aria-pressed={isClickable && pressed !== undefined ? pressed : undefined}
       {...props}
     >
       {hasHeader && (
@@ -92,7 +102,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
           <div className={styles.titleArea}>
             {title && (
               typeof title === "string" ? (
-                <h3 className={styles.title}>{title}</h3>
+                <HeadingTag className={styles.title}>{title}</HeadingTag>
               ) : (
                 <div className={styles.title}>{title}</div>
               )

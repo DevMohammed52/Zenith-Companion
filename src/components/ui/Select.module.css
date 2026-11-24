@@ -1,0 +1,248 @@
+.container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  background-color: var(--bg-input, #0d121d);
+  color: var(--text-main, #f8fafc);
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.12));
+  border-radius: 8px;
+  font-family: var(--font-sans, inherit);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+}
+
+.trigger:hover:not(:disabled) {
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.28));
+  background-color: var(--bg-card, #151b2b);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-color: var(--border-focus);
+}
+
+.triggerDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+
+.selectedContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.optionLabelText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+  color: var(--text-main, #f8fafc);
+}
+
+.listbox {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background-color: var(--bg-panel, #101522);
+  border: 1px solid var(--border-strong, rgba(148, 163, 184, 0.22));
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.12);
+  z-index: 50;
+  outline: none;
+  list-style: none;
+  animation: listboxFadeIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes listboxFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--text-main, #f8fafc);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 80ms ease;
+}
+
+@media (max-width: 640px) {
+  .option {
+    min-height: 44px;
+  }
+}
+
+.optionHighlighted {
+  background-color: var(--bg-card-hover, #1c2438);
+}
+
+.optionSelected {
+  font-weight: 600;
+  background-color: rgba(248, 250, 252, 0.08);
+}
+
+.optionDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.optionMainRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.optionLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.optionDescription {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.checkIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main, #f8fafc);
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted, #94a3b8);
+  margin-left: 6px;
+}
+
+/* Authentic IdleMMO Rarity Pips */
+.rarityPip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rarity_common {
+  background-color: #94a3b8;
+  box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+}
+
+.rarity_uncommon {
+  background-color: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+}
+
+.rarity_rare {
+  background-color: #60a5fa;
+  box-shadow: 0 0 6px rgba(96, 165, 250, 0.5);
+}
+
+.rarity_epic {
+  background-color: #c084fc;
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
+}
+
+.rarity_legendary {
+  background-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+.rarity_mythic {
+  background-color: #f87171;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listbox,
+  .chevron {
+    animation: none;
+    transition: none;
+  }
+}

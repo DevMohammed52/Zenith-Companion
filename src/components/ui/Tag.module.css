@@ -1,0 +1,160 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  user-select: none;
+  box-sizing: border-box;
+  outline: none;
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 100ms ease,
+              box-shadow 150ms ease;
+}
+
+@media (max-width: 639px) {
+  .tag.isInteractive {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+}
+
+.tag.isInteractive {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tag.isInteractive:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+  border-color: var(--border-strong);
+}
+
+.tag.isInteractive:active {
+  transform: scale(0.96);
+}
+
+.tag.isInteractive:focus-visible {
+  outline: 2px solid var(--border-focus, rgba(248, 250, 252, 0.5));
+  outline-offset: 2px;
+}
+
+/* Selected / Active Filter Pill (Refined Luminous Dark Mode) */
+.tag.isSelected {
+  background-color: rgba(248, 250, 252, 0.12);
+  color: #ffffff;
+  border: 1.5px solid rgba(248, 250, 252, 0.7);
+  box-shadow: 0 0 10px rgba(248, 250, 252, 0.08);
+  font-weight: 600;
+}
+
+.tag.isSelected:hover {
+  background-color: rgba(248, 250, 252, 0.18);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+/* Rarity variants */
+.rarity_common {
+  border-color: var(--border-subtle);
+}
+
+.rarity_uncommon {
+  color: var(--quality-refined-text, #60a5fa);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.rarity_rare {
+  color: var(--quality-premium, #1fd60b);
+  border-color: rgba(31, 214, 11, 0.3);
+}
+
+.rarity_epic {
+  color: var(--quality-epic-text, #f87171);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.rarity_legendary {
+  color: var(--quality-legendary, #f7bd1e);
+  border-color: rgba(247, 189, 30, 0.3);
+}
+
+.rarity_mythic {
+  color: var(--quality-mythic, #f48a00);
+  border-color: rgba(244, 138, 0, 0.3);
+}
+
+.iconSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.checkIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -2px;
+  margin-right: 2px;
+  color: #ffffff;
+}
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background-color: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: 2px;
+}
+
+.isSelected .countBadge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-left: 4px;
+  margin-right: -4px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.removeButton:hover {
+  opacity: 1;
+  color: var(--text-danger, #f87171);
+  background-color: rgba(248, 113, 113, 0.15);
+}
+
+.removeButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}

@@ -1,0 +1,99 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+}
+
+.label {
+  color: var(--text-main);
+  font-weight: 500;
+  user-select: none;
+}
+
+.counter {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.counterOver {
+  color: var(--accent-danger, #f87171);
+  font-weight: 600;
+}
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: 1rem; /* 16px to prevent iOS auto-zoom */
+  line-height: 1.5;
+  color: var(--text-main);
+  background-color: var(--bg-card, #141b2d);
+  border: 1px solid var(--border-subtle, #222c44);
+  border-radius: 8px;
+  padding: 10px 14px;
+  resize: vertical;
+  min-height: 80px;
+  max-height: 320px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  field-sizing: content;
+}
+
+.textarea::placeholder {
+  color: var(--text-subtle, #64748b);
+}
+
+.textarea:hover:not(:disabled) {
+  border-color: var(--border-strong, rgba(148, 163, 184, 0.22));
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--border-focus, rgba(248, 250, 252, 0.5));
+  outline-offset: 2px;
+  border-color: var(--border-focus, rgba(248, 250, 252, 0.5));
+}
+
+.textarea.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+}
+
+.textarea.error {
+  border-color: var(--accent-danger, #f87171);
+}
+
+.textarea.error:focus-visible {
+  outline-color: var(--accent-danger, #f87171);
+  border-color: var(--accent-danger, #f87171);
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--bg-base, #0b0f19);
+}
+
+.helper {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  margin: 0;
+}
+
+.errorMessage {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--accent-danger, #f87171);
+  margin: 0;
+}

@@ -74,6 +74,22 @@
   min-height: 42px;
 }
 
+@media (max-width: 640px) {
+  .input {
+    font-size: 16px; /* Prevents auto-zoom in mobile Safari */
+  }
+}
+
+.input[type="number"]::-webkit-inner-spin-button,
+.input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .input::placeholder {
   color: var(--text-dim, #64748b);
 }
@@ -114,6 +130,12 @@
   cursor: not-allowed;
 }
 
+.messageRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .helperText {
   font-family: var(--font-sans);
   font-size: 12px;
@@ -129,4 +151,10 @@
   line-height: 1.4;
   margin-top: 2px;
   font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputWrapper {
+    transition: none;
+  }
 }

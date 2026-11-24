@@ -1,0 +1,77 @@
+.labelContainer {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--text-main);
+  box-sizing: border-box;
+  min-height: 24px;
+}
+
+@media (max-width: 639px) {
+  .labelContainer {
+    min-height: 44px;
+    align-items: center;
+  }
+}
+
+.labelContainer.isDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  border-radius: 4px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--btn-primary-text, #0a0d14);
+  flex-shrink: 0;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+@media (max-width: 639px) {
+  .box {
+    margin-top: 0;
+  }
+}
+
+.labelContainer:hover:not(.isDisabled) .box {
+  border-color: var(--border-focus);
+}
+
+.box.isChecked,
+.box.isIndeterminate {
+  background-color: var(--btn-primary-bg, #f8fafc);
+  border-color: transparent;
+}
+
+.input:focus-visible + .box {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.labelText {
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.description {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
