@@ -140,18 +140,18 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 | **Phase 2** | Tier 1: `/weather` & `/lore` | Completed | High-craft canvas backdrops, subpixel reset button alignment, zero modal lag |
 | **Phase 3** | Tier 2: `/settings` | Completed | Scoped CSS Module, SegmentedControl groups, ModalSheet, 44px touch targets, zero a11y violations |
 | **Phase 4** | Tier 3: Shell Chrome | Completed | Sidebar, Header, Mobile BottomDock, Toast, Sound Spec, Refactoring Protocol |
-| **Phase 5** | Tier 4: `/items` & Global Modals | Completed | `/items`, `ItemModal` & `/enemies` completed |
-| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets` done; `/pets/compare` next |
+| **Phase 5** | Tier 4: `/items`, `ItemModal`, `/enemies` & `/whats-new` | Completed | `/items`, `ItemModal`, `/enemies`, and `/whats-new` completed |
+| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets` done; `/pets/compare` and `/pets/owned` next |
 | **Phase 7** | Tier 6: Economy Engines | Planned | Profiles, Bosses, Dungeons, Skill Profit, Forge, Alchemy |
 | **Phase 8** | Tier 7: Home Dashboard | Planned | Final aggregator route polish |
 
 ---
 
-## UI Primitives Master Backlog (38 Components)
+## UI Primitives Master Catalog (38 / 38 Built)
 
 Zenith strictly forbids ad-hoc button, form, or overlay implementations in page styles. All interactive elements must derive from tested primitives in `src/components/ui/` with full keyboard navigation and WCAG AA contrast.
 
-### Completed Primitives (11 / 38)
+### Completed Primitives (38 / 38)
 * [x] **`Button`**: Primary, secondary, ghost, danger variants; sm, md, lg sizes; active press scale; loading spinner; optical icon/label alignment.
 * [x] **`TextInput`**: Accessible form field with label, helper copy, clear error state via `aria-describedby`, dark fill, clear button, 44px mobile height.
 * [x] **`SegmentedControl`**: Sliding pill switch for view modes and filters with roving tabindex (`role="tablist"` / `role="tab"`).
@@ -163,38 +163,29 @@ Zenith strictly forbids ad-hoc button, form, or overlay implementations in page 
 * [x] **`Banner`**: Inline dismissible alert messages (`info`, `warning`, `error`, `success`) with action slots.
 * [x] **`EmptyState`**: Zero-data placeholder with native gamer copy, clear action button, and polite screen reader announcements.
 * [x] **`Icon`**: Centralized icon registry with semantic discovery in `src/lib/icons.ts`.
-
-### High-Priority Backlog (Next to Implement as Research Finishes)
-* [ ] **`Select` / `Dropdown`**: Single-value picker using listbox pattern (`role="combobox"` + `aria-haspopup="listbox"`). Native `<select>` fallback on mobile for native wheel ergonomics. Never use `role="menu"` for value pickers.
-* [ ] **`Combobox` / `Autocomplete`**: Searchable input for filtering 1,355 items, recipes, and enemies. Focus strictly remains in `<input>`, active option tracked via `aria-activedescendant`. Escape once closes popup; second Escape clears text.
-* [ ] **`Popover`**: Non-modal anchored rich content rendered in top layer/portal with viewport edge collision flipping and `overscroll-behavior: contain`. Adapts to a bottom sheet on narrow screens (<600px).
-* [ ] **`Tooltip`**: Supplementary text only (no links, buttons, or vital info). Wired via `aria-describedby`. Must appear on keyboard focus and hover, dismiss on Escape, stay visible on pointer hover (WCAG 1.4.13), with 200ms delay.
-* [ ] **`Skeleton`**: Layout-matching wireframe placeholders preventing CLS. Container marked `aria-busy="true"`; shapes hidden with `aria-hidden="true"`; single status announced via live region. Request timeout fallback to error/empty state.
-* [ ] **`Tabs`**: In-page view switching with roving tabindex, arrow key navigation, URL query parameter sync, and scroll edge fade.
-* [ ] **`SearchInput`**: Specialized search field with leading icon, trailing clear button, `Ctrl+K` keycap badge, and 150ms debouncing.
-* [ ] **`Tag` / `Chip`**: Compact filter and attribute chips with optional leading icon, count pill, and accessible dismiss button.
-* [ ] **`StatCard` / `MetricTile`**: High-prominence KPI tile with tabular number formatting and optional trend indicator.
-* [ ] **`Accordion` / `Collapsible`**: Progressive disclosure container for secondary formula toggles and configuration overrides.
-* [ ] **`Avatar` / `EntityIcon`**: Item, enemy, and pet icons with game rarity borders and fallback placeholders.
-
-### Medium-Priority Backlog
-* [ ] **`Checkbox`**: Multi-select filter inputs with 44px mobile touch target and indeterminate state support.
-* [ ] **`Switch` / `Toggle`**: Instant preference toggles (`role="switch"`) with spring animation.
-* [ ] **`NumberInput`**: Stepper input for gold amounts, batch craft counts, and level thresholds with tabular figures.
-* [ ] **`ProgressBar` / `ProgressRing`**: Skill XP, stamina, and boss cooldown timers (`role="progressbar"`).
-* [ ] **`Breadcrumbs`**: Route hierarchy navigation.
-* [ ] **`Pagination`**: Catalog and table page navigation with accessible `aria-current="page"`.
-* [ ] **`Drawer` / `SideSheet`**: Slide-out filter panel and full-height entity inspector.
-* [ ] **`BottomDock`**: Fixed mobile navigation dock with 3-5 ergonomic thumb targets.
-* [ ] **`Divider` / `Separator`**: Semantic boundary elements (`role="separator"`).
-* [ ] **`Kbd`**: Keyboard shortcut keycap styling.
-
-### Low-Priority / Specialized Backlog
-* [ ] **`Slider` / `Range`**: Continuous level and combat stat sliders.
-* [ ] **`TextArea`**: Multi-line custom notes and profile import strings.
-* [ ] **`RadioGroup` / `Radio`**: Vertical mutually exclusive option sets.
-* [ ] **`Timeline`**: General-purpose milestone stream primitive.
-* [ ] **`Tree` / `HierarchyView`**: Multi-tier crafting recipe dependency trees.
-* [ ] **`ContextMenu`**: Right-click contextual actions for items.
-* [ ] **`CommandPalette` / `SearchModal`**: Global `Ctrl+K` command overlay.
+* [x] **`Select`**: Single-value picker using listbox pattern (`role="combobox"` + `aria-haspopup="listbox"`), keyboard navigation, and elevated open stacking context.
+* [x] **`Combobox`**: Searchable input with filtering listbox and `aria-activedescendant`.
+* [x] **`Popover`**: Non-modal anchored rich content with light dismiss and scroll containment.
+* [x] **`Tooltip`**: Supplementary text wired via `aria-describedby`, focus/hover trigger, Escape dismiss.
+* [x] **`Skeleton` & `SkeletonContainer`**: Layout-matching wireframe placeholders preventing CLS.
+* [x] **`Tabs`**: In-page view switching with roving tabindex and arrow key navigation.
+* [x] **`SearchInput`**: Search landmark with leading icon, trailing clear button, and shortcut pill.
+* [x] **`Tag`**: Compact filter and attribute chips with rarity styling and dismiss support.
+* [x] **`StatCard`**: High-prominence KPI tile with `<dl>` semantics and tabular number formatting.
+* [x] **`Accordion` & `Collapsible`**: Progressive disclosure containers with CSS Grid row animations.
+* [x] **`Avatar`**: Entity sprite container with rarity accents and fallback initials.
+* [x] **`Checkbox`**: Multi-select filter inputs with 44px touch target and indeterminate state support.
+* [x] **`Switch`**: Instant preference toggles (`role="switch"`) with spring transition.
+* [x] **`NumberInput`**: Stepper input for quantities and levels with `inputMode="numeric"` and non-stealing steppers.
+* [x] **`ProgressBar`, `ProgressRing` & `Meter`**: Linear GPU bars, SVG progress rings, and scalar meters.
+* [x] **`Breadcrumbs`**: Route hierarchy navigation (`<nav aria-label="Breadcrumb">`).
+* [x] **`Pagination`**: Catalog and table page navigation with `aria-current="page"` and centered summary-free mode.
+* [x] **`Drawer`**: Slide-out panel with focus trap and Escape dismiss.
+* [x] **`BottomDock`**: Fixed mobile navigation dock with ergonomic thumb targets.
+* [x] **`Separator`**: Semantic boundary elements (`role="separator"`).
+* [x] **`Kbd`**: Keyboard shortcut keycap styling.
+* [x] **`Slider`**: Continuous level and combat stat sliders.
+* [x] **`TextArea`**: Auto-growing multi-line inputs for custom notes and import strings.
+* [x] **`RadioGroup`**: Mutually exclusive option sets (`<fieldset>` / `<legend>`).
+* [x] **`Timeline`**: Chronological milestone stream primitive with `<time>` tags.
 

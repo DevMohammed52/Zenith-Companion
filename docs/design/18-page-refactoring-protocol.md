@@ -112,7 +112,8 @@ If Gate 2 identified a missing primitive, build and test it in isolation before 
 Clean the foundation before building new features.
 
 ### Step 4.1: Strip Orphaned Code
-* Remove obsolete metric boxes, dead helper functions, unused state hooks, and legacy CSS classes flagged in the teardown.
+* Remove obsolete metric boxes, dead helper functions, unused state hooks, and route-local bespoke controls (such as ad-hoc `NumberField`, `OptionMenu`, or custom select/modal clones) once mapped to `src/components/ui/`.
+* Purge leftover route-specific classes from `src/app/globals.css` (and verify no global class like `.pet-avatar` leaks styles onto CSS Module wrappers).
 
 ### Step 4.2: Compile and Test Sanity
 * Run `npm run typecheck` to verify the stripped file compiles without errors.
@@ -127,6 +128,9 @@ Implement the modern presentation layer following all design and performance sta
 ### Step 6.1: Component Assembly and Tokens
 * Build the interface using tested UI primitives and CSS variables from `src/app/globals.css`.
 * Adhere to the Astral Slate monochromatic palette: 60% neutral surface (`--bg-base`), 30% structural elevation (`--bg-card`), reserving bright accents strictly for game drop rarities, weather buffs, and danger indicators.
+* **Fewer Borders Discipline**: Avoid wrapping inner stat/metric tiles or accordions in redundant `1px solid` outlines when they already sit inside a bordered card or modal (`DESIGN.md` Section 11). Separate them with translucent fills and whitespace.
+* **Icon & Skeleton Discipline**: Consume icons via `src/lib/icons.ts` / `<Icon>` rather than direct `lucide-react` imports where concepts already exist, and prefer dimension-matched `Skeleton` loaders over generic `StateBlock` boxes.
+* **Open Overflow Hygiene**: When CSS Grid accordions (`grid-template-rows: 0fr` to `1fr`) open, set inner overflow to `visible` and raise `:focus-within` z-index so dropdown listboxes never clip or sit behind adjacent fields.
 
 ### Step 6.2: Plain-Language Gamer Copy Overhaul
 * Replace all sophisticated, formal, or corporate vocabulary with natural player language.
@@ -203,13 +207,16 @@ Verify that calculation outputs, economy values, and drop rates match production
 * Run `npm run typecheck` to verify zero TypeScript errors.
 * Run `npm run build` to verify the production Next.js compiler generates all static routes and catches metadata errors.
 
-### Gate 5: Visual Evidence Across Breakpoints
-* Capture high-resolution headless browser screenshots across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports.
-* Save screenshots to the artifacts directory and inspect for layout clipping, descender truncation, awkward line wraps, or touch clearance issues.
+### Gate 5: Interactive Verification and Visual Evidence Across Breakpoints
+* Run interactive Playwright verification across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports rather than passive initial-load snapshots alone:
+  * Click numeric steppers (`+` / `-`) and confirm values update in the DOM.
+  * Open `Select` / `Combobox` dropdowns inside panels/accordions and confirm zero clipping or z-index occlusion.
+  * Toggle every view mode (Cards and Table) on both desktop and 375px mobile, verifying avatars do not collide with labels, table `min-width` prevents cramped numbers, and no unintended page-level horizontal scroll occurs (`scrollWidth <= clientWidth`).
+* Save screenshots to the artifacts directory and inspect for layout clipping, descender truncation, nested outline clutter, awkward line wraps, or touch clearance issues.
 
 ## 8. Stage 7: Release Engineering and Production Deployment Pipeline
 
-Follow these exact steps when deploying migrated pages to production:
+**Deploy Gate**: Execute Stage 7 **only after the user has explicitly reviewed the local changes/screenshots and approved deployment**. Never commit or push automatically at the end of Stage 6.
 
 ### Step 8.1: Pre-flight GitHub Actions Check
 * Run `gh run list --limit 5` before staging or pushing.
