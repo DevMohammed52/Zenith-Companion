@@ -30,6 +30,8 @@ export interface SelectProps {
   disabled?: boolean;
   ariaLabel?: string;
   ariaLabelledBy?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
   id?: string;
   className?: string;
   name?: string;
@@ -44,10 +46,14 @@ export function Select({
   disabled = false,
   ariaLabel,
   ariaLabelledBy,
+  "aria-label": ariaLabelProp,
+  "aria-labelledby": ariaLabelledByProp,
   id: externalId,
   className = "",
   name,
 }: SelectProps) {
+  const resolvedAriaLabel = ariaLabel ?? ariaLabelProp;
+  const resolvedAriaLabelledBy = ariaLabelledBy ?? ariaLabelledByProp;
   const generatedId = useId();
   const baseId = externalId || generatedId;
   const triggerId = `${baseId}-trigger`;
@@ -257,8 +263,8 @@ export function Select({
         aria-expanded={isOpen}
         aria-controls={listboxId}
         aria-activedescendant={highlightedOptionId}
-        aria-label={ariaLabel}
-        aria-labelledby={ariaLabelledBy}
+        aria-label={resolvedAriaLabel}
+        aria-labelledby={resolvedAriaLabelledBy}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
@@ -316,7 +322,8 @@ export function Select({
           id={listboxId}
           role="listbox"
           tabIndex={-1}
-          aria-labelledby={triggerId}
+          aria-label={resolvedAriaLabel}
+          aria-labelledby={resolvedAriaLabel ? undefined : (resolvedAriaLabelledBy ?? triggerId)}
           aria-activedescendant={highlightedOptionId}
           className={styles.listbox}
         >
