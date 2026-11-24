@@ -95,7 +95,19 @@ idlemmo-wiki-update-drafts/
 scripts/audit-idlemmo-wiki.mjs
 scripts/build-idlemmo-wiki-handoff.mjs
 
+# local logo evaluation and verification scripts
+public/logo-evaluation/
+public/logo-reconstruction/
+public/wordmark-evaluation/
+scripts/capture-*.mjs
+scripts/inspect-*.mjs
+scripts/query-*.mjs
+scripts/test-endpoints.mjs
+scripts/verify-gathering-location-navigation.mjs
+scripts/verify-ui-controls.mjs
+
 # graphify / agent artifacts
+
 graphify-out/
 .graphify/
 .agents/
