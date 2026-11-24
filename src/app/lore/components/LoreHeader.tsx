@@ -14,16 +14,29 @@ export function LoreHeader({
 }) {
   return (
     <section className="lore-hero">
-      <span className="lore-eyebrow"><ZenithIcon name="archive" size={16} /> IdleMMO Lore Wiki</span>
-      <h1 id="lore-page-title">Chronicles of Valaron</h1>
-      <p>
-        Edric&apos;s archive, rebuilt as a living atlas of civilizations, artifacts, gods, creatures,
-        witnesses, and suspiciously convenient historical silences.
+      <div className="lore-eyebrow">
+        <ZenithIcon name="archive" size={15} />
+        <span>Chronicles of Valaron</span>
+      </div>
+      <h1 id="lore-page-title">Valaron Lore Archive</h1>
+      <p className="lore-hero-lead">
+        Edric&apos;s illuminated records of fallen realms, celestial deities, ancient relics, and historical silences.
       </p>
-      <div className="lore-hero-stats" aria-label="Lore coverage">
-        <span><strong>{loading ? "..." : entriesCount}</strong> official records</span>
-        <span><strong>{loading ? "..." : relationsCount}</strong> source links</span>
-        <span><strong>{loading ? "..." : theoriesCount}</strong> theory files</span>
+      <div className="lore-hero-stats" aria-label="Archive coverage statistics">
+        <span className="lore-stat-pill">
+          <strong>{loading ? "..." : entriesCount}</strong>
+          <span>Records</span>
+        </span>
+        <span className="lore-stat-divider" aria-hidden="true">&bull;</span>
+        <span className="lore-stat-pill">
+          <strong>{loading ? "..." : relationsCount}</strong>
+          <span>Relations</span>
+        </span>
+        <span className="lore-stat-divider" aria-hidden="true">&bull;</span>
+        <span className="lore-stat-pill">
+          <strong>{loading ? "..." : theoriesCount}</strong>
+          <span>Theories</span>
+        </span>
       </div>
     </section>
   );

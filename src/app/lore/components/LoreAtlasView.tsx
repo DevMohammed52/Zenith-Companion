@@ -17,8 +17,11 @@ export function LoreAtlasView({
   openEntry: (entry: LoreEntry) => void;
 }) {
   return (
-    <section className="lore-section">
-      <SectionHeading label="World Atlas" detail="Civilizations, realms, artifacts, and mythic pressure points." />
+    <section className="lore-section" aria-label="World atlas records">
+      <SectionHeading
+        label="World Atlas"
+        detail="Realms, ancient civilizations, and geographic landmarks across Valaron."
+      />
       {featuredAtlas.length > 0 ? (
         <div className={`atlas-grid ${activeCategory === "NPC" ? "npc-atlas" : ""}`}>
           {featuredAtlas.map((entry) => (

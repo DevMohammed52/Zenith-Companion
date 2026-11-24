@@ -1,7 +1,8 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ExternalLink, X } from "lucide-react";
 import {
   getDescriptionLoreForEntry,
@@ -27,12 +28,18 @@ export function LoreEntryModal({
   const related = entry.relatedIds.map((id) => entryById[id]).filter(Boolean).slice(0, 10);
   const matchedItemLinks = itemLinks.filter((link) => (link.entryIds as readonly string[]).includes(entry.id)).slice(0, 8);
   const descriptionItemLinks = getDescriptionLoreForEntry(entry.id, 10);
+  const [mounted, setMounted] = useState(false);
   const modalRef = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const pointerStartedOnBackdrop = useRef(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeButtonRef.current?.focus();
 
@@ -68,9 +75,11 @@ export function LoreEntryModal({
       window.removeEventListener("keydown", handleKey);
       previousFocusRef.current?.focus();
     };
-  }, [onClose]);
+  }, [mounted, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className="lore-modal-shell"
       onPointerDown={(event) => {
@@ -170,26 +179,28 @@ export function LoreEntryModal({
 
       <style jsx>{`
         .lore-modal-shell {
-          align-items: flex-start;
-          background: rgba(0,0,0,0.78);
-          backdrop-filter: blur(14px);
+          align-items: center;
+          background: rgba(8, 10, 15, 0.88);
           display: flex;
           inset: 0;
           justify-content: center;
-          overflow-y: auto;
+          overflow: hidden;
           padding: 1.25rem;
           position: fixed;
           z-index: 9999;
           animation: loreModalBackdrop 0.18s ease both;
+          overscroll-behavior: contain;
         }
 
         .lore-modal {
           background: #101012;
           border: 1px solid color-mix(in srgb, var(--tone), transparent 62%);
-          border-radius: 10px;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.58);
+          border-radius: 12px;
+          box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65);
           color: #fff;
-          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          max-height: min(88dvh, 880px);
           max-width: 980px;
           overflow: hidden;
           width: 100%;
@@ -198,8 +209,9 @@ export function LoreEntryModal({
 
         header {
           align-items: center;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           display: flex;
+          flex-shrink: 0;
           gap: 1rem;
           justify-content: space-between;
           padding: 1.25rem 1.4rem;
@@ -226,15 +238,17 @@ export function LoreEntryModal({
           align-items: center;
           background: rgba(255,255,255,0.045);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 7px;
+          border-radius: 8px;
           color: rgba(255,255,255,0.62);
           cursor: pointer;
           display: inline-flex;
           flex: 0 0 auto;
-          height: 38px;
+          height: 44px;
+          width: 44px;
+          min-height: 44px;
+          min-width: 44px;
           justify-content: center;
           transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.16s ease;
-          width: 38px;
         }
 
         header button:hover {
@@ -251,9 +265,17 @@ export function LoreEntryModal({
           display: grid;
           gap: 1rem;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          max-height: calc(90vh - 98px);
+          flex: 1 1 auto;
           overflow-y: auto;
-          padding: 1.2rem;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          padding: 1.25rem;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.04);
+          scrollbar-gutter: stable;
+          scroll-behavior: auto;
+          transform: translateZ(0);
+          contain: content;
         }
 
         .modal-panel {
@@ -262,12 +284,11 @@ export function LoreEntryModal({
           border-radius: 8px;
           min-width: 0;
           padding: 1rem;
-          transition: border-color 0.18s ease, background 0.18s ease;
+          transition: border-color 0.12s ease;
         }
 
         .modal-panel:hover {
           border-color: color-mix(in srgb, var(--tone), transparent 76%);
-          background: rgba(255,255,255,0.045);
         }
 
         .span-two {
@@ -424,6 +445,7 @@ export function LoreEntryModal({
           }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body,
   );
 }

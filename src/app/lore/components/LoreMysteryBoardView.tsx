@@ -1,6 +1,8 @@
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, RefObject } from "react";
+import { useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import type { LoreEntry, LoreRelation } from "@/data/lore";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "./SectionHeading";
 import {
   CATEGORY_META,
@@ -64,11 +66,26 @@ export function LoreMysteryBoardView({
   openEntry: (entry: LoreEntry) => void;
   setBoardEntryId: (id: string) => void;
 }) {
+  const confidenceOptions = useMemo<Array<{ value: RelationFilter; label: string }>>(
+    () => [
+      { value: "all", label: "All Links" },
+      { value: "canon", label: "Canon" },
+      { value: "inferred", label: "Inferred" },
+      { value: "theory", label: "Theory" },
+    ],
+    [],
+  );
+
   return (
-    <section className="lore-section">
-      <SectionHeading label="Mystery Board" detail="Official links first. The red-string energy is optional, but encouraged." />
+    <section className="lore-section" aria-label="Interactive mystery board">
+      <SectionHeading
+        label="Mystery Board"
+        detail="Explore connections between relics, civilizations, and historical figures."
+      />
       {search.trim() && (
-        <p className="board-search-note">Page search filters Atlas, Characters, and Artifacts views. Use the thread search inside this board to change the selected mystery thread.</p>
+        <p className="board-search-note">
+          Page search filters Atlas, Characters, and Artifacts. Use the thread search below to pick a mystery node.
+        </p>
       )}
       <div className="board-controls">
         <div className="board-picker" ref={boardPickerRef}>
@@ -170,31 +187,37 @@ export function LoreMysteryBoardView({
           )}
         </div>
         <div className="confidence-tabs">
-          {(["all", "canon", "inferred", "theory"] as RelationFilter[]).map((filter) => (
-            <button
-              key={filter}
-              className={relationFilter === filter ? "active" : ""}
-              aria-pressed={relationFilter === filter}
-              onClick={() => setRelationFilter(filter)}
-              type="button"
-            >
-              {filter}
-            </button>
-          ))}
+          <SegmentedControl
+            options={confidenceOptions}
+            value={relationFilter}
+            onChange={setRelationFilter}
+            ariaLabel="Filter connections by confidence"
+            size="sm"
+          />
         </div>
       </div>
       <div className="mystery-board">
         <article className="board-center" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
-          <span>{CATEGORY_META[boardEntry.category].icon} {CATEGORY_META[boardEntry.category].label}</span>
-          <h3>{boardEntry.title}</h3>
-          <p>{cleanLoreCopy(boardEntry.summary)}</p>
+          <span className="board-center-badge">
+            {CATEGORY_META[boardEntry.category].icon} {CATEGORY_META[boardEntry.category].label}
+          </span>
+          <h3 className="board-center-title">{boardEntry.title}</h3>
+          <p className="board-center-summary">{cleanLoreCopy(boardEntry.summary)}</p>
           <div className="board-stat-row">
             <span><strong>{boardStats.total}</strong> total</span>
             <span><strong>{boardStats.canon}</strong> canon</span>
             <span><strong>{boardStats.inferred}</strong> inferred</span>
             <span><strong>{boardStats.theory}</strong> theory</span>
           </div>
-          <button type="button" onClick={() => openEntry(boardEntry)}>Open dossier</button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => openEntry(boardEntry)}
+            className="board-open-btn"
+          >
+            Open dossier
+          </Button>
         </article>
         <div className="board-map" aria-label={`Connection map for ${boardEntry.title}`}>
           <div className="board-map-core">
@@ -211,6 +234,7 @@ export function LoreMysteryBoardView({
                 type="button"
                 className={`board-node node-${index % 8} ${relation.confidence}`}
                 onClick={() => setBoardEntryId(other.id)}
+                aria-label={`Switch focus to ${other.title} (${relation.confidence})`}
               >
                 <span>{relation.confidence}</span>
                 <strong>{other.title}</strong>
@@ -224,7 +248,13 @@ export function LoreMysteryBoardView({
             const other = entryById[otherId];
             if (!other) return null;
             return (
-              <button key={`${relation.source}-${relation.target}`} type="button" className="thread-card" onClick={() => setBoardEntryId(other.id)}>
+              <button
+                key={`${relation.source}-${relation.target}`}
+                type="button"
+                className="thread-card"
+                onClick={() => setBoardEntryId(other.id)}
+                aria-label={`View thread with ${other.title}`}
+              >
                 <span className={`confidence ${relation.confidence}`}>{relation.confidence}</span>
                 <strong>{other.title}</strong>
                 <small>{relation.type}</small>
