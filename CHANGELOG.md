@@ -14,6 +14,8 @@ Updates are organized chronologically by release date.
 - **Missing Pets & Multi-Select Compare**: Owned Pets now tracks your collection progress, adds a **Missing Pets** view with drop sources and exchange floor prices, adds a sortable **Table** view, and lets you select 2–4 pets to open together in Pet Comparison.
 
 ### Changed
+- **What's New Timeline Redesign**: Upgraded What's New to a chronological release timeline with semantic date nodes, calm slate filter tabs, quick release jump counts, and smooth accordion drawers synced to the latest release date.
+- **Museum Collection Redesign**: Merged duplicate museum category filters into one toolbar, added a compact Snapshot Info modal, direct collectible inspection and Pet/Enemy Database links, paginated browsing (24, 48, or 96 entries per page), shareable filter links, and a floating Back to Top button.
 - **Calmer Dark-Mode Contrast**: Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes.
 - **Conquest Redesign**: Rebuilt Conquest in the monochromatic Astral Slate palette with clearly labeled control-share bars, inline vertical metric dividers, paginated contributor lists, world map deep links, shareable URL filters, and a floating Back to Top button.
 - **Smooth Back to Top**: Standardized a single floating **Back to Top** button across Conquest, House Planner, Items Database, Enemy Database, Pet Database, Owned Pets, and What's New with smooth fade and slide transitions above the mobile dock.
@@ -26,6 +28,8 @@ Updates are organized chronologically by release date.
 - **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.
 
 ### Fixed
+- **Alt Museum Live Import Sync**: Redeployed the profile import worker so visible alt characters fetch their own museums directly instead of leaving alt museums empty on import.
+- **What's New Release Date Sync**: Fixed the top summary tag displaying the previous date (`24 Nov 2026`) instead of matching the newest release (`25 Nov 2026`).
 - **House Planner Readability & Currency Icons**: Fixed smashed header/card labels on Profit, Built Components, and Guest Buffs tabs, aligned gold coin and material item icons cleanly beside values, and fixed condition readout ordering.
 - **Pet Picker Search Focus**: Fixed the search input in the Choose Pet modal losing focus back to the close button after typing each character.
 - **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed "Beastmaster Context" to "Beastmaster Class", and stopped simulator dropdowns from clipping or sitting behind nearby fields.
