@@ -13,34 +13,41 @@
           "items": [
             {
               "id": "2026-11-25-Added-0",
+              "title": "Guilds Spotlight, Open Slots & Conquest Join",
+              "description": "Guild Database now highlights your active profile's guild alongside the Top 3 Season Podium, shows wiki-calibrated roster capacity and open recruitment slots, and joins live Conquest zone rankings and assault statuses directly to every guild row and detail modal.",
+              "subItems": [],
+              "raw": "- **Guilds Spotlight, Open Slots & Conquest Join**: Guild Database now highlights your active profile's guild alongside the Top 3 Season Podium, shows wiki-calibrated roster capacity and open recruitment slots, and joins live Conquest zone rankings and assault statuses directly to every guild row and detail modal."
+            },
+            {
+              "id": "2026-11-25-Added-1",
               "title": "World Map Travel Cost & Territory Links",
               "description": "Added calibrated distance, teleport gold cost (with Banished and Cursed class discounts), and walk-time estimates from your active character's location directly in World Map, alongside live Conquest control bars, house-location badges, Weather Guide links, and Lore links.",
               "subItems": [],
               "raw": "- **World Map Travel Cost & Territory Links**: Added calibrated distance, teleport gold cost (with Banished and Cursed class discounts), and walk-time estimates from your active character's location directly in World Map, alongside live Conquest control bars, house-location badges, Weather Guide links, and Lore links."
             },
             {
-              "id": "2026-11-25-Added-1",
+              "id": "2026-11-25-Added-2",
               "title": "Conquest Season Archive",
               "description": "You can now browse past conquest seasons (**Season 3** through **Season 12**) alongside the current season in Conquest, complete with zone winners, paginated contributor rankings, and historical control shares.",
               "subItems": [],
               "raw": "- **Conquest Season Archive**: You can now browse past conquest seasons (**Season 3** through **Season 12**) alongside the current season in Conquest, complete with zone winners, paginated contributor rankings, and historical control shares."
             },
             {
-              "id": "2026-11-25-Added-2",
+              "id": "2026-11-25-Added-3",
               "title": "Conquest Buffs, Shards & Live Assault Timers",
               "description": "Conquest now shows live assault wave countdowns, resolves each top contributor's guild badge, displays guild levels, and provides a top-level **Buffs & Shards** guide for Territory Ruling Buffs (Ranks 1–10) and Zone Shard payouts (Ranks 1–25).",
               "subItems": [],
               "raw": "- **Conquest Buffs, Shards & Live Assault Timers**: Conquest now shows live assault wave countdowns, resolves each top contributor's guild badge, displays guild levels, and provides a top-level **Buffs & Shards** guide for Territory Ruling Buffs (Ranks 1–10) and Zone Shard payouts (Ranks 1–25)."
             },
             {
-              "id": "2026-11-25-Added-3",
+              "id": "2026-11-25-Added-4",
               "title": "Equipped Pet Spotlight",
               "description": "Your currently equipped pet now sits pinned at the top of Owned Pets with Power, Health, Location, best Battle EV/hr, and 1-click catalog comparison.",
               "subItems": [],
               "raw": "- **Equipped Pet Spotlight**: Your currently equipped pet now sits pinned at the top of Owned Pets with Power, Health, Location, best Battle EV/hr, and 1-click catalog comparison."
             },
             {
-              "id": "2026-11-25-Added-4",
+              "id": "2026-11-25-Added-5",
               "title": "Missing Pets & Multi-Select Compare",
               "description": "Owned Pets now tracks your collection progress, adds a **Missing Pets** view with drop sources and exchange floor prices, adds a sortable **Table** view, and lets you select 2–4 pets to open together in Pet Comparison.",
               "subItems": [],
@@ -53,90 +60,125 @@
           "items": [
             {
               "id": "2026-11-25-Changed-0",
+              "title": "Item & Enemy Details Modals",
+              "description": "Rebuilt the global **Item Inspection** modal and unified the **Enemy Details** modal across Enemy Database and World Map with cleaner inline stat strips, gold coin icons beside all prices and drop values, item thumbnails in container and recipe rows, accessible keyboard buttons, slider controls for Tier Upgrades, and WCAG AA quality contrast.",
+              "subItems": [],
+              "raw": "- **Item & Enemy Details Modals**: Rebuilt the global **Item Inspection** modal and unified the **Enemy Details** modal across Enemy Database and World Map with cleaner inline stat strips, gold coin icons beside all prices and drop values, item thumbnails in container and recipe rows, accessible keyboard buttons, slider controls for Tier Upgrades, and WCAG AA quality contrast."
+            },
+            {
+              "id": "2026-11-25-Changed-1",
+              "title": "Legacy Pages Visual & Accessibility Upgrade",
+              "description": "Polished **Settings**, **Items Database**, **Weather Guide**, **Enemy Database**, and **Lore Wiki** in the calm Astral Slate style—adding item thumbnails and gold coin icons to Custom Prices and Enemy loot tables, replacing nested card borders with clean inline divider strips, adopting standard pickers, search fields, filter tags, and modal sheets across all controls, bringing `Back to Top` to Lore Wiki, and expanding mobile tap targets to `>= 44px`.",
+              "subItems": [],
+              "raw": "- **Legacy Pages Visual & Accessibility Upgrade**: Polished **Settings**, **Items Database**, **Weather Guide**, **Enemy Database**, and **Lore Wiki** in the calm Astral Slate style—adding item thumbnails and gold coin icons to Custom Prices and Enemy loot tables, replacing nested card borders with clean inline divider strips, adopting standard pickers, search fields, filter tags, and modal sheets across all controls, bringing `Back to Top` to Lore Wiki, and expanding mobile tap targets to `>= 44px`."
+            },
+            {
+              "id": "2026-11-25-Changed-2",
+              "title": "Navigation Sidebar Hierarchy & Calm Highlight",
+              "description": "Separated sidebar navigation sections with subtle dividers and indent guides, toned down glaring pure-white active indicators and collapsed rail icons to Astral Slate, and standardized bottom dock short labels so tabs like **Alchemy** and **Profit** no longer truncate on mobile.",
+              "subItems": [],
+              "raw": "- **Navigation Sidebar Hierarchy & Calm Highlight**: Separated sidebar navigation sections with subtle dividers and indent guides, toned down glaring pure-white active indicators and collapsed rail icons to Astral Slate, and standardized bottom dock short labels so tabs like **Alchemy** and **Profit** no longer truncate on mobile."
+            },
+            {
+              "id": "2026-11-25-Changed-3",
+              "title": "Control & Overlay Accessibility Polish",
+              "description": "Added keyboard focus rings to number steppers, combobox clear buttons, popovers, and labeled SVG icons, replaced legacy search-empty markup inside Global Search with the standard empty-state view, hid duplicate browser clear buttons inside search palettes, and honored reduced-motion settings across all interactive UI primitives.",
+              "subItems": [],
+              "raw": "- **Control & Overlay Accessibility Polish**: Added keyboard focus rings to number steppers, combobox clear buttons, popovers, and labeled SVG icons, replaced legacy search-empty markup inside Global Search with the standard empty-state view, hid duplicate browser clear buttons inside search palettes, and honored reduced-motion settings across all interactive UI primitives."
+            },
+            {
+              "id": "2026-11-25-Changed-4",
+              "title": "Guild Database Redesign",
+              "description": "Rebuilt Guild Database in the Astral Slate design system with an inline registry summary strip, collapsible Season Podium banner cards, quick Open Slots and Conquest Rulers filter tags, Table and Cards view modes, bounded pagination, a Guild Rules & Offline cache modal, and a tabbed Guild Details modal (**Overview**, searchable **Roster**, and **Conquest**).",
+              "subItems": [],
+              "raw": "- **Guild Database Redesign**: Rebuilt Guild Database in the Astral Slate design system with an inline registry summary strip, collapsible Season Podium banner cards, quick Open Slots and Conquest Rulers filter tags, Table and Cards view modes, bounded pagination, a Guild Rules & Offline cache modal, and a tabbed Guild Details modal (**Overview**, searchable **Roster**, and **Conquest**)."
+            },
+            {
+              "id": "2026-11-25-Changed-5",
               "title": "World Map Redesign",
               "description": "Rebuilt World Map in the Astral Slate design system with an expansive panoramic map backdrop, level-sorted region pickers, `From -> To` travel estimator, in-place **Enemy Details** modal (with clickable loot drops), structured per-skill weather modifiers, and a chronological **Weather Forecast** timeline with quick filters.",
               "subItems": [],
               "raw": "- **World Map Redesign**: Rebuilt World Map in the Astral Slate design system with an expansive panoramic map backdrop, level-sorted region pickers, `From -> To` travel estimator, in-place **Enemy Details** modal (with clickable loot drops), structured per-skill weather modifiers, and a chronological **Weather Forecast** timeline with quick filters."
             },
             {
-              "id": "2026-11-25-Changed-1",
+              "id": "2026-11-25-Changed-6",
               "title": "What's New Timeline Redesign",
               "description": "Upgraded What's New to a chronological release timeline with semantic date nodes, calm slate filter tabs, quick release jump counts, and smooth accordion drawers synced to the latest release date.",
               "subItems": [],
               "raw": "- **What's New Timeline Redesign**: Upgraded What's New to a chronological release timeline with semantic date nodes, calm slate filter tabs, quick release jump counts, and smooth accordion drawers synced to the latest release date."
             },
             {
-              "id": "2026-11-25-Changed-2",
+              "id": "2026-11-25-Changed-7",
               "title": "Museum Collection Redesign",
               "description": "Merged duplicate museum category filters into one toolbar, added a compact Snapshot Info modal, direct collectible inspection and Pet/Enemy Database links, paginated browsing (24, 48, or 96 entries per page), shareable filter links, and a floating Back to Top button.",
               "subItems": [],
               "raw": "- **Museum Collection Redesign**: Merged duplicate museum category filters into one toolbar, added a compact Snapshot Info modal, direct collectible inspection and Pet/Enemy Database links, paginated browsing (24, 48, or 96 entries per page), shareable filter links, and a floating Back to Top button."
             },
             {
-              "id": "2026-11-25-Changed-3",
+              "id": "2026-11-25-Changed-8",
               "title": "Calmer Dark-Mode Contrast",
               "description": "Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes.",
               "subItems": [],
               "raw": "- **Calmer Dark-Mode Contrast**: Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes."
             },
             {
-              "id": "2026-11-25-Changed-4",
+              "id": "2026-11-25-Changed-9",
               "title": "Conquest Redesign",
               "description": "Rebuilt Conquest in the monochromatic Astral Slate palette with clearly labeled control-share bars, inline vertical metric dividers, paginated contributor lists, world map deep links, shareable URL filters, and a floating Back to Top button.",
               "subItems": [],
               "raw": "- **Conquest Redesign**: Rebuilt Conquest in the monochromatic Astral Slate palette with clearly labeled control-share bars, inline vertical metric dividers, paginated contributor lists, world map deep links, shareable URL filters, and a floating Back to Top button."
             },
             {
-              "id": "2026-11-25-Changed-5",
+              "id": "2026-11-25-Changed-10",
               "title": "Smooth Back to Top",
               "description": "Standardized a single floating **Back to Top** button across Conquest, House Planner, Items Database, Enemy Database, Pet Database, Owned Pets, and What's New with smooth fade and slide transitions above the mobile dock.",
               "subItems": [],
               "raw": "- **Smooth Back to Top**: Standardized a single floating **Back to Top** button across Conquest, House Planner, Items Database, Enemy Database, Pet Database, Owned Pets, and What's New with smooth fade and slide transitions above the mobile dock."
             },
             {
-              "id": "2026-11-25-Changed-6",
+              "id": "2026-11-25-Changed-11",
               "title": "House Planner Redesign",
               "description": "Rebuilt House Planner with scoped styling, an inline profile/mode/cost summary strip, in-game gold and construction material icons, unified skill icons across all 5 tabs, and responsive mobile controls.",
               "subItems": [],
               "raw": "- **House Planner Redesign**: Rebuilt House Planner with scoped styling, an inline profile/mode/cost summary strip, in-game gold and construction material icons, unified skill icons across all 5 tabs, and responsive mobile controls."
             },
             {
-              "id": "2026-11-25-Changed-7",
+              "id": "2026-11-25-Changed-12",
               "title": "Pet Comparison Overhaul",
               "description": "Redesigned Pet Comparison with a collapsible shared setup panel, searchable pet picker modal, cleaner comparison cards, distinct stat icons across the metrics table, and shareable comparison links.",
               "subItems": [],
               "raw": "- **Pet Comparison Overhaul**: Redesigned Pet Comparison with a collapsible shared setup panel, searchable pet picker modal, cleaner comparison cards, distinct stat icons across the metrics table, and shareable comparison links."
             },
             {
-              "id": "2026-11-25-Changed-8",
+              "id": "2026-11-25-Changed-13",
               "title": "Owned Pets Redesign",
               "description": "Rebuilt Owned Pets with **Your Pets** and **Missing Pets** tabs, **Cards** and **Table** views, a full Pet Details modal, page navigation, and a floating back-to-top button.",
               "subItems": [],
               "raw": "- **Owned Pets Redesign**: Rebuilt Owned Pets with **Your Pets** and **Missing Pets** tabs, **Cards** and **Table** views, a full Pet Details modal, page navigation, and a floating back-to-top button."
             },
             {
-              "id": "2026-11-25-Changed-9",
+              "id": "2026-11-25-Changed-14",
               "title": "Pet Directory Redesign",
               "description": "Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links.",
               "subItems": [],
               "raw": "- **Pet Directory Redesign**: Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links."
             },
             {
-              "id": "2026-11-25-Changed-10",
+              "id": "2026-11-25-Changed-15",
               "title": "Pet Setup Simulator",
               "description": "Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates.",
               "subItems": [],
               "raw": "- **Pet Setup Simulator**: Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates."
             },
             {
-              "id": "2026-11-25-Changed-11",
+              "id": "2026-11-25-Changed-16",
               "title": "Bounded Page Navigation",
               "description": "Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing.",
               "subItems": [],
               "raw": "- **Bounded Page Navigation**: Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing."
             },
             {
-              "id": "2026-11-25-Changed-12",
+              "id": "2026-11-25-Changed-17",
               "title": "Mobile Sheet Ergonomics",
               "description": "Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.",
               "subItems": [],
@@ -149,41 +191,55 @@
           "items": [
             {
               "id": "2026-11-25-Fixed-0",
+              "title": "Settings Shortcut Reference",
+              "description": "Updated the Settings keyboard shortcuts list so `Alt+4` accurately labels **Forge Lessons** alongside entries for **Lore Wiki** (`Alt+9`) and **World Map** (`Alt+M`).",
+              "subItems": [],
+              "raw": "- **Settings Shortcut Reference**: Updated the Settings keyboard shortcuts list so `Alt+4` accurately labels **Forge Lessons** alongside entries for **Lore Wiki** (`Alt+9`) and **World Map** (`Alt+M`)."
+            },
+            {
+              "id": "2026-11-25-Fixed-1",
+              "title": "Items Tag Guide Disclosure",
+              "description": "Separated the Items filter bar's Tag Guide popover button from the expandable filter summary so keyboard and screen-reader users can toggle it reliably.",
+              "subItems": [],
+              "raw": "- **Items Tag Guide Disclosure**: Separated the Items filter bar's Tag Guide popover button from the expandable filter summary so keyboard and screen-reader users can toggle it reliably."
+            },
+            {
+              "id": "2026-11-25-Fixed-2",
               "title": "Alt Museum Live Import Sync",
               "description": "Redeployed the profile import worker so visible alt characters fetch their own museums directly instead of leaving alt museums empty on import.",
               "subItems": [],
               "raw": "- **Alt Museum Live Import Sync**: Redeployed the profile import worker so visible alt characters fetch their own museums directly instead of leaving alt museums empty on import."
             },
             {
-              "id": "2026-11-25-Fixed-1",
+              "id": "2026-11-25-Fixed-3",
               "title": "What's New Release Date Sync",
               "description": "Fixed the top summary tag displaying the previous date (`24 Nov 2026`) instead of matching the newest release (`25 Nov 2026`).",
               "subItems": [],
               "raw": "- **What's New Release Date Sync**: Fixed the top summary tag displaying the previous date (`24 Nov 2026`) instead of matching the newest release (`25 Nov 2026`)."
             },
             {
-              "id": "2026-11-25-Fixed-2",
+              "id": "2026-11-25-Fixed-4",
               "title": "House Planner Readability & Currency Icons",
               "description": "Fixed smashed header/card labels on Profit, Built Components, and Guest Buffs tabs, aligned gold coin and material item icons cleanly beside values, and fixed condition readout ordering.",
               "subItems": [],
               "raw": "- **House Planner Readability & Currency Icons**: Fixed smashed header/card labels on Profit, Built Components, and Guest Buffs tabs, aligned gold coin and material item icons cleanly beside values, and fixed condition readout ordering."
             },
             {
-              "id": "2026-11-25-Fixed-3",
+              "id": "2026-11-25-Fixed-5",
               "title": "Pet Picker Search Focus",
               "description": "Fixed the search input in the Choose Pet modal losing focus back to the close button after typing each character.",
               "subItems": [],
               "raw": "- **Pet Picker Search Focus**: Fixed the search input in the Choose Pet modal losing focus back to the close button after typing each character."
             },
             {
-              "id": "2026-11-25-Fixed-4",
+              "id": "2026-11-25-Fixed-6",
               "title": "Pet Setup Controls",
               "description": "Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields.",
               "subItems": [],
               "raw": "- **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields."
             },
             {
-              "id": "2026-11-25-Fixed-5",
+              "id": "2026-11-25-Fixed-7",
               "title": "Pet Table & Modal Layout",
               "description": "Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls.",
               "subItems": [],
@@ -192,7 +248,7 @@
           ]
         }
       ],
-      "totalChanges": 24
+      "totalChanges": 32
     },
     {
       "version": "2026-11-24",
@@ -409,6 +465,6 @@
       "Changed",
       "Fixed"
     ],
-    "generatedAt": "2026-11-25T15:03:24.697Z"
+    "generatedAt": "2026-11-25T18:01:03.626Z"
   }
 }
