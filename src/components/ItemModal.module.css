@@ -1,47 +1,49 @@
-/* ItemModal.module.css - High-Craft Zenith Item Modal Design System */
+/* ItemModal.module.css - Astral Slate Item Inspector */
 
 .modalBody {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 16px);
-  padding: var(--space-4, 16px);
+  gap: 0.95rem;
   color: var(--text-main, #f8fafc);
   font-family: var(--font-sans);
 }
 
-/* Loading & Error States */
-.stateContainer {
+.modalBody :where(button, a, input, [role="slider"]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Loading Skeletons */
+.skeletonStack {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1.5rem;
-  text-align: center;
-  gap: var(--space-3, 12px);
+  gap: 0.95rem;
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--text-accent, #38bdf8);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Item Header */
-.itemHeader {
+.skeletonHead {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3, 12px);
-  padding-bottom: var(--space-3, 12px);
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.skeletonHeadCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.skeletonStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* Header Identity Row */
+.itemHero {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
 }
 
 .thumbnailWrapper {
@@ -49,478 +51,449 @@
   width: 56px;
   height: 56px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 1px solid var(--quality-border, rgba(255, 255, 255, 0.1));
-  background: var(--bg-card, #111827);
-  box-shadow: 0 0 16px var(--quality-glow, rgba(0, 0, 0, 0.4));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid var(--quality-border, var(--border-subtle));
+  background: var(--bg-inset, rgba(10, 13, 20, 0.55));
+  display: grid;
+  place-items: center;
 }
 
-.itemHeaderDetails {
+.itemHeroDetails {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.45rem;
   flex: 1;
   min-width: 0;
 }
 
-.itemName {
-  margin: 0;
-  font-size: 1.25rem;
+.qualityHeaderNote {
+  font-size: 0.78rem;
   font-weight: 700;
-  line-height: 1.3;
-  color: var(--text-main, #f8fafc);
+  letter-spacing: 0.02em;
 }
 
 .badgesRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0.4rem;
 }
 
 .headerActions {
   flex-shrink: 0;
 }
 
-/* Segmented Navigation */
 .navTabs {
-  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Tab Content */
 .tabContent {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4, 16px);
+  gap: 1rem;
 }
 
 .descriptionBox {
   font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--text-muted, #94a3b8);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  line-height: 1.55;
+  color: var(--text-accent, #cbd5e1);
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 0.7rem 0.9rem;
 }
 
-/* Section Titles */
-.sectionTitle {
+/* Section Separators (Zero Nested Borders) */
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sectionBlockFirst {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.sectionHeaderRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.8125rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted, #94a3b8);
-  margin: 0 0 8px 0;
+  margin: 0;
 }
 
-/* KPI / Stat Grids */
-.statsGrid {
+.sectionIcon {
+  color: var(--text-accent, #cbd5e1);
+  flex-shrink: 0;
+}
+
+.countMeta {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inline Hairline Divider Stat Strip (4 col desktop -> 2 col mobile) */
+.statStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: var(--space-2, 8px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-radius: 10px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+  overflow: hidden;
 }
 
-.statCard {
+.statStripThree {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statCell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-  border-radius: 8px;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  min-width: 0;
+}
+
+.statCell + .statCell {
+  border-left: 1px solid var(--border-subtle);
 }
 
 .statLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted, #94a3b8);
 }
 
 .statValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
   font-family: var(--font-mono);
-  font-size: 1.0625rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: var(--text-main, #f8fafc);
-  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statValueAccent {
+  color: var(--quality-refined-text, #60a5fa);
+}
+
+.statValueGold {
+  color: var(--text-gold, #fbbf24);
+}
+
+.statValueGood {
+  color: var(--quality-premium, #4ade80);
+}
+
+.statValueBad {
+  color: var(--text-danger, #f87171);
 }
 
 .statSubtext {
-  font-size: 0.6875rem;
+  font-size: 0.7rem;
   color: var(--text-muted, #94a3b8);
 }
 
-/* Interactive Tier Simulator */
-.tierSimulator {
+/* Combat Attributes Grid (Borderless Inset Tiles) */
+.attributesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.45rem;
+}
+
+.attributeTile {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3, 12px);
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  gap: 0.2rem;
+  padding: 0.6rem 0.75rem;
   border-radius: 8px;
-  padding: 14px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+}
+
+/* Tier Simulator */
+.tierPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
 }
 
 .tierHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.tierPill {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 9999px;
-  padding: 2px 10px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.tierSlider {
-  width: 100%;
-  accent-color: var(--text-accent, #38bdf8);
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  outline: none;
-  cursor: pointer;
-}
-
-.tierStatsComparison {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 8px;
-}
-
-.tierStatItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
-  border-radius: 6px;
-  padding: 8px 10px;
-}
-
-.tierStatLabel {
-  font-size: 0.7rem;
-  color: var(--text-muted, #94a3b8);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
+  gap: 0.5rem;
 }
 
 .tierStatNumbers {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .tierBaseVal {
-  font-size: 0.875rem;
+  font-size: 0.84rem;
   color: var(--text-muted, #94a3b8);
 }
 
 .tierUpgradedVal {
-  font-size: 1rem;
+  font-size: 0.96rem;
   font-weight: 700;
-  color: #38bdf8;
-}
-
-.tierDiff {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #4ade80;
-}
-
-.tierMatsRequired {
-  font-size: 0.8125rem;
-  color: var(--text-muted, #94a3b8);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-}
-
-/* Consumable Effects & Restoration */
-.consumableEffects {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px;
-}
-
-.effectCard {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-  border-radius: 8px;
-}
-
-.effectTitle {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #38bdf8;
-}
-
-.effectMeta {
-  font-size: 0.75rem;
-  color: var(--text-muted, #94a3b8);
-}
-
-/* Loot Table */
-.lootGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.lootRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
-}
-
-.lootRow:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: var(--border-focus, #38bdf8);
-}
-
-.lootName {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.lootChance {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #4ade80;
-}
-
-/* Reverse Recipe & Sources Explorer */
-.sourceList {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sourceCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
-}
-
-.sourceCard:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: var(--border-focus, #38bdf8);
-}
-
-.sourceInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sourceName {
-  font-size: 0.875rem;
-  font-weight: 600;
   color: var(--text-main, #f8fafc);
 }
 
-.sourceMeta {
-  font-size: 0.75rem;
-  color: var(--text-muted, #94a3b8);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sourceTag {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+.tierDiff {
+  font-size: 0.74rem;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--quality-premium, #4ade80);
 }
 
-/* Sell Recommendation Engine */
-.advisorCard {
+.tierMatsRequired {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Effects & Consumables */
+.effectsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.effectTile {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3, 12px);
-  padding: 14px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  gap: 0.2rem;
+  padding: 0.65rem 0.8rem;
   border-radius: 8px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
 }
 
-.advisorHeader {
+.effectTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--quality-refined-text, #60a5fa);
+}
+
+.effectTitleHealth {
+  color: var(--text-danger, #f87171);
+}
+
+.effectTitleHunger {
+  color: var(--text-gold, #fbbf24);
+}
+
+.effectMeta {
+  font-size: 0.74rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* Interactive Rows & Lists (Semantic Buttons >= 44px) */
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.45rem;
+}
+
+.actionRowBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 46px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 100ms ease;
 }
 
-.advisorBadge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  text-transform: uppercase;
+.actionRowBtn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-subtle);
 }
 
-.advisorMarket {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+.actionRowBtn:active {
+  transform: scale(0.985);
 }
 
-.advisorVendor {
-  background: rgba(245, 176, 65, 0.15);
-  color: #f5b041;
-  border: 1px solid rgba(245, 176, 65, 0.3);
+.rowLeading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
 }
 
-.advisorMetrics {
+.rowThumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: var(--space-2, 8px);
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.advisorMetrics > div {
+.rowCopy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
-  border-radius: 6px;
-  padding: 8px 10px;
+  gap: 0.12rem;
+  min-width: 0;
 }
 
-/* Lore Cards */
+.rowName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+.rowTrailingTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-accent, #cbd5e1);
+}
+
+.rowTrailingGood {
+  color: var(--quality-premium, #4ade80);
+}
+
+/* Lore Grid */
 .loreGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-2, 8px);
+  gap: 0.5rem;
 }
 
-.loreCard {
+.loreCardBtn {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  align-items: stretch;
+  gap: 0.3rem;
+  min-height: 48px;
+  padding: 0.65rem 0.8rem;
   border-radius: 8px;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 100ms ease;
 }
 
-.loreCard:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: var(--border-focus, #38bdf8);
+.loreCardBtn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-subtle);
 }
 
-.loreHeader {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #38bdf8;
+.loreCardBtn:active {
+  transform: scale(0.985);
 }
 
-.loreSnippet {
-  font-size: 0.75rem;
-  color: var(--text-muted, #94a3b8);
-  line-height: 1.4;
-}
-
-/* Interactive Price Trend Chart */
-.chartCard {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
-  padding: 12px 14px;
-}
-
-.chartHeader {
+.loreCardHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-.chartTitle {
-  font-size: 0.8125rem;
+.loreHeader {
+  font-size: 0.84rem;
   font-weight: 700;
-  color: var(--text-muted, #94a3b8);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  color: var(--text-main, #f8fafc);
 }
 
-.chartTrendBadge {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
+.loreActionHint {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-accent, #cbd5e1);
+  flex-shrink: 0;
 }
 
-.chartTrendUp {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.3);
+.loreSnippet {
+  font-size: 0.76rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.chartTrendDown {
-  background: rgba(248, 113, 113, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.3);
-}
-
-.chartTrendNeutral {
-  background: rgba(148, 163, 184, 0.15);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+/* Price Trend Chart (Inset Panel, No Neon Glows) */
+.chartPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
 }
 
 .chartSvgWrapper {
@@ -531,17 +504,21 @@
 
 .chartGridPills {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.65rem;
 }
 
 .chartPillItem {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  text-align: center;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0 0.35rem;
+}
+
+.chartPillItem + .chartPillItem {
+  border-left: 1px solid var(--border-subtle);
 }
 
 .chartPillLabel {
@@ -551,43 +528,23 @@
 }
 
 .chartPillVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-main, #f8fafc);
 }
 
-/* Recent 10 Sales Transaction Range */
-.spreadContainer {
+/* Recent 10 Sales Range */
+.spreadPanel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: var(--bg-card, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
-  padding: 12px 14px;
-}
-
-.spreadHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.spreadRatioBadge {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 9999px;
-  padding: 3px 10px;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  line-height: 1.2;
+  gap: 0.65rem;
+  background: var(--bg-inset, rgba(10, 13, 20, 0.45));
+  border-radius: 10px;
+  padding: 0.85rem 0.95rem;
 }
 
 .spreadBarTrack {
@@ -595,14 +552,14 @@
   height: 20px;
   display: flex;
   align-items: center;
-  margin: 10px 0 8px 0;
+  margin: 0.25rem 0;
 }
 
 .spreadBarRange {
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(56, 189, 248, 0.4), rgba(255, 255, 255, 0.12));
-  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.22);
+  border-radius: 9999px;
 }
 
 .spreadDiamondWrapper {
@@ -618,29 +575,22 @@
 .markerDiamond {
   width: 12px;
   height: 12px;
-  background: #38bdf8;
+  background: var(--quality-refined-text, #60a5fa);
+  border: 2px solid var(--bg-panel, #0f172a);
   transform: rotate(45deg);
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
 }
 
 .spreadColumns {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .spreadCol {
   display: flex;
   flex-direction: column;
   min-width: 0;
-}
-
-.spreadColLeft {
-  align-items: flex-start;
-  text-align: left;
 }
 
 .spreadColCenter {
@@ -662,6 +612,9 @@
 }
 
 .spreadColVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
   font-family: var(--font-mono);
   font-size: 0.875rem;
   font-weight: 700;
@@ -670,31 +623,58 @@
   white-space: nowrap;
 }
 
+.advisorSummary {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.5;
+}
+
+.spikeConfirmedNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(74, 222, 128, 0.08);
+  border-left: 2px solid var(--quality-premium, #4ade80);
+  color: #86efac;
+  font-size: 0.8125rem;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 640px) {
-  .modalBody {
-    padding: var(--space-3, 12px);
-    gap: var(--space-3, 12px);
-  }
-
-  .itemHeader {
+  .itemHero {
+    align-items: flex-start;
     flex-wrap: wrap;
   }
 
-  .thumbnailWrapper {
-    width: 48px;
-    height: 48px;
+  .statStrip,
+  .statStripThree,
+  .chartGridPills,
+  .skeletonStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .itemName {
-    font-size: 1.125rem;
+  .statStrip .statCell:nth-child(odd),
+  .chartGridPills .chartPillItem:nth-child(odd) {
+    border-left: none;
   }
 
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .statStrip .statCell:nth-child(n + 3),
+  .chartGridPills .chartPillItem:nth-child(n + 3) {
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actionRowBtn,
+  .loreCardBtn {
+    transition: none;
   }
 
-  .advisorMetrics {
-    grid-template-columns: repeat(2, 1fr);
+  .actionRowBtn:active,
+  .loreCardBtn:active {
+    transform: none;
   }
 }

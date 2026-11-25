@@ -1,36 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Shield,
-  Zap,
-  Package,
-  BookOpen,
-  MapPin,
-  Hammer,
-  TrendingUp,
-  Target,
-  Plus,
-  Coins,
-  Check,
-  AlertTriangle,
-  Sparkles,
-  Sliders,
-  Utensils,
-  Heart,
-  Activity,
-  ArrowRight,
-  Castle,
-  Crown,
-  Swords,
-  Pickaxe,
-  TrendingDown,
-  Minus,
-} from 'lucide-react';
-
 import { useItemModal } from '@/context/ItemModalContext';
 import { GameImage } from '@/components/GameImage';
+import { GoldIcon } from '@/components/GoldIcon';
 import { useCrafting } from '@/context/CraftingContext';
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
 import { isCraftingQueueRecipe } from '@/lib/crafting-queue';
@@ -56,12 +30,20 @@ import {
 } from '@/lib/locations';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 import { loadUsageMap } from '@/lib/usage-map';
-import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
-
-import { ModalSheet } from '@/components/ui/ModalSheet';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { Button } from '@/components/ui/Button';
-import { Badge, type BadgeVariant } from '@/components/ui/Badge';
+import { getQualityColor, getQualityTextColor } from '@/lib/quality';
+import {
+  Badge,
+  Banner,
+  Button,
+  EmptyState,
+  Icon,
+  ModalSheet,
+  SegmentedControl,
+  Skeleton,
+  SkeletonContainer,
+  Slider,
+  type BadgeVariant,
+} from '@/components/ui';
 import { formatGold } from '@/lib/format';
 import styles from './ItemModal.module.css';
 
@@ -126,11 +108,6 @@ async function loadPublicItemFallback(id: string) {
 
 const normalizeSourceType = (type?: string) =>
   (type || '').trim().toUpperCase().replace(/\s+/g, '_');
-
-const getSourceRoute = (source: AcquisitionSource) => {
-  const type = normalizeSourceType(source.type);
-  return type.includes('BOSS') ? 'bosses' : type.includes('DUNGEON') ? 'dungeons' : 'enemies';
-};
 
 const formatSourceType = (type?: string) =>
   normalizeSourceType(type).replace(/_/g, ' ') || 'SOURCE';
@@ -215,12 +192,26 @@ function formatLoreTitle(rawTitle?: string, entryId?: string): string {
     .join(' ');
 }
 
+function resolveItemImage(
+  name: string | undefined,
+  allItemsDb: Record<string, any> | null | undefined
+): string | undefined {
+  if (!name || !allItemsDb) return undefined;
+  const entry = allItemsDb[name];
+  if (entry) return entry.image_url || entry.image;
+  const lower = name.toLowerCase();
+  const matched = Object.values(allItemsDb).find(
+    (cand: any) => typeof cand?.name === 'string' && cand.name.toLowerCase() === lower
+  ) as any;
+  return matched?.image_url || matched?.image;
+}
+
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
-  const { openItemByName, prefetchItem, getCachedItem, setCachedItem } = useItemModal();
-  const { queue, addToQueue } = useCrafting();
+  const { openItemByName, getCachedItem, setCachedItem } = useItemModal();
+  const { addToQueue } = useCrafting();
   const { marketData, allItemsDb } = useData();
 
   const [item, setItem] = useState<any>(null);
@@ -230,6 +221,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'market' | 'sources'>('overview');
   const [addedToQueue, setAddedToQueue] = useState(false);
   const [selectedTier, setSelectedTier] = useState<number>(0);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    };
+  }, []);
 
   // URL Deep-Linking and History Management
   useEffect(() => {
@@ -329,15 +327,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     ? getProfileBarteringBoost(activeProfile)
     : preferences.barteringBoost;
 
-  const intrinsicValue = useMemo(() => {
+  useMemo(() => {
     if (!item || !marketData) return 0;
     return getItemTrueValue(item, marketData, allItemsDb || undefined);
   }, [item, marketData, allItemsDb]);
 
-  const GOLD_ICON =
-    'https://cdn.idle-mmo.com/cdn-cgi/image/width=20,height=20,format=auto/global/gold_coin.png';
-
   const qColor = item ? getQualityColor(item.quality) : getQualityColor('STANDARD');
+  const qTextColor = item ? getQualityTextColor(item.quality) : getQualityTextColor('STANDARD');
   const itemName = item?.name;
   const itemIsTradeable = item
     ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false
@@ -658,7 +654,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     if (isCraftingQueueRecipe(recipeToQueue)) {
       addToQueue(recipeToQueue);
       setAddedToQueue(true);
-      setTimeout(() => setAddedToQueue(false), 2000);
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+      queueTimerRef.current = setTimeout(() => setAddedToQueue(false), 2000);
     }
   };
 
@@ -676,40 +673,61 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     return 'neutral';
   };
 
+  const descriptionSubtitle = item
+    ? `${formatItemTypeLabel(item.type)} · ${item.quality || 'STANDARD'}`
+    : undefined;
+
   return (
     <ModalSheet
       isOpen={true}
       onClose={onClose}
       title={item?.name || 'Item Inspection'}
+      description={descriptionSubtitle}
       maxWidth="lg"
     >
       <div className={styles.modalBody}>
         {loading && (
-          <div className={styles.stateContainer}>
-            <div className={styles.spinner} />
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>Loading item details and market telemetry...</p>
-          </div>
+          <SkeletonContainer announcement="Loading item details and market telemetry...">
+            <div className={styles.skeletonStack}>
+              <div className={styles.skeletonHead}>
+                <Skeleton variant="rectangular" width={56} height={56} />
+                <div className={styles.skeletonHeadCopy}>
+                  <Skeleton variant="text" width="46%" height={18} />
+                  <Skeleton variant="text" width="64%" height={14} />
+                </div>
+              </div>
+              <Skeleton variant="rectangular" height={38} />
+              <div className={styles.skeletonStrip}>
+                <Skeleton variant="rectangular" height={58} />
+                <Skeleton variant="rectangular" height={58} />
+                <Skeleton variant="rectangular" height={58} />
+                <Skeleton variant="rectangular" height={58} />
+              </div>
+              <Skeleton variant="rectangular" height={110} />
+            </div>
+          </SkeletonContainer>
         )}
 
         {error && (
-          <div className={styles.stateContainer}>
-            <p style={{ margin: 0, color: '#f87171' }}>{error}</p>
-            <Button variant="secondary" size="sm" onClick={onClose}>
-              Close Inspector
-            </Button>
-          </div>
+          <EmptyState
+            variant="error"
+            title="Item unavailable"
+            description={error}
+            action={{
+              label: 'Close Inspector',
+              variant: 'secondary',
+              onClick: onClose,
+            }}
+          />
         )}
 
         {!loading && !error && item && (
           <>
-            {/* Item Header */}
-            <div className={styles.itemHeader}>
+            {/* Item Hero */}
+            <div className={styles.itemHero}>
               <div
                 className={styles.thumbnailWrapper}
-                style={{
-                  '--quality-border': qColor,
-                  '--quality-glow': `${qColor}40`,
-                } as React.CSSProperties}
+                style={{ '--quality-border': qColor } as React.CSSProperties}
               >
                 <GameImage
                   src={item.image_url || item.image}
@@ -722,36 +740,27 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 />
               </div>
 
-              <div className={styles.itemHeaderDetails}>
-                <h2 className={styles.itemName} style={{ color: qColor }}>
-                  {item.name}
-                </h2>
+              <div className={styles.itemHeroDetails}>
+                <span className={styles.qualityHeaderNote} style={{ color: qTextColor }}>
+                  {item.quality || 'STANDARD'} {formatItemTypeLabel(item.type)}
+                </span>
                 <div className={styles.badgesRow}>
-                  <Badge variant="neutral" size="sm">
-                    {formatItemTypeLabel(item.type)}
-                  </Badge>
                   <Badge variant={mapQualityToBadge(item.quality)} size="sm">
                     {item.quality || 'STANDARD'}
                   </Badge>
                   {item.requirements?.combat && (
                     <Badge variant="neutral" size="sm">
-                      Level {item.requirements.combat} Combat
+                      Lv. {item.requirements.combat} Combat
                     </Badge>
                   )}
                   {item.requirements?.level && (
                     <Badge variant="neutral" size="sm">
-                      Level {item.requirements.level}
+                      Lv. {item.requirements.level}
                     </Badge>
                   )}
-                  {itemIsTradeable ? (
-                    <Badge variant="success" size="sm">
-                      Tradeable
-                    </Badge>
-                  ) : (
-                    <Badge variant="neutral" size="sm">
-                      Untradable
-                    </Badge>
-                  )}
+                  <Badge variant={itemIsTradeable ? 'success' : 'neutral'} size="sm">
+                    {itemIsTradeable ? 'Tradeable' : 'Untradable'}
+                  </Badge>
                 </div>
               </div>
 
@@ -761,16 +770,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     variant={addedToQueue ? 'secondary' : 'primary'}
                     size="sm"
                     onClick={handleAddToQueue}
+                    icon={<Icon name={addedToQueue ? 'check' : 'plus'} size="sm" aria-hidden="true" />}
                   >
-                    {addedToQueue ? (
-                      <>
-                        <Check size={14} /> Added
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={14} /> Queue Craft
-                      </>
-                    )}
+                    {addedToQueue ? 'Added' : 'Queue Craft'}
                   </Button>
                 </div>
               )}
@@ -781,7 +783,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               <SegmentedControl
                 options={navTabOptions}
                 value={activeTab}
-                onChange={(val) => setActiveTab(val as any)}
+                onChange={(val) => setActiveTab(val as 'overview' | 'market' | 'sources')}
                 ariaLabel="Item sections"
               />
             </div>
@@ -795,15 +797,15 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   </div>
                 )}
 
-                {/* 1. Equipment: Combat Attributes & Interactive Tier Simulator */}
                 {item.stats && Object.keys(item.stats).length > 0 && (
-                  <div>
+                  <section className={`${styles.sectionBlock} ${!item.description ? styles.sectionBlockFirst : ''}`}>
                     <h3 className={styles.sectionTitle}>
-                      <Shield size={14} color="#38bdf8" /> Combat Attributes
+                      <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Combat Attributes</span>
                     </h3>
-                    <div className={styles.statsGrid}>
+                    <div className={styles.attributesGrid}>
                       {Object.entries(item.stats).map(([stat, val]) => (
-                        <div key={stat} className={styles.statCard}>
+                        <div key={stat} className={styles.attributeTile}>
                           <span className={styles.statLabel}>
                             {stat.replace(/_/g, ' ')}
                           </span>
@@ -813,107 +815,107 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* Interactive Tier Simulator for Equipment with max_tier */}
                 {isUpgradeableEquipment && (
-                  <div className={styles.tierSimulator}>
-                    <div className={styles.tierHeader}>
-                      <h3 className={styles.sectionTitle} style={{ margin: 0 }}>
-                        <Sliders size={14} color="#38bdf8" /> Tier Upgrade
-                      </h3>
-                      <span className={styles.tierPill}>
-                        Tier +{selectedTier} of {item.max_tier}
-                      </span>
+                  <section className={styles.sectionBlock}>
+                    <div className={styles.tierPanel}>
+                      <div className={styles.tierHeader}>
+                        <h3 className={styles.sectionTitle}>
+                          <Icon name="filter" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                          <span>Tier Upgrade</span>
+                        </h3>
+                        <Badge variant="refined" size="sm">
+                          Tier +{selectedTier} of {item.max_tier}
+                        </Badge>
+                      </div>
+
+                      <Slider
+                        value={selectedTier}
+                        onChange={(val) => setSelectedTier(Number(val))}
+                        min={0}
+                        max={Number(item.max_tier)}
+                        step={1}
+                        valueFormat={(v) => `+${v}`}
+                        aria-label="Tier upgrade level slider"
+                      />
+
+                      <div className={styles.attributesGrid}>
+                        {item.stats &&
+                          Object.entries(item.stats).map(([stat, val]) => {
+                            const base = Number(val) || 0;
+                            const modifier = Number(item.tier_modifiers?.[stat] || 0);
+                            const upgraded = base + selectedTier * modifier;
+                            const diff = upgraded - base;
+
+                            return (
+                              <div key={stat} className={styles.attributeTile}>
+                                <span className={styles.statLabel}>
+                                  {stat.replace(/_/g, ' ')}
+                                </span>
+                                {modifier === 0 || selectedTier === 0 ? (
+                                  <div className={styles.tierStatNumbers}>
+                                    <span className={styles.tierUpgradedVal}>{base}</span>
+                                  </div>
+                                ) : (
+                                  <div className={styles.tierStatNumbers}>
+                                    <span className={styles.tierBaseVal}>{base}</span>
+                                    <Icon name="arrowRight" size="xs" className={styles.sectionIcon} aria-hidden="true" />
+                                    <span className={styles.tierUpgradedVal}>{upgraded}</span>
+                                    {diff > 0 && (
+                                      <span className={styles.tierDiff}>+{diff}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+
+                      {Array.isArray(item.upgrade_requirements) &&
+                        item.upgrade_requirements.length > 0 && (
+                          <div className={styles.tierMatsRequired}>
+                            <strong>Upgrade Cost:</strong>
+                            {selectedTier === 0 ? (
+                              <span>Base tier (no stones required).</span>
+                            ) : (
+                              item.upgrade_requirements.map((req: any, idx: number) => (
+                                <Badge key={idx} variant="neutral" size="sm">
+                                  {req.quantity * selectedTier}x {req.item_name}
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                        )}
                     </div>
-
-                    <input
-                      type="range"
-                      min={0}
-                      max={Number(item.max_tier)}
-                      value={selectedTier}
-                      onChange={(e) => setSelectedTier(Number(e.target.value))}
-                      className={styles.tierSlider}
-                      aria-label="Tier upgrade level slider"
-                    />
-
-                    {/* Dynamic Stat Scaling */}
-                    <div className={styles.tierStatsComparison}>
-                      {item.stats &&
-                        Object.entries(item.stats).map(([stat, val]) => {
-                          const base = Number(val) || 0;
-                          const modifier = Number(item.tier_modifiers?.[stat] || 0);
-                          const upgraded = base + selectedTier * modifier;
-                          const diff = upgraded - base;
-
-                          return (
-                            <div key={stat} className={styles.tierStatItem}>
-                              <span className={styles.tierStatLabel}>
-                                {stat.replace(/_/g, ' ')}
-                              </span>
-                              {modifier === 0 || selectedTier === 0 ? (
-                                <div className={styles.tierStatNumbers}>
-                                  <span className={styles.tierUpgradedVal}>{base}</span>
-                                </div>
-                              ) : (
-                                <div className={styles.tierStatNumbers}>
-                                  <span className={styles.tierBaseVal}>{base}</span>
-                                  <ArrowRight size={12} color="var(--text-muted)" />
-                                  <span className={styles.tierUpgradedVal}>{upgraded}</span>
-                                  {diff > 0 && (
-                                    <span className={styles.tierDiff}>+{diff}</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-
-                    {/* Materials Needed for Upgrading */}
-                    {Array.isArray(item.upgrade_requirements) &&
-                      item.upgrade_requirements.length > 0 && (
-                        <div className={styles.tierMatsRequired}>
-                          <span style={{ fontWeight: 600 }}>Upgrade Cost:</span>
-                          {selectedTier === 0 ? (
-                            <span>Base tier (no stones required).</span>
-                          ) : (
-                            item.upgrade_requirements.map((req: any, idx: number) => (
-                              <Badge key={idx} variant="neutral" size="sm">
-                                {req.quantity * selectedTier}x {req.item_name}
-                              </Badge>
-                            ))
-                          )}
-                        </div>
-                      )}
-                  </div>
+                  </section>
                 )}
 
-                {/* 2. Consumable Restoration & Active Buffs */}
                 {(Number(item.health_restore) > 0 ||
                   Number(item.hunger_restore) > 0 ||
                   (Array.isArray(item.effects) && item.effects.length > 0)) && (
-                  <div>
+                  <section className={styles.sectionBlock}>
                     <h3 className={styles.sectionTitle}>
-                      <Utensils size={14} color="#4ade80" /> Item Effects
+                      <Icon name="food" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Item Effects</span>
                     </h3>
-                    <div className={styles.consumableEffects}>
+                    <div className={styles.effectsGrid}>
                       {Number(item.health_restore) > 0 && (
-                        <div className={styles.effectCard}>
-                          <span className={styles.effectTitle} style={{ color: '#f87171' }}>
-                            <Heart size={14} style={{ display: 'inline', marginRight: 4 }} />
-                            +{item.health_restore} Health
+                        <div className={styles.effectTile}>
+                          <span className={`${styles.effectTitle} ${styles.effectTitleHealth}`}>
+                            <Icon name="health" size="sm" aria-hidden="true" />
+                            <span>+{item.health_restore} Health</span>
                           </span>
                           <span className={styles.effectMeta}>Instant health recovery</span>
                         </div>
                       )}
 
                       {Number(item.hunger_restore) > 0 && (
-                        <div className={styles.effectCard}>
-                          <span className={styles.effectTitle} style={{ color: '#f5b041' }}>
-                            <Utensils size={14} style={{ display: 'inline', marginRight: 4 }} />
-                            +{item.hunger_restore} Hunger
+                        <div className={styles.effectTile}>
+                          <span className={`${styles.effectTitle} ${styles.effectTitleHunger}`}>
+                            <Icon name="food" size="sm" aria-hidden="true" />
+                            <span>+{item.hunger_restore} Hunger</span>
                           </span>
                           <span className={styles.effectMeta}>Restores hunger</span>
                         </div>
@@ -923,7 +925,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         item.effects.map((eff: any, idx: number) => {
                           const durationMin = eff.length ? Math.round(eff.length / 60000) : null;
                           return (
-                            <div key={idx} className={styles.effectCard}>
+                            <div key={idx} className={styles.effectTile}>
                               <span className={styles.effectTitle}>
                                 {formatEffectTitle(eff)}
                               </span>
@@ -934,69 +936,91 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           );
                         })}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 3. Chest Drops / Container Loot Table */}
                 {Array.isArray(item.chest_drops) && item.chest_drops.length > 0 && (
-                  <div>
-                    <h3 className={styles.sectionTitle}>
-                      <Package size={14} color="#f5b041" /> Container Drops ({item.chest_drops.length})
-                    </h3>
-                    <div className={styles.lootGrid}>
-                      {item.chest_drops.map((drop: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className={styles.lootRow}
-                          onClick={() => drop.item_name && openItemByName(drop.item_name)}
-                          title={`Click to inspect ${drop.item_name}`}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span className={styles.lootName}>{drop.item_name}</span>
-                            {drop.quantity > 1 && (
-                              <Badge variant="neutral" size="sm">
-                                x{drop.quantity}
-                              </Badge>
-                            )}
-                          </div>
-                          <span className={styles.lootChance}>
-                            {drop.chance !== undefined ? `${drop.chance}%` : 'Unknown'}
-                          </span>
-                        </div>
-                      ))}
+                  <section className={styles.sectionBlock}>
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>
+                        <Icon name="items" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                        <span>Container Drops</span>
+                      </h3>
+                      <span className={styles.countMeta}>{item.chest_drops.length}</span>
                     </div>
-                  </div>
+                    <div className={styles.actionList}>
+                      {item.chest_drops.map((drop: any, idx: number) => {
+                        const dropImg = resolveItemImage(drop.item_name, allItemsDb);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={styles.actionRowBtn}
+                            onClick={() => drop.item_name && openItemByName(drop.item_name)}
+                          >
+                            <span className={styles.rowLeading}>
+                              <span className={styles.rowThumb}>
+                                <GameImage
+                                  src={dropImg}
+                                  alt={drop.item_name || 'Drop'}
+                                  width={26}
+                                  height={26}
+                                  fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                                />
+                              </span>
+                              <span className={styles.rowCopy}>
+                                <span className={styles.rowName}>{drop.item_name}</span>
+                                {drop.quantity > 1 && (
+                                  <span className={styles.rowMeta}>Quantity x{drop.quantity}</span>
+                                )}
+                              </span>
+                            </span>
+                            <span className={`${styles.rowTrailingTag} ${styles.rowTrailingGood}`}>
+                              {drop.chance !== undefined ? `${drop.chance}%` : 'Unknown'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
                 )}
 
-                {/* 4. Recipe Information (if this item is a recipe) */}
                 {item.type === 'RECIPE' && item.recipe_yield && (
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Produces</span>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginTop: 4,
-                        cursor: 'pointer',
-                      }}
+                  <section className={styles.sectionBlock}>
+                    <h3 className={styles.sectionTitle}>
+                      <Icon name="produced" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Produces</span>
+                    </h3>
+                    <button
+                      type="button"
+                      className={styles.actionRowBtn}
                       onClick={() => openItemByName(item.recipe_yield.item_name)}
                     >
-                      <strong style={{ fontSize: '1rem', color: '#38bdf8' }}>
-                        {item.recipe_yield.item_name}
-                      </strong>
-                      <Badge variant="neutral" size="sm">
-                        Inspect Product <ArrowRight size={12} style={{ display: 'inline', marginLeft: 4 }} />
-                      </Badge>
-                    </div>
-                  </div>
+                      <span className={styles.rowLeading}>
+                        <span className={styles.rowThumb}>
+                          <GameImage
+                            src={resolveItemImage(item.recipe_yield.item_name, allItemsDb)}
+                            alt={item.recipe_yield.item_name}
+                            width={26}
+                            height={26}
+                            fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                          />
+                        </span>
+                        <span className={styles.rowName}>{item.recipe_yield.item_name}</span>
+                      </span>
+                      <span className={styles.rowTrailingTag}>
+                        <span>Inspect Product</span>
+                        <Icon name="arrowRight" size="xs" aria-hidden="true" />
+                      </span>
+                    </button>
+                  </section>
                 )}
 
-                {/* Lore Wiki */}
                 {loreLinks.length > 0 && (
-                  <div>
+                  <section className={styles.sectionBlock}>
                     <h3 className={styles.sectionTitle}>
-                      <BookOpen size={14} color="#38bdf8" /> Lore Wiki
+                      <Icon name="lore" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Lore Wiki</span>
                     </h3>
                     <div className={styles.loreGrid}>
                       {loreLinks.map((link, idx) => {
@@ -1011,78 +1035,84 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           rawLink.reason ||
                           'Connected lore record.';
                         return (
-                          <div
+                          <button
                             key={idx}
-                            className={styles.loreCard}
+                            type="button"
+                            className={styles.loreCardBtn}
                             onClick={() => entryId && router.push(`/lore?entry=${entryId}`)}
-                            title={`Read ${formattedTitle} in Lore Wiki`}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%' }}>
+                            <div className={styles.loreCardHead}>
                               <span className={styles.loreHeader}>{formattedTitle}</span>
-                              <span style={{ fontSize: '0.6875rem', color: 'var(--text-accent)', display: 'inline-flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                                Read Wiki <ArrowRight size={11} />
+                              <span className={styles.loreActionHint}>
+                                <span>Read Wiki</span>
+                                <Icon name="arrowRight" size="xs" aria-hidden="true" />
                               </span>
                             </div>
                             <span className={styles.loreSnippet}>{String(summary)}</span>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 )}
               </div>
             )}
 
-            {/* Tab 2: Market & Valuation (Complete Engine) */}
+            {/* Tab 2: Market & Valuation */}
             {activeTab === 'market' && (
               <div className={styles.tabContent}>
-                {/* 1. Price Trend Chart with 30-Day Moving Trajectory */}
-                {priceTrendData ? (
-                  <div className={styles.chartCard}>
-                    <div className={styles.chartHeader}>
-                      <span className={styles.chartTitle}>
-                        <Activity size={14} color="#38bdf8" /> 30-Day Price Trend
-                      </span>
-                      <span
-                        className={`${styles.chartTrendBadge} ${
+                {priceTrendData && (
+                  <section className={styles.chartPanel} aria-label="30-Day Price Trend">
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>
+                        <Icon name="skillProfit" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                        <span>30-Day Price Trend</span>
+                      </h3>
+                      <Badge
+                        variant={
                           priceTrendData.trendPct > 0.5
-                            ? styles.chartTrendUp
+                            ? 'success'
                             : priceTrendData.trendPct < -0.5
-                            ? styles.chartTrendDown
-                            : styles.chartTrendNeutral
-                        }`}
+                            ? 'danger'
+                            : 'neutral'
+                        }
+                        size="sm"
+                        icon={
+                          <Icon
+                            name={
+                              priceTrendData.trendPct > 0.5
+                                ? 'skillProfit'
+                                : priceTrendData.trendPct < -0.5
+                                ? 'trendDown'
+                                : 'minus'
+                            }
+                            size="xs"
+                          />
+                        }
                       >
-                        {priceTrendData.trendPct > 0.5 ? (
-                          <TrendingUp size={12} />
-                        ) : priceTrendData.trendPct < -0.5 ? (
-                          <TrendingDown size={12} />
-                        ) : (
-                          <Minus size={12} />
-                        )}
-                        <span>
-                          {priceTrendData.trendPct > 0 ? '+' : ''}
-                          {priceTrendData.trendPct.toFixed(1)}% (30d)
-                        </span>
-                      </span>
+                        {priceTrendData.trendPct > 0 ? '+' : ''}
+                        {priceTrendData.trendPct.toFixed(1)}% (30d)
+                      </Badge>
                     </div>
 
                     <div className={styles.chartSvgWrapper}>
                       <svg
                         viewBox={`0 0 ${priceTrendData.svgW} ${priceTrendData.svgH}`}
                         style={{ width: '100%', height: '100%', overflow: 'visible' }}
+                        aria-hidden="true"
                       >
                         <defs>
                           <linearGradient id="modalPriceGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.35" />
-                            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+                            <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.28" />
+                            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.0" />
                           </linearGradient>
                         </defs>
                         <path d={priceTrendData.areaD} fill="url(#modalPriceGradient)" />
                         <path
                           d={priceTrendData.pathD}
                           fill="none"
-                          stroke="#38bdf8"
-                          strokeWidth="2.5"
+                          stroke="#60a5fa"
+                          strokeWidth="2.2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         />
@@ -1102,7 +1132,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               cy={priceTrendData.rawCoord.y}
                               r="4"
                               fill="#f87171"
-                              stroke="#0b101b"
+                              stroke="#0f172a"
                               strokeWidth="2"
                             />
                           </>
@@ -1112,9 +1142,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             key={idx}
                             cx={pt.x}
                             cy={pt.y}
-                            r="4.5"
-                            fill={idx === 3 && priceTrendData.adjusted ? '#4ade80' : '#38bdf8'}
-                            stroke="#0b101b"
+                            r="4"
+                            fill={idx === 3 && priceTrendData.adjusted ? '#4ade80' : '#60a5fa'}
+                            stroke="#0f172a"
                             strokeWidth="2"
                           />
                         ))}
@@ -1124,38 +1154,48 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     <div className={styles.chartGridPills}>
                       <div className={styles.chartPillItem}>
                         <span className={styles.chartPillLabel}>30d Avg</span>
-                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p30)}</span>
+                        <span className={styles.chartPillVal}>
+                          {priceTrendData.p30 > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(priceTrendData.p30)}</span>
+                        </span>
                       </div>
                       <div className={styles.chartPillItem}>
                         <span className={styles.chartPillLabel}>14d Avg</span>
-                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p14)}</span>
+                        <span className={styles.chartPillVal}>
+                          {priceTrendData.p14 > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(priceTrendData.p14)}</span>
+                        </span>
                       </div>
                       <div className={styles.chartPillItem}>
                         <span className={styles.chartPillLabel}>7d Avg</span>
-                        <span className={styles.chartPillVal}>{formatGold(priceTrendData.p7)}</span>
+                        <span className={styles.chartPillVal}>
+                          {priceTrendData.p7 > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(priceTrendData.p7)}</span>
+                        </span>
                       </div>
                       <div className={styles.chartPillItem}>
                         <span className={styles.chartPillLabel}>Safe Price</span>
-                        <span className={styles.chartPillVal} style={{ color: '#38bdf8' }}>
-                          {formatGold(priceTrendData.pSafe)}
+                        <span className={`${styles.chartPillVal} ${styles.statValueAccent}`}>
+                          {priceTrendData.pSafe > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(priceTrendData.pSafe)}</span>
                         </span>
                       </div>
                     </div>
-                  </div>
-                ) : null}
+                  </section>
+                )}
 
-                {/* 2. Recent 10 Sales Transaction Range */}
                 {(item.latest_sale_min || item.latest_sale_max || item.latest_sale_median) ? (
-                  <div className={styles.spreadContainer}>
-                    <div className={styles.spreadHeader}>
-                      <span className={styles.statLabel}>Recent 10 Sales Range</span>
-                      <span className={styles.spreadRatioBadge}>
+                  <section className={styles.spreadPanel} aria-label="Recent 10 Sales Range">
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>Recent 10 Sales Range</h3>
+                      <Badge variant="neutral" size="sm">
                         {item.latest_sale_spread_ratio
                           ? `${((item.latest_sale_spread_ratio - 1) * 100).toFixed(1)}% spread`
                           : '10 sales tracked'}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className={styles.spreadBarTrack}>
+
+                    <div className={styles.spreadBarTrack} aria-hidden="true">
                       <div className={styles.spreadBarRange} />
                       <div
                         className={styles.spreadDiamondWrapper}
@@ -1176,78 +1216,74 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                         <span className={styles.markerDiamond} />
                       </div>
                     </div>
+
                     <div className={styles.spreadColumns}>
-                      <div className={`${styles.spreadCol} ${styles.spreadColLeft}`}>
+                      <div className={styles.spreadCol}>
                         <span className={styles.spreadColLabel}>Low Sale</span>
-                        <span className={styles.spreadColVal}>{formatGold(item.latest_sale_min || 0)}</span>
+                        <span className={styles.spreadColVal}>
+                          {(item.latest_sale_min || 0) > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(item.latest_sale_min || 0)}</span>
+                        </span>
                       </div>
                       <div className={`${styles.spreadCol} ${styles.spreadColCenter}`}>
                         <span className={styles.spreadColLabel}>Median Sale</span>
-                        <span className={styles.spreadColVal} style={{ color: '#38bdf8' }}>
-                          {formatGold(item.latest_sale_median || 0)}
+                        <span className={`${styles.spreadColVal} ${styles.statValueAccent}`}>
+                          {(item.latest_sale_median || 0) > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(item.latest_sale_median || 0)}</span>
                         </span>
                       </div>
                       <div className={`${styles.spreadCol} ${styles.spreadColRight}`}>
                         <span className={styles.spreadColLabel}>High Sale</span>
-                        <span className={styles.spreadColVal}>{formatGold(item.latest_sale_max || 0)}</span>
+                        <span className={styles.spreadColVal}>
+                          {(item.latest_sale_max || 0) > 0 && <GoldIcon size={11} />}
+                          <span>{formatGold(item.latest_sale_max || 0)}</span>
+                        </span>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 ) : null}
 
-                {/* 3. Volume Depth & Trading Velocity Grid */}
-                <div className={styles.statsGrid}>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>30-Day Volume</span>
-                    <span className={styles.statValue}>
-                      {item.vol_30 ? Number(item.vol_30).toLocaleString() : '—'}
-                    </span>
-                    <span className={styles.statSubtext}>
-                      {item.vol_7 ? `7d Vol: ${Number(item.vol_7).toLocaleString()}` : 'Monthly turnover'}
-                    </span>
-                  </div>
+                <section className={styles.sectionBlock} aria-label="Trading velocity">
+                  <div className={styles.statStrip}>
+                    <div className={styles.statCell}>
+                      <span className={styles.statLabel}>30d Volume</span>
+                      <strong className={styles.statValue}>
+                        {item.vol_30 ? Number(item.vol_30).toLocaleString() : '—'}
+                      </strong>
+                      <span className={styles.statSubtext}>
+                        {item.vol_7 ? `7d Vol: ${Number(item.vol_7).toLocaleString()}` : 'Monthly turnover'}
+                      </span>
+                    </div>
 
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>3-Day Stable Vol</span>
-                    <span className={styles.statValue}>
-                      {item.stable_vol_3 ? Number(item.stable_vol_3).toLocaleString() : '—'}
-                    </span>
-                    <span className={styles.statSubtext}>Outliers filtered</span>
-                  </div>
+                    <div className={styles.statCell}>
+                      <span className={styles.statLabel}>3d Stable Vol</span>
+                      <strong className={styles.statValue}>
+                        {item.stable_vol_3 ? Number(item.stable_vol_3).toLocaleString() : '—'}
+                      </strong>
+                      <span className={styles.statSubtext}>Outliers filtered</span>
+                    </div>
 
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Daily Median</span>
-                    <span className={styles.statValue}>
-                      {item.daily_sales_median_30 ? `${item.daily_sales_median_30}/day` : '—'}
-                    </span>
-                    <span className={styles.statSubtext}>Typical daily trades</span>
-                  </div>
+                    <div className={styles.statCell}>
+                      <span className={styles.statLabel}>Daily Median</span>
+                      <strong className={styles.statValue}>
+                        {item.daily_sales_median_30 ? `${Number(item.daily_sales_median_30).toLocaleString()}/day` : '—'}
+                      </strong>
+                      <span className={styles.statSubtext}>Typical daily trades</span>
+                    </div>
 
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Peak Daily Sales</span>
-                    <span className={styles.statValue}>
-                      {item.daily_sales_max_30 ? `${item.daily_sales_max_30}/day` : '—'}
-                    </span>
-                    <span className={styles.statSubtext}>Highest 1-day volume</span>
+                    <div className={styles.statCell}>
+                      <span className={styles.statLabel}>Peak Daily</span>
+                      <strong className={styles.statValue}>
+                        {item.daily_sales_max_30 ? `${Number(item.daily_sales_max_30).toLocaleString()}/day` : '—'}
+                      </strong>
+                      <span className={styles.statSubtext}>Highest 1-day volume</span>
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                {/* Spike Filter Confirmation */}
                 {item.price_adjusted && (
-                  <div
-                    style={{
-                      background: 'rgba(74, 222, 128, 0.08)',
-                      border: '1px solid rgba(74, 222, 128, 0.25)',
-                      borderRadius: 8,
-                      padding: '10px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: '0.8125rem',
-                      color: '#4ade80',
-                    }}
-                  >
-                    <Check size={16} style={{ flexShrink: 0 }} />
+                  <div className={styles.spikeConfirmedNotice}>
+                    <Icon name="check" size="sm" aria-hidden="true" />
                     <span>
                       Spike protection filtered {item.price_outlier_rows || 'extreme'} outlier listing(s). Raw 3-day average was{' '}
                       {formatGold(item.raw_avg_3 || item.raw_price || 0)}.
@@ -1255,45 +1291,25 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   </div>
                 )}
 
-                {/* Liquidity Alert if Bulk Spikes */}
                 {item.liquidity_warning && (
-                  <div
-                    style={{
-                      background: 'rgba(245, 176, 65, 0.1)',
-                      border: '1px solid rgba(245, 176, 65, 0.3)',
-                      borderRadius: 8,
-                      padding: '10px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: '0.8125rem',
-                      color: '#f5b041',
-                    }}
-                  >
-                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                    <span>{item.liquidity_warning}</span>
-                  </div>
+                  <Banner variant="warning" icon="warning">
+                    {item.liquidity_warning}
+                  </Banner>
                 )}
 
-                {/* 3. Sell Advisor Engine */}
                 {saleInsight && (
-                  <div className={styles.advisorCard}>
-                    <div className={styles.advisorHeader}>
-                      <h3 className={styles.sectionTitle} style={{ margin: 0 }}>
-                        <Coins size={14} color="#f5b041" /> Sell Advice
+                  <section className={styles.sectionBlock} aria-label="Sell Advice">
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>
+                        <Icon name="gold" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                        <span>Sell Advice</span>
                       </h3>
-                      <span
-                        className={`${styles.advisorBadge} ${
-                          saleInsight.recommendMarket
-                            ? styles.advisorMarket
-                            : styles.advisorVendor
-                        }`}
-                      >
+                      <Badge variant={saleInsight.recommendMarket ? 'refined' : 'warning'} size="sm">
                         {saleInsight.recommendMarket ? 'Sell on Market' : 'Sell to Vendor'}
-                      </span>
+                      </Badge>
                     </div>
 
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    <p className={styles.advisorSummary}>
                       {saleInsight.recommendMarket
                         ? `Selling on the player market nets ${formatGold(saleInsight.netMarket)} after ${Math.round(
                             saleInsight.marketTaxRate * 100
@@ -1303,78 +1319,82 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           )} instantly with zero tax and beats market returns.`}
                     </p>
 
-                    <div className={styles.advisorMetrics}>
-                      <div>
+                    <div className={`${styles.statStrip} ${styles.statStripThree}`}>
+                      <div className={styles.statCell}>
                         <span className={styles.statLabel}>Net Market</span>
-                        <strong style={{ fontSize: '0.95rem' }}>
-                          {formatGold(saleInsight.netMarket)}
+                        <strong className={styles.statValue}>
+                          {saleInsight.netMarket > 0 && <GoldIcon size={12} />}
+                          <span>{formatGold(saleInsight.netMarket)}</span>
                         </strong>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        <span className={styles.statSubtext}>
                           After {Math.round(saleInsight.marketTaxRate * 100)}% tax
                         </span>
                       </div>
-                      <div>
+
+                      <div className={styles.statCell}>
                         <span className={styles.statLabel}>Vendor Payout</span>
-                        <strong style={{ fontSize: '0.95rem', color: '#f5b041' }}>
-                          {formatGold(saleInsight.vendorPrice)}
+                        <strong className={`${styles.statValue} ${styles.statValueGold}`}>
+                          {saleInsight.vendorPrice > 0 && <GoldIcon size={12} />}
+                          <span>{formatGold(saleInsight.vendorPrice)}</span>
                         </strong>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        <span className={styles.statSubtext}>
                           Base: {formatGold(saleInsight.vendorBase)}
                         </span>
                       </div>
-                      <div>
+
+                      <div className={styles.statCell}>
                         <span className={styles.statLabel}>Extra Profit</span>
                         <strong
-                          style={{
-                            fontSize: '0.95rem',
-                            color: saleInsight.diff > 0 ? '#38bdf8' : '#f5b041',
-                          }}
+                          className={`${styles.statValue} ${
+                            saleInsight.diff > 0 ? styles.statValueAccent : styles.statValueGold
+                          }`}
                         >
-                          {saleInsight.diff > 0 ? '+' : ''}
-                          {formatGold(Math.abs(saleInsight.diff))}
+                          {Math.abs(saleInsight.diff) > 0 && <GoldIcon size={12} />}
+                          <span>
+                            {saleInsight.diff > 0 ? '+' : ''}
+                            {formatGold(Math.abs(saleInsight.diff))}
+                          </span>
                         </strong>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                          Net advantage
-                        </span>
+                        <span className={styles.statSubtext}>Net advantage</span>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 4. Crafting Profitability (if craftable) */}
                 {recipeEconomics && (
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Crafting Profit</span>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                        gap: 8,
-                        marginTop: 6,
-                      }}
-                    >
-                      <div>
-                        <span className={styles.statSubtext}>Material Cost:</span>
-                        <div style={{ fontWeight: 700 }}>{formatGold(recipeEconomics.totalMatCost)}</div>
+                  <section className={styles.sectionBlock} aria-label="Crafting Profit">
+                    <h3 className={styles.sectionTitle}>Crafting Profit</h3>
+                    <div className={`${styles.statStrip} ${styles.statStripThree}`}>
+                      <div className={styles.statCell}>
+                        <span className={styles.statLabel}>Material Cost</span>
+                        <strong className={styles.statValue}>
+                          {recipeEconomics.totalMatCost > 0 && <GoldIcon size={12} />}
+                          <span>{formatGold(recipeEconomics.totalMatCost)}</span>
+                        </strong>
                       </div>
-                      <div>
-                        <span className={styles.statSubtext}>Total Craft Investment:</span>
-                        <div style={{ fontWeight: 700 }}>{formatGold(recipeEconomics.investment)}</div>
+                      <div className={styles.statCell}>
+                        <span className={styles.statLabel}>Total Investment</span>
+                        <strong className={styles.statValue}>
+                          {recipeEconomics.investment > 0 && <GoldIcon size={12} />}
+                          <span>{formatGold(recipeEconomics.investment)}</span>
+                        </strong>
                       </div>
-                      <div>
-                        <span className={styles.statSubtext}>Net Profit / Craft:</span>
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            color: recipeEconomics.isProfitable ? '#4ade80' : '#f87171',
-                          }}
+                      <div className={styles.statCell}>
+                        <span className={styles.statLabel}>Net Profit / Craft</span>
+                        <strong
+                          className={`${styles.statValue} ${
+                            recipeEconomics.isProfitable ? styles.statValueGood : styles.statValueBad
+                          }`}
                         >
-                          {recipeEconomics.profit > 0 ? '+' : ''}
-                          {formatGold(recipeEconomics.profit)}
-                        </div>
+                          {Math.abs(recipeEconomics.profit) > 0 && <GoldIcon size={12} />}
+                          <span>
+                            {recipeEconomics.profit > 0 ? '+' : ''}
+                            {formatGold(recipeEconomics.profit)}
+                          </span>
+                        </strong>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 )}
               </div>
             )}
@@ -1382,224 +1402,232 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
             {/* Tab 3: Sources & Crafting */}
             {activeTab === 'sources' && (
               <div className={styles.tabContent}>
-                {/* 1. Crafting Recipe (Production) */}
                 {recipeData && recipeData.materials && (
-                  <div>
+                  <section className={`${styles.sectionBlock} ${styles.sectionBlockFirst}`}>
                     <h3 className={styles.sectionTitle}>
-                      <Hammer size={14} color="#38bdf8" /> Crafting Recipe
+                      <Icon name="craftTool" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Crafting Recipe</span>
                     </h3>
-                    <div className={styles.sourceList}>
+                    <div className={styles.actionList}>
                       {recipeData.materials.map((m: any, idx: number) => {
                         const mName = m.name || m.item_name;
                         const qty = m.amount || m.quantity || 1;
                         return (
-                          <div
+                          <button
                             key={idx}
-                            className={styles.sourceCard}
+                            type="button"
+                            className={styles.actionRowBtn}
                             onClick={() => openItemByName(mName)}
-                            title={`Inspect ${mName}`}
                           >
-                            <div className={styles.sourceInfo}>
-                              <span className={styles.sourceName}>{mName}</span>
-                              <span className={styles.sourceMeta}>Required Material</span>
-                            </div>
-                            <span className={styles.sourceTag}>{qty}x Required</span>
-                          </div>
+                            <span className={styles.rowLeading}>
+                              <span className={styles.rowThumb}>
+                                <GameImage
+                                  src={resolveItemImage(mName, allItemsDb)}
+                                  alt={mName}
+                                  width={26}
+                                  height={26}
+                                  fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                                />
+                              </span>
+                              <span className={styles.rowCopy}>
+                                <span className={styles.rowName}>{mName}</span>
+                                <span className={styles.rowMeta}>Required Material</span>
+                              </span>
+                            </span>
+                            <span className={styles.rowTrailingTag}>{qty}x Required</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 2. Gathering Locations */}
                 {gatheredLocations.length > 0 && (
-                  <div>
+                  <section className={`${styles.sectionBlock} ${!recipeData ? styles.sectionBlockFirst : ''}`}>
                     <h3 className={styles.sectionTitle}>
-                      <MapPin size={14} color="#38bdf8" /> Gathering Locations
+                      <Icon name="mapPin" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Gathering Locations</span>
                     </h3>
-                    <div className={styles.sourceList}>
+                    <div className={styles.actionList}>
                       {gatheredLocations.map((loc, idx) => {
                         const targetKey = loc.key || normalizeLocationKey(loc.name);
                         return (
-                          <div
+                          <button
                             key={idx}
-                            className={styles.sourceCard}
-                            onClick={() => {
-                              router.push(`/map?location=${encodeURIComponent(targetKey)}`);
-                            }}
-                            title={`View ${loc.name} on World Map`}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                router.push(`/map?location=${encodeURIComponent(targetKey)}`);
-                              }
-                            }}
+                            type="button"
+                            className={styles.actionRowBtn}
+                            onClick={() => router.push(`/map?location=${encodeURIComponent(targetKey)}`)}
                           >
-                            <div className={styles.sourceInfo}>
-                              <span className={styles.sourceName}>{loc.name}</span>
-                              <span className={styles.sourceMeta}>
-                                <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '4px' }} />
-                                View on World Map
+                            <span className={styles.rowCopy}>
+                              <span className={styles.rowName}>{loc.name}</span>
+                              <span className={styles.rowMeta}>
+                                <Icon name="mapPin" size="xs" aria-hidden="true" />
+                                <span>View on World Map</span>
                               </span>
-                            </div>
-                            <span className={styles.sourceTag}>Level {loc.level}</span>
-                          </div>
+                            </span>
+                            <span className={styles.rowTrailingTag}>Lv. {loc.level}</span>
+                          </button>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 3. Dungeon Drops */}
                 {dungeonSources.length > 0 && (
-                  <div>
+                  <section className={styles.sectionBlock}>
                     <h3 className={styles.sectionTitle}>
-                      <Castle size={14} color="#a855f7" /> Dungeon Drops
+                      <Icon name="dungeon" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Dungeon Drops</span>
                     </h3>
-                    <div className={styles.sourceList}>
+                    <div className={styles.actionList}>
                       {dungeonSources.map((src, idx) => (
-                        <div
+                        <button
                           key={idx}
-                          className={styles.sourceCard}
-                          onClick={() => {
-                            router.push(`/dungeons?search=${encodeURIComponent(src.name || '')}`);
-                          }}
-                          title={`View ${src.name} in Dungeons`}
+                          type="button"
+                          className={styles.actionRowBtn}
+                          onClick={() => router.push(`/dungeons?search=${encodeURIComponent(src.name || '')}`)}
                         >
-                          <div className={styles.sourceInfo}>
-                            <span className={styles.sourceName}>{src.name}</span>
-                            <span className={styles.sourceMeta}>
-                              {src.type === 'DUNGEON_CHEST' || src.type === 'CHEST' ? 'Dungeon Chest Drop' : 'Dungeon Encounter Drop'}
+                          <span className={styles.rowCopy}>
+                            <span className={styles.rowName}>{src.name}</span>
+                            <span className={styles.rowMeta}>
+                              <span>
+                                {src.type === 'DUNGEON_CHEST' || src.type === 'CHEST' ? 'Dungeon Chest Drop' : 'Dungeon Encounter Drop'}
+                              </span>
                               {Boolean(src.location) && (
                                 <>
-                                  {' • '}
-                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
-                                  {String(src.location)}
+                                  <span>·</span>
+                                  <Icon name="mapPin" size="xs" aria-hidden="true" />
+                                  <span>{String(src.location)}</span>
                                 </>
                               )}
                             </span>
-                          </div>
-                          <span className={styles.sourceTag}>
+                          </span>
+                          <span className={styles.rowTrailingTag}>
                             {src.chance !== undefined ? `${src.chance}% drop` : 'Drop table'}
                           </span>
-                        </div>
+                        </button>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 4. World Boss Drops */}
                 {bossSources.length > 0 && (
-                  <div>
+                  <section className={styles.sectionBlock}>
                     <h3 className={styles.sectionTitle}>
-                      <Crown size={14} color="#f59e0b" /> World Boss Drops
+                      <Icon name="crown" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>World Boss Drops</span>
                     </h3>
-                    <div className={styles.sourceList}>
+                    <div className={styles.actionList}>
                       {bossSources.map((src, idx) => (
-                        <div
+                        <button
                           key={idx}
-                          className={styles.sourceCard}
-                          onClick={() => {
-                            router.push(`/bosses?search=${encodeURIComponent(src.name || '')}`);
-                          }}
-                          title={`View ${src.name} in Bosses`}
+                          type="button"
+                          className={styles.actionRowBtn}
+                          onClick={() => router.push(`/bosses?search=${encodeURIComponent(src.name || '')}`)}
                         >
-                          <div className={styles.sourceInfo}>
-                            <span className={styles.sourceName}>{src.name}</span>
-                            <span className={styles.sourceMeta}>
-                              World Boss
+                          <span className={styles.rowCopy}>
+                            <span className={styles.rowName}>{src.name}</span>
+                            <span className={styles.rowMeta}>
+                              <span>World Boss</span>
                               {Boolean(src.location) && (
                                 <>
-                                  {' • '}
-                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
-                                  {String(src.location)}
+                                  <span>·</span>
+                                  <Icon name="mapPin" size="xs" aria-hidden="true" />
+                                  <span>{String(src.location)}</span>
                                 </>
                               )}
                             </span>
-                          </div>
-                          <span className={styles.sourceTag}>
+                          </span>
+                          <span className={styles.rowTrailingTag}>
                             {src.chance !== undefined ? `${src.chance}% drop` : 'Drop table'}
                           </span>
-                        </div>
+                        </button>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 5. Monster Drops */}
                 {enemySources.length > 0 && (
-                  <div>
+                  <section className={styles.sectionBlock}>
                     <h3 className={styles.sectionTitle}>
-                      <Swords size={14} color="#ef4444" /> Monster Drops
+                      <Icon name="combat" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                      <span>Monster Drops</span>
                     </h3>
-                    <div className={styles.sourceList}>
+                    <div className={styles.actionList}>
                       {enemySources.map((src, idx) => (
-                        <div
+                        <button
                           key={idx}
-                          className={styles.sourceCard}
-                          onClick={() => {
-                            router.push(`/enemies?search=${encodeURIComponent(src.name || '')}`);
-                          }}
-                          title={`View ${src.name} in Enemies`}
+                          type="button"
+                          className={styles.actionRowBtn}
+                          onClick={() => router.push(`/enemies?search=${encodeURIComponent(src.name || '')}`)}
                         >
-                          <div className={styles.sourceInfo}>
-                            <span className={styles.sourceName}>{src.name}</span>
-                            <span className={styles.sourceMeta}>
-                              {formatSourceType(src.type)}
+                          <span className={styles.rowCopy}>
+                            <span className={styles.rowName}>{src.name}</span>
+                            <span className={styles.rowMeta}>
+                              <span>{formatSourceType(src.type)}</span>
                               {Boolean(src.location) && (
                                 <>
-                                  {' • '}
-                                  <MapPin size={11} style={{ display: 'inline', verticalAlign: '-1px' }} />
-                                  {String(src.location)}
+                                  <span>·</span>
+                                  <Icon name="mapPin" size="xs" aria-hidden="true" />
+                                  <span>{String(src.location)}</span>
                                 </>
                               )}
                             </span>
-                          </div>
-                          <span className={styles.sourceTag}>
+                          </span>
+                          <span className={styles.rowTrailingTag}>
                             {src.chance !== undefined ? `${src.chance}% drop` : 'Drop pool'}
                           </span>
-                        </div>
+                        </button>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 )}
 
-                {/* 6. Used in Crafting Recipes (Reverse Recipe Usage) */}
                 {reverseRecipes.length > 0 && (
-                  <div>
-                    <h3 className={styles.sectionTitle}>
-                      <Hammer size={14} color="#4ade80" /> Used in Recipes ({reverseRecipes.length})
-                    </h3>
-                    <div className={styles.sourceList}>
+                  <section className={styles.sectionBlock}>
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>
+                        <Icon name="craftTool" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                        <span>Used in Recipes</span>
+                      </h3>
+                      <span className={styles.countMeta}>{reverseRecipes.length}</span>
+                    </div>
+                    <div className={styles.actionGrid}>
                       {reverseRecipes.map((rec, idx) => (
-                        <div
+                        <button
                           key={idx}
-                          className={styles.sourceCard}
+                          type="button"
+                          className={styles.actionRowBtn}
                           onClick={() => openItemByName(rec.name)}
-                          title={`Inspect ${rec.name}`}
                         >
-                          <div className={styles.sourceInfo}>
-                            <span className={styles.sourceName}>{rec.name}</span>
-                          </div>
-                          <span className={styles.sourceTag}>{rec.amount}x required</span>
-                        </div>
+                          <span className={styles.rowLeading}>
+                            <span className={styles.rowThumb}>
+                              <GameImage
+                                src={resolveItemImage(rec.name, allItemsDb)}
+                                alt={rec.name}
+                                width={26}
+                                height={26}
+                                fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                              />
+                            </span>
+                            <span className={styles.rowName}>{rec.name}</span>
+                          </span>
+                          <span className={styles.rowTrailingTag}>{rec.amount}x</span>
+                        </button>
                       ))}
                     </div>
-                  </div>
+                  </section>
                 )}
 
                 {gatheredLocations.length === 0 &&
                   acquisitionSources.length === 0 &&
                   !recipeData &&
                   reverseRecipes.length === 0 && (
-                    <div className={styles.stateContainer}>
-                      <Package size={24} color="var(--text-muted)" />
-                      <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-                        No drop sources or gathering locations recorded for this item.
-                      </p>
-                    </div>
+                    <EmptyState
+                      variant="no-data"
+                      title="No recorded sources"
+                      description="No drop tables, gathering locations, or recipes are listed for this item."
+                    />
                   )}
               </div>
             )}

@@ -20,6 +20,8 @@ interface EnemyModalProps {
   marketData?: Record<string, any> | null;
   onClose: () => void;
   onOpenItem: (name: string) => void;
+  /** "map" links footer to /enemies; "enemies" links footer to /map */
+  context?: "map" | "enemies";
 }
 
 function getToneVariant(kind: WeatherPreferenceKind): "success" | "danger" | "neutral" {
@@ -28,7 +30,16 @@ function getToneVariant(kind: WeatherPreferenceKind): "success" | "danger" | "ne
   return "neutral";
 }
 
+function getPrefToneClass(kind: WeatherPreferenceKind): string {
+  if (isFavorableWeather(kind)) return styles.prefGood;
+  if (isPenalizedWeather(kind)) return styles.prefBad;
+  return styles.prefNeutral;
+}
+
 function formatFavorableWindow(enemy: EnrichedEnemy): string {
+  if (isFavorableWeather(enemy.currentWeatherMatch)) {
+    return `${enemy.currentWeather?.name || "Favorable"} active now`;
+  }
   const win = enemy.nextFavorableWeather;
   if (!win) return "None scheduled";
   const start = win.starts_at ? new Date(win.starts_at) : null;
@@ -49,6 +60,7 @@ export function EnemyModal({
   marketData,
   onClose,
   onOpenItem,
+  context = "map",
 }: EnemyModalProps) {
   if (!enemy) return null;
 
@@ -63,50 +75,70 @@ export function EnemyModal({
       ]
     : [];
   const prefGroups = rawGroups.filter((g) => g.values.length > 0);
+  const hasEv = Number.isFinite(enemy.lootEv) && enemy.lootEv > 0;
 
   return (
     <ModalSheet
       isOpen={true}
       onClose={onClose}
       title={enemy.name}
-      description={`${enemy.locationName} • Level ${enemy.level}`}
+      description={`${enemy.locationName} · Level ${enemy.level}`}
       maxWidth="lg"
       footer={
         <div className={styles.footerRow}>
-          <Link
-            href={`/enemies?enemy=${encodeURIComponent(enemy.name)}`}
-            className={styles.footerLink}
-            onClick={onClose}
-          >
-            <Icon name="combat" size="sm" aria-hidden="true" />
-            <span>Open in Enemy Database</span>
-            <Icon name="externalLink" size="xs" aria-hidden="true" />
-          </Link>
+          {context === "enemies" ? (
+            <Link
+              href={`/map?location=${encodeURIComponent(enemy.locationKey)}`}
+              className={styles.footerLink}
+              onClick={onClose}
+            >
+              <Icon name="mapPin" size="sm" aria-hidden="true" />
+              <span>View {enemy.locationName} on Map</span>
+            </Link>
+          ) : (
+            <Link
+              href={`/enemies?enemy=${encodeURIComponent(enemy.name)}`}
+              className={styles.footerLink}
+              onClick={onClose}
+            >
+              <Icon name="combat" size="sm" aria-hidden="true" />
+              <span>Open in Enemy Database</span>
+              <Icon name="externalLink" size="xs" aria-hidden="true" />
+            </Link>
+          )}
         </div>
       }
     >
       <div className={styles.content}>
-        {/* Identity Header */}
+        {/* Identity Bar (No duplicate enemy title heading below ModalSheet header) */}
         <div className={styles.hero}>
           <div className={styles.avatar}>
             <GameImage
               src={enemy.imageUrl}
               alt={enemy.name}
-              width={56}
-              height={56}
+              width={52}
+              height={52}
               className={styles.avatarImg}
               fallback={<Icon name="boss" size="xl" aria-hidden="true" />}
             />
           </div>
           <div className={styles.identity}>
-            <div className={styles.titleRow}>
-              <h3 className={styles.enemyName}>{enemy.name}</h3>
+            <div className={styles.badgeCluster}>
               <Badge variant="neutral" size="sm">Lv. {enemy.level}</Badge>
+              <Badge variant={getToneVariant(enemy.currentWeatherMatch)} size="sm">
+                {enemy.currentWeather?.name || "Weather"}: {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
+              </Badge>
             </div>
             <div className={styles.metaRow}>
-              <span>{enemy.locationName}</span>
+              <span className={styles.metaItem}>
+                <Icon name="mapPin" size="xs" aria-hidden="true" />
+                <span>{enemy.locationName}</span>
+              </span>
               <span className={styles.vDivider} aria-hidden="true" />
-              <span>{enemy.chanceOfLoot}% drop roll</span>
+              <span className={styles.metaItem}>
+                <Icon name="items" size="xs" aria-hidden="true" />
+                <span>{enemy.chanceOfLoot}% drop roll</span>
+              </span>
             </div>
           </div>
         </div>
@@ -114,30 +146,42 @@ export function EnemyModal({
         {/* Combat Stat Strip */}
         <div className={styles.statStrip} aria-label={`${enemy.name} combat stats`}>
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>Level</span>
+            <span className={styles.statLabel}>
+              <Icon name="defense" size="xs" aria-hidden="true" />
+              <span>Level</span>
+            </span>
             <strong className={styles.statValue}>{enemy.level}</strong>
           </div>
-          <span className={styles.vDividerTall} aria-hidden="true" />
+
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>Health</span>
+            <span className={styles.statLabel}>
+              <Icon name="health" size="xs" aria-hidden="true" />
+              <span>Health</span>
+            </span>
             <strong className={styles.statValue}>{enemy.health.toLocaleString()} HP</strong>
           </div>
-          <span className={styles.vDividerTall} aria-hidden="true" />
+
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>Combat EXP</span>
+            <span className={styles.statLabel}>
+              <Icon name="xp" size="xs" aria-hidden="true" />
+              <span>Combat EXP</span>
+            </span>
             <strong className={styles.statValue}>{enemy.experience.toLocaleString()} XP</strong>
           </div>
-          <span className={styles.vDividerTall} aria-hidden="true" />
+
           <div className={styles.statCell}>
-            <span className={styles.statLabel}>Loot EV / Kill</span>
-            <strong className={styles.statGold}>
-              {enemy.lootEv > 0 ? (
+            <span className={styles.statLabel}>
+              <Icon name="gold" size="xs" aria-hidden="true" />
+              <span>Loot EV / Kill</span>
+            </span>
+            <strong className={hasEv ? styles.statGold : styles.statValue}>
+              {hasEv ? (
                 <>
                   <GoldIcon size={13} />
                   <span>{Math.round(enemy.lootEv).toLocaleString()}g</span>
                 </>
               ) : (
-                "-"
+                "—"
               )}
             </strong>
           </div>
@@ -148,27 +192,25 @@ export function EnemyModal({
         {/* Weather Synergy */}
         <section className={styles.section} aria-label="Weather synergy">
           <div className={styles.sectionHead}>
-            <span className={styles.sectionTitle}>
-              <Icon name="weather" size="sm" aria-hidden="true" />
+            <h3 className={styles.sectionTitle}>
+              <Icon name="weatherOvercast" size="sm" aria-hidden="true" />
               <span>Weather Synergy</span>
-            </span>
+            </h3>
             <Badge variant={getToneVariant(enemy.currentWeatherMatch)} size="sm">
               {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
             </Badge>
           </div>
           <p className={styles.summaryCopy}>
-            Current weather: <strong>{enemy.currentWeather?.name || "Unknown"}</strong> · Next favorable:{" "}
+            Current weather: <strong>{enemy.currentWeather?.name || "Unknown"}</strong> · Favorable window:{" "}
             <strong>{formatFavorableWindow(enemy)}</strong>
           </p>
           {prefGroups.length > 0 && (
-            <div className={styles.prefGrid}>
+            <div className={styles.prefChips}>
               {prefGroups.map((group) => (
-                <div key={group.kind} className={styles.prefRow}>
-                  <Badge variant={getToneVariant(group.kind)} size="sm">
-                    {getWeatherPreferenceLabel(group.kind)}
-                  </Badge>
-                  <span className={styles.prefValues}>{group.values.join(", ")}</span>
-                </div>
+                <span key={group.kind} className={`${styles.prefChip} ${getPrefToneClass(group.kind)}`}>
+                  <strong>{getWeatherPreferenceLabel(group.kind)}</strong>
+                  <span>{group.values.join(", ")}</span>
+                </span>
               ))}
             </div>
           )}
@@ -179,10 +221,10 @@ export function EnemyModal({
         {/* Loot Drop Table */}
         <section className={styles.section} aria-label="Loot drop table">
           <div className={styles.sectionHead}>
-            <span className={styles.sectionTitle}>
+            <h3 className={styles.sectionTitle}>
               <Icon name="items" size="sm" aria-hidden="true" />
               <span>Loot Drop Table</span>
-            </span>
+            </h3>
             <span className={styles.countMeta}>
               {enemy.loot.length} {enemy.loot.length === 1 ? "item" : "items"}
             </span>
@@ -216,7 +258,7 @@ export function EnemyModal({
                     <div className={styles.lootInfo}>
                       <span className={styles.lootName}>{drop.name}</span>
                       <span className={styles.lootMeta}>
-                        <span>{drop.chance}%</span>
+                        <span className={styles.lootChance}>{drop.chance}%</span>
                         {qty > 1 && <span>x{qty}</span>}
                         {marketVal > 0 && (
                           <span className={styles.lootGold}>
