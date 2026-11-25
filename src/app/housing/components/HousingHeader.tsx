@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { GoldIcon } from "@/components/GoldIcon";
 import { Icon } from "@/components/ui/Icon";
+import { normalizeLocationKey } from "@/lib/locations";
 import { HOUSING_TABS } from "../types";
 import type { HousingState } from "../hooks/useHousingState";
 
@@ -44,10 +46,20 @@ export function HousingHeader({ state }: { state: HousingState }) {
             <Icon name="housing" size="xs" aria-hidden="true" />
             <span>{housingModeLabel}</span>
           </span>
-          <span className={summary.availableAnywhere ? "good" : ""}>
-            <Icon name="map" size="xs" aria-hidden="true" />
-            <span>{housingScopeLabel}</span>
-          </span>
+          {summary.location ? (
+            <Link
+              href={`/map?location=${encodeURIComponent(normalizeLocationKey(summary.location))}`}
+              className={`housing-hero-chip-link ${summary.availableAnywhere ? "good" : ""}`.trim()}
+            >
+              <Icon name="map" size="xs" aria-hidden="true" />
+              <span>{housingScopeLabel}</span>
+            </Link>
+          ) : (
+            <span className={summary.availableAnywhere ? "good" : ""}>
+              <Icon name="map" size="xs" aria-hidden="true" />
+              <span>{housingScopeLabel}</span>
+            </span>
+          )}
           <span>
             <Icon name="timer" size="xs" aria-hidden="true" />
             <span>{strongestBonusLabel}</span>

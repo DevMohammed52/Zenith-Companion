@@ -1,20 +1,6 @@
-import React, { type ReactNode } from "react";
-import {
-  Castle,
-  Cloud,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  Flame,
-  Landmark,
-  MapPin,
-  Skull,
-  Sparkles,
-  Sun,
-  Swords,
-  Wind,
-} from "lucide-react";
+import React from "react";
+import { Icon } from "@/components/ui/Icon";
+import type { IconConcept } from "@/lib/icons";
 import { getSafeMarketValue } from "@/lib/market-pricing";
 import {
   getGatheredResourcesForLocation,
@@ -29,6 +15,14 @@ import {
 } from "@/lib/world-intelligence";
 
 export type PoiKind = "shrine" | "bank" | "dungeons" | "bosses" | "enemies";
+export type MapTab = "overview" | "resources" | "drops" | "weather";
+
+export const MAP_TABS: Array<{ id: MapTab; label: string }> = [
+  { id: "overview", label: "Overview & Sources" },
+  { id: "resources", label: "Resources" },
+  { id: "drops", label: "Loot Drops" },
+  { id: "weather", label: "Weather Forecast" },
+];
 
 export type ForecastWeather = {
   key?: string;
@@ -65,6 +59,15 @@ export type GatheredResource = GatheredResourceSource & {
 export type DropSourceEntity = {
   entity: any;
   type: "Enemy" | "Dungeon" | "World Boss";
+};
+
+export type MapConquestSummary = {
+  zoneKey: string;
+  leadingGuildName: string;
+  leadingGuildTag: string | null;
+  leadingSharePct: number;
+  isAssailed: boolean;
+  assaultEndsAt: string | null;
 };
 
 export type MapLocation = WorldLocation & {
@@ -115,27 +118,34 @@ export const WORLD_MAP_IMAGE_URL = "https://cdn.idle-mmo.com/global/world-map.pn
 export const MAP_WIDTH = 1000;
 export const MAP_HEIGHT = 1000;
 
+const WEATHER_ICON_CONCEPTS: Record<string, IconConcept> = {
+  CLEAR: "weatherClear",
+  FOG: "weatherFog",
+  HEATWAVE: "weatherHeatwave",
+  MAGIC_STORM: "weatherMagicStorm",
+  OVERCAST: "weatherOvercast",
+  RAIN: "weatherRain",
+  SNOW: "weatherSnow",
+  STORM: "weatherStorm",
+  WINDY: "weatherWindy",
+};
+
 export function weatherIcon(key?: string, size = 16) {
-  switch (String(key || "").toUpperCase()) {
-    case "CLEAR":
-      return <Sun size={size} />;
-    case "FOG":
-      return <CloudFog size={size} />;
-    case "HEATWAVE":
-      return <Flame size={size} />;
-    case "MAGIC_STORM":
-      return <Sparkles size={size} />;
-    case "RAIN":
-      return <CloudRain size={size} />;
-    case "SNOW":
-      return <CloudSnow size={size} />;
-    case "STORM":
-      return <CloudLightning size={size} />;
-    case "WINDY":
-      return <Wind size={size} />;
-    default:
-      return <Cloud size={size} />;
+  const normalized = String(key || "").toUpperCase();
+  const concept = WEATHER_ICON_CONCEPTS[normalized] || "weatherOvercast";
+  return <Icon name={concept} size={size} aria-hidden="true" />;
+}
+
+export function getWeatherRouteHref(key?: string, name?: string) {
+  const raw = String(key || name || "").trim().toLowerCase().replace(/[\s_]+/g, "-");
+  return raw ? `/weather?weather=${encodeURIComponent(raw)}` : "/weather";
+}
+
+export function getLoreRouteHref(locationKey: string, locationName: string) {
+  if (locationKey === "the-citadel") {
+    return "/lore?thread=world-the-citadel";
   }
+  return `/lore?q=${encodeURIComponent(locationName)}`;
 }
 
 export function formatCount(value: number, singular: string, plural = `${singular}s`) {
@@ -164,6 +174,17 @@ export function formatWindow(weather: ForecastWeather | null) {
   const end = safeDate(weather.ends_at);
   if (!start || !end) return weather.window || "Window unknown";
   return `${start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+export function formatDurationCompact(seconds: number | null) {
+  if (seconds === null || !Number.isFinite(seconds) || seconds <= 0) return "-";
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const rem = seconds % 60;
+  if (mins < 60) return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  return remMins > 0 ? `${hrs}h ${remMins}m` : `${hrs}h`;
 }
 
 export function getForecastEnemyCrosscheck(weather: ForecastWeather, enemies: EnrichedEnemy[]) {
@@ -241,17 +262,17 @@ export function getLocationLevel(enemies: any[], dungeons: any[], bosses: any[])
 export function poiIcon(kind: PoiKind, size = 15) {
   switch (kind) {
     case "shrine":
-      return <Sparkles size={size} />;
+      return <Icon name="magic" size={size} aria-hidden="true" />;
     case "bank":
-      return <Landmark size={size} />;
+      return <Icon name="bank" size={size} aria-hidden="true" />;
     case "enemies":
-      return <Swords size={size} />;
+      return <Icon name="combat" size={size} aria-hidden="true" />;
     case "dungeons":
-      return <Castle size={size} />;
+      return <Icon name="dungeon" size={size} aria-hidden="true" />;
     case "bosses":
-      return <Skull size={size} />;
+      return <Icon name="boss" size={size} aria-hidden="true" />;
     default:
-      return <MapPin size={size} />;
+      return <Icon name="mapPin" size={size} aria-hidden="true" />;
   }
 }
 
@@ -259,10 +280,10 @@ export function buildPointsOfInterest(location: MapLocation): PointOfInterest[] 
   const points: PointOfInterest[] = [];
   const facilities = LOCATION_FACILITIES[location.key] || [];
   if (facilities.includes("shrine")) {
-    points.push({ kind: "shrine", label: "Shrine", detail: "Point of interest" });
+    points.push({ kind: "shrine", label: "Shrine", detail: "Regional shrine" });
   }
   if (facilities.includes("bank")) {
-    points.push({ kind: "bank", label: "Bank", detail: "Point of interest" });
+    points.push({ kind: "bank", label: "Bank", detail: "Item & gold storage" });
   }
   if (location.dungeons.length > 0) {
     points.push({ kind: "dungeons", label: "Dungeons", detail: formatCount(location.dungeons.length, "dungeon") });
@@ -337,3 +358,69 @@ export function getSourceKind(title: string) {
   if (title === "Bosses") return "boss";
   return "source";
 }
+
+export type ParsedSkillWeatherEffect = {
+  skill: string;
+  efficiency?: string;
+  experience?: string;
+};
+
+export type ParsedWeatherEffects = {
+  skills: ParsedSkillWeatherEffect[];
+  special: Array<{ label: string; delta: string }>;
+};
+
+const SKILL_LABEL_NORMALIZE: Record<string, string> = {
+  hunt: "Hunting",
+  "hunting mastery": "Hunting",
+  hunting: "Hunting",
+  fishing: "Fishing",
+  woodcutting: "Woodcutting",
+  mining: "Mining",
+  construction: "Construction",
+};
+
+export function parseWeatherEffects(buffs?: string[] | null): ParsedWeatherEffects {
+  const skillMap = new Map<string, ParsedSkillWeatherEffect>();
+  const special: Array<{ label: string; delta: string }> = [];
+
+  for (const raw of buffs || []) {
+    const trimmed = String(raw || "").trim();
+    if (!trimmed) continue;
+
+    const effMatch = trimmed.match(/^([+-]\d+%)\s+(.+?)\s+Efficiency$/i);
+    if (effMatch) {
+      const delta = effMatch[1];
+      const rawSkill = effMatch[2].trim().toLowerCase();
+      const skill = SKILL_LABEL_NORMALIZE[rawSkill] || effMatch[2].trim();
+      const entry = skillMap.get(skill) || { skill };
+      entry.efficiency = delta;
+      skillMap.set(skill, entry);
+      continue;
+    }
+
+    const expMatch = trimmed.match(/^([+-]\d+%)\s+(.+?)\s+EXP$/i);
+    if (expMatch) {
+      const delta = expMatch[1];
+      const rawSkill = expMatch[2].trim().toLowerCase();
+      const skill = SKILL_LABEL_NORMALIZE[rawSkill] || expMatch[2].trim();
+      const entry = skillMap.get(skill) || { skill };
+      entry.experience = delta;
+      skillMap.set(skill, entry);
+      continue;
+    }
+
+    const mfMatch = trimmed.match(/^([+-]\d+%)\s+(.+)$/);
+    if (mfMatch) {
+      special.push({ delta: mfMatch[1], label: mfMatch[2].trim() });
+    } else {
+      special.push({ delta: "", label: trimmed });
+    }
+  }
+
+  return {
+    skills: Array.from(skillMap.values()),
+    special,
+  };
+}
+

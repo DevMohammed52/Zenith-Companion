@@ -25,6 +25,18 @@ export function useWeatherState() {
   const [weatherRefreshTick, setWeatherRefreshTick] = useState(0);
   const [filterByLevel, setFilterByLevel] = useState(false);
 
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const weatherParam = params.get("weather")?.trim().toLowerCase();
+      if (!weatherParam) return;
+      const match = WEATHER_DATA.find(
+        (w) => w.id.toLowerCase() === weatherParam || normalizeWeatherKey(w.name).toLowerCase() === weatherParam,
+      );
+      if (match) setActiveWeather(match);
+    } catch {}
+  }, []);
+
   const characterCombatLevel = useMemo(() => {
     const lvl = activeProfile?.levels?.combat;
     return typeof lvl === "number" && lvl > 0 ? lvl : null;

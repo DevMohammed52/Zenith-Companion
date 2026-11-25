@@ -4,18 +4,26 @@ import { describe, expect, it } from "vitest";
 import {
   getLocationLevel,
   getLocationPosition,
+  getLoreRouteHref,
+  getWeatherRouteHref,
   getWeatherTimeline,
   MAP_HEIGHT,
   MAP_WIDTH,
   LOCATION_FACILITIES,
+  parseWeatherEffects,
   WEATHER_COLORS,
 } from "@/app/map/types";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 
 describe("map architecture and modularization contracts", () => {
   const mapDir = path.join(process.cwd(), "src", "app", "map");
   const pagePath = path.join(mapDir, "page.tsx");
   const hookPath = path.join(mapDir, "hooks", "useMapState.ts");
   const componentsDir = path.join(mapDir, "components");
+
+  it("passes strict Zenith clean-route architectural contract", () => {
+    assertCleanMigratedRoute({ routeSubpath: "map", maxPageLines: 150 });
+  });
 
   it("orchestrator page.tsx is under 150 lines", () => {
     expect(existsSync(pagePath)).toBe(true);
@@ -32,16 +40,26 @@ describe("map architecture and modularization contracts", () => {
     expect(content).toContain("buildDropSummaries");
   });
 
-  it("contains all extracted feature components and styles", () => {
+  it("contains all extracted feature components and CSS module", () => {
     const requiredFiles = [
+      "MapHeader.tsx",
       "MapStage.tsx",
       "LocationDossier.tsx",
       "IntelGrid.tsx",
-      "MapStyles.tsx",
+      "WeatherEffectsBreakdown.tsx",
     ];
     for (const file of requiredFiles) {
       expect(existsSync(path.join(componentsDir, file))).toBe(true);
     }
+    expect(existsSync(path.join(process.cwd(), "src", "components", "EnemyModal.tsx"))).toBe(true);
+    expect(existsSync(path.join(mapDir, "page.module.css"))).toBe(true);
+    expect(existsSync(path.join(componentsDir, "MapStyles.tsx"))).toBe(false);
+  });
+
+  it("resolves connected weather and lore deep links accurately", () => {
+    expect(getWeatherRouteHref("MAGIC_STORM", "Magic Storm")).toBe("/weather?weather=magic-storm");
+    expect(getLoreRouteHref("the-citadel", "The Citadel")).toBe("/lore?thread=world-the-citadel");
+    expect(getLoreRouteHref("bluebell-hollow", "Bluebell Hollow")).toBe("/lore?q=Bluebell%20Hollow");
   });
 
   it("preserves strict game math and coordinate boundaries", () => {
@@ -108,5 +126,20 @@ describe("map architecture and modularization contracts", () => {
     expect(LOCATION_FACILITIES["the-citadel"]).toEqual(["shrine", "bank"]);
     expect(WEATHER_COLORS.RAIN).toBe("#38bdf8");
     expect(WEATHER_COLORS.HEATWAVE).toBe("#fb923c");
+  });
+
+  it("parses grouped weather skill modifiers cleanly", () => {
+    const parsed = parseWeatherEffects([
+      "-15% Hunt Efficiency",
+      "+35% Hunting Mastery EXP",
+      "-20% Fishing Efficiency",
+      "+40% Fishing EXP",
+      "+10% Magic Find",
+    ]);
+    expect(parsed.skills).toEqual([
+      { skill: "Hunting", efficiency: "-15%", experience: "+35%" },
+      { skill: "Fishing", efficiency: "-20%", experience: "+40%" },
+    ]);
+    expect(parsed.special).toEqual([{ delta: "+10%", label: "Magic Find" }]);
   });
 });

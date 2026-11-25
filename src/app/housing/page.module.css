@@ -71,7 +71,8 @@
   margin-top: 4px;
 }
 
-.housingPage :global(.housing-hero-chips > span) {
+.housingPage :global(.housing-hero-chips > span),
+.housingPage :global(.housing-hero-chips > a.housing-hero-chip-link) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -83,9 +84,16 @@
   line-height: 1.2;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+  text-decoration: none;
 }
 
-.housingPage :global(.housing-hero-chips > span.good) {
+.housingPage :global(.housing-hero-chips > a.housing-hero-chip-link:hover) {
+  border-color: var(--border-default, rgba(148, 163, 184, 0.28));
+  color: var(--text-main, #f8fafc);
+}
+
+.housingPage :global(.housing-hero-chips > span.good),
+.housingPage :global(.housing-hero-chips > a.housing-hero-chip-link.good) {
   color: var(--text-success, #4ade80);
   border-color: rgba(74, 222, 128, 0.35);
 }
