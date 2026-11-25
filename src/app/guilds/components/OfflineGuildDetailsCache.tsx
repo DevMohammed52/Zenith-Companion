@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Database } from "lucide-react";
+import { Badge, Button, Icon, ProgressBar } from "@/components/ui";
 import { formatGuildNumber, type GuildRecord } from "@/lib/guilds";
 import styles from "../page.module.css";
 import {
@@ -29,7 +29,6 @@ export function OfflineGuildDetailsCache({
   const shownUrls = useMemo(() => getGuildDetailUrls(shownGuilds), [shownGuilds]);
   const allUrls = useMemo(() => getGuildDetailUrls(allGuilds), [allGuilds]);
   const completed = Math.min(progress.total, progress.cached + progress.failed);
-  const percent = progress.total > 0 ? Math.round((completed / progress.total) * 100) : 0;
   const isBusy = activeMode !== null;
   const canCache = supportChecked && cacheSupported && !isBusy;
 
@@ -97,7 +96,7 @@ export function OfflineGuildDetailsCache({
   const statusLabel = !supportChecked
     ? "Checking support"
     : !cacheSupported
-      ? "Offline cache unavailable"
+      ? "Offline unavailable"
       : status === "running"
         ? `Caching ${formatGuildNumber(completed)}/${formatGuildNumber(progress.total)}`
         : status === "done"
@@ -105,55 +104,57 @@ export function OfflineGuildDetailsCache({
           : status === "error"
             ? "Needs retry"
             : "Opt-in cache";
+
+  const statusBadgeVariant =
+    status === "done" ? "success" : status === "error" ? "danger" : status === "running" ? "refined" : "neutral";
+
   const displayMessage =
     supportChecked && !cacheSupported
-      ? "Reload after offline support finishes installing, or use this from the deployed app."
+      ? "Offline detail caching activates once the service worker finishes installing."
       : message;
 
   return (
     <div className={styles.offlineCachePanel} data-state={status} aria-live="polite">
-      <div className={styles.offlineCacheCopy}>
-        <span>Offline guild details</span>
-        <strong>{statusLabel}</strong>
-        <small>{displayMessage}</small>
+      <div className={styles.offlineCacheHeader}>
+        <div className={styles.offlineCacheCopy}>
+          <span className={styles.offlineCacheTitle}>Offline Guild Details</span>
+          <small>{displayMessage}</small>
+        </div>
+        <Badge variant={statusBadgeVariant} size="sm">{statusLabel}</Badge>
       </div>
 
       <div className={styles.offlineCacheActions}>
-        <button
-          type="button"
-          className={styles.offlineCacheButton}
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={!canCache || shownUrls.length === 0}
+          loading={activeMode === "shown"}
+          icon={<Icon name="download" size="sm" />}
           onClick={() => cacheGuilds("shown", shownUrls)}
           aria-label={`Cache ${shownUrls.length} shown guild detail files offline`}
         >
-          <Database size={15} aria-hidden="true" />
-          <span>Cache shown</span>
-          <small>{formatGuildNumber(shownUrls.length)}</small>
-        </button>
-        <button
-          type="button"
-          className={styles.offlineCacheButton}
+          Cache shown ({formatGuildNumber(shownUrls.length)})
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={!canCache || allUrls.length === 0}
+          loading={activeMode === "all"}
+          icon={<Icon name="download" size="sm" />}
           onClick={() => cacheGuilds("all", allUrls)}
           aria-label={`Cache all ${allUrls.length} guild detail files offline`}
         >
-          <Database size={15} aria-hidden="true" />
-          <span>Cache all</span>
-          <small>{formatGuildNumber(allUrls.length)}</small>
-        </button>
+          Cache all ({formatGuildNumber(allUrls.length)})
+        </Button>
       </div>
 
       {status === "running" && (
-        <div
-          className={styles.offlineCacheProgress}
-          role="progressbar"
-          aria-label="Guild detail offline cache progress"
-          aria-valuemin={0}
-          aria-valuemax={progress.total || 1}
-          aria-valuenow={completed}
-        >
-          <span style={{ width: `${percent}%` }} />
-        </div>
+        <ProgressBar
+          value={completed}
+          max={progress.total || 1}
+          label={`Caching guild details: ${formatGuildNumber(completed)} of ${formatGuildNumber(progress.total)}`}
+          size="sm"
+        />
       )}
     </div>
   );

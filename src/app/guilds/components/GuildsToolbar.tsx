@@ -1,27 +1,43 @@
 "use client";
 
 import React from "react";
-import { RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
-import { formatGuildNumber, type GuildRecord, type GuildSortKey } from "@/lib/guilds";
+import {
+  Button,
+  Card,
+  Icon,
+  SearchInput,
+  SegmentedControl,
+  Select,
+  Tag,
+  type SelectOption,
+} from "@/components/ui";
+import { formatGuildNumber, type GuildSortKey } from "@/lib/guilds";
+import {
+  SORT_OPTIONS,
+  TIER_FILTERS,
+  type EnrichedGuildRecord,
+  type GuildViewMode,
+  type TierFilter,
+} from "../types";
 import styles from "../page.module.css";
-import { TIER_FILTERS, type SearchableGuildRecord, type TierFilter } from "../types";
-import { SortPicker } from "./SortPicker";
-import { OfflineGuildDetailsCache } from "./OfflineGuildDetailsCache";
 
 export interface GuildsToolbarProps {
   search: string;
   setSearch: (value: string) => void;
-  hasSearch: boolean;
-  visibleGuilds: SearchableGuildRecord[];
-  filteredGuilds: SearchableGuildRecord[];
-  allGuilds: SearchableGuildRecord[];
-  currentSortLabel: string;
-  hasActiveFilters: boolean;
-  activeFilterCount: number;
+  visibleGuilds: EnrichedGuildRecord[];
+  filteredGuilds: EnrichedGuildRecord[];
   tier: TierFilter;
   setTier: (tier: TierFilter) => void;
   sortBy: GuildSortKey;
   setSortBy: (sortBy: GuildSortKey) => void;
+  onlyOpenSlots: boolean;
+  setOnlyOpenSlots: React.Dispatch<React.SetStateAction<boolean>>;
+  onlyConquest: boolean;
+  setOnlyConquest: React.Dispatch<React.SetStateAction<boolean>>;
+  viewMode: GuildViewMode;
+  setViewMode: (mode: GuildViewMode) => void;
+  isCompactViewport: boolean;
+  hasActiveFilters: boolean;
   getTierFilterCount: (filter: TierFilter) => number;
   resetFilters: () => void;
   resultStatus: string;
@@ -30,112 +46,120 @@ export interface GuildsToolbarProps {
 export function GuildsToolbar({
   search,
   setSearch,
-  hasSearch,
   visibleGuilds,
   filteredGuilds,
-  allGuilds,
-  currentSortLabel,
-  hasActiveFilters,
-  activeFilterCount,
   tier,
   setTier,
   sortBy,
   setSortBy,
+  onlyOpenSlots,
+  setOnlyOpenSlots,
+  onlyConquest,
+  setOnlyConquest,
+  viewMode,
+  setViewMode,
+  isCompactViewport,
+  hasActiveFilters,
   getTierFilterCount,
   resetFilters,
   resultStatus,
 }: GuildsToolbarProps) {
+  const sortSelectOptions: SelectOption[] = SORT_OPTIONS.map((option) => ({
+    value: option.id,
+    label: option.label,
+  }));
+
+  const tierOptions = TIER_FILTERS.map((option) => ({
+    value: option.id,
+    label: option.label,
+    badge: formatGuildNumber(getTierFilterCount(option.id)),
+  }));
+
   return (
-    <>
-      <section className={styles.toolbar} aria-label="Guild filters">
-        <div className={styles.toolbarPrimary}>
-          <div className={styles.search}>
-            <Search size={17} aria-hidden="true" />
-            <input
-              aria-label="Search guilds"
+    <Card padding="md" overflowVisible className={styles.toolbarCard}>
+      <section aria-label="Guild filters" className={styles.toolbarInner}>
+        <div className={styles.toolbarTopRow}>
+          <div className={styles.searchWrap}>
+            <SearchInput
+              ariaLabel="Search guilds"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search guild, tag, leader, top member, or ID"
+              onChange={setSearch}
+              onClear={() => setSearch("")}
+              showShortcutHint={false}
+              placeholder="Search guild name, tag, leader, top member, or ID..."
             />
-            {hasSearch && (
-              <button
-                type="button"
-                className={styles.searchClear}
-                onClick={() => setSearch("")}
-                aria-label="Clear guild search"
+          </div>
+
+          <div className={styles.toolbarRightCluster}>
+            <div className={styles.resultSummary}>
+              <strong>{formatGuildNumber(visibleGuilds.length)}</strong>
+              <span> of {formatGuildNumber(filteredGuilds.length)} matching</span>
+            </div>
+
+            {!isCompactViewport && (
+              <SegmentedControl<GuildViewMode>
+                size="sm"
+                ariaLabel="Directory layout"
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: "table", label: "Table" },
+                  { value: "cards", label: "Cards" },
+                ]}
+              />
+            )}
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="undo" size="sm" />}
+                onClick={resetFilters}
+                aria-label="Reset guild filters"
               >
-                <X size={15} aria-hidden="true" />
-              </button>
+                Reset
+              </Button>
             )}
           </div>
-
-          <div className={styles.resultBar} aria-label="Visible guild results">
-            <span>Showing</span>
-            <strong>
-              {formatGuildNumber(visibleGuilds.length)} of {formatGuildNumber(filteredGuilds.length)}
-            </strong>
-            <small>{currentSortLabel}</small>
-          </div>
         </div>
 
-        <div className={styles.filterHeader} aria-hidden="true">
-          <span>
-            <SlidersHorizontal size={16} /> Filters
-          </span>
-          <span>{hasActiveFilters ? `${activeFilterCount} active` : "Default view"}</span>
-        </div>
-
-        <div className={styles.filterControls}>
-          <div className={styles.tierTabs} role="group" aria-label="Refresh tier filter">
-            {TIER_FILTERS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={tier === option.id}
-                data-active={tier === option.id}
-                onClick={() => setTier(option.id)}
-              >
-                <span className={styles.tierLabel}>{option.label}</span>
-                <span className={styles.tierCount}>{formatGuildNumber(getTierFilterCount(option.id))}</span>
-              </button>
-            ))}
+        <div className={styles.toolbarControlsRow}>
+          <div className={styles.tierScrollWrap}>
+            <SegmentedControl<TierFilter>
+              size="sm"
+              ariaLabel="Refresh tier filter"
+              value={tier}
+              onChange={setTier}
+              options={tierOptions}
+            />
           </div>
 
-          <SortPicker value={sortBy} onChange={setSortBy} />
+          <div className={styles.tagFilterGroup} role="group" aria-label="Quick guild filters">
+            <Tag
+              label="Open Slots"
+              selected={onlyOpenSlots}
+              onSelect={() => setOnlyOpenSlots((prev) => !prev)}
+            />
+            <Tag
+              label="Conquest Rulers"
+              icon={<Icon name="conquest" size="xs" />}
+              selected={onlyConquest}
+              onSelect={() => setOnlyConquest((prev) => !prev)}
+            />
+          </div>
 
-          <button
-            type="button"
-            className={styles.resetButton}
-            onClick={resetFilters}
-            disabled={!hasActiveFilters}
-            aria-label="Reset guild filters"
-          >
-            <RotateCcw size={15} aria-hidden="true" /> Reset
-          </button>
+          <div className={styles.sortSelectWrap}>
+            <Select
+              options={sortSelectOptions}
+              value={sortBy}
+              onChange={(next) => setSortBy(next as GuildSortKey)}
+              ariaLabel="Sort guilds by"
+            />
+          </div>
         </div>
-
-        <OfflineGuildDetailsCache shownGuilds={visibleGuilds} allGuilds={allGuilds} />
       </section>
 
-      <div className={styles.utilityNotes} aria-label="Guild database help">
-        <p>Searches guild names, tags, leaders, top members, and IDs.</p>
-        <dl className={styles.tierLegend}>
-          <div>
-            <dt>Active</dt>
-            <dd>refreshed most often</dd>
-          </div>
-          <div>
-            <dt>Tracked</dt>
-            <dd>known guild with periodic refresh</dd>
-          </div>
-          <div>
-            <dt>Archive</dt>
-            <dd>lower-priority stored record</dd>
-          </div>
-        </dl>
-      </div>
-
       <p className="sr-only" role="status" aria-live="polite">{resultStatus}</p>
-    </>
+    </Card>
   );
 }

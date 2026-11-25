@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   compareGuilds,
@@ -10,12 +12,14 @@ import {
 } from "@/lib/guilds";
 import {
   getGuildDetailUrls,
+  getGuildMemberCap,
   getSafeExternalHref,
   getSearchText,
   readCacheProgress,
   SORT_OPTIONS,
   TIER_FILTERS,
 } from "@/app/guilds/types";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 
 describe("/guilds Architecture Contracts & Calculation Invariance", () => {
   const mockGuildA: GuildRecord = {
@@ -155,7 +159,49 @@ describe("/guilds Architecture Contracts & Calculation Invariance", () => {
     });
   });
 
-  describe("Guild Formatting Functions", () => {
+  describe("Guild Formatting & Capacity Invariance", () => {
+    it("passes strict Zenith clean-route architectural contract", () => {
+      assertCleanMigratedRoute({ routeSubpath: "guilds", maxPageLines: 150 });
+    });
+
+    it("contains modular extracted components and removes legacy SortPicker", () => {
+      const guildsDir = path.join(process.cwd(), "src", "app", "guilds", "components");
+      const required = [
+        "GuildsHeader.tsx",
+        "GuildSpotlight.tsx",
+        "GuildsToolbar.tsx",
+        "GuildsTable.tsx",
+        "GuildMobileCard.tsx",
+        "GuildModal.tsx",
+        "GuildGuideModal.tsx",
+        "OfflineGuildDetailsCache.tsx",
+        "MemberLink.tsx",
+        "GuildMarkdown.tsx",
+      ];
+      for (const file of required) {
+        expect(existsSync(path.join(guildsDir, file))).toBe(true);
+      }
+      expect(existsSync(path.join(guildsDir, "SortPicker.tsx"))).toBe(false);
+
+      const hookSrc = readFileSync(
+        path.join(process.cwd(), "src", "app", "guilds", "hooks", "useGuildsState.ts"),
+        "utf-8",
+      );
+      expect(hookSrc).toContain("CONQUEST_DATA_URL");
+      expect(hookSrc).toContain("useProfiles");
+    });
+
+    it("derives accurate member capacity caps across wiki level tiers", () => {
+      expect(getGuildMemberCap(null)).toBe(20);
+      expect(getGuildMemberCap(1)).toBe(20);
+      expect(getGuildMemberCap(34)).toBe(20);
+      expect(getGuildMemberCap(35)).toBe(21);
+      expect(getGuildMemberCap(60)).toBe(22);
+      expect(getGuildMemberCap(70)).toBe(23);
+      expect(getGuildMemberCap(85)).toBe(24);
+      expect(getGuildMemberCap(100)).toBe(25);
+    });
+
     it("formats guild numbers with commas and handles fallbacks", () => {
       expect(formatGuildNumber(15400)).toBe("15,400");
       expect(formatGuildNumber(0)).toBe("0");
