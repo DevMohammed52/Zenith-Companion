@@ -1,7 +1,8 @@
 "use client";
 
-import { PawPrint } from "lucide-react";
-import { EmptyState, ErrorState, LoadingState } from "@/components/StateBlock";
+import { Banner } from "@/components/ui/Banner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton, SkeletonContainer } from "@/components/ui/Skeleton";
 import { usePetCompareState } from "./hooks/usePetCompareState";
 import { CompareHero } from "./components/CompareHero";
 import { SharedSetupPanel } from "./components/SharedSetupPanel";
@@ -9,6 +10,27 @@ import { CompareSlotsPanel } from "./components/CompareSlotsPanel";
 import { CompareCards } from "./components/CompareCards";
 import { CompareMetricsTable } from "./components/CompareMetricsTable";
 import styles from "./page.module.css";
+
+function CompareLoadingSkeleton() {
+  return (
+    <SkeletonContainer announcement="Loading pet comparison data" className={styles.skeletonStack}>
+      <div className={styles.skeletonPanel}>
+        <Skeleton variant="text" width="38%" height={22} />
+        <div className={styles.skeletonGrid}>
+          <Skeleton variant="rectangular" height={64} />
+          <Skeleton variant="rectangular" height={64} />
+        </div>
+      </div>
+      <div className={styles.skeletonPanel}>
+        <Skeleton variant="text" width="30%" height={20} />
+        <div className={styles.skeletonGrid}>
+          <Skeleton variant="rectangular" height={72} />
+          <Skeleton variant="rectangular" height={72} />
+        </div>
+      </div>
+    </SkeletonContainer>
+  );
+}
 
 export default function PetComparisonPage() {
   const state = usePetCompareState();
@@ -23,14 +45,15 @@ export default function PetComparisonPage() {
       />
 
       {state.loadError && (
-        <ErrorState title="Pet comparison data unavailable" description={state.loadError} />
+        <Banner
+          variant="error"
+          action={{ label: "Retry", onClick: () => window.location.reload() }}
+        >
+          {state.loadError}
+        </Banner>
       )}
-      {!state.database && !state.loadError && (
-        <LoadingState
-          title="Loading pet comparison data"
-          description="Preparing pet stats, sources, battle samples, and market listings."
-        />
-      )}
+
+      {!state.database && !state.loadError && <CompareLoadingSkeleton />}
 
       {state.database && (
         <>
@@ -57,10 +80,6 @@ export default function PetComparisonPage() {
             setFoodPolicy={state.setFoodPolicy}
             patBonus={state.patBonus}
             setPatBonus={state.setPatBonus}
-            openMenu={state.openMenu}
-            setOpenMenu={state.setOpenMenu}
-            battleCoverage={state.battleCoverage}
-            rowsCount={state.rows.length}
             onAddPet={state.addPet}
             onResetScenario={state.resetScenario}
           />
@@ -68,8 +87,6 @@ export default function PetComparisonPage() {
           <CompareSlotsPanel
             slots={state.slots}
             compareOptions={state.compareOptions}
-            openMenu={state.openMenu}
-            setOpenMenu={state.setOpenMenu}
             onSetSlot={state.setSlot}
             onClearSlot={state.clearSlot}
             unavailableSelectedIds={state.unavailableSelectedIds}
@@ -89,13 +106,13 @@ export default function PetComparisonPage() {
 
           {state.rows.length === 0 ? (
             <EmptyState
-              title="Select a pet to preview, add another to compare"
-              description="Use the quick picks or search by pet, boss, source, rarity, or exchange listing."
-              icon={PawPrint}
+              variant="no-data"
+              title="Pick pets to compare"
+              description="Select up to 4 database pets or owned snapshots above, or tap a quick pick."
             />
           ) : (
             <>
-              <CompareCards rows={state.rows} battleZone={state.battleZone} />
+              <CompareCards rows={state.rows} />
               <CompareMetricsTable rows={state.rows} metricBounds={state.metricBounds} />
             </>
           )}

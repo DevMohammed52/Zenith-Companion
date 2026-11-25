@@ -488,43 +488,10 @@
   padding-top: var(--space-2, 8px);
 }
 
-.backToTopButton {
-  position: fixed;
-  bottom: calc(var(--bottom-dock-height, 74px) + env(safe-area-inset-bottom, 0px) + 20px);
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  z-index: 45;
-  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
-}
-
-.backToTopButton:hover {
-  background: var(--bg-panel);
-  color: var(--text-primary);
-  transform: translateY(-2px);
-}
-
-@media (min-width: 768px) {
-  .backToTopButton {
-    bottom: 24px;
-    right: 24px;
-  }
-}
-
 /* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   .setupChevron,
   .setupAccordionContent,
-  .backToTopButton,
   .filterChip {
     transition: none !important;
   }

@@ -1,5 +1,5 @@
 import type { CharacterProfile, ProfileOwnedPet, ProfilePetStats } from "@/lib/profiles";
-import { QUALITY_COLORS, type Quality } from "@/lib/pets";
+import { QUALITY_COLORS, getTotalPower, type Quality, type StatKey } from "@/lib/pets";
 import { FRIENDLY_SECTION_LABELS, PET_STAT_LABELS } from "../types";
 
 export function makeOwnedPetId() {
@@ -28,6 +28,25 @@ export function activePetToOwnedPet(profile: CharacterProfile): ProfileOwnedPet 
 
 export function petKey(pet: Pick<ProfileOwnedPet, "species" | "level" | "evolution">) {
   return `${pet.species.toLowerCase()}::${pet.level || ""}::${pet.evolution || ""}`;
+}
+
+export function ownedPetToComparisonStats(stats: ProfilePetStats): Partial<Record<StatKey, number>> {
+  const num = (val: number | "") => (val === "" ? 0 : Number(val) || 0);
+  return {
+    agility: num(stats.agility),
+    accuracy: num(stats.accuracy),
+    protection: num(stats.protection),
+    attack_power: num(stats.attackPower),
+    movement_speed: num(stats.movementSpeed),
+    max_health: num(stats.maxHealth),
+    max_stamina: num(stats.maxStamina),
+    critical_damage: num(stats.criticalDamage),
+    critical_chance: num(stats.criticalChance),
+  };
+}
+
+export function getOwnedPetPower(stats: ProfilePetStats) {
+  return getTotalPower(ownedPetToComparisonStats(stats));
 }
 
 export function formatValue(value: number | "") {

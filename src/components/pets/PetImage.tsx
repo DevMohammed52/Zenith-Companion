@@ -1,17 +1,20 @@
 "use client";
 
 import React from "react";
-import { PawPrint } from "lucide-react";
 import { GameImage } from "@/components/GameImage";
-import type { PetRecord } from "../types";
+import { Icon } from "@/components/ui/Icon";
+import type { PetRecord } from "@/lib/pets";
 import styles from "./PetImage.module.css";
 
+/**
+ * Shared companion sprite thumbnail with fallback icon and Wyrmshadow orientation handling.
+ */
 export function PetImage({
   pet,
   size = 44,
   className = "",
 }: {
-  pet: PetRecord;
+  pet: Pick<PetRecord, "name" | "imageUrl" | "egg">;
   size?: number;
   className?: string;
 }) {
@@ -34,7 +37,7 @@ export function PetImage({
           loading="lazy"
         />
       ) : (
-        <PawPrint size={Math.round(size * 0.6)} aria-hidden="true" />
+        <Icon name="pets" size={size <= 36 ? "md" : "lg"} aria-hidden="true" />
       )}
     </div>
   );

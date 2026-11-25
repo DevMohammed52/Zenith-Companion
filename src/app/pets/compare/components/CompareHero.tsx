@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Trash2 } from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { MAX_COMPARE } from "../types";
 import styles from "../page.module.css";
 
@@ -16,41 +16,47 @@ export function CompareHero({
   onClearComparison: () => void;
 }) {
   return (
-    <section className={styles.hero}>
-      <div>
-        <span className={styles.kicker}>
-          <ZenithIcon name="pets" size={17} /> Pet Comparison
-        </span>
-        <h1 id="pet-compare-page-title">Compare Pets</h1>
-        <p>
-          Compare IdleMMO pet species and owned snapshots against the same level, mastery,
-          food, and recorded battle sample.
+    <header className={styles.hero}>
+      <div className={styles.heroMain}>
+        <div className={styles.kicker}>
+          <Icon name="petCompare" size="sm" aria-hidden="true" />
+          <span>Companion Comparison</span>
+        </div>
+        <h1 id="pet-compare-page-title" className={styles.heroTitle}>
+          Compare Pets
+        </h1>
+        <p className={styles.heroSubtitle}>
+          Compare database species and owned snapshots side by side under shared level, mastery, and battle settings.
         </p>
+
+        <div className={styles.metaStrip} aria-label="Comparison summary">
+          <span className={styles.metaPill}>
+            Selected: <strong>{selectedCount} / {MAX_COMPARE}</strong>
+          </span>
+          <span className={styles.metaPill}>
+            Owned Pool: <strong>{ownedPoolCount}</strong>
+          </span>
+          <span className={styles.metaPill}>
+            Battle Samples: <strong>{petsWithBattleCount} pets</strong>
+          </span>
+        </div>
       </div>
+
       <div className={styles.heroActions}>
-        <Link href="/pets" className={styles.secondaryLink}>
-          Pet Database <ArrowRight size={16} />
+        <Link href="/pets" className={styles.heroNavLink}>
+          <span>Pet Database</span>
+          <Icon name="chevronRight" size="sm" aria-hidden="true" />
         </Link>
-        <button type="button" className={styles.secondaryLink} onClick={onClearComparison}>
-          <Trash2 size={16} /> Clear comparison
-        </button>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={onClearComparison}
+          disabled={selectedCount === 0}
+          icon={<Icon name="trash" size="sm" aria-hidden="true" />}
+        >
+          Clear
+        </Button>
       </div>
-      <div className={styles.heroStats} aria-label="Current pet comparison summary">
-        <div>
-          <span>Selected</span>
-          <strong>
-            {selectedCount}/{MAX_COMPARE}
-          </strong>
-        </div>
-        <div>
-          <span>Owned pool</span>
-          <strong>{ownedPoolCount}</strong>
-        </div>
-        <div>
-          <span>Battle data</span>
-          <strong>{petsWithBattleCount}</strong>
-        </div>
-      </div>
-    </section>
+    </header>
   );
 }

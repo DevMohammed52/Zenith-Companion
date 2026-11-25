@@ -42,11 +42,11 @@ describe("pets architecture and modularization contracts", () => {
       "PetCard.tsx",
       "PetDetailModal.tsx",
       "PetBattleModal.tsx",
-      "PetImage.tsx",
     ];
     for (const file of requiredFiles) {
       expect(existsSync(path.join(componentsDir, file))).toBe(true);
     }
+    expect(existsSync(path.join(process.cwd(), "src", "components", "pets", "PetImage.tsx"))).toBe(true);
   });
 
   it("preserves gold formatting invariance", () => {

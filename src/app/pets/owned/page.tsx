@@ -1,44 +1,63 @@
 "use client";
 
-import Link from "next/link";
-import { PawPrint } from "lucide-react";
-import { EmptyState, NoResultsState } from "@/components/StateBlock";
-import { findPetRecordForOwnedPet } from "@/lib/pets";
-import { SOURCE_FILTERS } from "./types";
-import { petKey } from "./utils/owned-pet-helpers";
-import { useOwnedPetsState } from "./hooks/useOwnedPetsState";
-import { OwnedPetHeader } from "./components/OwnedPetHeader";
-import { OwnedPetSummary } from "./components/OwnedPetSummary";
-import { OwnedPetImportReadiness } from "./components/OwnedPetImportReadiness";
+import { BackToTop } from "@/components/ui/BackToTop";
+import { Banner } from "@/components/ui/Banner";
+import { Icon } from "@/components/ui/Icon";
 import { OwnedPetControls } from "./components/OwnedPetControls";
-import { OwnedPetCard } from "./components/OwnedPetCard";
+import { OwnedPetDetailModal } from "./components/OwnedPetDetailModal";
+import { OwnedPetHeader } from "./components/OwnedPetHeader";
+import { OwnedPetsWorkspace } from "./components/OwnedPetsWorkspace";
+import { useOwnedPetsState } from "./hooks/useOwnedPetsState";
+import { formatSectionList, petKey } from "./utils/owned-pet-helpers";
 import styles from "./page.module.css";
 
 export default function OwnedPetsPage() {
   const state = useOwnedPetsState();
 
+  const warningParts: string[] = [];
+  if (state.missingOrPrivate.length > 0) {
+    warningParts.push(`Private/missing sections: ${formatSectionList(state.missingOrPrivate)}`);
+  }
+  if (state.unmatchedSpeciesCount > 0) {
+    warningParts.push(
+      `${state.unmatchedSpeciesCount} pet${state.unmatchedSpeciesCount === 1 ? "" : "s"} not matched to catalog yet`,
+    );
+  }
+
+  const detailSummary = state.detailPet ? state.getCatalogSummary(state.detailPet) : null;
+  const detailIsActive = state.detailPet
+    ? petKey(state.detailPet) === state.activePetKey ||
+      Boolean(state.detailPet.active || state.detailPet.equipped)
+    : false;
+
   return (
     <main className={`container ${styles.page}`} aria-labelledby="owned-pets-page-title">
-      <OwnedPetHeader onAddCurrentPet={state.addCurrentPet} />
-
-      <OwnedPetSummary
+      <OwnedPetHeader
+        loaded={state.loaded}
         totalSaved={state.ownedPets.length}
+        ownedSpeciesCount={state.ownedSpeciesCount}
+        totalCatalogSpeciesCount={state.totalCatalogSpeciesCount}
         activeCount={state.activeCount}
-        manualCount={state.manualCount}
         importedCount={state.importedCount}
+        manualCount={state.manualCount}
+        hasProfile={Boolean(state.activeProfile)}
+        onAddCurrentPet={state.addCurrentPet}
       />
 
-      {state.activeProfile && (
-        <OwnedPetImportReadiness
-          importSource={state.importSource}
-          hasImportedPetSection={state.hasImportedPetSection}
-          missingOrPrivate={state.missingOrPrivate}
-          unmatchedSpeciesCount={state.unmatchedSpeciesCount}
-        />
+      {state.loaded && state.activeProfile && warningParts.length > 0 && (
+        <Banner variant="warning" title="Import notice">
+          {warningParts.join(" · ")}
+        </Banner>
       )}
 
-      {state.activeProfile && state.ownedPets.length > 0 && (
+      {(!state.loaded || Boolean(state.activeProfile)) && (
         <OwnedPetControls
+          activeTab={state.activeTab}
+          setActiveTab={state.setActiveTab}
+          ownedCount={state.ownedPets.length}
+          missingCount={state.missingCatalogPets.length}
+          viewMode={state.viewMode}
+          setViewMode={state.setViewMode}
           query={state.query}
           setQuery={state.setQuery}
           sourceFilter={state.sourceFilter}
@@ -49,74 +68,37 @@ export default function OwnedPetsPage() {
           setSortDirection={state.setSortDirection}
           controlsModified={state.controlsModified}
           activeControlCount={state.activeControlCount}
-          visibleCount={state.visiblePets.length}
+          visibleCount={
+            state.activeTab === "owned"
+              ? state.visiblePets.length
+              : state.missingCatalogPets.length
+          }
           sourceFilterLabel={state.sourceFilterLabel}
           sortLabel={state.sortLabel}
           isCompactViewport={state.isCompactViewport}
+          selectedCompareCount={state.selectedCompareIds.length}
+          compareSelectionHref={state.compareSelectionHref}
+          onClearCompareSelection={state.clearCompareSelection}
           resetControls={state.resetControls}
         />
       )}
 
-      {!state.activeProfile && (
-        <EmptyState
-          title="No active profile"
-          description="Create or select a profile before saving owned pets."
-          icon={PawPrint}
-          action={<Link href="/profiles">Open profiles</Link>}
-        />
-      )}
+      <OwnedPetsWorkspace state={state} />
 
-      {state.activeProfile && !state.ownedPets.length && (
-        <EmptyState
-          title="No owned pets saved"
-          description="Select a pet in Profiles, set its level/evolution, then add it here as a local snapshot."
-          icon={PawPrint}
-          action={<Link href="/profiles">Open profiles</Link>}
-        />
-      )}
+      <OwnedPetDetailModal
+        ownedPet={state.detailPet}
+        databasePet={detailSummary?.databasePet}
+        isActive={detailIsActive}
+        onClose={() => state.setDetailPetId(null)}
+        onUseAsActive={() => {
+          if (state.detailPet) state.handleUseAsActivePet(state.detailPet);
+        }}
+        onRemove={() => {
+          if (state.detailPet) state.removePet(state.detailPet);
+        }}
+      />
 
-      {state.activeProfile && state.ownedPets.length > 0 && (
-        <section className={styles.resultHeader} aria-live="polite">
-          <span>{state.visiblePets.length} shown</span>
-          <strong>
-            {state.sourceFilter === "all"
-              ? "All saved pets"
-              : SOURCE_FILTERS.find((option) => option.id === state.sourceFilter)?.label}
-          </strong>
-        </section>
-      )}
-
-      {state.activeProfile && state.ownedPets.length > 0 && state.visiblePets.length > 0 && (
-        <section className={styles.grid} aria-label={`${state.activeProfile.name} owned pets`}>
-          {state.visiblePets.map((ownedPet) => {
-            const databasePet = findPetRecordForOwnedPet(ownedPet, state.petMatchLookup);
-            const isActive =
-              petKey(ownedPet) === state.activePetKey || ownedPet.active || ownedPet.equipped;
-            return (
-              <OwnedPetCard
-                key={ownedPet.id}
-                ownedPet={ownedPet}
-                databasePet={databasePet}
-                isActive={isActive}
-                onUseAsActive={() => state.handleUseAsActivePet(ownedPet)}
-                onRemove={() => state.removePet(ownedPet)}
-              />
-            );
-          })}
-        </section>
-      )}
-
-      {state.activeProfile && state.ownedPets.length > 0 && !state.visiblePets.length && (
-        <NoResultsState
-          title="No owned pets match"
-          description="Adjust the search text or filter selection."
-          action={
-            <button type="button" onClick={state.resetControls}>
-              Clear controls
-            </button>
-          }
-        />
-      )}
+      <BackToTop />
     </main>
   );
 }

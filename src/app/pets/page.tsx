@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { ArrowUp } from "lucide-react";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { ErrorState, LoadingState } from "@/components/StateBlock";
 import { usePetsState } from "./hooks/usePetsState";
 import { PetHero } from "./components/PetHero";
@@ -115,18 +115,7 @@ function PetsContent() {
             />
           )}
 
-          {/* Floating Back-to-Top Button with Mobile Dock Clearance */}
-          {state.showBackToTop && (
-            <button
-              type="button"
-              className={styles.backToTopButton}
-              onClick={state.scrollToTop}
-              aria-label="Scroll back to top"
-              title="Back to top"
-            >
-              <ArrowUp size={18} />
-            </button>
-          )}
+          <BackToTop />
         </>
       )}
     </main>

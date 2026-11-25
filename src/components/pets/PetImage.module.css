@@ -6,14 +6,14 @@
   background: rgba(255, 255, 255, 0.04);
   overflow: hidden;
   flex-shrink: 0;
-  position: relative;
-  user-select: none;
+  color: var(--text-tertiary, var(--text-muted));
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .upsideDown {

@@ -35,7 +35,7 @@ import {
   qualityLabel,
   secondsToDuration,
 } from "../utils/pet-helpers";
-import { PetImage } from "./PetImage";
+import { PetImage } from "@/components/pets/PetImage";
 import styles from "./PetDetailModal.module.css";
 
 export function PetDetailModal({

@@ -16,7 +16,7 @@ import {
   secondsToDuration,
 } from "../utils/pet-helpers";
 import { PetCard } from "./PetCard";
-import { PetImage } from "./PetImage";
+import { PetImage } from "@/components/pets/PetImage";
 import styles from "../Pets.module.css";
 
 export function PetGrid({

@@ -1,179 +1,175 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { PetImage } from "@/components/pets/PetImage";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Icon } from "@/components/ui/Icon";
+import { getQualityPalette } from "@/lib/quality";
 import type { ProfileOwnedPet } from "@/lib/profiles";
-import type { PetRecord } from "@/lib/pets";
+import { QUALITY_COLORS, formatNumber, qualityLabel, type PetRecord } from "@/lib/pets";
 import { PET_STAT_LABELS } from "../types";
 import {
-  formatDateTime,
-  formatOptionalDateTime,
-  formatOptionalNumber,
   formatSourceMode,
   formatValue,
-  getQualityColor,
   missingStatCount,
 } from "../utils/owned-pet-helpers";
-import { OwnedPetImage } from "./OwnedPetImage";
 import styles from "../page.module.css";
 
 export function OwnedPetCard({
   ownedPet,
   databasePet,
+  power,
+  bestBattle,
   isActive,
+  isSelectedForCompare,
+  onToggleCompare,
   onUseAsActive,
+  onOpenDetails,
   onRemove,
 }: {
   ownedPet: ProfileOwnedPet;
   databasePet: PetRecord | null | undefined;
+  power: number;
+  bestBattle: { zone: string | null; value: number } | null;
   isActive: boolean;
+  isSelectedForCompare: boolean;
+  onToggleCompare: () => void;
   onUseAsActive: () => void;
+  onOpenDetails: () => void;
   onRemove: () => void;
 }) {
   const missingStats = missingStatCount(ownedPet.stats);
   const displayName = ownedPet.nickname || ownedPet.species;
+  const resolvedQuality = ownedPet.quality || databasePet?.quality || "UNKNOWN";
+  const palette = getQualityPalette(resolvedQuality);
+  const accent =
+    QUALITY_COLORS[resolvedQuality.toUpperCase() as keyof typeof QUALITY_COLORS] ||
+    QUALITY_COLORS.UNKNOWN;
 
   return (
     <article
       className={`${styles.card} ${isActive ? styles.activeCard : ""}`}
-      style={
-        {
-          "--owned-pet-quality": getQualityColor(ownedPet.quality || databasePet?.quality),
-        } as CSSProperties
-      }
+      style={{ "--accent": accent } as CSSProperties}
     >
       <div className={styles.cardTop}>
-        <div className={styles.petImage}>
-          <OwnedPetImage src={ownedPet.imageUrl || databasePet?.imageUrl || ""} />
-        </div>
-        <div>
-          <h2>{displayName}</h2>
-          <p>
-            {ownedPet.quality || databasePet?.quality || "Unknown quality"} - Lv.{" "}
-            {ownedPet.level || 1} - Evo {ownedPet.evolution || 0}
+        <PetImage
+          pet={{
+            name: displayName,
+            imageUrl: ownedPet.imageUrl || databasePet?.imageUrl || "",
+            egg: databasePet?.egg,
+          }}
+          size={44}
+        />
+        <div className={styles.cardIdentity}>
+          <h2 className={styles.cardTitle}>{displayName}</h2>
+          <p className={styles.cardSubtitle}>
+            Lv. {ownedPet.level || 1} &middot; Evo {ownedPet.evolution || 0}
+            {ownedPet.nickname && ownedPet.nickname !== ownedPet.species
+              ? ` · ${ownedPet.species}`
+              : ""}
           </p>
         </div>
-        {isActive && <span className={styles.activePill}>Active</span>}
+        <div className={styles.cardBadges}>
+          {isActive && (
+            <Badge variant="success" size="sm">
+              Equipped
+            </Badge>
+          )}
+          <Badge
+            variant="neutral"
+            size="sm"
+            style={{
+              color: palette.textColor,
+              borderColor: palette.border,
+              backgroundColor: palette.background,
+            }}
+          >
+            {qualityLabel(resolvedQuality)}
+          </Badge>
+        </div>
       </div>
+
       <div className={styles.statGrid}>
         {PET_STAT_LABELS.slice(0, 6).map(([key, label]) => (
-          <span key={key}>
-            {label}
-            <strong>{formatValue(ownedPet.stats[key])}</strong>
-          </span>
+          <div key={key} className={styles.statTile}>
+            <span className={styles.statTileLabel}>{label}</span>
+            <strong className={styles.statTileValue}>{formatValue(ownedPet.stats[key])}</strong>
+          </div>
         ))}
       </div>
+
       <div className={styles.metaRow}>
-        <span className={ownedPet.source === "imported" ? styles.importedMeta : styles.manualMeta}>
+        <Badge variant="neutral" size="sm">
           {formatSourceMode(ownedPet.source)}
+        </Badge>
+        <span className={styles.metaText}>Power {formatNumber(power)}</span>
+        {bestBattle?.zone && (
+          <span className={styles.metaText}>
+            {formatNumber(bestBattle.value)}g/hr
+          </span>
+        )}
+        <span className={styles.metaText}>
+          {ownedPet.location?.name || databasePet?.acquisition?.[0]?.boss || "With character"}
         </span>
-        <span>
-          {ownedPet.location?.name || databasePet?.acquisition?.[0]?.boss || "Source unknown"}
-        </span>
-        {!databasePet && <span className={styles.warningMeta}>No database match</span>}
+        {!databasePet && <span className={styles.warningMeta}>No catalog match</span>}
         {missingStats > 0 && <span className={styles.warningMeta}>{missingStats} missing stats</span>}
-        {ownedPet.totalExperience !== "" && (
-          <span>{Number(ownedPet.totalExperience).toLocaleString()} pet XP</span>
-        )}
       </div>
-      <details className={styles.detailPanel}>
-        <summary aria-label={`View details for ${displayName}`}>
-          <span>Details</span>
-          <strong>{databasePet ? "Linked data" : "Local snapshot"}</strong>
-        </summary>
-        <div className={styles.detailGrid}>
-          <div>
-            <strong>All Stats</strong>
-            <div className={styles.fullStatGrid}>
-              {PET_STAT_LABELS.map(([key, label]) => (
-                <span key={key}>
-                  {label}
-                  <b>{formatValue(ownedPet.stats[key])}</b>
-                </span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <strong>Evolution</strong>
-            <span>
-              State <b>{formatOptionalNumber(ownedPet.evolution)}</b>
-            </span>
-            <span>
-              Max <b>{formatOptionalNumber(ownedPet.evolutionMax)}</b>
-            </span>
-            <span>
-              Next bonus <b>{formatOptionalNumber(ownedPet.evolutionNextBonus)}</b>
-            </span>
-            <span>
-              Can evolve <b>{ownedPet.evolutionCanEvolve ? "Yes" : "No"}</b>
-            </span>
-          </div>
-          <div>
-            <strong>Import Source</strong>
-            <span>
-              Source <b>{formatSourceMode(ownedPet.source)}</b>
-            </span>
-            <span>
-              Imported <b>{formatDateTime(ownedPet.importedAt)}</b>
-            </span>
-            <span>
-              Hash <b>{ownedPet.hashTail ? `...${ownedPet.hashTail}` : "None"}</b>
-            </span>
-            <span>
-              API ID <b>{ownedPet.apiId ? String(ownedPet.apiId) : "None"}</b>
-            </span>
-          </div>
-          <div>
-            <strong>State</strong>
-            <span>
-              Equipped <b>{ownedPet.equipped ? "Yes" : "No"}</b>
-            </span>
-            <span>
-              Location <b>{ownedPet.location?.name || "Unknown"}</b>
-            </span>
-            <span>
-              Health{" "}
-              <b>
-                {ownedPet.health
-                  ? `${formatOptionalNumber(ownedPet.health.current)} / ${formatOptionalNumber(ownedPet.health.maximum)}`
-                  : "Unknown"}
-              </b>
-            </span>
-            <span>
-              Battle ends <b>{formatOptionalDateTime(ownedPet.battle?.endsAt)}</b>
-            </span>
-          </div>
+
+      <div className={styles.cardBottomBar}>
+        <Checkbox
+          label="Compare"
+          checked={isSelectedForCompare}
+          onChange={onToggleCompare}
+          aria-label={`Select ${displayName} for comparison`}
+        />
+
+        <div className={styles.cardActions}>
+          <Button
+            variant={isActive ? "secondary" : "primary"}
+            size="sm"
+            disabled={isActive}
+            onClick={onUseAsActive}
+            icon={isActive ? <Icon name="check" size="sm" aria-hidden="true" /> : undefined}
+            aria-label={
+              isActive
+                ? `${displayName} is already the active pet`
+                : `Set ${displayName} as active pet`
+            }
+          >
+            {isActive ? "Equipped" : "Equip"}
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onOpenDetails}
+            aria-label={`View details for ${displayName}`}
+          >
+            Details
+          </Button>
+
+          <Link
+            href={`/pets/compare?pets=${encodeURIComponent(`owned:${ownedPet.id}`)}`}
+            className={styles.cardIconAction}
+            aria-label={`Compare ${displayName} in Pet Comparison`}
+            title="Open in Pet Comparison"
+          >
+            <Icon name="petCompare" size="sm" aria-hidden="true" />
+          </Link>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            icon={<Icon name="trash" size="sm" aria-hidden="true" />}
+            aria-label={`Remove ${displayName} from owned pets`}
+          >
+            Remove
+          </Button>
         </div>
-        {ownedPet.evolutionTargets.length > 0 && (
-          <div className={styles.targetRow}>
-            <strong>Evolution targets</strong>
-            <span>
-              {ownedPet.evolutionTargets.map((target) => target.label || target.key).join(" / ")}
-            </span>
-          </div>
-        )}
-      </details>
-      {ownedPet.notes && <p className={styles.notes}>{ownedPet.notes}</p>}
-      <div className={styles.cardActions}>
-        <button
-          type="button"
-          aria-label={
-            isActive
-              ? `${displayName} is already the active pet`
-              : `Set ${displayName} as active pet`
-          }
-          disabled={isActive}
-          onClick={onUseAsActive}
-        >
-          {isActive ? "Current active" : "Set active pet"}
-        </button>
-        <button
-          type="button"
-          aria-label={`Remove ${displayName} from owned pets`}
-          onClick={onRemove}
-        >
-          <Trash2 size={15} /> Remove
-        </button>
       </div>
     </article>
   );

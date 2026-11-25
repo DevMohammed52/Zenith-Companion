@@ -12,7 +12,7 @@ import {
   getPetSourceLabel,
   qualityLabel,
 } from "../utils/pet-helpers";
-import { PetImage } from "./PetImage";
+import { PetImage } from "@/components/pets/PetImage";
 import styles from "./PetCard.module.css";
 
 export function PetCard({

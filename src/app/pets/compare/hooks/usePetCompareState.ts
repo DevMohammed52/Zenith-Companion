@@ -57,9 +57,9 @@ export function usePetCompareState() {
   const [battleMode, setBattleMode] = useState<BattleProfitMode>("withSleep");
   const [battleZone, setBattleZone] = useState(BEST_BATTLE_ZONE);
   const [foodPolicy, setFoodPolicy] = useState<FoodPolicy>("standard");
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const loadedStorageKeyRef = useRef<string | null>(null);
+  const skipNextSaveRef = useRef(false);
   const activeProfileId = activeProfile?.id || null;
   const storageKey = useMemo(() => getProfileStorageKey(STORAGE_KEY, activeProfileId), [activeProfileId]);
 
@@ -83,14 +83,34 @@ export function usePetCompareState() {
     setBattleZone(BEST_BATTLE_ZONE);
     setFoodPolicy("standard");
 
+    let hasUrlSelection = false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlPets = params.get("pets");
+      if (urlPets) {
+        const parsedIds = urlPets
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .map((item) => (item.includes(":") ? item : databaseOptionId(item)))
+          .slice(0, MAX_COMPARE);
+        if (parsedIds.length > 0) {
+          setSelectedIds(parsedIds);
+          hasUrlSelection = true;
+        }
+      }
+    } catch {}
+
     try {
       const raw = localStorage.getItem(storageKey) ?? (activeProfileId ? null : localStorage.getItem(STORAGE_KEY));
       if (raw) {
         const stored = JSON.parse(raw) as CompareState;
-        if (Array.isArray(stored.selectedIds)) {
-          setSelectedIds(stored.selectedIds.slice(0, MAX_COMPARE));
-        } else if (Array.isArray(stored.selectedNames)) {
-          setSelectedIds(stored.selectedNames.map(databaseOptionId).slice(0, MAX_COMPARE));
+        if (!hasUrlSelection) {
+          if (Array.isArray(stored.selectedIds)) {
+            setSelectedIds(stored.selectedIds.slice(0, MAX_COMPARE));
+          } else if (Array.isArray(stored.selectedNames)) {
+            setSelectedIds(stored.selectedNames.map(databaseOptionId).slice(0, MAX_COMPARE));
+          }
         }
         if (typeof stored.petLevel === "number") setPetLevel(clampNumber(stored.petLevel, 1, 100));
         if (typeof stored.masteryLevel === "number") setMasteryLevel(clampNumber(stored.masteryLevel, 1, 100));
@@ -103,10 +123,15 @@ export function usePetCompareState() {
       }
     } catch {}
     loadedStorageKeyRef.current = storageKey;
+    skipNextSaveRef.current = true;
   }, [activeProfileId, storageKey]);
 
   useEffect(() => {
     if (loadedStorageKeyRef.current !== storageKey) return;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
     const payload: CompareState = {
       selectedIds,
       petLevel,
@@ -119,6 +144,16 @@ export function usePetCompareState() {
       foodPolicy,
     };
     localStorage.setItem(storageKey, JSON.stringify(payload));
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (selectedIds.length > 0) {
+        url.searchParams.set("pets", selectedIds.join(","));
+      } else {
+        url.searchParams.delete("pets");
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
   }, [
     battleMode,
     battleZone,
@@ -153,23 +188,6 @@ export function usePetCompareState() {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (!openMenu) return;
-    const close = (event: PointerEvent) => {
-      const target = event.target as Element | null;
-      if (!target?.closest("[data-menu-root]")) setOpenMenu(null);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenMenu(null);
-    };
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [openMenu]);
 
   const pets = useMemo(() => {
     const list = database?.pets || [];
@@ -443,7 +461,6 @@ export function usePetCompareState() {
     setBattleMode("withSleep");
     setBattleZone(BEST_BATTLE_ZONE);
     setFoodPolicy("standard");
-    setOpenMenu(null);
   };
 
   const metricBounds = useMemo(() => {
@@ -493,8 +510,6 @@ export function usePetCompareState() {
     setBattleZone,
     foodPolicy,
     setFoodPolicy,
-    openMenu,
-    setOpenMenu,
     isCompactViewport,
     compareOptions,
     battleZoneOptions,

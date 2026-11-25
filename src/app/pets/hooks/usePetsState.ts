@@ -63,7 +63,6 @@ export function usePetsState() {
   // Pagination state (default 24 per page)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
-  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const { activeProfile } = useProfiles();
@@ -80,19 +79,6 @@ export function usePetsState() {
     media.addEventListener("change", syncViewport);
     return () => media.removeEventListener("change", syncViewport);
   }, []);
-
-  // Scroll listener for floating Back-to-Top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   // Load stored state
   useEffect(() => {
@@ -430,8 +416,6 @@ export function usePetsState() {
     setPageSize,
     totalPages,
     paginatedRows,
-    showBackToTop,
-    scrollToTop,
     activeProfile,
     masteryBonus,
     ownedSpeciesCount,

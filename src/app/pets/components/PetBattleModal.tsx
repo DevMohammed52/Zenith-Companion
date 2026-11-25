@@ -23,7 +23,7 @@ import {
   getZoneProfitValue,
   secondsToDuration,
 } from "../utils/pet-helpers";
-import { PetImage } from "./PetImage";
+import { PetImage } from "@/components/pets/PetImage";
 import styles from "./PetBattleModal.module.css";
 
 export function PetBattleModal({
