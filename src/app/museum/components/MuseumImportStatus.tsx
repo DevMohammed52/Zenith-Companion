@@ -1,5 +1,8 @@
-import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
-import type { useProfiles } from "@/lib/profiles";
+"use client";
+
+import { Banner } from "@/components/ui/Banner";
+import { ModalSheet } from "@/components/ui/ModalSheet";
+import type { ProfileMuseumSnapshot } from "@/lib/museum";
 import {
   formatDateTime,
   formatNumber,
@@ -17,8 +20,10 @@ export function MuseumImportStatus({
   hasCountMismatch,
   readableWarnings,
   uniqueWarnings,
+  isOpen,
+  onClose,
 }: {
-  museum: NonNullable<ReturnType<typeof useProfiles>["activeProfile"]>["museum"] | undefined;
+  museum: ProfileMuseumSnapshot | undefined;
   sourceTail: string | undefined;
   coverageText: string;
   itemsCount: number;
@@ -26,83 +31,72 @@ export function MuseumImportStatus({
   hasCountMismatch: boolean;
   readableWarnings: string[];
   uniqueWarnings: string[];
+  isOpen: boolean;
+  onClose: () => void;
 }) {
-  const statusClass =
-    museum?.status === "private"
-      ? styles.statusPrivate
-      : museum?.status === "unavailable"
-        ? styles.statusUnavailable
-        : museum?.status === "partial"
-          ? styles.statusPartial
-          : "";
+  const showWarningBanner = Boolean(
+    museum?.errorMessage || uniqueWarnings.length > 0 || hasCountMismatch,
+  );
+
+  const warningParts = [
+    museum?.errorMessage,
+    hasCountMismatch
+      ? `${formatNumber(itemsCount)} saved entries vs ${formatNumber(expectedItemCount)} expected from import metadata.`
+      : null,
+    readableWarnings.length > 0 ? readableWarnings.slice(0, 2).join(" / ") : null,
+  ].filter(Boolean);
 
   return (
     <>
-      <section className={styles.museumSourceStrip} aria-label="Museum import state">
-        <div className={`${styles.museumStatus} ${statusClass}`}>
-          <CheckCircle2 size={16} aria-hidden="true" />
-          <span>Status</span>
-          <strong>{museumStatusLabel(museum?.status)}</strong>
-        </div>
-        <div>
-          <Clock3 size={16} aria-hidden="true" />
-          <span>Imported</span>
-          <strong>{formatDateTime(museum?.importedAt)}</strong>
-        </div>
-        <details className={styles.museumImportDetails}>
-          <summary>Import details</summary>
-          <div>
-            <span>Game refresh</span>
+      {showWarningBanner && (
+        <Banner
+          variant="warning"
+          title="Partial museum import notice"
+        >
+          {warningParts.join(" ")}
+        </Banner>
+      )}
+
+      <ModalSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Museum Snapshot Info"
+        description="Sync coverage and profile source details for this browser-saved collection."
+        maxWidth="sm"
+      >
+        <div className={styles.snapshotDetailsList}>
+          <div className={styles.snapshotDetailRow}>
+            <span>Status</span>
+            <strong>{museumStatusLabel(museum?.status)}</strong>
+          </div>
+          <div className={styles.snapshotDetailRow}>
+            <span>Imported</span>
+            <strong>{formatDateTime(museum?.importedAt)}</strong>
+          </div>
+          <div className={styles.snapshotDetailRow}>
+            <span>Game endpoint update</span>
             <strong>{formatDateTime(museum?.endpointUpdatedAt)}</strong>
           </div>
-          <div>
-            <span>Character</span>
-            <strong>
-              {sourceTail ? `...${sourceTail}` : "Waiting for profile import"}
-            </strong>
+          <div className={styles.snapshotDetailRow}>
+            <span>Character hash tail</span>
+            <strong>{sourceTail ? `...${sourceTail}` : "Waiting for import"}</strong>
           </div>
-          <div>
+          <div className={styles.snapshotDetailRow}>
             <span>Pages saved</span>
             <strong>{coverageText}</strong>
           </div>
-          <div
-            className={
-              museum?.pagination?.failedPages?.length
-                ? `${styles.museumStatus} ${styles.statusPartial}`
-                : ""
-            }
-          >
+          <div className={styles.snapshotDetailRow}>
             <span>Pages skipped</span>
             <strong>{formatPageList(museum?.pagination?.failedPages)}</strong>
           </div>
-        </details>
-      </section>
-
-      {(museum?.errorMessage || uniqueWarnings.length > 0 || hasCountMismatch) && (
-        <section
-          className={styles.museumWarningStrip}
-          aria-label="Museum import notes"
-        >
-          <AlertTriangle size={17} aria-hidden="true" />
-          <div>
-            {museum?.errorMessage && <strong>{museum.errorMessage}</strong>}
-            {hasCountMismatch && (
-              <strong>
-                {formatNumber(itemsCount)} saved items, {formatNumber(expectedItemCount)} expected from import metadata.
-              </strong>
-            )}
-            {readableWarnings.length > 0 && (
-              <p>{readableWarnings.slice(0, 2).join(" / ")}</p>
-            )}
-            {uniqueWarnings.length > 0 && (
-              <details className={styles.museumTechnicalDetails}>
-                <summary>Technical details</summary>
-                <p>{uniqueWarnings.join(" / ")}</p>
-              </details>
-            )}
-          </div>
-        </section>
-      )}
+          {uniqueWarnings.length > 0 && (
+            <div className={styles.snapshotDetailRow}>
+              <span>Warnings</span>
+              <strong>{uniqueWarnings.join(" / ")}</strong>
+            </div>
+          )}
+        </div>
+      </ModalSheet>
     </>
   );
 }

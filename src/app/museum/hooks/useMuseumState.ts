@@ -1,55 +1,94 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useItemModal } from "@/context/ItemModalContext";
 import { useProfiles } from "@/lib/profiles";
 import {
   filterMuseumItems,
+  isMuseumCategory,
   museumCategoryLabel,
   sortMuseumItems,
   summarizeMuseum,
 } from "@/lib/museum";
 import {
-  MUSEUM_RESULT_BATCH_SIZE,
+  MUSEUM_PAGE_SIZE,
+  SORT_OPTIONS,
   type MuseumCategory,
   type MuseumSortDirection,
   type MuseumSortKey,
 } from "../types";
 import {
   formatNumber,
-  formatPageList,
   formatWarningKey,
   museumEmptyState,
 } from "../utils/museum-helpers";
 
 export function useMuseumState() {
   const { activeProfile, loaded } = useProfiles();
+  const { openItem, openItemByName } = useItemModal();
   const [category, setCategory] = useState<MuseumCategory | "ALL">("ALL");
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [sortKey, setSortKey] = useState<MuseumSortKey>("category");
   const [sortDirection, setSortDirection] = useState<MuseumSortDirection>("asc");
-  const [visibleLimit, setVisibleLimit] = useState(MUSEUM_RESULT_BATCH_SIZE);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(MUSEUM_PAGE_SIZE);
+  const urlInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (urlInitializedRef.current) return;
+    urlInitializedRef.current = true;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get("cat");
+      const qParam = params.get("q");
+      const sortParam = params.get("sort") as MuseumSortKey | null;
+      const dirParam = params.get("dir") as MuseumSortDirection | null;
+      if (catParam && isMuseumCategory(catParam)) setCategory(catParam);
+      if (qParam) setQuery(qParam);
+      if (sortParam && SORT_OPTIONS.some((o) => o.key === sortParam)) setSortKey(sortParam);
+      if (dirParam === "asc" || dirParam === "desc") setSortDirection(dirParam);
+    } catch {
+      // Ignore malformed URL params
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (category !== "ALL") params.set("cat", category);
+      else params.delete("cat");
+      if (deferredQuery.trim()) params.set("q", deferredQuery.trim());
+      else params.delete("q");
+      if (sortKey !== "category") params.set("sort", sortKey);
+      else params.delete("sort");
+      if (sortDirection !== "asc") params.set("dir", sortDirection);
+      else params.delete("dir");
+      const qs = params.toString();
+      const target = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState(null, "", target);
+    } catch {
+      // Ignore history sync errors
+    }
+  }, [category, deferredQuery, sortKey, sortDirection]);
 
   const museum = activeProfile?.museum;
   const items = useMemo(() => museum?.items || [], [museum]);
   const summaries = useMemo(() => summarizeMuseum(items), [items]);
   const totalQuantity = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
-    [items]
+    [items],
   );
 
   const visibleItems = useMemo(() => {
-    const filtered = filterMuseumItems({ items, category, query });
+    const filtered = filterMuseumItems({ items, category, query: deferredQuery });
     return sortMuseumItems(filtered, sortKey, sortDirection);
-  }, [category, items, query, sortDirection, sortKey]);
+  }, [category, items, deferredQuery, sortDirection, sortKey]);
 
   useEffect(() => {
-    setVisibleLimit(MUSEUM_RESULT_BATCH_SIZE);
-  }, [category, items, query, sortDirection, sortKey]);
+    setPage(1);
+  }, [category, items, deferredQuery, sortDirection, sortKey, pageSize]);
 
   useEffect(() => {
-    setQuery("");
-    setCategory("ALL");
-    setSortKey("category");
-    setSortDirection("asc");
-    setVisibleLimit(MUSEUM_RESULT_BATCH_SIZE);
+    setPage(1);
   }, [activeProfile?.id]);
 
   const activeSummary =
@@ -62,19 +101,19 @@ export function useMuseumState() {
 
   const summaryByCategory = useMemo(
     () => new Map(summaries.map((summary) => [summary.category, summary])),
-    [summaries]
+    [summaries],
   );
 
   const selectedQuantity = visibleItems.reduce(
     (sum, item) => sum + item.quantity,
-    0
+    0,
   );
-  const displayedItems = visibleItems.slice(0, visibleLimit);
-  const hasMoreItems = displayedItems.length < visibleItems.length;
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const displayedItems = visibleItems.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const hasMuseum = items.length > 0;
   const emptyState = museumEmptyState(museum?.status);
-  const EmptyIcon = emptyState.icon;
   const importSource = activeProfile?.importSource;
   const profileSourceTail = importSource?.characterHashTail;
   const sourceTail = museum?.sourceHashTail || profileSourceTail;
@@ -88,7 +127,7 @@ export function useMuseumState() {
 
   const expectedItemCount = museum?.itemCount || museum?.pagination?.total || 0;
   const hasCountMismatch = Boolean(
-    expectedItemCount && items.length && expectedItemCount !== items.length
+    expectedItemCount && items.length && expectedItemCount !== items.length,
   );
 
   const coverageText = museum?.pagination
@@ -96,7 +135,7 @@ export function useMuseumState() {
         museum.pagination.lastPage ||
           museum.pageCount ||
           museum.pagination.fetchedPages.length ||
-          0
+          0,
       )} pages`
     : museum?.pageCount
       ? `${formatNumber(museum.pageCount)} pages`
@@ -111,18 +150,15 @@ export function useMuseumState() {
 
   const noMatchTitle =
     category === "ALL"
-      ? `No museum items match "${query.trim()}"`
-      : `No ${museumCategoryLabel(category)} match "${query.trim()}"`;
+      ? `No museum entries match "${query.trim()}"`
+      : `No ${museumCategoryLabel(category)} entries match "${query.trim()}"`;
 
   const resetControls = () => {
     setQuery("");
     setCategory("ALL");
     setSortKey("category");
     setSortDirection("asc");
-  };
-
-  const showMore = () => {
-    setVisibleLimit((current) => current + MUSEUM_RESULT_BATCH_SIZE);
+    setPage(1);
   };
 
   return {
@@ -134,7 +170,11 @@ export function useMuseumState() {
     totalQuantity,
     visibleItems,
     displayedItems,
-    hasMoreItems,
+    page: safePage,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
     hasMuseum,
     category,
     setCategory,
@@ -148,7 +188,6 @@ export function useMuseumState() {
     summaryByCategory,
     selectedQuantity,
     emptyState,
-    EmptyIcon,
     sourceTail,
     uniqueWarnings,
     readableWarnings,
@@ -160,6 +199,12 @@ export function useMuseumState() {
     activeControlCount,
     noMatchTitle,
     resetControls,
-    showMore,
+    openCollectible: (id: string, name: string) => {
+      if (id && Number.isNaN(Number(id))) {
+        openItem(id);
+      } else {
+        openItemByName(name);
+      }
+    },
   };
 }

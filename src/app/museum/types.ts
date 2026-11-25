@@ -1,4 +1,4 @@
-import type { Sparkles } from "lucide-react";
+import type { IconConcept } from "@/lib/icons";
 import {
   MUSEUM_CATEGORIES,
   type MuseumCategory,
@@ -7,15 +7,6 @@ import {
   type MuseumSortDirection,
   type MuseumSortKey,
 } from "@/lib/museum";
-import {
-  BookOpen,
-  Database,
-  Image as ImageIcon,
-  Package,
-  PawPrint,
-  Shield,
-  UserRound,
-} from "lucide-react";
 
 export { MUSEUM_CATEGORIES };
 export type {
@@ -26,14 +17,14 @@ export type {
   MuseumSortKey,
 };
 
-export const CATEGORY_ICONS: Record<MuseumCategory | "ALL", typeof Sparkles> = {
-  ALL: Database,
-  SKINS: UserRound,
-  BACKGROUNDS: ImageIcon,
-  GUILD_ICONS: Shield,
-  PETS: PawPrint,
-  COLLECTIBLES: Package,
-  BESTIARY: BookOpen,
+export const CATEGORY_ICONS: Record<MuseumCategory | "ALL", IconConcept> = {
+  ALL: "museum",
+  SKINS: "profile",
+  BACKGROUNDS: "weather",
+  GUILD_ICONS: "conquest",
+  PETS: "pets",
+  COLLECTIBLES: "items",
+  BESTIARY: "lore",
 };
 
 export const SORT_OPTIONS: Array<{ key: MuseumSortKey; label: string }> = [
@@ -42,4 +33,4 @@ export const SORT_OPTIONS: Array<{ key: MuseumSortKey; label: string }> = [
   { key: "quantity", label: "Quantity" },
 ];
 
-export const MUSEUM_RESULT_BATCH_SIZE = 120;
+export const MUSEUM_PAGE_SIZE = 24;

@@ -1,4 +1,7 @@
-import { Search } from "lucide-react";
+"use client";
+
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import { museumCategoryLabel } from "@/lib/museum";
 import type { MuseumCategory, MuseumItem } from "../types";
 import { formatNumber } from "../utils/museum-helpers";
@@ -9,74 +12,80 @@ export function MuseumGrid({
   category,
   displayedItems,
   visibleItems,
-  activeSummary,
-  hasMoreItems,
-  showMore,
+  selectedQuantity,
+  page,
+  totalPages,
+  pageSize,
+  setPage,
+  setPageSize,
   noMatchTitle,
   query,
+  onResetFilters,
+  onInspectCollectible,
 }: {
   category: MuseumCategory | "ALL";
   displayedItems: MuseumItem[];
   visibleItems: MuseumItem[];
-  activeSummary: { itemCount: number; totalQuantity: number };
-  hasMoreItems: boolean;
-  showMore: () => void;
+  selectedQuantity: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+  setPage: (p: number) => void;
+  setPageSize: (size: number) => void;
   noMatchTitle: string;
   query: string;
+  onResetFilters: () => void;
+  onInspectCollectible: (id: string, name: string) => void;
 }) {
   return (
     <>
-      <section className={styles.museumResultsHeader}>
-        <div>
+      <div className={styles.resultsBar}>
+        <div className={styles.resultsStrip}>
+          <span>{category === "ALL" ? "All categories" : museumCategoryLabel(category)}</span>
           <span>
-            {category === "ALL" ? "All categories" : museumCategoryLabel(category)}
+            {formatNumber(visibleItems.length)} item{visibleItems.length === 1 ? "" : "s"}
           </span>
-          <strong>
-            {formatNumber(displayedItems.length)} of {formatNumber(visibleItems.length)} shown
-          </strong>
+          <span>{formatNumber(selectedQuantity)} total collected</span>
         </div>
-        <div>
-          <span>Selected total</span>
-          <strong>
-            {formatNumber(activeSummary.itemCount)} collected /{" "}
-            {formatNumber(activeSummary.totalQuantity)} qty
-          </strong>
-        </div>
-      </section>
+      </div>
 
       {visibleItems.length > 0 ? (
         <>
-          <section className={styles.museumGrid} aria-label="Museum items">
+          <section className={styles.itemGrid} aria-label="Museum items">
             {displayedItems.map((item) => (
               <MuseumItemCard
                 key={`${item.category}-${String(item.id)}-${item.name}`}
                 item={item}
+                onInspectCollectible={onInspectCollectible}
               />
             ))}
           </section>
-          {hasMoreItems && (
-            <div className={styles.museumMore}>
-              <button
-                type="button"
-                onClick={showMore}
-                aria-label={`Show more museum items, currently showing ${formatNumber(
-                  displayedItems.length
-                )} of ${formatNumber(visibleItems.length)}`}
-              >
-                Show{" "}
-                {formatNumber(
-                  Math.min(120, visibleItems.length - displayedItems.length)
-                )}{" "}
-                more
-              </button>
-            </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={visibleItems.length}
+              pageSize={pageSize}
+              pageSizeOptions={[24, 48, 96]}
+              showPageSize
+              itemLabel="entries"
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           )}
         </>
       ) : (
-        <section className={`${styles.museumEmpty} ${styles.museumEmptyCompact}`} role="status">
-          <Search size={24} aria-hidden="true" />
-          <h2>{query.trim() ? noMatchTitle : "No matching museum items"}</h2>
-          <p>Adjust the search text or category filter.</p>
+        <section className={styles.emptyPanel}>
+          <EmptyState
+            icon="searchEmpty"
+            title={query.trim() ? noMatchTitle : "No matching museum items"}
+            description="Try a different search query or switch category filters."
+            action={{
+              label: "Reset Filters",
+              onClick: onResetFilters,
+            }}
+          />
         </section>
       )}
     </>

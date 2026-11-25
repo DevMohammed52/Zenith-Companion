@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { useMuseumState } from "./hooks/useMuseumState";
 import { MuseumHero } from "./components/MuseumHero";
 import { MuseumControls } from "./components/MuseumControls";
 import { MuseumImportStatus } from "./components/MuseumImportStatus";
-import { MuseumSummaryRail } from "./components/MuseumSummaryRail";
 import { MuseumGrid } from "./components/MuseumGrid";
 import {
   MuseumLoading,
@@ -15,30 +16,50 @@ import styles from "./page.module.css";
 
 export default function MuseumPage() {
   const state = useMuseumState();
+  const [snapshotInfoOpen, setSnapshotInfoOpen] = useState(false);
 
   return (
-    <main className={`container ${styles.museumPage}`} aria-labelledby="museum-page-title">
+    <main className={styles.page} aria-labelledby="museum-page-title">
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {state.hasMuseum
-          ? `${formatNumber(state.visibleItems.length)} museum items match the current filters. ${formatNumber(state.displayedItems.length)} are rendered.`
+          ? `${formatNumber(state.visibleItems.length)} museum entries match the current filters. ${formatNumber(state.displayedItems.length)} shown.`
           : state.emptyState.title}
       </div>
 
       <MuseumHero
+        loaded={state.loaded}
         activeProfile={state.activeProfile}
+        museum={state.museum}
+        itemsCount={state.items.length}
+        totalQuantity={state.totalQuantity}
         summaries={state.summaries}
+        onOpenSnapshotInfo={() => setSnapshotInfoOpen(true)}
       />
 
       {!state.loaded ? (
         <MuseumLoading />
       ) : !state.hasMuseum ? (
         <MuseumEmptySnapshot
-          EmptyIcon={state.EmptyIcon}
+          icon={state.emptyState.icon}
+          variant={state.emptyState.variant}
           title={state.emptyState.title}
           body={state.emptyState.body}
         />
       ) : (
         <>
+          <MuseumImportStatus
+            museum={state.museum}
+            sourceTail={state.sourceTail}
+            coverageText={state.coverageText}
+            itemsCount={state.items.length}
+            expectedItemCount={state.expectedItemCount}
+            hasCountMismatch={state.hasCountMismatch}
+            readableWarnings={state.readableWarnings}
+            uniqueWarnings={state.uniqueWarnings}
+            isOpen={snapshotInfoOpen}
+            onClose={() => setSnapshotInfoOpen(false)}
+          />
+
           <MuseumControls
             query={state.query}
             setQuery={state.setQuery}
@@ -49,50 +70,30 @@ export default function MuseumPage() {
             sortDirection={state.sortDirection}
             setSortDirection={state.setSortDirection}
             itemsCount={state.items.length}
-            visibleItemsCount={state.visibleItems.length}
-            displayedItemsCount={state.displayedItems.length}
-            selectedQuantity={state.selectedQuantity}
             summaryByCategory={state.summaryByCategory}
             activeControlCount={state.activeControlCount}
-            hasActiveFilters={state.hasActiveFilters}
-            hasCustomSort={state.hasCustomSort}
             resetControls={state.resetControls}
-          />
-
-          <MuseumImportStatus
-            museum={state.museum}
-            sourceTail={state.sourceTail}
-            coverageText={state.coverageText}
-            itemsCount={state.items.length}
-            expectedItemCount={state.expectedItemCount}
-            hasCountMismatch={state.hasCountMismatch}
-            readableWarnings={state.readableWarnings}
-            uniqueWarnings={state.uniqueWarnings}
-          />
-
-          <MuseumSummaryRail
-            itemsCount={state.items.length}
-            totalQuantity={state.totalQuantity}
-            expectedItemCount={state.expectedItemCount}
-            summaries={state.summaries}
-            category={state.category}
-            onToggleCategory={(cat) =>
-              state.setCategory((current) => (current === cat ? "ALL" : cat))
-            }
           />
 
           <MuseumGrid
             category={state.category}
             displayedItems={state.displayedItems}
             visibleItems={state.visibleItems}
-            activeSummary={state.activeSummary}
-            hasMoreItems={state.hasMoreItems}
-            showMore={state.showMore}
+            selectedQuantity={state.selectedQuantity}
+            page={state.page}
+            totalPages={state.totalPages}
+            pageSize={state.pageSize}
+            setPage={state.setPage}
+            setPageSize={state.setPageSize}
             noMatchTitle={state.noMatchTitle}
             query={state.query}
+            onResetFilters={state.resetControls}
+            onInspectCollectible={state.openCollectible}
           />
         </>
       )}
+
+      <BackToTop />
     </main>
   );
 }

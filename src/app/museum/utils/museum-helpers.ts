@@ -1,5 +1,4 @@
-import { AlertTriangle, CheckCircle2, Database, LockKeyhole } from "lucide-react";
-import type { MuseumCategory } from "../types";
+import type { IconConcept } from "@/lib/icons";
 
 export function formatNumber(value: number): string {
   return value.toLocaleString();
@@ -13,6 +12,18 @@ export function formatDateTime(value?: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+export function formatRelativeAge(value?: string): string {
+  if (!value) return "Not synced";
+  const ms = new Date(value).getTime();
+  if (!Number.isFinite(ms)) return "Sync unknown";
+  const diffMin = Math.max(0, Math.round((Date.now() - ms) / 60000));
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.round(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return `${Math.round(diffHrs / 24)}d ago`;
 }
 
 export function formatPageList(pages?: number[]): string {
@@ -35,25 +46,6 @@ export function formatWarningKey(value: string): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export function categoryTone(category: MuseumCategory): string {
-  switch (category) {
-    case "SKINS":
-      return "violet";
-    case "BACKGROUNDS":
-      return "cyan";
-    case "GUILD_ICONS":
-      return "gold";
-    case "PETS":
-      return "green";
-    case "COLLECTIBLES":
-      return "amber";
-    case "BESTIARY":
-      return "rose";
-    default:
-      return "violet";
-  }
-}
-
 export function museumStatusLabel(status?: string): string {
   switch (status) {
     case "imported":
@@ -71,37 +63,47 @@ export function museumStatusLabel(status?: string): string {
   }
 }
 
-export function museumEmptyState(status?: string) {
+export function museumEmptyState(status?: string): {
+  icon: IconConcept;
+  variant: "default" | "error";
+  title: string;
+  body: string;
+} {
   switch (status) {
     case "empty":
       return {
-        icon: CheckCircle2,
+        icon: "check",
+        variant: "default",
         title: "Museum snapshot is empty",
-        body: "This profile has a museum snapshot, but the import did not include any collection items.",
+        body: "This character has a museum snapshot, but no unlocked entries were returned.",
       };
     case "private":
       return {
-        icon: LockKeyhole,
+        icon: "locked",
+        variant: "default",
         title: "Museum is private",
-        body: "Museum profile data is private or not yet imported. You can still use the rest of the profile manually.",
+        body: "This character's museum is set to private in IdleMMO. Make it public or re-import with permission to browse entries here.",
       };
     case "unavailable":
       return {
-        icon: AlertTriangle,
+        icon: "error",
+        variant: "error",
         title: "Museum unavailable",
-        body: "The museum snapshot could not be imported. The saved status is kept so this is not mistaken for missing setup.",
+        body: "The museum snapshot could not be imported on the last sync. Try re-importing your character profile.",
       };
     case "partial":
       return {
-        icon: AlertTriangle,
+        icon: "warning",
+        variant: "default",
         title: "Partial museum snapshot",
-        body: "The import recorded a partial museum result, but no usable collection items were saved.",
+        body: "The import recorded a partial museum result without saved entries.",
       };
     default:
       return {
-        icon: Database,
-        title: "No museum snapshot for this character",
-        body: "Each character in IdleMMO has their own personal museum collection. To view this character's museum, import their profile using their character hash.",
+        icon: "museum",
+        variant: "default",
+        title: "No museum snapshot yet",
+        body: "Each character keeps their own museum collection. Import a character on Profiles to inspect their unlocked entries here.",
       };
   }
 }
