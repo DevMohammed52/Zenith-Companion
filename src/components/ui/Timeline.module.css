@@ -98,7 +98,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex-grow: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
   background-color: var(--bg-card, #141b2d);
   border: 1px solid var(--border-subtle, #222c44);
   border-radius: 8px;

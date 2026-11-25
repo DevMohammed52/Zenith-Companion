@@ -82,6 +82,7 @@ import {
   Flame,
   Percent,
   Route,
+  MapPin,
 } from "lucide-react";
 
 /**
@@ -140,6 +141,8 @@ export const CONCEPT_ICONS = {
   items: Package,
   guilds: Users,
   map: Compass,
+  mapPin: MapPin,
+  bank: Landmark,
   route: Route,
   bis: Target,
   calculator: Calculator,
