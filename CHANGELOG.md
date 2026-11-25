@@ -8,12 +8,14 @@ Updates are organized chronologically by release date.
 ## [2026-11-25]
 
 ### Added
+- **World Map Travel Cost & Territory Links**: Added calibrated distance, teleport gold cost (with Banished and Cursed class discounts), and walk-time estimates from your active character's location directly in World Map, alongside live Conquest control bars, house-location badges, Weather Guide links, and Lore links.
 - **Conquest Season Archive**: You can now browse past conquest seasons (**Season 3** through **Season 12**) alongside the current season in Conquest, complete with zone winners, paginated contributor rankings, and historical control shares.
 - **Conquest Buffs, Shards & Live Assault Timers**: Conquest now shows live assault wave countdowns, resolves each top contributor's guild badge, displays guild levels, and provides a top-level **Buffs & Shards** guide for Territory Ruling Buffs (Ranks 1–10) and Zone Shard payouts (Ranks 1–25).
 - **Equipped Pet Spotlight**: Your currently equipped pet now sits pinned at the top of Owned Pets with Power, Health, Location, best Battle EV/hr, and 1-click catalog comparison.
 - **Missing Pets & Multi-Select Compare**: Owned Pets now tracks your collection progress, adds a **Missing Pets** view with drop sources and exchange floor prices, adds a sortable **Table** view, and lets you select 2–4 pets to open together in Pet Comparison.
 
 ### Changed
+- **World Map Redesign**: Rebuilt World Map in the Astral Slate design system with an expansive panoramic map backdrop, level-sorted region pickers, `From -> To` travel estimator, in-place **Enemy Details** modal (with clickable loot drops), structured per-skill weather modifiers, and a chronological **Weather Forecast** timeline with quick filters.
 - **What's New Timeline Redesign**: Upgraded What's New to a chronological release timeline with semantic date nodes, calm slate filter tabs, quick release jump counts, and smooth accordion drawers synced to the latest release date.
 - **Museum Collection Redesign**: Merged duplicate museum category filters into one toolbar, added a compact Snapshot Info modal, direct collectible inspection and Pet/Enemy Database links, paginated browsing (24, 48, or 96 entries per page), shareable filter links, and a floating Back to Top button.
 - **Calmer Dark-Mode Contrast**: Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes.

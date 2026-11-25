@@ -115,7 +115,7 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 - [x] **[2026-11-25 13:15] /housing**: Replaced 2,226-line `HousingStyles.tsx` (`<style jsx>`) with scoped `page.module.css`, decluttered `HousingHeader.tsx` (matched sidebar `housing` icon), added `GoldIcon` + `TokenIcon` + `ShardIcon` (`src/components/GoldIcon.tsx`) and material item sprites (`allItemsDb`), fixed header/card label spacing across Setup, Built Components, Room Profit ROI, and Guest Buffs tabs, mounted smooth `<BackToTop />`, preserved strict math invariance, and verified with `housing-architecture-contracts.test.ts` + Playwright (`housing-interactions.spec.ts`).
 - [x] **/conquest**: [2026-11-25 15:42] Decluttered Astral Slate Conquest redesign with labeled control-share bars, vertical metric separators, paginated contributors, incremental season archiving (Seasons 3–12), and single page-wide Territory Buffs & Shards modal.
 - [x] **/museum**: [2026-11-25 17:01] Astral Slate museum browser with duplicate summary removal, Snapshot Info modal, collectible ItemModal inspection, pet/bestiary cross-links, `<GameImage>` fallbacks, bounded `Pagination`, `<BackToTop />`, and URL sync.
-- [ ] **/map**: Interactive world map, territory levels, resource nodes.
+- [x] **/map**: [2026-11-25 20:31] Scoped Astral Slate atlas redesign (`MapHeader`, `MapStage`, `LocationDossier`, `IntelGrid`, `WeatherEffectsBreakdown`, `EnemyModal`), panoramic blurred ocean canvas with minimal `Solaris Isle` overlay badge, scenic full-width region header banner with directional gradient scrims, level-sorted location pickers, calibrated `From -> To` travel & teleport calculator (`world-boss-routing.ts`), live Conquest territory control & House links, structured per-skill weather modifiers, tabbed regional intelligence (Overview & Sources with in-place `EnemyModal`, Resources, paginated Loot Drops, and live/upcoming `SegmentedControl` + `Timeline` Weather Forecast), clean mobile dot markers + non-overlapping scrollable tabs, `?location=` & `?tab=` URL sync, `<BackToTop />`, and verified with `map-architecture-contracts.test.ts` + Playwright (`map-interactions.spec.ts`, `CLS <= 0.1`).
 - [ ] **/guilds**: Guild roster, intelligence metrics, raid logs.
 
 ### Tier 6: Economy Engines & Skilling Simulators
@@ -141,7 +141,7 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 | **Phase 3** | Tier 2: `/settings` | Completed | Scoped CSS Module, SegmentedControl groups, ModalSheet, 44px touch targets, zero a11y violations |
 | **Phase 4** | Tier 3: Shell Chrome | Completed | Sidebar, Header, Mobile BottomDock, Toast, Sound Spec, Refactoring Protocol |
 | **Phase 5** | Tier 4: `/items`, `ItemModal`, `/enemies` & `/whats-new` | Completed | `/items`, `ItemModal`, `/enemies`, and `/whats-new` completed |
-| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets`, `/pets/compare`, `/pets/owned`, `/housing`, `/conquest`, and `/museum` done; `/map` next (`/guilds` follows) |
+| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets`, `/pets/compare`, `/pets/owned`, `/housing`, `/conquest`, `/museum`, and `/map` done; `/guilds` next to complete Tier 5 |
 | **Phase 7** | Tier 6: Economy Engines | Planned | Profiles, Bosses, Dungeons, Skill Profit, Forge, Alchemy |
 | **Phase 8** | Tier 7: Home Dashboard | Planned | Final aggregator route polish |
 | **Phase 9** | Post-Migration Polish | Planned | [2026-11-25 16:04] Sidebar section grouping weight, Settings visual hierarchy, & cross-page mobile responsive audit |
