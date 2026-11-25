@@ -28,7 +28,36 @@ import {
   formatSignedGold,
   formatStarts,
 } from "@/lib/format";
+import type { IconConcept } from "@/lib/icons";
 import { getSafeMarketValue } from "@/lib/market-pricing";
+
+export function getHousingActivityIcon(activity?: HousingActivity | null, componentId?: string): IconConcept {
+  if (componentId === "remote-conduit") return "map";
+  if (componentId === "pet-quarters") return "pets";
+  if (componentId === "house-ledger") return "defense";
+  if (componentId?.startsWith("guest-quarters")) return "guilds";
+  switch (activity) {
+    case "alchemy":
+      return "alchemy";
+    case "smelting":
+    case "forge":
+    case "mining":
+      return "forge";
+    case "combat":
+      return "combat";
+    case "dungeon":
+      return "dungeon";
+    case "hunting":
+      return "accuracy";
+    case "meditation":
+    case "eventMastery":
+      return "xp";
+    case "construction":
+      return "housing";
+    default:
+      return "items";
+  }
+}
 
 export const BUFF_ACTIVITIES: HousingActivity[] = [
   "woodcutting",

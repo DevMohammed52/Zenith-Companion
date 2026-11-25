@@ -1,6 +1,8 @@
 "use client";
 
-import { Castle } from "lucide-react";
+import { BackToTop } from "@/components/ui/BackToTop";
+import { Icon } from "@/components/ui/Icon";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useHousingState } from "./hooks/useHousingState";
 import { HousingHeader } from "./components/HousingHeader";
 import { HousingOverviewTab } from "./components/HousingOverviewTab";
@@ -8,19 +10,23 @@ import { HousingSetupTab } from "./components/HousingSetupTab";
 import { HousingComponentsTab } from "./components/HousingComponentsTab";
 import { HousingProfitTab } from "./components/HousingProfitTab";
 import { HousingGuestTab } from "./components/HousingGuestTab";
-import { HousingStyles } from "./components/HousingStyles";
+import styles from "./page.module.css";
 
 export default function HousingPage() {
   const state = useHousingState();
-  const { activeProfile, undoHousing, restoreHousingUndo, activeHousingTab } = state;
+  const { loaded, activeProfile, undoHousing, restoreHousingUndo, activeHousingTab } = state;
 
   return (
-    <main className="container housing-page" aria-labelledby="housing-page-title">
+    <main className={`container housing-page ${styles.housingPage}`} aria-labelledby="housing-page-title">
       <HousingHeader state={state} />
 
-      {!activeProfile ? (
+      {!loaded ? (
+        <div className="housing-tab-viewport" style={{ minHeight: "520px", contain: "layout" }}>
+          <Skeleton variant="rectangular" width="100%" height={260} />
+        </div>
+      ) : !activeProfile ? (
         <section className="housing-panel empty-panel">
-          <Castle size={28} />
+          <Icon name="dungeon" size="xl" aria-hidden="true" />
           <h2>Create or select a profile first</h2>
           <p>Housing is stored per character profile so alts and mains do not share house setups.</p>
         </section>
@@ -41,7 +47,7 @@ export default function HousingPage() {
         </div>
       )}
 
-      <HousingStyles />
+      <BackToTop />
     </main>
   );
 }

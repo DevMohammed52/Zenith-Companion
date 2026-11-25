@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 
 export function ChoicePicker<T extends string>({
   label,
@@ -93,7 +93,7 @@ export function ChoicePicker<T extends string>({
       >
         {label && <span id={labelId} className="sr-only">{label}</span>}
         <span id={valueId}>{selected?.label || placeholder}</span>
-        <ChevronDown size={16} />
+        <Icon name="chevronDown" size="md" aria-hidden="true" />
       </button>
       {open && (
         <>
@@ -102,7 +102,7 @@ export function ChoicePicker<T extends string>({
             <div className="choice-menu-head">
               <span>{label || placeholder}</span>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu">
-                <X size={15} />
+                <Icon name="close" size="sm" aria-hidden="true" />
               </button>
             </div>
             {options.map((option) => (

@@ -1,12 +1,13 @@
 "use client";
 
-import { Clock, Coins, Home, MapPin, Package, TrendingUp, Users } from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Icon } from "@/components/ui/Icon";
 import { HOUSING_TABS } from "../types";
 import type { HousingState } from "../hooks/useHousingState";
 
 export function HousingHeader({ state }: { state: HousingState }) {
   const {
+    loaded,
     activeProfile,
     activeProfileName,
     housingModeLabel,
@@ -26,48 +27,45 @@ export function HousingHeader({ state }: { state: HousingState }) {
   return (
     <>
       <section className="page-title-row">
-        <div className="housing-hero-copy">
-          <p className="eyebrow"><ZenithIcon name="housing" size={16} /> Housing Manager</p>
-          <h1 id="housing-page-title">House Planner</h1>
-          <p className="muted">
-            Configure your house, guest host, room tiers, repairs, and upgrade profits in your character profile.
-          </p>
-          <div className="housing-hero-chips" aria-label="Housing context">
-            <span><Users size={14} aria-hidden="true" /> {activeProfileName}</span>
-            <span><Home size={14} aria-hidden="true" /> {housingModeLabel}</span>
-            <span className={summary.availableAnywhere ? "good" : ""}><MapPin size={14} aria-hidden="true" /> {housingScopeLabel}</span>
-          </div>
-          {activeProfile && (
-            <div className="housing-quick-actions" aria-label="Housing quick actions">
-              <button type="button" aria-pressed={activeHousingTab === "setup"} onClick={() => setActiveHousingTab("setup")}>
-                <Home size={15} aria-hidden="true" /> Setup
-              </button>
-              <button
-                type="button"
-                aria-pressed={activeHousingTab === (housing.mode === "guest" ? "guest" : "components")}
-                onClick={() => setActiveHousingTab(housing.mode === "guest" ? "guest" : "components")}
-              >
-                <Package size={15} aria-hidden="true" /> {housing.mode === "guest" ? "Guest" : "Rooms"}
-              </button>
-              <button type="button" aria-pressed={activeHousingTab === "profit"} disabled={housing.mode !== "owner"} onClick={() => setActiveHousingTab("profit")}>
-                <TrendingUp size={15} aria-hidden="true" /> ROI
-              </button>
-            </div>
+        <p className="eyebrow">
+          <Icon name="housing" size="sm" aria-hidden="true" />
+          <span>Housing</span>
+        </p>
+        <h1 id="housing-page-title">House Planner</h1>
+        <p className="muted">
+          Configure your house, guest host, room tiers, repairs, and upgrade profits for {activeProfileName}.
+        </p>
+        <div className="housing-hero-chips" aria-label="Housing context">
+          <span>
+            <Icon name="profile" size="xs" aria-hidden="true" />
+            <span>{activeProfileName}</span>
+          </span>
+          <span>
+            <Icon name="housing" size="xs" aria-hidden="true" />
+            <span>{housingModeLabel}</span>
+          </span>
+          <span className={summary.availableAnywhere ? "good" : ""}>
+            <Icon name="map" size="xs" aria-hidden="true" />
+            <span>{housingScopeLabel}</span>
+          </span>
+          <span>
+            <Icon name="timer" size="xs" aria-hidden="true" />
+            <span>{strongestBonusLabel}</span>
+          </span>
+          <span>
+            <Icon name="items" size="xs" aria-hidden="true" />
+            <span>{housingReadinessLabel}</span>
+          </span>
+          {housing.mode === "owner" && (
+            <span className={selectedBuildCost.missingMaterials.length ? "needs-data" : ""}>
+              <GoldIcon size={13} />
+              <span>{selectedCostStatus}</span>
+            </span>
           )}
-        </div>
-        <div className="housing-status-card">
-          <span>{activeProfile?.name || "No profile"}</span>
-          <strong>{housing.mode === "owner" ? "Owner" : housing.mode === "guest" ? "Guest" : "No house"}</strong>
-          <em>{housing.mode === "guest" && housing.guestHostName ? `Host: ${housing.guestHostName}` : strongestBonusLabel}</em>
-          <div className="housing-status-details" aria-label="Housing summary">
-            <span><Clock size={14} aria-hidden="true" /> {strongestBonusLabel}</span>
-            <span><Package size={14} aria-hidden="true" /> {housingReadinessLabel}</span>
-            <span className={selectedBuildCost.missingMaterials.length ? "needs-data" : ""}><Coins size={14} aria-hidden="true" /> {selectedCostStatus}</span>
-          </div>
         </div>
       </section>
 
-      {activeProfile && (
+      {(!loaded || activeProfile) && (
         <nav className="housing-tabs" aria-label="Housing sections" role="tablist" aria-orientation="horizontal">
           {HOUSING_TABS.map((tab, tabIndex) => (
             <button
@@ -78,6 +76,7 @@ export function HousingHeader({ state }: { state: HousingState }) {
               }}
               type="button"
               role="tab"
+              disabled={!loaded}
               className={activeHousingTab === tab.id ? "active" : ""}
               aria-current={activeHousingTab === tab.id ? "page" : undefined}
               aria-selected={activeHousingTab === tab.id}

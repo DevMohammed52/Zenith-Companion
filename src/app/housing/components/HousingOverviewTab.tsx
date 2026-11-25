@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, Clock, MapPin, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Icon } from "@/components/ui/Icon";
 import { formatHours, formatGoldUnit } from "@/lib/format";
 import { getHousingActivityLabel } from "@/lib/housing";
+import { getHousingActivityIcon } from "../types";
 import type { HousingState } from "../hooks/useHousingState";
 
 export function HousingOverviewTab({ state }: { state: HousingState }) {
@@ -58,7 +60,10 @@ export function HousingOverviewTab({ state }: { state: HousingState }) {
           <div><span>Slots</span><strong>{summary.slotCapacity}/16</strong></div>
           <div>
             <span>{selectedCostLabel}</span>
-            <strong className={selectedBuildCost.missingMaterials.length ? "needs-data-text" : ""}>{selectedCostStatus}</strong>
+            <strong className={selectedBuildCost.missingMaterials.length ? "needs-data-text" : "inline-gold-value"}>
+              {!selectedBuildCost.missingMaterials.length && <GoldIcon size={14} />}
+              <span>{selectedCostStatus}</span>
+            </strong>
           </div>
           <div>
             <span>{housing.mode === "guest" ? "Host" : "Guests"}</span>
@@ -81,7 +86,8 @@ export function HousingOverviewTab({ state }: { state: HousingState }) {
           <div className="overview-chip-list">
             {activeIdleBuffs.slice(0, 6).map((activity) => (
               <span key={activity}>
-                {getHousingActivityLabel(activity)}
+                <Icon name={getHousingActivityIcon(activity)} size="xs" aria-hidden="true" />
+                <span>{getHousingActivityLabel(activity)}</span>
                 <strong>+{formatHours(summary.idleHours[activity])}</strong>
               </span>
             ))}
@@ -105,18 +111,18 @@ export function HousingOverviewTab({ state }: { state: HousingState }) {
         <div className="overview-check-list">
           {housing.mode === "guest" ? (
             <>
-              <span className={housing.guestHostName ? "done" : ""}><Users size={15} /> Host {guestHostLabel}</span>
-              <span className={summary.availableAnywhere ? "done" : ""}><MapPin size={15} /> {summary.availableAnywhere ? "Remote Conduit active" : `Local to ${housing.location || "host location"}`}</span>
-              <span className={guestBlockedClass ? "" : "done"}><ShieldCheck size={15} /> {guestBlockedClass ? `${guestBlockedClass} cannot be a guest` : "Class can use guest access"}</span>
-              <span><Clock size={15} /> Host repair and decay status is manual</span>
+              <span className={housing.guestHostName ? "done" : ""}><Icon name="guilds" size="sm" aria-hidden="true" /> Host {guestHostLabel}</span>
+              <span className={summary.availableAnywhere ? "done" : ""}><Icon name="map" size="sm" aria-hidden="true" /> {summary.availableAnywhere ? "Remote Conduit active" : `Local to ${housing.location || "host location"}`}</span>
+              <span className={guestBlockedClass ? "" : "done"}><Icon name="defense" size="sm" aria-hidden="true" /> {guestBlockedClass ? `${guestBlockedClass} cannot be a guest` : "Class can use guest access"}</span>
+              <span><Icon name="timer" size="sm" aria-hidden="true" /> Host repair and decay status is manual</span>
             </>
           ) : (
             <>
-              <span className={housing.foundationBuilt ? "done" : ""}><Check size={15} /> Foundation {housing.foundationBuilt ? "built" : `${formatGoldUnit(foundationComponent?.goldCost || 25000)} / 6h`}</span>
-              <span><Clock size={15} /> Repair cycle {repairDecayDays} days after repair</span>
-              <span className={summary.remoteConduit ? "done" : ""}><MapPin size={15} /> Remote Conduit {summary.remoteConduit ? "active" : "not active"}</span>
-              <span className={summary.petQuarters ? "done" : ""}><Sparkles size={15} /> Pet Quarters {summary.petQuarters ? "active" : "not active"}</span>
-              <span className={summary.houseLedger ? "done" : ""}><ShieldCheck size={15} /> House Ledger {summary.houseLedger ? "active" : "not active"}</span>
+              <span className={housing.foundationBuilt ? "done" : ""}><Icon name="check" size="sm" aria-hidden="true" /> Foundation {housing.foundationBuilt ? "built" : `${formatGoldUnit(foundationComponent?.goldCost || 25000)} / 6h`}</span>
+              <span><Icon name="timer" size="sm" aria-hidden="true" /> Repair cycle {repairDecayDays} days after repair</span>
+              <span className={summary.remoteConduit ? "done" : ""}><Icon name="map" size="sm" aria-hidden="true" /> Remote Conduit {summary.remoteConduit ? "active" : "not active"}</span>
+              <span className={summary.petQuarters ? "done" : ""}><Icon name="xp" size="sm" aria-hidden="true" /> Pet Quarters {summary.petQuarters ? "active" : "not active"}</span>
+              <span className={summary.houseLedger ? "done" : ""}><Icon name="defense" size="sm" aria-hidden="true" /> House Ledger {summary.houseLedger ? "active" : "not active"}</span>
             </>
           )}
         </div>

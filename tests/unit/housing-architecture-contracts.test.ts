@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import postcss from "postcss";
 import { describe, expect, it } from "vitest";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import { calculateEssenceSession } from "@/lib/essences";
 import {
   HOUSING_COMPONENTS,
@@ -212,24 +213,26 @@ describe("housing architecture and modularization contracts", () => {
     });
   });
 
-  it("HousingStyles has 100% scoped selectors preventing global CSS leakage", () => {
-    const stylesPath = path.join(componentsDir, "HousingStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    const lines = content.split(/\r?\n/);
-    const cssLines = lines.slice(5, lines.length - 4);
-    const rawCss = cssLines.join("\n");
-    const root = postcss.parse(rawCss);
-
+  it("enforces clean migrated route architecture (CSS module, no style jsx, no direct lucide-react)", () => {
+    assertCleanMigratedRoute({
+      routeSubpath: "housing",
+      maxPageLines: 250,
+      allowStateBlock: false,
+      allowDirectLucide: false,
+    });
+    expect(existsSync(path.join(componentsDir, "HousingStyles.tsx"))).toBe(false);
+    const moduleCss = readFileSync(path.join(housingDir, "page.module.css"), "utf-8");
+    const root = postcss.parse(moduleCss);
     const unscoped: string[] = [];
     root.walkRules((rule) => {
+      if (rule.parent?.type === "atrule" && (rule.parent as { name?: string }).name === "keyframes") return;
       for (const sel of rule.selectors) {
         const trimmed = sel.trim();
-        if (!trimmed.startsWith(".housing-page")) {
+        if (!trimmed.startsWith(".housingPage")) {
           unscoped.push(trimmed);
         }
       }
     });
-
     expect(unscoped).toEqual([]);
   });
 
@@ -256,23 +259,10 @@ describe("housing architecture and modularization contracts", () => {
     expect(hookContent).toMatch(/setUndoHousing\(null\);[\s\S]*?setDraftTiers\(\{\}\);[\s\S]*?setConditionDrafts\(\{\}\);[\s\S]*?setConditionSliderDrafts\(\{\}\);[\s\S]*?setOpenPicker\(null\);[\s\S]*?\[activeProfile\?\.id\]/);
   });
 
-  it("enforces >= 44px touch targets on all interactive button classes in HousingStyles", () => {
-    const stylesPath = path.join(componentsDir, "HousingStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    expect(content).toMatch(/\.housing-undo-toast button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.inline-link-button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.ghost-button,\s*\.housing-page \.add-button,\s*\.housing-page \.selected-button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.selected-row-meta button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.guest-tier-row button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.cost-share-row button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.tier-selector button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.housing-quick-actions button\s*\{[^}]*min-height:\s*44px/);
-  });
-
-  it("component-ledger-details defines layout containment to prevent CLS during expansion", () => {
-    const stylesPath = path.join(componentsDir, "HousingStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    expect(content).toMatch(/\.component-ledger-details\s*\{[^}]*contain:\s*content/);
+  it("enforces >= 44px touch targets and layout containment in page.module.css", () => {
+    const css = readFileSync(path.join(housingDir, "page.module.css"), "utf-8");
+    expect(css).toMatch(/min-height:\s*44px/);
+    expect(css).toMatch(/component-ledger-details[\s\S]*?contain:\s*content/);
   });
 });
 

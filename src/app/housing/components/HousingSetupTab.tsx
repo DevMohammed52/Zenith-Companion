@@ -1,9 +1,10 @@
 "use client";
 
-import { Home, MapPin, Minus, Plus, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Icon } from "@/components/ui/Icon";
 import { HOUSING_LOCATIONS, getHousingActivityLabel } from "@/lib/housing";
 import { formatHours } from "@/lib/format";
-import { BUFF_ACTIVITIES, MODE_OPTIONS } from "../types";
+import { BUFF_ACTIVITIES, MODE_OPTIONS, getHousingActivityIcon } from "../types";
 import { ChoicePicker } from "./ChoicePicker";
 import type { HousingState } from "../hooks/useHousingState";
 
@@ -43,7 +44,7 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
             </div>
             {housing.mode !== "none" && (
               <button className="ghost-button" type="button" onClick={() => saveHousing({ mode: "none" })}>
-                <X size={16} /> Disable
+                <Icon name="close" size="md" aria-hidden="true" /> Disable
               </button>
             )}
           </div>
@@ -104,7 +105,7 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
                     disabled={!housing.foundationBuilt || housing.extraSlots <= 0}
                     onClick={() => setExtraSlots(housing.extraSlots - 1)}
                   >
-                    <Minus size={15} />
+                    <Icon name="minus" size="sm" aria-hidden="true" />
                   </button>
                   <strong>{housing.extraSlots}</strong>
                   <button
@@ -113,7 +114,7 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
                     disabled={!housing.foundationBuilt || housing.extraSlots >= 15}
                     onClick={() => setExtraSlots(housing.extraSlots + 1)}
                   >
-                    <Plus size={15} />
+                    <Icon name="plus" size="sm" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -122,13 +123,13 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
 
           {housing.mode === "guest" && (
             <div className="guest-note">
-              <Users size={18} />
+              <Icon name="guilds" size="md" aria-hidden="true" />
               <span>Enter the host buffs this profile receives. No foundation or slots are needed for guest mode.</span>
             </div>
           )}
           {housing.mode === "none" && (
             <div className="guest-note inactive-note">
-              <Home size={18} />
+              <Icon name="housing" size="md" aria-hidden="true" />
               <span>Housing buffs are disabled. Your owner build, guest buffs, and notes are preserved for when you switch back.</span>
             </div>
           )}
@@ -151,15 +152,18 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
             <div><span>Total Slots</span><strong>{summary.slotCapacity}/16</strong></div>
             <div>
               <span>{selectedCostLabel}</span>
-              <strong className={selectedBuildCost.missingMaterials.length ? "needs-data-text" : ""}>{selectedCostStatus}</strong>
+              <strong className={selectedBuildCost.missingMaterials.length ? "needs-data-text" : "inline-gold-value"}>
+                {!selectedBuildCost.missingMaterials.length && <GoldIcon size={14} />}
+                <span>{selectedCostStatus}</span>
+              </strong>
             </div>
             <div><span>Guests</span><strong>{summary.guestCapacity}</strong></div>
           </div>
 
           <div className="flag-grid">
-            <span className={summary.remoteConduit ? "enabled" : ""}><MapPin size={15} /> Remote Conduit</span>
-            <span className={summary.petQuarters ? "enabled" : ""}><Sparkles size={15} /> Pet Quarters</span>
-            <span className={summary.houseLedger ? "enabled" : ""}><ShieldCheck size={15} /> House Ledger</span>
+            <span className={summary.remoteConduit ? "enabled" : ""}><Icon name="map" size="sm" aria-hidden="true" /> Remote Conduit</span>
+            <span className={summary.petQuarters ? "enabled" : ""}><Icon name="xp" size="sm" aria-hidden="true" /> Pet Quarters</span>
+            <span className={summary.houseLedger ? "enabled" : ""}><Icon name="defense" size="sm" aria-hidden="true" /> House Ledger</span>
           </div>
         </div>
       </section>
@@ -177,8 +181,11 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
         <div className="buff-grid">
           {BUFF_ACTIVITIES.map((activity) => (
             <div key={activity} className={summary.idleHours[activity] > 0 ? "active" : ""}>
-              <span>{getHousingActivityLabel(activity)}</span>
-              <strong>{formatHours(summary.idleHours[activity])}</strong>
+              <span className="buff-activity-label">
+                <Icon name={getHousingActivityIcon(activity)} size="sm" aria-hidden="true" />
+                <span>{getHousingActivityLabel(activity)}</span>
+              </span>
+              <strong>{summary.idleHours[activity] > 0 ? `+${formatHours(summary.idleHours[activity])}` : formatHours(summary.idleHours[activity])}</strong>
             </div>
           ))}
         </div>

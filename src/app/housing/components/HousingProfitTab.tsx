@@ -1,6 +1,8 @@
 "use client";
 
-import { AlertTriangle, Clock, Home, Package, Route, Search, TrendingUp } from "lucide-react";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Icon } from "@/components/ui/Icon";
 import { formatEssenceBuff } from "@/lib/essences";
 import { formatGoldUnit, formatHours, formatPayback, formatSignedGold, formatStarts } from "@/lib/format";
 import { getHousingActivityLabel } from "@/lib/housing";
@@ -26,6 +28,7 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
     setProfitPlannerRoute,
     plannerSkill,
     profitPlannerEssence,
+    plannerEssenceImage,
     essenceOptions,
     setProfitPlannerEssence,
     plannerPlaytimeHours,
@@ -60,7 +63,7 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
             <p>Room ROI compares your own foundation, slots, room costs, and Skill Profit routes. Guest mode only tracks received buffs.</p>
           </div>
           <button className="ghost-button" type="button" onClick={() => saveHousing({ mode: "owner" })}>
-            <Home size={16} /> Use Owner Mode
+            <Icon name="housing" size="md" aria-hidden="true" /> Use Owner Mode
           </button>
         </div>
       </section>
@@ -76,7 +79,7 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
     >
       <div className="panel-heading">
         <div>
-          <p className="eyebrow"><TrendingUp size={15} /> Room Profit</p>
+          <p className="eyebrow"><Icon name="skillProfit" size="sm" aria-hidden="true" /> Room Profit</p>
           <h2>Idle-Time Value</h2>
           <p>
             Compare room tiers by timer length, starts per day, essence cost, daily gain, and build cost.
@@ -126,15 +129,17 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
       </div>
 
       <div className="room-profit-context">
-        <span><Clock size={15} /> Profile coverage {formatHours(plannerPlaytimeHours)}/day</span>
-        <span><Route size={15} /> {plannerSkill || "No Skill Profit source"}</span>
-        <span><Package size={15} /> {housing.foundationBuilt ? `${summary.freeSlots} free slot${summary.freeSlots === 1 ? "" : "s"}` : "Foundation needed"}</span>
+        <span><Icon name="timer" size="sm" aria-hidden="true" /> Profile coverage {formatHours(plannerPlaytimeHours)}/day</span>
+        <span><Icon name="route" size="sm" aria-hidden="true" /> {plannerSkill || "No Skill Profit source"}</span>
+        <span><Icon name="items" size="sm" aria-hidden="true" /> {housing.foundationBuilt ? `${summary.freeSlots} free slot${summary.freeSlots === 1 ? "" : "s"}` : "Foundation needed"}</span>
       </div>
 
       <div className="cost-share-card">
-        <div>
-          <span>Build cost split</span>
-          <strong>{roomCostShare === 1 ? "Solo" : `${roomCostShare} ways`}</strong>
+        <div className="cost-share-info">
+          <div className="cost-share-title">
+            <span>Build cost split</span>
+            <span className="cost-share-badge">{roomCostShare === 1 ? "Solo" : `${roomCostShare} ways`}</span>
+          </div>
           <small>Manual scenario only. Splits one-time build cost; daily profit stays per profile.</small>
         </div>
         <div className="cost-share-row" role="group" aria-label="Build cost split">
@@ -153,46 +158,71 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
       </div>
       {roomCostShare > summary.guestCapacity + 1 && (
         <div className="room-profit-capacity-warning">
-          <AlertTriangle size={15} />
+          <Icon name="warning" size="sm" aria-hidden="true" />
           <span>Current Guest Quarters support owner + {summary.guestCapacity} guest{summary.guestCapacity === 1 ? "" : "s"}; this split is a manual what-if.</span>
         </div>
       )}
 
       {!plannerSkill ? (
         <div className="planner-empty-state compact-empty-state">
-          <Route size={24} />
+          <Icon name="route" size="xl" aria-hidden="true" />
           <strong>No profit source yet</strong>
           <span>{plannerActivity ? `${getHousingActivityLabel(plannerActivity)} room value needs a reliable profit source before ROI can be estimated.` : "Choose an idle room to estimate ROI."}</span>
         </div>
       ) : !selectedRoute ? (
         <div className="planner-empty-state compact-empty-state">
-          <Search size={24} />
+          <Icon name="search" size="xl" aria-hidden="true" />
           <strong>No reliable route found</strong>
           <span>This skill has no profitable route with complete prices and enough market activity right now.</span>
         </div>
       ) : (
         <>
           <div className="room-profit-explainer">
-            <strong>What this is showing</strong>
-            <span>
-              Daily value starts from the profile hours already covered before housing. Room timer bonus can cover more of the remaining daily gap; if an essence is selected, one crystal is counted per start.
-            </span>
+            <Icon name="info" size="sm" aria-hidden="true" />
+            <div>
+              <strong>What this is showing</strong>
+              <span>
+                Daily value starts from the profile hours already covered before housing. Room timer bonus can cover more of the remaining daily gap; if an essence is selected, one crystal is counted per start.
+              </span>
+            </div>
           </div>
           <div className="route-value-card">
             <div>
               <span>Route value</span>
               <strong>{selectedRoute.name}</strong>
-              <small>{formatGoldUnit(selectedRoute.profitPerHour)}/hr after current prices and profile buffs</small>
+              <small className="inline-gold-value">
+                <GoldIcon size={12} />
+                <span>{formatGoldUnit(selectedRoute.profitPerHour)}/hr after current prices and profile buffs</span>
+              </small>
             </div>
             <div>
               <span>24h route value</span>
-              <strong>{formatGoldUnit(plannerTopTierRow?.projection.fullDayProfit || 0)}</strong>
+              <strong className="inline-gold-value">
+                <GoldIcon size={14} />
+                <span>{formatGoldUnit(plannerTopTierRow?.projection.fullDayProfit || 0)}</span>
+              </strong>
               <small>Before essence cost and uncovered profile time.</small>
             </div>
             <div>
               <span>Essence cost</span>
-              <strong>{profitPlannerEssence ? selectedEssenceHasPrice ? formatGoldUnit(selectedEssenceCost) : "Needs price/data" : "None"}</strong>
-              <small>{profitPlannerEssence || "Select one to include crystal savings."}</small>
+              <strong className={profitPlannerEssence && !selectedEssenceHasPrice ? "needs-data-text" : "inline-gold-value"}>
+                {profitPlannerEssence && selectedEssenceHasPrice && <GoldIcon size={14} />}
+                <span>{profitPlannerEssence ? selectedEssenceHasPrice ? formatGoldUnit(selectedEssenceCost) : "Needs price/data" : "None"}</span>
+              </strong>
+              <small className={plannerEssenceImage ? "inline-gold-value" : undefined}>
+                {plannerEssenceImage && (
+                  <GameImage
+                    src={plannerEssenceImage}
+                    alt={profitPlannerEssence}
+                    width={14}
+                    height={14}
+                    className="material-item-icon"
+                    sizes="14px"
+                    aria-hidden="true"
+                  />
+                )}
+                <span>{profitPlannerEssence || "Select one to include crystal savings."}</span>
+              </small>
             </div>
             <div>
               <span>Start change</span>
@@ -225,21 +255,24 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
             {plannerRows.map((row) => {
               const canEstimate = row.missingMaterials.length === 0;
               const isBase = row.tier === 0;
+              const cycleHorizon = row.projection.horizons.find((candidate) => candidate.days === repairDecayDays);
+              const isRoiPositive = !isBase && canEstimate && row.projection.netGainPerDay > 0 && (cycleHorizon?.netProfit || 0) >= 0;
               return (
-                <article key={row.label} className={`room-profit-card ${isBase ? "baseline" : ""}`}>
+                <article key={row.label} className={`room-profit-card ${isBase ? "baseline" : ""} ${isRoiPositive ? "roi-positive" : ""}`}>
                   <div className="room-profit-card-head">
                     <div>
                       <span>{row.label}</span>
                       <strong>{formatHours(row.projection.roomActionHours)} timer</strong>
                     </div>
-                    <small>{formatStarts(row.projection.roomStartsPerDay)}</small>
+                    <small className="starts-pill">{formatStarts(row.projection.roomStartsPerDay)}</small>
                   </div>
 
                   <div className="room-profit-metrics">
                     <div>
                       <span>{roomCostShare === 1 ? "Build cost" : "Your build share"}</span>
-                      <strong className={`gold-value ${canEstimate ? "" : "needs-data"}`}>
-                        {isBase ? "0g" : canEstimate ? formatGoldUnit(row.projection.buildCostShare) : "Needs price/data"}
+                      <strong className={`gold-value inline-gold-value ${canEstimate ? "" : "needs-data"}`}>
+                        {!isBase && canEstimate && <GoldIcon size={13} />}
+                        <span>{isBase ? "0g" : canEstimate ? formatGoldUnit(row.projection.buildCostShare) : "Needs price/data"}</span>
                       </strong>
                       {!isBase && row.prerequisiteCost > 0 && <small>Includes {formatGoldUnit(row.prerequisiteCost)} prerequisites</small>}
                       {!isBase && roomCostShare > 1 && <small>{formatGoldUnit(row.projection.fullBuildCost)} full build split {row.projection.costShare} ways</small>}
@@ -252,8 +285,9 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
                     </div>
                     <div>
                       <span>Essence cost per day</span>
-                      <strong className={`gold-value ${profitPlannerEssence && !selectedEssenceHasPrice ? "needs-data" : ""}`}>
-                        {profitPlannerEssence ? selectedEssenceHasPrice ? formatGoldUnit(row.projection.roomEssenceCostPerDay) : "Needs price/data" : "0g"}
+                      <strong className={`gold-value inline-gold-value ${profitPlannerEssence && !selectedEssenceHasPrice ? "needs-data" : ""}`}>
+                        {(!profitPlannerEssence || selectedEssenceHasPrice) && <GoldIcon size={13} />}
+                        <span>{profitPlannerEssence ? selectedEssenceHasPrice ? formatGoldUnit(row.projection.roomEssenceCostPerDay) : "Needs price/data" : "0g"}</span>
                       </strong>
                       <small>
                         {profitPlannerEssence
@@ -265,12 +299,18 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
                     </div>
                     <div>
                       <span>Essence saved per day</span>
-                      <strong className="gold-value">{formatGoldUnit(row.projection.essenceSavingsPerDay)}</strong>
+                      <strong className="gold-value inline-gold-value">
+                        <GoldIcon size={13} />
+                        <span>{formatGoldUnit(row.projection.essenceSavingsPerDay)}</span>
+                      </strong>
                       <small>{profitPlannerEssence ? row.projection.essenceSavingsPerDay > 0 ? `${row.projection.savedStartsPerDay} fewer crystal${row.projection.savedStartsPerDay === 1 ? "" : "s"}.` : "No crystal savings." : "Select an essence to count savings."}</small>
                     </div>
                     <div>
                       <span>Daily value after idle gaps</span>
-                      <strong className="gold-value">{formatGoldUnit(row.projection.roomDailyNetAfterEssence)}</strong>
+                      <strong className="gold-value inline-gold-value">
+                        <GoldIcon size={13} />
+                        <span>{formatGoldUnit(row.projection.roomDailyNetAfterEssence)}</span>
+                      </strong>
                       <small>
                         {`${formatHours(row.projection.roomCoveredHoursPerDay)} covered`}
                         {profitPlannerEssence ? ` - ${formatGoldUnit(row.projection.roomEssenceCostPerDay)} essence` : ""}
@@ -283,7 +323,10 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
                     </div>
                     <div>
                       <span>Daily net gain vs no room</span>
-                      <strong className="gold-value">{formatGoldUnit(row.projection.netGainPerDay)}</strong>
+                      <strong className="gold-value inline-gold-value">
+                        <GoldIcon size={13} />
+                        <span>{formatGoldUnit(row.projection.netGainPerDay)}</span>
+                      </strong>
                       <small>{getDailyGainNote(row.projection, Boolean(profitPlannerEssence && selectedEssenceHasPrice))}</small>
                     </div>
                     <div>
@@ -308,7 +351,10 @@ export function HousingProfitTab({ state }: { state: HousingState }) {
                         return (
                           <div key={`${row.label}-${days}`} className="horizon-row">
                             <span>{days === repairDecayDays ? `${days}d cycle` : `${days}d`}</span>
-                            <strong className="gold-value">{formatGoldUnit(horizon?.grossProfit || 0)} gain</strong>
+                            <strong className="gold-value inline-gold-value">
+                              <GoldIcon size={12} />
+                              <span>{formatGoldUnit(horizon?.grossProfit || 0)} gain</span>
+                            </strong>
                             <em className={`gold-value ${(horizon?.netProfit || 0) >= 0 ? "positive" : "negative"}`}>
                               {formatSignedGold(horizon?.netProfit || 0)} after cost
                             </em>

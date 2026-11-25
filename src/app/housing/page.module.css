@@ -1,0 +1,1547 @@
+/* House Planner (/housing) - Scoped Zenith Astral Styles */
+
+.housingPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+  padding-top: var(--space-5, 20px);
+  padding-bottom: calc(var(--space-10, 48px) + var(--mobile-dock-height, 0px));
+}
+
+.housingPage :global(.sr-only) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.housingPage :global(.tab-hidden),
+.housingPage :global([hidden]) {
+  display: none !important;
+}
+
+/* 1. Hero Header & Inline Summary Strip */
+.housingPage :global(.page-title-row) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  padding: var(--space-2, 8px) 0;
+}
+
+.housingPage :global(.eyebrow) {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.page-title-row h1) {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.muted) {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 66ch;
+}
+
+.housingPage :global(.housing-hero-chips) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.housingPage :global(.housing-hero-chips > span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.housing-hero-chips > span.good) {
+  color: var(--text-success, #4ade80);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.housingPage :global(.housing-hero-chips > span.needs-data) {
+  color: var(--text-warning, #fbbf24);
+}
+
+/* 2. Tab Navigation */
+.housingPage :global(.housing-tabs) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.housingPage :global(.housing-tabs button) {
+  flex: 1 1 130px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 150ms ease, color 150ms ease, transform 100ms ease;
+}
+
+.housingPage :global(.housing-tabs button:hover) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.housingPage :global(.housing-tabs button.active) {
+  background: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
+  box-shadow: inset 0 0 0 1px var(--control-active-border, rgba(203, 213, 225, 0.28));
+}
+
+.housingPage :global(.housing-tabs button span) {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.housingPage :global(.housing-tabs button small) {
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0.78;
+}
+
+.housingPage :global(.housing-tabs button:focus-visible) {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* 3. Tab Viewport & Undo Banner */
+.housingPage :global(.housing-tab-viewport) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.housingPage :global(.housing-undo-toast) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.housingPage :global(.housing-undo-toast button) {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--btn-primary-bg, #cbd5e1);
+  color: var(--btn-primary-text, #0a0d14);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 4. Panels & Common Grids */
+.housingPage :global(.housing-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.housingPage :global(.housing-overview-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.housingPage :global(.housing-panel) {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: var(--space-4, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  min-width: 0;
+}
+
+.housingPage :global(.panel-heading),
+.housingPage :global(.overview-card-head) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.housingPage :global(.panel-heading h2),
+.housingPage :global(.overview-card-head h2) {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.panel-heading p) {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* 5. Buttons, Pills & Badges */
+.housingPage :global(.ghost-button),
+.housingPage :global(.inline-link-button),
+.housingPage :global(.add-button),
+.housingPage :global(.selected-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+.housingPage :global(.add-button) {
+  background: var(--btn-primary-bg, #cbd5e1);
+  color: var(--btn-primary-text, #0a0d14);
+  border-color: transparent;
+}
+
+.housingPage :global(.selected-button) {
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--text-success, #4ade80);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.housingPage :global(.ghost-button:disabled),
+.housingPage :global(.add-button:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.housingPage :global(.access-pill) {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.55);
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.access-pill.good) {
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.access-pill.limited) {
+  background: rgba(251, 191, 36, 0.14);
+  color: var(--text-warning, #fbbf24);
+}
+
+/* 6. Overview Cards (Translucent inner tiles, zero nested 1px borders) */
+.housingPage :global(.overview-hero-stat) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.housingPage :global(.overview-hero-stat span) {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.overview-hero-stat strong) {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.overview-hero-stat small) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.overview-stat-grid),
+.housingPage :global(.stat-strip) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.housingPage :global(.stat-strip) {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+.housingPage :global(.overview-stat-grid div),
+.housingPage :global(.stat-strip div) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.45);
+  min-width: 0;
+}
+
+.housingPage :global(.overview-stat-grid span),
+.housingPage :global(.stat-strip span) {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.overview-stat-grid strong),
+.housingPage :global(.stat-strip strong) {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.housingPage :global(.overview-chip-list),
+.housingPage :global(.overview-check-list),
+.housingPage :global(.flag-grid) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.housingPage :global(.overview-chip-list span),
+.housingPage :global(.overview-check-list span),
+.housingPage :global(.flag-grid span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.45);
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.overview-chip-list strong) {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.overview-chip-list em) {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.35);
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.inline-gold-value) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.housingPage :global(.breakdown-label),
+.housingPage :global(.buff-activity-label),
+.housingPage :global(.guest-activity-name) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.housingPage :global(.material-item-icon) {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.housingPage :global(.overview-check-list span.done),
+.housingPage :global(.flag-grid span.enabled) {
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.overview-empty-copy) {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 7. Setup Tab */
+.housingPage :global(.mode-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.housingPage :global(.mode-card),
+.housingPage :global(.foundation-toggle) {
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.housingPage :global(.mode-card.active),
+.housingPage :global(.foundation-toggle.active) {
+  background: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
+  border-color: var(--control-active-border, rgba(203, 213, 225, 0.28));
+}
+
+.housingPage :global(.mode-card strong),
+.housingPage :global(.foundation-toggle strong) {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.housingPage :global(.mode-card span),
+.housingPage :global(.foundation-toggle span) {
+  font-size: 11px;
+  opacity: 0.78;
+}
+
+.housingPage :global(.mode-card:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.housingPage :global(.owner-setup-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.housingPage :global(.housing-field) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.housingPage :global(.housing-field span) {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.housing-field small) {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.housing-field input),
+.housingPage :global(.housing-field textarea) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.housingPage :global(.housing-field textarea) {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.housingPage :global(.slot-stepper) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.housingPage :global(.slot-stepper button) {
+  min-width: 38px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.housingPage :global(.slot-stepper strong) {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.guest-note) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.buff-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 8px;
+}
+
+.housingPage :global(.buff-grid div) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid transparent;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.buff-grid div strong) {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.buff-grid div.active) {
+  border-color: rgba(74, 222, 128, 0.32);
+  background: rgba(74, 222, 128, 0.08);
+  color: var(--text-primary);
+}
+
+.housingPage :global(.buff-grid div.active strong) {
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.slot-stepper.disabled) {
+  opacity: 0.48;
+}
+
+/* 8. ChoicePicker */
+.housingPage :global(.choice-picker) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.housingPage :global(.choice-label) {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.choice-trigger) {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.housingPage :global(.choice-backdrop) {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+}
+
+.housingPage :global(.choice-menu) {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 150;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.housingPage :global(.choice-menu-head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.choice-menu-head button) {
+  min-width: 32px;
+  min-height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.housingPage :global(.choice-menu button[role="option"]) {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.housingPage :global(.choice-menu button[role="option"]:hover),
+.housingPage :global(.choice-menu button[role="option"].active) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 9. Components & Built Setup Tab */
+.housingPage :global(.slot-meter) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.slot-meter strong) {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.slot-warning),
+.housingPage :global(.repair-data-note),
+.housingPage :global(.room-profit-warning),
+.housingPage :global(.room-profit-capacity-warning) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--text-warning, #fbbf24);
+  font-size: 12px;
+}
+
+.housingPage :global(.cost-model-strip),
+.housingPage :global(.selected-component-grid),
+.housingPage :global(.component-grid),
+.housingPage :global(.room-profit-controls),
+.housingPage :global(.route-value-card),
+.housingPage :global(.room-profit-grid),
+.housingPage :global(.guest-context-grid),
+.housingPage :global(.guest-buff-grid),
+.housingPage :global(.guest-specials) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+
+.housingPage :global(.cost-model-strip div),
+.housingPage :global(.setup-cost-panel),
+.housingPage :global(.selected-component-row),
+.housingPage :global(.component-card),
+.housingPage :global(.room-profit-card),
+.housingPage :global(.guest-rule-card),
+.housingPage :global(.guest-buff-card),
+.housingPage :global(.route-value-card div) {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.housingPage :global(.cost-model-strip div span),
+.housingPage :global(.route-value-card div > span) {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.cost-model-strip div strong),
+.housingPage :global(.route-value-card div > strong) {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.cost-model-strip div small),
+.housingPage :global(.route-value-card div > small) {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.cost-share-card) {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+.housingPage :global(.cost-share-info) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.housingPage :global(.cost-share-title) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.cost-share-badge) {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.14);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.housingPage :global(.cost-share-info small) {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.selected-component-title) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.housingPage :global(.selected-component-title strong) {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.selected-component-title span) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.selected-row-lock) {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.component-card.selected) {
+  outline: 1px solid rgba(74, 222, 128, 0.45);
+}
+
+.housingPage :global(.selected-row-meta) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.housingPage :global(.selected-row-meta button) {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.housingPage :global(.component-condition-panel) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.housingPage :global(.condition-readout),
+.housingPage :global(.setup-cost-head),
+.housingPage :global(.room-profit-card-head),
+.housingPage :global(.guest-buff-group-head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.housingPage :global(.condition-readout) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+}
+
+.housingPage :global(.condition-readout-top) {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.housingPage :global(.condition-readout span) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.condition-readout strong) {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.condition-readout small) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.setup-cost-head > div:first-child),
+.housingPage :global(.room-profit-card-head > div:first-child) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.housingPage :global(.setup-cost-head > div:first-child span),
+.housingPage :global(.room-profit-card-head > div:first-child span) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.setup-cost-head > div:first-child strong),
+.housingPage :global(.room-profit-card-head > div:first-child strong) {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.repair-cycle-pill) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.condition-slider input) {
+  width: 100%;
+  accent-color: #f8fafc;
+}
+
+.housingPage :global(.condition-number),
+.housingPage :global(.repair-gold-calibration) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.condition-number-controls) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.housingPage :global(.condition-number input),
+.housingPage :global(.repair-gold-calibration input) {
+  width: 100px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.component-ledger-details) {
+  contain: content;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.35);
+  padding: 8px 10px;
+}
+
+.housingPage :global(.component-ledger-details summary) {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.selected-material-breakdown),
+.housingPage :global(.material-list.cost-breakdown-list) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.selected-material-breakdown > span),
+.housingPage :global(.material-list.cost-breakdown-list > span) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.housingPage :global(.selected-material-breakdown > span strong),
+.housingPage :global(.material-list.cost-breakdown-list > span strong) {
+  margin-left: auto;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.housingPage :global(.selected-material-breakdown > span em),
+.housingPage :global(.material-list.cost-breakdown-list > span em) {
+  flex-basis: 100%;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.housingPage :global(.planner-controls) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.housingPage :global(.search-box) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  flex: 1 1 220px;
+}
+
+.housingPage :global(.search-box input) {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.housingPage :global(.component-head) {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.housingPage :global(.component-icon) {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.component-head h3) {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.component-head p) {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.tier-selector),
+.housingPage :global(.cost-share-row) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.housingPage :global(.guest-tier-row) {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.housingPage :global(.tier-selector button),
+.housingPage :global(.cost-share-row button),
+.housingPage :global(.guest-tier-row button) {
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.housingPage :global(.tier-selector button.active),
+.housingPage :global(.cost-share-row button.active),
+.housingPage :global(.guest-tier-row button.active) {
+  background: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
+  border-color: var(--control-active-border, rgba(203, 213, 225, 0.28));
+}
+
+.housingPage :global(.component-meta) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.component-meta span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.housingPage :global(.component-footer) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.housingPage :global(.component-footer-cost) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.housingPage :global(.component-footer-total) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.component-footer small) {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* 10. Profit & Guest Helpers */
+.housingPage :global(.room-profit-summary) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--border-subtle);
+  text-align: right;
+}
+
+.housingPage :global(.room-profit-summary span) {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.room-profit-summary strong) {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.room-profit-summary small) {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.starts-pill) {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.housingPage :global(.room-profit-card) {
+  border: 1px solid transparent;
+}
+
+.housingPage :global(.room-profit-card.roi-positive) {
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.housingPage :global(.room-profit-context),
+.housingPage :global(.room-profit-explainer),
+.housingPage :global(.room-profit-note) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.35);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.room-profit-explainer) {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.housingPage :global(.room-profit-explainer > div) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.housingPage :global(.room-profit-explainer strong) {
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.housingPage :global(.room-profit-context span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.housingPage :global(.room-profit-metrics) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.housingPage :global(.room-profit-metrics div) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.35);
+  font-size: 12px;
+}
+
+.housingPage :global(.room-profit-metrics div span) {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.room-profit-metrics div strong) {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.room-profit-metrics div small) {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.horizon-list) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.housingPage :global(.horizon-row) {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.horizon-row em) {
+  font-style: normal;
+  text-align: right;
+  font-weight: 600;
+}
+
+.housingPage :global(.positive) {
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.negative) {
+  color: var(--text-danger, #f87171);
+}
+
+.housingPage :global(.guest-rule-card strong) {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.guest-rule-card span) {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.guest-rule-card.warning) {
+  border-left: 3px solid var(--text-warning, #fbbf24);
+}
+
+.housingPage :global(.guest-buff-groups) {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.housingPage :global(.guest-buff-group) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.housingPage :global(.guest-buff-group-head h3) {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.housingPage :global(.guest-group-count) {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.guest-group-count.active) {
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.guest-buff-card) {
+  border: 1px solid transparent;
+}
+
+.housingPage :global(.guest-buff-card.active) {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.housingPage :global(.guest-buff-card > div:first-child) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.housingPage :global(.guest-buff-card > div:first-child strong) {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.housingPage :global(.guest-buff-card.active > div:first-child strong) {
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.guest-specials button) {
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.housingPage :global(.guest-special-copy) {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.housingPage :global(.guest-special-copy strong) {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.housingPage :global(.guest-special-copy small) {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.guest-special-state) {
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.housingPage :global(.guest-specials button.active) {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.housingPage :global(.guest-specials button.active .guest-special-state) {
+  background: rgba(74, 222, 128, 0.16);
+  color: var(--text-success, #4ade80);
+}
+
+.housingPage :global(.planner-empty-state),
+.housingPage :global(.empty-panel),
+.housingPage :global(.selected-empty) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 28px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.35);
+  color: var(--text-secondary);
+}
+
+.housingPage :global(.needs-data),
+.housingPage :global(.needs-data-text) {
+  color: var(--text-warning, #fbbf24);
+}
+
+@media (max-width: 960px) {
+  .housingPage :global(.housing-grid),
+  .housingPage :global(.housing-overview-grid),
+  .housingPage :global(.owner-setup-grid) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .housingPage :global(.mode-grid),
+  .housingPage :global(.room-profit-metrics) {
+    grid-template-columns: 1fr;
+  }
+
+  .housingPage :global(.room-profit-summary) {
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .housingPage :global(.horizon-row) {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .housingPage :global(.horizon-row em) {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .housingPage :global(.tier-selector button),
+  .housingPage :global(.cost-share-row button),
+  .housingPage :global(.guest-tier-row button) {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .housingPage :global(.housing-tabs button),
+  .housingPage :global(.ghost-button),
+  .housingPage :global(.add-button),
+  .housingPage :global(.selected-button),
+  .housingPage :global(.mode-card),
+  .housingPage :global(.foundation-toggle) {
+    transition: none;
+  }
+}

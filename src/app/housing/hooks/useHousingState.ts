@@ -57,7 +57,7 @@ import {
 } from "../types";
 
 export function useHousingState() {
-  const { activeProfile, updateProfile } = useProfiles();
+  const { activeProfile, loaded, updateProfile } = useProfiles();
   const { marketData, allItemsDb } = useData();
   const { preferences } = usePreferences();
   const [search, setSearch] = useState("");
@@ -101,6 +101,24 @@ export function useHousingState() {
     }
     return prices;
   }, [allItemsDb, marketData, preferences.customPrices]);
+
+  const materialImages = useMemo(() => {
+    const images: Record<string, string> = {};
+    for (const component of HOUSING_COMPONENTS) {
+      for (const material of component.materials) {
+        const imageUrl = allItemsDb?.[material.name]?.image_url;
+        if (typeof imageUrl === "string" && imageUrl.trim()) {
+          images[material.name] = imageUrl;
+        }
+      }
+    }
+    return images;
+  }, [allItemsDb]);
+
+  const plannerEssenceImage = useMemo(() => {
+    const imageUrl = profitPlannerEssence ? allItemsDb?.[profitPlannerEssence]?.image_url : "";
+    return typeof imageUrl === "string" ? imageUrl : "";
+  }, [allItemsDb, profitPlannerEssence]);
 
   useEffect(() => {
     if (!profitDataActive || (gearData && itemRegistry)) return undefined;
@@ -793,6 +811,8 @@ export function useHousingState() {
     slotComponent,
     selectedSetupEntries,
     selectedBuildCost,
+    materialImages,
+    plannerEssenceImage,
     repairSetupEntries,
     selectedRepairEstimate,
     selectedCostStatus,
@@ -848,6 +868,7 @@ export function useHousingState() {
     updateGuestBuff,
     focusHousingTab,
     handleHousingTabKeyDown,
+    loaded,
   };
 }
 
