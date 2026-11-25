@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { FILTERS, type UseConquestStateReturn } from "../types";
 import styles from "../page.module.css";
 
@@ -13,17 +13,20 @@ export default function ConquestToolbar({
     | "setFilter"
     | "searchTerm"
     | "setSearchTerm"
-    | "searchActive"
     | "zoneStatus"
+    | "isHistoricalSeason"
   >;
 }) {
-  const { filter, setFilter, searchTerm, setSearchTerm, searchActive, zoneStatus } = state;
+  const { filter, setFilter, searchTerm, setSearchTerm, zoneStatus, isHistoricalSeason } = state;
+  const visibleFilters = isHistoricalSeason
+    ? FILTERS.filter((f) => f.key !== "active")
+    : FILTERS;
 
   return (
     <>
       <section className={styles.toolbar} aria-label="Zone filters">
-        <div className={styles.filterButtons}>
-          {FILTERS.map((item) => (
+        <div className={styles.filterButtons} role="group" aria-label="Zone status filter">
+          {visibleFilters.map((item) => (
             <button
               key={item.key}
               type="button"
@@ -35,27 +38,20 @@ export default function ConquestToolbar({
             </button>
           ))}
         </div>
-        <label className={styles.searchBox}>
-          <span>Search zones, guilds, players</span>
-          <Search size={15} aria-hidden="true" />
-          <input
-            aria-label="Search conquest zones, guilds, and players"
+        <span className={styles.toolbarDivider} aria-hidden="true" />
+        <div className={styles.searchWrap}>
+          <SearchInput
+            ariaLabel="Search conquest zones, guilds, and players"
+            showShortcutHint={false}
             value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              if (event.target.value.trim()) setFilter("all");
+            onChange={(value) => {
+              setSearchTerm(value);
+              if (value.trim()) setFilter("all");
             }}
-            placeholder="Search conquest..."
+            onClear={() => setSearchTerm("")}
+            placeholder="Search zone, guild, player..."
           />
-          {searchActive && (
-            <button type="button" onClick={() => setSearchTerm("")}>
-              Clear
-            </button>
-          )}
-        </label>
-        <p className={styles.filterHelp}>
-          Dominated is the in-game zone status. Controlled means one guild holds 95%+ of zone XP.
-        </p>
+        </div>
       </section>
       <p className="sr-only" role="status" aria-live="polite">
         {zoneStatus}

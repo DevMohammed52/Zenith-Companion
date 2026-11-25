@@ -1,12 +1,16 @@
 "use client";
 
-import { Flag, MapPinned } from "lucide-react";
-import { NoResultsState } from "@/components/StateBlock";
+import { useEffect, useMemo, useState } from "react";
+import { GameImage } from "@/components/GameImage";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Icon } from "@/components/ui/Icon";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   formatConquestDecimal,
   formatConquestNumber,
   formatConquestPercent,
   getStatusLabel,
+  type ConquestGuild,
   type ConquestZone,
 } from "@/lib/conquest";
 import {
@@ -18,21 +22,66 @@ import {
   getPressureTone,
   getRunnerUp,
   getXpPerKill,
-  getZoneStyle,
   type DetailTab,
   type UseConquestStateReturn,
 } from "../types";
 import { AssaultRow, ContributorRow, ControlBar, GuildRow } from "./ConquestRows";
 import styles from "../page.module.css";
 
+const PAGE_SIZE = 10;
+
 export default function ConquestDetailPanel({
   selectedZone,
   state,
 }: {
   selectedZone: ConquestZone;
-  state: Pick<UseConquestStateReturn, "detailTab" | "setDetailTab">;
+  state: Pick<
+    UseConquestStateReturn,
+    "detailTab" | "setDetailTab" | "guildLevels" | "zoneDescriptions" | "isHistoricalSeason" | "selectedSeason"
+  >;
 }) {
-  const { detailTab, setDetailTab } = state;
+  const { detailTab, setDetailTab, guildLevels, zoneDescriptions, isHistoricalSeason, selectedSeason } = state;
+  const [guildsPage, setGuildsPage] = useState(1);
+  const [contribPage, setContribPage] = useState(1);
+
+  useEffect(() => {
+    setGuildsPage(1);
+    setContribPage(1);
+  }, [selectedZone.key, selectedSeason]);
+
+  const progressGuildMap = useMemo(() => {
+    const map = new Map<number, ConquestGuild>();
+    for (const row of selectedZone.guild_leaderboard) {
+      if (row.id != null && row.guild) {
+        map.set(row.id, row.guild);
+      }
+    }
+    return map;
+  }, [selectedZone.guild_leaderboard]);
+
+  const description = zoneDescriptions[selectedZone.key];
+  const zoneStatusPillTone = isHistoricalSeason
+    ? getLeaderShare(selectedZone) >= 95
+      ? "calm"
+      : selectedZone.status === "CONTESTED"
+        ? "warn"
+        : "active"
+    : getPressureTone(selectedZone);
+  const subtitleLabel = isHistoricalSeason ? "Final season standings" : getPressureLabel(selectedZone);
+
+  const totalGuildPages = Math.max(1, Math.ceil(selectedZone.guild_leaderboard.length / PAGE_SIZE));
+  const safeGuildPage = Math.min(guildsPage, totalGuildPages);
+  const visibleGuilds = selectedZone.guild_leaderboard.slice(
+    (safeGuildPage - 1) * PAGE_SIZE,
+    safeGuildPage * PAGE_SIZE,
+  );
+
+  const totalContribPages = Math.max(1, Math.ceil(selectedZone.top_contributors.length / PAGE_SIZE));
+  const safeContribPage = Math.min(contribPage, totalContribPages);
+  const visibleContributors = selectedZone.top_contributors.slice(
+    (safeContribPage - 1) * PAGE_SIZE,
+    safeContribPage * PAGE_SIZE,
+  );
 
   return (
     <aside
@@ -41,63 +90,59 @@ export default function ConquestDetailPanel({
     >
       <div className={styles.panelHeader}>
         <h2>
-          <Flag size={18} />
+          <Icon name="conquest" size="md" aria-hidden="true" />
           Zone Details
         </h2>
-        <span className={styles.statusPill} data-tone={getPressureTone(selectedZone)}>
+        <span className={styles.statusPill} data-tone={zoneStatusPillTone}>
           {getStatusLabel(selectedZone.status)}
         </span>
       </div>
       <div className={styles.panelBody}>
-        <div className={styles.detailHero} style={getZoneStyle(selectedZone)}>
+        <div className={styles.detailHero}>
           <div className={styles.detailHeroTop}>
-            <div>
-              <h2>{selectedZone.name}</h2>
-              <p>{getPressureLabel(selectedZone)}</p>
+            <div className={styles.detailHeroTitleWrap}>
+              {selectedZone.image_url && (
+                <GameImage
+                  src={selectedZone.image_url}
+                  alt=""
+                  width={44}
+                  height={44}
+                  className={styles.detailZoneArt}
+                  sizes="44px"
+                  aria-hidden="true"
+                />
+              )}
+              <div>
+                <h2>{selectedZone.name}</h2>
+                <p>{subtitleLabel}</p>
+              </div>
             </div>
             <a
               className={styles.detailMapLink}
               href={`/map?location=${encodeURIComponent(selectedZone.key)}`}
               aria-label={`Open ${selectedZone.name} on the world map`}
             >
-              <MapPinned size={16} />
+              <Icon name="map" size="sm" aria-hidden="true" />
               Open Map
             </a>
           </div>
+          {description && <p className={styles.detailZoneDesc}>{description}</p>}
           <div className={styles.detailGrid}>
             <div>
-              <span>XP</span>
+              <span>Zone XP</span>
               <strong>{formatConquestNumber(selectedZone.experience)}</strong>
             </div>
             <div>
-              <span>Kills</span>
+              <span>Total Kills</span>
               <strong>{formatConquestNumber(selectedZone.kills)}</strong>
             </div>
             <div>
-              <span>Guilds</span>
-              <strong>
-                {formatConquestNumber(selectedZone.leaderboard_count)} / {formatConquestNumber(selectedZone.guilds_count)}
-              </strong>
-            </div>
-            <div>
-              <span>Assaults</span>
-              <strong>{formatConquestNumber(selectedZone.active_assaults_count)}</strong>
-            </div>
-            <div>
-              <span>Control</span>
-              <strong>{formatConquestPercent(getLeaderShare(selectedZone))}</strong>
-            </div>
-            <div>
-              <span>Lead</span>
-              <strong>{formatConquestNumber(getLeaderMargin(selectedZone))}</strong>
-            </div>
-            <div>
-              <span>XP/Kill</span>
+              <span>XP / Kill</span>
               <strong>{formatConquestDecimal(getXpPerKill(selectedZone))}</strong>
             </div>
             <div>
-              <span>Contributors</span>
-              <strong>{formatConquestNumber(selectedZone.contribution_count)}</strong>
+              <span>Leader Share</span>
+              <strong>{formatConquestPercent(getLeaderShare(selectedZone))}</strong>
             </div>
           </div>
         </div>
@@ -106,15 +151,15 @@ export default function ConquestDetailPanel({
           <div className={styles.briefingCard}>
             <span>Leader</span>
             <strong>{getDominantGuild(selectedZone)?.name ?? "Unknown Guild"}</strong>
-            <p>{formatConquestPercent(getLeaderShare(selectedZone))} of zone XP.</p>
+            <p>{formatConquestPercent(getLeaderShare(selectedZone))} of zone XP</p>
           </div>
           <div className={styles.briefingCard}>
             <span>Challenger</span>
             <strong>{getRunnerUp(selectedZone)?.guild?.name ?? "No challenger"}</strong>
             <p>
               {getRunnerUp(selectedZone)
-                ? `${formatConquestNumber(getLeaderMargin(selectedZone))} XP behind.`
-                : "Zone is uncontested."}
+                ? `${formatConquestNumber(getLeaderMargin(selectedZone))} XP behind`
+                : "Zone is uncontested"}
             </p>
           </div>
         </div>
@@ -178,18 +223,34 @@ export default function ConquestDetailPanel({
           aria-labelledby="conquest-tab-guilds"
           hidden={detailTab !== "guilds"}
         >
-          {selectedZone.guild_leaderboard.length > 0 ? (
-            selectedZone.guild_leaderboard.map((row) => (
-              <GuildRow
-                key={`${selectedZone.key}-${row.position}-${row.guild?.id ?? row.guild?.name}`}
-                row={row}
-              />
-            ))
+          {visibleGuilds.length > 0 ? (
+            <>
+              {visibleGuilds.map((row) => (
+                <GuildRow
+                  key={`${selectedZone.key}-${row.position}-${row.guild?.id ?? row.guild?.name}`}
+                  row={row}
+                  guildLevel={row.guild?.id != null ? guildLevels[row.guild.id] : undefined}
+                />
+              ))}
+              {totalGuildPages > 1 && (
+                <Pagination
+                  currentPage={safeGuildPage}
+                  totalPages={totalGuildPages}
+                  totalItems={selectedZone.guild_leaderboard.length}
+                  pageSize={PAGE_SIZE}
+                  itemLabel="guilds"
+                  showSummary={false}
+                  scrollToTop={false}
+                  onPageChange={setGuildsPage}
+                />
+              )}
+            </>
           ) : (
-            <NoResultsState
-              compact
+            <EmptyState
+              icon="conquest"
+              size="sm"
               title="No guilds shown"
-              description="The latest conquest snapshot did not include guild rows for this zone."
+              description="This season snapshot did not include guild rows for this zone."
             />
           )}
         </div>
@@ -201,18 +262,42 @@ export default function ConquestDetailPanel({
           aria-labelledby="conquest-tab-contributors"
           hidden={detailTab !== "contributors"}
         >
-          {selectedZone.top_contributors.length > 0 ? (
-            selectedZone.top_contributors.map((row, index) => (
-              <ContributorRow
-                key={`${selectedZone.key}-${row.id ?? `${row.character?.name ?? "player"}-${index}`}`}
-                row={row}
-              />
-            ))
+          {visibleContributors.length > 0 ? (
+            <>
+              {visibleContributors.map((row, index) => {
+                const rank = (safeContribPage - 1) * PAGE_SIZE + index + 1;
+                return (
+                  <ContributorRow
+                    key={`${selectedZone.key}-${row.id ?? `${row.character?.name ?? "player"}-${rank}`}`}
+                    row={row}
+                    rank={rank}
+                    resolvedGuild={
+                      row.guild_conquest_progress_id != null
+                        ? progressGuildMap.get(row.guild_conquest_progress_id) ?? null
+                        : null
+                    }
+                  />
+                );
+              })}
+              {totalContribPages > 1 && (
+                <Pagination
+                  currentPage={safeContribPage}
+                  totalPages={totalContribPages}
+                  totalItems={selectedZone.top_contributors.length}
+                  pageSize={PAGE_SIZE}
+                  itemLabel="contributors"
+                  showSummary={false}
+                  scrollToTop={false}
+                  onPageChange={setContribPage}
+                />
+              )}
+            </>
           ) : (
-            <NoResultsState
-              compact
+            <EmptyState
+              icon="guilds"
+              size="sm"
               title="No players shown"
-              description="The latest conquest snapshot did not include player contribution rows for this zone."
+              description="This season snapshot did not include player contribution rows for this zone."
             />
           )}
         </div>
@@ -224,7 +309,7 @@ export default function ConquestDetailPanel({
           aria-labelledby="conquest-tab-assaults"
           hidden={detailTab !== "assaults"}
         >
-          {selectedZone.active_assaults.length > 0 ? (
+          {!isHistoricalSeason && selectedZone.active_assaults.length > 0 ? (
             selectedZone.active_assaults.map((assault, index) => (
               <AssaultRow
                 key={`${selectedZone.key}-assault-${assault.guild?.id ?? index}`}
@@ -233,10 +318,15 @@ export default function ConquestDetailPanel({
               />
             ))
           ) : (
-            <NoResultsState
-              compact
-              title="No active fight"
-              description="No guild is actively assaulting this zone in the latest snapshot."
+            <EmptyState
+              icon={isHistoricalSeason ? "calendar" : "combat"}
+              size="sm"
+              title={isHistoricalSeason ? "Season ended" : "No active fight"}
+              description={
+                isHistoricalSeason
+                  ? "Historical archives preserve final guild standings and player rankings, not live assault waves."
+                  : "No guild is actively assaulting this zone right now."
+              }
             />
           )}
         </div>

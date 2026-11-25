@@ -71,12 +71,20 @@ function summarizeZone(zone, inspectedEnvelope) {
   const contributions = Array.isArray(inspectedZone?.contributions) ? inspectedZone.contributions : [];
   const activeAssaults = Array.isArray(zone?.active_assaults) ? zone.active_assaults : [];
   const leaderboard = Array.isArray(zone?.guilds) ? zone.guilds : [];
+
+  const progressGuildMap = new Map();
+  for (const row of leaderboard) {
+    if (row?.id != null && row?.guild) {
+      progressGuildMap.set(row.id, compactGuild(row.guild));
+    }
+  }
+
   const contributionRows = contributions.map((row) => ({
     id: row.id ?? null,
     guild_conquest_progress_id: row.guild_conquest_progress_id ?? null,
     kills: normalizeNumber(row.kills),
     experience: normalizeNumber(row.experience),
-    guild: compactGuild(row.guild),
+    guild: compactGuild(row.guild) ?? progressGuildMap.get(row.guild_conquest_progress_id) ?? null,
     character: compactCharacter(row.character),
   }));
 
@@ -96,12 +104,16 @@ function summarizeZone(zone, inspectedEnvelope) {
     active_assaults: activeAssaults.map((row) => ({
       kills: normalizeNumber(row.kills),
       experience: normalizeNumber(row.experience),
+      starts_at: row.starts_at || null,
+      ends_at: row.ends_at || null,
       guild: compactGuild(row.guild),
     })),
     guild_leaderboard: leaderboard.slice(0, 25).map((row) => ({
+      id: row.id ?? null,
       position: row.position ?? null,
       kills: normalizeNumber(row.kills),
       experience: normalizeNumber(row.experience),
+      contributions: row.contributions ?? null,
       guild: compactGuild(row.guild),
     })),
     top_contributors: contributionRows

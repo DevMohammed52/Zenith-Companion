@@ -942,12 +942,20 @@ function summarizeConquestZone(zone, inspectedZone) {
     const contributions = Array.isArray(inspectedZone?.contributions) ? inspectedZone.contributions : [];
     const activeAssaults = Array.isArray(zone?.active_assaults) ? zone.active_assaults : [];
     const leaderboard = Array.isArray(zone?.guilds) ? zone.guilds : [];
+
+    const progressGuildMap = new Map();
+    for (const row of leaderboard) {
+        if (row?.id != null && row?.guild) {
+            progressGuildMap.set(row.id, compactConquestGuild(row.guild));
+        }
+    }
+
     const contributionRows = contributions.map(row => ({
         id: row.id ?? null,
         guild_conquest_progress_id: row.guild_conquest_progress_id ?? null,
         kills: normalizeApiNumber(row.kills),
         experience: normalizeApiNumber(row.experience),
-        guild: compactConquestGuild(row.guild),
+        guild: compactConquestGuild(row.guild) ?? progressGuildMap.get(row.guild_conquest_progress_id) ?? null,
         character: compactConquestCharacter(row.character),
     }));
 
@@ -967,12 +975,16 @@ function summarizeConquestZone(zone, inspectedZone) {
         active_assaults: activeAssaults.map(row => ({
             kills: normalizeApiNumber(row.kills),
             experience: normalizeApiNumber(row.experience),
+            starts_at: row.starts_at || null,
+            ends_at: row.ends_at || null,
             guild: compactConquestGuild(row.guild),
         })),
         guild_leaderboard: leaderboard.slice(0, 25).map(row => ({
+            id: row.id ?? null,
             position: row.position ?? null,
             kills: normalizeApiNumber(row.kills),
             experience: normalizeApiNumber(row.experience),
+            contributions: row.contributions ?? null,
             guild: compactConquestGuild(row.guild),
         })),
         top_contributors: contributionRows
@@ -1062,6 +1074,19 @@ async function fetchConquestData() {
 
         await safeWriteJson(CONQUEST_DATA_FILE, data);
         console.log(`Conquest data updated: ${zoneSummaries.length} zones, ${requestCount} requests.`);
+
+        if (process.env.CONQUEST_SKIP_ARCHIVE !== "true") {
+            const { execFileSync } = require("child_process");
+            try {
+                execFileSync(
+                    process.execPath,
+                    ["scripts/archive-conquest-seasons.mjs", "--delay-ms", String(API_DELAY_MS)],
+                    { stdio: "inherit" },
+                );
+            } catch (archiveErr) {
+                console.error("Incremental conquest season archive check failed:", archiveErr.message);
+            }
+        }
         return true;
     } catch (e) {
         console.error("Error updating conquest data:", e.message);

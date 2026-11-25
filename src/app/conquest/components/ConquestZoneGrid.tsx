@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, MapPinned } from "lucide-react";
-import { NoResultsState } from "@/components/StateBlock";
+import { GameImage } from "@/components/GameImage";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Icon } from "@/components/ui/Icon";
 import {
+  formatAssaultCountdown,
   formatConquestDecimal,
   formatConquestNumber,
   formatConquestPercent,
@@ -14,7 +16,6 @@ import {
   getPressureLabel,
   getPressureTone,
   getXpPerKill,
-  getZoneStyle,
   type UseConquestStateReturn,
 } from "../types";
 import { GuildIcon } from "./ConquestRows";
@@ -33,6 +34,7 @@ export default function ConquestZoneGrid({
     | "searchActive"
     | "searchTerm"
     | "setSearchTerm"
+    | "isHistoricalSeason"
   >;
 }) {
   const {
@@ -44,7 +46,27 @@ export default function ConquestZoneGrid({
     searchActive,
     searchTerm,
     setSearchTerm,
+    isHistoricalSeason,
   } = state;
+
+  if (filteredZones.length === 0) {
+    return (
+      <section className={styles.zoneEmptyWrap} aria-label="Conquest zones">
+        <EmptyState
+          icon="searchEmpty"
+          title={searchActive ? `No matches for "${searchTerm.trim()}"` : "No zones match this filter"}
+          description={getFilterEmptyLabel(filter)}
+          action={{
+            label: "Reset Filters",
+            onClick: () => {
+              setFilter("all");
+              setSearchTerm("");
+            },
+          }}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className={styles.zoneGrid} aria-label="Conquest zones">
@@ -52,40 +74,66 @@ export default function ConquestZoneGrid({
         const guild = getDominantGuild(zone);
         const leaderShare = getLeaderShare(zone);
         const isSelected = selectedZone?.key === zone.key;
+        const firstAssaultCountdown = isHistoricalSeason
+          ? null
+          : formatAssaultCountdown(zone.active_assaults[0]?.ends_at);
+        const historicalStatusLabel =
+          leaderShare >= 95 ? "Controlled" : zone.status === "CONTESTED" ? "Close race" : "Dominated";
+        const historicalTone =
+          leaderShare >= 95 ? "calm" : zone.status === "CONTESTED" ? "warn" : "active";
+        const statusLabel = isHistoricalSeason
+          ? historicalStatusLabel
+          : firstAssaultCountdown
+            ? `Assault • ${firstAssaultCountdown}`
+            : getPressureLabel(zone);
+        const statusTone = isHistoricalSeason ? historicalTone : getPressureTone(zone);
 
         return (
           <article
             key={zone.key}
             className={styles.zoneCard}
-            style={getZoneStyle(zone)}
             data-selected={isSelected}
           >
             <a
               className={styles.zoneMapLink}
               href={`/map?location=${encodeURIComponent(zone.key)}`}
               aria-label={`Open ${zone.name} on the world map`}
+              title={`Open ${zone.name} on the world map`}
             >
-              <MapPinned size={16} />
+              <Icon name="map" size="sm" aria-hidden="true" />
             </a>
             <button
               type="button"
               className={styles.zoneSelectButton}
-              aria-label={`Select ${zone.name}. ${getPressureLabel(zone)}. ${guild?.name ?? "No guild"} leads with ${formatConquestPercent(leaderShare)} control share.`}
+              aria-label={`Select ${zone.name}. ${isHistoricalSeason ? historicalStatusLabel : getPressureLabel(zone)}. ${guild?.name ?? "No guild"} leads with ${formatConquestPercent(leaderShare)} control share.`}
               aria-pressed={isSelected}
               onClick={() => setSelectedZoneKey(zone.key)}
             >
               <div className={styles.zoneBody}>
                 <div className={styles.zoneTop}>
-                  <h2 className={styles.zoneName}>{zone.name}</h2>
+                  <div className={styles.zoneTitleGroup}>
+                    {zone.image_url && (
+                      <GameImage
+                        src={zone.image_url}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className={styles.zoneArt}
+                        sizes="36px"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <h2 className={styles.zoneName}>{zone.name}</h2>
+                  </div>
                   <span className={styles.zoneActions}>
                     {isSelected && (
                       <span className={styles.selectedPill}>
-                        <Check size={12} />
+                        <Icon name="check" size="xs" aria-hidden="true" />
                         Selected
                       </span>
                     )}
-                    <span className={styles.statusPill} data-tone={getPressureTone(zone)}>
-                      {getPressureLabel(zone)}
+                    <span className={styles.statusPill} data-tone={statusTone}>
+                      {statusLabel}
                     </span>
                   </span>
                 </div>
@@ -98,18 +146,24 @@ export default function ConquestZoneGrid({
                       <span>
                         {guild
                           ? guild.tag
-                            ? `${guild.tag} - leading guild`
+                            ? `${guild.tag} · Leading guild`
                             : "Leading guild"
-                          : "No public leader in snapshot"}
+                          : "No public leader"}
                       </span>
                     </span>
                   </div>
 
-                  <div
-                    className={styles.zoneControl}
-                    aria-label={`${formatConquestPercent(leaderShare)} control share`}
-                  >
-                    <span style={{ width: `${leaderShare}%` }} />
+                  <div className={styles.zoneControlWrap}>
+                    <div className={styles.zoneControlHeader}>
+                      <span>Control share</span>
+                      <strong>{formatConquestPercent(leaderShare)}</strong>
+                    </div>
+                    <div
+                      className={styles.zoneControl}
+                      aria-label={`${formatConquestPercent(leaderShare)} control share`}
+                    >
+                      <span style={{ width: `${leaderShare}%` }} />
+                    </div>
                   </div>
 
                   <div className={styles.zoneMetrics}>
@@ -122,22 +176,8 @@ export default function ConquestZoneGrid({
                       <strong>{formatConquestNumber(zone.kills)}</strong>
                     </div>
                     <div>
-                      <span>Guilds</span>
-                      <strong>
-                        {formatConquestNumber(zone.leaderboard_count)} / {formatConquestNumber(zone.guilds_count)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>Share</span>
-                      <strong>{formatConquestPercent(leaderShare)}</strong>
-                    </div>
-                    <div>
-                      <span>XP/Kill</span>
+                      <span>XP / Kill</span>
                       <strong>{formatConquestDecimal(getXpPerKill(zone))}</strong>
-                    </div>
-                    <div>
-                      <span>Players</span>
-                      <strong>{formatConquestNumber(zone.contribution_count)}</strong>
                     </div>
                   </div>
                 </div>
@@ -146,30 +186,6 @@ export default function ConquestZoneGrid({
           </article>
         );
       })}
-
-      {filteredZones.length === 0 && (
-        <NoResultsState
-          title={getFilterEmptyLabel(filter)}
-          description={
-            searchActive
-              ? `No zone, guild, or player matched "${searchTerm.trim()}".`
-              : "Try another conquest filter."
-          }
-          action={
-            searchActive || filter !== "all" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm("");
-                  setFilter("all");
-                }}
-              >
-                Reset filters
-              </button>
-            ) : null
-          }
-        />
-      )}
     </section>
   );
 }

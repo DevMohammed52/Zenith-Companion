@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import {
   getFilterEmptyLabel,
   getLeaderMargin,
@@ -11,7 +12,12 @@ import {
   zoneMatchesFilter,
   zoneMatchesSearch,
 } from "../../src/app/conquest/types";
-import type { ConquestZone } from "../../src/lib/conquest";
+import {
+  formatAssaultCountdown,
+  getConquestExpShardReward,
+  getConquestRulerTier,
+  type ConquestZone,
+} from "../../src/lib/conquest";
 
 function createMockZone(overrides: Partial<ConquestZone> = {}): ConquestZone {
   return {
@@ -151,17 +157,40 @@ describe("Conquest Architecture & Math Contracts", () => {
         "src/app/conquest/hooks/useConquestState.ts",
         "src/app/conquest/components/ConquestRows.tsx",
         "src/app/conquest/components/ConquestHero.tsx",
-        "src/app/conquest/components/ConquestCommandGrid.tsx",
         "src/app/conquest/components/ConquestToolbar.tsx",
         "src/app/conquest/components/ConquestZoneGrid.tsx",
         "src/app/conquest/components/ConquestDetailPanel.tsx",
         "src/app/conquest/components/ConquestGlobalLeaders.tsx",
+        "src/app/conquest/components/ConquestRewardsModal.tsx",
       ];
 
       for (const file of expectedFiles) {
         const filePath = join(process.cwd(), file);
         expect(existsSync(filePath)).toBe(true);
       }
+    });
+
+    it("enforces clean migrated route architecture (no StateBlock, no direct lucide-react)", () => {
+      assertCleanMigratedRoute({
+        routeSubpath: "conquest",
+        maxPageLines: 150,
+        allowStateBlock: false,
+        allowDirectLucide: false,
+      });
+    });
+
+    it("maps territory ruler buffs, shard rewards, and assault countdowns accurately", () => {
+      expect(getConquestRulerTier(1)?.primaryExpPercent).toBe(25);
+      expect(getConquestRulerTier(5)?.primaryExpPercent).toBe(7);
+      expect(getConquestRulerTier(10)?.primaryEffPercent).toBe(2);
+      expect(getConquestRulerTier(11)).toBeNull();
+
+      expect(getConquestExpShardReward(1)).toBe(20000);
+      expect(getConquestExpShardReward(15)).toBe(1000);
+      expect(getConquestExpShardReward(26)).toBe(0);
+
+      expect(formatAssaultCountdown(null)).toBeNull();
+      expect(formatAssaultCountdown("2020-01-01T00:00:00Z")).toBe("Ended");
     });
   });
 });

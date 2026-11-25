@@ -5,6 +5,7 @@ import {
   type ConquestData,
   type ConquestGuild,
   type ConquestGuildRow,
+  type ConquestSeasonIndex,
   type ConquestZone,
 } from "@/lib/conquest";
 
@@ -100,6 +101,13 @@ export function getPressureTone(zone: ConquestZone): "hot" | "warn" | "calm" | "
 export type UseConquestStateReturn = {
   data: ConquestData | null;
   error: string | null;
+  seasonIndex: ConquestSeasonIndex | null;
+  selectedSeason: string;
+  setSelectedSeason: (season: string) => void;
+  seasonLoading: boolean;
+  isHistoricalSeason: boolean;
+  guildLevels: Record<number, number>;
+  zoneDescriptions: Record<string, string>;
   selectedZoneKey: string | null;
   setSelectedZoneKey: (key: string | null) => void;
   filter: ZoneFilter;
@@ -114,7 +122,4 @@ export type UseConquestStateReturn = {
   zoneStatus: string;
   seasonLeaders: Array<{ zone: ConquestZone; row: ConquestGuildRow }>;
   activeAssaults: Array<{ zone: ConquestZone; assault: ConquestZone["active_assaults"][number] }>;
-  tightestRace: ConquestZone | null;
-  lockedZones: ConquestZone[];
-  highestYieldZone: ConquestZone | null;
 };
