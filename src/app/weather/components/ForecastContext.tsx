@@ -12,6 +12,7 @@ import {
   formatRelativeCountdown,
   type LocationWeatherCounts,
 } from "../types";
+import styles from "../Weather.module.css";
 
 function ForecastLocationCard({
   location,
@@ -28,16 +29,16 @@ function ForecastLocationCard({
   return (
     <Link
       href={`/map?location=${encodeURIComponent(location.key)}`}
-      className="forecast-location-card"
+      className={styles.forecastLocationCard}
       aria-label={formatForecastAriaLabel(weather?.name || "Weather", mode === "current" ? "now" : "next", location, weather)}
     >
-      <div className="forecast-location-top">
+      <div className={styles.forecastLocationTop}>
         <strong>{location.name}</strong>
-        <span className="forecast-countdown-pill">{countdown.label}</span>
+        <span className={styles.forecastCountdownPill}>{countdown.label}</span>
       </div>
-      <div className="forecast-location-bottom">
+      <div className={styles.forecastLocationBottom}>
         <small>{formatForecastTime(weather)}</small>
-        <div className="forecast-location-badges">
+        <div className={styles.forecastLocationBadges}>
           {counts.favored > 0 && (
             <Badge variant="success" size="sm" icon={<Icon name="xp" size="xs" />} title={`${counts.favored} favored enemies`}>
               {counts.favored}
@@ -68,20 +69,20 @@ export function ForecastContext({
   const getCounts = (location: EnrichedLocation) => locationWeatherCounts.get(location.key) || { favored: 0, penalized: 0 };
 
   return (
-    <Card variant="default" className="forecast-context-card">
-      <div className="card-header compact">
+    <Card variant="default" className={styles.liveCard}>
+      <div className={`${styles.cardHeader} ${styles.cardHeaderCompact}`}>
         <Icon name="map" size="md" />
         <h3>Location Forecast</h3>
       </div>
-      <div className="forecast-lanes">
-        <section className="forecast-lane">
-          <div className="forecast-lane-title">
+      <div className={styles.laneStack}>
+        <section>
+          <div className={styles.laneTitle}>
             <span>Active now</span>
             <Badge variant="success" size="sm">
               {currentLocations.length}
             </Badge>
           </div>
-          <div className="forecast-location-list">
+          <div className={styles.laneList}>
             {currentLocations.slice(0, 4).map((location) => (
               <ForecastLocationCard key={`current-${location.key}`} location={location} mode="current" counts={getCounts(location)} />
             ))}
@@ -96,14 +97,14 @@ export function ForecastContext({
           </div>
         </section>
 
-        <section className="forecast-lane">
-          <div className="forecast-lane-title">
+        <section>
+          <div className={styles.laneTitle}>
             <span>Coming next</span>
             <Badge variant="neutral" size="sm">
               {nextLocations.length}
             </Badge>
           </div>
-          <div className="forecast-location-list">
+          <div className={styles.laneList}>
             {nextLocations.slice(0, 4).map((location) => (
               <ForecastLocationCard key={`next-${location.key}`} location={location} mode="next" counts={getCounts(location)} />
             ))}

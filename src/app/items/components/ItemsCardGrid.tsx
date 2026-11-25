@@ -1,15 +1,17 @@
 'use client';
 
 import React from 'react';
-import { ChevronRight, Hammer, MapPin } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { GameImage } from '@/components/GameImage';
-import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
+import { GoldIcon } from '@/components/GoldIcon';
+import { getQualityColor, getQualityTextColor, getQualityTextStyle } from '@/lib/quality';
 import { ItemCompactBadges } from './ItemBadges';
 import {
   formatGold,
   formatLabel,
   type EnrichedItem,
 } from '../types';
+import styles from '../Items.module.css';
 
 export interface ItemsCardGridProps {
   items: EnrichedItem[];
@@ -18,7 +20,7 @@ export interface ItemsCardGridProps {
 
 export function ItemsCardGrid({ items, onOpenItem }: ItemsCardGridProps) {
   return (
-    <div className="cards-grid" role="feed" aria-label="Item catalog cards">
+    <div className={styles.cardsGrid} role="region" aria-label="Item catalog cards">
       {items.map((item) => {
         const qColor = getQualityColor(item.quality);
         return (
@@ -27,11 +29,11 @@ export function ItemsCardGrid({ items, onOpenItem }: ItemsCardGridProps) {
             type="button"
             aria-label={`Open ${item.name} details`}
             onClick={() => onOpenItem(item.id)}
-            className="item-mobile-card"
+            className={styles.itemCardButton}
             style={{ '--quality-color': qColor } as React.CSSProperties}
           >
-            <div className="card-main-row">
-              <div className="card-thumb-wrap">
+            <div className={styles.cardMainRow}>
+              <div className={styles.cardThumbWrap}>
                 <GameImage
                   src={item.image}
                   alt=""
@@ -43,83 +45,70 @@ export function ItemsCardGrid({ items, onOpenItem }: ItemsCardGridProps) {
                 />
               </div>
 
-              <div className="card-identity-col">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', width: '100%' }}>
-                  <h3 className="card-title" style={{ color: qColor }}>
+              <div className={styles.cardIdentityCol}>
+                <div className={styles.cardHeaderLine}>
+                  <h3 className={styles.cardTitle} style={{ color: getQualityTextColor(item.quality) }}>
                     {item.name}
                   </h3>
-                  <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true" />
+                  <Icon name="chevronRight" size={16} className={styles.cardChevron} />
                 </div>
-                <div className="card-pills-row">
-                  <span className="card-type-pill">{formatLabel(item.type)}</span>
+                <div className={styles.cardPillsRow}>
+                  <span className={styles.cardTypePill}>{formatLabel(item.type)}</span>
                   <span
-                    className="card-quality-badge"
-                    style={{
-                      ...getQualityTextStyle(item.quality),
-                      fontSize: '0.6875rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                    }}
+                    className={styles.qualityTag}
+                    style={getQualityTextStyle(item.quality)}
                   >
                     {item.quality}
                   </span>
-                  {item.tradeable ? (
-                    <span
-                      style={{
-                        background: 'rgba(74, 222, 128, 0.1)',
-                        border: '1px solid rgba(74, 222, 128, 0.3)',
-                        borderRadius: '4px',
-                        color: '#4ade80',
-                        fontSize: '0.6875rem',
-                        fontWeight: 600,
-                        padding: '0.1rem 0.35rem',
-                      }}
-                    >
-                      Tradeable
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: '4px',
-                        color: 'var(--text-muted)',
-                        fontSize: '0.6875rem',
-                        fontWeight: 600,
-                        padding: '0.1rem 0.35rem',
-                      }}
-                    >
-                      Untradable
-                    </span>
-                  )}
+                  <span className={`${styles.badgePill} ${item.tradeable ? styles.toneGood : ''}`}>
+                    {item.tradeable ? 'Tradeable' : 'Untradable'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="card-stats-grid">
-              <div className="card-stat-cell">
-                <span className="card-stat-label">Market</span>
-                <span className="card-stat-val gold">{formatGold(item.marketPrice)}</span>
+            <div className={styles.cardStatsStrip}>
+              <div className={styles.cardStatCell}>
+                <span className={styles.cardStatLabel}>Market</span>
+                <span className={styles.cardStatVal}>
+                  {item.marketPrice > 0 ? (
+                    <>
+                      <GoldIcon size={11} />
+                      <span>{formatGold(item.marketPrice)}</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </span>
               </div>
-              <div className="card-stat-cell">
-                <span className="card-stat-label">Vendor</span>
-                <span className="card-stat-val">{formatGold(item.vendorPrice)}</span>
+              <div className={styles.cardStatCell}>
+                <span className={styles.cardStatLabel}>Vendor</span>
+                <span className={styles.cardStatVal}>
+                  {item.vendorPrice > 0 ? (
+                    <>
+                      <GoldIcon size={11} />
+                      <span>{formatGold(item.vendorPrice)}</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </span>
               </div>
-              <div className="card-stat-cell">
-                <span className="card-stat-label">Req Lvl</span>
-                <span className="card-stat-val">{item.requiredLevel || '—'}</span>
+              <div className={styles.cardStatCell}>
+                <span className={styles.cardStatLabel}>Req Lvl</span>
+                <span className={styles.cardStatVal}>{item.requiredLevel || '—'}</span>
               </div>
-              <div className="card-stat-cell">
-                <span className="card-stat-label">30d Vol</span>
-                <span className="card-stat-val">
+              <div className={styles.cardStatCell}>
+                <span className={styles.cardStatLabel}>30d Vol</span>
+                <span className={styles.cardStatVal}>
                   {item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '—'}
                 </span>
               </div>
             </div>
 
             {item.resourceLocations.length > 0 && (
-              <div className="card-source-row" aria-label={`${item.name} gathered locations`}>
-                <MapPin size={12} color="#38bdf8" aria-hidden="true" style={{ flexShrink: 0 }} />
+              <div className={styles.cardSourceRow} aria-label={`${item.name} gathered locations`}>
+                <Icon name="mapPin" size={12} className={styles.cardSourceIcon} />
                 <span>
                   {item.resourceLocations.slice(0, 2).map((loc) => loc.name).join(', ')}
                   {item.resourceLocations.length > 2 ? ` +${item.resourceLocations.length - 2}` : ''}
@@ -128,17 +117,15 @@ export function ItemsCardGrid({ items, onOpenItem }: ItemsCardGridProps) {
             )}
 
             {item.resourceLocations.length === 0 && item.gatheringActionSource && (
-              <div className="card-source-row" aria-label={`${item.name} gathered source`}>
-                <Hammer size={12} color="#4ade80" aria-hidden="true" style={{ flexShrink: 0 }} />
+              <div className={styles.cardSourceRow} aria-label={`${item.name} gathered source`}>
+                <Icon name="craftTool" size={12} className={styles.cardSourceIcon} />
                 <span>
                   {item.gatheringActionSource.skill} Lv.{item.gatheringActionSource.level}
                 </span>
               </div>
             )}
 
-            <div className="card-tags-row">
-              <ItemCompactBadges item={item} />
-            </div>
+            <ItemCompactBadges item={item} />
           </button>
         );
       })}

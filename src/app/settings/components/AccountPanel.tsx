@@ -1,8 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Card, Icon, SegmentedControl } from "@/components/ui";
 import type { UseSettingsStateReturn } from "../types";
 import styles from "../Settings.module.css";
 
@@ -18,7 +16,7 @@ export default function AccountPanel({
       className={`settings-panel ${styles.panel}`}
       title={
         <h2 className={styles.cardTitle}>
-          <ShieldCheck size={18} style={{ color: "var(--text-accent)" }} />
+          <Icon name="membership" size={18} className={styles.headerAccentIcon} />
           Account & Membership
         </h2>
       }
@@ -31,7 +29,7 @@ export default function AccountPanel({
       <div className={styles.settingGroup}>
         <div className={styles.settingLabelRow}>
           <span className={styles.settingLabel}>Market Tax Tier</span>
-          <span className={styles.cardSubtitle} style={{ marginTop: 0 }}>
+          <span className={styles.settingHintValue}>
             {preferences.membership ? "12% sales fee" : "15% sales fee"}
           </span>
         </div>

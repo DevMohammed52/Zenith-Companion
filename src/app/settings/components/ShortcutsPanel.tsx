@@ -1,7 +1,6 @@
 "use client";
 
-import { Keyboard } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Card, Icon, Kbd } from "@/components/ui";
 import styles from "../Settings.module.css";
 
 const SHORTCUTS = [
@@ -9,11 +8,13 @@ const SHORTCUTS = [
   { keys: ["Alt", "1"], label: "Dashboard" },
   { keys: ["Alt", "2"], label: "Alchemy Profit" },
   { keys: ["Alt", "3"], label: "Items Database" },
-  { keys: ["Alt", "4"], label: "Combat Planner" },
+  { keys: ["Alt", "4"], label: "Forge Lessons" },
   { keys: ["Alt", "5"], label: "Dungeons" },
   { keys: ["Alt", "6"], label: "World Bosses" },
   { keys: ["Alt", "7"], label: "BiS Recommender" },
   { keys: ["Alt", "8"], label: "Crafting Queue" },
+  { keys: ["Alt", "9"], label: "Lore Wiki" },
+  { keys: ["Alt", "M"], label: "World Map" },
   { keys: ["Alt", "S"], label: "Settings" },
   { keys: ["Esc"], label: "Close modal or search" },
 ];
@@ -24,7 +25,7 @@ export default function ShortcutsPanel() {
       className={`settings-panel settings-panel-wide settings-desktop-only ${styles.fullWidth}`}
       title={
         <h2 className={styles.cardTitle}>
-          <Keyboard size={18} style={{ color: "var(--text-accent)" }} />
+          <Icon name="keyboard" size={18} className={styles.headerAccentIcon} />
           Keyboard Shortcuts
         </h2>
       }
@@ -37,13 +38,7 @@ export default function ShortcutsPanel() {
       <div className={styles.shortcutsGrid}>
         {SHORTCUTS.map((item) => (
           <div className={styles.shortcutItem} key={item.label}>
-            <div className={styles.shortcutKbdRow}>
-              {item.keys.map((k) => (
-                <kbd className={styles.shortcutKbd} key={k}>
-                  {k}
-                </kbd>
-              ))}
-            </div>
+            <Kbd keys={item.keys} size="sm" />
             <span className={styles.shortcutLabel}>{item.label}</span>
           </div>
         ))}

@@ -21,9 +21,18 @@ import {
 export function useWeatherState() {
   const { staticData, worldLocations, marketData, allItemsDb } = useData();
   const { activeProfile } = useProfiles();
-  const [activeWeather, setActiveWeather] = useState<WeatherData>(WEATHER_DATA[0]);
+  const [activeWeather, setActiveWeatherState] = useState<WeatherData>(WEATHER_DATA[0]);
   const [weatherRefreshTick, setWeatherRefreshTick] = useState(0);
   const [filterByLevel, setFilterByLevel] = useState(false);
+
+  const setActiveWeather = (weather: WeatherData) => {
+    setActiveWeatherState(weather);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("weather", weather.id);
+      window.history.replaceState(null, "", url.toString());
+    } catch {}
+  };
 
   useEffect(() => {
     try {
@@ -33,7 +42,7 @@ export function useWeatherState() {
       const match = WEATHER_DATA.find(
         (w) => w.id.toLowerCase() === weatherParam || normalizeWeatherKey(w.name).toLowerCase() === weatherParam,
       );
-      if (match) setActiveWeather(match);
+      if (match) setActiveWeatherState(match);
     } catch {}
   }, []);
 

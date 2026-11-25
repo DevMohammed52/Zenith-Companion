@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  ArrowDownNarrowWide,
-  ArrowUpNarrowWide,
-  ChevronDown,
-  Coins,
-  HelpCircle,
-  SlidersHorizontal,
-  X,
-} from 'lucide-react';
-import { ItemFilterPicker } from './ItemFilterPicker';
+  Button,
+  Icon,
+  ModalSheet,
+  SegmentedControl,
+  Select,
+  Tag,
+  type ItemRarity,
+  type SelectOption,
+} from '@/components/ui';
 import { ItemSearchBox } from './ItemSearchBox';
 import {
   SIGNAL_OPTIONS,
@@ -20,6 +20,7 @@ import {
   type SortKey,
   type ViewMode,
 } from '../types';
+import styles from '../Items.module.css';
 
 export interface ItemsFilterBarState {
   searchTerm: string;
@@ -49,8 +50,37 @@ export interface ItemsFilterBarState {
   setViewMode: (mode: ViewMode) => void;
 }
 
+function mapQualityTone(tone?: string): ItemRarity | undefined {
+  if (!tone) return undefined;
+  const upper = tone.toUpperCase();
+  if (upper === 'MYTHIC') return 'mythic';
+  if (upper === 'LEGENDARY') return 'legendary';
+  if (upper === 'EPIC') return 'epic';
+  if (upper === 'PREMIUM' || upper === 'RARE') return 'rare';
+  if (upper === 'REFINED' || upper === 'UNCOMMON') return 'uncommon';
+  if (upper === 'STANDARD' || upper === 'COMMON') return 'common';
+  return undefined;
+}
+
+function toSelectOptions<T extends string>(options: FilterOption<T>[]): SelectOption[] {
+  return options.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+    rarity: mapQualityTone(opt.qualityTone),
+  }));
+}
+
+const TAG_GUIDE_ITEMS: Array<{ label: string; tone?: 'success' | 'warning' | 'neutral'; desc: string }> = [
+  { label: 'Likely market', tone: 'success', desc: 'Active trading volume with predictable market prices.' },
+  { label: 'Volume swings', tone: 'warning', desc: 'Occasional sales or bulk trades; prices may fluctuate.' },
+  { label: 'Vendor safer', tone: 'neutral', desc: 'NPC vendor payout is higher or more reliable than thin market demand.' },
+  { label: 'Untradable', tone: 'neutral', desc: 'Soulbound or account-locked; cannot be traded on the player market.' },
+  { label: 'Farmable', tone: 'neutral', desc: 'Can be gathered from world locations, dungeons, or regular enemies.' },
+];
+
 export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
   const [showTagGuide, setShowTagGuide] = useState(false);
+
   const activeCount =
     state.activeAdvancedFilterCount ??
     [
@@ -60,185 +90,175 @@ export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
       state.selectedLocation !== 'ALL',
     ].filter(Boolean).length;
 
+  const hasAnyFilter = activeCount > 0 || state.hideNonMarket || Boolean(state.searchTerm.trim());
+
+  const sortSelectOptions = useMemo(() => toSelectOptions(SORT_OPTIONS), []);
+  const typeSelectOptions = useMemo(() => toSelectOptions(state.typeOptions), [state.typeOptions]);
+  const qualitySelectOptions = useMemo(() => toSelectOptions(state.qualityOptions), [state.qualityOptions]);
+  const signalSelectOptions = useMemo(() => toSelectOptions(SIGNAL_OPTIONS), []);
+  const locationSelectOptions = useMemo(() => toSelectOptions(state.locationOptions), [state.locationOptions]);
+
   return (
     <>
-      {showTagGuide && (
-        <aside className="item-tag-guide-banner" aria-label="Item tag definitions">
-          <div className="tag-guide-header">
-            <div className="tag-guide-title">
-              <HelpCircle size={15} style={{ color: 'var(--text-accent)' }} />
-              <strong>Item Tag Guide</strong>
-            </div>
-            <button
-              type="button"
-              className="tag-guide-close"
-              aria-label="Close tag guide"
-              onClick={() => setShowTagGuide(false)}
-            >
-              <X size={14} />
-            </button>
-          </div>
-          <div className="tag-guide-grid">
-            <div className="tag-guide-item">
-              <span className="guide-pill good">Likely market</span>
-              <p>Active trading volume with predictable market prices.</p>
-            </div>
-            <div className="tag-guide-item">
-              <span className="guide-pill warning">Volume swings</span>
-              <p>Occasional sales or bulk trades; prices may fluctuate.</p>
-            </div>
-            <div className="tag-guide-item">
-              <span className="guide-pill muted">Vendor safer</span>
-              <p>NPC vendor payout is higher or more reliable than thin market demand.</p>
-            </div>
-            <div className="tag-guide-item">
-              <span className="guide-pill unranked">Untradable</span>
-              <p>Soulbound or account-locked; cannot be traded on the player market.</p>
-            </div>
-            <div className="tag-guide-item">
-              <span className="guide-pill info">Farmable</span>
-              <p>Can be gathered from world locations, dungeons, or regular enemies.</p>
-            </div>
-          </div>
-        </aside>
-      )}
-
-      <section className="db-controls" aria-label="Item filters and view controls">
-        <div className="control-group search-control">
-          <label className="control-label" htmlFor="item-catalog-search">Search</label>
+      <section className={styles.controlsCard} aria-label="Item filters and view controls">
+        <div className={`${styles.controlGroup} ${styles.searchControl}`}>
+          <label className={styles.controlLabel} htmlFor="item-catalog-search">
+            Search
+          </label>
           <ItemSearchBox
+            id="item-catalog-search"
             value={state.searchTerm}
             onChange={state.setSearchTerm}
             placeholder="Search equipment, materials, potions, recipes..."
           />
         </div>
 
-        <div className="control-group sort-control">
-          <label className="control-label">Sort</label>
-          <div className="sort-input-cluster">
-            <ItemFilterPicker
-              ariaLabel="Item sort property"
-              options={SORT_OPTIONS}
-              value={state.sortBy}
-              onChange={state.handleSortPickerChange}
-            />
-            <button
-              type="button"
-              className="icon-toggle sort-direction-toggle"
+        <div className={`${styles.controlGroup} ${styles.sortControl}`}>
+          <span className={styles.controlLabel}>Sort</span>
+          <div className={styles.sortInputCluster}>
+            <div className={styles.sortSelectWrap}>
+              <Select
+                ariaLabel="Item sort property"
+                options={sortSelectOptions}
+                value={state.sortBy}
+                onChange={(nextVal) => state.handleSortPickerChange(nextVal as SortKey)}
+              />
+            </div>
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Icon name={state.sortDesc ? 'sortDescAlt' : 'sortAscAlt'} size={15} />}
               aria-label={`Sort ${state.sortDesc ? 'descending (highest first)' : 'ascending (lowest first)'}. Click to reverse.`}
               title={`Sort ${state.sortDesc ? 'descending' : 'ascending'}`}
               onClick={() => state.setSortDesc((prev) => !prev)}
             >
-              {state.sortDesc ? (
-                <ArrowDownNarrowWide size={15} aria-hidden="true" />
-              ) : (
-                <ArrowUpNarrowWide size={15} aria-hidden="true" />
-              )}
-              <span className="sort-direction-label">{state.sortDesc ? 'Desc' : 'Asc'}</span>
-            </button>
+              {state.sortDesc ? 'Desc' : 'Asc'}
+            </Button>
           </div>
         </div>
 
-        <button
-          type="button"
-          className={`control-input icon-toggle market-toggle ${state.hideNonMarket ? 'active' : ''}`}
-          aria-pressed={state.hideNonMarket}
-          title="Filter to tradeable items with active market price data"
-          onClick={() => state.setHideNonMarket((prev) => !prev)}
-        >
-          <Coins size={15} aria-hidden="true" />
-          <span>Tradeable only</span>
-        </button>
+        <div className={styles.quickActions}>
+          <Button
+            variant={state.hideNonMarket ? 'primary' : 'secondary'}
+            size="md"
+            icon={<Icon name="gold" size={15} />}
+            aria-pressed={state.hideNonMarket}
+            title="Filter to tradeable items with active market price data"
+            onClick={() => state.setHideNonMarket((prev) => !prev)}
+          >
+            Tradeable only
+          </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            icon={<Icon name="help" size={15} />}
+            onClick={() => setShowTagGuide(true)}
+          >
+            Tag Guide
+          </Button>
+          {hasAnyFilter && state.resetFilters && (
+            <Button
+              variant="ghost"
+              size="md"
+              icon={<Icon name="undo" size={15} />}
+              onClick={state.resetFilters}
+              aria-label="Reset item filters"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
 
-        <details className="advanced-filter-panel" open={!state.isCompactViewport ? true : undefined}>
-          <summary>
-            <div className="summary-left">
-              <SlidersHorizontal size={15} aria-hidden="true" />
+        <div className={styles.viewControl}>
+          <SegmentedControl
+            ariaLabel="View mode"
+            value={state.viewMode}
+            onChange={(val) => state.setViewMode(val as ViewMode)}
+            options={[
+              { value: 'table', label: 'Table' },
+              { value: 'cards', label: 'Cards' },
+            ]}
+          />
+        </div>
+
+        <details
+          className={styles.advancedFilterPanel}
+          open={!state.isCompactViewport ? true : undefined}
+        >
+          <summary className={styles.advancedFilterSummary}>
+            <span className={styles.summaryLeft}>
+              <Icon name="filter" size={15} />
               <span>Filters</span>
               {activeCount > 0 ? (
-                <span className="active-filter-pill">{activeCount} active</span>
+                <span className={styles.activeFilterPill}>{activeCount} active</span>
               ) : null}
-            </div>
-            <div className="summary-right">
-              <button
-                type="button"
-                className="tag-guide-trigger-btn"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowTagGuide((prev) => !prev);
-                }}
-                title="Explain market and item tags"
-              >
-                <HelpCircle size={13} aria-hidden="true" />
-                <span>Tag Guide</span>
-              </button>
-              <ChevronDown size={15} aria-hidden="true" className="filter-panel-chevron" />
-            </div>
+            </span>
+            <Icon name="chevronDown" size={15} className={styles.filterPanelChevron} />
           </summary>
 
-          <div className="advanced-filter-grid">
-            <div className="control-group">
-              <label className="control-label">Type</label>
-              <ItemFilterPicker
+          <div className={styles.advancedFilterGrid}>
+            <div className={styles.controlGroup}>
+              <span className={styles.controlLabel}>Type</span>
+              <Select
                 ariaLabel="Item type filter"
-                options={state.typeOptions}
+                options={typeSelectOptions}
                 value={state.selectedType}
                 onChange={state.handleTypeChange}
               />
             </div>
 
-            <div className="control-group">
-              <label className="control-label">Quality</label>
-              <ItemFilterPicker
+            <div className={styles.controlGroup}>
+              <span className={styles.controlLabel}>Quality</span>
+              <Select
                 ariaLabel="Item quality filter"
-                options={state.qualityOptions}
+                options={qualitySelectOptions}
                 value={state.selectedQuality}
                 onChange={state.setSelectedQuality}
               />
             </div>
 
-            <div className="control-group">
-              <label className="control-label">Tag</label>
-              <ItemFilterPicker
+            <div className={styles.controlGroup}>
+              <span className={styles.controlLabel}>Tag</span>
+              <Select
                 ariaLabel="Item tag filter"
-                options={SIGNAL_OPTIONS}
+                options={signalSelectOptions}
                 value={state.selectedSignal}
-                onChange={state.setSelectedSignal}
+                onChange={(val) => state.setSelectedSignal(val as SignalFilter)}
               />
             </div>
 
-            <div className="control-group">
-              <label className="control-label">Source</label>
-              <ItemFilterPicker
+            <div className={styles.controlGroup}>
+              <span className={styles.controlLabel}>Source</span>
+              <Select
                 ariaLabel="Item source location filter"
-                options={state.locationOptions}
+                options={locationSelectOptions}
                 value={state.selectedLocation}
                 onChange={state.setSelectedLocation}
               />
             </div>
           </div>
         </details>
-
-        <div className="view-toggle" role="group" aria-label="View mode">
-          <button
-            type="button"
-            className={state.viewMode === 'table' ? 'active' : ''}
-            aria-pressed={state.viewMode === 'table'}
-            onClick={() => state.setViewMode('table')}
-          >
-            Table
-          </button>
-          <button
-            type="button"
-            className={state.viewMode === 'cards' ? 'active' : ''}
-            aria-pressed={state.viewMode === 'cards'}
-            onClick={() => state.setViewMode('cards')}
-          >
-            Grid
-          </button>
-        </div>
       </section>
+
+      <ModalSheet
+        isOpen={showTagGuide}
+        onClose={() => setShowTagGuide(false)}
+        title="Item Tag Guide"
+        description="Definitions for market confidence and source indicators across the catalog."
+        maxWidth="sm"
+      >
+        <div className={styles.tagGuideGrid}>
+          {TAG_GUIDE_ITEMS.map((entry) => (
+            <div key={entry.label} className={styles.tagGuideItem}>
+              <Tag
+                label={entry.label}
+                rarity={entry.tone === 'warning' ? 'legendary' : entry.tone === 'success' ? 'rare' : 'common'}
+              />
+              <p className={styles.tagGuideDesc}>{entry.desc}</p>
+            </div>
+          ))}
+        </div>
+      </ModalSheet>
     </>
   );
 }

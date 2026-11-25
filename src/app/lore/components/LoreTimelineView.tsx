@@ -1,139 +1,130 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ComponentType } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  ArrowDownUp,
-  BookOpen,
-  Clock,
-  Compass,
-  Crown,
-  Flame,
-  History,
-  Landmark,
-  Scroll,
-  Shield,
-  Sparkles,
-  Swords,
-  TreePine,
-  Users,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { LoreEntry, LoreTimelineEvent } from "@/data/lore";
+import { Icon } from "@/components/ui/Icon";
+import { Button } from "@/components/ui/Button";
+import type { IconConcept } from "@/lib/icons";
 import { CATEGORY_META, cleanLoreCopy } from "../types";
 import { SectionHeading } from "./SectionHeading";
-import { Button } from "@/components/ui/Button";
+import styles from "../Lore.module.css";
 
 type EpochFilter = "all" | "br" | "early-ar" | "modern-ar";
 
 interface EventMeta {
-  icon: ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+  icon: IconConcept;
   epochGroup: "br" | "early-ar" | "modern-ar";
   epochTitle: string;
   epochTag: string;
-  tone: "gold" | "cyan" | "ruby";
+  tone: "gold" | "sky" | "ruby";
 }
 
 const EVENT_METADATA: Record<string, EventMeta> = {
   "age-ancients": {
-    icon: Sparkles,
+    icon: "xp",
     epochGroup: "br",
     epochTitle: "Epoch I: The Mythic Age (Before Ruin)",
     epochTag: "Mythic Origin",
     tone: "gold",
   },
   "age-splendor": {
-    icon: Crown,
+    icon: "crown",
     epochGroup: "br",
     epochTitle: "Epoch I: The Mythic Age (Before Ruin)",
     epochTag: "First Civilizations",
     tone: "gold",
   },
   "great-fragmentation": {
-    icon: Activity,
+    icon: "cataclysm",
     epochGroup: "br",
     epochTitle: "Epoch I: The Mythic Age (Before Ruin)",
     epochTag: "Cataclysm",
     tone: "gold",
   },
   "oakenra-roots": {
-    icon: TreePine,
+    icon: "forest",
     epochGroup: "br",
     epochTitle: "Epoch I: The Mythic Age (Before Ruin)",
     epochTag: "Forest Awakening",
     tone: "gold",
   },
   "arvendor-foundation": {
-    icon: Landmark,
+    icon: "museum",
     epochGroup: "br",
     epochTitle: "Epoch I: The Mythic Age (Before Ruin)",
     epochTag: "Imperial Rise",
     tone: "gold",
   },
   "recorded-history": {
-    icon: BookOpen,
+    icon: "lore",
     epochGroup: "early-ar",
     epochTitle: "Epoch II: Rebuilding & Discovery (0–4.5k AR)",
     epochTag: "Cataclysm Aftermath",
-    tone: "cyan",
+    tone: "sky",
   },
   "citadel-discovery": {
-    icon: Compass,
+    icon: "map",
     epochGroup: "early-ar",
     epochTitle: "Epoch II: Rebuilding & Discovery (0–4.5k AR)",
     epochTag: "Monument Discovery",
-    tone: "cyan",
+    tone: "sky",
   },
   "ombric-break": {
-    icon: Users,
+    icon: "guilds",
     epochGroup: "early-ar",
     epochTitle: "Epoch II: Rebuilding & Discovery (0–4.5k AR)",
     epochTag: "Civilization Schism",
-    tone: "cyan",
+    tone: "sky",
   },
   "eldoria-founding": {
-    icon: Shield,
+    icon: "conquest",
     epochGroup: "early-ar",
     epochTitle: "Epoch II: Rebuilding & Discovery (0–4.5k AR)",
     epochTag: "Maritime Founding",
-    tone: "cyan",
+    tone: "sky",
   },
   "mokthar-marker": {
-    icon: Scroll,
+    icon: "scroll",
     epochGroup: "modern-ar",
     epochTitle: "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
     epochTag: "Nomadic Migration",
-    tone: "cyan",
+    tone: "sky",
   },
   "great-war-arvendor-ombric": {
-    icon: Swords,
+    icon: "combat",
     epochGroup: "modern-ar",
     epochTitle: "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
     epochTag: "World War",
     tone: "ruby",
   },
   "dark-chapter-eldoria": {
-    icon: AlertTriangle,
+    icon: "warning",
     epochGroup: "modern-ar",
     epochTitle: "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
     epochTag: "Occult Crisis",
     tone: "ruby",
   },
   "great-fire-eldoria": {
-    icon: Flame,
+    icon: "critDamage",
     epochGroup: "modern-ar",
     epochTitle: "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
     epochTag: "City Inferno",
     tone: "ruby",
   },
   "present-archive": {
-    icon: Clock,
+    icon: "timer",
     epochGroup: "modern-ar",
     epochTitle: "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
     epochTag: "Current Day",
-    tone: "cyan",
+    tone: "sky",
   },
 };
+
+function getToneClass(tone: EventMeta["tone"]) {
+  if (tone === "gold") return styles.toneGold;
+  if (tone === "ruby") return styles.toneRuby;
+  return styles.toneSky;
+}
 
 export function LoreTimelineView({
   timeline,
@@ -231,52 +222,51 @@ export function LoreTimelineView({
   }, [filteredEvents, expandedIds]);
 
   return (
-    <section className="lore-section" aria-label="Chronological history of Valaron">
+    <section className={styles.section} aria-label="Chronological history of Valaron">
       <SectionHeading
         label="Chronology of Valaron"
         detail="14 historical milestones tracking civilizations, cataclysms, and wars across the ages."
       />
 
-      {/* Interactive Epoch Controls */}
-      <div className="timeline-controls" role="toolbar" aria-label="Timeline navigation controls">
-        <div className="timeline-epoch-pills" role="group" aria-label="Filter by historical epoch">
+      <div className={styles.timelineControls} role="toolbar" aria-label="Timeline navigation controls">
+        <div className={styles.timelineEpochPills} role="group" aria-label="Filter by historical epoch">
           <button
             type="button"
-            className={`timeline-epoch-btn ${activeEpoch === "all" ? "active" : ""}`}
+            className={`${styles.timelineEpochBtn} ${activeEpoch === "all" ? styles.timelineEpochBtnActive : ""}`}
             aria-pressed={activeEpoch === "all"}
             onClick={() => setActiveEpoch("all")}
           >
-            <Clock size={14} aria-hidden="true" />
+            <Icon name="timer" size="sm" aria-hidden="true" />
             <span>All Eras</span>
-            <span className="timeline-epoch-count">{epochCounts.all}</span>
+            <span className={styles.timelineEpochCount}>{epochCounts.all}</span>
           </button>
           <button
             type="button"
-            className={`timeline-epoch-btn ${activeEpoch === "br" ? "active" : ""}`}
+            className={`${styles.timelineEpochBtn} ${activeEpoch === "br" ? styles.timelineEpochBtnActive : ""}`}
             aria-pressed={activeEpoch === "br"}
             onClick={() => setActiveEpoch("br")}
           >
-            <History size={14} aria-hidden="true" />
+            <Icon name="history" size="sm" aria-hidden="true" />
             <span>Before Ruin (BR)</span>
-            <span className="timeline-epoch-count">{epochCounts.br}</span>
+            <span className={styles.timelineEpochCount}>{epochCounts.br}</span>
           </button>
           <button
             type="button"
-            className={`timeline-epoch-btn ${activeEpoch === "early-ar" ? "active" : ""}`}
+            className={`${styles.timelineEpochBtn} ${activeEpoch === "early-ar" ? styles.timelineEpochBtnActive : ""}`}
             aria-pressed={activeEpoch === "early-ar"}
             onClick={() => setActiveEpoch("early-ar")}
           >
             <span>Rebuilding (0–4.5k AR)</span>
-            <span className="timeline-epoch-count">{epochCounts.early}</span>
+            <span className={styles.timelineEpochCount}>{epochCounts.early}</span>
           </button>
           <button
             type="button"
-            className={`timeline-epoch-btn ${activeEpoch === "modern-ar" ? "active" : ""}`}
+            className={`${styles.timelineEpochBtn} ${activeEpoch === "modern-ar" ? styles.timelineEpochBtnActive : ""}`}
             aria-pressed={activeEpoch === "modern-ar"}
             onClick={() => setActiveEpoch("modern-ar")}
           >
             <span>Modern Valaron (5k+ AR)</span>
-            <span className="timeline-epoch-count">{epochCounts.modern}</span>
+            <span className={styles.timelineEpochCount}>{epochCounts.modern}</span>
           </button>
         </div>
 
@@ -284,19 +274,18 @@ export function LoreTimelineView({
           type="button"
           variant="ghost"
           size="sm"
-          icon={<ArrowDownUp size={14} aria-hidden="true" />}
+          icon={<Icon name="sort" size="sm" aria-hidden="true" />}
           onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
           aria-label={`Toggle timeline sort order: currently ${sortOrder === "asc" ? "Oldest First" : "Newest First"}`}
-          className="timeline-sort-btn"
+          className={styles.timelineSortBtn}
         >
           {sortOrder === "asc" ? "Oldest First" : "Newest First"}
         </Button>
       </div>
 
-      {/* Interactive Chronology Track */}
-      <div ref={trackRef} className="timeline-track">
+      <div ref={trackRef} className={styles.timelineTrack}>
         <div
-          className="timeline-spine-rail"
+          className={styles.timelineSpineRail}
           style={
             railBounds
               ? {
@@ -313,8 +302,8 @@ export function LoreTimelineView({
           const isFirst = index === 0;
           const isLast = index === filteredEvents.length - 1;
 
-          const meta = EVENT_METADATA[event.id] || {
-            icon: Clock,
+          const meta: EventMeta = EVENT_METADATA[event.id] || {
+            icon: "timer",
             epochGroup: isBr(event.era) ? "br" : isEarlyAr(event.era) ? "early-ar" : "modern-ar",
             epochTitle: isBr(event.era)
               ? "Epoch I: The Mythic Age (Before Ruin)"
@@ -322,83 +311,78 @@ export function LoreTimelineView({
               ? "Epoch II: Rebuilding & Discovery (0–4.5k AR)"
               : "Epoch III: Great Wars & Modern Valaron (5k+ AR)",
             epochTag: "Historical Event",
-            tone: isBr(event.era) ? "gold" : "cyan",
+            tone: isBr(event.era) ? "gold" : "sky",
           };
 
-          const MetaIcon = meta.icon;
+          const toneClass = getToneClass(meta.tone);
           const prevEvent = filteredEvents[index - 1];
           const prevMeta = prevEvent ? EVENT_METADATA[prevEvent.id] : null;
           const showEpochGate = !prevMeta || prevMeta.epochTitle !== meta.epochTitle;
 
-          // Find first connected entry for inline quick excerpt
           const firstEntry = event.entryIds.length > 0 ? entryById[event.entryIds[0]] : null;
           const previewSnippet = firstEntry?.summary ? cleanLoreCopy(firstEntry.summary) : null;
           const isExpanded = expandedIds.has(event.id);
 
           return (
-            <div key={event.id} className="timeline-segment">
+            <div key={event.id} className={styles.timelineSegment}>
               {showEpochGate && (
-                <div className={`timeline-epoch-gate tone-${meta.tone}`}>
-                  <div className="timeline-epoch-gate-badge">
-                    <span className="timeline-epoch-gate-icon">
-                      {meta.tone === "gold" ? "✦" : meta.tone === "ruby" ? "⚔" : "◆"}
-                    </span>
-                    <span className="timeline-epoch-gate-title">{meta.epochTitle}</span>
+                <div className={`${styles.timelineEpochGate} ${toneClass}`}>
+                  <div className={styles.timelineEpochGateBadge}>
+                    <span>{meta.epochTitle}</span>
                   </div>
                 </div>
               )}
 
-              <div className={`timeline-row tone-${meta.tone}`}>
-                {/* Node column on the chronology rail */}
-                <div className="timeline-node-col">
+              <div className={`${styles.timelineRow} ${toneClass}`}>
+                <div className={styles.timelineNodeCol}>
                   <div
                     ref={(el) => {
                       if (isFirst) firstNodeRef.current = el;
                       if (isLast) lastNodeRef.current = el;
                     }}
-                    className="timeline-node-capsule"
+                    className={styles.timelineNodeCapsule}
                     title={`${event.era}: ${event.title}`}
                   >
-                    <MetaIcon size={16} aria-hidden="true" />
+                    <Icon name={meta.icon} size="md" aria-hidden="true" />
                   </div>
-                  <div className="timeline-connector-beam" aria-hidden="true" />
                 </div>
 
-                {/* Event Card */}
-                <article className="timeline-card">
-                  <header className="timeline-card-header">
-                    <div className="timeline-card-badges">
-                      <span className="timeline-era-badge">{event.era}</span>
-                      <span className="timeline-tag-badge">{meta.epochTag}</span>
+                <article className={styles.timelineCard}>
+                  <header className={styles.timelineCardHeader}>
+                    <div className={styles.timelineCardBadges}>
+                      <span className={styles.timelineEraBadge}>{event.era}</span>
+                      <span className={styles.timelineTagBadge}>{meta.epochTag}</span>
                     </div>
 
                     {previewSnippet && (
-                      <button
+                      <Button
                         type="button"
-                        className="timeline-excerpt-toggle"
+                        variant="ghost"
+                        size="sm"
+                        className={styles.timelineExcerptToggle}
                         onClick={() => toggleExcerpt(event.id)}
                         aria-expanded={isExpanded}
                         aria-label={`${isExpanded ? "Hide" : "Show"} quick archive excerpt for ${event.title}`}
                       >
                         {isExpanded ? "Hide Excerpt" : "Quick Excerpt"}
-                      </button>
+                      </Button>
                     )}
                   </header>
 
-                  <h3 className="timeline-title">{event.title}</h3>
-                  <p className="timeline-summary">{cleanLoreCopy(event.summary)}</p>
+                  <h3 className={styles.timelineTitle}>{event.title}</h3>
+                  <p className={styles.timelineSummary}>{cleanLoreCopy(event.summary)}</p>
 
                   {isExpanded && previewSnippet && (
-                    <div className="timeline-quick-read" role="region" aria-label={`Archive excerpt from ${firstEntry?.title}`}>
-                      <span className="timeline-quick-read-label">Archive Excerpt &middot; {firstEntry?.title}:</span>
+                    <div className={styles.timelineQuickRead} role="region" aria-label={`Archive excerpt from ${firstEntry?.title}`}>
+                      <span className={styles.timelineQuickReadLabel}>Archive Excerpt &middot; {firstEntry?.title}:</span>
                       <p>&ldquo;{previewSnippet}&rdquo;</p>
                     </div>
                   )}
 
                   {event.entryIds.length > 0 && (
-                    <div className="timeline-records" role="group" aria-label={`Connected records for ${event.title}`}>
-                      <span className="timeline-records-heading">Connected Records:</span>
-                      <div className="timeline-record-pills">
+                    <div className={styles.timelineRecords} role="group" aria-label={`Connected records for ${event.title}`}>
+                      <span className={styles.timelineRecordsHeading}>Connected Records:</span>
+                      <div className={styles.timelineRecordPills}>
                         {event.entryIds.map((id) => {
                           const entry = entryById[id];
                           if (!entry) return null;
@@ -407,14 +391,14 @@ export function LoreTimelineView({
                             <button
                               key={id}
                               type="button"
-                              className="timeline-record-pill"
+                              className={styles.timelineRecordPill}
                               style={{ "--tone": catMeta?.tone || "var(--lore-gold)" } as CSSProperties}
                               onClick={() => openEntry(entry)}
                               aria-label={`Open dossier for ${entry.title} (${catMeta?.label || entry.category})`}
                             >
-                              <span className="timeline-pill-glyph" aria-hidden="true">{catMeta?.icon}</span>
-                              <span className="timeline-pill-title">{entry.title}</span>
-                              <span className="timeline-pill-cat">{catMeta?.label || entry.category}</span>
+                              <span className={styles.timelinePillGlyph} aria-hidden="true">{catMeta?.icon}</span>
+                              <span>{entry.title}</span>
+                              <span className={styles.timelinePillCat}>{catMeta?.label || entry.category}</span>
                             </button>
                           );
                         })}

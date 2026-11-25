@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { GameImage } from "@/components/GameImage";
 import type { WeatherData } from "@/constants/weatherData";
 import {
   getWeatherPreferenceLabel,
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getEnemyWeatherLabel } from "../types";
+import styles from "../Weather.module.css";
 
 export function CurrentEnemyContext({
   activeWeather,
@@ -27,24 +28,24 @@ export function CurrentEnemyContext({
     <Link
       key={`${tone}-${enemy.locationKey}-${enemy.name}`}
       href={`/enemies?search=${encodeURIComponent(enemy.name)}`}
-      className={`current-enemy-link ${tone}`}
+      className={styles.currentEnemyLink}
       aria-label={getEnemyWeatherLabel(enemy, `${tone} by current ${activeWeather.name}`)}
     >
-      <div className="enemy-avatar-shell">
+      <div className={styles.enemyAvatarShell}>
         {enemy.imageUrl ? (
-          <Image src={enemy.imageUrl} alt="" width={36} height={36} unoptimized />
+          <GameImage src={enemy.imageUrl} alt="" width={36} height={36} sizes="36px" className={styles.enemyAvatarImg} />
         ) : (
           <Icon name="combat" size="md" />
         )}
       </div>
-      <div className="enemy-info-col">
-        <div className="enemy-info-top">
+      <div className={styles.enemyInfoCol}>
+        <div className={styles.enemyInfoTop}>
           <strong>{enemy.name}</strong>
           <Badge variant="neutral" size="sm">
             Lv.{enemy.level}
           </Badge>
         </div>
-        <div className="enemy-info-bottom">
+        <div className={styles.enemyInfoBottom}>
           <small>
             {enemy.locationName} &middot; {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
           </small>
@@ -57,10 +58,10 @@ export function CurrentEnemyContext({
   );
 
   return (
-    <Card variant="default" className="current-enemy-card">
-      <div className="card-header compact">
+    <Card variant="default" className={styles.liveCard}>
+      <div className={`${styles.cardHeader} ${styles.cardHeaderCompact}`}>
         <Icon name="combat" size="md" />
-        <div className="card-header-title-row">
+        <div className={styles.cardHeaderTitleRow}>
           <h3>Current Enemy Match</h3>
           {characterCombatLevel && (
             <Badge variant="neutral" size="sm">
@@ -69,15 +70,15 @@ export function CurrentEnemyContext({
           )}
         </div>
       </div>
-      <div className="current-enemy-grid">
-        <section className="current-enemy-lane">
-          <div className="forecast-lane-title good">
+      <div className={styles.laneStack}>
+        <section>
+          <div className={styles.laneTitle}>
             <span>Favored by {activeWeather.name}</span>
             <Badge variant="success" size="sm">
               {favoredEnemies.length}
             </Badge>
           </div>
-          <div className="current-enemy-list">
+          <div className={styles.laneList}>
             {favoredEnemies.slice(0, 5).map((enemy) => renderEnemy(enemy, "favored"))}
             {favoredEnemies.length === 0 && (
               <EmptyState
@@ -90,14 +91,14 @@ export function CurrentEnemyContext({
           </div>
         </section>
 
-        <section className="current-enemy-lane">
-          <div className="forecast-lane-title bad">
+        <section>
+          <div className={styles.laneTitle}>
             <span>Penalized by {activeWeather.name}</span>
             <Badge variant="danger" size="sm">
               {penalizedEnemies.length}
             </Badge>
           </div>
-          <div className="current-enemy-list">
+          <div className={styles.laneList}>
             {penalizedEnemies.slice(0, 5).map((enemy) => renderEnemy(enemy, "penalized"))}
             {penalizedEnemies.length === 0 && (
               <EmptyState

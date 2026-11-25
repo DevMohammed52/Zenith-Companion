@@ -33,19 +33,33 @@ describe("enemies architecture and modularization contracts", () => {
     expect(content).toContain("compareEnemiesByProgression");
   });
 
-  it("contains all extracted feature components and styles", () => {
+  it("contains all extracted feature components and scoped CSS module", () => {
     const requiredFiles = [
-      "CustomSelect.tsx",
-      "PreferencePills.tsx",
       "EnemyDetailModal.tsx",
       "EnemiesHeader.tsx",
       "EnemiesControls.tsx",
       "EnemyCard.tsx",
       "EnemiesGrid.tsx",
-      "EnemiesStyles.tsx",
+      "EnemiesPagination.tsx",
     ];
     for (const file of requiredFiles) {
       expect(existsSync(path.join(componentsDir, file))).toBe(true);
+    }
+    expect(existsSync(path.join(componentsDir, "CustomSelect.tsx"))).toBe(false);
+    expect(existsSync(path.join(componentsDir, "EnemiesStyles.tsx"))).toBe(false);
+    expect(existsSync(path.join(componentsDir, "PreferencePills.tsx"))).toBe(false);
+
+    const cssPath = path.join(enemiesDir, "Enemies.module.css");
+    expect(existsSync(cssPath)).toBe(true);
+    const css = readFileSync(cssPath, "utf-8");
+    expect(css).toContain("--border-focus");
+    expect(css).toContain("44px");
+    expect(css).toContain("prefers-reduced-motion");
+
+    for (const file of requiredFiles) {
+      const content = readFileSync(path.join(componentsDir, file), "utf-8");
+      expect(content).not.toContain('from "lucide-react"');
+      expect(content).not.toContain("<style jsx");
     }
   });
 

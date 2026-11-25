@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ArrowDown, ArrowDownUp, ArrowUp, AlertTriangle } from 'lucide-react';
+import { Icon } from '@/components/ui/Icon';
 import { GameImage } from '@/components/GameImage';
-import { getQualityColor, getQualityTextStyle } from '@/lib/quality';
+import { GoldIcon } from '@/components/GoldIcon';
+import { getQualityColor, getQualityTextColor, getQualityTextStyle } from '@/lib/quality';
 import { ItemCompactBadges } from './ItemBadges';
 import {
   formatGold,
@@ -12,6 +13,7 @@ import {
   type EnrichedItem,
   type SortKey,
 } from '../types';
+import styles from '../Items.module.css';
 
 export interface ItemsTableProps {
   items: EnrichedItem[];
@@ -30,21 +32,24 @@ export function ItemsTable({
 }: ItemsTableProps) {
   const renderSortHeader = (key: SortKey, label: string, align: 'left' | 'right' | 'center' = 'right') => {
     const active = sortBy === key;
+    const colClass = align === 'left' ? styles.colLeft : align === 'center' ? styles.colCenter : styles.colRight;
+    const alignClass = align === 'left' ? styles.sortLeft : align === 'center' ? styles.sortCenter : styles.sortRight;
     return (
       <th
-        className={align}
+        className={colClass}
         aria-sort={active ? (sortDesc ? 'descending' : 'ascending') : 'none'}
       >
         <button
           type="button"
-          className={`sort-header-button ${active ? 'active' : ''} ${align}`}
+          className={`${styles.sortHeaderButton} ${active ? styles.sortActive : ''} ${alignClass}`}
           aria-label={`Sort by ${label}${active ? `, currently ${sortDesc ? 'descending' : 'ascending'}` : ''}`}
           onClick={() => onSort(key)}
         >
           <span>{label}</span>
-          <span aria-hidden="true" className="sort-indicator">
-            {active ? (sortDesc ? <ArrowDown size={13} /> : <ArrowUp size={13} />) : <ArrowDownUp size={13} />}
-          </span>
+          <Icon
+            name={active ? (sortDesc ? 'sortDesc' : 'sortAsc') : 'sort'}
+            size={13}
+          />
         </button>
       </th>
     );
@@ -52,26 +57,26 @@ export function ItemsTable({
 
   return (
     <div
-      className="desktop-table-shell"
+      className={styles.desktopTableShell}
       role="region"
       aria-label="Item catalog data table"
       tabIndex={0}
     >
-      <table className="items-table">
+      <table className={styles.itemsTable}>
         <colgroup>
           <col style={{ width: '280px', minWidth: '280px' }} />
           <col style={{ width: '100px', minWidth: '90px' }} />
           <col style={{ width: '110px', minWidth: '100px' }} />
           <col style={{ width: '75px', minWidth: '70px' }} />
-          <col style={{ width: '110px', minWidth: '100px' }} />
-          <col style={{ width: '90px', minWidth: '80px' }} />
+          <col style={{ width: '115px', minWidth: '105px' }} />
+          <col style={{ width: '95px', minWidth: '85px' }} />
           <col style={{ width: '120px', minWidth: '110px' }} />
           <col style={{ width: '80px', minWidth: '75px' }} />
-          <col style={{ minWidth: '140px' }} />
+          <col style={{ minWidth: '150px' }} />
         </colgroup>
         <thead>
           <tr>
-            <th className="left pinned-item">Item</th>
+            <th className={`${styles.colLeft} ${styles.pinnedCol}`}>Item</th>
             {renderSortHeader('type', 'Type', 'left')}
             {renderSortHeader('quality', 'Quality', 'left')}
             {renderSortHeader('requiredLevel', 'Level', 'right')}
@@ -79,7 +84,7 @@ export function ItemsTable({
             {renderSortHeader('vendor', 'Vendor', 'right')}
             {renderSortHeader('volume', 'Stable Vol', 'right')}
             {renderSortHeader('usage', 'Usage', 'right')}
-            <th className="left">Tags</th>
+            <th className={styles.colLeft}>Tags</th>
           </tr>
         </thead>
         <tbody>
@@ -87,27 +92,20 @@ export function ItemsTable({
             const warningLabel = getMarketWarningLabel(item);
 
             return (
-              <tr
-                aria-label={`Open ${item.name} item details`}
-                key={item.id}
-                onClick={() => onOpenItem(item.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onOpenItem(item.id);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-              >
-                <td className="item-cell pinned-item">
-                  <div className="item-cell-inner">
+              <tr key={item.id} onClick={() => onOpenItem(item.id)}>
+                <td className={styles.pinnedCol}>
+                  <button
+                    type="button"
+                    className={styles.rowOpenButton}
+                    aria-label={`Open ${item.name} item details`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpenItem(item.id);
+                    }}
+                  >
                     <div
-                      className="item-thumb-wrapper"
-                      style={{
-                        borderColor: getQualityColor(item.quality),
-                        boxShadow: `0 0 10px ${getQualityColor(item.quality)}25`,
-                      }}
+                      className={styles.itemThumbWrapper}
+                      style={{ borderColor: getQualityColor(item.quality) }}
                     >
                       <GameImage
                         src={item.image}
@@ -119,46 +117,70 @@ export function ItemsTable({
                         fallbackSrc="/favicon.ico"
                       />
                     </div>
-                    <div className="item-copy">
-                      <strong style={{ color: getQualityColor(item.quality) }}>
+                    <div className={styles.itemCopy}>
+                      <strong
+                        className={styles.itemNameText}
+                        style={{ color: getQualityTextColor(item.quality) }}
+                      >
                         {item.name}
                       </strong>
-                      <small>{formatLabel(item.type)}</small>
+                      <small className={styles.itemTypeSub}>{formatLabel(item.type)}</small>
                     </div>
-                  </div>
+                  </button>
                 </td>
-                <td className="left">{formatLabel(item.type)}</td>
-                <td className="left">
-                  <span className={`quality-tag ${item.quality.toLowerCase()}`} style={getQualityTextStyle(item.quality)}>
+                <td className={styles.colLeft}>{formatLabel(item.type)}</td>
+                <td className={styles.colLeft}>
+                  <span
+                    className={styles.qualityTag}
+                    style={getQualityTextStyle(item.quality)}
+                  >
                     {item.quality}
                   </span>
                 </td>
-                <td className="mono right" title={item.requirementsText || undefined}>
+                <td className={`${styles.mono} ${styles.colRight}`} title={item.requirementsText || undefined}>
                   {item.requiredLevel || '—'}
                 </td>
-                <td className="mono right gold-cell" title={item.marketConfidence.note}>
-                  {formatGold(item.marketPrice)}
+                <td className={`${styles.mono} ${styles.colRight}`} title={item.marketConfidence.note}>
+                  {item.marketPrice > 0 ? (
+                    <span className={styles.goldValue}>
+                      <GoldIcon size={12} />
+                      <span>{formatGold(item.marketPrice)}</span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
-                <td className="mono right">{formatGold(item.vendorPrice)}</td>
+                <td className={`${styles.mono} ${styles.colRight}`}>
+                  {item.vendorPrice > 0 ? (
+                    <span className={styles.goldValue}>
+                      <GoldIcon size={12} />
+                      <span>{formatGold(item.vendorPrice)}</span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td
-                  className={`mono right liquidity-volume ${item.liquidity.tone}`}
+                  className={`${styles.mono} ${styles.colRight}`}
                   title={
                     item.stableMarketVolume !== item.marketVolume || item.liquidity.hasPriceSwings
                       ? item.liquidity.note
                       : `Raw 3-day volume: ${item.marketVolume.toLocaleString()}`
                   }
                 >
-                  <span className="volume-number">
+                  <span>
                     {item.stableMarketVolume ? item.stableMarketVolume.toLocaleString() : '—'}
                   </span>
                   {warningLabel ? (
-                    <span className="volume-warning-icon" title={warningLabel} aria-label={warningLabel}>
-                      <AlertTriangle size={11} aria-hidden="true" />
+                    <span className={styles.volumeWarningIcon} role="img" title={warningLabel} aria-label={warningLabel}>
+                      <Icon name="warning" size={11} />
                     </span>
                   ) : null}
                 </td>
-                <td className="mono right">{item.usageScore ? item.usageScore.toLocaleString() : '—'}</td>
-                <td className="signals-cell left">
+                <td className={`${styles.mono} ${styles.colRight}`}>
+                  {item.usageScore ? item.usageScore.toLocaleString() : '—'}
+                </td>
+                <td className={styles.colLeft}>
                   <ItemCompactBadges item={item} />
                 </td>
               </tr>

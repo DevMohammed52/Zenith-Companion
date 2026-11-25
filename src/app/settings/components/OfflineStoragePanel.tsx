@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Database, RefreshCw, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Banner } from "@/components/ui/Banner";
+import { Banner, Button, Icon } from "@/components/ui";
 import {
   formatAge,
   formatBytes,
@@ -217,7 +215,7 @@ export default function OfflineStoragePanel() {
         <Button
           variant="secondary"
           size="sm"
-          icon={<RefreshCw size={13} />}
+          icon={<Icon name="refresh" size={13} />}
           onClick={() => runOfflineAction("refresh")}
           disabled={!canUseOfflineCache || busyAction !== null}
         >
@@ -226,7 +224,7 @@ export default function OfflineStoragePanel() {
         <Button
           variant="danger"
           size="sm"
-          icon={<Trash2 size={13} />}
+          icon={<Icon name="trash" size={13} />}
           onClick={() => runOfflineAction("clear")}
           disabled={!canUseOfflineCache || busyAction !== null}
         >
@@ -235,7 +233,7 @@ export default function OfflineStoragePanel() {
         <Button
           variant="secondary"
           size="sm"
-          icon={<Database size={13} />}
+          icon={<Icon name="database" size={13} />}
           onClick={() =>
             checkOfflineStorage("Offline cache entries counted.", {
               countCacheEntries: true,
@@ -247,21 +245,21 @@ export default function OfflineStoragePanel() {
         </Button>
       </div>
 
-      <Banner variant="info" style={{ marginTop: "1rem" }}>
+      <Banner variant="info" className={styles.offlineBanner}>
         These controls manage only public app files and cached game data. They never delete character profiles, custom prices, or local settings stored in your browser.
       </Banner>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.65rem" }}>
-        <p className={styles.storageStatusNote} style={{ margin: 0 }}>
+      <div className={styles.offlineStatusStack}>
+        <p className={styles.storageStatusNote}>
           {busyAction ? "Working..." : statusMessage}
         </p>
         {offlineStorage.error && (
-          <p className="settings-warning-note" style={{ color: "var(--accent-red)", fontSize: "0.8rem", margin: 0 }}>
+          <p className={`settings-warning-note ${styles.offlineErrorNote}`}>
             {offlineStorage.error}
           </p>
         )}
         {offlineStorage.manifestGeneratedAt && (
-          <p className={styles.storageStatusNote} style={{ margin: 0, opacity: 0.8 }}>
+          <p className={styles.storageStatusSub}>
             Offline manifest generated {formatAge(offlineStorage.manifestGeneratedAt)}.
           </p>
         )}

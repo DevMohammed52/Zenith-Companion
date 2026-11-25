@@ -7,6 +7,7 @@ import { Banner } from "@/components/ui/Banner";
 import { Icon } from "@/components/ui/Icon";
 import { getWeatherConcept } from "../types";
 import type { EnrichedLocation, ForecastWeather } from "@/lib/world-intelligence";
+import styles from "../Weather.module.css";
 
 export interface WeatherHeaderProps {
   activeWeather: WeatherData;
@@ -51,9 +52,9 @@ export function WeatherHeader({
   };
 
   return (
-    <header className="page-header">
+    <header className={styles.pageHeader}>
       {magicStormAlert && (
-        <div className="weather-storm-alert-slot">
+        <div className={styles.stormAlertSlot}>
           <Banner
             variant="announcement"
             title={
@@ -64,7 +65,7 @@ export function WeatherHeader({
             action={
               <Link
                 href={`/map?location=${encodeURIComponent(magicStormAlert.location.key)}`}
-                className="weather-storm-action-link"
+                className={styles.stormActionLink}
               >
                 View on map
               </Link>
@@ -77,9 +78,9 @@ export function WeatherHeader({
         </div>
       )}
 
-      <div className="header-text">
-        <div className="header-eyebrow-row">
-          <span className="eyebrow">
+      <div className={styles.headerText}>
+        <div className={styles.eyebrowRow}>
+          <span className={styles.eyebrow}>
             <Icon name="weather" size="sm" /> IdleMMO Weather Index
           </span>
           {currentSeason && (
@@ -89,37 +90,45 @@ export function WeatherHeader({
           )}
         </div>
 
-        <h1>Weather Guide</h1>
-        <p>
+        <h1 className={styles.headerTitle}>Weather Guide</h1>
+        <p className={styles.headerDesc}>
           Read current and next weather by region, then check skill modifiers and enemy reactions before choosing where to farm.
         </p>
 
-        <div className="weather-snapshot-grid" aria-label={`${activeWeather.name} weather summary`}>
-          <div className="weather-snapshot-card">
-            <Icon name="timer" size="sm" />
-            <span data-short="Active">Active windows</span>
-            <strong>{currentWeatherLocationsCount}</strong>
+        <div className={styles.snapshotStrip} aria-label={`${activeWeather.name} weather summary`}>
+          <div className={styles.snapshotCell}>
+            <span className={styles.snapshotLabelRow}>
+              <Icon name="timer" size="xs" />
+              <span>Active</span>
+            </span>
+            <strong className={styles.snapshotVal}>{currentWeatherLocationsCount}</strong>
           </div>
-          <div className="weather-snapshot-card">
-            <Icon name="map" size="sm" />
-            <span data-short="Next">Coming next</span>
-            <strong>{nextWeatherLocationsCount}</strong>
+          <div className={styles.snapshotCell}>
+            <span className={styles.snapshotLabelRow}>
+              <Icon name="map" size="xs" />
+              <span>Next</span>
+            </span>
+            <strong className={styles.snapshotVal}>{nextWeatherLocationsCount}</strong>
           </div>
-          <div className="weather-snapshot-card good">
-            <Icon name="xp" size="sm" />
-            <span data-short="Favored">Favored enemies</span>
-            <strong>{favoredPreferenceCount}</strong>
+          <div className={`${styles.snapshotCell} ${styles.snapshotGood}`}>
+            <span className={styles.snapshotLabelRow}>
+              <Icon name="xp" size="xs" />
+              <span>Favored</span>
+            </span>
+            <strong className={styles.snapshotVal}>{favoredPreferenceCount}</strong>
           </div>
-          <div className="weather-snapshot-card bad">
-            <Icon name="combat" size="sm" />
-            <span data-short="Penalized">Penalized enemies</span>
-            <strong>{penalizedPreferenceCount}</strong>
+          <div className={`${styles.snapshotCell} ${styles.snapshotBad}`}>
+            <span className={styles.snapshotLabelRow}>
+              <Icon name="combat" size="xs" />
+              <span>Penalized</span>
+            </span>
+            <strong className={styles.snapshotVal}>{penalizedPreferenceCount}</strong>
           </div>
         </div>
       </div>
 
-      <div className="weather-selector-shell">
-        <span className="weather-selector-heading">Select weather condition:</span>
+      <div className={styles.selectorShell}>
+        <span className={styles.selectorHeading}>Select weather condition</span>
         <SegmentedControl
           options={weatherOptions}
           value={activeWeather.id}

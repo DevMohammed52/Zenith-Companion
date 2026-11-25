@@ -7,9 +7,8 @@ import { ItemsFilterBar } from './components/ItemsFilterBar';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemsCardGrid } from './components/ItemsCardGrid';
 import { ItemsPagination } from './components/ItemsPagination';
-import { BackToTop } from '@/components/ui/BackToTop';
-import { ItemsStyles } from './components/ItemsStyles';
-import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
+import { BackToTop, Button, EmptyState, Skeleton } from '@/components/ui';
+import styles from './Items.module.css';
 
 export {
   SORT_OPTIONS,
@@ -63,9 +62,7 @@ function ItemsArchiveContent() {
       : `${state.filteredItems.length.toLocaleString()} items`;
 
   return (
-    <main className="container items-db-page" aria-label="Item Database">
-      <ItemsStyles />
-
+    <main className={`container items-db-page ${styles.page}`} aria-label="Item Database">
       <ItemsHeader
         totalCataloged={state.index.length}
         stats={state.stats}
@@ -75,35 +72,39 @@ function ItemsArchiveContent() {
       <ItemsFilterBar state={state} />
 
       {state.loadError && (
-        <ErrorState title="Item data unavailable" description={state.loadError} />
-      )}
-
-      {!state.loadError && (state.loading || state.index.length === 0) && (
-        <LoadingState
-          title="Loading item data"
-          description="Preparing the item index, market rows, and relationship map."
+        <EmptyState
+          variant="error"
+          title="Item data unavailable"
+          description={state.loadError}
         />
       )}
 
+      {!state.loadError && (state.loading || state.index.length === 0) && (
+        <div className={styles.skeletonSection} aria-busy="true" aria-label="Loading item catalog">
+          <div className={styles.skeletonCardsGrid}>
+            {Array.from({ length: 9 }).map((_, idx) => (
+              <Skeleton key={idx} variant="rectangular" height={148} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {!state.loadError && state.index.length > 0 && state.filteredItems.length === 0 && (
-        <NoResultsState
+        <EmptyState
+          variant="search-empty"
           title="No items match the current filters"
           description="Clear the search, market-only view, or advanced filters to widen the catalog."
-          action={(
-            <button
-              type="button"
-              className="reset-btn"
-              onClick={state.resetFilters}
-            >
-              Reset filters
-            </button>
-          )}
+          action={{
+            label: 'Reset filters',
+            variant: 'primary',
+            onClick: state.resetFilters,
+          }}
         />
       )}
 
       {!state.loadError && state.filteredItems.length > 0 && (
-        <div style={{ minHeight: '640px', contain: 'layout' }}>
-          <div className="result-meta">
+        <div className={styles.resultsStage} style={{ minHeight: '640px', contain: 'layout' }}>
+          <div className={styles.resultMeta}>
             <span>{metaCountText}</span>
             <span>Sorted by {state.currentSortLabel}</span>
           </div>
@@ -145,9 +146,11 @@ export default function ItemsPage() {
   return (
     <Suspense
       fallback={(
-        <div className="container" style={{ textAlign: 'center', padding: '5rem' }}>
-          <div className="skeleton-text" style={{ width: '200px', margin: '0 auto' }} />
-        </div>
+        <main className={styles.page} aria-busy="true" aria-label="Loading item directory">
+          <Skeleton variant="rectangular" height={88} />
+          <Skeleton variant="rectangular" height={206} />
+          <Skeleton variant="rectangular" height={760} />
+        </main>
       )}
     >
       <ItemsArchiveContent />

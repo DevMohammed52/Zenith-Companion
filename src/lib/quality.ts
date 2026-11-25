@@ -106,13 +106,17 @@ export function getQualityColor(value: unknown) {
   return QUALITY_COLORS[normalizeQuality(value)];
 }
 
+export function getQualityTextColor(value: unknown) {
+  return QUALITY_PALETTE[normalizeQuality(value)].textColor;
+}
+
 export function getQualityPalette(value: unknown) {
   return QUALITY_PALETTE[normalizeQuality(value)];
 }
 
 export function getQualityTextStyle(value: unknown): CSSProperties {
   const palette = getQualityPalette(value);
-  if (!palette.textGradient) return { color: palette.color };
+  if (!palette.textGradient) return { color: palette.textColor };
   return {
     background: palette.textGradient,
     backgroundClip: "text",

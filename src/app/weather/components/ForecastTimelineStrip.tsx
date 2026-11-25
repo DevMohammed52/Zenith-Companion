@@ -5,6 +5,7 @@ import type { EnrichedLocation } from "@/lib/world-intelligence";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { formatForecastAriaLabel, formatForecastTime, formatRelativeCountdown } from "../types";
+import styles from "../Weather.module.css";
 
 export function ForecastTimelineStrip({
   activeWeather,
@@ -21,13 +22,13 @@ export function ForecastTimelineStrip({
   ].slice(0, 7);
 
   return (
-    <section className={`forecast-strip ${windows.length > 1 ? "scrollable" : ""}`} aria-label={`${activeWeather.name} forecast timeline`}>
-      <div className="forecast-strip-label">
+    <section className={styles.forecastStrip} aria-label={`${activeWeather.name} forecast timeline`}>
+      <div className={styles.forecastStripLabel}>
         <Icon name="timer" size="sm" />
         <span>{activeWeather.name} windows</span>
       </div>
-      {windows.length > 1 && <p className="forecast-strip-hint">Scroll to view all upcoming regions</p>}
-      <div className="forecast-strip-track">
+      {windows.length > 1 && <p className={styles.forecastStripHint}>Scroll to view all upcoming regions</p>}
+      <div className={styles.forecastStripTrack}>
         {windows.length > 0 ? (
           windows.map(({ location, mode, weather }) => {
             const countdown = formatRelativeCountdown(weather);
@@ -35,25 +36,25 @@ export function ForecastTimelineStrip({
               <Link
                 key={`${mode}-${location.key}`}
                 href={`/map?location=${encodeURIComponent(location.key)}`}
-                className={`forecast-pill ${mode === "Now" ? "now" : "next"}`}
+                className={styles.forecastPill}
                 aria-label={formatForecastAriaLabel(activeWeather.name, mode, location, weather)}
               >
-                <div className="forecast-pill-header">
+                <div className={styles.forecastPillHeader}>
                   <Badge variant={mode === "Now" ? "success" : "neutral"} size="sm">
                     {mode}
                   </Badge>
-                  <span className="forecast-countdown">{countdown.label}</span>
+                  <span className={styles.forecastCountdown}>{countdown.label}</span>
                 </div>
-                <strong>{location.name}</strong>
-                <small>{formatForecastTime(weather)}</small>
+                <strong className={styles.forecastPillName}>{location.name}</strong>
+                <small className={styles.forecastPillTime}>{formatForecastTime(weather)}</small>
               </Link>
             );
           })
         ) : (
-          <div className="forecast-pill empty">
+          <div className={`${styles.forecastPill} ${styles.forecastPillEmpty}`}>
             <Badge variant="neutral" size="sm">Quiet</Badge>
-            <strong>No active or upcoming {activeWeather.name} window</strong>
-            <small>No matching location forecast in current rotation.</small>
+            <strong className={styles.forecastPillName}>No active or upcoming {activeWeather.name} window</strong>
+            <small className={styles.forecastPillTime}>No matching location forecast in current rotation.</small>
           </div>
         )}
       </div>

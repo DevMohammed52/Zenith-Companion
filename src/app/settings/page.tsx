@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
-import { Button } from "@/components/ui/Button";
+import { BackToTop, Button, Icon } from "@/components/ui";
 import InstallAppHelper from "@/components/InstallAppHelper";
 import { useSettingsState } from "./hooks/useSettingsState";
 import SettingsOverview from "./components/SettingsOverview";
@@ -28,7 +27,7 @@ export default function SettingsPage() {
             <ZenithIcon
               name="settings"
               size={26}
-              style={{ color: "var(--text-accent)" }}
+              style={{ color: "var(--text-muted)" }}
             />{" "}
             Settings
           </h1>
@@ -40,7 +39,7 @@ export default function SettingsPage() {
           <Button
             size="md"
             variant="secondary"
-            iconTrailing={<ExternalLink size={14} />}
+            iconTrailing={<Icon name="externalLink" size={14} />}
             className="settings-link-button settings-header-action"
           >
             Manage Profiles
@@ -67,6 +66,8 @@ export default function SettingsPage() {
 
         <ShortcutsPanel />
       </section>
+
+      <BackToTop />
     </main>
   );
 }

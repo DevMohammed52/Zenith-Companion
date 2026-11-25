@@ -38,9 +38,7 @@ import { ItemsTable } from '@/app/items/components/ItemsTable';
 import { ItemsCardGrid } from '@/app/items/components/ItemsCardGrid';
 import { ItemsPagination } from '@/app/items/components/ItemsPagination';
 import { ItemBadges, ItemCompactBadges } from '@/app/items/components/ItemBadges';
-import { ItemFilterPicker } from '@/app/items/components/ItemFilterPicker';
 import { ItemSearchBox } from '@/app/items/components/ItemSearchBox';
-import { ItemsStyles } from '@/app/items/components/ItemsStyles';
 
 describe('items architecture and modularization contracts', () => {
   const itemsDir = path.join(process.cwd(), 'src', 'app', 'items');
@@ -87,13 +85,14 @@ describe('items architecture and modularization contracts', () => {
       'ItemsCardGrid.tsx',
       'ItemsPagination.tsx',
       'ItemBadges.tsx',
-      'ItemFilterPicker.tsx',
       'ItemSearchBox.tsx',
-      'ItemsStyles.tsx',
     ];
     for (const comp of requiredComponents) {
       expect(existsSync(path.join(componentsDir, comp)), `Missing component: ${comp}`).toBe(true);
     }
+    expect(existsSync(path.join(itemsDir, 'Items.module.css'))).toBe(true);
+    expect(existsSync(path.join(componentsDir, 'ItemsStyles.tsx'))).toBe(false);
+    expect(existsSync(path.join(componentsDir, 'ItemFilterPicker.tsx'))).toBe(false);
   });
 
   it('exports valid component functions', () => {
@@ -104,15 +103,14 @@ describe('items architecture and modularization contracts', () => {
     expect(typeof ItemsPagination).toBe('function');
     expect(typeof ItemBadges).toBe('function');
     expect(typeof ItemCompactBadges).toBe('function');
-    expect(typeof ItemFilterPicker).toBe('function');
     expect(typeof ItemSearchBox).toBe('function');
-    expect(typeof ItemsStyles).toBe('function');
   });
 
   it('orchestrator defines layout containment and min-height to guarantee zero CLS', () => {
     const pageContent = readFileSync(pagePath, 'utf-8');
     expect(pageContent).toContain('contain: \'layout\'');
     expect(pageContent).toMatch(/minHeight:\s*['"]640px['"]/);
+    expect(pageContent).not.toContain('StateBlock');
   });
 
   it('orchestrator delegates all state and computation to custom hooks with zero inline fetch or heavy computation', () => {
@@ -124,51 +122,21 @@ describe('items architecture and modularization contracts', () => {
     expect(pageContent).not.toContain('.sort(');
   });
 
-  it('ItemsStyles has 100% scoped selectors under .items-db-page preventing global CSS leakage', () => {
-    const stylesPath = path.join(componentsDir, 'ItemsStyles.tsx');
-    const content = readFileSync(stylesPath, 'utf-8');
-    const match = content.match(/<style jsx global>\{`([\s\S]*?)`\}<\/style>/);
-    expect(match).not.toBeNull();
-    const rawCss = match ? match[1] : '';
-    const root = postcss.parse(rawCss);
+  it('Items.module.css uses valid scoped styles, >= 44px targets, reduced-motion safety, and Astral Slate tokens', () => {
+    const cssPath = path.join(itemsDir, 'Items.module.css');
+    const content = readFileSync(cssPath, 'utf-8');
+    const root = postcss.parse(content);
+    expect(root.nodes.length).toBeGreaterThan(10);
 
-    const unscoped: string[] = [];
-    root.walkRules((rule) => {
-      if (rule.parent?.type === 'atrule' && 'name' in rule.parent && rule.parent.name === 'keyframes') {
-        return;
-      }
-      for (const sel of rule.selectors) {
-        const trimmed = sel.trim();
-        if (!trimmed.startsWith('.items-db-page')) {
-          unscoped.push(trimmed);
-        }
-      }
-    });
-
-    expect(unscoped).toEqual([]);
-  });
-
-  it('enforces >= 44px touch targets on interactive controls in ItemsStyles', () => {
-    const stylesPath = path.join(componentsDir, 'ItemsStyles.tsx');
-    const content = readFileSync(stylesPath, 'utf-8');
-    expect(content).toMatch(/\.items-db-page \.item-select-trigger\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.item-select-option\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.sort-header-button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.icon-toggle\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.view-toggle button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.load-more,\s*\.items-db-page \.reset-btn\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.items-db-page \.advanced-filter-panel summary\s*\{[^}]*min-height:\s*44px/);
-  });
-
-  it('verifies ItemsStyles utilizes CSS variable design tokens without hardcoded raw colors', () => {
-    const stylesPath = path.join(componentsDir, 'ItemsStyles.tsx');
-    const content = readFileSync(stylesPath, 'utf-8');
     expect(content).toContain('var(--border-subtle)');
     expect(content).toContain('var(--text-muted)');
     expect(content).toContain('var(--text-main)');
-    expect(content).toContain('var(--text-accent)');
     expect(content).toContain('var(--bg-base)');
     expect(content).toContain('var(--border-focus)');
+    expect(content).toContain('prefers-reduced-motion');
+    expect(content).toMatch(/\.sortHeaderButton\s*\{[^}]*min-height:\s*44px/);
+    expect(content).toMatch(/\.rowOpenButton\s*\{[^}]*min-height:\s*44px/);
+    expect(content).toMatch(/\.advancedFilterSummary\s*\{[^}]*min-height:\s*44px/);
   });
 
   it('re-exports all pure helpers from page.tsx for backward compatibility', () => {

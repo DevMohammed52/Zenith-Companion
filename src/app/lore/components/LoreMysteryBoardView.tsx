@@ -1,8 +1,9 @@
 import { useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from "react";
-import { ChevronRight, Search } from "lucide-react";
 import type { LoreEntry, LoreRelation } from "@/data/lore";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeading } from "./SectionHeading";
 import {
   CATEGORY_META,
@@ -10,6 +11,19 @@ import {
   type LoreFilter,
   type RelationFilter,
 } from "../types";
+import styles from "../Lore.module.css";
+
+function getConfidenceBorderClass(confidence: LoreRelation["confidence"]) {
+  if (confidence === "canon") return styles.confCanon;
+  if (confidence === "inferred") return styles.confInferred;
+  return styles.confTheory;
+}
+
+function getConfidenceTextClass(confidence: LoreRelation["confidence"]) {
+  if (confidence === "canon") return styles.confidenceCanon;
+  if (confidence === "inferred") return styles.confidenceInferred;
+  return styles.confidenceTheory;
+}
 
 export function LoreMysteryBoardView({
   search,
@@ -77,41 +91,46 @@ export function LoreMysteryBoardView({
   );
 
   return (
-    <section className="lore-section" aria-label="Interactive mystery board">
+    <section className={styles.section} aria-label="Interactive mystery board">
       <SectionHeading
         label="Mystery Board"
         detail="Explore connections between relics, civilizations, and historical figures."
       />
       {search.trim() && (
-        <p className="board-search-note">
+        <p className={styles.boardSearchNote}>
           Page search filters Atlas, Characters, and Artifacts. Use the thread search below to pick a mystery node.
         </p>
       )}
-      <div className="board-controls">
-        <div className="board-picker" ref={boardPickerRef}>
+      <div className={styles.boardControls}>
+        <div className={styles.boardPicker} ref={boardPickerRef}>
           <button
             type="button"
-            className="board-picker-trigger"
+            className={styles.boardPickerTrigger}
             onClick={toggleBoardPicker}
             aria-expanded={boardPickerOpen}
             aria-controls={boardPickerListId}
             aria-haspopup="listbox"
             ref={boardPickerTriggerRef}
           >
-            <span className="board-picker-mark" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
+            <span className={styles.boardPickerMark} style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
               {CATEGORY_META[boardEntry.category].icon}
             </span>
-            <span className="board-picker-copy">
+            <span className={styles.boardPickerCopy}>
               <small>{CATEGORY_META[boardEntry.category].label} thread</small>
               <strong>{boardEntry.title}</strong>
             </span>
-            <ChevronRight className={boardPickerOpen ? "open" : ""} size={17} />
+            <Icon
+              name="chevronRight"
+              size="md"
+              className={`${styles.boardPickerChevron} ${boardPickerOpen ? styles.boardPickerChevronOpen : ""}`}
+              aria-hidden="true"
+            />
           </button>
 
           {boardPickerOpen && (
-            <div className="board-picker-popover">
-              <label className="board-picker-search">
-                <Search size={15} />
+            <div className={styles.boardPickerPopover}>
+              <label className={styles.boardPickerSearch}>
+                <Icon name="search" size="sm" aria-hidden="true" />
                 <input
                   aria-activedescendant={activeBoardOptionId}
                   aria-autocomplete="list"
@@ -129,10 +148,10 @@ export function LoreMysteryBoardView({
                   autoFocus
                 />
               </label>
-              <div className="board-picker-categories" role="group" aria-label="Board thread categories">
+              <div className={styles.boardPickerCategories} role="group" aria-label="Board thread categories">
                 <button
                   type="button"
-                  className={boardPickerCategory === "all" ? "active" : ""}
+                  className={boardPickerCategory === "all" ? styles.boardPickerCategoryActive : ""}
                   aria-pressed={boardPickerCategory === "all"}
                   onClick={() => {
                     setBoardPickerCategory("all");
@@ -145,19 +164,18 @@ export function LoreMysteryBoardView({
                   <button
                     key={category}
                     type="button"
-                    className={boardPickerCategory === category ? "active" : ""}
+                    className={boardPickerCategory === category ? styles.boardPickerCategoryActive : ""}
                     aria-pressed={boardPickerCategory === category}
                     onClick={() => {
                       setBoardPickerCategory(category);
                       setActiveBoardOptionIndex(0);
                     }}
-                    style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
                   >
                     {CATEGORY_META[category].label}
                   </button>
                 ))}
               </div>
-              <div id={boardPickerListId} className="board-option-list custom-scrollbar" role="listbox" aria-label="Lore board threads">
+              <div id={boardPickerListId} className={styles.boardOptionList} role="listbox" aria-label="Lore board threads">
                 {filteredBoardOptions.length > 0 ? filteredBoardOptions.map((entry, index) => {
                   const meta = CATEGORY_META[entry.category];
                   const isActive = index === activeBoardOptionIndex;
@@ -167,12 +185,11 @@ export function LoreMysteryBoardView({
                       key={entry.id}
                       id={getBoardOptionId(entry.id)}
                       type="button"
-                      className={`${isActive ? "active" : ""} ${isSelected ? "selected" : ""}`.trim()}
+                      className={`${isActive ? styles.boardOptionActive : ""} ${isSelected ? styles.boardOptionSelected : ""}`.trim()}
                       role="option"
                       aria-selected={isActive}
                       onClick={() => selectBoardEntry(entry.id)}
                       tabIndex={-1}
-                      style={{ "--tone": meta.tone } as CSSProperties}
                     >
                       <span>{meta.icon}</span>
                       <strong>{entry.title}</strong>
@@ -180,51 +197,53 @@ export function LoreMysteryBoardView({
                     </button>
                   );
                 }) : (
-                  <div className="board-picker-empty">No matching lore thread.</div>
+                  <div className={styles.boardPickerEmpty}>No matching lore thread.</div>
                 )}
               </div>
             </div>
           )}
         </div>
-        <div className="confidence-tabs">
-          <SegmentedControl
-            options={confidenceOptions}
-            value={relationFilter}
-            onChange={setRelationFilter}
-            ariaLabel="Filter connections by confidence"
-            size="sm"
-          />
-        </div>
+
+        <SegmentedControl
+          options={confidenceOptions}
+          value={relationFilter}
+          onChange={setRelationFilter}
+          ariaLabel="Filter connections by confidence"
+          size="sm"
+        />
       </div>
-      <div className="mystery-board">
-        <article className="board-center" style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
-          <span className="board-center-badge">
-            {CATEGORY_META[boardEntry.category].icon} {CATEGORY_META[boardEntry.category].label}
+
+      <div className={styles.mysteryBoard}>
+        <article className={styles.boardCenter} style={{ "--tone": CATEGORY_META[boardEntry.category].tone } as CSSProperties}>
+          <span className={styles.boardCenterBadge}>
+            {CATEGORY_META[boardEntry.category].icon}
+            <span>{CATEGORY_META[boardEntry.category].label}</span>
           </span>
-          <h3 className="board-center-title">{boardEntry.title}</h3>
-          <p className="board-center-summary">{cleanLoreCopy(boardEntry.summary)}</p>
-          <div className="board-stat-row">
-            <span><strong>{boardStats.total}</strong> total</span>
-            <span><strong>{boardStats.canon}</strong> canon</span>
-            <span><strong>{boardStats.inferred}</strong> inferred</span>
-            <span><strong>{boardStats.theory}</strong> theory</span>
+          <h3 className={styles.boardCenterTitle}>{boardEntry.title}</h3>
+          <p className={styles.boardCenterSummary}>{cleanLoreCopy(boardEntry.summary)}</p>
+          <div className={styles.boardStatStrip}>
+            <span className={styles.boardStatCell}><strong>{boardStats.total}</strong> total</span>
+            <span className={styles.boardStatCell}><strong>{boardStats.canon}</strong> canon</span>
+            <span className={styles.boardStatCell}><strong>{boardStats.inferred}</strong> inferred</span>
+            <span className={styles.boardStatCell}><strong>{boardStats.theory}</strong> theory</span>
           </div>
           <Button
             type="button"
             variant="primary"
             size="sm"
             onClick={() => openEntry(boardEntry)}
-            className="board-open-btn"
+            className={styles.boardOpenBtn}
           >
             Open dossier
           </Button>
         </article>
-        <div className="board-map" aria-label={`Connection map for ${boardEntry.title}`}>
-          <div className="board-map-core">
+
+        <div className={styles.boardMap} aria-label={`Connection map for ${boardEntry.title}`}>
+          <div className={styles.boardMapCore}>
             <span>{CATEGORY_META[boardEntry.category].label}</span>
             <strong>{boardEntry.title}</strong>
           </div>
-          {boardGraphRelations.map((relation, index) => {
+          {boardGraphRelations.map((relation) => {
             const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
             const other = entryById[otherId];
             if (!other) return null;
@@ -232,7 +251,7 @@ export function LoreMysteryBoardView({
               <button
                 key={`node-${relation.source}-${relation.target}`}
                 type="button"
-                className={`board-node node-${index % 8} ${relation.confidence}`}
+                className={`${styles.boardNode} ${getConfidenceBorderClass(relation.confidence)}`}
                 onClick={() => setBoardEntryId(other.id)}
                 aria-label={`Switch focus to ${other.title} (${relation.confidence})`}
               >
@@ -242,7 +261,8 @@ export function LoreMysteryBoardView({
             );
           })}
         </div>
-        <div className="thread-list">
+
+        <div className={styles.threadList}>
           {boardRelations.length > 0 ? boardRelations.map((relation) => {
             const otherId = relation.source === boardEntry.id ? relation.target : relation.source;
             const other = entryById[otherId];
@@ -251,18 +271,25 @@ export function LoreMysteryBoardView({
               <button
                 key={`${relation.source}-${relation.target}`}
                 type="button"
-                className="thread-card"
+                className={styles.threadCard}
                 onClick={() => setBoardEntryId(other.id)}
                 aria-label={`View thread with ${other.title}`}
               >
-                <span className={`confidence ${relation.confidence}`}>{relation.confidence}</span>
+                <span className={`${styles.confidenceLabel} ${getConfidenceTextClass(relation.confidence)}`}>
+                  {relation.confidence}
+                </span>
                 <strong>{other.title}</strong>
                 <small>{relation.type}</small>
                 <em>{relation.evidence}</em>
               </button>
             );
           }) : (
-            <div className="empty-thread">No matching connections for this filter.</div>
+            <EmptyState
+              size="sm"
+              variant="search-empty"
+              title="No matching connections"
+              description="Try switching back to All Links to view every recorded thread."
+            />
           )}
         </div>
       </div>

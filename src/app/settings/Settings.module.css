@@ -7,7 +7,7 @@
 .page {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 3.5rem;
+  padding: 1.25rem 1rem calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 3rem);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -64,18 +64,18 @@
 .page .overviewRibbon {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
-  background: var(--bg-card, #131722);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  gap: 0.75rem 1rem;
+  background: var(--bg-card, #151b2b);
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.12));
   border-radius: 12px;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
 }
 
 @media (min-width: 768px) {
   .page .overviewRibbon {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem;
-    padding: 0.85rem 1.25rem;
+    gap: 0;
+    padding: 0.9rem 0.5rem;
   }
 }
 
@@ -84,6 +84,20 @@
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .overviewItem {
+    padding: 0 1rem;
+  }
+  .overviewItem + .overviewItem {
+    border-left: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.12));
+  }
+}
+
+.overviewInlineNote {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
 }
 
 .overviewLabel {
@@ -173,17 +187,33 @@
   line-height: 1.45;
 }
 
+.headerAccentIcon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.settingHintValue {
+  font-size: 0.8rem;
+  color: var(--text-muted, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Setting Row & Group */
 .settingGroup {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 1.15rem;
   width: 100%;
 }
 
-.settingGroup:first-of-type {
+.settingGroup:first-child {
   margin-top: 0;
+}
+
+.dockSelectWrap {
+  flex: 1;
+  min-width: 0;
 }
 
 .settingLabelRow {
@@ -417,14 +447,51 @@
   transition: background 100ms ease;
 }
 
-.suggestionOption:hover,
+.suggestionOption:hover {
+  background: var(--bg-card-hover, #1c2438);
+}
+
 .suggestionOption:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
-  outline: none;
+  background: var(--bg-card-hover, #1c2438);
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
 }
 
 .suggestionOptionActive {
-  background: color-mix(in srgb, var(--text-accent, #38bdf8), transparent 85%) !important;
+  background: var(--control-active-bg, #242f47) !important;
+  color: var(--control-active-text, #f8fafc);
+}
+
+.suggestionIdentity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.suggestionName {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestionType {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+}
+
+.itemThumb {
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.addPriceButton {
+  min-height: 44px;
 }
 
 /* Custom Prices List & Table */
@@ -457,14 +524,21 @@
 }
 
 .customPriceRow {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.025);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.customPriceItemIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .customPriceItemInfo {
@@ -491,14 +565,18 @@
 .customPriceValues {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.65rem;
+  flex-shrink: 0;
 }
 
 .customPriceGold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #fbbf24;
+  color: var(--text-main, #f8fafc);
 }
 
 /* Offline Storage Panel */
@@ -516,8 +594,7 @@
 }
 
 .storageMetricCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.025);
   border-radius: 8px;
   padding: 0.75rem 0.85rem;
   display: flex;
@@ -573,13 +650,122 @@
 }
 
 .shortcutItem {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.025);
   border-radius: 8px;
   padding: 0.65rem 0.75rem;
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.privacyFooterNote {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.privacyFooterIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.privacyFooterCopy {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.offlineBanner {
+  margin-top: 1rem;
+}
+
+.offlineStatusStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.65rem;
+}
+
+.offlineErrorNote {
+  color: var(--text-danger, #f87171);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.storageStatusSub {
+  font-size: 0.78rem;
+  color: var(--text-dim, #64748b);
+  margin: 0;
+}
+
+.installStateTile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.installIconTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--control-active-bg, #242f47);
+  color: var(--text-main, #f8fafc);
+  flex-shrink: 0;
+}
+
+.installIconInstalled {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.installStateCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.installStateTitle {
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.installStateMessage {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.installActionsRow {
+  margin-top: 1rem;
+}
+
+.installGuidanceTile {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 0.75rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.installGuidanceTitle {
+  color: var(--text-main);
+  font-size: 0.85rem;
+}
+
+.installGuidanceCopy {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .shortcutKbdRow {
@@ -626,5 +812,14 @@
 @media (max-width: 767px) {
   .page :global(.settings-mobile-only) {
     display: flex !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dockSelect,
+  .volumeSlider::-webkit-slider-thumb,
+  .soundChip,
+  .suggestionOption {
+    transition: none;
   }
 }

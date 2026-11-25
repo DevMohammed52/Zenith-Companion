@@ -12,7 +12,8 @@ import { LoreArtifactsView } from "./components/LoreArtifactsView";
 import { LoreMysteryBoardView } from "./components/LoreMysteryBoardView";
 import { LoreTheoriesView } from "./components/LoreTheoriesView";
 import { LoreEntryModal } from "./components/LoreEntryModal";
-import { LoreStyles } from "./components/LoreStyles";
+import { BackToTop } from "@/components/ui/BackToTop";
+import styles from "./Lore.module.css";
 
 export * from "./types";
 
@@ -20,9 +21,8 @@ function LoreContent() {
   const state = useLoreState();
 
   return (
-    <main className="lore-page" aria-labelledby="lore-page-title">
+    <main className={styles.page} aria-labelledby="lore-page-title">
       <LoreCanvas />
-      <div className="lore-shade" aria-hidden="true" />
 
       <LoreHeader
         loading={state.loading}
@@ -49,7 +49,7 @@ function LoreContent() {
         resetLoreControls={state.resetLoreControls}
       />
 
-      <div className="lore-view-viewport" style={{ minHeight: "500px", contain: "layout", position: "relative", zIndex: 5 }}>
+      <div className={styles.viewViewport}>
         {state.activeView === "atlas" && (
           <LoreAtlasView
             featuredAtlas={state.featuredAtlas}
@@ -132,14 +132,14 @@ function LoreContent() {
         />
       )}
 
-      <LoreStyles />
+      <BackToTop label="Scroll back to top of lore archive" />
     </main>
   );
 }
 
 export default function LorePage() {
   return (
-    <Suspense fallback={<main className="container">Loading lore archive...</main>}>
+    <Suspense fallback={<main className={styles.page}><div className={styles.fallbackState}>Loading lore archive...</div></main>}>
       <LoreContent />
     </Suspense>
   );

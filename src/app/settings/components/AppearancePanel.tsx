@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bell, Smartphone, SlidersHorizontal, Volume2 } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Card, Icon, SegmentedControl, Select } from "@/components/ui";
 import { DOCKABLE_NAV_ITEMS } from "@/lib/navigation";
 import { DEFAULT_DOCK_TABS } from "@/lib/route-history";
 import type { UseSettingsStateReturn } from "../types";
@@ -21,6 +19,11 @@ export default function AppearancePanel({
     return hasCustomTabs ? preferences.mobileDockTabs : DEFAULT_DOCK_TABS;
   }, [hasCustomTabs, preferences.mobileDockTabs]);
 
+  const dockOptions = useMemo(
+    () => DOCKABLE_NAV_ITEMS.map((item) => ({ value: item.href, label: item.label })),
+    [],
+  );
+
   const handleTabChange = (index: number, newHref: string) => {
     const updated = [...activeTabs];
     updated[index] = newHref;
@@ -32,7 +35,7 @@ export default function AppearancePanel({
       className={`settings-panel ${styles.panel}`}
       title={
         <h2 className={styles.cardTitle}>
-          <SlidersHorizontal size={18} style={{ color: "var(--text-accent)" }} />
+          <Icon name="filter" size={18} className={styles.headerAccentIcon} />
           Interface & Feedback
         </h2>
       }
@@ -44,7 +47,7 @@ export default function AppearancePanel({
     >
       <div className={`settings-mobile-only ${styles.settingGroup}`}>
         <span className={styles.settingLabel}>
-          <Smartphone size={14} style={{ color: "var(--text-accent)" }} />
+          <Icon name="device" size={14} className={styles.headerAccentIcon} />
           Mobile Navigation Dock
         </span>
         <SegmentedControl
@@ -68,18 +71,14 @@ export default function AppearancePanel({
             {[0, 1, 2].map((slotIdx) => (
               <div key={slotIdx} className={styles.dockSlotRow}>
                 <span className={styles.dockSlotLabel}>Tab {slotIdx + 1}</span>
-                <select
-                  className={styles.dockSelect}
-                  aria-label={`Mobile dock tab slot ${slotIdx + 1}`}
-                  value={activeTabs[slotIdx]}
-                  onChange={(e) => handleTabChange(slotIdx, e.target.value)}
-                >
-                  {DOCKABLE_NAV_ITEMS.map((item) => (
-                    <option key={item.href} value={item.href}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
+                <div className={styles.dockSelectWrap}>
+                  <Select
+                    ariaLabel={`Mobile dock tab slot ${slotIdx + 1}`}
+                    value={activeTabs[slotIdx]}
+                    options={dockOptions}
+                    onChange={(nextVal) => handleTabChange(slotIdx, nextVal)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -90,9 +89,9 @@ export default function AppearancePanel({
         )}
       </div>
 
-      <div className={`settings-mobile-only ${styles.settingGroup}`} style={{ marginTop: "1rem" }}>
+      <div className={`settings-mobile-only ${styles.settingGroup}`}>
         <span className={styles.settingLabel}>
-          <Smartphone size={14} style={{ color: "var(--text-accent)" }} />
+          <Icon name="device" size={14} className={styles.headerAccentIcon} />
           Touch Feedback (Haptics)
         </span>
         <SegmentedControl
@@ -107,9 +106,9 @@ export default function AppearancePanel({
         />
       </div>
 
-      <div className={styles.settingGroup} style={{ marginTop: "1rem" }}>
+      <div className={styles.settingGroup}>
         <span className={styles.settingLabel}>
-          <Volume2 size={14} style={{ color: "var(--text-accent)" }} />
+          <Icon name="audio" size={14} className={styles.headerAccentIcon} />
           Interaction Sounds
         </span>
         <SegmentedControl
@@ -130,9 +129,9 @@ export default function AppearancePanel({
         />
       </div>
 
-      <div className={styles.settingGroup} style={{ marginTop: "1rem" }}>
+      <div className={styles.settingGroup}>
         <span className={styles.settingLabel}>
-          <Bell size={14} style={{ color: "var(--text-accent)" }} />
+          <Icon name="notifications" size={14} className={styles.headerAccentIcon} />
           In-App Guidance Tips
         </span>
         <SegmentedControl

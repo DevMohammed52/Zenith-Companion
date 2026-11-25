@@ -1,12 +1,9 @@
 "use client";
 
-import { Coins, Plus, Trash2 } from "lucide-react";
 import { getSafeMarketValue } from "@/lib/market-pricing";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Banner } from "@/components/ui/Banner";
-import { ModalSheet } from "@/components/ui/ModalSheet";
-import { TextInput } from "@/components/ui/TextInput";
+import { Banner, Button, Card, Icon, ModalSheet, TextInput } from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
 import type { UseSettingsStateReturn } from "../types";
 import styles from "../Settings.module.css";
 
@@ -73,7 +70,7 @@ export default function CustomPricesPanel({
       className={`settings-panel settings-panel-wide ${styles.fullWidth}`}
       title={
         <h2 className={styles.cardTitle}>
-          <Coins size={18} style={{ color: "var(--text-accent)" }} />
+          <Icon name="gold" size={18} className={styles.headerAccentIcon} />
           Custom Item Prices
         </h2>
       }
@@ -133,8 +130,20 @@ export default function CustomPricesPanel({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => selectCustomItem(name)}
                   >
-                    <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{name}</span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    <span className={styles.suggestionIdentity}>
+                      {item?.image_url ? (
+                        <GameImage
+                          src={item.image_url}
+                          alt=""
+                          width={20}
+                          height={20}
+                          sizes="20px"
+                          className={styles.itemThumb}
+                        />
+                      ) : null}
+                      <span className={styles.suggestionName}>{name}</span>
+                    </span>
+                    <span className={styles.suggestionType}>
                       {item?.type ? String(item.type).replace(/_/g, " ") : "Item"}
                     </span>
                   </button>
@@ -148,6 +157,7 @@ export default function CustomPricesPanel({
           <TextInput
             label="Custom Value (Gold)"
             type="number"
+            inputMode="numeric"
             min="0"
             placeholder="e.g. 15000"
             value={customItemPrice}
@@ -159,9 +169,9 @@ export default function CustomPricesPanel({
 
         <Button
           variant="primary"
-          icon={<Plus size={15} />}
+          icon={<Icon name="plus" size={15} />}
           onClick={saveCustomPrice}
-          style={{ height: "42px", marginBottom: "2px" }}
+          className={styles.addPriceButton}
         >
           Add Override
         </Button>
@@ -195,26 +205,40 @@ export default function CustomPricesPanel({
       ) : (
         <div className={styles.customPriceList}>
           {customPriceRows.map(([name, price]) => {
+            const item = allItemsDb?.[name];
             const market = getSafeMarketValue(marketData?.[name]);
             return (
               <div className={styles.customPriceRow} key={name}>
-                <div className={styles.customPriceItemInfo}>
-                  <strong className={styles.customPriceItemName}>{name}</strong>
-                  <span className={styles.customPriceItemRef}>
-                    {market > 0
-                      ? `Safe market: ${market.toLocaleString()}g`
-                      : "No safe market price recorded"}
-                  </span>
+                <div className={styles.customPriceItemIdentity}>
+                  {item?.image_url ? (
+                    <GameImage
+                      src={item.image_url}
+                      alt=""
+                      width={28}
+                      height={28}
+                      sizes="28px"
+                      className={styles.itemThumb}
+                    />
+                  ) : null}
+                  <div className={styles.customPriceItemInfo}>
+                    <strong className={styles.customPriceItemName}>{name}</strong>
+                    <span className={styles.customPriceItemRef}>
+                      {market > 0
+                        ? `Safe market: ${market.toLocaleString()}g`
+                        : "No safe market price recorded"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className={styles.customPriceValues}>
                   <span className={styles.customPriceGold}>
-                    {Number(price).toLocaleString()}g
+                    <GoldIcon size={14} />
+                    <span>{Number(price).toLocaleString()}g</span>
                   </span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    icon={<Trash2 size={14} />}
+                    icon={<Icon name="trash" size={14} />}
                     onClick={() => removeCustomPrice(name)}
                     aria-label={`Remove override for ${name}`}
                   />

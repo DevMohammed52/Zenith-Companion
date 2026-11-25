@@ -1,0 +1,743 @@
+/* ==========================================================================
+   Items Directory Module CSS
+   Astral Slate design tokens, >= 44px touch targets, 0 CLS, no neon glows.
+   ========================================================================== */
+
+.page {
+  padding-bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 3rem);
+  overflow-x: hidden;
+}
+
+.header {
+  margin-bottom: 1rem;
+}
+
+.headerBrandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.headerIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.headerDescription {
+  margin: 0;
+  max-width: 720px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Filter Controls Bar */
+.controlsCard {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.6fr)
+    minmax(220px, 1.3fr)
+    auto
+    auto;
+  grid-template-areas:
+    "search sort actions view"
+    "filters filters filters filters";
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  position: relative;
+  z-index: 5;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.controlLabel {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.searchControl {
+  grid-area: search;
+}
+
+.sortControl {
+  grid-area: sort;
+}
+
+.sortInputCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.sortSelectWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.quickActions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.viewControl {
+  grid-area: view;
+  display: flex;
+  align-items: center;
+}
+
+.advancedFilterPanel {
+  grid-area: filters;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 0.15rem;
+  padding-top: 0.5rem;
+}
+
+.advancedFilterSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.advancedFilterSummary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedFilterSummary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.summaryLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.activeFilterPill {
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--control-active-bg, #242f47);
+  border: 1px solid var(--control-active-border, rgba(203, 213, 225, 0.28));
+  color: var(--control-active-text, #f8fafc);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.filterPanelChevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.advancedFilterPanel[open] .filterPanelChevron {
+  transform: rotate(180deg);
+}
+
+.advancedFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding-top: 0.5rem;
+}
+
+/* Tag Guide Modal Content */
+.tagGuideGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.tagGuideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tagGuideItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tagGuideDesc {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Result Meta Strip */
+.resultsStage {
+  min-height: 640px;
+  contain: layout;
+}
+
+.resultMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Desktop Data Table */
+.desktopTableShell {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  contain: layout paint;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  position: relative;
+  z-index: 1;
+}
+
+.desktopTableShell:focus-visible {
+  border-color: var(--border-focus);
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.itemsTable {
+  width: 100%;
+  min-width: 1080px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.itemsTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.itemsTable th.pinnedCol {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.itemsTable td.pinnedCol {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  background-color: var(--bg-card);
+  border-right: 1px solid var(--border-subtle);
+  text-align: left;
+}
+
+.colLeft {
+  text-align: left;
+}
+
+.colRight {
+  text-align: right;
+}
+
+.colCenter {
+  text-align: center;
+}
+
+.sortHeaderButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sortHeaderButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.sortLeft {
+  justify-content: flex-start;
+}
+
+.sortRight {
+  justify-content: flex-end;
+}
+
+.sortCenter {
+  justify-content: center;
+}
+
+.sortActive {
+  color: var(--text-main);
+}
+
+.itemsTable tbody td {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.itemsTable tbody tr {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.itemsTable tbody tr:hover td,
+.itemsTable tbody tr:has(.rowOpenButton:focus-visible) td {
+  background-color: var(--bg-card-hover);
+}
+
+.rowOpenButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.rowOpenButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.itemThumbWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.itemCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  width: 100%;
+}
+
+.itemNameText {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemTypeSub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qualityTag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.goldValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.volumeWarningIcon {
+  display: inline-flex;
+  margin-left: 0.35rem;
+  color: #f5b041;
+  vertical-align: -1px;
+}
+
+/* Badges (Calm Astral Slate palette with intentional warning amber) */
+.badgesWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.badgePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.toneGood {
+  border-color: rgba(74, 222, 128, 0.28);
+  color: #4ade80;
+}
+
+.toneWarning {
+  border-color: rgba(245, 176, 65, 0.3);
+  color: #f5b041;
+}
+
+.toneSlate {
+  border-color: rgba(148, 163, 184, 0.24);
+  color: var(--text-main);
+}
+
+/* Card Grid View */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .cardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .cardsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.itemCardButton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--quality-color, var(--border-subtle));
+  border-radius: 10px;
+  color: var(--text-main);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease, background-color 0.15s ease;
+}
+
+.itemCardButton:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.itemCardButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.itemCardButton:active {
+  transform: scale(0.99);
+}
+
+.cardMainRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cardThumbWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.cardIdentityCol {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cardHeaderLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardChevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.cardPillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cardTypePill {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Inline stat strip inside card (no nested 1px border) */
+.cardStatsStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+}
+
+.cardStatCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 0.55rem;
+}
+
+.cardStatCell + .cardStatCell {
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.cardStatLabel {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cardStatVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardSourceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardSourceIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Skeleton Loader Grid */
+.skeletonSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 760px;
+  contain: layout;
+}
+
+.skeletonCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .cardStatsStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 0.45rem;
+  }
+
+  .cardStatCell:nth-child(3) {
+    border-left: none;
+  }
+
+  .cardStatCell:nth-child(n + 3) {
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+  }
+}
+
+@media (max-width: 767px) {
+  .controlsCard {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "search"
+      "sort"
+      "actions"
+      "filters";
+    padding: 0.75rem;
+  }
+
+  .viewControl {
+    display: none;
+  }
+
+  .advancedFilterGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .desktopTableShell {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filterPanelChevron,
+  .itemsTable tbody tr,
+  .itemCardButton {
+    transition: none;
+  }
+  .itemCardButton:active {
+    transform: none;
+  }
+}

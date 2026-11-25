@@ -1,12 +1,9 @@
 import React from "react";
-import {
-  ArrowDownNarrowWide,
-  ArrowUpNarrowWide,
-  RotateCcw,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Select } from "@/components/ui/Select";
+import { Tag } from "@/components/ui/Tag";
 import {
   LEVEL_OPTIONS,
   MATCH_OPTIONS,
@@ -15,7 +12,7 @@ import {
   type Option,
   type SortKey,
 } from "../types";
-import { CustomSelect } from "./CustomSelect";
+import styles from "../Enemies.module.css";
 
 export function EnemiesControls({
   query,
@@ -31,11 +28,8 @@ export function EnemiesControls({
   sortDesc,
   setSortDesc,
   locationOptions,
-  activeFilterCount,
-  hasCustomSort,
   hasActiveControls,
   resetControls,
-  filteredCount,
 }: {
   query: string;
   setQuery: (val: string) => void;
@@ -63,152 +57,142 @@ export function EnemiesControls({
   const selectedSortObj = SORT_OPTIONS.find((opt) => opt.value === sortKey);
 
   return (
-    <section className="enemy-controls" aria-label="Enemy filters and search">
-      <div className="search-control" role="search">
-        <label htmlFor="enemy-search-input" className="search-label">
+    <section className={styles.controls} aria-label="Enemy filters and search">
+      <div className={styles.searchControl} role="search">
+        <label htmlFor="enemy-search-input" className={styles.controlLabel}>
           Search Enemies
         </label>
-        <div className="search-input-wrap">
-          <span className="search-icon-box" aria-hidden="true">
-            <Search size={16} />
-          </span>
-          <input
-            id="enemy-search-input"
-            type="search"
-            aria-label="Search enemies by name, location, drop, or weather"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search enemy, location, loot, weather..."
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {query.length > 0 && (
-            <button
-              type="button"
-              className="search-clear-btn"
-              onClick={() => setQuery("")}
-              aria-label="Clear search input"
-            >
-              <X size={14} aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        <SearchInput
+          id="enemy-search-input"
+          value={query}
+          onChange={setQuery}
+          onClear={() => setQuery("")}
+          placeholder="Search enemy, location, loot, weather..."
+          ariaLabel="Search enemies by name, location, drop, or weather"
+          showShortcutHint={false}
+          className={styles.searchField}
+        />
       </div>
 
-      <div className="enemy-filter-grid">
-        <CustomSelect
-          label="Location"
-          value={selectedLocation}
-          options={locationOptions}
-          onChange={setSelectedLocation}
-        />
-        <CustomSelect
-          label="Weather"
-          value={matchFilter}
-          options={MATCH_OPTIONS}
-          onChange={setMatchFilter}
-        />
-        <CustomSelect
-          label="Level Band"
-          value={levelFilter}
-          options={LEVEL_OPTIONS}
-          onChange={setLevelFilter}
-        />
-        <CustomSelect
-          label="Sort By"
-          value={sortKey}
-          options={SORT_OPTIONS}
-          onChange={setSortKey}
-        />
-        <div className="sort-direction-wrap">
-          <label className="sort-direction-label">Direction</label>
-          <button
-            type="button"
-            className="sort-direction"
+      <div className={styles.filterGrid}>
+        <div className={styles.filterField}>
+          <span id="enemy-location-label" className={styles.controlLabel}>
+            Location
+          </span>
+          <Select
+            ariaLabelledBy="enemy-location-label"
+            value={selectedLocation}
+            options={locationOptions}
+            onChange={setSelectedLocation}
+          />
+        </div>
+
+        <div className={styles.filterField}>
+          <span id="enemy-weather-label" className={styles.controlLabel}>
+            Weather
+          </span>
+          <Select
+            ariaLabelledBy="enemy-weather-label"
+            value={matchFilter}
+            options={MATCH_OPTIONS}
+            onChange={(val) => setMatchFilter(val as MatchFilter)}
+          />
+        </div>
+
+        <div className={styles.filterField}>
+          <span id="enemy-level-label" className={styles.controlLabel}>
+            Level Band
+          </span>
+          <Select
+            ariaLabelledBy="enemy-level-label"
+            value={levelFilter}
+            options={LEVEL_OPTIONS}
+            onChange={setLevelFilter}
+          />
+        </div>
+
+        <div className={styles.filterField}>
+          <span id="enemy-sort-label" className={styles.controlLabel}>
+            Sort By
+          </span>
+          <Select
+            ariaLabelledBy="enemy-sort-label"
+            value={sortKey}
+            options={SORT_OPTIONS}
+            onChange={(val) => setSortKey(val as SortKey)}
+          />
+        </div>
+
+        <div className={styles.filterField}>
+          <span className={styles.controlLabel}>Direction</span>
+          <Button
+            variant="secondary"
+            className={styles.sortDirectionButton}
             aria-pressed={sortDesc}
             aria-label={`Sort direction: currently ${sortDesc ? "descending" : "ascending"}. Click to reverse.`}
+            icon={<Icon name={sortDesc ? "sortDescAlt" : "sortAscAlt"} size="sm" />}
             onClick={() => setSortDesc((prev) => !prev)}
           >
-            {sortDesc ? (
-              <ArrowDownNarrowWide size={15} aria-hidden="true" />
-            ) : (
-              <ArrowUpNarrowWide size={15} aria-hidden="true" />
-            )}
-            <span>{sortDesc ? "Desc" : "Asc"}</span>
-          </button>
+            {sortDesc ? "Desc" : "Asc"}
+          </Button>
         </div>
       </div>
 
       {hasActiveControls && (
-        <div className="active-filters-strip" aria-label="Active filters summary">
-          <span className="active-filters-heading">Active:</span>
+        <div className={styles.activeFiltersStrip} aria-label="Active filters summary">
+          <span className={styles.activeFiltersHeading}>Active:</span>
           {query.trim().length > 0 && (
-            <button
-              type="button"
-              className="active-filter-chip"
-              onClick={() => setQuery("")}
-              aria-label={`Remove search filter: ${query}`}
-            >
-              <span>Search: "{query}"</span>
-              <X size={12} aria-hidden="true" />
-            </button>
+            <Tag
+              label={`Search: "${query}"`}
+              selected
+              onRemove={() => setQuery("")}
+              removeAriaLabel={`Remove search filter: ${query}`}
+            />
           )}
           {selectedLocation !== "all" && (
-            <button
-              type="button"
-              className="active-filter-chip"
-              onClick={() => setSelectedLocation("all")}
-              aria-label={`Remove location filter: ${selectedLocationObj?.label}`}
-            >
-              <span>{selectedLocationObj?.label || selectedLocation}</span>
-              <X size={12} aria-hidden="true" />
-            </button>
+            <Tag
+              label={selectedLocationObj?.label || selectedLocation}
+              selected
+              onRemove={() => setSelectedLocation("all")}
+              removeAriaLabel={`Remove location filter: ${selectedLocationObj?.label || selectedLocation}`}
+            />
           )}
           {matchFilter !== "all" && (
-            <button
-              type="button"
-              className="active-filter-chip"
-              onClick={() => setMatchFilter("all")}
-              aria-label={`Remove weather filter: ${selectedWeatherObj?.label}`}
-            >
-              <span>Weather: {selectedWeatherObj?.label || matchFilter}</span>
-              <X size={12} aria-hidden="true" />
-            </button>
+            <Tag
+              label={`Weather: ${selectedWeatherObj?.label || matchFilter}`}
+              selected
+              onRemove={() => setMatchFilter("all")}
+              removeAriaLabel={`Remove weather filter: ${selectedWeatherObj?.label || matchFilter}`}
+            />
           )}
           {levelFilter !== "all" && (
-            <button
-              type="button"
-              className="active-filter-chip"
-              onClick={() => setLevelFilter("all")}
-              aria-label={`Remove level filter: ${selectedLevelObj?.label}`}
-            >
-              <span>Level: {selectedLevelObj?.label || levelFilter}</span>
-              <X size={12} aria-hidden="true" />
-            </button>
+            <Tag
+              label={`Level: ${selectedLevelObj?.label || levelFilter}`}
+              selected
+              onRemove={() => setLevelFilter("all")}
+              removeAriaLabel={`Remove level filter: ${selectedLevelObj?.label || levelFilter}`}
+            />
           )}
           {(sortKey !== "level" || sortDesc) && (
-            <button
-              type="button"
-              className="active-filter-chip"
-              onClick={() => {
+            <Tag
+              label={`Sort: ${selectedSortObj?.label} (${sortDesc ? "Desc" : "Asc"})`}
+              selected
+              onRemove={() => {
                 setSortKey("level");
                 setSortDesc(false);
               }}
-              aria-label="Reset sort order to default level ascending"
-            >
-              <span>Sort: {selectedSortObj?.label} ({sortDesc ? "Desc" : "Asc"})</span>
-              <X size={12} aria-hidden="true" />
-            </button>
+              removeAriaLabel="Reset sort order to default level ascending"
+            />
           )}
-          <button
-            type="button"
-            className="clear-all-filters-btn"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={resetControls}
+            icon={<Icon name="undo" size="xs" />}
             aria-label="Clear all active filters"
           >
-            <RotateCcw size={12} aria-hidden="true" />
-            <span>Clear all</span>
-          </button>
+            Clear all
+          </Button>
         </div>
       )}
     </section>

@@ -16,7 +16,7 @@ export default function SettingsOverview({
 
   return (
     <section
-      className={`settings-overview ${styles.overviewRibbon}`}
+      className={styles.overviewRibbon}
       aria-label="Settings summary"
     >
       <div className={styles.overviewItem}>
@@ -58,7 +58,7 @@ export default function SettingsOverview({
           <strong className={styles.overviewValue}>
             {customPriceRows.length.toLocaleString()}
           </strong>
-          <span className={styles.cardSubtitle} style={{ marginTop: 0 }}>
+          <span className={styles.overviewInlineNote}>
             {customPriceRows.length === 1 ? "override" : "overrides"}
           </span>
         </div>

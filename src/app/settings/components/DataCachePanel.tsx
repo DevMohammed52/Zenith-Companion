@@ -1,7 +1,6 @@
 "use client";
 
-import { Database, Lock } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Card, Icon } from "@/components/ui";
 import { formatAge, type UseSettingsStateReturn } from "../types";
 import OfflineStoragePanel from "./OfflineStoragePanel";
 import styles from "../Settings.module.css";
@@ -21,7 +20,7 @@ export default function DataCachePanel({
       className={`settings-panel settings-panel-wide ${styles.fullWidth}`}
       title={
         <h2 className={styles.cardTitle}>
-          <Database size={18} style={{ color: "var(--text-accent)" }} />
+          <Icon name="database" size={18} className={styles.headerAccentIcon} />
           Data Cache & Storage
         </h2>
       }
@@ -63,18 +62,9 @@ export default function DataCachePanel({
 
       <OfflineStoragePanel />
 
-      <div
-        style={{
-          marginTop: "1.25rem",
-          paddingTop: "0.85rem",
-          borderTop: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <Lock size={14} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-        <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
+      <div className={styles.privacyFooterNote}>
+        <Icon name="locked" size={14} className={styles.privacyFooterIcon} />
+        <span className={styles.privacyFooterCopy}>
           Local-first privacy: Character profiles, custom item prices, and planner data are stored strictly inside your browser and are never transmitted to external servers.
         </span>
       </div>

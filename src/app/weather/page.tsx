@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { useWeatherState } from "./hooks/useWeatherState";
 import { WeatherCanvas } from "./components/WeatherCanvas";
 import { WeatherHeader } from "./components/WeatherHeader";
@@ -10,16 +11,16 @@ import { ForecastContext } from "./components/ForecastContext";
 import { CurrentEnemyContext } from "./components/CurrentEnemyContext";
 import { EnemyPreferences } from "./components/EnemyPreferences";
 import { WeatherMechanicsAside } from "./components/WeatherMechanicsAside";
-import { WeatherStyles } from "./components/WeatherStyles";
+import styles from "./Weather.module.css";
 
 export default function WeatherPage() {
   const state = useWeatherState();
 
   return (
-    <main className="weather-container" style={state.weatherAccent}>
+    <main className={styles.page} style={state.weatherAccent}>
       <WeatherCanvas weatherId={state.activeWeather.id} />
 
-      <div className="weather-content-wrapper">
+      <div className={styles.contentWrapper}>
         <WeatherHeader
           activeWeather={state.activeWeather}
           setActiveWeather={state.setActiveWeather}
@@ -31,8 +32,8 @@ export default function WeatherPage() {
           currentSeason={state.currentSeason}
         />
 
-        <div className="main-grid">
-          <section className="active-info-panel">
+        <div className={styles.mainGrid}>
+          <section className={styles.activeInfoPanel}>
             <WeatherHero activeWeather={state.activeWeather} />
 
             <ForecastTimelineStrip
@@ -41,7 +42,7 @@ export default function WeatherPage() {
               nextLocations={state.nextWeatherLocations}
             />
 
-            <div className="weather-live-grid">
+            <div className={styles.liveGrid}>
               <ForecastContext
                 activeWeather={state.activeWeather}
                 currentLocations={state.currentWeatherLocations}
@@ -69,7 +70,7 @@ export default function WeatherPage() {
         </div>
       </div>
 
-      <WeatherStyles />
+      <BackToTop label="Scroll back to top of weather guide" />
     </main>
   );
 }

@@ -1,18 +1,5 @@
 import type { ReactNode } from "react";
-import {
-  BookOpen,
-  Brain,
-  Clock,
-  Compass,
-  GitBranch,
-  Landmark,
-  Layers,
-  Map,
-  Package,
-  Skull,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import type {
   LoreEntry,
   LoreRelation,
@@ -31,23 +18,55 @@ export const isLoreView = (value: string | null): value is LoreView =>
   value === "theories";
 
 export const VIEW_OPTIONS: Array<{ id: LoreView; label: string; icon: ReactNode }> = [
-  { id: "atlas", label: "Atlas", icon: <Map size={16} /> },
-  { id: "timeline", label: "Timeline", icon: <Clock size={16} /> },
-  { id: "characters", label: "Characters", icon: <Users size={16} /> },
-  { id: "artifacts", label: "Artifacts & Beasts", icon: <Skull size={16} /> },
-  { id: "board", label: "Mystery Board", icon: <GitBranch size={16} /> },
-  { id: "theories", label: "Theories", icon: <Brain size={16} /> },
+  { id: "atlas", label: "Atlas", icon: <Icon name="atlasMap" size="md" aria-hidden="true" /> },
+  { id: "timeline", label: "Timeline", icon: <Icon name="timer" size="md" aria-hidden="true" /> },
+  { id: "characters", label: "Characters", icon: <Icon name="guilds" size="md" aria-hidden="true" /> },
+  { id: "artifacts", label: "Artifacts & Beasts", icon: <Icon name="boss" size="md" aria-hidden="true" /> },
+  { id: "board", label: "Mystery Board", icon: <Icon name="relations" size="md" aria-hidden="true" /> },
+  { id: "theories", label: "Theories", icon: <Icon name="theory" size="md" aria-hidden="true" /> },
 ];
 
 export const CATEGORY_META: Record<LoreEntry["category"], { label: string; tone: string; icon: ReactNode }> = {
-  Index: { label: "Archive", tone: "#f5b041", icon: <Layers size={16} /> },
-  Overview: { label: "Overview", tone: "#38bdf8", icon: <BookOpen size={16} /> },
-  Civilization: { label: "Civilization", tone: "#4ade80", icon: <Landmark size={16} /> },
-  World: { label: "World", tone: "#60a5fa", icon: <Compass size={16} /> },
-  Concept: { label: "Concept", tone: "#a78bfa", icon: <Sparkles size={16} /> },
-  Artifact: { label: "Artifact", tone: "#f59e0b", icon: <Package size={16} /> },
-  Bestiary: { label: "Bestiary", tone: "#f87171", icon: <Skull size={16} /> },
-  NPC: { label: "NPC", tone: "#f472b6", icon: <Users size={16} /> },
+  Index: {
+    label: "Archive",
+    tone: "var(--text-gold, #fbbf24)",
+    icon: <Icon name="archiveLayers" size="md" aria-hidden="true" />,
+  },
+  Overview: {
+    label: "Overview",
+    tone: "var(--quality-refined-text, #93c5fd)",
+    icon: <Icon name="lore" size="md" aria-hidden="true" />,
+  },
+  Civilization: {
+    label: "Civilization",
+    tone: "var(--quality-premium, #4ade80)",
+    icon: <Icon name="museum" size="md" aria-hidden="true" />,
+  },
+  World: {
+    label: "World",
+    tone: "var(--text-accent, #cbd5e1)",
+    icon: <Icon name="map" size="md" aria-hidden="true" />,
+  },
+  Concept: {
+    label: "Concept",
+    tone: "var(--text-accent, #cbd5e1)",
+    icon: <Icon name="xp" size="md" aria-hidden="true" />,
+  },
+  Artifact: {
+    label: "Artifact",
+    tone: "var(--quality-legendary, #f59e0b)",
+    icon: <Icon name="items" size="md" aria-hidden="true" />,
+  },
+  Bestiary: {
+    label: "Bestiary",
+    tone: "var(--text-danger, #f87171)",
+    icon: <Icon name="boss" size="md" aria-hidden="true" />,
+  },
+  NPC: {
+    label: "NPC",
+    tone: "var(--text-accent, #cbd5e1)",
+    icon: <Icon name="guilds" size="md" aria-hidden="true" />,
+  },
 };
 
 export const FEATURED_ATLAS_IDS = [

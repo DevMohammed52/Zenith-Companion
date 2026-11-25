@@ -1,0 +1,819 @@
+/* ==========================================================================
+   Weather Guide Module CSS
+   Scoped Astral Slate tokens, >= 44px touch targets, 0 CLS, no nested borders.
+   ========================================================================== */
+
+.page {
+  position: relative;
+  min-height: calc(100vh - 40px);
+  width: 100%;
+  max-width: 100vw;
+  padding: clamp(1rem, 2.5vw, 2.5rem);
+  color: var(--text-main, #f8fafc);
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+
+.page::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.5);
+}
+
+.page :where(button, a) {
+  touch-action: manipulation;
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-width: 0;
+  padding-bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 2.5rem);
+}
+
+/* Alert Banner Slot */
+.stormAlertSlot {
+  margin-bottom: 1.25rem;
+}
+
+.stormActionLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.65rem;
+  border-radius: 6px;
+  color: var(--text-main, #f8fafc);
+  text-decoration: underline;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.stormActionLink:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Header Card */
+.pageHeader {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 1.8vw, 1.35rem);
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--accent, var(--border-strong));
+  border-radius: 12px;
+  background: var(--bg-card);
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eyebrowRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent, var(--text-muted));
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.headerTitle {
+  color: var(--text-main);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 0.5rem 0;
+}
+
+.headerDesc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+/* Inline Snapshot Summary Strip (No Nested Borders) */
+.snapshotStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 10px;
+  padding: 0.55rem 0;
+}
+
+@media (min-width: 640px) {
+  .snapshotStrip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.snapshotCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0.2rem 0.75rem;
+}
+
+.snapshotCell + .snapshotCell {
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+@media (max-width: 639px) {
+  .snapshotCell:nth-child(3) {
+    border-left: none;
+  }
+  .snapshotCell:nth-child(n + 3) {
+    margin-top: 0.35rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+  }
+}
+
+.snapshotLabelRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.snapshotVal {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.snapshotGood .snapshotVal {
+  color: #4ade80;
+}
+
+.snapshotBad .snapshotVal {
+  color: #f87171;
+}
+
+.selectorShell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.selectorHeading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Main Layout */
+.mainGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: clamp(1.25rem, 2vw, 2rem);
+  align-items: start;
+}
+
+.activeInfoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Weather Hero */
+.heroCard {
+  padding: clamp(1.15rem, 2vw, 1.5rem);
+}
+
+.heroRow {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.heroIconShell {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--bg-base);
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.heroTitle {
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.heroDesc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.impactCard {
+  padding: 1.25rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+
+.cardHeaderCompact {
+  margin-bottom: 0.75rem;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardHeaderTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 8px;
+}
+
+.cardHeader h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.mfStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.mfStatTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mfStatLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.modifierList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modifierRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.modifierSkill {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.modifierBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Forecast Strip */
+.forecastStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.forecastStripLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.forecastStripHint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.forecastStripTrack {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px 10px 2px;
+  min-width: 0;
+}
+
+.forecastPill {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+  max-width: 220px;
+  flex: 0 0 auto;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-main);
+  text-decoration: none;
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms ease;
+}
+
+.forecastPill:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+
+.forecastPill:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.forecastPillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.forecastCountdown {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.forecastPillName {
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forecastPillTime {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.forecastPillEmpty {
+  min-width: 240px;
+}
+
+/* Live Grid */
+.liveGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 1.5vw, 1.5rem);
+  min-width: 0;
+}
+
+.liveCard {
+  padding: 1.25rem;
+}
+
+.laneStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.laneTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.laneList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.forecastLocationCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0.65rem 0.85rem;
+  min-height: 44px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.forecastLocationCard:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.forecastLocationCard:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.forecastLocationTop,
+.forecastLocationBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.forecastLocationTop strong {
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forecastCountdownPill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.forecastLocationBottom small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forecastLocationBadges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.currentEnemyLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.currentEnemyLink:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.currentEnemyLink:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.enemyAvatarShell {
+  flex: 0 0 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+.enemyAvatarImg {
+  object-fit: contain;
+}
+
+.enemyInfoCol {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.enemyInfoTop,
+.enemyInfoBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.enemyInfoTop strong {
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enemyInfoBottom small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Enemy Preferences Section */
+.enemyPrefsCard {
+  padding: 1.25rem;
+}
+
+.enemyPrefsHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.enemyFilterBar {
+  margin-bottom: 1rem;
+}
+
+.enemyGroupsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.enemyPrefGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.enemyPrefHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.enemyPrefHeading h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.enemyPrefList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.enemyPrefLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0.45rem 0.65rem;
+  background: var(--bg-card);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.enemyPrefLink:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.enemyPrefLink:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.enemyPrefText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.enemyPrefText strong {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enemyPrefText small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.enemyPrefMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: var(--bg-card);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.enemyPrefMore:hover {
+  color: var(--text-main);
+}
+
+.enemyPrefMore:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Mechanics Aside */
+.mechanicsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 80px;
+}
+
+.mechanicsCard {
+  padding: 1.25rem;
+}
+
+.mechanicsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mechItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.mechItem h4 {
+  margin: 0 0 2px 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.mechItem p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.tipContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.tipContent p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .pageHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .mainGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mechanicsPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .liveGrid,
+  .enemyGroupsGrid,
+  .mfStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecastPill,
+  .forecastLocationCard,
+  .currentEnemyLink,
+  .enemyPrefLink {
+    transition: none;
+  }
+  .forecastPill:hover {
+    transform: none;
+  }
+}

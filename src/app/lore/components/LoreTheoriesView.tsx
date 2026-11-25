@@ -1,8 +1,9 @@
 import React from "react";
-import { ShieldAlert } from "lucide-react";
 import type { LoreEntry, LoreTheory } from "@/data/lore";
 import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "./SectionHeading";
+import styles from "../Lore.module.css";
 
 export function LoreTheoriesView({
   theories,
@@ -14,15 +15,15 @@ export function LoreTheoriesView({
   openEntry: (entry: LoreEntry) => void;
 }) {
   return (
-    <section className="lore-section" aria-label="Lore theories and speculation">
+    <section className={styles.section} aria-label="Lore theories and speculation">
       <SectionHeading
         label="Theory Files"
         detail="Speculation and community hypotheses regarding unsolved mysteries in Valaron."
       />
-      <div className="theory-grid">
+      <div className={styles.theoryGrid}>
         {theories.map((theory) => (
-          <article key={theory.id} className="theory-card">
-            <div className="theory-card-header">
+          <article key={theory.id} className={styles.theoryCard}>
+            <div className={styles.theoryCardHeader}>
               <Badge
                 variant={
                   theory.speculationLevel === "High"
@@ -36,19 +37,19 @@ export function LoreTheoriesView({
                 {theory.speculationLevel} speculation
               </Badge>
             </div>
-            <h3 className="theory-title">{theory.title}</h3>
-            <p className="theory-premise">{theory.premise}</p>
+            <h3 className={styles.theoryTitle}>{theory.title}</h3>
+            <p className={styles.theoryPremise}>{theory.premise}</p>
             {theory.evidenceIds.length > 0 && (
-              <div className="theory-evidence" role="group" aria-label="Evidence threads">
-                <span className="theory-evidence-label">Evidence threads</span>
-                <div className="theory-evidence-pills">
+              <div className={styles.theoryEvidence} role="group" aria-label="Evidence threads">
+                <span className={styles.theoryEvidenceLabel}>Evidence threads</span>
+                <div className={styles.theoryEvidencePills}>
                   {theory.evidenceIds.map((id) => {
                     const entry = entryById[id];
                     return entry ? (
                       <button
                         key={id}
                         type="button"
-                        className="theory-evidence-btn"
+                        className={styles.theoryEvidenceBtn}
                         onClick={() => openEntry(entry)}
                         aria-label={`Open dossier for ${entry.title}`}
                       >
@@ -60,8 +61,8 @@ export function LoreTheoriesView({
               </div>
             )}
             {theory.counterpoints.length > 0 && (
-              <div className="counterpoint">
-                <ShieldAlert size={15} aria-hidden="true" />
+              <div className={styles.counterpoint}>
+                <Icon name="counterpoint" size="sm" className={styles.counterpointIcon} aria-hidden="true" />
                 <span>{theory.counterpoints[0]}</span>
               </div>
             )}

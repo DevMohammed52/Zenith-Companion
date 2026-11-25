@@ -42,11 +42,12 @@ describe("weather architecture and modularization contracts", () => {
       "CurrentEnemyContext.tsx",
       "EnemyPreferences.tsx",
       "WeatherMechanicsAside.tsx",
-      "WeatherStyles.tsx",
     ];
     for (const file of requiredFiles) {
       expect(existsSync(path.join(componentsDir, file))).toBe(true);
     }
+    expect(existsSync(path.join(weatherDir, "Weather.module.css"))).toBe(true);
+    expect(existsSync(path.join(componentsDir, "WeatherStyles.tsx"))).toBe(false);
   });
 
   it("preserves strict percentage and modifier tone calculations", () => {

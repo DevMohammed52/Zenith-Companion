@@ -7,15 +7,15 @@ import { EnemiesControls } from "./components/EnemiesControls";
 import { EnemiesGrid } from "./components/EnemiesGrid";
 import { EnemyDetailModal } from "./components/EnemyDetailModal";
 import { BackToTop } from "@/components/ui/BackToTop";
-import { EnemiesStyles } from "./components/EnemiesStyles";
+import styles from "./Enemies.module.css";
 
 function EnemiesContent() {
   const state = useEnemiesState();
 
   return (
-    <main className="enemy-db-page" aria-labelledby="enemy-db-page-title">
+    <main className={styles.page} aria-labelledby="enemy-db-page-title">
       <div
-        className="enemy-page-shell"
+        className={styles.shell}
         inert={state.selectedEnemy ? true : undefined}
         aria-hidden={state.selectedEnemy ? true : undefined}
       >
@@ -75,7 +75,6 @@ function EnemiesContent() {
       )}
 
       <BackToTop label="Scroll back to top of enemy bestiary" />
-      <EnemiesStyles />
     </main>
   );
 }
@@ -84,8 +83,8 @@ export default function EnemiesPage() {
   return (
     <Suspense
       fallback={(
-        <main className="enemy-db-page">
-          <div className="enemy-empty">Loading enemy bestiary...</div>
+        <main className={styles.page}>
+          <div className={styles.fallbackState}>Loading enemy bestiary...</div>
         </main>
       )}
     >

@@ -1,22 +1,22 @@
 import { useMemo, type CSSProperties } from "react";
-import { Filter, RotateCcw, Search, X } from "lucide-react";
 import type { LoreEntry } from "@/data/lore";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import {
   VIEW_OPTIONS,
   CATEGORY_META,
   type LoreView,
   type LoreFilter,
 } from "../types";
+import styles from "../Lore.module.css";
 
 export function LoreToolbar({
   search,
   setSearch,
-  hasSearch,
   activeView,
   setActiveView,
-  activeViewLabel,
   visibleEntryCount,
   activeCategory,
   setActiveCategory,
@@ -55,29 +55,19 @@ export function LoreToolbar({
 
   return (
     <>
-      <section className="lore-toolbar" aria-label="Lore controls">
-        <div className="lore-toolbar-top">
-          <div className="lore-search">
-            <Search size={16} className="lore-search-icon" aria-hidden="true" />
-            <span id="lore-search-label" className="sr-only">Search lore records</span>
-            <input
-              aria-labelledby="lore-search-label"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search civilizations, relics, deities, characters..."
-            />
-            {hasSearch && (
-              <button
-                type="button"
-                className="lore-search-clear"
-                onClick={() => setSearch("")}
-                aria-label="Clear lore search"
-              >
-                <X size={15} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-          <div className="lore-view-switcher">
+      <section className={styles.toolbar} aria-label="Lore controls">
+        <div className={styles.toolbarTop}>
+          <SearchInput
+            id="lore-search-input"
+            value={search}
+            onChange={setSearch}
+            onClear={() => setSearch("")}
+            placeholder="Search civilizations, relics, deities, characters..."
+            ariaLabel="Search lore records"
+            showShortcutHint={false}
+            className={styles.searchField}
+          />
+          <div className={styles.viewSwitcher}>
             <SegmentedControl
               options={viewOptions}
               value={activeView}
@@ -88,13 +78,13 @@ export function LoreToolbar({
           </div>
         </div>
 
-        <div className="lore-toolbar-status-row" aria-live="polite">
-          <div className="lore-status-info">
-            <span className="lore-status-count">
+        <div className={styles.toolbarStatusRow} aria-live="polite">
+          <div className={styles.statusInfo}>
+            <span>
               Showing <strong>{visibleEntryCount}</strong> {activeView === "board" ? "connections" : "records"}
             </span>
             {activeCategory !== "all" && categoryFilterApplies && (
-              <span className="lore-status-category-tag">
+              <span>
                 in <strong>{activeCategoryLabel}</strong>
               </span>
             )}
@@ -104,10 +94,9 @@ export function LoreToolbar({
               type="button"
               variant="ghost"
               size="sm"
-              icon={<RotateCcw size={14} aria-hidden="true" />}
+              icon={<Icon name="undo" size="sm" aria-hidden="true" />}
               onClick={resetLoreControls}
               aria-label="Reset all lore filters and return to default view"
-              className="lore-reset-btn"
             >
               Reset
             </Button>
@@ -116,30 +105,30 @@ export function LoreToolbar({
       </section>
 
       {categoryFilterApplies && (
-        <section className="category-rail-container" aria-label="Filter by lore category">
-          <div className="category-rail">
+        <section className={styles.categoryRailContainer} aria-label="Filter by lore category">
+          <div className={styles.categoryRail}>
             <button
-              className={`category-pill ${activeCategory === "all" ? "active" : ""}`}
+              className={`${styles.categoryPill} ${activeCategory === "all" ? styles.categoryPillActive : ""}`}
               aria-pressed={activeCategory === "all"}
               onClick={() => setActiveCategory("all")}
               type="button"
             >
-              <Filter size={14} aria-hidden="true" />
+              <Icon name="filter" size="sm" aria-hidden="true" />
               <span>All</span>
-              <span className="category-pill-count">{entriesCount}</span>
+              <span className={styles.categoryPillCount}>{entriesCount}</span>
             </button>
             {(Object.keys(CATEGORY_META) as LoreEntry["category"][]).map((category) => (
               <button
                 key={category}
                 type="button"
                 style={{ "--tone": CATEGORY_META[category].tone } as CSSProperties}
-                className={`category-pill ${activeCategory === category ? "active" : ""}`}
+                className={`${styles.categoryPill} ${activeCategory === category ? styles.categoryPillActive : ""}`}
                 aria-pressed={activeCategory === category}
                 onClick={() => setActiveCategory(category)}
               >
-                <span className="category-pill-glyph">{CATEGORY_META[category].icon}</span>
+                <span className={styles.categoryPillGlyph}>{CATEGORY_META[category].icon}</span>
                 <span>{CATEGORY_META[category].label}</span>
-                <span className="category-pill-count">{categoryCounts[category] || 0}</span>
+                <span className={styles.categoryPillCount}>{categoryCounts[category] || 0}</span>
               </button>
             ))}
           </div>
