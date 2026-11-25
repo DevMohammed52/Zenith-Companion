@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Copy, Check, ExternalLink, MessageSquare } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { useToast } from "@/components/ui/Toast";
 import styles from "./SiteFooter.module.css";
 
@@ -70,7 +70,7 @@ export default function SiteFooter() {
                   aria-label="Open IdleMMO game website (opens in new tab)"
                 >
                   <span>Play IdleMMO</span>
-                  <ExternalLink size={12} aria-hidden="true" />
+                  <Icon name="externalLink" size={12} />
                 </a>
                 <a
                   href={IDLE_MMO_PROFILE_URL}
@@ -80,7 +80,7 @@ export default function SiteFooter() {
                   aria-label="Open creator D3vxGh0st profile on IdleMMO (opens in new tab)"
                 >
                   <span>Creator Profile</span>
-                  <ExternalLink size={12} aria-hidden="true" />
+                  <Icon name="externalLink" size={12} />
                 </a>
                 <button
                   type="button"
@@ -88,12 +88,12 @@ export default function SiteFooter() {
                   className={styles.copyButton}
                   aria-label={`Copy Discord username ${DISCORD_HANDLE} to clipboard`}
                 >
-                  <MessageSquare size={13} aria-hidden="true" />
+                  <Icon name="chat" size={13} />
                   <span>{copiedDiscord ? "Copied!" : `Discord: ${DISCORD_HANDLE}`}</span>
                   {copiedDiscord ? (
-                    <Check size={12} className={styles.checkIcon} aria-hidden="true" />
+                    <Icon name="check" size={12} className={styles.checkIcon} />
                   ) : (
-                    <Copy size={12} aria-hidden="true" />
+                    <Icon name="copy" size={12} />
                   )}
                 </button>
               </div>

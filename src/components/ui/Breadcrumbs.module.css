@@ -59,3 +59,18 @@
   display: inline-flex;
   align-items: center;
 }
+
+@media (max-width: 639px) {
+  .link {
+    min-height: 44px;
+    padding: 0 6px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

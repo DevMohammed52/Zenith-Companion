@@ -21,7 +21,8 @@
   border-color: var(--border-strong);
 }
 
-.inputWrap.isFocused {
+.inputWrap.isFocused,
+.inputWrap:focus-within {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 2px var(--border-focus);
 }
@@ -57,6 +58,11 @@
     width: 44px;
     height: 44px;
   }
+  .clearButton {
+    width: 44px;
+    height: 44px;
+    margin-right: 0;
+  }
 }
 
 .input::placeholder {
@@ -81,6 +87,12 @@
 .clearButton:hover {
   color: var(--text-main);
   background-color: var(--bg-card-hover);
+}
+
+.clearButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  color: var(--text-main);
 }
 
 .dropdown {
@@ -156,4 +168,11 @@
   color: var(--text-dim);
   font-size: 0.8125rem;
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputWrap,
+  .clearButton {
+    transition: none;
+  }
 }

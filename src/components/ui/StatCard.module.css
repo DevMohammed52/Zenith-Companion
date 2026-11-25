@@ -95,3 +95,9 @@
   font-size: 0.75rem;
   color: var(--text-dim);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .statCard {
+    transition: none;
+  }
+}

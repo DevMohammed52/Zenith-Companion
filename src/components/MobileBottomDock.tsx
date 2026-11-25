@@ -2,15 +2,41 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu, X } from "lucide-react";
 import { useSidebar } from "@/context/SidebarContext";
 import { usePreferences } from "@/lib/preferences";
 import { BottomDock, type BottomDockItem } from "@/components/ui/BottomDock";
+import { Icon } from "@/components/ui/Icon";
 import { findNavItemByHref, isNavItemActive } from "@/lib/navigation";
 import { DEFAULT_DOCK_TABS, getTopVisitedRoutes, recordRouteVisit } from "@/lib/route-history";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 
-function formatDockLabel(fullLabel: string): string {
+const DOCK_SHORT_LABELS: Record<string, string> = {
+  "/alchemy": "Alchemy",
+  "/alchemy/mythic": "Mythic Lab",
+  "/skill-profit": "Profit",
+  "/pets/compare": "Compare",
+  "/pets/owned": "Owned",
+  "/forge/lessons": "Forge",
+  "/forge/craft": "Craft",
+  "/crafting": "Queue",
+  "/bosses": "Bosses",
+  "/patch-notes": "Patches",
+  "/whats-new": "What's New",
+  "/dungeons": "Dungeons",
+  "/conquest": "Conquest",
+  "/profiles": "Profiles",
+  "/guilds": "Guilds",
+  "/museum": "Museum",
+  "/map": "Map",
+  "/weather": "Weather",
+  "/bis": "BiS",
+  "/housing": "Housing",
+};
+
+function formatDockLabel(href: string, fullLabel: string): string {
+  if (DOCK_SHORT_LABELS[href]) {
+    return DOCK_SHORT_LABELS[href];
+  }
   return fullLabel
     .replace(" Database", "")
     .replace(" Calculator", "")
@@ -70,7 +96,7 @@ export default function MobileBottomDock() {
       }
 
       const active = isNavItemActive(pathname, navItem) && !mobileOpen;
-      const cleanLabel = formatDockLabel(navItem.label);
+      const cleanLabel = formatDockLabel(navItem.href, navItem.label);
       const cleanId = `dock-${href.replace(/\//g, "-").replace(/^-/, "")}`;
 
       const item: BottomDockItem = {
@@ -93,7 +119,7 @@ export default function MobileBottomDock() {
       id: "dock-home",
       label: "Home",
       href: "/",
-      icon: <LayoutDashboard size={20} aria-hidden="true" />,
+      icon: <Icon name="dashboard" size={20} />,
       isActive: isHomeActive,
       onClick: handleNavClick,
       "aria-label": "Dashboard",
@@ -102,11 +128,7 @@ export default function MobileBottomDock() {
     {
       id: "dock-menu",
       label: mobileOpen ? "Close" : "Menu",
-      icon: mobileOpen ? (
-        <X size={20} aria-hidden="true" />
-      ) : (
-        <Menu size={20} aria-hidden="true" />
-      ),
+      icon: <Icon name={mobileOpen ? "close" : "menu"} size={20} />,
       isActive: mobileOpen,
       onClick: toggleMobile,
       "aria-label": mobileOpen ? "Close navigation menu" : "Open navigation menu",

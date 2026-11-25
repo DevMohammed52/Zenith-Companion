@@ -51,6 +51,7 @@ export const Icon = forwardRef<HTMLSpanElement, IconProps>(function Icon(
         size={pixelSize}
         strokeWidth={strokeWidth}
         aria-hidden={isDecorative ? "true" : undefined}
+        aria-label={isDecorative ? undefined : label}
         role={isDecorative ? undefined : "img"}
         {...props}
       />

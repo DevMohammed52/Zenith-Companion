@@ -174,3 +174,21 @@
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
 }
+
+@media (max-width: 639px) {
+  .sizeSelect {
+    min-height: 44px;
+    padding: 4px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .pageButton {
+    transition: none;
+  }
+  .button:active:not(:disabled),
+  .pageButton:active:not(:disabled) {
+    transform: none;
+  }
+}

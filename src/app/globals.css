@@ -2996,6 +2996,15 @@ kbd {
   width: 100%;
 }
 
+.command-input-wrap input::-webkit-search-cancel-button,
+.command-input-wrap input::-webkit-search-decoration,
+.command-input-wrap input::-webkit-search-results-button,
+.command-input-wrap input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
 .command-input-wrap button {
   align-items: center;
   background: transparent;
@@ -14328,6 +14337,15 @@ kbd {
   min-width: 0;
   outline: none;
   width: 100%;
+}
+
+.command-input-wrap input::-webkit-search-cancel-button,
+.command-input-wrap input::-webkit-search-decoration,
+.command-input-wrap input::-webkit-search-results-button,
+.command-input-wrap input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 
 .command-input-wrap button {

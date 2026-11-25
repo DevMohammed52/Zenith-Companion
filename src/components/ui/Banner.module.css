@@ -148,3 +148,10 @@
     height: 44px;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .actionButton,
+  .closeButton {
+    transition: none;
+  }
+}

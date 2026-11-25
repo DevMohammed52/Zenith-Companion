@@ -34,7 +34,8 @@
   border-color: var(--border-strong);
 }
 
-.controlsWrap.isFocused {
+.controlsWrap.isFocused,
+.controlsWrap:focus-within:not(.isError) {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 2px var(--border-focus);
 }
@@ -67,6 +68,13 @@
 }
 
 .stepperBtn:hover:not(:disabled) {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.stepperBtn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
   background-color: var(--bg-card-hover);
   color: var(--text-main);
 }
@@ -125,4 +133,14 @@
 .errorText {
   font-size: 0.75rem;
   color: var(--accent-danger, #f87171);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .controlsWrap,
+  .stepperBtn {
+    transition: none;
+  }
+  .stepperBtn:active:not(:disabled) {
+    transform: none;
+  }
 }

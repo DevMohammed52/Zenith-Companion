@@ -40,7 +40,7 @@
 }
 
 .item {
-  flex: 1;
+  flex: 1 1 0%;
   display: flex;
   justify-content: center;
   min-width: 0;
@@ -124,16 +124,16 @@
 }
 
 .active .iconWrapper {
-  background-color: rgba(248, 250, 252, 0.12);
-  box-shadow: 0 0 12px rgba(248, 250, 252, 0.06);
+  background-color: var(--control-active-bg, #242f47);
+  border: 1px solid var(--control-active-border, rgba(203, 213, 225, 0.24));
 }
 
 .active .icon {
-  transform: scale(1.12);
+  transform: scale(1.06);
 }
 
 .active .label {
-  color: var(--text-main, #f8fafc);
+  color: var(--control-active-text, #f8fafc);
   font-weight: 700;
 }
 
@@ -144,7 +144,7 @@
   width: 14px;
   height: 2.5px;
   border-radius: 9999px;
-  background-color: var(--btn-primary-bg, #f8fafc);
+  background-color: var(--btn-primary-bg, #cbd5e1);
   margin-top: 1px;
   animation: dockPillEntrance 180ms var(--ease-spring, cubic-bezier(0.16, 1, 0.3, 1));
 }
@@ -170,7 +170,7 @@
   padding: 0 4px;
   border-radius: 9999px;
   background-color: var(--text-danger, #ef4444);
-  color: #ffffff;
+  color: var(--text-main, #f8fafc);
   font-family: monospace;
   font-size: 0.625rem;
   font-weight: 700;

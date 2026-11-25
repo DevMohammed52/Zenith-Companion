@@ -58,19 +58,6 @@
   line-height: 1.4;
 }
 
-.input::-webkit-search-cancel-button,
-.input::-webkit-search-decoration,
-.input::-webkit-search-results-button,
-.input::-webkit-search-results-decoration {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  pointer-events: none !important;
-  margin: 0 !important;
-}
-
 .input::placeholder {
   color: var(--text-dim, #64748b);
 }
@@ -140,5 +127,17 @@
 @media (max-width: 640px) {
   .kbdHint {
     display: none;
+  }
+  .clearButton {
+    width: 44px;
+    height: 44px;
+    margin-right: -8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inputWrapper,
+  .clearButton {
+    transition: none;
   }
 }

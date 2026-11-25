@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, PanelLeft, PanelLeftClose, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 import { ZenithMark, ZenithWordmark } from "@/components/brand/ZenithBrand";
 import { getActiveNavGroup, isNavItemActive, NAV_GROUPS, type NavItem } from "@/lib/navigation";
 import { usePreferences } from "@/lib/preferences";
 import { useSidebar } from "@/context/SidebarContext";
+import { Icon } from "@/components/ui/Icon";
 import { Tooltip } from "@/components/ui/Tooltip";
 import styles from "./Sidebar.module.css";
 
@@ -231,17 +231,18 @@ export default function Sidebar() {
                     className={styles.railToggle}
                     aria-label="Collapse sidebar (Rail mode)"
                   >
-                    <PanelLeftClose size={16} />
+                    <Icon name="panelLeftClose" size={16} />
                   </button>
                 </Tooltip>
 
                 <button
                   ref={closeButtonRef}
+                  type="button"
                   onClick={closeMobileMenu}
                   className={styles.mobileClose}
                   aria-label="Close navigation menu"
                 >
-                  <X size={18} />
+                  <Icon name="close" size={18} />
                 </button>
               </div>
             </>
@@ -254,7 +255,7 @@ export default function Sidebar() {
                   className={styles.railHeaderToggle}
                   aria-label="Expand sidebar"
                 >
-                  <PanelLeft size={18} />
+                  <Icon name="panelLeft" size={18} />
                 </button>
               </Tooltip>
             </div>
@@ -291,7 +292,7 @@ export default function Sidebar() {
                     className={`${styles.groupChevron} ${isExpanded ? styles.chevronExpanded : ""}`}
                     aria-hidden="true"
                   >
-                    <ChevronDown size={12} />
+                    <Icon name="chevronDown" size={12} />
                   </span>
                 </button>
 

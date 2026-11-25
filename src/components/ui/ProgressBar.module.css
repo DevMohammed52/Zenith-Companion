@@ -51,7 +51,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--accent-primary, #f8fafc);
+  background-color: var(--btn-primary-bg, #cbd5e1);
   border-radius: 9999px;
   transform-origin: left center;
   transition: transform 150ms ease-out;
@@ -84,7 +84,7 @@
 }
 
 .ringFill {
-  stroke: var(--accent-primary, #f8fafc);
+  stroke: var(--btn-primary-bg, #cbd5e1);
   stroke-linecap: round;
   transition: stroke-dashoffset 150ms ease-out;
 }
@@ -103,4 +103,11 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-main);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill,
+  .ringFill {
+    transition: none;
+  }
 }

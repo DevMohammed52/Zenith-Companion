@@ -221,11 +221,13 @@
 
   .footerLink {
     font-size: 0.78125rem;
-    padding: 4px 0;
+    min-height: 44px;
+    padding: 0 6px;
   }
 
   .copyButton {
-    padding: 4px 8px;
+    min-height: 44px;
+    padding: 0 12px;
     font-size: 0.75rem;
     margin-top: 0;
   }

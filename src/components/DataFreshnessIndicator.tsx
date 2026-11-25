@@ -2,15 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronRight,
-  Clock3,
-  Database,
-  DatabaseZap,
-  RefreshCw,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import type { IconConcept } from "@/lib/icons";
 import { useData } from "@/context/DataContext";
 import {
   formatPublicDataAge,
@@ -153,15 +146,15 @@ export default function DataFreshnessIndicator() {
   const statusCopy = copyForLevel(model.level, model.ageLabel);
   const shortLabel = shortLabelForLevel(model.level, model.ageLabel);
 
-  const StatusIcon = model.level === "running"
-    ? RefreshCw
+  const statusIconName: IconConcept = model.level === "running"
+    ? "refresh"
     : model.level === "fresh"
-      ? CheckCircle2
+      ? "checkCircle"
       : model.level === "unavailable"
-        ? DatabaseZap
+        ? "databaseOffline"
         : model.level === "delayed"
-          ? Clock3
-          : AlertTriangle;
+          ? "clockDelay"
+          : "warning";
 
   return (
     <div className={styles.wrapper}>
@@ -180,7 +173,7 @@ export default function DataFreshnessIndicator() {
             />
             <span className={styles.label}>{shortLabel}</span>
             <span className={styles.iconOnly} aria-hidden="true">
-              <Database size={16} />
+              <Icon name="database" size={16} />
               <span
                 className={`${styles.dot} ${styles.badgeDot}`}
                 data-level={model.level}
@@ -192,7 +185,7 @@ export default function DataFreshnessIndicator() {
         <PopoverContent className={styles.popoverCard} showArrow={false}>
           <div className={styles.popoverHeader}>
             <div className={styles.iconShell} data-level={model.level} aria-hidden="true">
-              <StatusIcon size={16} className={model.level === "running" ? styles.spin : ""} />
+              <Icon name={statusIconName} size={16} className={model.level === "running" ? styles.spin : ""} />
             </div>
             <div className={styles.titleGroup}>
               <span className={styles.title}>{statusTitle}</span>
@@ -235,7 +228,7 @@ export default function DataFreshnessIndicator() {
               onClick={() => setOpen(false)}
             >
               <span>Settings</span>
-              <ChevronRight size={13} aria-hidden="true" />
+              <Icon name="chevronRight" size={13} />
             </Link>
           </div>
         </PopoverContent>

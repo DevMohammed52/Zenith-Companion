@@ -40,9 +40,8 @@
 }
 
 .track.isChecked {
-  background-color: var(--btn-primary-bg, #f8fafc);
-  border-color: #f8fafc;
-  box-shadow: 0 0 12px rgba(248, 250, 252, 0.25);
+  background-color: var(--btn-primary-bg, #cbd5e1);
+  border-color: var(--btn-primary-bg, #cbd5e1);
 }
 
 .thumb {
@@ -50,16 +49,19 @@
   left: 3px;
   width: 20px;
   height: 20px;
-  background-color: #ffffff;
+  background-color: var(--text-main, #f8fafc);
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 220ms ease,
-              width 180ms cubic-bezier(0.16, 1, 0.3, 1);
+              background-color 220ms ease;
 }
 
 .container:active:not(.isDisabled) .thumb {
-  width: 24px;
+  transform: scale(1.06);
+}
+
+.container:active:not(.isDisabled) .track.isChecked .thumb {
+  transform: translateX(20px) scale(1.06);
 }
 
 .track.isChecked .thumb {
@@ -88,4 +90,17 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .thumb {
+    transition: none;
+  }
+  .container:active:not(.isDisabled) .thumb {
+    transform: none;
+  }
+  .container:active:not(.isDisabled) .track.isChecked .thumb {
+    transform: translateX(20px);
+  }
 }

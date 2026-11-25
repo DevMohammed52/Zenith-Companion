@@ -79,7 +79,7 @@
 
 .tab.isSelected {
   color: var(--text-main);
-  border-bottom-color: var(--btn-primary-bg, #f8fafc);
+  border-bottom-color: var(--btn-primary-bg, #cbd5e1);
   font-weight: 600;
 }
 
@@ -90,9 +90,9 @@
 }
 
 .pillVariant .tab.isSelected {
-  background-color: var(--bg-card);
-  color: var(--text-main);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  background-color: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .tabBadge {
@@ -124,4 +124,10 @@
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
 }

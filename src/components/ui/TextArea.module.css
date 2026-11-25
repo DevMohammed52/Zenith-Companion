@@ -97,3 +97,9 @@
   color: var(--accent-danger, #f87171);
   margin: 0;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .textarea {
+    transition: none;
+  }
+}

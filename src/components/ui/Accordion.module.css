@@ -90,3 +90,12 @@
 .contentClosed {
   display: none;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .chevron,
+  .content {
+    transition: none;
+    animation: none;
+  }
+}

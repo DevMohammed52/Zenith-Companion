@@ -58,3 +58,17 @@
 .contentClosed {
   display: none;
 }
+
+@media (max-width: 639px) {
+  .trigger {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .chevron,
+  .content {
+    transition: none;
+  }
+}

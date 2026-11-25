@@ -51,7 +51,7 @@
 
 .box.isChecked,
 .box.isIndeterminate {
-  background-color: var(--btn-primary-bg, #f8fafc);
+  background-color: var(--btn-primary-bg, #cbd5e1);
   border-color: transparent;
 }
 
@@ -75,4 +75,10 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box {
+    transition: none;
+  }
 }

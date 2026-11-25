@@ -48,12 +48,11 @@
   outline-offset: 2px;
 }
 
-/* Selected / Active Filter Pill (Refined Luminous Dark Mode) */
+/* Selected / Active Filter Pill (Calm Astral Slate) */
 .tag.isSelected {
-  background-color: rgba(248, 250, 252, 0.12);
-  color: #ffffff;
-  border: 1.5px solid rgba(248, 250, 252, 0.7);
-  box-shadow: 0 0 10px rgba(248, 250, 252, 0.08);
+  background-color: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
+  border: 1.5px solid var(--control-active-border, rgba(203, 213, 225, 0.38));
   font-weight: 600;
 }
 
@@ -106,7 +105,7 @@
   justify-content: center;
   margin-left: -2px;
   margin-right: 2px;
-  color: #ffffff;
+  color: var(--control-active-text, #f8fafc);
 }
 
 .countBadge {
@@ -126,11 +125,12 @@
 }
 
 .isSelected .countBadge {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background-color: rgba(203, 213, 225, 0.16);
+  color: var(--control-active-text, #f8fafc);
 }
 
 .removeButton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -143,9 +143,21 @@
   border: none;
   border-radius: 50%;
   color: inherit;
-  opacity: 0.7;
+  opacity: 0.75;
   cursor: pointer;
   transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+.removeButton::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+@media (max-width: 639px) {
+  .removeButton::after {
+    inset: -13px;
+  }
 }
 
 .removeButton:hover {
@@ -157,4 +169,14 @@
 .removeButton:focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag,
+  .removeButton {
+    transition: none;
+  }
+  .tag.isInteractive:active {
+    transform: none;
+  }
 }

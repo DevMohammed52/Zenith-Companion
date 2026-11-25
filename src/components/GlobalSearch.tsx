@@ -3,8 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
-import { NoResultsState } from "@/components/StateBlock";
+import { EmptyState, Icon } from "@/components/ui";
 import { useItemModal } from "@/context/ItemModalContext";
 import { useProfiles } from "@/lib/profiles";
 import { notifyZenith } from "@/lib/notifications";
@@ -509,7 +508,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
       >
         <h2 id={titleId} className="sr-only">Global search</h2>
         <div className="command-input-wrap">
-          <Search size={16} aria-hidden="true" />
+          <Icon name="search" size={16} />
           <input
             ref={inputRef}
             autoFocus
@@ -528,7 +527,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             placeholder="Search tools, items, recipes, enemies, lore..."
           />
           <button type="button" onClick={closeSearch} aria-label="Close search">
-            <X size={16} aria-hidden="true" />
+            <Icon name="close" size={16} />
           </button>
         </div>
         <div
@@ -565,8 +564,9 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
             </button>
           ))}
           {filteredResults.length === 0 ? (
-            <NoResultsState
-              compact
+            <EmptyState
+              variant="search-empty"
+              size="sm"
               title="No matches found"
               description={query ? `No tools, items, profiles, or references match "${query}".` : "Start typing to search Zenith."}
             />
@@ -594,7 +594,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         aria-controls={dialogId}
         data-open={open ? "true" : "false"}
       >
-        <Search size={14} aria-hidden="true" />
+        <Icon name="search" size={14} />
         <span>Search</span>
         <kbd>Ctrl K</kbd>
       </button>

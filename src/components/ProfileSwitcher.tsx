@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, UserRound, Users } from "lucide-react";
 import { DEFAULT_PROFILE_BACKGROUND_IMAGE_URL, type CharacterProfile, useProfiles } from "@/lib/profiles";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
-import { Avatar } from "@/components/ui/Avatar";
+import { Avatar, Icon, Popover, PopoverContent, PopoverTrigger } from "@/components/ui";
 import styles from "./ProfileSwitcher.module.css";
 
 type ProfileSwitcherProps = {
@@ -45,16 +43,16 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
               alt={activeLabel}
               size="sm"
               shape="rounded"
-              fallback={activeProfile ? profileInitial(activeProfile) : <UserRound size={16} />}
+              fallback={activeProfile ? profileInitial(activeProfile) : <Icon name="profile" size={16} />}
             />
             <span className={`${styles.triggerText} profile-switcher-text`}>
               <strong className={styles.name}>{activeLabel}</strong>
               <small className={`${styles.meta} profile-switcher-meta`}>{activeMeta}</small>
             </span>
-            <ChevronDown
+            <Icon
+              name="chevronDown"
               size={14}
               className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}
-              aria-hidden="true"
             />
           </button>
         </PopoverTrigger>
@@ -62,7 +60,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
         <PopoverContent className={styles.popoverMenu} showArrow={false}>
           <div className={styles.menuHeader}>
             <div className={styles.headerLeft}>
-              <Users size={14} aria-hidden="true" />
+              <Icon name="profileSwitch" size={14} />
               <span>Active Profile</span>
             </div>
             <span className={styles.countBadge} aria-label={`${state.profiles.length} profiles saved`}>
@@ -133,7 +131,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
                     </div>
 
                     {isSelected && (
-                      <Check size={16} className={styles.checkIcon} aria-hidden="true" />
+                      <Icon name="check" size={16} className={styles.checkIcon} />
                     )}
                   </button>
                 );
@@ -148,7 +146,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
               onClick={() => setOpen(false)}
             >
               <span>Manage all profiles</span>
-              <ChevronRight size={14} aria-hidden="true" />
+              <Icon name="chevronRight" size={14} />
             </Link>
           </div>
         </PopoverContent>
