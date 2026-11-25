@@ -87,7 +87,7 @@ export function Separator({
     return (
       <div
         role={decorative ? "none" : "separator"}
-        aria-orientation="vertical"
+        aria-orientation={decorative ? undefined : "vertical"}
         className={`${styles.separator} ${styles.vertical} ${spacingClass} ${className}`.trim()}
         {...(restProps as React.HTMLAttributes<HTMLDivElement>)}
       />

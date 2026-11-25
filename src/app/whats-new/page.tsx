@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseChangelog, type ParsedChangelog } from "@/lib/changelog-parser";
 import { createRouteMetadata } from "@/lib/route-metadata";
+import { APP_VERSION, APP_RELEASE_DATE } from "@/lib/version";
 import WhatsNewClient from "./WhatsNewClient";
 
 export const metadata = createRouteMetadata({
@@ -45,8 +46,8 @@ function loadChangelogData(): ParsedChangelog {
     releases: [],
     meta: {
       totalReleases: 0,
-      latestVersion: "0.86.2",
-      latestDate: "2026-11-24",
+      latestVersion: APP_VERSION,
+      latestDate: APP_RELEASE_DATE,
       categories: [],
     },
   };

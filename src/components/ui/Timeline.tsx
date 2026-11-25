@@ -5,6 +5,7 @@ export type TimelineVariant = "default" | "success" | "danger" | "warning";
 
 export interface TimelineItem {
   id?: string | number;
+  htmlId?: string;
   title: React.ReactNode;
   timestamp: string | Date;
   formattedTime?: string;
@@ -17,6 +18,7 @@ export interface TimelineItem {
 export interface TimelineProps {
   items: TimelineItem[];
   title?: string;
+  headingLevel?: "h2" | "h3";
   directionNotice?: string;
   className?: string;
   "aria-label"?: string;
@@ -25,11 +27,15 @@ export interface TimelineProps {
 export function Timeline({
   items,
   title,
+  headingLevel = "h3",
   directionNotice = "Order: Newest updates first • Server Time (UTC)",
   className,
   "aria-label": ariaLabel,
 }: TimelineProps) {
   if (!items || items.length === 0) return null;
+
+  const SectionHeading = headingLevel;
+  const EntryHeading = headingLevel === "h2" ? "h3" : "h4";
 
   return (
     <section
@@ -38,7 +44,7 @@ export function Timeline({
     >
       {(title || directionNotice) && (
         <div className={styles.header}>
-          {title && <h3 className={styles.title}>{title}</h3>}
+          {title && <SectionHeading className={styles.title}>{title}</SectionHeading>}
           {directionNotice && (
             <p className={styles.directionNotice}>{directionNotice}</p>
           )}
@@ -67,7 +73,7 @@ export function Timeline({
           const variantClass = item.variant ? styles[item.variant] : "";
 
           return (
-            <li key={item.id ?? index} className={styles.entry}>
+            <li key={item.id ?? index} id={item.htmlId} className={styles.entry}>
               <div className={styles.marker} aria-hidden="true">
                 <span className={`${styles.dot} ${variantClass}`.trim()} />
                 <span className={styles.line} />
@@ -90,7 +96,7 @@ export function Timeline({
                   )}
                 </div>
 
-                <h4 className={styles.entryTitle}>{item.title}</h4>
+                <EntryHeading className={styles.entryTitle}>{item.title}</EntryHeading>
 
                 {item.body && <p className={styles.body}>{item.body}</p>}
                 {item.children}

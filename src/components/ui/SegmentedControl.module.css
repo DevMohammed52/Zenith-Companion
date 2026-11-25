@@ -125,8 +125,8 @@
 }
 
 .active .badge {
-  background-color: rgba(10, 13, 20, 0.15);
-  color: #0a0d14;
+  background-color: rgba(248, 250, 252, 0.14);
+  color: var(--control-active-text, #f8fafc);
 }
 
 @media (prefers-reduced-motion: reduce) {
