@@ -6,7 +6,7 @@ import { EnemiesHeader } from "./components/EnemiesHeader";
 import { EnemiesControls } from "./components/EnemiesControls";
 import { EnemiesGrid } from "./components/EnemiesGrid";
 import { EnemyDetailModal } from "./components/EnemyDetailModal";
-import { EnemiesBackToTop } from "./components/EnemiesBackToTop";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { EnemiesStyles } from "./components/EnemiesStyles";
 
 function EnemiesContent() {
@@ -74,7 +74,7 @@ function EnemiesContent() {
         />
       )}
 
-      <EnemiesBackToTop />
+      <BackToTop label="Scroll back to top of enemy bestiary" />
       <EnemiesStyles />
     </main>
   );

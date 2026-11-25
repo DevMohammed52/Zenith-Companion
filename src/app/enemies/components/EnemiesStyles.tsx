@@ -641,46 +641,6 @@ export function EnemiesStyles() {
          ------------------------------------------------------------------------- */
 
       /* -------------------------------------------------------------------------
-         6. BACK TO TOP BUTTON (Neutral Floating Control)
-         ------------------------------------------------------------------------- */
-
-      .enemy-back-to-top {
-        position: fixed;
-        right: 1.5rem;
-        bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 20px);
-        z-index: 1000;
-        display: grid;
-        place-items: center;
-        width: 48px;
-        height: 48px;
-        border-radius: 999px;
-        background: var(--bg-card, #1e293b);
-        border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
-        color: #f8fafc;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        cursor: pointer;
-        opacity: 0;
-        transform: translateY(12px) scale(0.92);
-        pointer-events: none;
-        transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s ease;
-      }
-
-      .enemy-back-to-top.visible {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        pointer-events: auto;
-      }
-
-      .enemy-back-to-top:hover {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.25);
-      }
-
-      .enemy-back-to-top:active {
-        transform: scale(0.95);
-      }
-
-      /* -------------------------------------------------------------------------
          7. MODALSHEET ENEMY DETAIL CONTENT
          ------------------------------------------------------------------------- */
 
@@ -1147,14 +1107,10 @@ export function EnemiesStyles() {
         .enemy-grid {
           grid-template-columns: 1fr;
         }
-        .enemy-back-to-top {
-          right: 1rem;
-        }
       }
 
       @media (prefers-reduced-motion: reduce) {
         .enemy-card,
-        .enemy-back-to-top,
         .controls-reset-btn,
         :global(.select-trigger),
         :global(.select-menu),

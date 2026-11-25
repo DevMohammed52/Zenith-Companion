@@ -146,14 +146,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      <head />
+      <body>
         <Script
           id="zenith-pre-paint-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: PRE_PAINT_INIT_SCRIPT }}
         />
-      </head>
-      <body>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

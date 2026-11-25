@@ -132,10 +132,10 @@
 }
 
 .pageButton.isCurrent {
-  background-color: var(--btn-primary-bg, #f8fafc);
-  color: var(--btn-primary-text, #0a0d14);
+  background-color: var(--control-active-bg, #242f47);
+  color: var(--control-active-text, #f8fafc);
   font-weight: 600;
-  border-color: transparent;
+  border-color: var(--control-active-border, rgba(203, 213, 225, 0.28));
 }
 
 .ellipsis {

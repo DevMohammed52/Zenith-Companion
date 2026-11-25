@@ -7,7 +7,7 @@ import { ItemsFilterBar } from './components/ItemsFilterBar';
 import { ItemsTable } from './components/ItemsTable';
 import { ItemsCardGrid } from './components/ItemsCardGrid';
 import { ItemsPagination } from './components/ItemsPagination';
-import { BackToTopButton } from './components/BackToTopButton';
+import { BackToTop } from '@/components/ui/BackToTop';
 import { ItemsStyles } from './components/ItemsStyles';
 import { ErrorState, LoadingState, NoResultsState } from '@/components/StateBlock';
 
@@ -136,7 +136,7 @@ function ItemsArchiveContent() {
         </div>
       )}
 
-      <BackToTopButton />
+      <BackToTop label="Scroll back to top of item catalog" />
     </main>
   );
 }

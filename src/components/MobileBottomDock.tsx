@@ -7,7 +7,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { usePreferences } from "@/lib/preferences";
 import { BottomDock, type BottomDockItem } from "@/components/ui/BottomDock";
 import { findNavItemByHref, isNavItemActive } from "@/lib/navigation";
-import { getTopVisitedRoutes, recordRouteVisit } from "@/lib/route-history";
+import { DEFAULT_DOCK_TABS, getTopVisitedRoutes, recordRouteVisit } from "@/lib/route-history";
 import ZenithIcon from "@/components/icons/ZenithIcon";
 
 function formatDockLabel(fullLabel: string): string {
@@ -26,10 +26,12 @@ export default function MobileBottomDock() {
   const pathname = usePathname();
   const { mobileOpen, toggleMobile, setMobileOpen } = useSidebar();
   const { preferences } = usePreferences();
-  const [visitedRoutes, setVisitedRoutes] = useState<string[]>(() => getTopVisitedRoutes(3));
+  const [mounted, setMounted] = useState(false);
+  const [visitedRoutes, setVisitedRoutes] = useState<string[]>(DEFAULT_DOCK_TABS);
 
-  // Record route visits on client side and refresh dynamic top routes
+  // Mark mounted and record route visits on client side only (prevents SSR hydration mismatch)
   useEffect(() => {
+    setMounted(true);
     if (pathname) {
       recordRouteVisit(pathname);
       setVisitedRoutes(getTopVisitedRoutes(3));
@@ -53,11 +55,12 @@ export default function MobileBottomDock() {
 
   // Determine the 3 middle tabs: custom user choice or dynamic top 3 visited
   const middleHrefs = useMemo(() => {
+    if (!mounted) return DEFAULT_DOCK_TABS;
     if (preferences.mobileDockTabs && preferences.mobileDockTabs.length === 3) {
       return preferences.mobileDockTabs;
     }
     return visitedRoutes;
-  }, [preferences.mobileDockTabs, visitedRoutes]);
+  }, [mounted, preferences.mobileDockTabs, visitedRoutes]);
 
   const middleItems = useMemo(() => {
     return middleHrefs.map((href) => {

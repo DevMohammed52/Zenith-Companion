@@ -396,46 +396,16 @@
   color: var(--text-secondary);
 }
 
-/* Floating Back To Top Button - Styled like items catalog button */
-.backToTopButton {
-  position: fixed;
-  bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
-  right: 16px;
-  z-index: 45;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-strong, #334155);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 150ms ease,
-              border-color 150ms ease,
-              color 150ms ease;
-}
-
-.backToTopButton:hover {
-  background-color: var(--bg-card-hover, #1a2236);
-  border-color: var(--border-focus);
+.inlineBold {
+  font-weight: 600;
   color: var(--text-primary);
-  transform: translateY(-2px);
 }
 
-.backToTopButton:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
-}
-
-@media (min-width: 768px) {
-  .backToTopButton {
-    bottom: 24px;
-    right: 24px;
-  }
+.inlineCode {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
 }

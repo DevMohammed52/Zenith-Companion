@@ -507,8 +507,9 @@ export function ItemsStyles() {
       }
 
       .items-db-page .view-toggle button.active {
-        background: #f8fafc;
-        color: #0f172a;
+        background: var(--control-active-bg, #242f47);
+        border: 1px solid var(--control-active-border, rgba(203, 213, 225, 0.28));
+        color: var(--control-active-text, #f8fafc);
         font-weight: 700;
       }
 
@@ -1023,10 +1024,10 @@ export function ItemsStyles() {
       .items-db-page .load-more,
       .items-db-page .reset-btn {
         align-items: center;
-        background: #f8fafc;
+        background: var(--btn-primary-bg, #cbd5e1);
         border: 0;
         border-radius: 6px;
-        color: #0f172a;
+        color: var(--btn-primary-text, #0a0d14);
         cursor: pointer;
         display: inline-flex;
         font: inherit;
@@ -1060,63 +1061,6 @@ export function ItemsStyles() {
       @media (min-width: 1200px) {
         .items-db-page .cards-grid {
           grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      .items-db-page .items-back-to-top:focus-visible {
-        outline: none;
-        border-color: var(--border-focus);
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-accent), transparent 75%);
-      }
-
-      /* Floating Back To Top Button */
-      .items-db-page .items-back-to-top {
-        position: fixed;
-        bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
-        right: 16px;
-        z-index: 45;
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
-        border-radius: 50%;
-        background-color: var(--bg-card);
-        border: 1px solid var(--border-strong);
-        color: var(--text-base);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(12px) scale(0.9);
-        transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
-                    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
-                    background-color 150ms ease,
-                    border-color 150ms ease;
-      }
-
-      .items-db-page .items-back-to-top.visible {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0) scale(1);
-      }
-
-      .items-db-page .items-back-to-top:hover {
-        background-color: var(--bg-card-hover, #1a2236);
-        border-color: var(--border-focus);
-        transform: translateY(-2px) scale(1.04);
-      }
-
-      .items-db-page .items-back-to-top:active {
-        transform: translateY(0) scale(0.96);
-      }
-
-      @media (min-width: 768px) {
-        .items-db-page .items-back-to-top {
-          bottom: 24px;
-          right: 24px;
         }
       }
 

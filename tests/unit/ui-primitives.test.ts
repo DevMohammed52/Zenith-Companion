@@ -67,6 +67,7 @@ import {
   TextArea,
   RadioGroup,
   Timeline,
+  BackToTop,
 } from "@/components/ui";
 import { CONCEPT_ICONS, ICON_SIZES, type IconConcept } from "@/lib/icons";
 
@@ -1727,6 +1728,21 @@ describe("Timeline Primitive", () => {
     expect(html).toContain("Patch 0.86.1 Combat Rebalance");
     expect(html).toContain("Weapon speeds adjusted across all tiers.");
     expect(html).toContain("Haunted Hollow World Boss Spawn");
+  });
+});
+
+describe("Primitive: BackToTop", () => {
+  it("hides non-destructively when not scrolled and becomes visible with forceVisible", () => {
+    const hiddenHtml = renderToStaticMarkup(createElement(BackToTop));
+    expect(hiddenHtml).toContain('aria-hidden="true"');
+    expect(hiddenHtml).toContain('tabindex="-1"');
+
+    const visibleHtml = renderToStaticMarkup(createElement(BackToTop, { forceVisible: true }));
+    expect(visibleHtml).toContain('aria-label="Scroll back to top"');
+    expect(visibleHtml).toContain('title="Back to top"');
+    expect(visibleHtml).toContain('aria-hidden="false"');
+    expect(visibleHtml).toContain('tabindex="0"');
+    expect(visibleHtml).toContain("<svg");
   });
 });
 

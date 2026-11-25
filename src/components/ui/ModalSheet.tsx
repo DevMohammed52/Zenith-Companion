@@ -36,6 +36,11 @@ export function ModalSheet({
   const [isClosing, setIsClosing] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const titleId = useId();
   const descriptionId = useId();
@@ -86,7 +91,7 @@ export function ModalSheet({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && closeOnEscape) {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -130,7 +135,7 @@ export function ModalSheet({
         previousActiveElement.current.focus();
       }
     };
-  }, [isOpen, onClose, closeOnEscape]);
+  }, [isOpen, closeOnEscape]);
 
   if (!mounted || !isRendering) {
     return null;

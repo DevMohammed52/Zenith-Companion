@@ -37,7 +37,6 @@ import { ItemsFilterBar } from '@/app/items/components/ItemsFilterBar';
 import { ItemsTable } from '@/app/items/components/ItemsTable';
 import { ItemsCardGrid } from '@/app/items/components/ItemsCardGrid';
 import { ItemsPagination } from '@/app/items/components/ItemsPagination';
-import { BackToTopButton } from '@/app/items/components/BackToTopButton';
 import { ItemBadges, ItemCompactBadges } from '@/app/items/components/ItemBadges';
 import { ItemFilterPicker } from '@/app/items/components/ItemFilterPicker';
 import { ItemSearchBox } from '@/app/items/components/ItemSearchBox';
@@ -87,7 +86,6 @@ describe('items architecture and modularization contracts', () => {
       'ItemsTable.tsx',
       'ItemsCardGrid.tsx',
       'ItemsPagination.tsx',
-      'BackToTopButton.tsx',
       'ItemBadges.tsx',
       'ItemFilterPicker.tsx',
       'ItemSearchBox.tsx',
@@ -104,7 +102,6 @@ describe('items architecture and modularization contracts', () => {
     expect(typeof ItemsTable).toBe('function');
     expect(typeof ItemsCardGrid).toBe('function');
     expect(typeof ItemsPagination).toBe('function');
-    expect(typeof BackToTopButton).toBe('function');
     expect(typeof ItemBadges).toBe('function');
     expect(typeof ItemCompactBadges).toBe('function');
     expect(typeof ItemFilterPicker).toBe('function');

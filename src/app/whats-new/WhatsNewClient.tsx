@@ -21,6 +21,7 @@ import { Select, type SelectOption } from "@/components/ui/Select";
 import { Pagination } from "@/components/ui/Pagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
+import { BackToTop } from "@/components/ui/BackToTop";
 import styles from "./WhatsNew.module.css";
 
 const STORAGE_KEY_LAST_VERSION = "zenith_changelog_last_viewed_version";
@@ -37,6 +38,27 @@ const CATEGORY_LABELS: Record<ChangelogCategory, string> = {
 
 interface WhatsNewClientProps {
   initialData: ParsedChangelog;
+}
+
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={index} className={styles.inlineBold}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code key={index} className={styles.inlineCode}>
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
 }
 
 function formatDate(dateStr: string | null): string {
@@ -61,7 +83,6 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
   const [selectedCategory, setSelectedCategory] = useState<ChangelogCategory | "ALL">("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastReadVersion, setLastReadVersion] = useState<string | null>(null);
-  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Latest release expanded by default
   const [expandedVersions, setExpandedVersions] = useState<Set<string>>(() => {
@@ -82,15 +103,6 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
     } catch {
       // Ignore
     }
-  }, []);
-
-  // Back to top scroll listener
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleMarkAsRead = useCallback(() => {
@@ -215,10 +227,6 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
     if (!lastReadVersion || initialData.releases.length === 0) return false;
     return initialData.meta.latestVersion !== lastReadVersion;
   }, [lastReadVersion, initialData.meta.latestVersion, initialData.releases.length]);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -433,7 +441,7 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
                                   <span className={styles.itemTitle}>{item.title}</span>
                                   {item.description && (
                                     <span className={styles.itemDescription}>
-                                      : {item.description}
+                                      : {renderInlineMarkdown(item.description)}
                                     </span>
                                   )}
                                 </div>
@@ -464,18 +472,7 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
         />
       )}
 
-      {/* 5. Floating Back To Top Button */}
-      {showBackToTop && (
-        <button
-          type="button"
-          onClick={scrollToTop}
-          className={styles.backToTopButton}
-          aria-label="Scroll to top"
-          title="Back to top"
-        >
-          <Icon name="chevronUp" size="md" />
-        </button>
-      )}
+      <BackToTop label="Scroll to top" />
     </div>
   );
 }

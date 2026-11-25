@@ -74,6 +74,14 @@ import {
   ThermometerSun,
   Trophy,
   Calendar,
+  Scale,
+  Sword,
+  Feather,
+  Crosshair,
+  BatteryCharging,
+  Flame,
+  Percent,
+  Route,
 } from "lucide-react";
 
 /**
@@ -124,12 +132,15 @@ export const CONCEPT_ICONS = {
   calendar: Calendar,
   housing: Warehouse,
   pets: PawPrint,
+  petsOwned: Heart,
+  petCompare: Scale,
   museum: Landmark,
   conquest: Shield,
   lore: BookOpen,
   items: Package,
   guilds: Users,
   map: Compass,
+  route: Route,
   bis: Target,
   calculator: Calculator,
 
@@ -138,6 +149,12 @@ export const CONCEPT_ICONS = {
   defense: ShieldCheck,
   speed: Zap, // Strictly combat attack speed / haste, NOT for generic button flair
   health: Heart,
+  attackPower: Sword,
+  agility: Feather,
+  accuracy: Crosshair,
+  stamina: BatteryCharging,
+  critDamage: Flame,
+  critChance: Percent,
 
   // Game Economy & Progression
   gold: Coins,

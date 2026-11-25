@@ -230,3 +230,7 @@ export {
   type TimelineItem,
   type TimelineVariant,
 } from "./Timeline";
+export {
+  BackToTop,
+  type BackToTopProps,
+} from "./BackToTop";
