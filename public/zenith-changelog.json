@@ -3,6 +3,156 @@
   "description": "All notable changes to Zenith Companion will be documented in this file. Updates are organized chronologically by release date.",
   "releases": [
     {
+      "version": "2026-11-25",
+      "date": "2026-11-25",
+      "rawHeading": "## [2026-11-25]",
+      "isUnreleased": false,
+      "sections": [
+        {
+          "category": "Added",
+          "items": [
+            {
+              "id": "2026-11-25-Added-0",
+              "title": "Conquest Season Archive",
+              "description": "You can now browse past conquest seasons (**Season 3** through **Season 12**) alongside the current season in Conquest, complete with zone winners, paginated contributor rankings, and historical control shares.",
+              "subItems": [],
+              "raw": "- **Conquest Season Archive**: You can now browse past conquest seasons (**Season 3** through **Season 12**) alongside the current season in Conquest, complete with zone winners, paginated contributor rankings, and historical control shares."
+            },
+            {
+              "id": "2026-11-25-Added-1",
+              "title": "Conquest Buffs, Shards & Live Assault Timers",
+              "description": "Conquest now shows live assault wave countdowns, resolves each top contributor's guild badge, displays guild levels, and provides a top-level **Buffs & Shards** guide for Territory Ruling Buffs (Ranks 1–10) and Zone Shard payouts (Ranks 1–25).",
+              "subItems": [],
+              "raw": "- **Conquest Buffs, Shards & Live Assault Timers**: Conquest now shows live assault wave countdowns, resolves each top contributor's guild badge, displays guild levels, and provides a top-level **Buffs & Shards** guide for Territory Ruling Buffs (Ranks 1–10) and Zone Shard payouts (Ranks 1–25)."
+            },
+            {
+              "id": "2026-11-25-Added-2",
+              "title": "Equipped Pet Spotlight",
+              "description": "Your currently equipped pet now sits pinned at the top of Owned Pets with Power, Health, Location, best Battle EV/hr, and 1-click catalog comparison.",
+              "subItems": [],
+              "raw": "- **Equipped Pet Spotlight**: Your currently equipped pet now sits pinned at the top of Owned Pets with Power, Health, Location, best Battle EV/hr, and 1-click catalog comparison."
+            },
+            {
+              "id": "2026-11-25-Added-3",
+              "title": "Missing Pets & Multi-Select Compare",
+              "description": "Owned Pets now tracks your collection progress, adds a **Missing Pets** view with drop sources and exchange floor prices, adds a sortable **Table** view, and lets you select 2–4 pets to open together in Pet Comparison.",
+              "subItems": [],
+              "raw": "- **Missing Pets & Multi-Select Compare**: Owned Pets now tracks your collection progress, adds a **Missing Pets** view with drop sources and exchange floor prices, adds a sortable **Table** view, and lets you select 2–4 pets to open together in Pet Comparison."
+            }
+          ]
+        },
+        {
+          "category": "Changed",
+          "items": [
+            {
+              "id": "2026-11-25-Changed-0",
+              "title": "Calmer Dark-Mode Contrast",
+              "description": "Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes.",
+              "subItems": [],
+              "raw": "- **Calmer Dark-Mode Contrast**: Toned down stark bright-white active tabs, filter pills, pagination buttons, and primary buttons to calmer slate tones so dark screens feel more relaxed on the eyes."
+            },
+            {
+              "id": "2026-11-25-Changed-1",
+              "title": "Conquest Redesign",
+              "description": "Rebuilt Conquest in the monochromatic Astral Slate palette with clearly labeled control-share bars, inline vertical metric dividers, paginated contributor lists, world map deep links, shareable URL filters, and a floating Back to Top button.",
+              "subItems": [],
+              "raw": "- **Conquest Redesign**: Rebuilt Conquest in the monochromatic Astral Slate palette with clearly labeled control-share bars, inline vertical metric dividers, paginated contributor lists, world map deep links, shareable URL filters, and a floating Back to Top button."
+            },
+            {
+              "id": "2026-11-25-Changed-2",
+              "title": "Smooth Back to Top",
+              "description": "Standardized a single floating **Back to Top** button across Conquest, House Planner, Items Database, Enemy Database, Pet Database, Owned Pets, and What's New with smooth fade and slide transitions above the mobile dock.",
+              "subItems": [],
+              "raw": "- **Smooth Back to Top**: Standardized a single floating **Back to Top** button across Conquest, House Planner, Items Database, Enemy Database, Pet Database, Owned Pets, and What's New with smooth fade and slide transitions above the mobile dock."
+            },
+            {
+              "id": "2026-11-25-Changed-3",
+              "title": "House Planner Redesign",
+              "description": "Rebuilt House Planner with scoped styling, an inline profile/mode/cost summary strip, in-game gold and construction material icons, unified skill icons across all 5 tabs, and responsive mobile controls.",
+              "subItems": [],
+              "raw": "- **House Planner Redesign**: Rebuilt House Planner with scoped styling, an inline profile/mode/cost summary strip, in-game gold and construction material icons, unified skill icons across all 5 tabs, and responsive mobile controls."
+            },
+            {
+              "id": "2026-11-25-Changed-4",
+              "title": "Pet Comparison Overhaul",
+              "description": "Redesigned Pet Comparison with a collapsible shared setup panel, searchable pet picker modal, cleaner comparison cards, distinct stat icons across the metrics table, and shareable comparison links.",
+              "subItems": [],
+              "raw": "- **Pet Comparison Overhaul**: Redesigned Pet Comparison with a collapsible shared setup panel, searchable pet picker modal, cleaner comparison cards, distinct stat icons across the metrics table, and shareable comparison links."
+            },
+            {
+              "id": "2026-11-25-Changed-5",
+              "title": "Owned Pets Redesign",
+              "description": "Rebuilt Owned Pets with **Your Pets** and **Missing Pets** tabs, **Cards** and **Table** views, a full Pet Details modal, page navigation, and a floating back-to-top button.",
+              "subItems": [],
+              "raw": "- **Owned Pets Redesign**: Rebuilt Owned Pets with **Your Pets** and **Missing Pets** tabs, **Cards** and **Table** views, a full Pet Details modal, page navigation, and a floating back-to-top button."
+            },
+            {
+              "id": "2026-11-25-Changed-6",
+              "title": "Pet Directory Redesign",
+              "description": "Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links.",
+              "subItems": [],
+              "raw": "- **Pet Directory Redesign**: Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links."
+            },
+            {
+              "id": "2026-11-25-Changed-7",
+              "title": "Pet Setup Simulator",
+              "description": "Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates.",
+              "subItems": [],
+              "raw": "- **Pet Setup Simulator**: Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates."
+            },
+            {
+              "id": "2026-11-25-Changed-8",
+              "title": "Bounded Page Navigation",
+              "description": "Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing.",
+              "subItems": [],
+              "raw": "- **Bounded Page Navigation**: Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing."
+            },
+            {
+              "id": "2026-11-25-Changed-9",
+              "title": "Mobile Sheet Ergonomics",
+              "description": "Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.",
+              "subItems": [],
+              "raw": "- **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button."
+            }
+          ]
+        },
+        {
+          "category": "Fixed",
+          "items": [
+            {
+              "id": "2026-11-25-Fixed-0",
+              "title": "House Planner Readability & Currency Icons",
+              "description": "Fixed smashed header/card labels on Profit, Built Components, and Guest Buffs tabs, aligned gold coin and material item icons cleanly beside values, and fixed condition readout ordering.",
+              "subItems": [],
+              "raw": "- **House Planner Readability & Currency Icons**: Fixed smashed header/card labels on Profit, Built Components, and Guest Buffs tabs, aligned gold coin and material item icons cleanly beside values, and fixed condition readout ordering."
+            },
+            {
+              "id": "2026-11-25-Fixed-1",
+              "title": "Pet Picker Search Focus",
+              "description": "Fixed the search input in the Choose Pet modal losing focus back to the close button after typing each character.",
+              "subItems": [],
+              "raw": "- **Pet Picker Search Focus**: Fixed the search input in the Choose Pet modal losing focus back to the close button after typing each character."
+            },
+            {
+              "id": "2026-11-25-Fixed-2",
+              "title": "Pet Setup Controls",
+              "description": "Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields.",
+              "subItems": [],
+              "raw": "- **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields."
+            },
+            {
+              "id": "2026-11-25-Fixed-3",
+              "title": "Pet Table & Modal Layout",
+              "description": "Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls.",
+              "subItems": [],
+              "raw": "- **Pet Table & Modal Layout**: Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls."
+            }
+          ]
+        }
+      ],
+      "totalChanges": 18
+    },
+    {
       "version": "2026-11-24",
       "date": "2026-11-24",
       "rawHeading": "## [2026-11-24]",
@@ -205,71 +355,18 @@
     "date": null,
     "rawHeading": "## [Unreleased]",
     "isUnreleased": true,
-    "sections": [
-      {
-        "category": "Changed",
-        "items": [
-          {
-            "id": "Unreleased-Changed-0",
-            "title": "Pet Directory Redesign",
-            "description": "Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links.",
-            "subItems": [],
-            "raw": "- **Pet Directory Redesign**: Redesigned the companion catalog with responsive cards, clean stat comparisons, and direct egg acquisition links."
-          },
-          {
-            "id": "Unreleased-Changed-1",
-            "title": "Pet Setup Simulator",
-            "description": "Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates.",
-            "subItems": [],
-            "raw": "- **Pet Setup Simulator**: Consolidated level, mastery, and evolution stat controls into a collapsible simulator panel with instant calculation updates."
-          },
-          {
-            "id": "Unreleased-Changed-2",
-            "title": "Bounded Page Navigation",
-            "description": "Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing.",
-            "subItems": [],
-            "raw": "- **Bounded Page Navigation**: Switched from infinite scrolling to fast page navigation (12, 24, or 48 companions per page) for smoother browsing."
-          },
-          {
-            "id": "Unreleased-Changed-3",
-            "title": "Mobile Sheet Ergonomics",
-            "description": "Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button.",
-            "subItems": [],
-            "raw": "- **Mobile Sheet Ergonomics**: Companion and combat details now open in an edge-to-edge mobile bottom sheet with swipe-to-dismiss and floating back-to-top button."
-          }
-        ]
-      },
-      {
-        "category": "Fixed",
-        "items": [
-          {
-            "id": "Unreleased-Fixed-0",
-            "title": "Pet Setup Controls",
-            "description": "Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields.",
-            "subItems": [],
-            "raw": "- **Pet Setup Controls**: Fixed the +/- buttons on level, mastery, and evolution inputs, renamed \"Beastmaster Context\" to \"Beastmaster Class\", and stopped simulator dropdowns from clipping or sitting behind nearby fields."
-          },
-          {
-            "id": "Unreleased-Fixed-1",
-            "title": "Pet Table & Modal Layout",
-            "description": "Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls.",
-            "subItems": [],
-            "raw": "- **Pet Table & Modal Layout**: Added spacing between pet icons and names in table view, stopped mobile table columns from squishing numbers, cleaned up duplicate card and modal borders, and centered page navigation controls."
-          }
-        ]
-      }
-    ],
-    "totalChanges": 6
+    "sections": [],
+    "totalChanges": 0
   },
   "meta": {
-    "totalReleases": 4,
-    "latestVersion": "2026-11-24",
-    "latestDate": "2026-11-24",
+    "totalReleases": 5,
+    "latestVersion": "2026-11-25",
+    "latestDate": "2026-11-25",
     "categories": [
+      "Added",
       "Changed",
-      "Fixed",
-      "Added"
+      "Fixed"
     ],
-    "generatedAt": "2026-11-24T19:31:31.409Z"
+    "generatedAt": "2026-11-25T11:02:13.609Z"
   }
 }

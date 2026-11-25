@@ -17,15 +17,19 @@ This document is the authoritative standard operating procedure for redesigning,
 Before modifying code, understand the game reality, map architectural dependencies, and establish baseline test coverage.
 
 ### Step 1.1: Local Knowledge Search
-* Search the local game knowledge repository at `.agents/knowledge/idlemmo/wiki/` for the page's domain (items, alchemy, forge, combat, pets, conquest).
-* Record the article's last updated date.
+* Search the local game knowledge repository at `.agents/knowledge/idlemmo/wiki/` for the page's domain (items, alchemy, forge, combat, pets, conquest) and read the full mechanic docs before proposing a UI.
+* Record each article's `last_ingested` / last-modified date.
 
 ### Step 1.2: Patch Notes Delta Audit
-* Inspect `public/idlemmo-patch-notes.json` and `.agents/knowledge/idlemmo/patch-notes-summary.md` for all releases dated after the wiki article's last update.
-* Catch recent mechanic changes, rebalances, level requirement adjustments, or recipe shifts.
+* Inspect `public/idlemmo-patch-notes.json` (`patchNotes` array, checking `releasedAt`) and `.agents/knowledge/idlemmo/patch-notes-summary.md` for **all** releases dated after the wiki article's last-modified date.
+* Catch recent mechanic changes, rebalances, level requirement adjustments, or recipe shifts before designing any feature or copy.
 
-### Step 1.3: Data Schema and Null Value Audit
-* Inspect corresponding datasets in `public/` and `src/data/`.
+### Step 1.3: Data Schema, Live API Endpoint & Null Value Audit
+* Inspect corresponding datasets in `public/` and `src/data/`, plus `.agents/knowledge/idlemmo/api-endpoints.md` and `scripts/`.
+* After confirming no conflicting GitHub Actions scraper is running (`gh run list --limit 5`), run a lightweight read-only probe against all relevant IdleMMO `/v1/` API endpoints to inspect **every raw JSON field** returned (not just fields already mapped by existing scripts). Identify:
+  * Dropped or unmapped API fields (e.g. timestamps, IDs linking players to guilds, historical `season_number` parameters).
+  * Related endpoints that can be joined for richer player utility (e.g. Guild info, World locations, Items DB).
+  * Missing or restricted endpoints/fields to flag to the user if API docs are incomplete.
 * Audit field names, optional properties, and null value behavior (items with no active market price, uncraftable items, zero drop chance entries).
 
 ### Step 1.4: Automated Route & Dependency Audit
@@ -60,16 +64,17 @@ Classify the page into one of three primary interaction modes:
   * Lore references deep-link to corresponding game entities.
 * **Shared Domain Extraction**: When related routes share an entity (for example `/pets`, `/pets/compare`, and `/pets/owned` sharing pet images or setup controls), extract a single shared component rather than maintaining three route-local copies.
 
-### Step 2.3: Decluttering and Information Hierarchy
-* Review every container, card, and metric box on the legacy page.
-* Eliminate redundant summary numbers that repeat table headers.
-* Merge scattered filter dropdowns into a unified search and filter toolbar.
-* Move secondary or advanced parameters into clean disclosure sheets or collapsible filter drawers.
+### Step 2.3: Decluttering, Static vs Dynamic Audit, and Visual Restraint
+* **Static vs Dynamic Separation**: Identify **static game reference rules** that apply identically across every location or entity (for example Conquest Territory Buffs Ranks 1–10 and Zone Shards Ranks 1–25). Render static tables **once** at page level (such as a single reference modal or top-level sheet), never duplicated inside every entity tab or card.
+* **"So What?" Metric Filter**: Reject decorative summary cards, redundant 4-card top highlights that repeat cards directly below, and vanity aggregate numbers (such as summed XP across unrelated zones or trivial zone counts). Every number on screen must help the player decide what to do next.
+* **Astral Slate Restraint & Bar Clarity**: Follow `DESIGN.md` strictly: never use saturated bright/neon borders, glows, or arbitrary rainbow accents per entity card. Keep cards monochromatic neutral (`--bg-card`, `--border-subtle`), reserve subtle low-saturation tints strictly for actionable status pills, and give every progress bar a clear quantitative label (`Control share: 78%`).
+* **Inline Vertical Separators**: Separate compact metric strips (`XP | Kills | XP/Kill`) and toolbar groups cleanly using subtle `1px` vertical dividers rather than unseparated text runs or nested inner borders.
+* Merge scattered filter dropdowns into a unified search and filter toolbar, and move secondary parameters into clean disclosure sheets.
 
-### Step 2.4: Data Volume and Performance Budget
-* Quantify dataset size. If the page renders more than 50 complex cards simultaneously:
-  * Enforce bounded pagination (e.g. 25 to 50 items per page) or virtualized windowing.
-  * Use deferred search filtering (`useDeferredValue`) to keep keystroke typing responsive and protect Interaction to Next Paint (INP).
+### Step 2.4: Data Volume, Incremental Archiving, and Height Discipline
+* Quantify dataset size. Whenever an endpoint returns 25–75+ rows inside a detail tab or panel (such as top 50 zone contributors), enforce bounded pagination (`<Pagination pageSize={10} scrollToTop={false} />`) or clean table bounds so switching tabs never bloats page height.
+* Use deferred search filtering (`useDeferredValue`) to keep keystroke typing responsive and protect Interaction to Next Paint (INP).
+* **Incremental Scraper Caching**: Separate immutable historical archives from mutable live snapshots in fetcher scripts and scheduled GitHub Actions workflows — skip re-fetching completed historical data already present on disk (`--force` to rebuild), probe minimally for season rollovers, and ensure CI workflows commit all enriched/archived outputs automatically.
 
 ### Step 2.5: The 4-State Matrix Architecture
 Explicitly plan all four states for the page:
@@ -79,16 +84,18 @@ Explicitly plan all four states for the page:
 4. **Error / Offline State**: Actionable recovery message with a retry button if network or local storage data fails.
 
 ### Step 2.6: UI Primitive Inventory Check
-* Map required page controls against `src/components/ui/` primitives (`Button`, `TextInput`, `SearchInput`, `SegmentedControl`, `Select`, `Card`, `Badge`, `ModalSheet`, `Drawer`, `Popover`, `Tooltip`, `Table`, `EmptyState`, `Skeleton`, `Toast`, `Pagination`, `Combobox`, `Tabs`, `Tag`, `StatCard`, `Checkbox`, `Switch`, `NumberInput`, `ProgressBar`, `Breadcrumbs`, `Slider`).
+* Map required page controls against `src/components/ui/` primitives (`Button`, `TextInput`, `SearchInput`, `SegmentedControl`, `Select`, `Card`, `Badge`, `ModalSheet`, `Drawer`, `Popover`, `Tooltip`, `Table`, `EmptyState`, `Skeleton`, `Toast`, `Pagination`, `Combobox`, `Tabs`, `Tag`, `StatCard`, `Checkbox`, `Switch`, `NumberInput`, `ProgressBar`, `Breadcrumbs`, `Slider`, `TextArea`, `RadioGroup`, `Timeline`, `BackToTop`).
+* Check scroll depth: any route or tab view that can scroll past roughly 1.5x viewport height (directories, multi-group planners, tables, timelines, long guides) must include `<BackToTop />` from `@/components/ui` by default.
+* Check game iconography: map every currency amount (`GoldIcon`, `TokenIcon`, `ShardIcon` from `@/components/GoldIcon`) and material/item/essence list to actual game sprites (`<GameImage>` with `allItemsDb`) rather than generic placeholder icons.
 * If any required widget is missing, flag it immediately for Stage 3.
 
-### Step 2.7: Teardown Proposal Presentation
-* Compile the audit into a concise report:
-  * Exact elements to delete (clutter, redundant metric boxes, obsolete containers).
-  * Plain-language copy improvements.
-  * Relational links to add.
-  * Component inventory and primitive requirements.
-* Present the teardown proposal to the user.
+### Step 2.7: Area-by-Area Redesign & Teardown Proposal
+* Never reskin the old layout. Break the redesign down area-by-area:
+  1. **Top Header Area**: Kicker icon matching `src/lib/navigation.ts`, concise title/subtitle, inline status/summary pills, and high-value primary actions.
+  2. **Search, Filter & Action Bar**: Unified toolbar with aligned control heights, clean progressive disclosure, and workflow-specific actions (such as multi-select compare or view mode toggles).
+  3. **Main Content Area**: Purpose-built layout (spotlight, cards, sortable roster table, missing-collection/gap tabs, or calculators) tailored to the actual game mechanics.
+  4. **Secondary Panels / Modals / Drawers**: Clean detail sheets, quick actions, and relational deep links.
+* Compile the audit into a concise report (what gets deleted, what each area becomes, plain-language copy, relational links, and UI primitive inventory) and present it to the user.
 
 **Exit Gate 2**: Explicit user sign-off on the teardown proposal before any code changes begin.
 
@@ -133,7 +140,9 @@ Implement the modern presentation layer following all design and performance sta
 * Build the interface using tested UI primitives and CSS variables from `src/app/globals.css`.
 * Adhere to the Astral Slate monochromatic palette: 60% neutral surface (`--bg-base`), 30% structural elevation (`--bg-card`), reserving bright accents strictly for game drop rarities, weather buffs, and danger indicators.
 * **Fewer Borders Discipline**: Avoid wrapping inner stat/metric tiles or accordions in redundant `1px solid` outlines when they already sit inside a bordered card or modal (`DESIGN.md` Section 11). Separate them with translucent fills and whitespace.
-* **Icon & Skeleton Discipline**: Consume icons via `src/lib/icons.ts` / `<Icon>` rather than direct `lucide-react` imports where concepts already exist, and prefer dimension-matched `Skeleton` loaders over generic `StateBlock` boxes.
+* **Icon Parity & Optical Alignment**: Every page kicker/header icon must match its exact sidebar icon in `src/lib/navigation.ts`. Use `GoldIcon`, `TokenIcon`, and `ShardIcon` (`@/components/GoldIcon`) for in-game currencies and `<GameImage>` (`allItemsDb` image URLs) for materials/items/essences; for UI concepts, pick distinct context-matched icons from `src/lib/icons.ts` (never repeat a placeholder icon across unrelated stats or cards). Enforce `display: inline-flex; align-items: center` with explicit gaps on icon+text pairs, uniform control heights across horizontal toolbars, and explicit `min-width: 0` truncation rules so icons, labels, and controls align cleanly.
+* **100% JSX-to-CSS Selector Parity & No Smashed Nodes**: Whenever removing `<style jsx>` or rewriting `globals.css` rules into `*.module.css`, audit **every** `className` and adjacent `<span>`/`<strong>`/`<small>` group in TSX against the CSS module. Adjacent labels, values, and notes must have explicit flex/grid rules or gaps so text nodes never run together (`LabelValueNote`), multi-row headers must use an explicit top-row wrapper (rather than fragile `flex-wrap` + `flex-basis` tricks), and descendant rules (such as `.footer span`) must not override utility display classes (such as `.inline-gold-value`).
+* **Default Scroll Recovery (`<BackToTop />`)**: Long or scrollable pages must render `<BackToTop />` from `@/components/ui` so desktop and mobile users can jump back to the top in one tap above the mobile dock. Do not re-implement custom scroll buttons per route.
 * **Open Overflow Hygiene**: When CSS Grid accordions (`grid-template-rows: 0fr` to `1fr`) open, set inner overflow to `visible` and raise `:focus-within` z-index so dropdown listboxes never clip or sit behind adjacent fields.
 
 ### Step 6.2: Plain-Language Gamer Copy Overhaul
@@ -213,12 +222,14 @@ Verify that calculation outputs, economy values, and drop rates match production
 
 ### Gate 5: Interactive Verification, Seeded States & Visual Evidence Across Breakpoints
 * Author or update a route Playwright spec using `tests/a11y/fixtures/route-helpers.ts` (`seedPopulatedProfile`, `attachRuntimeMonitors`, `assertAxeClean(..., "serious")`, `assertNoHorizontalOverflow`, `openUnclippedListboxOption`).
-* Test across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports in both **Populated** (seeded character/owned items) and **Empty** states:
+* Test across mobile (375px), tablet/laptop (1024px), and desktop (1440px) viewports in **Populated** (seeded character/owned items/active owner/guest states), **Interactive** (every tab, active filter/calculator state, expanded accordion, and selected item card), and **Empty** states:
+  * Dismiss onboarding overlays in headless captures (`Not now`) and switch out of passive/disabled defaults (e.g., activate Owner + Foundation + selected items, or active Guest buffs) so every real layout block is captured and inspected, not just empty placeholders.
   * Click numeric steppers (`+` / `-`) and confirm values update in the DOM.
   * Open `Select` / `Combobox` dropdowns inside panels/accordions and confirm zero clipping or z-index occlusion.
-  * Toggle every view mode (Cards and Table) on both desktop and 375px mobile, verifying avatars clear labels, table `min-width` prevents cramped numbers, and `scrollWidth <= innerWidth`.
+  * Toggle every view mode (Cards and Table) and every route tab on both desktop and 375px mobile, verifying avatars clear labels, currency/material icons align inline, table `min-width` prevents cramped numbers, `<BackToTop />` appears above the mobile dock when scrolled, and `scrollWidth <= innerWidth`.
   * Assert zero `console.error` / `pageerror`, zero failed same-origin requests, `CLS <= 0.1`, and zero `serious` or `critical` axe violations.
-* Save screenshots to the artifacts directory and inspect for layout clipping, descender truncation, nested outline clutter, awkward line wraps, or touch clearance issues.
+* Run `npx knip --include files` before declaring a page done to verify no orphaned files or dead helpers remain.
+* Save screenshots to the artifacts directory and inspect **every tab and active card** for smashed inline labels, layout clipping, descender truncation, nested outline clutter, **icon-to-text vertical centering, toolbar/card control alignment, header-vs-sidebar icon parity**, awkward line wraps, or touch clearance issues.
 
 ## 8. Stage 7: Release Engineering and Production Deployment Pipeline
 
@@ -256,6 +267,5 @@ Verify that calculation outputs, economy values, and drop rates match production
 * Verify the push finishes with exit code 0.
 
 ### Step 8.7: Dual-Workspace Parity Sync
-* Primary working directory: `C:\Data\Programming Projects\Zenith Companion` (backup: `c:\Data\IdleMMO related stuff\02_Tools\AlchemyCalculator\Zenith Companion`).
-* Run `git fetch origin main; git reset --hard origin/main; git status` in the other checkout and mirror any updated local-only files (`AGENTS.md`, `DESIGN.md`, `.agents/`, `graphify-out/`).
-* Confirm both workspaces sit at identical commit hashes with clean working trees.
+* Active agent working directory: `c:\Data\IdleMMO related stuff\02_Tools\AlchemyCalculator\Zenith Companion` (backup mirror: `C:\Data\Programming Projects\Zenith Companion`).
+* Mirror committed `origin/main` updates cleanly (`git fetch origin main; git reset --hard origin/main; git status`) and mirror local-only files (`AGENTS.md`, `DESIGN.md`, `.agents/`, `graphify-out/`) so both directories match identically.

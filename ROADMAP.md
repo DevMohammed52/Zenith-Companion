@@ -110,10 +110,10 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 
 ### Tier 5: Reference Pages
 - [x] **[2026-11-25 01:00] /pets**: Complete redesign of the companion directory with scoped CSS modules, UI primitives (`SearchInput`, `Select`, `SegmentedControl`, `NumberInput`, `Switch`, `Button`, `EmptyState`, `Pagination`, `Badge`, `ModalSheet`), zero CLS, mobile bottom-sheet ergonomics, and clean gamer copy. Stripped 10 redundant metric tiles, simplified simulator setup into a collapsible panel with CSS Grid row animations (`0fr -> 1fr`) and visible open overflow, fixed `NumberInput` stepper focus loop and `Select` open stacking order, centered summary-free `Pagination` controls, added bounded pagination (12, 24, 48 items), egg acquisition links to `ItemModal`, URL deep-linking (`?pet=`), floating back-to-top button with 20px mobile dock clearance, removed redundant nested borders/outlines, fixed mobile table min-width and avatar spacing, and purged 1,781 lines of legacy global pet styles from `globals.css`. Passed all 5 verification gates: strict logic invariance, 791 unit tests passing across 56 files (`tests/unit/pets-architecture-contracts.test.ts`), 0 TypeScript errors, clean production build across 42 routes, and Playwright 3-tier captures (375px mobile, 1024px tablet, 1440px desktop).
-- [ ] **/pets/compare**: Side-by-side companion comparisons and stat diffs.
-- [ ] **/pets/owned**: Owned companion roster and investment tracking.
-- [ ] **/housing**: Room tiers, furniture bonuses, gold upgrade costs.
-- [ ] **/conquest**: Guild conquest territories, territory buffs, time-to-conquer calculators.
+- [x] **[2026-11-25 11:30] /pets/compare**: Migrated side-by-side companion comparison to Zenith UI primitives, shared `PetImage`, collapsible setup controls (`0fr -> 1fr` CSS Grid), `?pets=` URL deep-linking, distinct context-matched metric icons across all 13 rows, fixed `ModalSheet` searchbox focus retention, mobile sticky-metric width balance, and verified with `pets-compare-architecture-contracts.test.ts` + Playwright (`pet-compare-interactions.spec.ts`).
+- [x] **[2026-11-25 11:30] /pets/owned**: Area-by-area redesign with `petsOwned` sidebar icon parity, Equipped Pet Spotlight (Power, Health, Location, Battle EV/hr), unified **Your Pets** / **Missing Pets** tabs, **Cards** / **Table** views, multi-select compare tray, `OwnedPetDetailModal`, bounded pagination, floating back-to-top button with mobile dock clearance, `Checkbox` pointer-events fix, zero unused files (`npx knip --include files`), and verified with `pets-owned-architecture-contracts.test.ts` + Playwright (`pet-owned-interactions.spec.ts`, `CLS <= 0.1`).
+- [x] **[2026-11-25 13:15] /housing**: Replaced 2,226-line `HousingStyles.tsx` (`<style jsx>`) with scoped `page.module.css`, decluttered `HousingHeader.tsx` (matched sidebar `housing` icon), added `GoldIcon` + `TokenIcon` + `ShardIcon` (`src/components/GoldIcon.tsx`) and material item sprites (`allItemsDb`), fixed header/card label spacing across Setup, Built Components, Room Profit ROI, and Guest Buffs tabs, mounted smooth `<BackToTop />`, preserved strict math invariance, and verified with `housing-architecture-contracts.test.ts` + Playwright (`housing-interactions.spec.ts`).
+- [x] **/conquest**: [2026-11-25 15:42] Decluttered Astral Slate Conquest redesign with labeled control-share bars, vertical metric separators, paginated contributors, incremental season archiving (Seasons 3–12), and single page-wide Territory Buffs & Shards modal.
 - [ ] **/museum**: Character-isolated item completion tracker, donation progress.
 - [ ] **/map**: Interactive world map, territory levels, resource nodes.
 - [ ] **/guilds**: Guild roster, intelligence metrics, raid logs.
@@ -141,17 +141,18 @@ Routes are migrated in dependency order from lowest coupling (zero blast radius)
 | **Phase 3** | Tier 2: `/settings` | Completed | Scoped CSS Module, SegmentedControl groups, ModalSheet, 44px touch targets, zero a11y violations |
 | **Phase 4** | Tier 3: Shell Chrome | Completed | Sidebar, Header, Mobile BottomDock, Toast, Sound Spec, Refactoring Protocol |
 | **Phase 5** | Tier 4: `/items`, `ItemModal`, `/enemies` & `/whats-new` | Completed | `/items`, `ItemModal`, `/enemies`, and `/whats-new` completed |
-| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets` done; `/pets/compare` and `/pets/owned` next |
+| **Phase 6** | Tier 5: Reference Pages | Current Phase | `/pets`, `/pets/compare`, `/pets/owned`, `/housing`, and `/conquest` done; `/museum` next (`/map`, `/guilds` follow) |
 | **Phase 7** | Tier 6: Economy Engines | Planned | Profiles, Bosses, Dungeons, Skill Profit, Forge, Alchemy |
 | **Phase 8** | Tier 7: Home Dashboard | Planned | Final aggregator route polish |
+| **Phase 9** | Post-Migration Polish | Planned | [2026-11-25 16:04] Sidebar section grouping weight, Settings visual hierarchy, & cross-page mobile responsive audit |
 
 ---
 
-## UI Primitives Master Catalog (38 / 38 Built)
+## UI Primitives Master Catalog (39 / 39 Built)
 
 Zenith strictly forbids ad-hoc button, form, or overlay implementations in page styles. All interactive elements must derive from tested primitives in `src/components/ui/` with full keyboard navigation and WCAG AA contrast.
 
-### Completed Primitives (38 / 38)
+### Completed Primitives (39 / 39)
 * [x] **`Button`**: Primary, secondary, ghost, danger variants; sm, md, lg sizes; active press scale; loading spinner; optical icon/label alignment.
 * [x] **`TextInput`**: Accessible form field with label, helper copy, clear error state via `aria-describedby`, dark fill, clear button, 44px mobile height.
 * [x] **`SegmentedControl`**: Sliding pill switch for view modes and filters with roving tabindex (`role="tablist"` / `role="tab"`).
@@ -188,4 +189,5 @@ Zenith strictly forbids ad-hoc button, form, or overlay implementations in page 
 * [x] **`TextArea`**: Auto-growing multi-line inputs for custom notes and import strings.
 * [x] **`RadioGroup`**: Mutually exclusive option sets (`<fieldset>` / `<legend>`).
 * [x] **`Timeline`**: Chronological milestone stream primitive with `<time>` tags.
+* [x] **`BackToTop`**: Floating scroll-to-top button with smooth fade/slide transitions, `44x44px` hit target, mobile dock clearance, and `prefers-reduced-motion` support (adopted across `/housing`, `/items`, `/enemies`, `/whats-new`, `/pets`, and `/pets/owned`).
 
