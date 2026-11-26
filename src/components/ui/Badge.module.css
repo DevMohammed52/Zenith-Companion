@@ -40,9 +40,9 @@
 }
 
 .refined {
-  color: var(--quality-refined-text, #60a5fa);
+  color: var(--quality-refined-text, #5e87e6);
   background-color: rgba(77, 118, 214, 0.15);
-  border-color: rgba(96, 165, 250, 0.32);
+  border-color: rgba(77, 118, 214, 0.34);
 }
 
 .premium {
@@ -52,9 +52,9 @@
 }
 
 .epic {
-  color: var(--quality-epic-text, #f87171);
+  color: var(--quality-epic-text, #ef5344);
   background-color: rgba(192, 57, 43, 0.16);
-  border-color: rgba(248, 113, 113, 0.32);
+  border-color: rgba(192, 57, 43, 0.36);
 }
 
 .legendary {
@@ -65,14 +65,14 @@
 
 .mythic {
   color: var(--quality-mythic, #f48a00);
-  background-color: rgba(244, 138, 0, 0.15);
-  border-color: rgba(244, 138, 0, 0.35);
+  background: linear-gradient(135deg, rgba(118, 68, 48, 0.32), rgba(73, 47, 49, 0.28));
+  border-color: rgba(244, 138, 0, 0.38);
 }
 
 .unique {
-  color: var(--quality-unique-text, #c084fc);
-  background-color: rgba(180, 23, 244, 0.15);
-  border-color: rgba(192, 132, 252, 0.35);
+  color: var(--quality-unique-text, #c952f9);
+  background: linear-gradient(135deg, rgba(124, 89, 142, 0.32), rgba(78, 39, 96, 0.28));
+  border-color: rgba(180, 23, 244, 0.40);
 }
 
 /* Functional status */
@@ -94,20 +94,22 @@
   border-color: rgba(248, 113, 113, 0.25);
 }
 
-/* Gradient Text Support */
+/* Gradient Text Support (IdleMMO 0deg vertical stops) */
 .mythicGradient {
-  background: var(--gradient-mythic, linear-gradient(90deg, #f48a00, #da5b00));
+  background: var(--gradient-mythic, linear-gradient(0deg, #da5b00, #f48a00));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: inline-block;
   font-weight: 600;
 }
 
 .uniqueGradient {
-  background: var(--gradient-unique, linear-gradient(90deg, rgb(180, 23, 244), rgb(128, 6, 181)));
+  background: var(--gradient-unique, linear-gradient(0deg, rgb(128, 6, 181), rgb(180, 23, 244)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: inline-block;
   font-weight: 600;
 }
 

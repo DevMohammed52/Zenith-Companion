@@ -62,34 +62,59 @@
   color: #ffffff;
 }
 
-/* Rarity variants */
+/* IdleMMO Rarity variants (supporting both IdleMMO tier names and legacy aliases) */
+.rarity_standard,
 .rarity_common {
-  border-color: var(--border-subtle);
+  color: var(--quality-standard, #d1d5db);
+  border-color: rgba(209, 213, 219, 0.24);
 }
 
+.rarity_refined,
 .rarity_uncommon {
-  color: var(--quality-refined-text, #60a5fa);
-  border-color: rgba(96, 165, 250, 0.3);
+  color: var(--quality-refined-text, #5e87e6);
+  border-color: rgba(77, 118, 214, 0.34);
 }
 
+.rarity_premium,
 .rarity_rare {
   color: var(--quality-premium, #1fd60b);
-  border-color: rgba(31, 214, 11, 0.3);
+  border-color: rgba(31, 214, 11, 0.30);
 }
 
 .rarity_epic {
-  color: var(--quality-epic-text, #f87171);
-  border-color: rgba(248, 113, 113, 0.3);
+  color: var(--quality-epic-text, #ef5344);
+  border-color: rgba(192, 57, 43, 0.36);
 }
 
 .rarity_legendary {
   color: var(--quality-legendary, #f7bd1e);
-  border-color: rgba(247, 189, 30, 0.3);
+  border-color: rgba(247, 189, 30, 0.35);
 }
 
 .rarity_mythic {
   color: var(--quality-mythic, #f48a00);
-  border-color: rgba(244, 138, 0, 0.3);
+  border-color: rgba(244, 138, 0, 0.38);
+}
+
+.rarity_mythic .rarityGradientText {
+  background: var(--gradient-mythic, linear-gradient(0deg, #da5b00, #f48a00));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.rarity_unique {
+  color: var(--quality-unique-text, #c952f9);
+  border-color: rgba(180, 23, 244, 0.40);
+}
+
+.rarity_unique .rarityGradientText {
+  background: var(--gradient-unique, linear-gradient(0deg, rgb(128, 6, 181), rgb(180, 23, 244)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
 }
 
 .iconSlot {

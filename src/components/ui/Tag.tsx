@@ -3,7 +3,17 @@
 import React, { ReactNode } from "react";
 import styles from "./Tag.module.css";
 
-export type TagRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic";
+export type TagRarity =
+  | "standard"
+  | "refined"
+  | "premium"
+  | "epic"
+  | "legendary"
+  | "mythic"
+  | "unique"
+  | "common"
+  | "uncommon"
+  | "rare";
 
 export interface TagProps {
   label: string;
@@ -50,7 +60,7 @@ export function Tag({
         </span>
       )}
       {icon && <span className={styles.iconSlot} aria-hidden="true">{icon}</span>}
-      <span>{label}</span>
+      <span className={rarity === "mythic" || rarity === "unique" ? styles.rarityGradientText : undefined}>{label}</span>
       {count !== undefined && <span className={styles.countBadge}>{count}</span>}
       {onRemove && (
         <button

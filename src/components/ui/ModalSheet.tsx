@@ -9,8 +9,8 @@ export type ModalSheetMaxWidth = "sm" | "md" | "lg" | "xl";
 export interface ModalSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
-  description?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
   children?: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: ModalSheetMaxWidth;

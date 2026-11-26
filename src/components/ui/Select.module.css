@@ -213,34 +213,42 @@
   flex-shrink: 0;
 }
 
+.rarity_standard,
 .rarity_common {
-  background-color: #94a3b8;
-  box-shadow: 0 0 6px rgba(148, 163, 184, 0.4);
+  background-color: var(--quality-standard, #d1d5db);
+  box-shadow: 0 0 6px rgba(209, 213, 219, 0.35);
 }
 
+.rarity_refined,
 .rarity_uncommon {
-  background-color: #4ade80;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  background-color: var(--quality-refined, #4d76d6);
+  box-shadow: 0 0 6px rgba(77, 118, 214, 0.45);
 }
 
+.rarity_premium,
 .rarity_rare {
-  background-color: #60a5fa;
-  box-shadow: 0 0 6px rgba(96, 165, 250, 0.5);
+  background-color: var(--quality-premium, #1fd60b);
+  box-shadow: 0 0 6px rgba(31, 214, 11, 0.45);
 }
 
 .rarity_epic {
-  background-color: #c084fc;
-  box-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
+  background-color: var(--quality-epic, #c0392b);
+  box-shadow: 0 0 8px rgba(192, 57, 43, 0.5);
 }
 
 .rarity_legendary {
-  background-color: #fbbf24;
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+  background-color: var(--quality-legendary, #f7bd1e);
+  box-shadow: 0 0 8px rgba(247, 189, 30, 0.55);
 }
 
 .rarity_mythic {
-  background-color: #f87171;
-  box-shadow: 0 0 10px rgba(248, 113, 113, 0.7);
+  background: var(--gradient-mythic, linear-gradient(0deg, #da5b00, #f48a00));
+  box-shadow: 0 0 10px rgba(244, 138, 0, 0.65);
+}
+
+.rarity_unique {
+  background: var(--gradient-unique, linear-gradient(0deg, rgb(128, 6, 181), rgb(180, 23, 244)));
+  box-shadow: 0 0 10px rgba(180, 23, 244, 0.65);
 }
 
 @media (prefers-reduced-motion: reduce) {

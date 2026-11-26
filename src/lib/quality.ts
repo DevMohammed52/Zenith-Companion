@@ -37,7 +37,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   REFINED: {
     color: "#4d76d6",
-    textColor: "#60a5fa",
+    textColor: "#5e87e6",
     border: "#4d76d64d",
     background: "#152951",
   },
@@ -49,7 +49,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   EPIC: {
     color: "#c0392b",
-    textColor: "#f87171",
+    textColor: "#ef5344",
     border: "#c0392b4d",
     background: "#421d25",
   },
@@ -61,18 +61,18 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   MYTHIC: {
     color: "#f48a00",
-    textColor: "#fb923c",
+    textColor: "#f48a00",
     border: "#c2410c4d",
     background: "#492f31",
-    textGradient: "linear-gradient(90deg, #f48a00, #da5b00)",
+    textGradient: "linear-gradient(0deg, #da5b00, #f48a00)",
     backgroundGradient: "linear-gradient(to bottom right, #764430, #492f31)",
   },
   UNIQUE: {
     color: "#b417f4",
-    textColor: "#d8b4fe",
+    textColor: "#c952f9",
     border: "#7e22ce4d",
     background: "#4e2760",
-    textGradient: "linear-gradient(90deg, #b417f4, #8006b5)",
+    textGradient: "linear-gradient(0deg, rgb(128, 6, 181), rgb(180, 23, 244))",
     backgroundGradient: "linear-gradient(to bottom right, #7c598e, #4e2760)",
   },
 };

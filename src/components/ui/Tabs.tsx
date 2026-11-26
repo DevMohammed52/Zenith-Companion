@@ -16,6 +16,7 @@ interface TabsContextValue {
   setActiveTab: (value: string) => void;
   baseId: string;
   variant: "underline" | "pill";
+  sharedPanelId?: string;
 }
 
 const TabsContext = createContext<TabsContextValue | null>(null);
@@ -33,6 +34,7 @@ export interface TabsProps {
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   variant?: "underline" | "pill";
+  sharedPanelId?: string;
   children?: ReactNode;
   className?: string;
 }
@@ -42,6 +44,7 @@ export function Tabs({
   defaultValue,
   onValueChange,
   variant = "underline",
+  sharedPanelId,
   children,
   className = "",
 }: TabsProps) {
@@ -58,7 +61,7 @@ export function Tabs({
   };
 
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab, baseId, variant }}>
+    <TabsContext.Provider value={{ activeTab, setActiveTab, baseId, variant, sharedPanelId }}>
       <div className={`${styles.tabsContainer} ${className}`.trim()}>{children}</div>
     </TabsContext.Provider>
   );
@@ -135,11 +138,11 @@ export function Tab({
   children,
   className = "",
 }: TabProps) {
-  const { activeTab, setActiveTab, baseId } = useTabsContext();
+  const { activeTab, setActiveTab, baseId, sharedPanelId } = useTabsContext();
   const isSelected = activeTab === value;
 
   const tabId = `${baseId}-tab-${value}`;
-  const panelId = `${baseId}-panel-${value}`;
+  const panelId = sharedPanelId || `${baseId}-panel-${value}`;
 
   return (
     <button

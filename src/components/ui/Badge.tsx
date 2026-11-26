@@ -27,7 +27,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export function Badge({
   variant = "neutral",
   size = "md",
-  gradient = false,
+  gradient,
   icon,
   className = "",
   children,
@@ -42,10 +42,11 @@ export function Badge({
     .filter(Boolean)
     .join(" ");
 
+  const useGradient = gradient ?? (variant === "mythic" || variant === "unique");
   const labelClass =
-    gradient && variant === "mythic"
+    useGradient && variant === "mythic"
       ? styles.mythicGradient
-      : gradient && variant === "unique"
+      : useGradient && variant === "unique"
       ? styles.uniqueGradient
       : undefined;
 

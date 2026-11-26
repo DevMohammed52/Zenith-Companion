@@ -4,12 +4,16 @@ import React, { useState, useRef, useEffect, useId, useCallback } from "react";
 import styles from "./Select.module.css";
 
 export type ItemRarity =
-  | "common"
-  | "uncommon"
-  | "rare"
+  | "standard"
+  | "refined"
+  | "premium"
   | "epic"
   | "legendary"
-  | "mythic";
+  | "mythic"
+  | "unique"
+  | "common"
+  | "uncommon"
+  | "rare";
 
 export interface SelectOption {
   value: string;
