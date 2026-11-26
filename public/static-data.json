@@ -4442,6 +4442,214 @@
           "dungeoneering": 105084
         }
       }
+    },
+    {
+      "id": 21,
+      "name": "Silverleaf Enclave",
+      "description": "",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30H9GCWTSAD4MTNDRFC60R4.png",
+      "level_required": 25,
+      "difficulty": 100,
+      "length": 7200000,
+      "cost": 2500,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 20
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 79.98
+        },
+        {
+          "hashed_item_id": "eA59WrBQRpa4Yzb62qKv",
+          "name": "Moon Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z7SGQCYSCFNQ572GTN1SJ.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.02
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 828,
+          "dungeoneering": 5400,
+          "lunar-mastery": 828
+        }
+      },
+      "_source": "live_dungeons_api",
+      "is_seasonal": true,
+      "event_active": false
+    },
+    {
+      "id": 22,
+      "name": "Pumpkin Hollow",
+      "description": "A haunted forest filled with twisted, glowing pumpkins and creeping vines. Shadows dance between the trees, and eerie laughter echoes through the air. Dark magic lingers, drawing in those brave enough to explore its depths.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBPKX70W9VXH030HDWVGH2.png",
+      "level_required": 25,
+      "difficulty": 100,
+      "length": 7200000,
+      "cost": 2500,
+      "shards": 0,
+      "completion_requirement": 50,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 80
+        },
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 19.98
+        },
+        {
+          "hashed_item_id": "jlPA8v9NM9aRNEyMe2Oa",
+          "name": "Nightwood Broom",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GIwh1zbetIfQYyfCVLwQc7H7GgvbTvG88M0BHOfj.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.02
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 828,
+          "dungeoneering": 5400,
+          "shadow-mastery": 828
+        }
+      },
+      "_source": "live_dungeons_api",
+      "is_seasonal": true,
+      "event_active": false
+    },
+    {
+      "id": 26,
+      "name": "Stone Hollow",
+      "description": "",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01K0C2B2DNQZ2DY6TDRSP787Z0.png",
+      "level_required": 50,
+      "difficulty": 350,
+      "length": 7200000,
+      "cost": 10000,
+      "shards": 40,
+      "completion_requirement": 50,
+      "location": {
+        "id": 14,
+        "name": "Moonlit Valley"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "K5jqPopYGrwPNrOzDRGV",
+          "name": "Lunar Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "ZvrGV8RQp2kbY2wgA5jD",
+          "name": "Lunar Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01J30HD3FTAN0WGHEKRAPPRS4C.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 69.9
+        },
+        {
+          "hashed_item_id": "eA59WrBQRpa4Yzb62qKv",
+          "name": "Moon Fragment",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01KY9Z7SGQCYSCFNQ572GTN1SJ.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1800,
+          "dungeoneering": 15120,
+          "lunar-mastery": 1800
+        }
+      },
+      "_source": "live_dungeons_api",
+      "is_seasonal": true,
+      "event_active": false
+    },
+    {
+      "id": 23,
+      "name": "Wickedroot Patch",
+      "description": "An overgrown field of cursed pumpkins and tangled, thorny vines. The ground pulses with dark energy, and the air is thick with an unnatural fog. Strange, twisted creatures lurk among the twisted roots, guarding the sinister secrets buried within.",
+      "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQC9727C8JT96E8ATJJDNX3.png",
+      "level_required": 75,
+      "difficulty": 850,
+      "length": 7200000,
+      "cost": 10000,
+      "shards": 40,
+      "completion_requirement": 50,
+      "location": {
+        "id": 11,
+        "name": "Wraithwood Forest"
+      },
+      "loot": [
+        {
+          "hashed_item_id": "yE1A84kYO5O0Ql6XeVKp",
+          "name": "Cursed Ticket (Untradable)",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 69.9
+        },
+        {
+          "hashed_item_id": "7Do6jgkY05OoL8BAdKX0",
+          "name": "Cursed Ticket",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/01JAQBDMVADS56SEE2Z2APH02N.png",
+          "quality": "STANDARD",
+          "quantity": 20,
+          "chance": 30
+        },
+        {
+          "hashed_item_id": "jlPA8v9NM9aRNEyMe2Oa",
+          "name": "Nightwood Broom",
+          "image_url": "https://cdn.idle-mmo.com/uploaded/skins/GIwh1zbetIfQYyfCVLwQc7H7GgvbTvG88M0BHOfj.png",
+          "quality": "MYTHIC",
+          "quantity": 1,
+          "chance": 0.1
+        }
+      ],
+      "experience": {
+        "skills": {
+          "combat": 1800,
+          "dungeoneering": 15120,
+          "shadow-mastery": 1800
+        }
+      },
+      "_source": "live_dungeons_api",
+      "is_seasonal": true,
+      "event_active": false
     }
   ],
   "world_bosses": [
