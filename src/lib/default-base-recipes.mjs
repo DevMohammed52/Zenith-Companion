@@ -86,3 +86,54 @@ BASE_METALS.forEach((metal) => {
     };
   });
 });
+
+export const DEFAULT_CONSTRUCTION_RECIPES = {
+  "Weak Plank": {
+    level: 1,
+    materials: [{ name: "Oak Log", amount: 3 }],
+  },
+  Brick: {
+    level: 10,
+    materials: [{ name: "Clay", amount: 3 }],
+  },
+  "Iron Fitting": {
+    level: 10,
+    materials: [{ name: "Iron Bar", amount: 3 }],
+  },
+  "Weak Beam": {
+    level: 15,
+    materials: [
+      { name: "Birch Log", amount: 3 },
+      { name: "Banyan Log", amount: 3 },
+    ],
+  },
+  Glass: {
+    level: 15,
+    materials: [
+      { name: "Limestone", amount: 3 },
+      { name: "Sand", amount: 3 },
+    ],
+  },
+  "Robust Plank": {
+    level: 30,
+    materials: [{ name: "Banyan Log", amount: 3 }],
+  },
+  "Robust Beam": {
+    level: 45,
+    materials: [
+      { name: "Maple Log", amount: 3 },
+      { name: "Willow Log", amount: 3 },
+    ],
+  },
+  "Strong Plank": {
+    level: 65,
+    materials: [{ name: "Willow Log", amount: 3 }],
+  },
+  "Strong Beam": {
+    level: 75,
+    materials: [
+      { name: "Mahogany Log", amount: 3 },
+      { name: "Mystical Log", amount: 3 },
+    ],
+  },
+};

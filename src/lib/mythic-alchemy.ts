@@ -1,4 +1,5 @@
 import { getMerchantBuyPrice } from "@/constants";
+import { getRecipeExperienceInfo } from "@/lib/logic-core.mjs";
 import { getMarketTaxMultiplier } from "@/lib/preferences";
 import { getMarketLiquidity, getSafeMarketPrice, type MarketLiquidityInfo } from "@/lib/market-pricing";
 
@@ -187,7 +188,7 @@ export function buildMythicAlchemyRecipes(itemsByName: Record<string, MythicDbIt
       ].join(" ").toLowerCase(),
       level,
       maxUses,
-      experience: Number(recipe?.experience) || 0,
+      experience: getRecipeExperienceInfo(recipe?.experience, "alchemy").skillExp,
       recipeQuality: item.quality || "MYTHIC",
       resultQuality: resultItem?.quality || "MYTHIC",
       recipeTradeable: item.is_tradeable !== false && !/\(Untradable\)$/i.test(item.name),

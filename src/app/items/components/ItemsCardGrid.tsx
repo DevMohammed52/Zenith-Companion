@@ -47,7 +47,7 @@ export function ItemsCardGrid({ items, onOpenItem }: ItemsCardGridProps) {
 
               <div className={styles.cardIdentityCol}>
                 <div className={styles.cardHeaderLine}>
-                  <h3 className={styles.cardTitle} style={{ color: getQualityTextColor(item.quality) }}>
+                  <h3 className={styles.cardTitle} style={getQualityTextStyle(item.quality)}>
                     {item.name}
                   </h3>
                   <Icon name="chevronRight" size={16} className={styles.cardChevron} />

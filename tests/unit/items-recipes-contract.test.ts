@@ -97,4 +97,40 @@ describe('Base Crafting Recipes Contract (Smelting, Cooking, Forge)', () => {
     const tinGear = tinBarEntry.required_for.filter((r: any) => r.type === 'FORGE');
     expect(tinGear.length).toBeGreaterThanOrEqual(8);
   });
+
+  it('correctly maps all 9 construction material recipes and reverse ingredient links', () => {
+    const constructionItems = [
+      { name: 'Weak Plank', level: 1, materials: ['Oak Log'] },
+      { name: 'Brick', level: 10, materials: ['Clay'] },
+      { name: 'Iron Fitting', level: 10, materials: ['Iron Bar'] },
+      { name: 'Weak Beam', level: 15, materials: ['Birch Log', 'Banyan Log'] },
+      { name: 'Glass', level: 15, materials: ['Limestone', 'Sand'] },
+      { name: 'Robust Plank', level: 30, materials: ['Banyan Log'] },
+      { name: 'Robust Beam', level: 45, materials: ['Maple Log', 'Willow Log'] },
+      { name: 'Strong Plank', level: 65, materials: ['Willow Log'] },
+      { name: 'Strong Beam', level: 75, materials: ['Mahogany Log', 'Mystical Log'] },
+    ];
+
+    constructionItems.forEach(({ name, level, materials }) => {
+      const entry = usageMap[name];
+      expect(entry, `${name} should exist in usage-map`).toBeDefined();
+      expect(entry.produced_from, `${name} should have produced_from`).toBeDefined();
+      expect(entry.produced_from.skill).toBe('CONSTRUCTION');
+      expect(entry.produced_from.source).toBe('DEFAULT_CONSTRUCTION');
+      expect(entry.produced_from.level).toBe(level);
+      expect(entry.produced_from.materials).toHaveLength(materials.length);
+
+      materials.forEach((matName) => {
+        const mat = entry.produced_from.materials.find((m: any) => m.name === matName);
+        expect(mat, `${name} requires ${matName}`).toBeDefined();
+        expect(mat.amount).toBe(3);
+
+        const reverse = usageMap[matName]?.required_for?.find(
+          (r: any) => r.name === name && r.type === 'CONSTRUCTION'
+        );
+        expect(reverse, `${matName} links to ${name}`).toBeDefined();
+        expect(reverse.amount).toBe(3);
+      });
+    });
+  });
 });

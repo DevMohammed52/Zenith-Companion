@@ -103,6 +103,22 @@ export function getItemTrueValue(
     return getItemTrueValueBreakdown(itemName, marketData, allItemsDb, depth, options).value;
 }
 
+function resolveDbItem(
+    allItemsDb: TrueValueItemDb | null | undefined,
+    itemName: string,
+): TrueValueDbItem | undefined {
+    if (!allItemsDb || !itemName) return undefined;
+    if (allItemsDb[itemName]) return allItemsDb[itemName];
+    if (/\bArmour\b/i.test(itemName)) {
+        const usName = itemName.replace(/\bArmour\b/g, "Armor");
+        if (allItemsDb[usName]) return allItemsDb[usName];
+    } else if (/\bArmor\b/i.test(itemName)) {
+        const ukName = itemName.replace(/\bArmor\b/g, "Armour");
+        if (allItemsDb[ukName]) return allItemsDb[ukName];
+    }
+    return undefined;
+}
+
 export function getItemTrueValueBreakdown(
     itemName: string,
     marketData: TrueValueMarketData | null | undefined,
@@ -122,7 +138,7 @@ export function getItemTrueValueBreakdown(
     if (!itemName) return empty;
 
     const mData = marketData?.[itemName];
-    const dbItem = allItemsDb?.[itemName];
+    const dbItem = resolveDbItem(allItemsDb, itemName);
     const direct = getDirectSellBreakdown(itemName, mData, dbItem, options);
     const directValue = direct.value;
     let best: TrueValueBreakdown = {

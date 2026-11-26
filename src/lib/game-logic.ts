@@ -1,6 +1,6 @@
-import { getRecipeUses, normalizeProductName } from './logic-core.mjs';
+import { getRecipeExperienceInfo, getRecipeUses, normalizeProductName } from './logic-core.mjs';
 
-export { getRecipeUses, normalizeProductName };
+export { getRecipeExperienceInfo, getRecipeUses, normalizeProductName };
 
 export interface RecipeIngredient {
   name?: string;

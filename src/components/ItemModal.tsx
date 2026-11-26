@@ -8,7 +8,7 @@ import { GoldIcon } from '@/components/GoldIcon';
 import { useCrafting } from '@/context/CraftingContext';
 import { getMarketTaxMultiplier, getMarketTaxRate, usePreferences } from '@/lib/preferences';
 import { isCraftingQueueRecipe } from '@/lib/crafting-queue';
-import { getRecipeUses } from '@/lib/game-logic';
+import { getRecipeExperienceInfo, getRecipeUses } from '@/lib/game-logic';
 import { getItemTrueValue } from '@/lib/ev-logic';
 import { useData } from '@/context/DataContext';
 import { getMerchantBuyPrice } from '@/constants';
@@ -30,7 +30,8 @@ import {
 } from '@/lib/locations';
 import { formatItemTypeLabel, isForcedUntradableItem } from '@/lib/item-display';
 import { loadUsageMap } from '@/lib/usage-map';
-import { getQualityColor, getQualityTextColor } from '@/lib/quality';
+import QualityText from '@/components/QualityText';
+import { formatQualityLabel, getQualityPalette } from '@/lib/quality';
 import {
   Badge,
   Banner,
@@ -38,10 +39,14 @@ import {
   EmptyState,
   Icon,
   ModalSheet,
-  SegmentedControl,
   Skeleton,
   SkeletonContainer,
   Slider,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Tooltip,
   type BadgeVariant,
 } from '@/components/ui';
 import { formatGold } from '@/lib/format';
@@ -192,19 +197,42 @@ function formatLoreTitle(rawTitle?: string, entryId?: string): string {
     .join(' ');
 }
 
+function resolveItemEntry(
+  name: string | undefined,
+  allItemsDb: Record<string, any> | null | undefined
+): any | undefined {
+  if (!name || !allItemsDb) return undefined;
+  const direct = allItemsDb[name];
+  if (direct) return direct;
+  const lower = name.toLowerCase();
+  return Object.values(allItemsDb).find(
+    (cand: any) => typeof cand?.name === 'string' && cand.name.toLowerCase() === lower
+  );
+}
+
 function resolveItemImage(
   name: string | undefined,
   allItemsDb: Record<string, any> | null | undefined
 ): string | undefined {
-  if (!name || !allItemsDb) return undefined;
-  const entry = allItemsDb[name];
-  if (entry) return entry.image_url || entry.image;
-  const lower = name.toLowerCase();
-  const matched = Object.values(allItemsDb).find(
-    (cand: any) => typeof cand?.name === 'string' && cand.name.toLowerCase() === lower
-  ) as any;
+  const matched = resolveItemEntry(name, allItemsDb);
   return matched?.image_url || matched?.image;
 }
+
+function formatRecipeSkillLabel(skill?: string): string {
+  const clean = String(skill || '').trim();
+  if (!clean) return 'Crafting';
+  return clean
+    .replace(/[_-]+/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+const STAT_XP_LABELS: Record<string, string> = {
+  strength: 'Strength',
+  speed: 'Speed',
+  defence: 'Defence',
+  dexterity: 'Dexterity',
+};
 
 export default function ItemModal({ id, onClose }: ItemModalProps) {
   const router = useRouter();
@@ -332,8 +360,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     return getItemTrueValue(item, marketData, allItemsDb || undefined);
   }, [item, marketData, allItemsDb]);
 
-  const qColor = item ? getQualityColor(item.quality) : getQualityColor('STANDARD');
-  const qTextColor = item ? getQualityTextColor(item.quality) : getQualityTextColor('STANDARD');
+  const qualityPalette = getQualityPalette(item?.quality || 'STANDARD');
   const itemName = item?.name;
   const itemIsTradeable = item
     ? !isForcedUntradableItem(item.name) && item.is_tradeable !== false
@@ -500,11 +527,16 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     const recipeMats = recipeData.materials || [];
 
     const getRecipeMatUnitPrice = (m: any) => {
-      const merchantBuyPrice = getMerchantBuyPrice(m.name || m.item_name);
+      const mName = m.name || m.item_name;
+      const merchantBuyPrice = getMerchantBuyPrice(mName);
       if (merchantBuyPrice > 0) return merchantBuyPrice;
       const injectedPrice = Number(m.price || 0);
       if (injectedPrice > 0) return injectedPrice;
-      return 0;
+      const marketEntry = mName ? marketData?.[mName] : null;
+      const marketVal = marketEntry ? getSafeMarketValue(marketEntry) || Number(marketEntry.price || 0) : 0;
+      if (marketVal > 0) return marketVal;
+      const fallbackItem = resolveItemEntry(mName, allItemsDb);
+      return Number(fallbackItem?.vendor_price || 0);
     };
 
     const totalMatCost = recipeMats.reduce(
@@ -519,9 +551,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
       item.type === 'RECIPE'
         ? marketPriceInfo.safePrice
         : item.produced_from?.recipe_price || 0;
+    const yieldName = recipeData.result?.item_name || item.recipe_yield?.item_name;
+    const yieldEntry = yieldName ? resolveItemEntry(yieldName, allItemsDb) : null;
+    const yieldMarketEntry = yieldName ? marketData?.[yieldName] : null;
     const resultPrice =
       item.type === 'RECIPE'
-        ? item.recipe_yield?.market_price || 0
+        ? item.recipe_yield?.market_price ||
+          (yieldMarketEntry ? getSafeMarketValue(yieldMarketEntry) || Number(yieldMarketEntry.price || 0) : 0)
         : marketPriceInfo.safePrice;
 
     const recipeCostPerCraft = uses === Infinity ? 0 : recipePrice / uses;
@@ -531,23 +567,28 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     const marketRevenue = resultPrice * marketTaxMultiplier;
     const vendorBase =
       item.type === 'RECIPE'
-        ? item.recipe_yield?.vendor_price || 0
+        ? item.recipe_yield?.vendor_price || Number(yieldEntry?.vendor_price || 0)
         : item.vendor_price || 0;
     const vendorRevenue =
       vendorBase * (1 + (Number(profileBarteringBoost) || 0) / 100);
 
     const bestRevenue = Math.max(marketRevenue, vendorRevenue);
     const profit = bestRevenue - investment;
+    const xpInfo = getRecipeExperienceInfo(recipeData.experience, recipeData.skill);
 
     return {
       totalMatCost,
+      recipeCostPerCraft,
       investment,
       bestRevenue,
       profit,
       isProfitable: profit > 0,
       uses,
+      xpInfo,
+      skillLabel: formatRecipeSkillLabel(recipeData.skill),
+      levelRequired: Number(recipeData.level_required || recipeData.level || 0),
     };
-  }, [item, recipeData, preferences.membership, profileBarteringBoost, marketPriceInfo.safePrice]);
+  }, [allItemsDb, item, marketData, marketPriceInfo.safePrice, preferences.membership, profileBarteringBoost, recipeData]);
 
   const isUpgradeableEquipment = useMemo(() => {
     if (!item) return false;
@@ -659,12 +700,6 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
     }
   };
 
-  const navTabOptions = [
-    { value: 'overview', label: 'Overview' },
-    { value: 'market', label: 'Market' },
-    { value: 'sources', label: 'Sources' },
-  ];
-
   const mapQualityToBadge = (quality?: string): BadgeVariant => {
     const q = (quality || '').toLowerCase();
     if (['standard', 'refined', 'premium', 'epic', 'legendary', 'mythic', 'unique'].includes(q)) {
@@ -674,14 +709,46 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
   };
 
   const descriptionSubtitle = item
-    ? `${formatItemTypeLabel(item.type)} · ${item.quality || 'STANDARD'}`
+    ? [
+        formatItemTypeLabel(item.type),
+        item.requirements?.combat
+          ? `Lv. ${item.requirements.combat} Combat`
+          : item.requirements?.level
+            ? `Lv. ${item.requirements.level}`
+            : recipeEconomics?.levelRequired
+              ? `Lv. ${recipeEconomics.levelRequired} ${recipeEconomics.skillLabel}`
+              : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
     : undefined;
+
+  const sourcesCount =
+    (recipeData?.materials?.length || 0) +
+    gatheredLocations.length +
+    acquisitionSources.length +
+    reverseRecipes.length;
+
+  const stableVol = Number(item?.stable_vol_3 || item?.vol_3 || 0);
+  const contextualToolLink = useMemo(() => {
+    if (!item) return null;
+    const skillLower = String(recipeData?.skill || item.recipe?.skill || '').toLowerCase();
+    if (skillLower === 'forge') return { href: '/forge', label: 'Forge Planner' };
+    if (skillLower === 'alchemy' || item.type === 'POTION') return { href: '/alchemy', label: 'Alchemy' };
+    if (['cooking', 'smelting', 'construction'].includes(skillLower)) {
+      return { href: `/skill-profit?q=${encodeURIComponent(item.name)}`, label: 'Skill Profit' };
+    }
+    if (['ORE', 'LOG', 'FISH', 'METAL_BAR', 'FOOD', 'CONSTRUCTION_MATERIAL'].includes(String(item.type).toUpperCase())) {
+      return { href: `/skill-profit?q=${encodeURIComponent(item.name)}`, label: 'Skill Profit' };
+    }
+    return null;
+  }, [item, recipeData]);
 
   return (
     <ModalSheet
       isOpen={true}
       onClose={onClose}
-      title={item?.name || 'Item Inspection'}
+      title={item ? <QualityText value={item.quality}>{item.name}</QualityText> : 'Item Inspection'}
       description={descriptionSubtitle}
       maxWidth="lg"
     >
@@ -723,11 +790,14 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
         {!loading && !error && item && (
           <>
-            {/* Item Hero */}
+            {/* Compact Identity Hero */}
             <div className={styles.itemHero}>
               <div
                 className={styles.thumbnailWrapper}
-                style={{ '--quality-border': qColor } as React.CSSProperties}
+                style={{
+                  '--quality-border': qualityPalette.color,
+                  '--quality-bg': qualityPalette.backgroundGradient || qualityPalette.background,
+                } as React.CSSProperties}
               >
                 <GameImage
                   src={item.image_url || item.image}
@@ -741,31 +811,54 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               </div>
 
               <div className={styles.itemHeroDetails}>
-                <span className={styles.qualityHeaderNote} style={{ color: qTextColor }}>
-                  {item.quality || 'STANDARD'} {formatItemTypeLabel(item.type)}
-                </span>
                 <div className={styles.badgesRow}>
                   <Badge variant={mapQualityToBadge(item.quality)} size="sm">
-                    {item.quality || 'STANDARD'}
+                    {formatQualityLabel(item.quality || 'STANDARD')}
                   </Badge>
-                  {item.requirements?.combat && (
-                    <Badge variant="neutral" size="sm">
-                      Lv. {item.requirements.combat} Combat
-                    </Badge>
-                  )}
-                  {item.requirements?.level && (
-                    <Badge variant="neutral" size="sm">
-                      Lv. {item.requirements.level}
-                    </Badge>
-                  )}
                   <Badge variant={itemIsTradeable ? 'success' : 'neutral'} size="sm">
                     {itemIsTradeable ? 'Tradeable' : 'Untradable'}
                   </Badge>
+                  {recipeEconomics && (
+                    <Badge variant="neutral" size="sm">
+                      {recipeEconomics.uses === Infinity
+                        ? 'Unlimited uses'
+                        : `${recipeEconomics.uses} use${recipeEconomics.uses === 1 ? '' : 's'}`}
+                    </Badge>
+                  )}
                 </div>
+                {(recipeEconomics && (recipeEconomics.xpInfo.skillExp > 0 || Object.keys(recipeEconomics.xpInfo.stats).length > 0)) && (
+                  <div className={styles.recipeXpSummary}>
+                    {recipeEconomics.xpInfo.skillExp > 0 && (
+                      <span>
+                        +{recipeEconomics.xpInfo.skillExp.toLocaleString()} {recipeEconomics.skillLabel} XP
+                      </span>
+                    )}
+                    {Object.entries(recipeEconomics.xpInfo.stats).map(([statKey, statXp]) =>
+                      Number(statXp) > 0 ? (
+                        <span key={statKey}>
+                          +{Number(statXp).toLocaleString()} {STAT_XP_LABELS[statKey] || statKey} XP
+                        </span>
+                      ) : null
+                    )}
+                  </div>
+                )}
               </div>
 
-              {recipeData && isCraftingQueueRecipe(item.recipe || item) && (
-                <div className={styles.headerActions}>
+              <div className={styles.headerActions}>
+                {contextualToolLink && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      router.push(contextualToolLink.href);
+                    }}
+                    icon={<Icon name="externalLink" size="xs" aria-hidden="true" />}
+                  >
+                    {contextualToolLink.label}
+                  </Button>
+                )}
+                {recipeData && isCraftingQueueRecipe(item.recipe || item) && (
                   <Button
                     variant={addedToQueue ? 'secondary' : 'primary'}
                     size="sm"
@@ -774,23 +867,119 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                   >
                     {addedToQueue ? 'Added' : 'Queue Craft'}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Segmented View Navigation */}
-            <div className={styles.navTabs}>
-              <SegmentedControl
-                options={navTabOptions}
-                value={activeTab}
-                onChange={(val) => setActiveTab(val as 'overview' | 'market' | 'sources')}
-                ariaLabel="Item sections"
-              />
+            {/* 4-Cell Above-Tabs Summary Strip */}
+            <div className={styles.statStrip} aria-label="Quick valuation summary">
+              <div className={styles.statCell}>
+                <span className={styles.statLabel}>Vendor</span>
+                <strong className={`${styles.statValue} ${styles.statValueGold}`}>
+                  {(saleInsight?.vendorPrice || 0) > 0 && <GoldIcon size={12} />}
+                  <span>{saleInsight ? `${formatGold(saleInsight.vendorPrice)}g` : '—'}</span>
+                </strong>
+                <span className={styles.statSubtext}>
+                  {Number(profileBarteringBoost) > 0
+                    ? `Bartering +${Number(profileBarteringBoost).toFixed(1)}%`
+                    : 'Base NPC value'}
+                </span>
+              </div>
+
+              <div className={styles.statCell}>
+                <span className={styles.statLabel}>Market Net</span>
+                <strong className={`${styles.statValue} ${saleInsight?.recommendMarket ? styles.statValueAccent : ''}`}>
+                  {itemIsTradeable && (saleInsight?.netMarket || 0) > 0 && <GoldIcon size={12} />}
+                  <span>
+                    {!itemIsTradeable
+                      ? 'Untradable'
+                      : (saleInsight?.netMarket || 0) > 0
+                        ? `${formatGold(saleInsight!.netMarket)}g`
+                        : 'No data'}
+                  </span>
+                </strong>
+                <span className={styles.statSubtext}>
+                  {!itemIsTradeable ? (
+                    'Account bound'
+                  ) : item.price_adjusted ? (
+                    <Tooltip content="3-day average ignored due to extreme spike; anchored to median listing history.">
+                      <span className={styles.inlineTooltipHint}>Spike-protected</span>
+                    </Tooltip>
+                  ) : (
+                    `After ${Math.round((saleInsight?.marketTaxRate || 0.15) * 100)}% tax`
+                  )}
+                </span>
+              </div>
+
+              <div className={styles.statCell}>
+                <span className={styles.statLabel}>
+                  {recipeEconomics ? 'Craft Margin' : 'Best Sell'}
+                </span>
+                {recipeEconomics ? (
+                  <>
+                    <strong
+                      className={`${styles.statValue} ${
+                        recipeEconomics.isProfitable ? styles.statValueGood : styles.statValueBad
+                      }`}
+                    >
+                      {Math.abs(recipeEconomics.profit) > 0 && <GoldIcon size={12} />}
+                      <span>
+                        {recipeEconomics.profit > 0 ? '+' : ''}
+                        {formatGold(recipeEconomics.profit)}g
+                      </span>
+                    </strong>
+                    <span className={styles.statSubtext}>
+                      Input {formatGold(recipeEconomics.investment)}g
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <strong className={styles.statValue}>
+                      {saleInsight?.recommendMarket ? 'Market' : 'Vendor'}
+                    </strong>
+                    <span className={styles.statSubtext}>
+                      {saleInsight && saleInsight.safeMarket > 0
+                        ? `+${formatGold(Math.abs(saleInsight.diff))}g edge`
+                        : 'Direct NPC sell'}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className={styles.statCell}>
+                <span className={styles.statLabel}>
+                  {itemIsTradeable ? '3d Volume' : 'Connections'}
+                </span>
+                <strong className={styles.statValue}>
+                  {itemIsTradeable
+                    ? stableVol > 0
+                      ? stableVol.toLocaleString()
+                      : '—'
+                    : `${sourcesCount}`}
+                </strong>
+                <span className={styles.statSubtext}>
+                  {itemIsTradeable
+                    ? `${sourcesCount} source${sourcesCount === 1 ? '' : 's'} / uses`
+                    : 'Recipes & drops'}
+                </span>
+              </div>
             </div>
 
-            {/* Tab 1: Overview & Stats */}
-            {activeTab === 'overview' && (
-              <div className={styles.tabContent}>
+            {/* Primitive Tabs Navigation */}
+            <Tabs
+              value={activeTab}
+              onValueChange={(val) => setActiveTab(val as 'overview' | 'market' | 'sources')}
+              variant="pill"
+            >
+              <TabList aria-label="Item details sections" className={styles.tabListBar}>
+                <Tab value="overview">Overview</Tab>
+                <Tab value="market">Market</Tab>
+                <Tab value="sources" badge={sourcesCount > 0 ? sourcesCount : undefined}>
+                  Sources &amp; Uses
+                </Tab>
+              </TabList>
+
+              <TabPanel value="overview" className={styles.tabContent}>
                 {item.description && (
                   <div className={styles.descriptionBox}>
                     {item.description}
@@ -799,51 +988,30 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
                 {item.stats && Object.keys(item.stats).length > 0 && (
                   <section className={`${styles.sectionBlock} ${!item.description ? styles.sectionBlockFirst : ''}`}>
-                    <h3 className={styles.sectionTitle}>
-                      <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
-                      <span>Combat Attributes</span>
-                    </h3>
-                    <div className={styles.attributesGrid}>
-                      {Object.entries(item.stats).map(([stat, val]) => (
-                        <div key={stat} className={styles.attributeTile}>
-                          <span className={styles.statLabel}>
-                            {stat.replace(/_/g, ' ')}
-                          </span>
-                          <span className={styles.statValue}>
-                            {Number(val) > 0 ? `+${val}` : String(val)}
-                          </span>
+                    {isUpgradeableEquipment ? (
+                      <div className={styles.tierPanel}>
+                        <div className={styles.tierHeader}>
+                          <h3 className={styles.sectionTitle}>
+                            <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                            <span>Stats &amp; Tier Scaling</span>
+                          </h3>
+                          <Badge variant={selectedTier > 0 ? 'refined' : 'neutral'} size="sm">
+                            Tier +{selectedTier} of {item.max_tier}
+                          </Badge>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
 
-                {isUpgradeableEquipment && (
-                  <section className={styles.sectionBlock}>
-                    <div className={styles.tierPanel}>
-                      <div className={styles.tierHeader}>
-                        <h3 className={styles.sectionTitle}>
-                          <Icon name="filter" size="sm" className={styles.sectionIcon} aria-hidden="true" />
-                          <span>Tier Upgrade</span>
-                        </h3>
-                        <Badge variant="refined" size="sm">
-                          Tier +{selectedTier} of {item.max_tier}
-                        </Badge>
-                      </div>
+                        <Slider
+                          value={selectedTier}
+                          onChange={(val) => setSelectedTier(Number(val))}
+                          min={0}
+                          max={Number(item.max_tier)}
+                          step={1}
+                          valueFormat={(v) => `+${v}`}
+                          aria-label="Tier upgrade level slider"
+                        />
 
-                      <Slider
-                        value={selectedTier}
-                        onChange={(val) => setSelectedTier(Number(val))}
-                        min={0}
-                        max={Number(item.max_tier)}
-                        step={1}
-                        valueFormat={(v) => `+${v}`}
-                        aria-label="Tier upgrade level slider"
-                      />
-
-                      <div className={styles.attributesGrid}>
-                        {item.stats &&
-                          Object.entries(item.stats).map(([stat, val]) => {
+                        <div className={styles.attributesGrid}>
+                          {Object.entries(item.stats).map(([stat, val]) => {
                             const base = Number(val) || 0;
                             const modifier = Number(item.tier_modifiers?.[stat] || 0);
                             const upgraded = base + selectedTier * modifier;
@@ -856,25 +1024,24 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 </span>
                                 {modifier === 0 || selectedTier === 0 ? (
                                   <div className={styles.tierStatNumbers}>
-                                    <span className={styles.tierUpgradedVal}>{base}</span>
+                                    <span className={styles.tierUpgradedVal}>
+                                      {base > 0 ? `+${base}` : base}
+                                    </span>
                                   </div>
                                 ) : (
                                   <div className={styles.tierStatNumbers}>
                                     <span className={styles.tierBaseVal}>{base}</span>
                                     <Icon name="arrowRight" size="xs" className={styles.sectionIcon} aria-hidden="true" />
                                     <span className={styles.tierUpgradedVal}>{upgraded}</span>
-                                    {diff > 0 && (
-                                      <span className={styles.tierDiff}>+{diff}</span>
-                                    )}
+                                    {diff > 0 && <span className={styles.tierDiff}>+{diff}</span>}
                                   </div>
                                 )}
                               </div>
                             );
                           })}
-                      </div>
+                        </div>
 
-                      {Array.isArray(item.upgrade_requirements) &&
-                        item.upgrade_requirements.length > 0 && (
+                        {Array.isArray(item.upgrade_requirements) && item.upgrade_requirements.length > 0 && (
                           <div className={styles.tierMatsRequired}>
                             <strong>Upgrade Cost:</strong>
                             {selectedTier === 0 ? (
@@ -888,7 +1055,27 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             )}
                           </div>
                         )}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className={styles.sectionTitle}>
+                          <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                          <span>Combat Attributes</span>
+                        </h3>
+                        <div className={styles.attributesGrid}>
+                          {Object.entries(item.stats).map(([stat, val]) => (
+                            <div key={stat} className={styles.attributeTile}>
+                              <span className={styles.statLabel}>
+                                {stat.replace(/_/g, ' ')}
+                              </span>
+                              <span className={styles.statValue}>
+                                {Number(val) > 0 ? `+${val}` : String(val)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </section>
                 )}
 
@@ -950,7 +1137,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     </div>
                     <div className={styles.actionList}>
                       {item.chest_drops.map((drop: any, idx: number) => {
-                        const dropImg = resolveItemImage(drop.item_name, allItemsDb);
+                        const dropEntry = resolveItemEntry(drop.item_name, allItemsDb);
                         return (
                           <button
                             key={idx}
@@ -961,7 +1148,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             <span className={styles.rowLeading}>
                               <span className={styles.rowThumb}>
                                 <GameImage
-                                  src={dropImg}
+                                  src={dropEntry?.image_url || dropEntry?.image}
                                   alt={drop.item_name || 'Drop'}
                                   width={26}
                                   height={26}
@@ -969,7 +1156,11 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 />
                               </span>
                               <span className={styles.rowCopy}>
-                                <span className={styles.rowName}>{drop.item_name}</span>
+                                <span className={styles.rowName}>
+                                  <QualityText value={dropEntry?.quality || 'STANDARD'}>
+                                    {drop.item_name}
+                                  </QualityText>
+                                </span>
                                 {drop.quantity > 1 && (
                                   <span className={styles.rowMeta}>Quantity x{drop.quantity}</span>
                                 )}
@@ -991,28 +1182,37 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <Icon name="produced" size="sm" className={styles.sectionIcon} aria-hidden="true" />
                       <span>Produces</span>
                     </h3>
-                    <button
-                      type="button"
-                      className={styles.actionRowBtn}
-                      onClick={() => openItemByName(item.recipe_yield.item_name)}
-                    >
-                      <span className={styles.rowLeading}>
-                        <span className={styles.rowThumb}>
-                          <GameImage
-                            src={resolveItemImage(item.recipe_yield.item_name, allItemsDb)}
-                            alt={item.recipe_yield.item_name}
-                            width={26}
-                            height={26}
-                            fallback={<Icon name="items" size="sm" aria-hidden="true" />}
-                          />
-                        </span>
-                        <span className={styles.rowName}>{item.recipe_yield.item_name}</span>
-                      </span>
-                      <span className={styles.rowTrailingTag}>
-                        <span>Inspect Product</span>
-                        <Icon name="arrowRight" size="xs" aria-hidden="true" />
-                      </span>
-                    </button>
+                    {(() => {
+                      const yieldEntry = resolveItemEntry(item.recipe_yield.item_name, allItemsDb);
+                      return (
+                        <button
+                          type="button"
+                          className={styles.actionRowBtn}
+                          onClick={() => openItemByName(item.recipe_yield.item_name)}
+                        >
+                          <span className={styles.rowLeading}>
+                            <span className={styles.rowThumb}>
+                              <GameImage
+                                src={yieldEntry?.image_url || yieldEntry?.image}
+                                alt={item.recipe_yield.item_name}
+                                width={26}
+                                height={26}
+                                fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                              />
+                            </span>
+                            <span className={styles.rowName}>
+                              <QualityText value={yieldEntry?.quality || item.quality}>
+                                {item.recipe_yield.item_name}
+                              </QualityText>
+                            </span>
+                          </span>
+                          <span className={styles.rowTrailingTag}>
+                            <span>Inspect Product</span>
+                            <Icon name="arrowRight" size="xs" aria-hidden="true" />
+                          </span>
+                        </button>
+                      );
+                    })()}
                   </section>
                 )}
 
@@ -1055,12 +1255,9 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     </div>
                   </section>
                 )}
-              </div>
-            )}
+              </TabPanel>
 
-            {/* Tab 2: Market & Valuation */}
-            {activeTab === 'market' && (
-              <div className={styles.tabContent}>
+              <TabPanel value="market" className={styles.tabContent}>
                 {priceTrendData && (
                   <section className={styles.chartPanel} aria-label="30-Day Price Trend">
                     <div className={styles.sectionHeaderRow}>
@@ -1073,8 +1270,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                           priceTrendData.trendPct > 0.5
                             ? 'success'
                             : priceTrendData.trendPct < -0.5
-                            ? 'danger'
-                            : 'neutral'
+                              ? 'danger'
+                              : 'neutral'
                         }
                         size="sm"
                         icon={
@@ -1083,8 +1280,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               priceTrendData.trendPct > 0.5
                                 ? 'skillProfit'
                                 : priceTrendData.trendPct < -0.5
-                                ? 'trendDown'
-                                : 'minus'
+                                  ? 'trendDown'
+                                  : 'minus'
                             }
                             size="xs"
                           />
@@ -1103,15 +1300,15 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       >
                         <defs>
                           <linearGradient id="modalPriceGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.28" />
-                            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.0" />
+                            <stop offset="0%" stopColor="var(--quality-refined-text)" stopOpacity="0.28" />
+                            <stop offset="100%" stopColor="var(--quality-refined-text)" stopOpacity="0.0" />
                           </linearGradient>
                         </defs>
                         <path d={priceTrendData.areaD} fill="url(#modalPriceGradient)" />
                         <path
                           d={priceTrendData.pathD}
                           fill="none"
-                          stroke="#60a5fa"
+                          stroke="var(--quality-refined-text)"
                           strokeWidth="2.2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1123,7 +1320,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               y1={priceTrendData.coords[2].y}
                               x2={priceTrendData.rawCoord.x}
                               y2={priceTrendData.rawCoord.y}
-                              stroke="#f87171"
+                              stroke="var(--text-danger)"
                               strokeWidth="2"
                               strokeDasharray="4 4"
                             />
@@ -1131,8 +1328,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               cx={priceTrendData.rawCoord.x}
                               cy={priceTrendData.rawCoord.y}
                               r="4"
-                              fill="#f87171"
-                              stroke="#0f172a"
+                              fill="var(--text-danger)"
+                              stroke="var(--bg-panel)"
                               strokeWidth="2"
                             />
                           </>
@@ -1143,8 +1340,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             cx={pt.x}
                             cy={pt.y}
                             r="4"
-                            fill={idx === 3 && priceTrendData.adjusted ? '#4ade80' : '#60a5fa'}
-                            stroke="#0f172a"
+                            fill={idx === 3 && priceTrendData.adjusted ? 'var(--text-success)' : 'var(--quality-refined-text)'}
+                            stroke="var(--bg-panel)"
                             strokeWidth="2"
                           />
                         ))}
@@ -1363,7 +1560,12 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
 
                 {recipeEconomics && (
                   <section className={styles.sectionBlock} aria-label="Crafting Profit">
-                    <h3 className={styles.sectionTitle}>Crafting Profit</h3>
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>Crafting Profit</h3>
+                      <span className={styles.countMeta}>
+                        {recipeEconomics.skillLabel} Lv. {recipeEconomics.levelRequired || 1}
+                      </span>
+                    </div>
                     <div className={`${styles.statStrip} ${styles.statStripThree}`}>
                       <div className={styles.statCell}>
                         <span className={styles.statLabel}>Material Cost</span>
@@ -1396,22 +1598,30 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     </div>
                   </section>
                 )}
-              </div>
-            )}
+              </TabPanel>
 
-            {/* Tab 3: Sources & Crafting */}
-            {activeTab === 'sources' && (
-              <div className={styles.tabContent}>
+              <TabPanel value="sources" className={styles.tabContent}>
                 {recipeData && recipeData.materials && (
                   <section className={`${styles.sectionBlock} ${styles.sectionBlockFirst}`}>
-                    <h3 className={styles.sectionTitle}>
-                      <Icon name="craftTool" size="sm" className={styles.sectionIcon} aria-hidden="true" />
-                      <span>Crafting Recipe</span>
-                    </h3>
+                    <div className={styles.sectionHeaderRow}>
+                      <h3 className={styles.sectionTitle}>
+                        <Icon name="craftTool" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                        <span>Crafting Recipe</span>
+                      </h3>
+                      <span className={styles.countMeta}>
+                        {formatRecipeSkillLabel(recipeData.skill)} Lv. {recipeData.level_required || recipeData.level || 1}
+                      </span>
+                    </div>
                     <div className={styles.actionList}>
                       {recipeData.materials.map((m: any, idx: number) => {
                         const mName = m.name || m.item_name;
                         const qty = m.amount || m.quantity || 1;
+                        const matEntry = resolveItemEntry(mName, allItemsDb);
+                        const matMarket = mName ? marketData?.[mName] : null;
+                        const unitCost =
+                          getMerchantBuyPrice(mName) ||
+                          Number(m.price || 0) ||
+                          (matMarket ? getSafeMarketValue(matMarket) || Number(matMarket.price || 0) : 0);
                         return (
                           <button
                             key={idx}
@@ -1422,7 +1632,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                             <span className={styles.rowLeading}>
                               <span className={styles.rowThumb}>
                                 <GameImage
-                                  src={resolveItemImage(mName, allItemsDb)}
+                                  src={matEntry?.image_url || matEntry?.image}
                                   alt={mName}
                                   width={26}
                                   height={26}
@@ -1430,8 +1640,14 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                                 />
                               </span>
                               <span className={styles.rowCopy}>
-                                <span className={styles.rowName}>{mName}</span>
-                                <span className={styles.rowMeta}>Required Material</span>
+                                <span className={styles.rowName}>
+                                  <QualityText value={matEntry?.quality || 'STANDARD'}>
+                                    {mName}
+                                  </QualityText>
+                                </span>
+                                <span className={styles.rowMeta}>
+                                  {unitCost > 0 ? `${formatGold(unitCost)}g ea` : 'Required Material'}
+                                </span>
                               </span>
                             </span>
                             <span className={styles.rowTrailingTag}>{qty}x Required</span>
@@ -1474,7 +1690,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 )}
 
                 {dungeonSources.length > 0 && (
-                  <section className={styles.sectionBlock}>
+                  <section className={`${styles.sectionBlock} ${!recipeData && gatheredLocations.length === 0 ? styles.sectionBlockFirst : ''}`}>
                     <h3 className={styles.sectionTitle}>
                       <Icon name="dungeon" size="sm" className={styles.sectionIcon} aria-hidden="true" />
                       <span>Dungeon Drops</span>
@@ -1584,7 +1800,13 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                 )}
 
                 {reverseRecipes.length > 0 && (
-                  <section className={styles.sectionBlock}>
+                  <section
+                    className={`${styles.sectionBlock} ${
+                      !recipeData && gatheredLocations.length === 0 && acquisitionSources.length === 0
+                        ? styles.sectionBlockFirst
+                        : ''
+                    }`}
+                  >
                     <div className={styles.sectionHeaderRow}>
                       <h3 className={styles.sectionTitle}>
                         <Icon name="craftTool" size="sm" className={styles.sectionIcon} aria-hidden="true" />
@@ -1593,28 +1815,40 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <span className={styles.countMeta}>{reverseRecipes.length}</span>
                     </div>
                     <div className={styles.actionGrid}>
-                      {reverseRecipes.map((rec, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          className={styles.actionRowBtn}
-                          onClick={() => openItemByName(rec.name)}
-                        >
-                          <span className={styles.rowLeading}>
-                            <span className={styles.rowThumb}>
-                              <GameImage
-                                src={resolveItemImage(rec.name, allItemsDb)}
-                                alt={rec.name}
-                                width={26}
-                                height={26}
-                                fallback={<Icon name="items" size="sm" aria-hidden="true" />}
-                              />
+                      {reverseRecipes.map((rec, idx) => {
+                        const recEntry = resolveItemEntry(rec.name, allItemsDb);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={styles.actionRowBtn}
+                            onClick={() => openItemByName(rec.name)}
+                          >
+                            <span className={styles.rowLeading}>
+                              <span className={styles.rowThumb}>
+                                <GameImage
+                                  src={recEntry?.image_url || recEntry?.image}
+                                  alt={rec.name}
+                                  width={26}
+                                  height={26}
+                                  fallback={<Icon name="items" size="sm" aria-hidden="true" />}
+                                />
+                              </span>
+                              <span className={styles.rowCopy}>
+                                <span className={styles.rowName}>
+                                  <QualityText value={recEntry?.quality || 'STANDARD'}>
+                                    {rec.name}
+                                  </QualityText>
+                                </span>
+                                <span className={styles.rowMeta}>
+                                  {formatRecipeSkillLabel(rec.type)}
+                                </span>
+                              </span>
                             </span>
-                            <span className={styles.rowName}>{rec.name}</span>
-                          </span>
-                          <span className={styles.rowTrailingTag}>{rec.amount}x</span>
-                        </button>
-                      ))}
+                            <span className={styles.rowTrailingTag}>{rec.amount}x</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </section>
                 )}
@@ -1629,8 +1863,8 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       description="No drop tables, gathering locations, or recipes are listed for this item."
                     />
                   )}
-              </div>
-            )}
+              </TabPanel>
+            </Tabs>
           </>
         )}
       </div>

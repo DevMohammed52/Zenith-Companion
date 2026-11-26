@@ -120,7 +120,7 @@ export function ItemsTable({
                     <div className={styles.itemCopy}>
                       <strong
                         className={styles.itemNameText}
-                        style={{ color: getQualityTextColor(item.quality) }}
+                        style={getQualityTextStyle(item.quality)}
                       >
                         {item.name}
                       </strong>

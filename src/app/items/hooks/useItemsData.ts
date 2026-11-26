@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useItemModal } from '@/context/ItemModalContext';
 import { useData } from '@/context/DataContext';
@@ -82,6 +82,9 @@ export function useItemsData() {
     };
   }, []);
 
+  const handledNameParamRef = useRef<string | null>(null);
+  const handledIdParamRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (index.length === 0) return;
     try {
@@ -89,11 +92,23 @@ export function useItemsData() {
       const nameParam = searchParams.get('name') || searchParams.get('q');
 
       if (idParam && idParam.trim()) {
-        openItem(idParam.trim());
-      } else if (nameParam && nameParam.trim()) {
-        const cleanName = nameParam.trim().toLowerCase();
-        const found = index.find((i: SearchIndexItem) => i.name.toLowerCase() === cleanName);
-        if (found) openItem(found.id);
+        const cleanId = idParam.trim();
+        if (handledIdParamRef.current !== cleanId) {
+          handledIdParamRef.current = cleanId;
+          openItem(cleanId);
+        }
+      } else {
+        handledIdParamRef.current = null;
+        if (nameParam && nameParam.trim()) {
+          const cleanName = nameParam.trim().toLowerCase();
+          if (handledNameParamRef.current !== cleanName) {
+            handledNameParamRef.current = cleanName;
+            const found = index.find((i: SearchIndexItem) => i.name.toLowerCase() === cleanName);
+            if (found) openItem(found.id);
+          }
+        } else {
+          handledNameParamRef.current = null;
+        }
       }
     } catch {
       // Safe fallback if searchParams contains malformed URI encoding
