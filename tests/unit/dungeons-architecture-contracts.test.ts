@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import postcss from "postcss";
 import { describe, expect, it } from "vitest";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import {
+  calculateDungeonEvMetrics,
+  formatBonusMasteryLabel,
   formatDungeonModifierDuration,
   getConfirmedDungeonItemModifiers,
   getDungeonKey,
@@ -16,6 +18,7 @@ import {
   normalizeCompletionCount,
   removeUntradeableDuplicateModifiers,
   resolveDungeonDropValue,
+  resolveDungeonItemRecord,
   type DungeonItemModifier,
 } from "@/app/dungeons/types";
 
@@ -23,13 +26,13 @@ describe("dungeons architecture and modularization contracts", () => {
   const dungeonsDir = path.join(process.cwd(), "src", "app", "dungeons");
   const pagePath = path.join(dungeonsDir, "page.tsx");
   const hookPath = path.join(dungeonsDir, "hooks", "useDungeonState.ts");
+  const cssPath = path.join(dungeonsDir, "Dungeons.module.css");
   const componentsDir = path.join(dungeonsDir, "components");
 
-  it("orchestrator page.tsx is under 200 lines", () => {
-    expect(existsSync(pagePath)).toBe(true);
-    const content = readFileSync(pagePath, "utf-8");
-    const lines = content.split(/\r?\n/).length;
-    expect(lines).toBeLessThan(200);
+  it("passes strict Zenith clean-route architectural contract", () => {
+    assertCleanMigratedRoute({ routeSubpath: "dungeons", maxPageLines: 200 });
+    expect(existsSync(path.join(componentsDir, "DungeonStyles.tsx"))).toBe(false);
+    expect(existsSync(cssPath)).toBe(true);
   });
 
   it("exports dedicated custom hook useDungeonState", () => {
@@ -41,13 +44,12 @@ describe("dungeons architecture and modularization contracts", () => {
     expect(content).toContain("useProfiles");
   });
 
-  it("contains all 5 required feature components", () => {
+  it("contains all modular feature components", () => {
     const requiredComponents = [
       "DungeonHeader.tsx",
       "DungeonCard.tsx",
       "DungeonDetailsModal.tsx",
       "DungeonItemEffectPicker.tsx",
-      "DungeonStyles.tsx",
     ];
 
     for (const comp of requiredComponents) {
@@ -56,48 +58,49 @@ describe("dungeons architecture and modularization contracts", () => {
     }
   });
 
-  it("orchestrator defines layout containment and min-height to guarantee CLS <= 0.1", () => {
+  it("orchestrator defines layout containment, min-height, and BackToTop to guarantee CLS <= 0.1", () => {
     const pageContent = readFileSync(pagePath, "utf-8");
     expect(pageContent).toContain('contain: "layout"');
     expect(pageContent).toMatch(/minHeight:\s*["']520px["']/);
+    expect(pageContent).toContain("BackToTop");
   });
 
-  it("DungeonHeader includes search input, readiness filter pills, profile status, and metric cards", () => {
+  it("DungeonHeader includes SearchInput, SegmentedControl readiness/valuation controls, and Tuning drawer", () => {
     const headerPath = path.join(componentsDir, "DungeonHeader.tsx");
     const content = readFileSync(headerPath, "utf-8");
-    expect(content).toContain("dungeon-command");
-    expect(content).toContain("dungeon-search-control");
-    expect(content).toContain("dungeon-readiness-filters");
-    expect(content).toContain("dungeon-readiness-pill");
-    expect(content).toContain("dungeon-modifier-panel");
-    expect(content).toContain("dungeon-valuation-panel");
+    expect(content).toContain("SearchInput");
+    expect(content).toContain("SegmentedControl");
+    expect(content).toContain("DungeonItemEffectPicker");
+    expect(content).toContain("commandCard");
+    expect(content).toContain("tuningDrawer");
   });
 
-  it("DungeonCard includes readiness badge, completion counters, and expected loot value preview", () => {
+  it("DungeonCard includes readiness Badge, GameImage, GoldIcon, completion inputs, and DungeonTableRow", () => {
     const cardPath = path.join(componentsDir, "DungeonCard.tsx");
     const content = readFileSync(cardPath, "utf-8");
-    expect(content).toContain("dungeon-card");
-    expect(content).toContain("dungeon-readiness");
-    expect(content).toContain("dungeon-mobile-completed");
+    expect(content).toContain("mobileDungeonCard");
+    expect(content).toContain("Badge");
+    expect(content).toContain("GameImage");
+    expect(content).toContain("GoldIcon");
     expect(content).toContain("DungeonTableRow");
   });
 
-  it("DungeonDetailsModal includes drop table inspector, drop valuation mode, value breakdown, and lore panel", () => {
+  it("DungeonDetailsModal uses ModalSheet, QualityText, loot inspector, chest breakdown, and LoreThreadPanel", () => {
     const modalPath = path.join(componentsDir, "DungeonDetailsModal.tsx");
     const content = readFileSync(modalPath, "utf-8");
-    expect(content).toContain("dungeon-modal");
-    expect(content).toContain("dungeon-modal-grid");
-    expect(content).toContain("dungeon-loot-list");
-    expect(content).toContain("dungeon-chest-breakdown");
+    expect(content).toContain("ModalSheet");
+    expect(content).toContain("QualityText");
+    expect(content).toContain("lootList");
+    expect(content).toContain("chestBreakdown");
     expect(content).toContain("LoreThreadPanel");
   });
 
-  it("DungeonItemEffectPicker includes modifier selector and accessible keyboard navigation", () => {
+  it("DungeonItemEffectPicker includes accessible listbox and keyboard navigation", () => {
     const pickerPath = path.join(componentsDir, "DungeonItemEffectPicker.tsx");
     const content = readFileSync(pickerPath, "utf-8");
-    expect(content).toContain("dungeon-effect-picker");
-    expect(content).toContain("dungeon-effect-trigger");
-    expect(content).toContain("dungeon-effect-menu");
+    expect(content).toContain("pickerWrap");
+    expect(content).toContain("pickerTrigger");
+    expect(content).toContain("pickerMenu");
     expect(content).toContain('role="listbox"');
     expect(content).toContain('role="option"');
     expect(content).toContain("aria-controls={open ? listboxId : undefined}");
@@ -106,51 +109,16 @@ describe("dungeons architecture and modularization contracts", () => {
     expect(content).toContain("handleOptionKeyDown");
   });
 
-  it("DungeonStyles has 100% scoped selectors preventing global CSS leakage", () => {
-    const stylesPath = path.join(componentsDir, "DungeonStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    const match = content.match(/<style jsx global>\{`([\s\S]*?)`\}<\/style>/);
-    expect(match).not.toBeNull();
-    const rawCss = match ? match[1] : "";
-    const root = postcss.parse(rawCss);
-
-    const unscoped: string[] = [];
-    root.walkRules((rule) => {
-      if (rule.parent?.type === "atrule" && "name" in rule.parent && rule.parent.name === "keyframes") {
-        return;
-      }
-      for (const sel of rule.selectors) {
-        const trimmed = sel.trim();
-        if (!trimmed.startsWith(".dungeons-page")) {
-          unscoped.push(trimmed);
-        }
-      }
-    });
-
-    expect(unscoped).toEqual([]);
-  });
-
-  it("enforces >= 44px touch targets on interactive button and input classes in DungeonStyles", () => {
-    const stylesPath = path.join(componentsDir, "DungeonStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    expect(content).toMatch(/\.dungeons-page \.dungeon-sort-button\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.dungeon-segmented button,\s*\.dungeons-page \.dungeon-readiness-pill\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.dungeon-check-toggle\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.dungeon-effect-trigger\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.dungeon-effect-option\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.close-btn\s*\{[^}]*min-height:\s*44px/);
-    expect(content).toMatch(/\.dungeons-page \.dungeon-open-button\s*\{[^}]*min-height:\s*44px/);
-  });
-
-  it("defines focus rings and zero letter-spacing for control labels in DungeonStyles", () => {
-    const stylesPath = path.join(componentsDir, "DungeonStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    expect(content).toContain(".dungeons-page .control-label");
-    expect(content).toMatch(/\.dungeons-page \.control-label\s*\{[^}]*letter-spacing:\s*0/);
-    expect(content).toContain(".dungeons-page .dungeon-planner-field .control-input:focus");
-    expect(content).toContain(".dungeons-page .dungeon-completed-input:focus");
-    expect(content).toContain(".dungeons-page .dungeon-mobile-completed input:focus");
-    expect(content).toContain(".dungeons-page .dungeon-effect-option:focus-visible");
+  it("Dungeons.module.css enforces >= 44px touch targets and focus-visible rings", () => {
+    const cssContent = readFileSync(cssPath, "utf-8");
+    expect(cssContent).toMatch(/\.sortButton\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toMatch(/\.toggleChip\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toMatch(/\.pickerTrigger\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toMatch(/\.pickerOption\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toMatch(/\.doneInput\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toMatch(/\.mobileOpenTrigger\s*\{[^}]*min-height:\s*44px/);
+    expect(cssContent).toContain("--border-focus");
+    expect(cssContent).toContain("prefers-reduced-motion");
   });
 
   it("useDungeonState implements dual state and ref loaded-key guards to prevent cross-profile storage write races", () => {
@@ -422,6 +390,7 @@ describe("dungeons architecture and modularization contracts", () => {
         location: { name: "Sunken Realm" },
         profileReady: true,
         netProfitPerRun: 15420,
+        shardCount: 100,
         shardValue: 250,
       };
 
@@ -433,7 +402,37 @@ describe("dungeons architecture and modularization contracts", () => {
       expect(label).toContain("Sunken Realm");
       expect(label).toContain("Ready");
       expect(label).toContain("+15,420g EV per run");
-      expect(label).toContain("250g per shard");
+      expect(label).toContain("250g entry per shard");
+    });
+
+    it("computes netProfitPerRun after entry fee without canceling cost with fake shardEv", () => {
+      const nexus = calculateDungeonEvMetrics(12039, 45000, 300);
+      expect(nexus.ev).toBe(12039);
+      expect(nexus.shardEv).toBe(0);
+      expect(nexus.netProfitPerRun).toBe(12039 - 45000);
+      expect(nexus.shardValue).toBe(150);
+
+      const early = calculateDungeonEvMetrics(729, 1200, 0);
+      expect(early.netProfitPerRun).toBe(729 - 1200);
+      expect(early.shardValue).toBe(0);
+    });
+
+    it("resolves Armour/Armor spelling variants and seasonal mastery labels cleanly", () => {
+      const db = {
+        "Dreadbane Armor Recipe": { name: "Dreadbane Armor Recipe", vendor_price: 150000 },
+      };
+      expect(resolveDungeonItemRecord(db, "Dreadbane Armour Recipe")?.vendor_price).toBe(150000);
+      expect(formatBonusMasteryLabel("shadow-mastery")).toBe("Shadow Mastery");
+      expect(formatBonusMasteryLabel("lunar_mastery")).toBe("Lunar Mastery");
+    });
+
+    it("retains the 4 seasonal event dungeons and synced Armour/seasonal items in static cache", () => {
+      const staticData = JSON.parse(readFileSync(path.join(process.cwd(), "public", "static-data.json"), "utf-8"));
+      const names = new Set((staticData.dungeons || []).map((d: any) => d.name));
+      expect(names.has("Pumpkin Hollow")).toBe(true);
+      expect(names.has("Silverleaf Enclave")).toBe(true);
+      expect(names.has("Wickedroot Patch")).toBe(true);
+      expect(names.has("Stone Hollow")).toBe(true);
     });
 
     it("verifies DungeonItemEffectPicker mobile touch pointerdown and Tab key dismiss patterns", () => {

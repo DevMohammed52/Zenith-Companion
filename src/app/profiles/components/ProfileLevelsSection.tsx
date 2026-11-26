@@ -3,10 +3,11 @@
 import React from "react";
 import type { CharacterProfile, ProfileFieldSource } from "@/lib/profiles";
 import { ascensionLevel } from "@/lib/profile-calculations";
+import styles from "../Profiles.module.css";
 import { ProfileNumberField } from "./ProfileControls";
 
 export const LEVEL_FIELDS: Array<[keyof CharacterProfile["levels"], string, { min: number; max: number }]> = [
-  ["totalLevel", "Total Level / TL", { min: 20, max: 2300 }],
+  ["totalLevel", "Total Level", { min: 20, max: 2300 }],
   ["combat", "Combat", { min: 1, max: 600 }],
   ["strength", "Strength", { min: 1, max: 100 }],
   ["defence", "Defence", { min: 1, max: 100 }],
@@ -36,13 +37,14 @@ export function ProfileLevelsSection({
 }: ProfileLevelsSectionProps) {
   return (
     <>
-      <div className="profile-panel-heading">
+      <div className={styles.panelHeading}>
         <div>
           <h2>Combat & Core Levels</h2>
-          <p>Combat, Hunting Mastery, and Dungeoneering can store ascension levels above 100.</p>
+          <p>Combat, Hunting Mastery, and Dungeoneering store ascension levels above 100.</p>
         </div>
       </div>
-      <div className="profile-grid compact">
+
+      <div className={styles.gridFour}>
         {LEVEL_FIELDS.map(([key, label, limits]) => {
           const asc = ASCENSION_LEVEL_FIELDS.has(key) ? ascensionLevel(levels[key]) : 0;
           return (
@@ -53,7 +55,7 @@ export function ProfileLevelsSection({
               min={limits.min}
               max={limits.max}
               onChange={(value) => onChangeLevel(key, value)}
-              hint={asc ? `Ascension ${asc}` : undefined}
+              badge={asc ? `Asc. ${asc}` : undefined}
               source={fieldSource(`levels.${key}`)}
             />
           );

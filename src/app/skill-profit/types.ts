@@ -46,9 +46,18 @@ export type PersistedState = {
   ascensionOpen: boolean;
   essenceOpen: boolean;
   hideAboveLevel: boolean;
+  liquidOnly?: boolean;
+  profitableOnly?: boolean;
+  rateMode?: RateMode;
+  viewMode?: ViewMode;
+  pageSize?: number;
 };
 
 export type DropdownLayer = "tools" | "essences" | "command";
+export type RateMode = "hourly" | "session";
+export type ViewMode = "table" | "cards";
+export const PAGE_SIZE_OPTIONS = [15, 25, 50] as const;
+export const DEFAULT_PAGE_SIZE = 25;
 
 export const DEFAULT_STATE: PersistedState = {
   settings: DEFAULT_SETTINGS,
@@ -60,6 +69,11 @@ export const DEFAULT_STATE: PersistedState = {
   ascensionOpen: false,
   essenceOpen: false,
   hideAboveLevel: false,
+  liquidOnly: false,
+  profitableOnly: false,
+  rateMode: "hourly",
+  viewMode: "table",
+  pageSize: DEFAULT_PAGE_SIZE,
 };
 
 export const MOBILE_RESULT_BATCH_SIZE = 48;
@@ -121,7 +135,13 @@ export interface UseSkillProfitStateReturn {
   searchTokens: string[];
   minVolume: number;
   hideAboveLevel: boolean;
-  includeForgeInfoRows: boolean;
+  liquidOnly: boolean;
+  profitableOnly: boolean;
+  rateMode: RateMode;
+  viewMode: ViewMode;
+  drawerOpen: boolean;
+  currentPage: number;
+  pageSize: number;
   ascensionOpen: boolean;
   essenceOpen: boolean;
   mobileSetupOpen: boolean;
@@ -162,8 +182,14 @@ export interface UseSkillProfitStateReturn {
   setAscensionOpen: Dispatch<SetStateAction<boolean>>;
   setEssenceOpen: Dispatch<SetStateAction<boolean>>;
   setMobileSetupOpen: Dispatch<SetStateAction<boolean>>;
-  setIncludeForgeInfoRows: Dispatch<SetStateAction<boolean>>;
   setHideAboveLevel: Dispatch<SetStateAction<boolean>>;
+  setLiquidOnly: Dispatch<SetStateAction<boolean>>;
+  setProfitableOnly: Dispatch<SetStateAction<boolean>>;
+  setRateMode: Dispatch<SetStateAction<RateMode>>;
+  setViewMode: Dispatch<SetStateAction<ViewMode>>;
+  setDrawerOpen: Dispatch<SetStateAction<boolean>>;
+  setCurrentPage: Dispatch<SetStateAction<number>>;
+  setPageSize: Dispatch<SetStateAction<number>>;
   setVisibleRowLimit: Dispatch<SetStateAction<number>>;
   setSelectedRow: (row: SkillProfitRow | null) => void;
 
@@ -182,10 +208,14 @@ export interface UseSkillProfitStateReturn {
 }
 
 export interface UseSkillProfitCalculationsReturn {
+  isLoading: boolean;
   // Calculated datasets
   rows: SkillProfitRow[];
   rowModel: SkillProfitRowModel;
+  activeTopRoute: SkillProfitRow | null;
   visibleRows: SkillProfitRow[];
+  paginatedRows: SkillProfitRow[];
+  totalPages: number;
   hiddenRowCount: number;
   liquidRouteCount: number;
   needsPriceCount: number;
@@ -223,9 +253,6 @@ export interface UseSkillProfitCalculationsReturn {
   // Essence sessions
   essenceSessionsBySkill: Partial<Record<EssenceSkillName, EssenceSession>>;
   activeEssenceCount: number;
-
-  // Forge data
-  forgeRecipes: SkillRecipe[];
 
   // Search & Batching
   searchTokens: string[];
@@ -287,6 +314,12 @@ export function formatSignedGold(value: number): string {
 
 export function formatNumber(value: number): string {
   return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+export function formatDurationSeconds(seconds: number): string {
+  if (!Number.isFinite(seconds)) return "0s";
+  const rounded = Math.round(seconds * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded.toLocaleString() : rounded.toLocaleString(undefined, { maximumFractionDigits: 1 })}s`;
 }
 
 export function formatOptionalNumber(value: number | null): string {

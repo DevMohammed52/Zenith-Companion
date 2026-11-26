@@ -1,5 +1,6 @@
 import { ALCHEMY_ITEMS, VENDOR_ITEMS, getMerchantBuyPrice, parseVendorGoldPrice } from "@/constants";
 import type { EssenceBuff, EssencePriceInfo } from "@/lib/essences";
+import { getRecipeExperienceInfo } from "@/lib/logic-core.mjs";
 import { getMarketLiquidity, getSafeMarketPrice } from "@/lib/market-pricing";
 
 export type SkillName =
@@ -175,7 +176,6 @@ export const SKILLS: SkillName[] = [
   "Cooking",
   "Smelting",
   "Alchemy",
-  "Forge",
   "Construction",
 ];
 
@@ -221,10 +221,10 @@ export const SKILL_TOOLS: Record<ToolSkill, Array<{
     { name: "Improved Fishing Rod", quality: "Refined", level: 5, vendorValue: 4, efficiency: 5 },
     { name: "Rivertamer", quality: "Refined", level: 10, vendorValue: 6, efficiency: 10 },
     { name: "Seasong's Lure", quality: "Refined", level: 20, vendorValue: 10, efficiency: 15 },
-    { name: "Hydra's Coil", quality: "Premium", level: 35, vendorValue: 25, efficiency: 20 },
-    { name: "Moonshimmer Hook", quality: "Premium", level: 45, vendorValue: 50, efficiency: 25 },
+    { name: "Moonshimmer Hook", quality: "Premium", level: 35, vendorValue: 25, efficiency: 20 },
+    { name: "Hydra's Coil", quality: "Premium", level: 45, vendorValue: 50, efficiency: 25 },
     { name: "Ocean's Whisper", quality: "Epic", level: 60, vendorValue: 75, efficiency: 30 },
-    { name: "Rune-Etched Reeler", quality: "Epic", level: 70, vendorValue: 150, efficiency: 35 },
+    { name: "Rune-etched Reeler", quality: "Epic", level: 70, vendorValue: 150, efficiency: 35 },
     { name: "Kraken's Grasp", quality: "Legendary", level: 85, vendorValue: 500, efficiency: 40 },
     { name: "Aqua Reaper", quality: "Mythic", level: 99, vendorValue: 1000, efficiency: 50 },
   ],
@@ -572,7 +572,7 @@ export function buildForgeRecipes(
         name: gear.name,
         level: recipe.level_required || 1,
         baseDuration: 60,
-        experience: recipe.experience || 0,
+        experience: getRecipeExperienceInfo(recipe.experience, "forge").skillExp,
         ingredients: [
           ...(recipe.materials || []).map((material) => ({
             name: material.item_name || material.name || "Unknown",
@@ -780,9 +780,10 @@ export function calculateSkillProfitRow(
 
 function getToolEfficiencyBonus(settings: SkillProfitSettings, skill: SkillName) {
   if (skill !== "Woodcutting" && skill !== "Mining" && skill !== "Fishing") return 0;
-  const selectedTool = settings.tools?.[skill];
+  const selectedTool = settings.tools?.[skill]?.trim();
   if (!selectedTool) return 0;
-  return SKILL_TOOLS[skill].find((tool) => tool.name === selectedTool)?.efficiency || 0;
+  const normalizedSelected = selectedTool.toLowerCase();
+  return SKILL_TOOLS[skill].find((tool) => tool.name.toLowerCase() === normalizedSelected)?.efficiency || 0;
 }
 
 export function getPrice(

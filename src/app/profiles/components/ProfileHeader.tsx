@@ -1,16 +1,30 @@
 "use client";
 
 import React from "react";
-import { BadgeCheck, Download, FileUp, Plus, UserRound } from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
 import { GameImage } from "@/components/GameImage";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { formatProfileBackupAge } from "@/lib/local-backup";
+import type { IconConcept } from "@/lib/icons";
 import {
   DEFAULT_PROFILE_BACKGROUND_IMAGE_URL,
   MAX_PROFILES,
   type CharacterProfile,
 } from "@/lib/profiles";
-import { formatProfileBackupAge } from "@/lib/local-backup";
+import styles from "../Profiles.module.css";
 import { PROFILE_SECTIONS, type ProfileSectionId } from "../types";
+
+const SECTION_ICONS: Record<ProfileSectionId, IconConcept> = {
+  identity: "profile",
+  levels: "skillProfit",
+  combat: "combat",
+  magic: "magic",
+  pet: "pets",
+  gear: "forge",
+  housing: "housing",
+  transfer: "download",
+};
 
 export function formatProfileSourceDate(value?: string): string {
   if (!value) return "Never";
@@ -35,82 +49,75 @@ export interface ProfileHeaderProps {
 
 export function ProfileHeader({
   profilesCount,
-  activeProfileSection,
-  openProfileSection,
   onAddProfile,
   onExport,
-  backupDue,
-  lastBackupAt,
-  lastImportedOrRefreshedAt,
 }: ProfileHeaderProps) {
   return (
-    <>
-      <div className="header profile-header">
-        <div>
-          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles</h1>
-        </div>
-        <div className="profile-header-actions">
-          <button
-            className="profile-action"
-            type="button"
-            onClick={onAddProfile}
-            disabled={profilesCount >= MAX_PROFILES}
-          >
-            <Plus size={15} /> Add
-          </button>
-          <button className="profile-action" type="button" onClick={onExport}>
-            <Download size={15} /> Export
-          </button>
-        </div>
-      </div>
-
-      <nav className="profile-section-nav" aria-label="Profile sections">
-        {PROFILE_SECTIONS.map(([id, label]) => (
-          <a
-            key={id}
-            href={`#profile-${id}`}
-            aria-current={activeProfileSection === id ? "page" : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              openProfileSection(id);
-            }}
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
-
-      <a
-        className="profile-import-jump-card"
-        href="#profile-transfer"
-        onClick={(event) => {
-          event.preventDefault();
-          openProfileSection("transfer");
-        }}
-      >
-        <span>
-          <FileUp size={17} />
-          <strong>Import from IdleMMO</strong>
-        </span>
-        <em>
-          {lastImportedOrRefreshedAt
-            ? `Last import: ${formatProfileSourceDate(lastImportedOrRefreshedAt)}`
-            : "Fill visible character details without scrolling through manual setup."}
-        </em>
-      </a>
-
-      <div className={`profile-backup-reminder ${backupDue ? "profile-backup-reminder-due" : ""}`}>
-        <div>
-          <strong>Local browser data</strong>
-          <span>
-            Profiles are saved only in this browser. {formatProfileBackupAge(lastBackupAt)}
+    <header className={styles.header}>
+      <div className={styles.headerCopy}>
+        <div className={styles.headerTitleRow}>
+          <span className={styles.headerIcon} aria-hidden="true">
+            <Icon name="profileSwitch" size="lg" />
           </span>
+          <h1 className="header-title" style={{ margin: 0 }}>
+            Profiles
+          </h1>
         </div>
-        <button type="button" className="profile-action" onClick={onExport}>
-          <Download size={15} /> Copy backup
-        </button>
+        <p className={styles.subtitle}>
+          Manage character stats, pets, housing, and gear loadouts stored locally in your browser.
+        </p>
       </div>
-    </>
+
+      <div className={styles.headerActions}>
+        <Button
+          variant="primary"
+          size="md"
+          icon={<Icon name="plus" size="sm" aria-hidden="true" />}
+          onClick={onAddProfile}
+          disabled={profilesCount >= MAX_PROFILES}
+        >
+          Add profile
+        </Button>
+        <Button
+          variant="secondary"
+          size="md"
+          icon={<Icon name="download" size="sm" aria-hidden="true" />}
+          onClick={onExport}
+        >
+          Export backup
+        </Button>
+      </div>
+    </header>
+  );
+}
+
+export interface ProfileSectionNavProps {
+  activeProfileSection: ProfileSectionId;
+  openProfileSection: (section: ProfileSectionId) => void;
+}
+
+export function ProfileSectionNav({
+  activeProfileSection,
+  openProfileSection,
+}: ProfileSectionNavProps) {
+  return (
+    <nav className={styles.sectionNav} aria-label="Profile sections">
+      {PROFILE_SECTIONS.map(([id, label]) => (
+        <a
+          key={id}
+          href={`#profile-${id}`}
+          className={styles.sectionTab}
+          aria-current={activeProfileSection === id ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            openProfileSection(id);
+          }}
+        >
+          <Icon name={SECTION_ICONS[id]} size="sm" aria-hidden="true" />
+          <span>{label}</span>
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -118,20 +125,55 @@ export interface ProfileListPanelProps {
   profiles: CharacterProfile[];
   activeProfileId: string | null;
   onSelectProfile: (profileId: string) => void;
+  backupDue?: boolean;
+  lastBackupAt?: number;
+  lastImportedOrRefreshedAt?: string;
+  onOpenImport?: () => void;
 }
 
 export function ProfileListPanel({
   profiles,
   activeProfileId,
   onSelectProfile,
+  backupDue,
+  lastBackupAt = 0,
+  lastImportedOrRefreshedAt,
+  onOpenImport,
 }: ProfileListPanelProps) {
   return (
-    <section className="profile-list-panel" aria-labelledby="profile-list-heading">
-      <div className="profile-count">
-        <span>{profiles.length} / {MAX_PROFILES}</span>
-        <strong id="profile-list-heading">Local Profiles</strong>
+    <section className={`${styles.listPanel} profile-list-panel`} aria-labelledby="profile-list-heading">
+      <div className={styles.listHeader}>
+        <div className={styles.listHeaderLeft}>
+          <h2 id="profile-list-heading">Character Roster</h2>
+          <Badge variant="neutral" size="sm">
+            {profiles.length} / {MAX_PROFILES}
+          </Badge>
+          {backupDue && (
+            <Badge variant="warning" size="sm">
+              Backup due
+            </Badge>
+          )}
+        </div>
+
+        <div className={styles.listHeaderRight}>
+          <span>
+            Sync: {lastImportedOrRefreshedAt ? formatProfileSourceDate(lastImportedOrRefreshedAt) : "Not imported"}
+          </span>
+          <span>Backup: {formatProfileBackupAge(lastBackupAt)}</span>
+          {onOpenImport && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name="upload" size="xs" aria-hidden="true" />}
+              onClick={onOpenImport}
+            >
+              IdleMMO sync
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="profile-list">
+
+      <div className={styles.profileList}>
         {profiles.map((item) => {
           const active = item.id === activeProfileId;
           const itemBackgroundUrl =
@@ -142,28 +184,37 @@ export function ProfileListPanel({
             <button
               key={item.id}
               type="button"
-              className={`profile-list-item ${item.imageUrl || itemBackgroundUrl ? "has-art" : ""} ${active ? "active" : ""}`}
+              className={`${styles.profileListItem} ${active ? styles.active : ""}`}
               aria-pressed={active}
               aria-label={`${active ? "Active profile" : "Switch to profile"}: ${item.name || "Unnamed Character"}`}
               onClick={() => onSelectProfile(item.id)}
             >
-              {itemBackgroundUrl && <span className="profile-list-item-bg" style={{ backgroundImage: `url("${itemBackgroundUrl}")` }} aria-hidden="true" />}
-              <span className="profile-avatar">
+              {itemBackgroundUrl && (
+                <span
+                  className={styles.profileListItemBg}
+                  style={{ backgroundImage: `url("${itemBackgroundUrl}")` }}
+                  aria-hidden="true"
+                />
+              )}
+              <span className={styles.profileAvatar}>
                 {item.imageUrl ? (
-                  <GameImage
-                    src={item.imageUrl}
-                    alt=""
-                    width={40}
-                    height={48}
-                    sizes="40px"
-                  />
-                ) : <UserRound size={18} />}
+                  <GameImage src={item.imageUrl} alt="" width={40} height={40} sizes="40px" />
+                ) : (
+                  <Icon name="profile" size="md" aria-hidden="true" />
+                )}
               </span>
-              <span>
+              <span className={styles.profileItemText}>
                 <strong>{item.name || "Unnamed Character"}</strong>
-                <small>{item.kind === "main" ? "Main" : "Alt"} - {item.className}{item.location?.name ? ` - ${item.location.name}` : ""}</small>
+                <small>
+                  {item.kind === "main" ? "Main" : "Alt"} · {item.className} · TL{" "}
+                  {(item.levels.totalLevel || 0).toLocaleString()}
+                </small>
               </span>
-              {active && <BadgeCheck size={16} />}
+              {active && (
+                <span className={styles.profileListBadge} aria-hidden="true">
+                  <Icon name="membership" size="sm" />
+                </span>
+              )}
             </button>
           );
         })}

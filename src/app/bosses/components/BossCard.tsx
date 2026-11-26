@@ -1,127 +1,208 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { formatCountdown, formatDateTime, formatDuration, formatGold, formatTime } from "@/lib/format";
-import {
-    getPhaseClass,
-    getSignalClass,
-    needsBossValueReview,
-    type ValuedBossRow,
-} from "../types";
+import type { CSSProperties } from "react";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Badge, Icon, TableCell, TableRow, type BadgeVariant } from "@/components/ui";
+import { formatCountdown, formatDuration, formatGold } from "@/lib/format";
+import { getSignalClass, type BossPhase, type ValuedBossRow } from "../types";
+import styles from "../Bosses.module.css";
 
-export interface BossCardProps {
+function getPhaseBadgeVariant(phase: BossPhase): BadgeVariant {
+    if (phase === "active") return "success";
+    if (phase === "ready") return "standard";
+    if (phase === "respawning") return "warning";
+    return "neutral";
+}
+
+function getSignalBadgeVariant(signalClass: string): BadgeVariant {
+    if (signalClass === "boss-signal-good") return "success";
+    if (signalClass === "boss-signal-warn") return "warning";
+    if (signalClass === "boss-signal-bad") return "danger";
+    return "neutral";
+}
+
+type BossCardProps = {
     row: ValuedBossRow;
     now: number;
-    onOpen: (row: ValuedBossRow) => void;
-}
+    activeCombatLevel: number | null;
+    onSelect: (boss: ValuedBossRow) => void;
+};
 
-export function BossCard({ row, now, onOpen }: BossCardProps) {
-    const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onOpen(row);
-        }
-    };
+export function BossCard({ row, now, activeCombatLevel, onSelect }: BossCardProps) {
+    const levelTooHigh = activeCombatLevel !== null && Number(row.level) > activeCombatLevel;
 
     return (
-        <div
-            aria-label={`Open ${row.name} boss details`}
-            className="mobile-alchemy-card boss-mobile-card"
-            onClick={() => onOpen(row)}
-            onKeyDown={handleKeyDown}
-            role="button"
-            tabIndex={0}
+        <button
+            type="button"
+            className={styles.mobileBossCard}
+            onClick={() => onSelect(row)}
+            aria-label={`Inspect ${row.name}, Level ${row.level}, ${row.statusLabel}`}
         >
-            <div className="m-card-header">
-                <div className="m-card-title">
-                    <div className="boss-mobile-name">
-                        {row.image_url && <img src={row.image_url} alt="" />}
-                        <span className="m-name">{row.name}</span>
-                    </div>
-                    <span className="m-lvl">{row.location?.name || "Unknown"} - LVL {row.level}</span>
-                </div>
-                <div className="m-roi pos">
-                    ~{formatGold(row.ev)}g
-                    {needsBossValueReview(row) && <span className="boss-mobile-review">Review price</span>}
-                </div>
-            </div>
-            <div className="m-card-body">
-                <div className="m-stat">
-                    <span className="m-label">Status</span>
-                    <span className={`boss-phase ${getPhaseClass(row.phase)}`}>{row.statusLabel}</span>
-                </div>
-                <div className="m-stat">
-                    <span className="m-label">{row.countdownLabel}</span>
-                    <span className="m-val pos font-bold">{formatCountdown(row.countdownTarget, now)}</span>
-                </div>
-                <div className="m-stat">
-                    <span className="m-label">Battle Ends</span>
-                    <span className="m-val text-muted">{formatTime(row.battleEndTime)}</span>
-                </div>
-                <div className="m-stat">
-                    <span className="m-label">Fight Duration</span>
-                    <span className="m-val text-muted">{formatDuration(row.battleLengthSeconds)}</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-export interface BossTableRowProps {
-    row: ValuedBossRow;
-    now: number;
-    onOpen: (row: ValuedBossRow) => void;
-}
-
-export function BossTableRow({ row, now, onOpen }: BossTableRowProps) {
-    const handleKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onOpen(row);
-        }
-    };
-
-    return (
-        <tr
-            aria-label={`Open ${row.name} boss details`}
-            className="clickable-row"
-            onClick={() => onOpen(row)}
-            onKeyDown={handleKeyDown}
-            tabIndex={0}
-        >
-            <td className="item-name left-align">
-                <div className="boss-name-cell">
-                    {row.image_url && <img src={row.image_url} alt="" />}
-                    <div>
-                        <span>{row.name}</span>
-                        <small>{row.dropsCount} drops - {row.scheduleInfo?.respawnHours || "?"}h cycle - {formatDuration(row.battleLengthSeconds)} fight</small>
+            <div className={styles.mobileCardTop}>
+                <div className={styles.mobileCardIdentity}>
+                    <span className={styles.bossThumb} aria-hidden="true">
+                        <GameImage
+                            src={row.image_url}
+                            alt=""
+                            width={36}
+                            height={36}
+                            sizes="36px"
+                            fallback={<Icon name="boss" size="md" />}
+                        />
+                    </span>
+                    <div className={styles.mobileCardMeta}>
+                        <span className={styles.mobileCardName}>{row.name}</span>
+                        <span className={styles.bossLocationLine}>
+                            <Icon name="mapPin" size="xs" aria-hidden="true" />
+                            <span>{row.location?.name || "Unknown"}</span>
+                            <span>• Lv. {row.level}</span>
+                        </span>
                     </div>
                 </div>
-            </td>
-            <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
-            <td className="mono">{row.level}</td>
-            <td>
-                <div className="boss-status-cell">
-                    <span className={`boss-phase ${getPhaseClass(row.phase)}`}>{row.statusLabel}</span>
-                    <strong>{row.countdownLabel} {formatCountdown(row.countdownTarget, now)}</strong>
-                    <small>
-                        {row.phase === "active"
-                            ? `Ends ${formatTime(row.battleEndTime)} - ${formatCountdown(row.battleEndTime, now)}`
-                            : `Starts ${formatDateTime(row.nextSpawnTime)} - in ${formatCountdown(row.nextSpawnTime, now)}`}
-                    </small>
+                <Badge size="sm" variant={getPhaseBadgeVariant(row.phase)}>
+                    {row.statusLabel}
+                </Badge>
+            </div>
+
+            <div className={styles.mobileCardStats}>
+                <div className={styles.mobileCardStatCell}>
+                    <span className={styles.statLabel}>{row.countdownLabel}</span>
+                    <strong className={styles.cellPrimary}>
+                        {formatCountdown(row.countdownTarget, now)}
+                    </strong>
                 </div>
-            </td>
-            <td className="mono profit-positive font-bold">
-                <span className="boss-ev-cell">
-                    ~{formatGold(row.ev)}
-                    {needsBossValueReview(row) && <em>Review price</em>}
+                <div className={styles.mobileCardStatCell}>
+                    <span className={styles.statLabel}>Duration</span>
+                    <strong className={styles.cellPrimary}>
+                        {formatDuration(row.battleLengthSeconds)}
+                    </strong>
+                </div>
+                <div className={styles.mobileCardStatCell}>
+                    <span className={styles.statLabel}>Expected Loot</span>
+                    <strong className={styles.evValue}>
+                        <GoldIcon size={13} />
+                        <span>~{formatGold(row.ev)}g</span>
+                    </strong>
+                </div>
+            </div>
+
+            <div className={styles.mobileCardFooter}>
+                <span>
+                    {row.phase === "active" ? "Ends" : "Start"}{" "}
+                    {(row.phase === "active" ? row.battleEndTime : row.nextSpawnTime)?.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    }) || "TBA"}
+                    {row.scheduleInfo?.respawnHours ? ` • Every ${row.scheduleInfo.respawnHours}h` : ""}
                 </span>
-            </td>
-            <td>
-                <span className={`boss-signal ${getSignalClass(row.liquiditySignal)}`}>{row.liquiditySignal}</span>
-            </td>
-        </tr>
+                <div className={styles.reviewRow}>
+                    {levelTooHigh && (
+                        <Badge size="sm" variant="warning">
+                            Needs Lv. {row.level}
+                        </Badge>
+                    )}
+                    <Badge size="sm" variant={getSignalBadgeVariant(getSignalClass(row.liquiditySignal))}>
+                        {row.liquiditySignal}
+                    </Badge>
+                </div>
+            </div>
+        </button>
     );
 }
 
-export default BossCard;
+type BossTableRowProps = {
+    row: ValuedBossRow;
+    now: number;
+    activeCombatLevel: number | null;
+    onSelect: (boss: ValuedBossRow) => void;
+    rowStyle?: CSSProperties;
+};
+
+export function BossTableRow({ row, now, activeCombatLevel, onSelect, rowStyle }: BossTableRowProps) {
+    const levelTooHigh = activeCombatLevel !== null && Number(row.level) > activeCombatLevel;
+    const signalClass = getSignalClass(row.liquiditySignal);
+
+    return (
+        <TableRow
+            className="clickable-row"
+            onClick={() => onSelect(row)}
+            style={rowStyle}
+        >
+            <TableCell>
+                <div className={styles.tableBossCell}>
+                    <span className={styles.bossThumb} aria-hidden="true">
+                        <GameImage
+                            src={row.image_url}
+                            alt=""
+                            width={36}
+                            height={36}
+                            sizes="36px"
+                            fallback={<Icon name="boss" size="md" />}
+                        />
+                    </span>
+                    <div className={styles.bossTitleStack}>
+                        <button
+                            type="button"
+                            className={styles.bossRowNameBtn}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onSelect(row);
+                            }}
+                        >
+                            {row.name}
+                        </button>
+                        <div className={styles.bossLocationLine}>
+                            <Icon name="mapPin" size="xs" aria-hidden="true" />
+                            <span>{row.location?.name || "Unknown Location"}</span>
+                            {levelTooHigh && (
+                                <Badge size="sm" variant="warning">
+                                    Needs Lv. {row.level}
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </TableCell>
+            <TableCell>
+                <span className={styles.cellPrimary}>Lv. {row.level}</span>
+            </TableCell>
+            <TableCell>
+                <div className={styles.statusCell}>
+                    <Badge size="sm" variant={getPhaseBadgeVariant(row.phase)}>
+                        {row.statusLabel}
+                    </Badge>
+                    <span className={styles.cellPrimary}>{formatCountdown(row.countdownTarget, now)}</span>
+                    <span className={styles.cellMuted}>
+                        {row.phase === "active" ? "Ends" : "Start"}{" "}
+                        {(row.phase === "active" ? row.battleEndTime : row.nextSpawnTime)?.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        }) || "TBA"}
+                    </span>
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className={styles.statusCell}>
+                    <span className={styles.cellPrimary}>
+                        Every {row.scheduleInfo?.respawnHours ? `${row.scheduleInfo.respawnHours}h` : "TBA"}
+                    </span>
+                    <span className={styles.cellMuted}>
+                        Fight {formatDuration(row.battleLengthSeconds)}
+                    </span>
+                </div>
+            </TableCell>
+            <TableCell align="right">
+                <div className={styles.statusCell} style={{ alignItems: "flex-end" }}>
+                    <span className={styles.evValue}>
+                        <GoldIcon size={14} />
+                        <span>~{formatGold(row.ev)}g</span>
+                    </span>
+                    <Badge size="sm" variant={getSignalBadgeVariant(signalClass)}>
+                        {row.liquiditySignal}
+                    </Badge>
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+}

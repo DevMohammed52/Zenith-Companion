@@ -716,6 +716,62 @@ async function updatePetDatabaseExchange() {
     }
 }
 
+function mergeDungeonsCollection(currentItems = [], liveItems = [], sourceLabel) {
+    const liveByKey = new Map();
+    for (const live of liveItems) {
+        const key = live.id || live.name;
+        if (key) liveByKey.set(key, live);
+    }
+
+    const seenKeys = new Set();
+    const updatedItems = [];
+
+    for (const item of currentItems) {
+        const key = item.id || item.name;
+        const live = liveByKey.get(key) || liveItems.find(liveItem => liveItem.id === item.id || liveItem.name === item.name);
+        if (live) {
+            seenKeys.add(live.id || live.name);
+            const isSeasonal = Boolean(item.is_seasonal || Number(live.id) > 18);
+            updatedItems.push({
+                ...item,
+                ...live,
+                loot: live.loot || item.loot || [],
+                _source: sourceLabel,
+                ...(isSeasonal ? { is_seasonal: true, event_active: true } : {}),
+            });
+            continue;
+        }
+
+        // Preserve seasonal/event dungeons between campaigns rather than deleting them when off-season.
+        if (item.is_seasonal || Number(item.id) > 18) {
+            updatedItems.push({
+                ...item,
+                is_seasonal: true,
+                event_active: false,
+            });
+            continue;
+        }
+
+        if (item._source !== sourceLabel) {
+            updatedItems.push(item);
+        }
+    }
+
+    for (const live of liveItems) {
+        const key = live.id || live.name;
+        if (!key || seenKeys.has(key)) continue;
+        const isSeasonal = Number(live.id) > 18;
+        updatedItems.push({
+            ...live,
+            loot: live.loot || [],
+            _source: sourceLabel,
+            ...(isSeasonal ? { is_seasonal: true, event_active: true } : {}),
+        });
+    }
+
+    return updatedItems;
+}
+
 async function fetchLiveDungeons() {
     try {
         console.log("Fetching live dungeon data...");
@@ -730,7 +786,7 @@ async function fetchLiveDungeons() {
             const currentStatic = loadJson(STATIC_DATA_FILE);
             if (!currentStatic) return;
 
-            currentStatic.dungeons = mergeLiveCollection(
+            currentStatic.dungeons = mergeDungeonsCollection(
                 currentStatic.dungeons || [],
                 data.dungeons,
                 "live_dungeons_api",

@@ -1,8 +1,12 @@
 "use client";
 
 import React from "react";
-import { Copy, Sparkles, Trash2, UserRound } from "lucide-react";
 import { GameImage } from "@/components/GameImage";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { TextArea } from "@/components/ui/TextArea";
 import {
   DEFAULT_PROFILE_BACKGROUND_IMAGE_URL,
   MAX_PROFILES,
@@ -11,6 +15,7 @@ import {
   type ProfileUpdateOptions,
 } from "@/lib/profiles";
 import { CLASS_DATA, type ClassInfo } from "@/lib/profile-calculations";
+import styles from "../Profiles.module.css";
 import {
   FieldSourceChip,
   ProfilePicker,
@@ -62,69 +67,122 @@ export function ProfileIdentitySection({
       : "";
 
   return (
-    <section id="profile-identity" className="profile-panel profile-identity-panel" tabIndex={-1}>
-      <div className="profile-panel-heading">
+    <section id="profile-identity" className={styles.panel} tabIndex={-1}>
+      <div className={styles.panelHeading}>
         <div>
           <h2>Identity</h2>
-          <p>Stable profile data used by calculators.</p>
+          <p>Core character details shared across all calculators and estimators.</p>
         </div>
-        <div className="profile-inline-actions">
-          <button type="button" onClick={() => {
-            const created = duplicateProfile(profile.id);
-            if (created) setToast("Profile duplicated.");
-          }} disabled={profilesCount >= MAX_PROFILES} aria-label="Duplicate active profile">
-            <Copy size={15} />
-          </button>
-          <button type="button" onClick={handleDeleteProfile} aria-label="Delete active profile">
-            <Trash2 size={15} />
-          </button>
+        <div className={styles.inlineActions}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="copy" size="sm" aria-hidden="true" />}
+            onClick={() => {
+              const created = duplicateProfile(profile.id);
+              if (created) setToast("Profile duplicated.");
+            }}
+            disabled={profilesCount >= MAX_PROFILES}
+            aria-label="Duplicate active profile"
+          >
+            Duplicate
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<Icon name="trash" size="sm" aria-hidden="true" />}
+            onClick={handleDeleteProfile}
+            aria-label="Delete active profile"
+          >
+            Delete
+          </Button>
         </div>
       </div>
-      <div
-        className={`profile-game-hero ${profileBackgroundUrl ? "has-background" : ""}`}
-        style={profileBackgroundUrl ? { backgroundImage: `url(${profileBackgroundUrl})` } : undefined}
-      >
-        <div className="profile-game-hero-character">
-          {profile.imageUrl ? (
-            <GameImage
-              src={profile.imageUrl}
-              alt=""
-              width={144}
-              height={168}
-              sizes="144px"
-              priority
-              fetchPriority="high"
-            />
-          ) : <UserRound size={38} />}
-        </div>
-        <div className="profile-game-hero-panel">
-          <div className="profile-game-hero-title">
-            <h3>{profile.name || "Unnamed Character"}</h3>
-            <span>{profile.kind === "main" ? "Main" : "Alt"}</span>
-          </div>
-          <div className="profile-chip-row">
-            <span>{profile.className}</span>
-            <span>Total Lv. {profile.levels.totalLevel || 0}</span>
-            <span>{profile.location?.name || "No location imported"}</span>
-            {profile.guild?.tag && <span>Guild {profile.guild.tag}</span>}
-          </div>
-          <div className="profile-copy-row" aria-label="Copy profile values">
-            <button type="button" onClick={() => handleCopyValue("Profile summary", buildProfileCopySummary(profile))}>
-              <Copy size={14} /> Summary
-            </button>
-            <button type="button" onClick={() => handleCopyValue("Profile name", profile.name || "")}>
-              <Copy size={14} /> Name
-            </button>
-            {profile.importSource.characterHashTail && (
-              <button type="button" onClick={() => handleCopyValue("Character hash tail", profile.importSource.characterHashTail || "")}>
-                <Copy size={14} /> Hash tail
-              </button>
+
+      <div className={styles.heroBanner}>
+        {profileBackgroundUrl && (
+          <span
+            className={styles.heroBannerBg}
+            style={{ backgroundImage: `url("${profileBackgroundUrl}")` }}
+            aria-hidden="true"
+          />
+        )}
+        <div className={styles.heroIdentity}>
+          <span className={styles.heroAvatar}>
+            {profile.imageUrl ? (
+              <GameImage
+                src={profile.imageUrl}
+                alt=""
+                width={68}
+                height={68}
+                sizes="68px"
+                priority
+                fetchPriority="high"
+              />
+            ) : (
+              <Icon name="profile" size="xl" aria-hidden="true" />
             )}
+          </span>
+          <div className={styles.heroMeta}>
+            <div className={styles.heroTitleLine}>
+              <h3>{profile.name || "Unnamed Character"}</h3>
+              <Badge variant="neutral" size="sm">
+                {profile.kind === "main" ? "Main" : "Alt"}
+              </Badge>
+              {profile.guild?.tag && (
+                <Badge variant="neutral" size="sm">
+                  [{profile.guild.tag}]
+                </Badge>
+              )}
+            </div>
+            <div className={styles.heroSubline}>
+              {profile.className} · Total Lv. {(profile.levels.totalLevel || 0).toLocaleString()} ·{" "}
+              {profile.location?.name || "No location imported"}
+            </div>
           </div>
         </div>
+
+        <div className={styles.heroActions} aria-label="Copy profile values">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Icon name="copy" size="xs" aria-hidden="true" />}
+            onClick={() => handleCopyValue("Profile summary", buildProfileCopySummary(profile))}
+          >
+            Copy summary
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Icon name="copy" size="xs" aria-hidden="true" />}
+            onClick={() => handleCopyValue("Profile name", profile.name || "")}
+          >
+            Name
+          </Button>
+          {profile.importSource.characterHashTail && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Icon name="copy" size="xs" aria-hidden="true" />}
+              onClick={() =>
+                handleCopyValue("Character hash tail", profile.importSource.characterHashTail || "")
+              }
+            >
+              Hash
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="profile-grid identity-grid">
-        <ProfileTextField label="Character Name" value={profile.name} onChange={(name) => patchActive({ name })} placeholder="Character name" source={fieldSource("name")} />
+
+      <div className={styles.gridThree}>
+        <ProfileTextField
+          label="Character Name"
+          value={profile.name}
+          onChange={(name) => patchActive({ name })}
+          placeholder="Character name"
+          source={fieldSource("name")}
+        />
+
         <ProfilePicker
           id="class"
           label="Class"
@@ -135,56 +193,134 @@ export function ProfileIdentitySection({
             title: entry.id,
             subtitle: entry.category,
             image: entry.icon,
+            badge: entry.category,
             searchText: `${entry.id} ${entry.category}`,
             value: entry.id,
           }))}
           openId={openPicker}
           setOpenId={setOpenPicker}
-          onSelect={(value) => patchActive({ className: String(value || "Other") })}
+          onSelect={(value) => patchActive({ className: String(value || "Warrior") })}
           source={fieldSource("className")}
         />
-        <label className="profile-field">
-          <span className="profile-field-labelrow">
-            <span>Character Type</span>
-            <FieldSourceChip source={fieldSource("kind")} />
-          </span>
-          <div className="profile-segmented">
-            <button type="button" className={profile.kind === "main" ? "active" : ""} onClick={() => patchActive({ kind: "main" })}>Main</button>
-            <button type="button" className={profile.kind === "alt" ? "active" : ""} onClick={() => patchActive({ kind: "alt" })}>Alt</button>
+
+        <div className={styles.field}>
+          <div className={styles.labelRow}>
+            <span className={styles.labelText}>Character Slot</span>
+            <span className={styles.labelMetaGroup}>
+              <FieldSourceChip source={fieldSource("kind")} />
+            </span>
           </div>
-        </label>
+          <SegmentedControl<CharacterProfile["kind"]>
+            ariaLabel="Character slot type"
+            value={profile.kind}
+            onChange={(kind) => patchActive({ kind })}
+            fullWidth
+            options={[
+              { value: "main", label: "Main" },
+              { value: "alt", label: "Alt", disabled: profilesCount <= 1 && profile.kind === "main" },
+            ]}
+          />
+          {profilesCount <= 1 && profile.kind === "main" && (
+            <p className={styles.fieldHint}>First slot stays Main until another profile is added.</p>
+          )}
+        </div>
       </div>
-      <details className="profile-media-details">
-        <summary>Media</summary>
-        <div className="profile-grid identity-grid">
-          <ProfileTextField label="Character Image URL" value={profile.imageUrl} onChange={(imageUrl) => patchActive({ imageUrl })} placeholder="Imported image URL" source={fieldSource("imageUrl")} />
-          <ProfileTextField label="Background URL" value={profile.backgroundUrl} onChange={(backgroundUrl) => patchActive({ backgroundUrl })} placeholder="Imported background URL" source={fieldSource("backgroundUrl")} />
+
+      <div className={styles.classBanner}>
+        {classInfo.icon ? (
+          <GameImage
+            src={classInfo.icon}
+            alt=""
+            width={56}
+            height={56}
+            className={styles.classBannerIcon}
+          />
+        ) : (
+          <span className={styles.classBannerIcon} aria-hidden="true">
+            <Icon name="combat" size="lg" />
+          </span>
+        )}
+        <div className={styles.classBannerBody}>
+          <strong>{classInfo.id} Bonuses & Talents</strong>
+          <p>{classInfo.summary}</p>
+          {classInfo.effects.length > 0 && (
+            <div className={styles.classBonusTags}>
+              {classInfo.effects.map((effect) => (
+                <Badge key={effect} variant="neutral" size="sm">
+                  {effect}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div style={{ display: "grid", gap: "0.25rem", marginTop: "0.25rem" }}>
+            {classInfo.talents.length ? (
+              classInfo.talents.map((talent) => {
+                const active = Number(profile.levels.combat || 0) >= talent.level;
+                return (
+                  <small
+                    key={talent.name}
+                    style={{
+                      color: active ? "var(--text-accent)" : "var(--text-muted)",
+                      fontWeight: active ? 600 : 400,
+                      fontSize: "0.81rem",
+                    }}
+                  >
+                    {talent.name} (Combat Lv.{talent.level}): {talent.description}
+                  </small>
+                );
+              })
+            ) : (
+              <small style={{ color: "var(--text-muted)", fontSize: "0.81rem" }}>
+                No battle talents.
+              </small>
+            )}
+            {classInfo.notes.map((note) => (
+              <small key={note} style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                {note}
+              </small>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <details className={styles.accordionCard} style={{ marginBottom: "1rem" }}>
+        <summary className={styles.accordionSummary}>
+          <span className={styles.accordionTitleGroup}>
+            <strong>Custom Artwork URLs</strong>
+            <span>Optional portrait image and profile banner overrides</span>
+          </span>
+          <span className={styles.accordionCue}>
+            <span>Expand</span>
+            <Icon name="chevronDown" size="sm" className={styles.accordionChevron} aria-hidden="true" />
+          </span>
+        </summary>
+        <div className={styles.accordionBody}>
+          <div className={styles.gridTwo}>
+            <ProfileTextField
+              label="Character Image URL"
+              value={profile.imageUrl}
+              onChange={(imageUrl) => patchActive({ imageUrl })}
+              placeholder="Imported image URL"
+              source={fieldSource("imageUrl")}
+            />
+            <ProfileTextField
+              label="Background URL"
+              value={profile.backgroundUrl}
+              onChange={(backgroundUrl) => patchActive({ backgroundUrl })}
+              placeholder="Imported background URL"
+              source={fieldSource("backgroundUrl")}
+            />
+          </div>
         </div>
       </details>
-      <div className="profile-class-card">
-        <span className="profile-class-icon">{classInfo.icon ? <img src={classInfo.icon} alt="" /> : <Sparkles size={22} />}</span>
-        <div>
-          <h3>{classInfo.id}</h3>
-          <p>{classInfo.summary}</p>
-          <div className="profile-chip-row">
-            {classInfo.effects.map((effect) => <span key={effect}>{effect}</span>)}
-          </div>
-          <div className="profile-talent-list">
-            {classInfo.talents.length ? classInfo.talents.map((talent) => {
-              const active = Number(profile.levels.combat || 0) >= talent.level;
-              return <em key={talent.name} className={active ? "active" : ""}>{talent.name} Lv.{talent.level}: {talent.description}</em>;
-            }) : <em>No battle talents.</em>}
-          </div>
-          {classInfo.notes.map((note) => <small key={note}>{note}</small>)}
-        </div>
-      </div>
-      <label className="profile-field profile-field-wide">
-        <span className="profile-field-labelrow">
-          <span>Notes</span>
-          <FieldSourceChip source={fieldSource("notes")} />
-        </span>
-        <textarea className="control-input" value={profile.notes} onChange={(event) => patchActive({ notes: event.target.value })} />
-      </label>
+
+      <TextArea
+        label="Character Notes"
+        minRows={3}
+        value={profile.notes}
+        placeholder="Gear goals, dungeon targets, or character reminders..."
+        onChange={(event) => patchActive({ notes: event.target.value })}
+      />
     </section>
   );
 }

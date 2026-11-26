@@ -23,12 +23,20 @@ import { numberFromInput, formatFieldSourceLabel } from "@/app/profiles/componen
 import { getSkillInputLevel } from "@/app/profiles/components/ProfileSkillsSection";
 import { formatProfileSourceMode } from "@/app/profiles/components/ProfileLiveImportModal";
 import { formatShortStats, formatItemEffects } from "@/app/profiles/components/ProfileGearSection";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 
 describe("profiles architecture and modularization contracts", () => {
   const profilesDir = path.join(process.cwd(), "src", "app", "profiles");
   const pagePath = path.join(profilesDir, "page.tsx");
   const componentsDir = path.join(profilesDir, "components");
   const hooksDir = path.join(profilesDir, "hooks");
+
+  it("satisfies clean migrated route contracts (CSS module, <220 page lines, zero direct lucide-react / StateBlock / style jsx)", () => {
+    assertCleanMigratedRoute({
+      routeSubpath: "profiles",
+      maxPageLines: 220,
+    });
+  });
 
   it("orchestrator page.tsx is strictly under 250 lines", () => {
     expect(existsSync(pagePath)).toBe(true);

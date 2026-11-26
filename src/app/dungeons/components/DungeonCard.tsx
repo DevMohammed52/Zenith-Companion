@@ -1,14 +1,22 @@
 "use client";
 
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import Image from "next/image";
-import { formatGoldUnit, formatSignedGold } from "@/lib/format";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon, ShardIcon } from "@/components/GoldIcon";
+import { Badge, Icon, TableCell, TableRow, type BadgeVariant } from "@/components/ui";
+import { formatGoldUnit, formatNumber, formatSignedGold } from "@/lib/format";
 import {
   type ValuedDungeonRow,
   getDungeonKey,
   getDungeonRowLabel,
   getReadinessText,
 } from "../types";
+import styles from "../Dungeons.module.css";
+
+function getReadinessBadgeVariant(row: ValuedDungeonRow, hasProfile: boolean): BadgeVariant {
+  if (row.profileReady) return "success";
+  if (hasProfile) return "warning";
+  return "neutral";
+}
 
 export interface DungeonCardProps {
   row: ValuedDungeonRow;
@@ -26,64 +34,96 @@ export function DungeonCard({
   onUpdateCompletedRuns,
 }: DungeonCardProps) {
   const dungeonKey = getDungeonKey(row);
+  const netClass = row.netProfitPerRun >= 0 ? styles.profitPositive : styles.profitNegative;
 
   return (
     <article
       aria-label={getDungeonRowLabel(row, hasProfile)}
-      className="dungeon-card"
+      className={styles.mobileDungeonCard}
     >
-      <div className="dungeon-card-top">
+      <div className={styles.mobileCardTop}>
         <button
           type="button"
-          className="dungeon-name-cell dungeon-open-button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpen(row);
-          }}
+          className={styles.mobileOpenTrigger}
+          onClick={() => onOpen(row)}
         >
-          {row.image_url && <Image src={row.image_url} alt="" width={32} height={32} unoptimized />}
-          <div>
-            <strong>{row.name}</strong>
-            <small>{row.location?.name || "Unknown"} - {Math.round(row.effectiveDurationMins)}m</small>
-          </div>
+          <span className={styles.dungeonThumb} aria-hidden="true">
+            <GameImage
+              src={row.image_url}
+              alt=""
+              width={34}
+              height={34}
+              sizes="34px"
+              fallback={<Icon name="dungeon" size="sm" />}
+            />
+          </span>
+          <span style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <span className={styles.pickerPrimary}>
+              {row.name}{" "}
+              {row.isSeasonal && (
+                <Badge size="sm" variant="neutral">
+                  Event
+                </Badge>
+              )}
+            </span>
+            <span className={styles.cellSubline}>
+              {row.location?.name || "Unknown"} • {Math.round(row.effectiveDurationMins)}m
+            </span>
+          </span>
         </button>
-        <span className={`dungeon-readiness ${row.profileReady ? "ready" : hasProfile ? "blocked" : "neutral"}`}>
+
+        <Badge size="sm" variant={getReadinessBadgeVariant(row, hasProfile)}>
           {getReadinessText(row, hasProfile)}
-        </span>
+        </Badge>
       </div>
-      <div className="dungeon-card-stats">
-        <span>
-          <small>EV/run</small>
-          <strong className={row.netProfitPerRun >= 0 ? "profit-positive" : "profit-negative"}>
-            {formatSignedGold(row.netProfitPerRun)}
+
+      <div className={styles.mobileCardStats}>
+        <div className={styles.mobileCardStatCell}>
+          <span className={styles.statLabel}>EV / Run</span>
+          <strong className={`${styles.currencyReadout} ${netClass}`}>
+            <GoldIcon size={13} />
+            <span>{formatSignedGold(row.netProfitPerRun)}</span>
           </strong>
-        </span>
-        <span>
-          <small>Gold / Shard</small>
-          <strong>{row.shardValue > 0 ? formatGoldUnit(row.shardValue) : "-"}</strong>
-        </span>
-        <span>
-          <small>Runs / Action</small>
-          <strong>{row.runsInIdleAction}</strong>
-        </span>
-        <span>
-          <small>Daily Runs</small>
-          <strong>{row.dailyRunsByPlaytime}</strong>
-        </span>
-        <span>
-          <small>Cost</small>
-          <strong>{formatGoldUnit(row.entryCost)}</strong>
-        </span>
+        </div>
+        <div className={styles.mobileCardStatCell}>
+          <span className={styles.statLabel}>Entry / Shard</span>
+          <strong className={styles.currencyReadout}>
+            {row.shardCount > 0 && row.shardValue > 0 ? (
+              <>
+                <GoldIcon size={13} />
+                <span>{formatGoldUnit(row.shardValue)}</span>
+              </>
+            ) : (
+              <span className={styles.fieldMeta}>No shards</span>
+            )}
+          </strong>
+        </div>
+        <div className={styles.mobileCardStatCell}>
+          <span className={styles.statLabel}>Runs / Action</span>
+          <strong className={styles.statValue}>
+            {row.runsInIdleAction} <small className={styles.fieldMeta}>({row.dailyRunsByPlaytime}/day)</small>
+          </strong>
+        </div>
+        <div className={styles.mobileCardStatCell}>
+          <span className={styles.statLabel}>Entry Cost</span>
+          <strong className={styles.currencyReadout}>
+            <GoldIcon size={13} />
+            <span>{formatGoldUnit(row.entryCost)}</span>
+          </strong>
+        </div>
       </div>
-      <label className="dungeon-mobile-completed" onClick={(event) => event.stopPropagation()}>
-        <span>Completed runs</span>
+
+      <label className={styles.mobileDoneField}>
+        <span>Completed runs (/{row.completionRequirement || 0})</span>
         <input
           aria-label={`${row.name} completed runs`}
+          className={styles.doneInput}
           type="number"
           min="0"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={completedRuns ?? ""}
-          placeholder={`Requirement ${row.completionRequirement || 0}`}
-          onKeyDown={(event) => event.stopPropagation()}
+          placeholder={String(row.completionRequirement || 0)}
           onChange={(event) => {
             const value = event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0);
             onUpdateCompletedRuns(dungeonKey, value);
@@ -110,55 +150,97 @@ export function DungeonTableRow({
   onUpdateCompletedRuns,
 }: DungeonTableRowProps) {
   const dungeonKey = getDungeonKey(row);
-
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLTableRowElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onOpen(row);
-    }
-  };
+  const netClass = row.netProfitPerRun >= 0 ? styles.profitPositive : styles.profitNegative;
 
   return (
-    <tr
+    <TableRow
       aria-label={getDungeonRowLabel(row, hasProfile)}
       className="clickable-row"
       onClick={() => onOpen(row)}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
     >
-      <td className="item-name left-align">
-        <button
-          type="button"
-          className="dungeon-name-cell dungeon-open-button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpen(row);
-          }}
-        >
-          {row.image_url && <Image src={row.image_url} alt="" width={32} height={32} unoptimized />}
-          <div>
-            <span>{row.name}</span>
-            <small>Lv {row.level_required || 0} - {row.durationMins}m - {row.dropsCount} drops</small>
+      <TableCell>
+        <div className={styles.dungeonCell}>
+          <span className={styles.dungeonThumb} aria-hidden="true">
+            <GameImage
+              src={row.image_url}
+              alt=""
+              width={34}
+              height={34}
+              sizes="34px"
+              fallback={<Icon name="dungeon" size="sm" />}
+            />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <button
+              type="button"
+              className={styles.dungeonNameBtn}
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpen(row);
+              }}
+            >
+              {row.name}
+            </button>
+            <div className={styles.cellSubline}>
+              <span>Lv {row.level_required || 0}</span>
+              <span>• {Math.round(row.effectiveDurationMins)}m</span>
+              <span>• {row.dropsCount} drops</span>
+              {row.isSeasonal && (
+                <Badge size="sm" variant="neutral">
+                  Event
+                </Badge>
+              )}
+              {row.shardCount > 0 && (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                  • <ShardIcon size={12} /> {formatNumber(row.shardCount)}
+                </span>
+              )}
+            </div>
           </div>
-        </button>
-      </td>
-      <td className="text-muted left-align">{row.location?.name || "Unknown"}</td>
-      <td>
-        <span className={`dungeon-readiness ${row.profileReady ? "ready" : hasProfile ? "blocked" : "neutral"}`}>
-          {getReadinessText(row, hasProfile)}
+        </div>
+      </TableCell>
+      <TableCell>
+        <span className={styles.cellSubline}>
+          <Icon name="mapPin" size="xs" aria-hidden="true" />
+          <span>{row.location?.name || "Unknown"}</span>
         </span>
-      </td>
-      <td className={`mono ${row.netProfitPerRun >= 0 ? "profit-positive" : "profit-negative"}`}>
-        {formatSignedGold(row.netProfitPerRun)}
-      </td>
-      <td className="mono text-muted">{row.shardValue > 0 ? formatGoldUnit(row.shardValue) : "-"}</td>
-      <td className="mono text-muted">{row.runsInIdleAction}</td>
-      <td>
+      </TableCell>
+      <TableCell>
+        <Badge size="sm" variant={getReadinessBadgeVariant(row, hasProfile)}>
+          {getReadinessText(row, hasProfile)}
+        </Badge>
+      </TableCell>
+      <TableCell align="right">
+        <span className={`${styles.currencyReadout} ${netClass}`}>
+          <GoldIcon size={13} />
+          <span>{formatSignedGold(row.netProfitPerRun)}</span>
+        </span>
+      </TableCell>
+      <TableCell align="right">
+        <span className={styles.currencyReadout}>
+          {row.shardCount > 0 && row.shardValue > 0 ? (
+            <>
+              <GoldIcon size={13} />
+              <span>{formatGoldUnit(row.shardValue)}</span>
+            </>
+          ) : (
+            <span className={styles.fieldMeta}>No shards</span>
+          )}
+        </span>
+      </TableCell>
+      <TableCell align="right">
+        <span className={styles.statValue} style={{ fontSize: "0.9rem" }}>
+          {row.runsInIdleAction}
+        </span>
+      </TableCell>
+      <TableCell align="center">
         <input
           aria-label={`${row.name} completed runs`}
-          className="dungeon-completed-input"
+          className={styles.doneInput}
           type="number"
           min="0"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={completedRuns ?? ""}
           placeholder={`/${row.completionRequirement || 0}`}
           onClick={(event) => event.stopPropagation()}
@@ -168,9 +250,13 @@ export function DungeonTableRow({
             onUpdateCompletedRuns(dungeonKey, value);
           }}
         />
-      </td>
-      <td className="mono text-muted">{row.runsToDrop === Infinity ? "-" : row.runsToDrop.toFixed(1)}</td>
-    </tr>
+      </TableCell>
+      <TableCell align="right">
+        <span className={styles.statValue} style={{ fontSize: "0.9rem" }}>
+          {row.runsToDrop === Infinity ? "—" : row.runsToDrop.toFixed(1)}
+        </span>
+      </TableCell>
+    </TableRow>
   );
 }
 

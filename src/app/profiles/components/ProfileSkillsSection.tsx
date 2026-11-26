@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { CharacterProfile, ProfileFieldSource } from "@/lib/profiles";
+import styles from "../Profiles.module.css";
 import { ProfileNumberField } from "./ProfileControls";
 
 export const SKILL_FIELDS: Array<[string, string]> = [
@@ -56,13 +57,14 @@ export function ProfileSkillsSection({
 
   return (
     <>
-      <div className="profile-panel-heading" style={{ marginTop: "1.75rem" }}>
+      <div className={styles.subHeading}>
         <div>
-          <h2>Primary Skilling Levels</h2>
-          <p>Gathering, refining, and crafting skills. Levels can exceed 100 via ascension.</p>
+          <h3>Primary Skilling Levels</h3>
+          <p>Gathering, refining, and crafting skills. Levels above 100 count as ascension.</p>
         </div>
       </div>
-      <div className="profile-grid compact">
+
+      <div className={styles.gridFour}>
         {SKILL_FIELDS.map(([key, label]) => {
           const currentLevel = resolveLevel(key);
           const asc = typeof currentLevel === "number" && currentLevel > 100 ? currentLevel - 100 : 0;
@@ -74,20 +76,21 @@ export function ProfileSkillsSection({
               min={1}
               max={600}
               onChange={(value) => onUpdateSkill(key, value)}
-              hint={asc ? `Ascension ${asc}` : undefined}
+              badge={asc ? `Asc. ${asc}` : undefined}
               source={fieldSource(`skills.${key}.level`) || fieldSource(`skills.${key}`)}
             />
           );
         })}
       </div>
 
-      <div className="profile-panel-heading" style={{ marginTop: "1.75rem" }}>
+      <div className={styles.subHeading}>
         <div>
-          <h2>Masteries & Special Skills</h2>
-          <p>Guild, meditation, and seasonal masteries exempt from economic penalties.</p>
+          <h3>Masteries & Special Skills</h3>
+          <p>Guild, meditation, and seasonal masteries exempt from market price penalties.</p>
         </div>
       </div>
-      <div className="profile-grid compact">
+
+      <div className={styles.gridFour}>
         {MASTERY_FIELDS.map(([key, label]) => {
           const currentLevel = resolveLevel(key);
           const asc = typeof currentLevel === "number" && currentLevel > 100 ? currentLevel - 100 : 0;
@@ -99,7 +102,7 @@ export function ProfileSkillsSection({
               min={1}
               max={600}
               onChange={(value) => onUpdateSkill(key, value)}
-              hint={asc ? `Ascension ${asc}` : undefined}
+              badge={asc ? `Asc. ${asc}` : undefined}
               source={fieldSource(`skills.${key}.level`) || fieldSource(`skills.${key}`)}
             />
           );

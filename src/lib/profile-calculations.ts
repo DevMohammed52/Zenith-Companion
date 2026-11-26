@@ -196,7 +196,7 @@ export const CLASS_DATA = [
   {
     id: "Forsaken",
     category: "Restricted",
-    icon: "https://cdn.idle-mmo.com/classes/forsaken.png",
+    icon: "https://cdn.idle-mmo.com/cdn-cgi/image/width=100/classes/forsaken.png",
     summary: "Challenge class with severe EXP penalties.",
     effects: ["-50% Skill Experience", "-50% Battle Experience", "-50% Dungeon Experience"],
     notes: [
@@ -223,21 +223,22 @@ export const CLASS_DATA = [
     ],
     talents: [],
   },
-  {
-    id: "Other",
-    category: "Manual",
-    icon: "",
-    summary: "Manual class option for unsupported or future class states.",
-    effects: ["No automatic class effects"],
-    notes: ["Use manual overrides until the class is verified."],
-    talents: [],
-  },
 ] as const;
 
 export type ClassInfo = (typeof CLASS_DATA)[number];
 
+const FALLBACK_CLASS_INFO = {
+  id: "Unknown",
+  category: "Manual",
+  icon: "",
+  summary: "Unrecognized class name.",
+  effects: ["No automatic class effects"],
+  notes: ["Select a class from the list above."],
+  talents: [],
+} as unknown as ClassInfo;
+
 export function getClassInfo(className: string): ClassInfo {
-  return CLASS_DATA.find((entry) => entry.id === className) || CLASS_DATA[CLASS_DATA.length - 1];
+  return CLASS_DATA.find((entry) => entry.id === className) || FALLBACK_CLASS_INFO;
 }
 
 export function dailyStreakMagicFind(streak: number | "") {

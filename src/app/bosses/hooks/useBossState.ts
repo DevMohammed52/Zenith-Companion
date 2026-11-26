@@ -15,7 +15,6 @@ import {
 } from "@/lib/profile-calculations";
 import { useData } from "@/context/DataContext";
 import type { LoreNameInput } from "@/lib/lore-links";
-import { useModalA11y } from "@/lib/use-modal-a11y";
 import type { TravelMode } from "@/lib/world-boss-routing";
 import {
     BASE_MOVEMENT_SPEED,
@@ -50,7 +49,7 @@ import {
 export function useBossState() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { marketData, staticData, allItemsDb } = useData();
+    const { marketData, staticData, allItemsDb, loading } = useData();
     const { preferences, setPreferences } = usePreferences();
     const { activeProfile, updateProfile } = useProfiles();
     const { openItemByName, prefetchItem } = useItemModal();
@@ -199,6 +198,10 @@ export function useBossState() {
     useEffect(() => {
         const searchParam = searchParams.get("search");
         if (searchParam) setSearchTerm(searchParam);
+        const viewParam = searchParams.get("view");
+        if (viewParam === "planner" || viewParam === "details") {
+            setActiveBossView(viewParam);
+        }
     }, [searchParams]);
 
     // Escape key modal/picker dismissal
@@ -324,6 +327,8 @@ export function useBossState() {
                 return {
                     ...drop,
                     ...value,
+                    quality: String(drop.quality || dbItem?.quality || "UNKNOWN"),
+                    image_url: drop.image_url || dbItem?.image_url,
                     expectedVal,
                     signal,
                     magicFindGain: drop.adjustedChance - drop.baseChance,
@@ -535,6 +540,35 @@ export function useBossState() {
             : [...current, bossKey]);
     };
 
+    const selectAllRoutineBosses = () => {
+        setRoutineBossKeys(routinePickerRows.map((boss) => getRoutineBossKey(boss)));
+    };
+
+    const selectActiveReadyRoutineBosses = () => {
+        setRoutineBossKeys(
+            routinePickerRows
+                .filter((boss) => boss.phase === "active" || boss.phase === "ready")
+                .map((boss) => getRoutineBossKey(boss)),
+        );
+    };
+
+    const clearRoutineBosses = () => {
+        setRoutineBossKeys([]);
+    };
+
+    const resetFilters = () => {
+        setSearchTerm("");
+        setSelectedPhase("all");
+    };
+
+    const isLoading = loading && (!staticData?.world_bosses || !marketData || !allItemsDb);
+    const activeCombatLevel =
+        activeProfile?.levels?.combat !== undefined &&
+        activeProfile?.levels?.combat !== "" &&
+        Number.isFinite(Number(activeProfile.levels.combat))
+            ? Number(activeProfile.levels.combat)
+            : null;
+
     const autoOpenedRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -560,8 +594,6 @@ export function useBossState() {
         const key = getBossKey(selectedBoss);
         return calculatedRows.find((row) => getBossKey(row) === key) || selectedBoss;
     }, [calculatedRows, selectedBoss]);
-
-    const bossDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedBossData), () => setSelectedBoss(null));
 
     const selectedBossLoreNames = useMemo<LoreNameInput[]>(() => {
         if (!selectedBossData) return [];
@@ -625,7 +657,9 @@ export function useBossState() {
         staticData,
         allItemsDb,
         activeProfile,
+        activeCombatLevel,
         preferences,
+        isLoading,
         openItemByName,
         prefetchItem,
 
@@ -639,6 +673,7 @@ export function useBossState() {
         setSearchTerm,
         selectedPhase,
         setSelectedPhase,
+        resetFilters,
         sortCol,
         setSortCol,
         sortDesc,
@@ -661,7 +696,6 @@ export function useBossState() {
         selectedBoss,
         setSelectedBoss,
         selectedBossData,
-        bossDialogRef,
         selectedBossLoreNames,
         openBoss,
         handleKeyboardOpen,
@@ -693,6 +727,9 @@ export function useBossState() {
         routineBossKeys,
         setRoutineBossKeys,
         toggleRoutineBoss,
+        selectAllRoutineBosses,
+        selectActiveReadyRoutineBosses,
+        clearRoutineBosses,
         routineStartLocation,
         setRoutineStartLocation,
         routineTeleportLevel,

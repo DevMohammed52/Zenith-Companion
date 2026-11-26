@@ -7,6 +7,7 @@ import {
   DEFAULT_COOKING_RECIPES,
   DEFAULT_FORGE_BOW_RECIPES,
   DEFAULT_FORGE_GEAR_RECIPES,
+  DEFAULT_CONSTRUCTION_RECIPES,
 } from '../src/lib/default-base-recipes.mjs';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -260,6 +261,7 @@ async function rebuild() {
   registerBaseCrafts(DEFAULT_COOKING_RECIPES, 'COOKING', 'DEFAULT_COOKING', 'Default Cooking');
   registerBaseCrafts(DEFAULT_FORGE_BOW_RECIPES, 'FORGE', 'DEFAULT_FORGE', 'Default Forge');
   registerBaseCrafts(DEFAULT_FORGE_GEAR_RECIPES, 'FORGE', 'DEFAULT_FORGE', 'Default Forge');
+  registerBaseCrafts(DEFAULT_CONSTRUCTION_RECIPES, 'CONSTRUCTION', 'DEFAULT_CONSTRUCTION', 'Default Construction');
 
   // 3. Build Search Index
   const searchIndex = Object.values(allItemsDb).map(item => ({

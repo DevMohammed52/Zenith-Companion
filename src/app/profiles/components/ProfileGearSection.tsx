@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { FileUp, Shield, Swords } from "lucide-react";
 import type { CharacterProfile, CombatStyle, ProfileFieldSource, ProfileUpdateOptions } from "@/lib/profiles";
 import {
   calculateProfileSecondaryStats,
@@ -11,6 +10,9 @@ import {
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
 import QualityText from "@/components/QualityText";
+import { Icon } from "@/components/ui/Icon";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import styles from "../Profiles.module.css";
 import { ProfileNumberField, ProfilePicker, type PickerOption } from "./ProfileControls";
 
 export const ARMOR_GEAR_FIELDS: Array<[string, string, string[]]> = [
@@ -44,14 +46,16 @@ export function formatItemEffects(effects?: ProfileItemRecord["effects"], limit 
     .filter((effect) => Number(effect?.value || 0) !== 0)
     .slice(0, limit);
   if (!entries.length) return "";
-  return entries.map((effect) => {
-    const target = String(effect.target || "").replace(/_/g, " ");
-    const attribute = String(effect.attribute || "").replace(/_/g, " ");
-    const value = Number(effect.value || 0);
-    const suffix = effect.value_type === "percentage" || effect.value_type === "efficiency" ? "%" : "";
-    const label = attribute === "magic find" ? "MF" : formatStatName(attribute);
-    return `${target ? `${target} ` : ""}${label} +${value}${suffix}`;
-  }).join(" / ");
+  return entries
+    .map((effect) => {
+      const target = String(effect.target || "").replace(/_/g, " ");
+      const attribute = String(effect.attribute || "").replace(/_/g, " ");
+      const value = Number(effect.value || 0);
+      const suffix = effect.value_type === "percentage" || effect.value_type === "efficiency" ? "%" : "";
+      const label = attribute === "magic find" ? "MF" : formatStatName(attribute);
+      return `${target ? `${target} ` : ""}${label} +${value}${suffix}`;
+    })
+    .join(" / ");
 }
 
 export interface ProfileGearSectionProps {
@@ -82,8 +86,9 @@ export function ProfileGearSection({
     title: item.name || "Unknown item",
     subtitle: (
       <>
-        <QualityText value={item.quality || "UNKNOWN"}>{item.quality || "UNKNOWN"}</QualityText> - {String(item.type || "").replace(/_/g, " ")}
-        {getItemRequirementLevel(item) ? ` - Lv. ${getItemRequirementLevel(item)}` : ""}
+        <QualityText value={item.quality || "UNKNOWN"}>{item.quality || "UNKNOWN"}</QualityText> ·{" "}
+        {String(item.type || "").replace(/_/g, " ")}
+        {getItemRequirementLevel(item) ? ` · Lv. ${getItemRequirementLevel(item)}` : ""}
       </>
     ),
     image: item.image_url,
@@ -95,13 +100,15 @@ export function ProfileGearSection({
   const renderGearSlot = (key: string, label: string, types: string[], disabled = false, tiered = true) => {
     const options = getSlotOptions(types);
     const selected = itemByName[profile.gear[key] || ""];
-    const selectedOption = selected ? itemPickerOption(selected) : {
-      id: "none",
-      title: `Select ${label}`,
-      subtitle: label,
-      searchText: "none",
-      value: null,
-    };
+    const selectedOption = selected
+      ? itemPickerOption(selected)
+      : {
+          id: "none",
+          title: `Select ${label}`,
+          subtitle: "Empty slot",
+          searchText: "none",
+          value: null,
+        };
     const maxTier = Number(selected?.max_tier || 1);
     const previewProfile = {
       ...profile,
@@ -112,152 +119,178 @@ export function ProfileGearSection({
     const stats = calculateProfileSecondaryStats(previewProfile, itemByName);
 
     return (
-      <div key={key} className={`profile-item-slot rich ${disabled ? "disabled" : ""}`}>
-        <ProfilePicker
-          id={`gear-${key}`}
-          label={label}
-          placeholder={`Select ${label}`}
-          selected={selectedOption}
-          options={[
-            { id: "none", title: "None", subtitle: "Clear this slot", searchText: "none clear", value: null, muted: true },
-            ...options.map(itemPickerOption),
-          ]}
-          openId={openPicker}
-          setOpenId={setOpenPicker}
-          disabled={disabled}
-          source={fieldSource(`gear.${key}`)}
-          onSelect={(item) => {
-            const next = item as ProfileItemRecord | null;
-            patchActive({
-              gear: { ...profile.gear, [key]: next?.name || "" },
-              gearTiers: { ...profile.gearTiers, [key]: 1 },
-            });
-          }}
-        />
-        {tiered && (
-          <ProfileNumberField
-            label={`Tier / ${maxTier}`}
-            value={profile.gearTiers?.[key] ?? 1}
-            min={1}
-            max={maxTier}
-            onChange={(value) => {
+      <div key={key} className={styles.gearSlotRow}>
+        <div className={tiered ? styles.gearSlotInputs : undefined}>
+          <ProfilePicker
+            id={`gear-${key}`}
+            label={label}
+            placeholder={`Select ${label}`}
+            selected={selectedOption}
+            options={[
+              { id: "none", title: "None", subtitle: "Clear this slot", searchText: "none clear", value: null, muted: true },
+              ...options.map(itemPickerOption),
+            ]}
+            openId={openPicker}
+            setOpenId={setOpenPicker}
+            disabled={disabled}
+            source={fieldSource(`gear.${key}`)}
+            onSelect={(item) => {
+              const next = item as ProfileItemRecord | null;
               patchActive({
-                gearTiers: {
-                  ...profile.gearTiers,
-                  [key]: value === "" ? "" : Math.min(Math.max(Number(value) || 1, 1), maxTier),
-                },
+                gear: { ...profile.gear, [key]: next?.name || "" },
+                gearTiers: { ...profile.gearTiers, [key]: 1 },
               });
             }}
-            onBlur={() => {
-              if (profile.gearTiers?.[key] === "") {
-                patchActive({ gearTiers: { ...profile.gearTiers, [key]: 1 } });
-              }
-            }}
-            source={fieldSource(`gearTiers.${key}`)}
           />
-        )}
+          {tiered && (
+            <ProfileNumberField
+              label={`Tier / ${maxTier}`}
+              value={profile.gearTiers?.[key] ?? 1}
+              min={1}
+              max={maxTier}
+              onChange={(value) => {
+                patchActive({
+                  gearTiers: {
+                    ...profile.gearTiers,
+                    [key]: value === "" ? "" : Math.min(Math.max(Number(value) || 1, 1), maxTier),
+                  },
+                });
+              }}
+              onBlur={() => {
+                if (profile.gearTiers?.[key] === "") {
+                  patchActive({ gearTiers: { ...profile.gearTiers, [key]: 1 } });
+                }
+              }}
+              source={fieldSource(`gearTiers.${key}`)}
+            />
+          )}
+        </div>
+
         {selected && (
-          <div className="profile-slot-stats">
-            <span>{formatShortStats(selected.stats, 5) || formatItemEffects(selected.effects, 4) || "No base stats"}</span>
-            {selected.tier_modifiers && <small>Tier gain: {formatShortStats(selected.tier_modifiers, 5)}</small>}
-            {tiered && <small>Slot preview: AP {stats.attackPower}, Prot {stats.protection}, Agi {stats.agility}, Acc {stats.accuracy}</small>}
+          <div className={styles.gearSummaryRow}>
+            <strong>
+              {formatShortStats(selected.stats, 4) || formatItemEffects(selected.effects, 3) || "No base stats"}
+            </strong>
+            {selected.tier_modifiers && <span>Tier gain: {formatShortStats(selected.tier_modifiers, 3)}</span>}
+            {tiered && (
+              <span>
+                AP {stats.attackPower} · Prot {stats.protection} · Agi {stats.agility} · Acc {stats.accuracy}
+              </span>
+            )}
           </div>
         )}
-        {disabled && <div className="profile-slot-stats"><span>Disabled by current weapon setup.</span></div>}
+        {disabled && (
+          <div className={styles.gearSummaryRow}>
+            <span>Disabled by current weapon setup.</span>
+          </div>
+        )}
       </div>
     );
   };
 
+  const activeStyleOption = COMBAT_STYLE_OPTIONS.find((opt) => opt.value === profile.combatStyle);
+
   return (
-    <section id="profile-gear" className="profile-panel" tabIndex={-1}>
-      <div className="profile-panel-heading">
+    <section id="profile-gear" className={styles.panel} tabIndex={-1}>
+      <div className={styles.panelHeading}>
         <div>
-          <h2>Gear And Tools</h2>
-          <p>Gear and tools come from the item database. Tier 1 is the base item; higher tiers apply stored tier modifiers.</p>
+          <h2>Gear & Tools</h2>
+          <p>Click any equipment or tool slot to search the item database in full view.</p>
+        </div>
+        <div style={{ display: "grid", gap: "0.3rem", minWidth: "min(22rem, 100%)" }}>
+          <SegmentedControl<CombatStyle>
+            ariaLabel="Weapon setup"
+            value={profile.combatStyle}
+            onChange={updateCombatStyle}
+            fullWidth
+            options={COMBAT_STYLE_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
+          {activeStyleOption && (
+            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem", textAlign: "right" }}>
+              {activeStyleOption.hint}
+            </small>
+          )}
         </div>
       </div>
-      <div className="profile-dual-grid">
-        <div>
-          <h3><Shield size={14} /> Gear</h3>
-          <div className="profile-loadout-card">
-            <span><Swords size={14} /> Weapon Setup</span>
-            <div className="profile-loadout-options">
-              {COMBAT_STYLE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={profile.combatStyle === option.value ? "active" : ""}
-                  onClick={() => updateCombatStyle(option.value)}
-                >
-                  <strong>{option.label}</strong>
-                  <small>{option.hint}</small>
-                </button>
-              ))}
+
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+        <Icon name="defense" size="sm" aria-hidden="true" />
+        <h3 style={{ margin: 0, fontSize: "0.96rem", fontWeight: 800 }}>Combat Equipment</h3>
+      </div>
+
+      <div className={styles.gridGear}>
+        {ARMOR_GEAR_FIELDS.map(([key, label, types]) => renderGearSlot(key, label, types))}
+        {renderGearSlot("special", "Special", ["SPECIAL"], false, false)}
+        {profile.combatStyle === "swordShield" && (
+          <>
+            {renderGearSlot("weapon", "Sword", ["SWORD"])}
+            {renderGearSlot("shield", "Shield", ["SHIELD"])}
+          </>
+        )}
+        {profile.combatStyle === "dualDaggers" && (
+          <>
+            {renderGearSlot("weapon", "Main Dagger", ["DAGGER"])}
+            {renderGearSlot("offhandWeapon", "Offhand Dagger", ["DAGGER"])}
+            {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
+          </>
+        )}
+        {profile.combatStyle === "bow" && (
+          <>
+            {renderGearSlot("bow", "Bow", ["BOW"])}
+            {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
+          </>
+        )}
+      </div>
+
+      <div className={styles.subHeading}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Icon name="craftTool" size="sm" aria-hidden="true" />
+          <h3>Gathering Tools</h3>
+        </div>
+      </div>
+
+      <div className={styles.gridTools}>
+        {TOOL_FIELDS.map(([key, label, types]) => {
+          const selected = itemByName[profile.tools[key] || ""];
+          return (
+            <div key={key} className={styles.gearSlotRow}>
+              <ProfilePicker
+                id={`tool-${key}`}
+                label={label}
+                placeholder={`Select ${label}`}
+                selected={
+                  selected
+                    ? itemPickerOption(selected)
+                    : {
+                        id: "none",
+                        title: `Select ${label}`,
+                        subtitle: "Tool",
+                        searchText: "none",
+                        value: null,
+                      }
+                }
+                options={[
+                  { id: "none", title: "None", subtitle: "Clear this tool", searchText: "none clear", value: null, muted: true },
+                  ...getSlotOptions(types).map(itemPickerOption),
+                ]}
+                openId={openPicker}
+                setOpenId={setOpenPicker}
+                source={fieldSource(`tools.${key}`)}
+                onSelect={(item) => {
+                  const next = item as ProfileItemRecord | null;
+                  patchActive({ tools: { ...profile.tools, [key]: next?.name || "" } });
+                }}
+              />
+              <div className={styles.gearSummaryRow}>
+                <strong>{selected ? `Efficiency: +${getToolEfficiency(selected)}%` : "No tool selected"}</strong>
+                {selected?.requirements && <span>Req. Lv. {getItemRequirementLevel(selected)}</span>}
+              </div>
             </div>
-          </div>
-          <div className="profile-grid single">
-            {ARMOR_GEAR_FIELDS.map(([key, label, types]) => renderGearSlot(key, label, types))}
-            {renderGearSlot("special", "Special", ["SPECIAL"], false, false)}
-            {profile.combatStyle === "swordShield" && (
-              <>
-                {renderGearSlot("weapon", "Sword", ["SWORD"])}
-                {renderGearSlot("shield", "Shield", ["SHIELD"])}
-              </>
-            )}
-            {profile.combatStyle === "dualDaggers" && (
-              <>
-                {renderGearSlot("weapon", "Main Dagger", ["DAGGER"])}
-                {renderGearSlot("offhandWeapon", "Offhand Dagger", ["DAGGER"])}
-                {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
-              </>
-            )}
-            {profile.combatStyle === "bow" && (
-              <>
-                {renderGearSlot("bow", "Bow", ["BOW"])}
-                {renderGearSlot("shield", "Shield", ["SHIELD"], true)}
-              </>
-            )}
-          </div>
-        </div>
-        <div>
-          <h3><FileUp size={14} /> Tools</h3>
-          <div className="profile-grid single">
-            {TOOL_FIELDS.map(([key, label, types]) => {
-              const selected = itemByName[profile.tools[key] || ""];
-              return (
-                <div key={key} className="profile-item-slot tool-slot">
-                  <ProfilePicker
-                    id={`tool-${key}`}
-                    label={label}
-                    placeholder={`Select ${label}`}
-                    selected={selected ? itemPickerOption(selected) : {
-                      id: "none",
-                      title: `Select ${label}`,
-                      subtitle: "Tool",
-                      searchText: "none",
-                      value: null,
-                    }}
-                    options={[
-                      { id: "none", title: "None", subtitle: "Clear this tool", searchText: "none clear", value: null, muted: true },
-                      ...getSlotOptions(types).map(itemPickerOption),
-                    ]}
-                    openId={openPicker}
-                    setOpenId={setOpenPicker}
-                    source={fieldSource(`tools.${key}`)}
-                    onSelect={(item) => {
-                      const next = item as ProfileItemRecord | null;
-                      patchActive({ tools: { ...profile.tools, [key]: next?.name || "" } });
-                    }}
-                  />
-                  <div className="profile-slot-stats">
-                    <span>{selected ? `Efficiency: +${getToolEfficiency(selected)}%` : "No tool selected"}</span>
-                    {selected?.requirements && <small>Requires Lv. {getItemRequirementLevel(selected)}</small>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+          );
+        })}
       </div>
     </section>
   );

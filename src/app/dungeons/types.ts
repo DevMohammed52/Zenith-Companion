@@ -30,7 +30,7 @@ export type DungeonItemModifier = {
 };
 
 export const DROP_VALUATION_OPTIONS: Array<{ value: DungeonDropValuationMode; label: string }> = [
-  { value: "safe-market", label: "Modeled market" },
+  { value: "safe-market", label: "Market" },
   { value: "vendor", label: "Vendor" },
   { value: "manual", label: "Manual" },
   { value: "exclude", label: "Exclude" },
@@ -76,6 +76,40 @@ export function isMarketSensitiveDungeonDrop(itemName: string, item: any): boole
   return isGearRecipe || isDirectGear || isMythicPotionStyle;
 }
 
+export function resolveDungeonItemRecord(allItemsDb: any, itemName: string): any {
+  if (!allItemsDb || !itemName) return undefined;
+  if (allItemsDb[itemName]) return allItemsDb[itemName];
+  if (/\bArmour\b/i.test(itemName)) {
+    const usName = itemName.replace(/\bArmour\b/g, "Armor");
+    if (allItemsDb[usName]) return allItemsDb[usName];
+  } else if (/\bArmor\b/i.test(itemName)) {
+    const ukName = itemName.replace(/\bArmor\b/g, "Armour");
+    if (allItemsDb[ukName]) return allItemsDb[ukName];
+  }
+  return undefined;
+}
+
+export function calculateDungeonEvMetrics(lootEv: number, entryCost: number, shardCount: number) {
+  const safeLootEv = Number.isFinite(lootEv) ? lootEv : 0;
+  const safeEntryCost = Number.isFinite(entryCost) ? entryCost : 0;
+  const safeShardCount = Math.max(0, Number(shardCount || 0));
+  return {
+    ev: safeLootEv,
+    lootEv: safeLootEv,
+    shardEv: 0,
+    netProfitPerRun: safeLootEv - safeEntryCost,
+    shardValue: safeShardCount > 0 ? safeEntryCost / safeShardCount : 0,
+  };
+}
+
+export function formatBonusMasteryLabel(skillKey: string): string {
+  return skillKey
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 export function resolveDungeonDropValue(
   itemName: string,
   marketData: any,
@@ -85,7 +119,7 @@ export function resolveDungeonDropValue(
   manualValue: number,
   depth = 0,
 ): any {
-  const item = allItemsDb?.[itemName];
+  const item = resolveDungeonItemRecord(allItemsDb, itemName);
   const marketItem = marketData?.[itemName];
   const marketPriceInfo = getSafeMarketPrice(marketItem);
   const marketLiquidity = getMarketLiquidity(marketItem);
@@ -298,8 +332,9 @@ export function getDungeonRowLabel(row: any, hasProfile: boolean): string {
   const readiness = getReadinessText(row, hasProfile);
   const duration = Math.round(Number(row.effectiveDurationMins || row.durationMins || 0));
   const profit = `${Number(row.netProfitPerRun || 0) >= 0 ? "+" : ""}${Math.round(Number(row.netProfitPerRun || 0)).toLocaleString()}g`;
-  const shardValue = row.shardValue > 0 ? formatGoldUnit(row.shardValue) : "no shard value";
-  return `${row.name}, level ${row.level_required || 0}, ${duration} minutes, ${row.dropsCount || 0} drops, ${locationName}, ${readiness}, ${profit} EV per run, ${shardValue} per shard. Open dungeon details.`;
+  const shardValue = row.shardCount > 0 && row.shardValue > 0 ? `${formatGoldUnit(row.shardValue)} entry per shard` : "no shards";
+  const seasonal = row.isSeasonal ? ", Event dungeon" : "";
+  return `${row.name}${seasonal}, level ${row.level_required || 0}, ${duration} minutes, ${row.dropsCount || 0} drops, ${locationName}, ${readiness}, ${profit} EV per run, ${shardValue}. Open dungeon details.`;
 }
 
 export function getHousingDungeonHoursForDungeon(profile: ReturnType<typeof useProfiles>["activeProfile"], dungeon: any): number {
@@ -410,5 +445,8 @@ export interface ValuedDungeonRow {
   includeMagicFindEv: boolean;
   combatExp: number;
   dungeoneeringExp: number;
+  bonusMasteryExp: Array<{ skill: string; amount: number }>;
+  isSeasonal: boolean;
+  eventActive: boolean;
   [key: string]: any;
 }

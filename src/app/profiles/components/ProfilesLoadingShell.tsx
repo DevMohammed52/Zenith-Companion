@@ -1,102 +1,76 @@
 "use client";
 
 import React from "react";
-import { Copy, Download, FileUp, Plus, Trash2 } from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
+import { Icon } from "@/components/ui/Icon";
+import { Skeleton } from "@/components/ui/Skeleton";
+import styles from "../Profiles.module.css";
 import { PROFILE_SECTIONS } from "../types";
 
 export function ProfilesLoadingShell() {
   return (
-    <main className="container profiles-page" aria-busy="true" aria-live="polite">
-      <div className="header profile-header">
-        <div>
-          <h1 className="header-title"><ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles</h1>
-        </div>
-        <div className="profile-header-actions" aria-hidden="true">
-          <button className="profile-action" type="button" disabled>
-            <Plus size={15} /> Add
-          </button>
-          <button className="profile-action" type="button" disabled>
-            <Download size={15} /> Export
-          </button>
-        </div>
-      </div>
-
-      <nav className="profile-section-nav profile-section-nav-loading" aria-label="Profile sections loading">
-        {PROFILE_SECTIONS.map(([id, label]) => (
-          <a key={id} aria-disabled="true" tabIndex={-1}>
-            {label}
-          </a>
-        ))}
-      </nav>
-
-      <div className="profile-import-jump-card profile-loading-card" aria-hidden="true">
-        <span>
-          <FileUp size={17} />
-          <strong>Import from IdleMMO</strong>
-        </span>
-        <em className="profile-skeleton-line" />
-      </div>
-
-      <div className="profile-backup-reminder profile-loading-card" aria-hidden="true">
-        <div>
-          <strong>Local browser data</strong>
-          <span className="profile-skeleton-line" />
-        </div>
-        <button type="button" className="profile-action" disabled>
-          <Download size={15} /> Copy backup
-        </button>
-      </div>
-
-      <section className="profile-layout" aria-label="Profile manager loading">
-        <section className="profile-list-panel">
-          <div className="profile-count">
-            <span>Loading</span>
-            <strong>Local Profiles</strong>
+    <main className={`container ${styles.page}`} aria-busy="true" aria-live="polite">
+      <header className={styles.header}>
+        <div className={styles.headerCopy}>
+          <div className={styles.headerTitleRow}>
+            <span className={styles.headerIcon} aria-hidden="true">
+              <Icon name="profileSwitch" size="lg" />
+            </span>
+            <h1 className="header-title" style={{ margin: 0 }}>
+              Profiles
+            </h1>
           </div>
-          <div className="profile-list">
+          <p className={styles.subtitle}>Preparing your local character roster and workspace.</p>
+        </div>
+        <div className={styles.headerActions} aria-hidden="true">
+          <Skeleton width={120} height={44} />
+          <Skeleton width={132} height={44} />
+        </div>
+      </header>
+
+      <section className={`${styles.layout} profile-layout`} aria-label="Profile manager loading">
+        <section className={`${styles.listPanel} profile-list-panel`}>
+          <div className={styles.listHeader}>
+            <div className={styles.listHeaderLeft}>
+              <h2>Character Roster</h2>
+            </div>
+            <Skeleton width={140} height={20} />
+          </div>
+          <div className={styles.profileList}>
             {Array.from({ length: 3 }).map((_, index) => (
-              <div className="profile-list-item profile-loading-item" key={index}>
-                <span className="profile-avatar" />
-                <span>
-                  <strong className="profile-skeleton-line" />
-                  <small className="profile-skeleton-line short" />
-                </span>
+              <div className={styles.profileListItem} key={index}>
+                <Skeleton width={40} height={40} />
+                <div style={{ display: "grid", gap: "0.35rem" }}>
+                  <Skeleton variant="text" width="80%" height={14} />
+                  <Skeleton variant="text" width="60%" height={12} />
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <div className="profile-editor">
-          <section className="profile-panel profile-identity-panel profile-loading-panel" tabIndex={-1}>
-            <div className="profile-panel-heading">
+        <nav className={styles.sectionNav} aria-label="Profile sections loading">
+          {PROFILE_SECTIONS.map(([id, label]) => (
+            <span key={id} className={styles.sectionTab} aria-disabled="true">
+              {label}
+            </span>
+          ))}
+        </nav>
+
+        <div className={`${styles.editor} profile-editor`} style={{ minHeight: "560px", contain: "layout" }}>
+          <section className={styles.panel} tabIndex={-1}>
+            <div className={styles.panelHeading}>
               <div>
                 <h2>Identity</h2>
                 <p>Preparing saved character data.</p>
               </div>
-              <div className="profile-inline-actions" aria-hidden="true">
-                <button type="button" disabled><Copy size={15} /></button>
-                <button type="button" disabled><Trash2 size={15} /></button>
-              </div>
             </div>
-            <div className="profile-game-hero profile-loading-hero">
-              <div className="profile-game-hero-character" />
-              <div className="profile-game-hero-panel">
-                <div className="profile-skeleton-line title" />
-                <div className="profile-chip-row">
-                  <span>Class</span>
-                  <span>Total Lv.</span>
-                  <span>Location</span>
-                </div>
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <Skeleton width="100%" height={88} />
+              <div className={styles.gridThree}>
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} width="100%" height={44} />
+                ))}
               </div>
-            </div>
-            <div className="profile-grid identity-grid">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div className="profile-field" key={index}>
-                  <span className="profile-skeleton-line short" />
-                  <div className="control-input profile-loading-input" />
-                </div>
-              ))}
             </div>
           </section>
         </div>

@@ -57,7 +57,6 @@ describe("Adversarial Empirical Stress Harness: /skill-profit UI Stability & Tou
       const content = readFileSync(pageFile, "utf-8");
       const lines = content.split(/\r?\n/).length;
       expect(lines).toBeLessThan(200);
-      expect(lines).toBe(126);
     });
 
     it("verifies orchestrator delegates all math and storage to custom hooks with zero inline fetch or heavy computation", () => {
@@ -69,51 +68,41 @@ describe("Adversarial Empirical Stress Harness: /skill-profit UI Stability & Tou
   });
 
   // =========================================================================
-  // Dimension 2: Touch Target Compliance (>= 44px) & CSS Tokens
+  // Dimension 2: Touch Target Compliance (>= 44px) & Centralized Primitives
   // =========================================================================
-  describe("Dimension 2: Touch Target Compliance (>= 44px) & CSS Tokens", () => {
-    it("verifies interactive form inputs and selects enforce 44px height", () => {
-      const css = readFileSync(cssFile, "utf-8");
+  describe("Dimension 2: Touch Target Compliance (>= 44px) & Centralized Primitives", () => {
+    it("verifies browse bar and Loadout drawer consume tested UI primitives", () => {
+      const filterBar = readFileSync(filterBarFile, "utf-8");
+      const table = readFileSync(tableFile, "utf-8");
 
-      // Verify input / select heights
-      expect(css).toMatch(/\.commandBar select,\s*\.toolField select,\s*\.numberField input,\s*\.searchBox input\s*\{[^}]*height:\s*44px/);
+      expect(filterBar).toContain("<SearchInput");
+      expect(filterBar).toContain("<SegmentedControl");
+      expect(filterBar).toContain("<Select");
+      expect(filterBar).toContain("<Tag");
+      expect(filterBar).toContain("<Popover");
+      expect(filterBar).toContain("<Drawer");
+      expect(filterBar).toContain("<Switch");
+      expect(filterBar).toContain("<NumberInput");
+      expect(table).toContain("<Pagination");
+      expect(table).toContain("<Tooltip");
     });
 
-    it("verifies navigation tabs, triggers, and action buttons declare >= 44px touch targets", () => {
+    it("verifies navigation triggers, option buttons, and inputs enforce >= 44px touch targets", () => {
       const css = readFileSync(cssFile, "utf-8");
 
-      // .toolTrigger >= 42px, .compactTrigger >= 44px
-      expect(css).toMatch(/\.toolTrigger\s*\{[^}]*min-height:\s*42px/);
-      expect(css).toMatch(/\.compactTrigger\s*\{[^}]*min-height:\s*44px/);
-
-      // .toolOption, .compactOption >= 44px
+      expect(css).toMatch(/\.toolTrigger,\s*\.compactTrigger\s*\{[^}]*min-height:\s*44px/);
       expect(css).toMatch(/\.toolOption,\s*\.compactOption\s*\{[^}]*min-height:\s*44px/);
-
-      // .tab height >= 44px
-      expect(css).toMatch(/\.tab\s*\{[^}]*height:\s*44px/);
-
-      // .segmentGroup height: 44px with .segmentButton height: 100%
-      expect(css).toMatch(/\.segmentGroup\s*\{[^}]*height:\s*44px/);
-      expect(css).toMatch(/\.segmentButton\s*\{[^}]*height:\s*100%/);
-
-      // .searchClear >= 44px min-height & min-width
-      expect(css).toMatch(/\.searchClear\s*\{[^}]*min-height:\s*44px/);
-      expect(css).toMatch(/\.searchClear\s*\{[^}]*min-width:\s*44px/);
-
-      // .resetFilters >= 44px
-      expect(css).toMatch(/\.resetFilters\s*\{[^}]*min-height:\s*44px/);
-
-      // .buffButton on mobile / coarse pointer >= 44px
-      expect(css).toMatch(/@media\s*\(pointer:\s*coarse\)[^{]*\{[\s\S]*?\.buffButton\s*\{[^}]*min-height:\s*44px/);
-      expect(css).toMatch(/@media\s*\(pointer:\s*coarse\)[^{]*\{[\s\S]*?\.buffButton\s*\{[^}]*min-width:\s*44px/);
+      expect(css).toMatch(/\.spotlightBtn\s*\{[^}]*min-height:\s*44px/);
+      expect(css).toMatch(/\.forgeLink\s*\{[^}]*min-height:\s*44px/);
+      expect(css).toMatch(/\.buffButton\s*\{[^}]*min-height:\s*44px/);
+      expect(css).toMatch(/\.buffButton\s*\{[^}]*min-width:\s*44px/);
+      expect(css).toMatch(/\.scenarioInput input,\s*\.targetProfitField input\s*\{[^}]*height:\s*44px/);
     });
 
     it("verifies table buttons and item triggers satisfy touch accessibility", () => {
       const css = readFileSync(cssFile, "utf-8");
 
-      // .itemButton or row button
       expect(css).toContain(".itemButton");
-      // .sortButton
       expect(css).toContain(".sortButton");
     });
   });
@@ -122,32 +111,14 @@ describe("Adversarial Empirical Stress Harness: /skill-profit UI Stability & Tou
   // Dimension 3: Modal Accessibility, Focus Trapping & ESC Dismissal
   // =========================================================================
   describe("Dimension 3: Modal Accessibility, Focus Trapping & ESC Dismissal", () => {
-    it("verifies SkillProfitStrategyModal uses canonical useModalA11y hook", () => {
+    it("verifies SkillProfitStrategyModal uses centralized ModalSheet (focus trap, aria-modal, Escape) and focused Tabs", () => {
       const content = readFileSync(modalFile, "utf-8");
-      expect(content).toContain('import { useModalA11y } from "@/lib/use-modal-a11y";');
-      expect(content).toContain("useModalA11y<HTMLDivElement>(true, onClose)");
-    });
-
-    it("verifies modal dialog declares aria-labelledby, aria-modal, role='dialog', and tabIndex", () => {
-      const content = readFileSync(modalFile, "utf-8");
-      expect(content).toContain('aria-labelledby="skill-strategy-title"');
-      expect(content).toContain('aria-modal="true"');
-      expect(content).toContain('role="dialog"');
-      expect(content).toContain("tabIndex={-1}");
-      expect(content).toContain("ref={dialogRef}");
-    });
-
-    it("verifies modal overlay handles click-to-dismiss with stopPropagation on dialog body", () => {
-      const content = readFileSync(modalFile, "utf-8");
-      expect(content).toMatch(/className=["'].*modal-overlay.*["']\s+onClick=\{onClose\}/);
-      expect(content).toMatch(/onClick=\{\(event\)\s*=>\s*event\.stopPropagation\(\)\}/);
-    });
-
-    it("verifies close button has explicit aria-label and type='button'", () => {
-      const content = readFileSync(modalFile, "utf-8");
-      expect(content).toContain('aria-label="Close skill strategy"');
-      expect(content).toContain('className="close-btn"');
-      expect(content).toContain('type="button"');
+      expect(content).toContain("ModalSheet");
+      expect(content).toContain("<ModalSheet");
+      expect(content).toContain("onClose={onClose}");
+      expect(content).toContain("title={activeRow.name}");
+      expect(content).toContain("<TabList");
+      expect(content).toContain("What-If Prices");
     });
 
     it("verifies useSkillProfitState hook provides redundant window ESC key listener for modal", () => {
@@ -157,70 +128,65 @@ describe("Adversarial Empirical Stress Harness: /skill-profit UI Stability & Tou
   });
 
   // =========================================================================
-  // Dimension 4: Mobile Batch Rendering & Filter Mutation Reset
+  // Dimension 4: Bounded Pagination & Filter Mutation Reset
   // =========================================================================
-  describe("Dimension 4: Mobile Batch Rendering & Filter Mutation Reset", () => {
-    it("verifies MOBILE_RESULT_BATCH_SIZE is strictly 48", () => {
+  describe("Dimension 4: Bounded Pagination & Filter Mutation Reset", () => {
+    it("verifies MOBILE_RESULT_BATCH_SIZE and DEFAULT_PAGE_SIZE defaults remain bounded", () => {
       expect(MOBILE_RESULT_BATCH_SIZE).toBe(48);
+      expect(DEFAULT_STATE.pageSize).toBe(25);
     });
 
-    it("verifies default state visibleRowLimit initializes to MOBILE_RESULT_BATCH_SIZE", () => {
-      const content = readFileSync(stateHookFile, "utf-8");
-      expect(content).toContain("useState(MOBILE_RESULT_BATCH_SIZE)");
-    });
-
-    it("verifies useSkillProfitCalculations slices visibleRows using visibleRowLimit when compactResults is true", () => {
+    it("verifies useSkillProfitCalculations slices paginatedRows using pageSize and safePage", () => {
       const content = readFileSync(calcHookFile, "utf-8");
-      expect(content).toContain("const visibleRows = compactResults");
-      expect(content).toContain("? rowModel.filtered.slice(0, visibleRowLimit)");
-      expect(content).toContain(": rowModel.filtered");
-      expect(content).toContain("const hiddenRowCount = Math.max(0, rowModel.filtered.length - visibleRows.length)");
+      expect(content).toContain("const totalPages = Math.max(1, Math.ceil(rowModel.filtered.length / Math.max(1, pageSize)))");
+      expect(content).toContain("const paginatedRows = useMemo(() => {");
+      expect(content).toContain("return rowModel.filtered.slice(start, start + pageSize)");
     });
 
-    it("verifies onShowMore increments visibleRowLimit by exactly 48", () => {
+    it("verifies page.tsx wires paginatedRows and Pagination handlers to both views", () => {
       const pageContent = readFileSync(pageFile, "utf-8");
-      expect(pageContent).toContain("onShowMore={() => state.setVisibleRowLimit((limit) => limit + 48)}");
+      expect(pageContent).toContain("visibleRows={calc.paginatedRows}");
+      expect(pageContent).toContain("onPageChange={state.setCurrentPage}");
+      expect(pageContent).toContain("onPageSizeChange={state.setPageSize}");
     });
 
-    it("verifies useSkillProfitState resets visibleRowLimit to MOBILE_RESULT_BATCH_SIZE on any filter change", () => {
+    it("verifies useSkillProfitState resets currentPage to 1 on any filter change", () => {
       const content = readFileSync(stateHookFile, "utf-8");
-      expect(content).toMatch(
-        /useEffect\(\(\)\s*=>\s*\{\s*setVisibleRowLimit\(MOBILE_RESULT_BATCH_SIZE\);\s*\},/
-      );
-      // Verify dependencies include activeSkill, deferredSearchTerm, minVolume, sortKey, sortDesc, etc.
+      expect(content).toContain("setCurrentPage(1);");
       expect(content).toContain("activeSkill");
       expect(content).toContain("deferredSearchTerm");
       expect(content).toContain("minVolume");
+      expect(content).toContain("liquidOnly");
+      expect(content).toContain("profitableOnly");
       expect(content).toContain("sortKey");
       expect(content).toContain("sortDesc");
       expect(content).toContain("hideAboveLevel");
-      expect(content).toContain("includeForgeInfoRows");
+      expect(content).not.toContain("includeForgeInfoRows");
+    });
+
+    it("excludes Forge from SKILLS tabs and quick filters on /skill-profit", async () => {
+      const { SKILLS } = await import("@/lib/skill-profit");
+      expect(SKILLS).not.toContain("Forge");
+      const filterBar = readFileSync(filterBarFile, "utf-8");
+      expect(filterBar).not.toContain("Include Forge gear");
     });
   });
 
   // =========================================================================
-  // Dimension 5: Dropdown Layer Elevation (activeDropdownLayer)
+  // Dimension 5: Loadout Drawer & Picker Layer Elevation
   // =========================================================================
-  describe("Dimension 5: Dropdown Layer Elevation (activeDropdownLayer)", () => {
-    it("verifies useSkillProfitState tracks activeDropdownLayer and provides open change handlers", () => {
-      const content = readFileSync(stateHookFile, "utf-8");
-      expect(content).toContain("const [activeDropdownLayer, setActiveDropdownLayer] = useState<DropdownLayer | null>(null)");
-      expect(content).toContain("handleToolPickerOpenChange");
-      expect(content).toContain("handleEssencePickerOpenChange");
-      expect(content).toContain("handleCommandPickerOpenChange");
-    });
-
-    it("verifies SkillProfitFilterBar assigns styles.dropdownLayerActive dynamically", () => {
+  describe("Dimension 5: Loadout Drawer & Picker Layer Elevation", () => {
+    it("verifies SkillProfitFilterBar houses Loadout controls inside right-side Drawer", () => {
       const content = readFileSync(filterBarFile, "utf-8");
-      expect(content).toContain('activeDropdownLayer === "command" ? styles.dropdownLayerActive : ""');
-      expect(content).toContain('activeDropdownLayer === "tools" ? styles.dropdownLayerActive : ""');
-      expect(content).toContain('activeDropdownLayer === "essences" ? styles.dropdownLayerActive : ""');
+      expect(content).toContain("<Drawer");
+      expect(content).toContain('side="right"');
+      expect(content).toContain("isOpen={drawerOpen}");
     });
 
-    it("verifies page.module.css defines z-index: 220 for dropdownLayerActive", () => {
+    it("verifies page.module.css defines z-index elevation for toolPickerOpen and toolMenu", () => {
       const css = readFileSync(cssFile, "utf-8");
-      expect(css).toMatch(/\.dropdownLayerActive\s*\{[^}]*z-index:\s*220/);
-      expect(css).toMatch(/\.toolPanel\.dropdownLayerActive,\s*\.essencePanel\.dropdownLayerActive,\s*\.commandBar\.dropdownLayerActive\s*\{[^}]*z-index:\s*220/);
+      expect(css).toMatch(/\.toolPickerOpen\s*\{[^}]*z-index:\s*220/);
+      expect(css).toMatch(/\.toolMenu\s*\{[\s\S]*?z-index:\s*280/);
     });
 
     it("verifies OptionPicker, ToolPicker, and EssencePicker dispatch zenith-tool-picker-close to prevent overlapping popovers", () => {

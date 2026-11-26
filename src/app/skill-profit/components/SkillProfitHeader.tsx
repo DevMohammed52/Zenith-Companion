@@ -1,181 +1,228 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import Link from "next/link";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Badge, Button, Icon, Tab, TabList, Tabs } from "@/components/ui";
 import { formatGold } from "@/lib/format";
 import { formatHours } from "@/lib/housing";
-import ZenithIcon from "@/components/icons/ZenithIcon";
 import { SKILLS, type SkillName, type SkillProfitRow } from "@/lib/skill-profit";
 import styles from "../page.module.css";
 import { Metric } from "./SkillProfitControls";
-import { getProfitCardValue, getProfitSummary } from "../types";
+import { getDisplayProfitPerHour, type RateMode } from "../types";
 
 export interface SkillProfitHeaderProps {
   profileLabel: string;
-  scopeLabel: string;
-  saleModeLabel: string;
+  membership: boolean;
   topRoute: SkillProfitRow | null;
   rowsCount: number;
   filteredCount: number;
+  liquidRouteCount: number;
   marketAgeMinutes: number | null;
   buffTotals: { efficiency: number; experience: number };
-  housingWindowAllValue: string;
-  housingWindowAllSub: string;
+  baseIdleActionHours: number;
   activeSkillHousingLabel: string;
   activeSkillHousingHours: number;
+  housingWindowAllValue: string;
+  housingWindowAllSub: string;
   housingWindowSub: string;
   activeSkill: SkillName | "All";
-  onSelectSkill: (skill: SkillName | "All") => void;
-  topBySkill: Map<SkillName, SkillProfitRow>;
-  counts: Map<SkillName, number>;
-  forgeRecipesCount: number;
+  rateMode: RateMode;
+  activeModifierCount: number;
+  onOpenDrawer: () => void;
+  allItemsDb?: Record<string, any> | null;
   onSelectRow: (row: SkillProfitRow) => void;
   prefetchItem: (name: string) => void;
 }
 
+function formatMarketAge(minutes: number | null): string {
+  if (minutes === null) return "Loading market";
+  if (minutes < 1) return "Fresh market";
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m ago`;
+  return `${minutes}m ago`;
+}
+
 export function SkillProfitHeader({
   profileLabel,
-  scopeLabel,
-  saleModeLabel,
+  membership,
   topRoute,
   rowsCount,
   filteredCount,
+  liquidRouteCount,
   marketAgeMinutes,
   buffTotals,
-  housingWindowAllValue,
-  housingWindowAllSub,
+  baseIdleActionHours,
   activeSkillHousingLabel,
   activeSkillHousingHours,
+  housingWindowAllValue,
+  housingWindowAllSub,
   housingWindowSub,
   activeSkill,
-  onSelectSkill,
-  topBySkill,
-  counts,
-  forgeRecipesCount,
+  rateMode,
+  activeModifierCount,
+  onOpenDrawer,
+  allItemsDb,
   onSelectRow,
   prefetchItem,
 }: SkillProfitHeaderProps) {
+  const topImage = topRoute ? allItemsDb?.[topRoute.name]?.image_url : undefined;
+  const hourlyProfit = topRoute ? getDisplayProfitPerHour(topRoute) : null;
+  const topIdleHours = topRoute ? baseIdleActionHours + topRoute.housingWindowHours : baseIdleActionHours;
+  const sessionProfit =
+    topRoute && hourlyProfit !== null
+      ? Math.round(hourlyProfit * topIdleHours)
+      : null;
+
+  const spotlightProfitLabel =
+    !topRoute || hourlyProfit === null
+      ? "Needs price"
+      : rateMode === "session" && sessionProfit !== null
+        ? `${formatGold(sessionProfit)}g / session`
+        : `${formatGold(hourlyProfit)}g/hr`;
+
   return (
-    <>
-      <section className={styles.hero}>
-        <div className={styles.heroIntro}>
-          <div className={styles.heroCopy}>
-            <div className={styles.eyebrow}>Skill Profit Finder</div>
-            <h1 className={styles.title}>
-              Skill Profit Routes <ZenithIcon name="skill" size={22} />
-            </h1>
-            <p className={styles.heroSubtitle}>
-              Rank gathering, crafting, cooking, and construction routes with taxes, tools, buffs, and costs.
-            </p>
-          </div>
-          <div className={styles.heroChips} aria-label="Current skill profit inputs">
-            <span>{profileLabel}</span>
-            <span>{scopeLabel}</span>
-            <span>{saleModeLabel} sell</span>
-          </div>
+    <header className={styles.headerBlock}>
+      <div className={styles.titleRow}>
+        <div className={styles.titleGroup}>
+          <span className={styles.eyebrow}>
+            <Icon name="skillProfit" size="sm" aria-hidden="true" />
+            <span>
+              {profileLabel} • {rowsCount.toLocaleString()} routes
+            </span>
+          </span>
+          <h1 className={styles.title}>Skill Profit Planner</h1>
         </div>
+
+        <div className={styles.headerActions}>
+          <Badge size="sm" variant={membership ? "success" : "neutral"}>
+            {membership ? "12% Member tax" : "15% Free tax"}
+          </Badge>
+          <Link href="/forge" className={styles.forgeLink}>
+            <span>Forge Planner</span>
+            <Icon name="arrowRight" size="xs" aria-hidden="true" />
+          </Link>
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Icon name="filter" size="sm" aria-hidden="true" />}
+            onClick={onOpenDrawer}
+          >
+            Loadout &amp; Boosts{activeModifierCount > 0 ? ` (${activeModifierCount})` : ""}
+          </Button>
+        </div>
+      </div>
+
+      <section className={styles.spotlightCard} aria-label="Recommended route and active bonuses">
         <button
-          aria-label={topRoute ? `Open best liquid route ${topRoute.name}` : "Best liquid route is waiting for data"}
-          className={styles.spotlightCard}
+          aria-label={topRoute ? `Open top route ${topRoute.name}` : "Top route loading"}
+          className={styles.spotlightBtn}
           disabled={!topRoute}
           onClick={() => topRoute && onSelectRow(topRoute)}
           onMouseEnter={() => topRoute && prefetchItem(topRoute.name)}
           type="button"
         >
-          <span className={styles.spotlightLabel}>Best liquid route</span>
-          <strong>{topRoute?.name || "Waiting for data"}</strong>
-          <small>{topRoute ? `${topRoute.skill} Lvl ${topRoute.level} - ${getProfitSummary(topRoute)}` : "Market data is loading"}</small>
-          <span className={styles.spotlightMetrics}>
-            <span>
-              <em>Profit</em>
-              <strong>{topRoute ? getProfitCardValue(topRoute) : "0g/hr"}</strong>
+          <span className={styles.spotlightThumb} aria-hidden="true">
+            <GameImage
+              src={topImage}
+              alt=""
+              width={36}
+              height={36}
+              sizes="36px"
+              loading="eager"
+              fallback={<Icon name="skillProfit" size="md" />}
+            />
+          </span>
+          <span className={styles.spotlightMeta}>
+            <span className={styles.spotlightKicker}>
+              {activeSkill === "All" ? "Best Liquid Route" : `Best ${activeSkill} Route`}
             </span>
-            <span>
-              <em>Cost</em>
-              <strong>{topRoute ? `${formatGold(topRoute.inputCost)}g` : "0g"}</strong>
+            <span className={styles.spotlightTitleRow}>
+              <span>{topRoute ? topRoute.name : "Loading routes..."}</span>
+              {topRoute && <Icon name="chevronRight" size="sm" aria-hidden="true" />}
             </span>
-            <span>
-              <em>Volume</em>
-              <strong>{topRoute ? topRoute.stableVolume3d.toLocaleString() : "0"}</strong>
+            <span className={styles.spotlightSub}>
+              {topRoute ? (
+                <>
+                  <span>
+                    {topRoute.skill} Lv {topRoute.level}
+                  </span>
+                  <span>•</span>
+                  <GoldIcon size={12} />
+                  <strong>{spotlightProfitLabel}</strong>
+                </>
+              ) : (
+                <span>Syncing market snapshot</span>
+              )}
             </span>
           </span>
         </button>
-        <div className={styles.heroStats}>
-          <Metric label="Market age" value={marketAgeMinutes === null ? "Waiting" : marketAgeMinutes < 1 ? "Fresh" : `${marketAgeMinutes}m`} sub={`${rowsCount.toLocaleString()} rows`} />
-          <Metric label="Buff totals" value={`+${buffTotals.efficiency}% eff / +${buffTotals.experience}% exp`} sub={activeSkill === "Construction" ? "ascension ignored" : "active buffs"} />
+
+        <div className={styles.statStrip}>
           <Metric
-            label="Housing Idle Buffs"
-            value={activeSkill === "All"
-              ? housingWindowAllValue
-              : activeSkillHousingHours > 0 ? `${activeSkillHousingLabel} +${formatHours(activeSkillHousingHours)}` : "None"}
-            sub={activeSkill === "All"
-              ? housingWindowAllSub
-              : housingWindowSub}
+            label="Active Buffs"
+            value={`+${buffTotals.efficiency}% / +${buffTotals.experience}%`}
+            sub={activeSkill === "Construction" ? "Ascension excluded" : "Eff / EXP stack"}
           />
-          <Metric label="Results" value={filteredCount.toLocaleString()} sub={`${scopeLabel} routes`} />
+          <Metric
+            label="Idle Window"
+            value={
+              activeSkill === "All"
+                ? housingWindowAllValue
+                : activeSkillHousingHours > 0
+                  ? `${activeSkillHousingLabel} +${formatHours(activeSkillHousingHours)}`
+                  : `${formatHours(baseIdleActionHours)} base`
+            }
+            sub={activeSkill === "All" ? housingWindowAllSub : housingWindowSub}
+          />
+          <Metric
+            label="Market"
+            value={formatMarketAge(marketAgeMinutes)}
+            sub={membership ? "Member rate active" : "Standard tax rate"}
+          />
+          <Metric
+            label="Shown"
+            value={`${filteredCount.toLocaleString()} routes`}
+            sub={`${liquidRouteCount.toLocaleString()} liquid`}
+          />
         </div>
       </section>
-
-      <section className={styles.overviewGrid}>
-        {SKILLS.map((skill) => {
-          const top = topBySkill.get(skill);
-          return (
-            <button
-              aria-pressed={activeSkill === skill}
-              className={`${styles.skillCard} ${activeSkill === skill ? styles.skillCardActive : ""}`}
-              key={skill}
-              onClick={() => onSelectSkill(skill)}
-              title={skill === "Forge" ? `${forgeRecipesCount} forge recipes loaded for display only` : top ? `${top.name}: ${getProfitSummary(top)}` : "No liquid route"}
-              type="button"
-            >
-              <div className={styles.skillCardTop}>
-                <span>{skill}</span>
-                <span>{(counts.get(skill) || 0).toLocaleString()}</span>
-              </div>
-              <div className={styles.skillCardBody}>
-                <span>{skill === "Forge" ? "Info only" : top?.name || "No liquid route"}</span>
-                <strong>{skill === "Forge" ? `${forgeRecipesCount} recipes` : top ? getProfitCardValue(top) : "0g/hr"}</strong>
-              </div>
-            </button>
-          );
-        })}
-      </section>
-      <div className={styles.forgeHandoff}>
-        <span>Forge recipes are informational here and hidden from All results by default.</span>
-        <a href="/forge">Open Forge Planner</a>
-      </div>
-    </>
+    </header>
   );
 }
 
 export interface SkillProfitTabsProps {
   activeSkill: SkillName | "All";
   onSelectSkill: (skill: SkillName | "All") => void;
-  filteredCount: number;
+  counts?: Map<SkillName, number>;
+  rowsCount?: number;
 }
 
 export function SkillProfitTabs({
   activeSkill,
   onSelectSkill,
-  filteredCount,
+  counts,
+  rowsCount,
 }: SkillProfitTabsProps) {
   return (
-    <section className={styles.tableHeader}>
-      <div className={styles.tabRow}>
-        {(["All", ...SKILLS] as const).map((skill) => (
-          <button
-            key={skill}
-            aria-pressed={activeSkill === skill}
-            className={`${styles.tab} ${activeSkill === skill ? styles.tabActive : ""}`}
-            onClick={() => onSelectSkill(skill)}
-            type="button"
-          >
-            {skill}
-          </button>
-        ))}
-      </div>
-      <div className={styles.panelMeta}>
-        <Filter size={13} /> {filteredCount.toLocaleString()} rows
-      </div>
+    <section className={styles.tabsBar} aria-label="Skill category tabs">
+      <Tabs
+        value={activeSkill}
+        onValueChange={(next) => onSelectSkill(next as SkillName | "All")}
+        variant="pill"
+        sharedPanelId="skill-profit-results"
+        className={styles.tabsContainer}
+      >
+        <TabList aria-label="Filter routes by skill" className={styles.tabsList}>
+          <Tab value="All" badge={rowsCount}>
+            All
+          </Tab>
+          {SKILLS.map((skill) => (
+            <Tab key={skill} value={skill} badge={counts?.get(skill)}>
+              {skill}
+            </Tab>
+          ))}
+        </TabList>
+      </Tabs>
     </section>
   );
 }

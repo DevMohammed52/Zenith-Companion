@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  BarChart3,
-  Check,
-  Search,
-  ShieldCheck,
-  Timer,
-} from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
+import { useState } from "react";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Button, Icon, SearchInput, SegmentedControl } from "@/components/ui";
 import { formatGoldUnit, formatHours, formatSignedGold } from "@/lib/format";
 import type { DungeonState } from "../hooks/useDungeonState";
 import {
@@ -16,15 +12,16 @@ import {
   type DungeonDropValuationMode,
   type ReadinessFilter,
   getDungeonKey,
-  getReadinessText,
 } from "../types";
 import { DungeonItemEffectPicker } from "./DungeonItemEffectPicker";
+import styles from "../Dungeons.module.css";
 
 export interface DungeonHeaderProps {
   state: DungeonState;
 }
 
 export function DungeonHeader({ state }: DungeonHeaderProps) {
+  const [tuningOpen, setTuningOpen] = useState(true);
   const {
     activeProfile,
     rows,
@@ -63,246 +60,412 @@ export function DungeonHeader({ state }: DungeonHeaderProps) {
     setManualSensitiveDropValue,
     setSelectedDungeonKey,
     getHousingDungeonScopeText,
+    resetFilters,
   } = state;
 
+  const hasFilters = Boolean(searchTerm.trim() || readinessFilter !== "all" || minimumProfit !== "");
+  const totalItemMf = itemMagicFindBonus + equippedDungeonSpecialMagicFind;
+
   return (
-    <>
-      <div className="header">
-        <h1 className="header-title">
-          <ZenithIcon name="castle" size={24} style={{ color: "var(--text-accent)" }} /> Dungeon Planner
-        </h1>
-        <div className="header-status" aria-live="polite">
-          <div className="status-dot"></div>
-          <span className="mono">{activeProfile ? `${activeProfile.name} - ` : ""}{rows.length} FILTERED</span>
+    <header className={styles.headerBlock}>
+      <div className={styles.titleRow}>
+        <div className={styles.titleGroup}>
+          <span className={styles.eyebrow}>
+            <Icon name="dungeon" size="sm" aria-hidden="true" />
+            <span>
+              {activeProfile ? `${activeProfile.name} • ` : ""}
+              {rows.length} {rows.length === 1 ? "dungeon" : "dungeons"} shown
+            </span>
+          </span>
+          <h1 className={styles.pageTitle}>Dungeon Planner</h1>
+          <p className={styles.subtitle}>
+            Compare entry readiness, gold per run, shard value, and queued run limits.
+          </p>
         </div>
       </div>
 
-      <section className="dungeon-command">
-        <div className="dungeon-command-main">
-          <span className="dungeon-eyebrow"><ShieldCheck size={14} /> {heroModeLabel}</span>
-          <h2>{heroDungeon?.name || "Build a dungeon plan"}</h2>
-          <p>
-            {heroReason} Compare entry readiness, run cost, dungeon efficiency, gold per shard, and magic-find adjusted EV.
-          </p>
-          {summary.sensitiveDropCount > 0 && (
-            <p className="dungeon-risk-note">
-              Market EV includes {summary.sensitiveDropCount} low-volume gear or mythic drop{summary.sensitiveDropCount === 1 ? "" : "s"}. Use Vendor, Manual, or Exclude for conservative estimates.
-            </p>
-          )}
+      <section className={styles.commandCard} aria-label="Dungeon spotlight and summary metrics">
+        <div className={styles.commandHero}>
+          <span className={styles.heroThumb} aria-hidden="true">
+            <GameImage
+              src={heroDungeon?.image_url}
+              alt=""
+              width={44}
+              height={44}
+              sizes="44px"
+              fallback={<Icon name="dungeon" size="lg" />}
+            />
+          </span>
+          <div className={styles.heroMeta}>
+            <div className={styles.heroLabelRow}>
+              <span className={styles.heroKicker}>{heroModeLabel}</span>
+            </div>
+            {heroDungeon ? (
+              <button
+                type="button"
+                className={styles.heroButton}
+                onClick={() => setSelectedDungeonKey(getDungeonKey(heroDungeon))}
+              >
+                <span>{heroDungeon.name}</span>
+                <Icon name="chevronRight" size="sm" aria-hidden="true" />
+              </button>
+            ) : (
+              <strong style={{ fontSize: "1.1rem" }}>Build a dungeon plan</strong>
+            )}
+            <p className={styles.heroSubtext}>{heroReason}</p>
+          </div>
         </div>
-        <div className="dungeon-command-stats" aria-label="Dungeon summary metrics" tabIndex={0}>
-          <div>
-            <span>Ready dungeons</span>
-            <strong>{activeProfile ? `${summary.readyRows.length} of ${rows.length} visible` : "Select profile"}</strong>
-            <small>{activeProfile ? "Current filters your profile can enter now." : "Readiness needs an active profile."}</small>
+
+        <div className={styles.statStrip}>
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>Ready Dungeons</span>
+            <strong className={styles.statValue}>
+              {activeProfile ? `${summary.readyRows.length}/${rows.length}` : "No profile"}
+            </strong>
+            <span className={styles.statHint}>
+              {activeProfile ? "Enterable right now" : "Pick a character"}
+            </span>
           </div>
-          <div>
-            <span>Top ready EV/run</span>
-            <strong>{summary.bestReady ? formatSignedGold(summary.bestReady.netProfitPerRun) : "-"}</strong>
-            <small>{summary.bestReady ? `${summary.bestReady.name} after entry cost.` : activeProfile ? "No ready dungeon in this view." : "Select a profile to check readiness."}</small>
+
+          <div className={styles.statCell}>
+            {summary.bestReady ? (
+              <button
+                type="button"
+                className={styles.statCellAction}
+                onClick={() => summary.bestReady && setSelectedDungeonKey(getDungeonKey(summary.bestReady))}
+              >
+                <span className={styles.statLabel}>Top Ready EV/Run</span>
+                <strong className={styles.statValue}>
+                  <GoldIcon size={13} />
+                  <span>{formatSignedGold(summary.bestReady.netProfitPerRun)}</span>
+                </strong>
+                <span className={styles.statHint}>{summary.bestReady.name}</span>
+              </button>
+            ) : (
+              <>
+                <span className={styles.statLabel}>Top Ready EV/Run</span>
+                <strong className={styles.statValue}>—</strong>
+                <span className={styles.statHint}>{activeProfile ? "None ready here" : "Needs profile"}</span>
+              </>
+            )}
           </div>
-          <div>
-            <span>Lowest entry cost</span>
-            <strong>{summary.cheapest ? formatGoldUnit(summary.cheapest.entryCost) : "-"}</strong>
-            <small>{summary.cheapest ? `${summary.cheapest.name} entry cost per run.` : "No dungeon matches the filters."}</small>
+
+          <div className={styles.statCell}>
+            {summary.cheapest ? (
+              <button
+                type="button"
+                className={styles.statCellAction}
+                onClick={() => summary.cheapest && setSelectedDungeonKey(getDungeonKey(summary.cheapest))}
+              >
+                <span className={styles.statLabel}>Lowest Entry Cost</span>
+                <strong className={styles.statValue}>
+                  <GoldIcon size={13} />
+                  <span>{formatGoldUnit(summary.cheapest.entryCost)}</span>
+                </strong>
+                <span className={styles.statHint}>{summary.cheapest.name}</span>
+              </button>
+            ) : (
+              <>
+                <span className={styles.statLabel}>Lowest Entry Cost</span>
+                <strong className={styles.statValue}>—</strong>
+                <span className={styles.statHint}>No match</span>
+              </>
+            )}
+          </div>
+
+          <div className={styles.statCell}>
+            <span className={styles.statLabel}>Action Limit</span>
+            <strong className={styles.statValue}>
+              {actionLimitSummary.maxHousing > 0
+                ? `Up to ${formatHours(actionLimitSummary.maxLimit)}`
+                : formatHours(actionLimitSummary.base)}
+            </strong>
+            <span className={styles.statHint}>
+              {activeProfile
+                ? actionLimitSummary.maxHousing > 0
+                  ? `${actionLimitSummary.matchingLocationText || `${actionLimitSummary.matchingRows} zones`}`
+                  : `${activeProfile.kind === "main" ? "Main" : "Alt"} base cap`
+                : "Select profile"}
+            </span>
           </div>
         </div>
       </section>
 
-      <section className="dungeon-planner">
-        <div className="dungeon-control-panel dungeon-find-panel" aria-label="Dungeon discovery controls">
-          <div className="dungeon-planner-field dungeon-search-field dungeon-search-control">
-            <label className="control-label">Search</label>
-            <div className="dungeon-input-icon">
-              <Search aria-hidden="true" size={16} strokeWidth={2.1} />
-              <input
-                aria-label="Search dungeons"
-                type="text"
-                className="control-input"
-                placeholder="Search dungeon or location"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </div>
-          </div>
-          <div className="dungeon-planner-field dungeon-filter-field dungeon-readiness-filters" role="group" aria-label="Filter by readiness">
-            <span className="control-label">Entry Readiness</span>
-            <div className="dungeon-segmented">
-              {(["all", "ready", "blocked"] as ReadinessFilter[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className={`dungeon-readiness-pill ${readinessFilter === mode ? "active" : ""}`}
-                  aria-pressed={readinessFilter === mode}
-                  onClick={() => setReadinessFilter(mode)}
-                >
-                  {mode === "all" ? "All" : mode === "ready" ? "Ready" : "Blocked"}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="dungeon-control-panel dungeon-limits-panel" aria-label="Dungeon profile limits">
-          <div className="dungeon-planner-field dungeon-readonly-field dungeon-action-limit-field">
-            <span className="control-label">Action Limit</span>
-            <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : formatHours(actionLimitSummary.base)}</strong>
-            <small>
-              {activeProfile
-                ? actionLimitSummary.maxHousing > 0
-                  ? `${activeProfile.kind === "main" ? "Main" : "Alt"} base ${formatHours(actionLimitSummary.base)}. Housing applies per matching row${actionLimitSummary.matchingLocationText ? ` (${actionLimitSummary.matchingLocationText})` : ""}.`
-                  : `${activeProfile.kind === "main" ? "Main" : "Alt"} base. ${getHousingDungeonScopeText()}`
-                : "Select a profile."}
-            </small>
-          </div>
-          <div className="dungeon-planner-field dungeon-readonly-field dungeon-playtime-field">
-            <span className="control-label">Playtime</span>
-            <strong>{Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day</strong>
-            <small>Used for daily repeat capacity, not one queued action.</small>
-          </div>
-          <div className="dungeon-planner-field dungeon-readonly-field dungeon-completion-field">
-            <span className="control-label">Completion Magic Find</span>
-            <strong>+{completionMagicFindBonus}%</strong>
-            <small>{listedCompletionMagicFindBonus}% current list + {eventCompletionMagicFindBonus}% limited-time.</small>
-          </div>
-        </div>
-        <div className="dungeon-control-panel dungeon-tuning-panel" aria-label="Dungeon EV tuning controls">
-          <label className="dungeon-planner-field dungeon-profit-field">
-            <span className="control-label">Min Profit / Run</span>
-            <input aria-label="Minimum profit per run" className="control-input" type="number" value={minimumProfit} onChange={(event) => setMinimumProfit(event.target.value === "" ? "" : Number.isFinite(Number(event.target.value)) ? Number(event.target.value) : "")} />
-          </label>
-          <label className="dungeon-planner-field dungeon-efficiency-field">
-            <span className="control-label">Dungeon Efficiency</span>
-            <input aria-label="Dungeon Efficiency" className="control-input" type="number" min="0" value={dungeonEfficiency} placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"} onChange={(event) => setDungeonEfficiency(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
-          </label>
-          <label className="dungeon-planner-field dungeon-mf-field">
-            <span className="control-label">Dungeon MF</span>
-            <input aria-label="Dungeon Magic Find" className="control-input" type="number" min="0" value={dungeonMagicFind} placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"} onChange={(event) => setDungeonMagicFind(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))} />
-          </label>
-          <label className="dungeon-planner-field dungeon-event-completion-field">
-            <span className="control-label">Event Completions</span>
-            <input
-              aria-label="Limited-time dungeon completions"
-              className="control-input"
-              type="number"
-              min="0"
-              value={eventDungeonCompletionCount}
-              placeholder="0"
-              onChange={(event) => setEventDungeonCompletionCount(event.target.value === "" ? "" : Math.max(0, Math.floor(Number(event.target.value) || 0)))}
-            />
-            <small>Adds completion MF for completed limited-time dungeons.</small>
-          </label>
+      <section className={styles.toolbarCard} aria-label="Dungeon discovery and calculator controls">
+        <div className={styles.primaryControls}>
+          <SearchInput
+            id="dungeon-search-input"
+            ariaLabel="Search dungeons"
+            placeholder="Search dungeon or location..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+            showShortcutHint={false}
+          />
+
+          <SegmentedControl<ReadinessFilter>
+            ariaLabel="Filter by entry readiness"
+            value={readinessFilter}
+            onChange={setReadinessFilter}
+            options={[
+              { value: "all", label: "All" },
+              { value: "ready", label: "Ready" },
+              { value: "blocked", label: "Blocked" },
+            ]}
+          />
+
           <button
             type="button"
-            className={`dungeon-check-toggle dungeon-mf-toggle ${includeMagicFindEv ? "active" : ""}`}
+            className={`${styles.toggleChip} ${includeMagicFindEv ? styles.toggleChipActive : ""}`.trim()}
             aria-pressed={includeMagicFindEv}
             onClick={() => setIncludeMagicFindEv((value) => !value)}
           >
-            <span className="dungeon-check-box">{includeMagicFindEv && <Check size={13} />}</span>
-            <span>
-              <strong>Apply MF</strong>
-              <small>Adjust loot EV with profile and completion magic find.</small>
-            </span>
+            <Icon name={includeMagicFindEv ? "check" : "minus"} size="xs" aria-hidden="true" />
+            <span>Apply MF EV</span>
           </button>
-        </div>
-      </section>
 
-      <div className="dungeon-advanced-row">
-        <section className="dungeon-modifier-panel" aria-label="Dungeon item modifiers">
-          <div className="dungeon-modifier-copy">
-            <span className="control-label">Dungeon Item Effects</span>
-            <strong>
-              {itemEfficiencyBonus > 0 || itemMagicFindBonus > 0 || equippedDungeonSpecialMagicFind > 0
-                ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} / ${itemMagicFindBonus + equippedDungeonSpecialMagicFind > 0 ? `+${itemMagicFindBonus + equippedDungeonSpecialMagicFind}% MF` : "No MF"}`
-                : "No item effect"}
-            </strong>
-            <small>Temporary dropdowns exclude equipped specials; profile gear special adds MF when selected.</small>
-            {dungeonMagicFindItemOptions.length === 0 && (
-              <small className="dungeon-empty-menu-hint">No tradeable temporary MF item is known in the current data. Select special gear from Profiles.</small>
-            )}
-          </div>
-          <div className="dungeon-modifier-pickers">
-            <DungeonItemEffectPicker
-              ariaLabel="Active dungeon efficiency item"
-              emptyLabel="No speed item"
-              label="Efficiency Item"
-              onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, efficiencyItem: value }))}
-              options={dungeonEfficiencyItemOptions}
-              value={dungeonItemModifierSelections.efficiencyItem}
-            />
-            <DungeonItemEffectPicker
-              ariaLabel="Active dungeon magic find item"
-              emptyLabel="No magic-find item"
-              label="Magic-Find Item"
-              onChange={(value) => setDungeonItemModifierSelections((current) => ({ ...current, magicFindItem: value }))}
-              options={dungeonMagicFindItemOptions}
-              value={dungeonItemModifierSelections.magicFindItem}
-            />
-          </div>
-        </section>
-
-        <section className="dungeon-valuation-panel" aria-label="Dungeon drop valuation">
-          <div className="dungeon-valuation-copy">
-            <span className="control-label">Sensitive Drop Value</span>
-            <strong>{DROP_VALUATION_LABELS[dropValuationMode]}</strong>
-            <small>Uses safe market prices plus modeled chest/recipe paths for high-tier gear recipes and mythic potion-style drops. Loot EV, shard EV, and entry cost stay separated.</small>
-          </div>
-          <div className="dungeon-valuation-controls">
-            <div className="dungeon-segmented dungeon-valuation-segmented" role="group" aria-label="Sensitive drop valuation mode">
-              {DROP_VALUATION_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={dropValuationMode === option.value ? "active" : ""}
-                  aria-pressed={dropValuationMode === option.value}
-                  onClick={() => setDropValuationMode(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {dropValuationMode === "manual" && (
-              <label className="dungeon-manual-value-field">
-                <span className="control-label">Manual Value / Drop</span>
-                <input
-                  aria-label="Manual value for sensitive dungeon drops"
-                  className="control-input"
-                  type="number"
-                  min="0"
-                  value={manualSensitiveDropValue}
-                  placeholder="0"
-                  onChange={(event) => setManualSensitiveDropValue(event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0))}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem" }}>
+            <Button
+              variant="secondary"
+              size="md"
+              aria-expanded={tuningOpen}
+              icon={<Icon name="filter" size="sm" aria-hidden="true" />}
+              iconTrailing={
+                <Icon
+                  name={tuningOpen ? "chevronUp" : "chevronDown"}
+                  size="sm"
+                  aria-hidden="true"
                 />
-              </label>
+              }
+              onClick={() => setTuningOpen((open) => !open)}
+            >
+              Tuning
+            </Button>
+            {hasFilters && (
+              <Button variant="ghost" size="md" onClick={resetFilters}>
+                Reset
+              </Button>
             )}
           </div>
-        </section>
-      </div>
+        </div>
 
-      <section className="dungeon-insights">
-        <button type="button" className="dungeon-insight" onClick={() => summary.bestProfit && setSelectedDungeonKey(getDungeonKey(summary.bestProfit))}>
-          <BarChart3 size={16} />
-          <span>Top EV/run in view</span>
-          <strong>{summary.bestProfit ? summary.bestProfit.name : "-"}</strong>
-          <small>{summary.bestProfit ? `${formatSignedGold(summary.bestProfit.netProfitPerRun)} after entry cost.` : "No dungeon data in this view."}</small>
-        </button>
-        <button type="button" className="dungeon-insight" onClick={() => summary.bestReady && setSelectedDungeonKey(getDungeonKey(summary.bestReady))}>
-          <ShieldCheck size={16} />
-          <span>Top ready EV/run</span>
-          <strong>{summary.bestReady ? summary.bestReady.name : "-"}</strong>
-          <small>{summary.bestReady ? `${formatSignedGold(summary.bestReady.netProfitPerRun)} and ${getReadinessText(summary.bestReady, Boolean(activeProfile)).toLowerCase()}.` : "No ready dungeon in this view."}</small>
-        </button>
-        <div className="dungeon-insight passive">
-          <Timer size={16} />
-          <span>Profile action limit</span>
-          <strong>{actionLimitSummary.maxHousing > 0 ? `Up to ${formatHours(actionLimitSummary.maxLimit)}` : `${formatHours(actionLimitSummary.base)} action limit`}</strong>
-          <small>
-            {actionLimitSummary.maxHousing > 0
-              ? `Base ${formatHours(actionLimitSummary.base)}; housing applies only on ${actionLimitSummary.matchingRows} matching row${actionLimitSummary.matchingRows === 1 ? "" : "s"}.`
-              : "No dungeon housing bonus applied."}
-          </small>
+        <div className={`${styles.tuningDrawer} ${tuningOpen ? styles.tuningDrawerOpen : ""}`.trim()}>
+          <div className={styles.tuningDrawerInner}>
+            <div className={styles.tuningBody}>
+              <div className={styles.limitsStrip} aria-label="Dungeon profile limits">
+                <div className={styles.statCell}>
+                  <span className={styles.statLabel}>Action Limit</span>
+                  <strong className={styles.statValue}>
+                    {actionLimitSummary.maxHousing > 0
+                      ? `Up to ${formatHours(actionLimitSummary.maxLimit)}`
+                      : formatHours(actionLimitSummary.base)}
+                  </strong>
+                  <span className={styles.statHint}>
+                    {activeProfile
+                      ? actionLimitSummary.maxHousing > 0
+                        ? `Base ${formatHours(actionLimitSummary.base)} + housing`
+                        : getHousingDungeonScopeText()
+                      : "Select a profile."}
+                  </span>
+                </div>
+                <div className={styles.statCell}>
+                  <span className={styles.statLabel}>Daily Playtime</span>
+                  <strong className={styles.statValue}>
+                    {Number(activeProfile?.timers.activeHours || 0).toLocaleString()}h/day
+                  </strong>
+                  <span className={styles.statHint}>Daily repeat budget</span>
+                </div>
+                <div className={styles.statCell}>
+                  <span className={styles.statLabel}>Completion Magic Find</span>
+                  <strong className={styles.statValue}>+{completionMagicFindBonus}%</strong>
+                  <span className={styles.statHint}>
+                    {listedCompletionMagicFindBonus}% listed + {eventCompletionMagicFindBonus}% event
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.tuningGrid}>
+                <label className={styles.controlField}>
+                  <span className={styles.fieldLabel}>
+                    <span>Min Profit / Run</span>
+                    <span className={styles.fieldMeta}>Gold</span>
+                  </span>
+                  <div className={styles.numberFieldWrap}>
+                    <GoldIcon size={14} />
+                    <input
+                      aria-label="Minimum profit per run"
+                      className={styles.numberFieldInput}
+                      type="number"
+                      inputMode="numeric"
+                      value={minimumProfit}
+                      placeholder="Any"
+                      onChange={(event) =>
+                        setMinimumProfit(
+                          event.target.value === ""
+                            ? ""
+                            : Number.isFinite(Number(event.target.value))
+                              ? Number(event.target.value)
+                              : "",
+                        )
+                      }
+                    />
+                  </div>
+                </label>
+
+                <label className={styles.controlField}>
+                  <span className={styles.fieldLabel}>
+                    <span>Dungeon Efficiency</span>
+                    <span className={styles.fieldMeta}>% speed</span>
+                  </span>
+                  <div className={styles.numberFieldWrap}>
+                    <input
+                      aria-label="Dungeon Efficiency"
+                      className={styles.numberFieldInput}
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={dungeonEfficiency}
+                      placeholder={activeProfile?.efficiency.dungeon ? String(activeProfile.efficiency.dungeon) : "0"}
+                      onChange={(event) =>
+                        setDungeonEfficiency(
+                          event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0),
+                        )
+                      }
+                    />
+                    <span className={styles.numberFieldUnit}>%</span>
+                  </div>
+                </label>
+
+                <label className={styles.controlField}>
+                  <span className={styles.fieldLabel}>
+                    <span>Dungeon MF</span>
+                    <span className={styles.fieldMeta}>% bonus</span>
+                  </span>
+                  <div className={styles.numberFieldWrap}>
+                    <input
+                      aria-label="Dungeon Magic Find"
+                      className={styles.numberFieldInput}
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={dungeonMagicFind}
+                      placeholder={activeProfile?.magicFind.dungeon ? String(activeProfile.magicFind.dungeon) : "0"}
+                      onChange={(event) =>
+                        setDungeonMagicFind(
+                          event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0),
+                        )
+                      }
+                    />
+                    <span className={styles.numberFieldUnit}>%</span>
+                  </div>
+                </label>
+
+                <label className={styles.controlField}>
+                  <span className={styles.fieldLabel}>
+                    <span>Event Completions</span>
+                    <span className={styles.fieldMeta}>+1% MF ea</span>
+                  </span>
+                  <div className={styles.numberFieldWrap}>
+                    <input
+                      aria-label="Limited-time dungeon completions"
+                      className={styles.numberFieldInput}
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={eventDungeonCompletionCount}
+                      placeholder="0"
+                      onChange={(event) =>
+                        setEventDungeonCompletionCount(
+                          event.target.value === "" ? "" : Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                        )
+                      }
+                    />
+                  </div>
+                </label>
+              </div>
+
+              <div className={styles.modifiersValuationRow}>
+                <section className={styles.insetGroup} aria-label="Dungeon item modifiers">
+                  <div className={styles.insetGroupHeader}>
+                    <span className={styles.insetGroupTitle}>Dungeon Item Effects</span>
+                    <span className={styles.insetGroupNote}>
+                      {itemEfficiencyBonus > 0 || totalItemMf > 0
+                        ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} • ${totalItemMf > 0 ? `+${totalItemMf}% MF` : "No MF"}`
+                        : "No item effect active"}
+                    </span>
+                  </div>
+                  <div className={styles.pickersPair}>
+                    <DungeonItemEffectPicker
+                      ariaLabel="Active dungeon efficiency item"
+                      emptyLabel="No speed item"
+                      label="Efficiency Item"
+                      onChange={(value) =>
+                        setDungeonItemModifierSelections((current) => ({ ...current, efficiencyItem: value }))
+                      }
+                      options={dungeonEfficiencyItemOptions}
+                      value={dungeonItemModifierSelections.efficiencyItem}
+                    />
+                    <DungeonItemEffectPicker
+                      ariaLabel="Active dungeon magic find item"
+                      emptyLabel="No magic-find item"
+                      label="Magic-Find Item"
+                      onChange={(value) =>
+                        setDungeonItemModifierSelections((current) => ({ ...current, magicFindItem: value }))
+                      }
+                      options={dungeonMagicFindItemOptions}
+                      value={dungeonItemModifierSelections.magicFindItem}
+                    />
+                  </div>
+                </section>
+
+                <section className={styles.insetGroup} aria-label="Dungeon drop valuation">
+                  <div className={styles.insetGroupHeader}>
+                    <span className={styles.insetGroupTitle}>Sensitive Drop Value</span>
+                    <span className={styles.insetGroupNote}>{DROP_VALUATION_LABELS[dropValuationMode]}</span>
+                  </div>
+                  <div className={styles.valuationControls}>
+                    <SegmentedControl<DungeonDropValuationMode>
+                      ariaLabel="Sensitive drop valuation mode"
+                      value={dropValuationMode}
+                      onChange={setDropValuationMode}
+                      options={DROP_VALUATION_OPTIONS.map((option) => ({
+                        value: option.value,
+                        label: option.label,
+                      }))}
+                      fullWidth
+                    />
+                    {dropValuationMode === "manual" && (
+                      <label className={styles.controlField}>
+                        <span className={styles.fieldLabel}>
+                          <span>Manual Value / Drop</span>
+                        </span>
+                        <div className={styles.numberFieldWrap}>
+                          <GoldIcon size={14} />
+                          <input
+                            aria-label="Manual value for sensitive dungeon drops"
+                            className={styles.numberFieldInput}
+                            type="number"
+                            min="0"
+                            inputMode="numeric"
+                            value={manualSensitiveDropValue}
+                            placeholder="0"
+                            onChange={(event) =>
+                              setManualSensitiveDropValue(
+                                event.target.value === "" ? "" : Math.max(0, Number(event.target.value) || 0),
+                              )
+                            }
+                          />
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-    </>
+    </header>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { useData } from "@/context/DataContext";
 import { getProfileSkillLevel } from "@/lib/profiles";
 import { getProfileBarteringBoost, getProfileConquestRank } from "@/lib/profile-calculations";
@@ -19,13 +19,10 @@ import {
 } from "@/lib/essences";
 import {
   DEFAULT_TOOL_SELECTIONS,
-  GearData,
-  ItemRegistry,
   SKILLS,
   SkillName,
   SkillProfitRow,
   SkillProfitSettings,
-  buildForgeRecipes,
   calculateSkillProfitRows,
   getBuffTotals,
 } from "@/lib/skill-profit";
@@ -42,8 +39,7 @@ import {
 } from "../types";
 
 export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): UseSkillProfitCalculationsReturn {
-  const { marketData, allItemsDb, itemRegistry } = useData();
-  const [gearData, setGearData] = useState<GearData | null>(null);
+  const { marketData, allItemsDb, itemRegistry, loading } = useData();
 
   const {
     settings,
@@ -53,25 +49,16 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     searchTokens,
     minVolume,
     hideAboveLevel,
-    includeForgeInfoRows,
+    liquidOnly,
+    profitableOnly,
     compactResults,
     visibleRowLimit,
+    currentPage,
+    pageSize,
     configuredProfile,
     preferences,
     profileLabel,
   } = state;
-
-  useEffect(() => {
-    fetch("/gear-data.json")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setGearData)
-      .catch(() => {});
-  }, []);
-
-  const forgeRecipes = useMemo(
-    () => buildForgeRecipes(gearData, itemRegistry as ItemRegistry | null),
-    [gearData, itemRegistry],
-  );
 
   const housingSummary = useMemo(
     () => calculateHousingBuffs(configuredProfile?.housing, { profileClassName: configuredProfile?.className }),
@@ -202,10 +189,10 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
       marketData,
       allItemsDb,
       { ...deferredSettings, housingIdleHoursBySkill },
-      forgeRecipes,
+      [],
       0,
     ),
-    [marketData, allItemsDb, deferredSettings, forgeRecipes, housingIdleHoursBySkill],
+    [marketData, allItemsDb, deferredSettings, housingIdleHoursBySkill],
   );
 
   const rowModel = useMemo<SkillProfitRowModel>(() => {
@@ -230,7 +217,6 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
 
     const filtered = rows
       .filter((row) => activeSkill === "All" || row.skill === activeSkill)
-      .filter((row) => row.skill !== "Forge" || activeSkill === "Forge" || includeForgeInfoRows)
       .filter((row) => rowMatchesSearch(row, searchTokens))
       .filter((row) => {
         if (!hideAboveLevel || !configuredProfile) return true;
@@ -238,11 +224,9 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
         if (playerLevel === null) return true;
         return row.level <= playerLevel;
       })
+      .filter((row) => !liquidOnly || isLiquid(row, minVolume))
+      .filter((row) => !profitableOnly || getRankedProfitPerHour(row) > 0)
       .sort((a, b) => {
-        if (activeSkill === "All" && a.skill !== b.skill) {
-          if (a.skill === "Forge") return 1;
-          if (b.skill === "Forge") return -1;
-        }
         const sortResult = getSortValue(a, sortKey) > getSortValue(b, sortKey)
           ? 1
           : getSortValue(a, sortKey) < getSortValue(b, sortKey)
@@ -255,7 +239,19 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     for (const row of rows) counts.set(row.skill, (counts.get(row.skill) || 0) + 1);
 
     return { filtered, topBySkill, topOverall, counts };
-  }, [activeSkill, configuredProfile, hideAboveLevel, includeForgeInfoRows, minVolume, rows, searchTokens, sortDesc, sortKey]);
+  }, [activeSkill, configuredProfile, hideAboveLevel, liquidOnly, minVolume, profitableOnly, rows, searchTokens, sortDesc, sortKey]);
+
+  const activeTopRoute = useMemo(() => {
+    if (activeSkill === "All") return rowModel.topOverall;
+    return rowModel.topBySkill.get(activeSkill) || rowModel.filtered[0] || null;
+  }, [activeSkill, rowModel]);
+
+  const totalPages = Math.max(1, Math.ceil(rowModel.filtered.length / Math.max(1, pageSize)));
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return rowModel.filtered.slice(start, start + pageSize);
+  }, [pageSize, rowModel.filtered, safePage]);
 
   const visibleRows = compactResults
     ? rowModel.filtered.slice(0, visibleRowLimit)
@@ -263,7 +259,7 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
   const hiddenRowCount = Math.max(0, rowModel.filtered.length - visibleRows.length);
 
   const liquidRouteCount = useMemo(
-    () => rowModel.filtered.filter((row) => row.skill !== "Forge" && isLiquid(row, minVolume)).length,
+    () => rowModel.filtered.filter((row) => isLiquid(row, minVolume)).length,
     [minVolume, rowModel.filtered],
   );
 
@@ -355,9 +351,13 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
   const scopeLabel = activeSkill === "All" ? "All skills" : activeSkill;
 
   return {
+    isLoading: Boolean(loading && (!marketData || !allItemsDb)),
     rows,
     rowModel,
+    activeTopRoute,
     visibleRows,
+    paginatedRows,
+    totalPages,
     hiddenRowCount,
     liquidRouteCount,
     needsPriceCount,
@@ -387,7 +387,6 @@ export function useSkillProfitCalculations(state: UseSkillProfitStateReturn): Us
     hasAnyLocationLimitedHousing,
     essenceSessionsBySkill,
     activeEssenceCount,
-    forgeRecipes,
     searchTokens,
   };
 }

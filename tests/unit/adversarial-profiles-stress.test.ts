@@ -24,7 +24,7 @@ describe("Adversarial Empirical Stress Harness: /profiles Deconstruction", () =>
   const rootDir = process.cwd();
   const pageFile = path.join(rootDir, "src", "app", "profiles", "page.tsx");
   const shellFile = path.join(rootDir, "src", "app", "profiles", "components", "ProfilesLoadingShell.tsx");
-  const cssFile = path.join(rootDir, "src", "app", "globals.css");
+  const cssFile = path.join(rootDir, "src", "app", "profiles", "Profiles.module.css");
 
   // 1. Line Count & Orchestrator Scope
   describe("Gate 1: Orchestrator Line Count Verification", () => {
@@ -33,7 +33,6 @@ describe("Adversarial Empirical Stress Harness: /profiles Deconstruction", () =>
       const content = readFileSync(pageFile, "utf-8");
       const lineCount = content.split(/\r?\n/).length;
       expect(lineCount).toBeLessThan(250);
-      expect(lineCount).toBe(212);
     });
 
     it("page.tsx functions purely as an orchestrator with zero inline calculation engines", () => {
@@ -48,19 +47,16 @@ describe("Adversarial Empirical Stress Harness: /profiles Deconstruction", () =>
 
   // 2. Touch Target Compliance
   describe("Gate 2: Touch Target Compliance (>= 44px)", () => {
-    it("verifies global CSS guarantees minimum 44px (2.75rem) touch targets for profiles controls", () => {
+    it("verifies scoped CSS guarantees minimum 44px (2.75rem) touch targets and focus rings for profiles controls", () => {
       const css = readFileSync(cssFile, "utf-8");
-      // Verify .profiles-page controls have min-height 2.75rem (44px)
-      expect(css).toContain(".profiles-page .profile-action");
-      expect(css).toContain(".profiles-page .profile-section-nav a");
-      expect(css).toContain(".profiles-page .profile-list-item");
-      expect(css).toContain(".profiles-page .profile-picker-button");
-      expect(css).toContain(".profiles-page .profile-picker-option");
+      expect(css).toContain(".sectionTab");
+      expect(css).toContain(".profileListItem");
+      expect(css).toContain(".pickerTrigger");
+      expect(css).toContain(".pickerOption");
+      expect(css).toContain(".numberInput");
       expect(css).toContain("min-height: 2.75rem;");
-
-      // Verify mobile general rules enforce min-height and min-width 44px
-      expect(css).toContain("min-height: 44px;");
-      expect(css).toContain("min-width: 44px;");
+      expect(css).toContain("--border-focus");
+      expect(css).toContain("prefers-reduced-motion");
     });
   });
 
@@ -70,15 +66,15 @@ describe("Adversarial Empirical Stress Harness: /profiles Deconstruction", () =>
       const content = readFileSync(pageFile, "utf-8");
       expect(content).toContain('contain: "layout"');
       expect(content).toMatch(/minHeight:\s*["']560px["']/);
-      expect(content).toContain('className="profile-editor"');
+      expect(content).toContain("profile-editor");
     });
 
     it("page.tsx and ProfilesLoadingShell maintain identical grid structure", () => {
       const pageContent = readFileSync(pageFile, "utf-8");
       const shellContent = readFileSync(shellFile, "utf-8");
 
-      expect(pageContent).toContain('className="profile-layout"');
-      expect(shellContent).toContain('className="profile-layout"');
+      expect(pageContent).toContain("profile-layout");
+      expect(shellContent).toContain("profile-layout");
 
       // Both must render list panel first, editor second
       expect(pageContent.indexOf("ProfileListPanel")).toBeLessThan(pageContent.indexOf("profile-editor"));

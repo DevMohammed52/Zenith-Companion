@@ -29,6 +29,8 @@ import {
   formatEffectEntry,
 } from "@/app/skill-profit/page";
 import type { SkillProfitRow } from "@/lib/skill-profit";
+import { calculateSkillProfitRow, SKILL_TOOLS } from "@/lib/skill-profit";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import { useSkillProfitState } from "@/app/skill-profit/hooks/useSkillProfitState";
 import { useSkillProfitCalculations } from "@/app/skill-profit/hooks/useSkillProfitCalculations";
 import {
@@ -53,6 +55,43 @@ describe("skill-profit architecture and modularization contracts", () => {
   const typesPath = path.join(skillProfitDir, "types.ts");
   const componentsDir = path.join(skillProfitDir, "components");
   const hooksDir = path.join(skillProfitDir, "hooks");
+
+  it("orchestrator page.tsx passes shared migrated route cleanliness checks", () => {
+    assertCleanMigratedRoute({
+      routeSubpath: "skill-profit",
+      maxPageLines: 200,
+    });
+  });
+
+  it("matches verified wiki/API fishing rod levels and case-insensitive tool names", () => {
+    const moonshimmer = SKILL_TOOLS.Fishing.find((t) => t.name === "Moonshimmer Hook");
+    const hydra = SKILL_TOOLS.Fishing.find((t) => t.name === "Hydra's Coil");
+    expect(moonshimmer).toMatchObject({ level: 35, efficiency: 20 });
+    expect(hydra).toMatchObject({ level: 45, efficiency: 25 });
+
+    const exactFishRow = calculateSkillProfitRow(
+      { skill: "Fishing", name: "Raw Trout", level: 10, baseDuration: 10, experience: 20, ingredients: [] },
+      null,
+      null,
+      { ...DEFAULT_SETTINGS, tools: { ...DEFAULT_SETTINGS.tools, Fishing: "Rune-etched Reeler" } },
+    );
+    const titleCaseFishRow = calculateSkillProfitRow(
+      { skill: "Fishing", name: "Raw Trout", level: 10, baseDuration: 10, experience: 20, ingredients: [] },
+      null,
+      null,
+      { ...DEFAULT_SETTINGS, tools: { ...DEFAULT_SETTINGS.tools, Fishing: "Rune-Etched Reeler" } },
+    );
+    const wcRow = calculateSkillProfitRow(
+      { skill: "Woodcutting", name: "Oak Logs", level: 10, baseDuration: 10, experience: 20, ingredients: [] },
+      null,
+      null,
+      { ...DEFAULT_SETTINGS, tools: { ...DEFAULT_SETTINGS.tools, Woodcutting: "Improved Felling axe" } },
+    );
+
+    expect(exactFishRow.toolBonus).toBe(35);
+    expect(titleCaseFishRow.toolBonus).toBe(35);
+    expect(wcRow.toolBonus).toBe(5);
+  });
 
   it("orchestrator page.tsx is strictly under 200 lines", () => {
     expect(existsSync(pagePath)).toBe(true);

@@ -12,9 +12,19 @@ import {
 const args = parseArgs();
 const isDryRun = Boolean(args["dry-run"]);
 const fishOnly = Boolean(args["fish-only"]);
+const includeAlchemy = Boolean(args["include-alchemy"]);
 const limit = Number(args.limit || 0);
+const delayMs = Math.max(750, Number(args.delay || 950));
 const targetHash = args.hash ? String(args.hash).trim() : null;
 const skipDerivatives = Boolean(args["skip-derivatives"]);
+
+function formatRecipeExp(exp) {
+  if (exp === null || exp === undefined) return "none";
+  if (typeof exp !== "object") return String(exp);
+  const skills = Object.entries(exp.skills || {}).map(([k, v]) => `${k}:${v}`);
+  const stats = Object.entries(exp.stats || {}).map(([k, v]) => `${k}:${v}`);
+  return [...skills, ...stats].join(", ") || JSON.stringify(exp);
+}
 
 const ITEMS_FILE = path.join(process.cwd(), "public", "all-items-db.json");
 const ITEMS_MAP_FILE = path.join(process.cwd(), "public", "items-map.json");
@@ -46,9 +56,11 @@ const itemsMap = fs.existsSync(ITEMS_MAP_FILE)
 // Fish regex for detecting deprecated fish materials
 const FISH_REGEX = /fish|sardine|herring|salmon|cod|tuna|pike|trout|bass|swordfish|shark/i;
 
-// Filter candidate forge recipe items
+// Filter candidate recipe items (Forge by default, plus Alchemy when --include-alchemy is set)
 let candidateEntries = Object.entries(allItems).filter(([id, item]) => {
-  if (item.type !== "RECIPE" || item.recipe?.skill !== "Forge") return false;
+  const skill = item.recipe?.skill;
+  if (item.type !== "RECIPE") return false;
+  if (skill !== "Forge" && !(includeAlchemy && skill === "Alchemy")) return false;
   if (targetHash && item.hashed_id !== targetHash && id !== targetHash) return false;
   if (fishOnly) {
     const materials = item.recipe?.materials || [];
@@ -61,19 +73,19 @@ if (limit > 0) {
   candidateEntries = candidateEntries.slice(0, limit);
 }
 
-console.log(`=== IdleMMO Forge Recipe Refresh ===`);
-console.log(`Total candidate forge recipes to inspect: ${candidateEntries.length}`);
+console.log(`=== IdleMMO Recipe Refresh (${includeAlchemy ? "Forge + Alchemy" : "Forge"}) ===`);
+console.log(`Total candidate recipes to inspect: ${candidateEntries.length}`);
 console.log(`Mode: ${isDryRun ? "DRY-RUN (no files modified)" : "LIVE WRITE"}`);
 console.log(`Fish-only filter: ${fishOnly ? "YES" : "NO"}`);
-console.log(`API Key Rate Budget: 60 req/min (using 1100ms safe spacing)`);
+console.log(`API Key Rate Budget: 80 req/min (using ${delayMs}ms safe spacing)`);
 console.log(`Target files: all-items-db.json${itemsMap ? " & items-map.json" : ""}`);
 console.log(`====================================\n`);
 
-// Create safe queue with 1100ms delay (~54 req/min, safely below 60 req/min)
+// Create safe queue obeying 80 req/min IdleMMO API budget
 const queue = createFetchQueue({
   apiKey,
-  delayMs: 1100,
-  label: "forge-sync",
+  delayMs,
+  label: "recipe-sync",
 });
 
 queue.addEstimated(candidateEntries.length);
@@ -125,10 +137,11 @@ for (let i = 0; i < candidateEntries.length; i++) {
     const hasFish = (newRecipe?.materials || []).some((m) => FISH_REGEX.test(m.item_name || ""));
 
     const levelChanged = oldRecipe?.level_required !== newRecipe?.level_required;
-    const expChanged = oldRecipe?.experience !== newRecipe?.experience;
+    const expChanged = JSON.stringify(oldRecipe?.experience ?? null) !== JSON.stringify(newRecipe?.experience ?? null);
+    const maxUsesChanged = (oldRecipe?.max_uses ?? null) !== (newRecipe?.max_uses ?? null);
     const matsChanged = oldMats !== newMats;
 
-    if (matsChanged || levelChanged || expChanged || hadFish !== hasFish) {
+    if (matsChanged || levelChanged || expChanged || maxUsesChanged || hadFish !== hasFish) {
       changes.push({
         hash,
         name,
@@ -138,6 +151,8 @@ for (let i = 0; i < candidateEntries.length; i++) {
         newLevel: newRecipe?.level_required,
         oldExp: oldRecipe?.experience,
         newExp: newRecipe?.experience,
+        oldUses: oldRecipe?.max_uses,
+        newUses: newRecipe?.max_uses,
         oldMats,
         newMats,
       });
@@ -150,7 +165,10 @@ for (let i = 0; i < candidateEntries.length; i++) {
         console.log(`    -> Level: ${oldRecipe?.level_required} -> ${newRecipe?.level_required}`);
       }
       if (expChanged) {
-        console.log(`    -> Exp: ${oldRecipe?.experience} -> ${newRecipe?.experience}`);
+        console.log(`    -> Exp: ${formatRecipeExp(oldRecipe?.experience)} -> ${formatRecipeExp(newRecipe?.experience)}`);
+      }
+      if (maxUsesChanged) {
+        console.log(`    -> Uses: ${oldRecipe?.max_uses} -> ${newRecipe?.max_uses}`);
       }
 
       // Update all-items-db in memory

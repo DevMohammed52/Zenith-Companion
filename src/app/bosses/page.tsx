@@ -1,155 +1,194 @@
 "use client";
 
 import { Suspense } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import MobileSortControls from "@/components/MobileSortControls";
-import { LoadingState, NoResultsState } from "@/components/StateBlock";
+import {
+    BackToTop,
+    Button,
+    EmptyState,
+    Icon,
+    Skeleton,
+    SkeletonContainer,
+    Table,
+    TableBody,
+    TableContainer,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui";
 import { useBossState } from "./hooks/useBossState";
 import { BossHeader } from "./components/BossHeader";
 import { BossCard, BossTableRow } from "./components/BossCard";
 import { BossDetailsModal } from "./components/BossDetailsModal";
 import { WorldBossRoutinePlanner } from "./components/WorldBossRoutinePlanner";
-import { BossStyles } from "./components/BossStyles";
-import { getBossKey } from "./types";
+import styles from "./Bosses.module.css";
+
+const MOBILE_SORT_OPTIONS = [
+    { value: "nextSpawnTime", label: "Timer" },
+    { value: "ev", label: "EV" },
+    { value: "level", label: "Level" },
+    { value: "name", label: "Name" },
+] as const;
+
+function BossesLoadingFallback() {
+    return (
+        <SkeletonContainer announcement="Loading world boss tracker..." className={styles.page}>
+            <div className={styles.skeletonCard}>
+                <Skeleton variant="text" width="38%" height={28} />
+                <Skeleton variant="rectangular" width="100%" height={84} />
+            </div>
+            <div className={styles.skeletonCard}>
+                <Skeleton variant="rectangular" width="100%" height={52} />
+                <div className={styles.skeletonRows}>
+                    {[0, 1, 2, 3, 4, 5].map((idx) => (
+                        <Skeleton key={idx} variant="rectangular" width="100%" height={56} />
+                    ))}
+                </div>
+            </div>
+        </SkeletonContainer>
+    );
+}
 
 function BossesContent() {
     const state = useBossState();
     const {
+        isLoading,
         activeBossView,
+        activeCombatLevel,
         rows,
-        now,
-        openBoss,
         sortCol,
         sortDesc,
-        handleSort,
         setSortDesc,
+        handleSort,
         getSortDirection,
-        totalBossCount,
-        setSearchTerm,
-        setSelectedPhase,
+        openBoss,
+        resetFilters,
+        now,
     } = state;
 
-    const renderSortIcon = (col: string) => {
-        if (sortCol !== col) return null;
-        return sortDesc ? <ChevronDown size={14} /> : <ChevronUp size={14} />;
-    };
+    const sortArrow = (col: string) =>
+        sortCol !== col
+            ? <Icon name="sort" size="xs" aria-hidden="true" />
+            : <Icon name={sortDesc ? "sortDesc" : "sortAsc"} size="xs" aria-hidden="true" />;
 
     return (
-        <main className="container bosses-page">
+        <main className={`container ${styles.page}`}>
             <BossHeader state={state} />
 
-            <div className="bosses-viewport" style={{ minHeight: "520px", contain: "layout" }}>
-                {activeBossView === "planner" && <WorldBossRoutinePlanner state={state} />}
-
-                {activeBossView === "details" && (
-                    <section className="table-wrapper">
-                        <div className="desktop-only">
-                            <div className="table-container">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th aria-sort={getSortDirection("name")} className="sortable left-align">
-                                                <button aria-label="Sort by Boss" className="boss-sort-button" onClick={() => handleSort("name")} type="button">
-                                                    <span>Boss</span>
-                                                    {renderSortIcon("name")}
+            <div className={styles.viewport} style={{ minHeight: "520px", contain: "layout" }}>
+                {isLoading ? (
+                    <BossesLoadingFallback />
+                ) : activeBossView === "planner" ? (
+                    <WorldBossRoutinePlanner state={state} />
+                ) : rows.length === 0 ? (
+                    <EmptyState
+                        variant="search-empty"
+                        title="No matching world bosses"
+                        description="Try clearing your search query or switching back to all spawn phases."
+                        action={{ label: "Reset filters", onClick: resetFilters }}
+                    />
+                ) : (
+                    <>
+                        <div className={styles.desktopTable}>
+                            <TableContainer ariaLabel="World boss timers and expected loot value">
+                                <Table hoverable>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead align="left" aria-sort={getSortDirection("name")}>
+                                                <button type="button" className={styles.sortButton} onClick={() => handleSort("name")}>
+                                                    <span>Boss &amp; Zone</span>
+                                                    {sortArrow("name")}
                                                 </button>
-                                            </th>
-                                            <th aria-sort={getSortDirection("location")} className="sortable left-align">
-                                                <button aria-label="Sort by Location" className="boss-sort-button" onClick={() => handleSort("location")} type="button">
-                                                    <span>Location</span>
-                                                    {renderSortIcon("location")}
-                                                </button>
-                                            </th>
-                                            <th aria-sort={getSortDirection("level")} className="sortable">
-                                                <button aria-label="Sort by Level" className="boss-sort-button" onClick={() => handleSort("level")} type="button">
+                                            </TableHead>
+                                            <TableHead align="left" aria-sort={getSortDirection("level")}>
+                                                <button type="button" className={styles.sortButton} onClick={() => handleSort("level")}>
                                                     <span>Level</span>
-                                                    {renderSortIcon("level")}
+                                                    {sortArrow("level")}
                                                 </button>
-                                            </th>
-                                            <th aria-sort={getSortDirection("nextSpawnTime")} className="sortable">
-                                                <button aria-label="Sort by Status / Timer" className="boss-sort-button" onClick={() => handleSort("nextSpawnTime")} type="button">
-                                                    <span>Status / Timer</span>
-                                                    {renderSortIcon("nextSpawnTime")}
+                                            </TableHead>
+                                            <TableHead align="left" aria-sort={getSortDirection("nextSpawnTime")}>
+                                                <button type="button" className={styles.sortButton} onClick={() => handleSort("nextSpawnTime")}>
+                                                    <span>Status &amp; Timer</span>
+                                                    {sortArrow("nextSpawnTime")}
                                                 </button>
-                                            </th>
-                                            <th aria-sort={getSortDirection("ev")} className="sortable">
-                                                <button aria-label="Sort by EV / Boss" className="boss-sort-button" onClick={() => handleSort("ev")} type="button">
-                                                    <span>EV / Boss</span>
-                                                    {renderSortIcon("ev")}
+                                            </TableHead>
+                                            <TableHead align="left">Schedule</TableHead>
+                                            <TableHead align="right" aria-sort={getSortDirection("ev")}>
+                                                <button type="button" className={styles.sortButton} onClick={() => handleSort("ev")}>
+                                                    <span>Expected Loot</span>
+                                                    {sortArrow("ev")}
                                                 </button>
-                                            </th>
-                                            <th>Market note</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {rows.map((row) => (
-                                            <BossTableRow key={getBossKey(row)} row={row} now={now} onOpen={openBoss} />
+                                            <BossTableRow
+                                                key={row.id || row.name}
+                                                row={row}
+                                                now={now}
+                                                activeCombatLevel={activeCombatLevel}
+                                                onSelect={openBoss}
+                                            />
                                         ))}
-                                        {rows.length === 0 && (
-                                            <tr>
-                                                <td colSpan={6}>
-                                                    <NoResultsState
-                                                        title="No matching bosses"
-                                                        description={`Loaded ${totalBossCount} bosses, but none match the current filters.`}
-                                                        action={
-                                                            <button type="button" onClick={() => { setSearchTerm(""); setSelectedPhase("all"); }}>
-                                                                Reset filters
-                                                            </button>
-                                                        }
-                                                    />
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </div>
 
-                        <div className="mobile-only">
-                            <MobileSortControls
-                                label="Sort Bosses"
-                                value={sortCol || "nextSpawnTime"}
-                                descending={sortDesc}
-                                onSort={handleSort}
-                                onToggleDirection={() => setSortDesc((prev) => !prev)}
-                                options={[
-                                    { value: "nextSpawnTime", label: "Next Spawn" },
-                                    { value: "ev", label: "EV / Boss" },
-                                    { value: "level", label: "Level" },
-                                    { value: "name", label: "Name" },
-                                    { value: "location", label: "Location" },
-                                ]}
-                            />
-                            <div className="mobile-card-grid">
+                        <div className={styles.mobileCards}>
+                            <div className={styles.mobileSortBar}>
+                                <div className={styles.mobileSortHeader}>
+                                    <span>Sort Bosses</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon={<Icon name={sortDesc ? "chevronDown" : "chevronUp"} size="sm" aria-hidden="true" />}
+                                        onClick={() => setSortDesc((current) => !current)}
+                                        aria-label={`Sort ${sortDesc ? "descending" : "ascending"}`}
+                                    >
+                                        {sortDesc ? "Desc" : "Asc"}
+                                    </Button>
+                                </div>
+                                <div className={styles.mobileSortChips}>
+                                    {MOBILE_SORT_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            className={`${styles.phasePill} ${sortCol === opt.value ? styles.phasePillActive : ""}`.trim()}
+                                            aria-pressed={sortCol === opt.value}
+                                            onClick={() => handleSort(opt.value)}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className={styles.mobileCardGrid}>
                                 {rows.map((row) => (
-                                    <BossCard key={getBossKey(row)} row={row} now={now} onOpen={openBoss} />
-                                ))}
-                                {rows.length === 0 && (
-                                    <NoResultsState
-                                        title="No matching bosses"
-                                        description={`Loaded ${totalBossCount} bosses, but none match the current filters.`}
-                                        action={
-                                            <button type="button" onClick={() => { setSearchTerm(""); setSelectedPhase("all"); }}>
-                                                Reset filters
-                                            </button>
-                                        }
+                                    <BossCard
+                                        key={row.id || row.name}
+                                        row={row}
+                                        now={now}
+                                        activeCombatLevel={activeCombatLevel}
+                                        onSelect={openBoss}
                                     />
-                                )}
+                                ))}
                             </div>
                         </div>
-                    </section>
+                    </>
                 )}
             </div>
 
             <BossDetailsModal state={state} />
-            <BossStyles />
+            <BackToTop />
         </main>
     );
 }
 
 export default function BossesPage() {
     return (
-        <Suspense fallback={<LoadingState title="Loading bosses" description="Preparing spawn timers, route planner, and EV estimates." />}>
+        <Suspense fallback={<BossesLoadingFallback />}>
             <BossesContent />
         </Suspense>
     );

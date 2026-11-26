@@ -6,6 +6,7 @@ import { getProfileSkillLevel, isStarterProfile, useProfiles } from "@/lib/profi
 import { getProfileBarteringBoost } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
 import {
+  DEFAULT_PAGE_SIZE,
   DEFAULT_SETTINGS,
   DEFAULT_STATE,
   DEFAULT_TOOL_SELECTIONS,
@@ -14,14 +15,18 @@ import {
   getSearchTokens,
   type DropdownLayer,
   type PersistedState,
+  type RateMode,
   type UseSkillProfitStateReturn,
+  type ViewMode,
 } from "../types";
-import type {
-  SkillName,
-  SkillProfitRow,
-  SkillProfitSettings,
-  SkillProfitSortKey,
-  ToolSkill,
+import {
+  SKILLS,
+  type SaleMode,
+  type SkillName,
+  type SkillProfitRow,
+  type SkillProfitSettings,
+  type SkillProfitSortKey,
+  type ToolSkill,
 } from "@/lib/skill-profit";
 import type { EssenceSkillName } from "@/lib/essences";
 
@@ -43,8 +48,14 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
   const [mobileSetupOpen, setMobileSetupOpen] = useState(false);
   const [compactResults, setCompactResults] = useState(false);
   const [visibleRowLimit, setVisibleRowLimit] = useState(MOBILE_RESULT_BATCH_SIZE);
-  const [includeForgeInfoRows, setIncludeForgeInfoRows] = useState(false);
   const [hideAboveLevel, setHideAboveLevel] = useState(DEFAULT_STATE.hideAboveLevel);
+  const [liquidOnly, setLiquidOnly] = useState(false);
+  const [profitableOnly, setProfitableOnly] = useState(false);
+  const [rateMode, setRateMode] = useState<RateMode>("hourly");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [loadedStoredState, setLoadedStoredState] = useState(false);
   const [storageReloadTick, setStorageReloadTick] = useState(0);
   const [selectedRow, setSelectedRow] = useState<SkillProfitRow | null>(null);
@@ -66,6 +77,7 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
   const targetBarteringLevel = configuredProfile
     ? (configuredProfile.boosts?.barteringLevel === "" ? 0 : (configuredProfile.boosts?.barteringLevel ?? 0))
     : Math.min(100, Math.max(0, Math.round(Number(preferences.barteringBoost || 0) / 0.2)));
+  const profileIdForBarterRef = useRef<string | null>(null);
   const [barteringLevelDraft, setBarteringLevelDraft] = useState(() => String(targetBarteringLevel));
 
   const setDropdownLayerOpen = useCallback((layer: DropdownLayer, open: boolean) => {
@@ -87,10 +99,15 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     setDropdownLayerOpen("command", open);
   }, [setDropdownLayerOpen]);
 
-  // Sync draft inputs
+  // Sync draft inputs when switching profiles or restoring stored values
   useEffect(() => {
-    setBarteringLevelDraft(String(targetBarteringLevel));
-  }, [targetBarteringLevel]);
+    if (profileIdForBarterRef.current !== activeProfileId) {
+      profileIdForBarterRef.current = activeProfileId;
+      setBarteringLevelDraft(String(targetBarteringLevel));
+    } else if (configuredProfile) {
+      setBarteringLevelDraft(String(targetBarteringLevel));
+    }
+  }, [activeProfileId, configuredProfile, targetBarteringLevel]);
 
   useEffect(() => {
     setPoolExpDraft(String(settings.energizingPoolExp));
@@ -140,6 +157,11 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     let nextAscensionOpen = DEFAULT_STATE.ascensionOpen;
     let nextEssenceOpen = DEFAULT_STATE.essenceOpen;
     let nextHideAboveLevel = DEFAULT_STATE.hideAboveLevel;
+    let nextLiquidOnly = Boolean(DEFAULT_STATE.liquidOnly);
+    let nextProfitableOnly = Boolean(DEFAULT_STATE.profitableOnly);
+    let nextRateMode: RateMode = DEFAULT_STATE.rateMode || "hourly";
+    let nextViewMode: ViewMode = DEFAULT_STATE.viewMode || "table";
+    let nextPageSize = DEFAULT_STATE.pageSize || DEFAULT_PAGE_SIZE;
 
     try {
       const stored = localStorage.getItem(storageKey) || localStorage.getItem(STORAGE_KEY);
@@ -165,10 +187,35 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
           if (typeof parsed.ascensionOpen === "boolean") nextAscensionOpen = parsed.ascensionOpen;
           if (typeof parsed.essenceOpen === "boolean") nextEssenceOpen = parsed.essenceOpen;
           if (typeof parsed.hideAboveLevel === "boolean") nextHideAboveLevel = parsed.hideAboveLevel;
+          if (typeof parsed.liquidOnly === "boolean") nextLiquidOnly = parsed.liquidOnly;
+          if (typeof parsed.profitableOnly === "boolean") nextProfitableOnly = parsed.profitableOnly;
+          if (parsed.rateMode === "hourly" || parsed.rateMode === "session") nextRateMode = parsed.rateMode;
+          if (parsed.viewMode === "table" || parsed.viewMode === "cards") nextViewMode = parsed.viewMode;
+          if (typeof parsed.pageSize === "number" && [15, 25, 50].includes(parsed.pageSize)) {
+            nextPageSize = parsed.pageSize;
+          }
         }
       }
     } catch {
       // Ignore parse or storage errors
+    }
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlSkill = params.get("skill");
+      if (urlSkill && (urlSkill === "All" || (SKILLS as readonly string[]).includes(urlSkill))) {
+        nextActiveSkill = urlSkill as SkillName | "All";
+      }
+      const urlSearch = params.get("q");
+      if (urlSearch !== null) nextSearchTerm = urlSearch;
+      const urlSell = params.get("sell");
+      if (urlSell === "best" || urlSell === "market" || urlSell === "vendor") {
+        nextSettings = { ...nextSettings, saleMode: urlSell as SaleMode };
+      }
+      const urlRate = params.get("rate");
+      if (urlRate === "hourly" || urlRate === "session") nextRateMode = urlRate;
+      if (params.get("liquid") === "1") nextLiquidOnly = true;
+      if (params.get("profitable") === "1") nextProfitableOnly = true;
     }
 
     setSettings(nextSettings);
@@ -180,6 +227,12 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     setAscensionOpen(nextAscensionOpen);
     setEssenceOpen(nextEssenceOpen);
     setHideAboveLevel(nextHideAboveLevel);
+    setLiquidOnly(nextLiquidOnly);
+    setProfitableOnly(nextProfitableOnly);
+    setRateMode(nextRateMode);
+    setViewMode(nextViewMode);
+    setPageSize(nextPageSize);
+    setCurrentPage(1);
 
     const timer = setTimeout(() => {
       loadedStorageKeyRef.current = storageKey;
@@ -203,6 +256,11 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
       ascensionOpen,
       essenceOpen,
       hideAboveLevel,
+      liquidOnly,
+      profitableOnly,
+      rateMode,
+      viewMode,
+      pageSize,
     };
     const timeout = window.setTimeout(() => {
       try {
@@ -212,12 +270,38 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
       }
     }, 200);
     return () => window.clearTimeout(timeout);
-  }, [activeSkill, ascensionOpen, essenceOpen, hideAboveLevel, loadedStoredState, minVolume, profilesLoaded, searchTerm, settings, sortDesc, sortKey, storageKey]);
+  }, [activeSkill, ascensionOpen, essenceOpen, hideAboveLevel, liquidOnly, loadedStoredState, minVolume, pageSize, profitableOnly, profilesLoaded, rateMode, searchTerm, settings, sortDesc, sortKey, storageKey, viewMode]);
 
-  // Batch limit reset on filter mutation
+  // Shareable URL filter sync via replaceState (no browser history spam)
+  useEffect(() => {
+    if (!loadedStoredState || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (activeSkill !== "All") params.set("skill", activeSkill);
+    else params.delete("skill");
+    if (deferredSearchTerm.trim()) params.set("q", deferredSearchTerm.trim());
+    else params.delete("q");
+    if ((settings.saleMode || "best") !== "best") params.set("sell", settings.saleMode || "best");
+    else params.delete("sell");
+    if (rateMode !== "hourly") params.set("rate", rateMode);
+    else params.delete("rate");
+    if (liquidOnly) params.set("liquid", "1");
+    else params.delete("liquid");
+    if (profitableOnly) params.set("profitable", "1");
+    else params.delete("profitable");
+
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [activeSkill, deferredSearchTerm, liquidOnly, loadedStoredState, profitableOnly, rateMode, settings.saleMode]);
+
+  // Batch & page limit reset on filter mutation
   useEffect(() => {
     setVisibleRowLimit(MOBILE_RESULT_BATCH_SIZE);
-  }, [activeSkill, configuredProfile, deferredSearchTerm, hideAboveLevel, includeForgeInfoRows, minVolume, sortDesc, sortKey]);
+    setCurrentPage(1);
+  }, [activeSkill, configuredProfile, deferredSearchTerm, hideAboveLevel, liquidOnly, minVolume, pageSize, profitableOnly, settings.saleMode, sortDesc, sortKey]);
 
   // Modal ESC key listener
   useEffect(() => {
@@ -270,31 +354,46 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     const level = Number.isFinite(parsed) ? Math.min(100, Math.max(0, Math.round(parsed))) : 0;
     setBarteringLevelDraft(String(level));
     const boost = Math.round(level * 0.2);
-    patchSettings({ barteringBoost: boost });
-    if (!configuredProfile) {
+    setSettings((current) => ({ ...current, barteringBoost: boost }));
+    if (configuredProfile) {
+      updateProfile(configuredProfile.id, {
+        boosts: {
+          ...configuredProfile.boosts,
+          barteringLevel: level,
+        },
+      });
+    } else {
       setPreferences({ barteringBoost: boost });
     }
-  }, [configuredProfile, patchSettings, setPreferences]);
+  }, [configuredProfile, setPreferences, updateProfile]);
 
-  // Debounced bartering level commit (400ms)
+  // Debounced bartering level commit (400ms) for typed input
   useEffect(() => {
     const timer = setTimeout(() => {
       const parsed = barteringLevelDraft === "" ? 0 : Number(barteringLevelDraft);
       if (!Number.isFinite(parsed)) return;
       const level = Math.min(100, Math.max(0, Math.round(parsed)));
       const boost = Math.round(level * 0.2);
-      const currentBoost = configuredProfile
-        ? getProfileBarteringBoost(configuredProfile)
-        : Number(preferences.barteringBoost || 0);
-      if (boost !== currentBoost) {
-        patchSettings({ barteringBoost: boost });
-        if (!configuredProfile) {
-          setPreferences({ barteringBoost: boost });
+      if (configuredProfile) {
+        const currentProfileLevel =
+          configuredProfile.boosts?.barteringLevel === ""
+            ? 0
+            : Number(configuredProfile.boosts?.barteringLevel ?? 0);
+        if (level !== currentProfileLevel) {
+          updateProfile(configuredProfile.id, {
+            boosts: {
+              ...configuredProfile.boosts,
+              barteringLevel: level,
+            },
+          });
         }
+      } else if (boost !== Number(preferences.barteringBoost || 0)) {
+        setSettings((current) => ({ ...current, barteringBoost: boost }));
+        setPreferences({ barteringBoost: boost });
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [barteringLevelDraft, configuredProfile, patchSettings, preferences.barteringBoost, setPreferences]);
+  }, [barteringLevelDraft, configuredProfile, preferences.barteringBoost, setPreferences, updateProfile]);
 
   const patchTool = useCallback((skill: ToolSkill, toolName: string) => {
     if (configuredProfile) {
@@ -322,8 +421,10 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     setMinVolumeDraft(String(DEFAULT_STATE.minVolume));
     setSortKey(DEFAULT_STATE.sortKey);
     setSortDesc(DEFAULT_STATE.sortDesc);
-    setIncludeForgeInfoRows(false);
     setHideAboveLevel(false);
+    setLiquidOnly(false);
+    setProfitableOnly(false);
+    setCurrentPage(1);
     patchSettings({ saleMode: DEFAULT_SETTINGS.saleMode });
   }, [patchSettings]);
 
@@ -363,7 +464,13 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     searchTokens,
     minVolume,
     hideAboveLevel,
-    includeForgeInfoRows,
+    liquidOnly,
+    profitableOnly,
+    rateMode,
+    viewMode,
+    drawerOpen,
+    currentPage,
+    pageSize,
     ascensionOpen,
     essenceOpen,
     mobileSetupOpen,
@@ -396,8 +503,14 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
     setAscensionOpen,
     setEssenceOpen,
     setMobileSetupOpen,
-    setIncludeForgeInfoRows,
     setHideAboveLevel,
+    setLiquidOnly,
+    setProfitableOnly,
+    setRateMode,
+    setViewMode,
+    setDrawerOpen,
+    setCurrentPage,
+    setPageSize,
     setVisibleRowLimit,
     setSelectedRow,
     patchSettings,

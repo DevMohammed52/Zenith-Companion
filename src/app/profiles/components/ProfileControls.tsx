@@ -1,15 +1,12 @@
 "use client";
 
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
-import { ChevronDown, Package, Search, X } from "lucide-react";
+import React, { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CharacterProfile, ProfileFieldSource } from "@/lib/profiles";
+import { GameImage } from "@/components/GameImage";
+import { Icon } from "@/components/ui/Icon";
+import { ModalSheet } from "@/components/ui/ModalSheet";
+import { TextInput } from "@/components/ui/TextInput";
+import styles from "../Profiles.module.css";
 
 export function numberFromInput(value: string): number | "" {
   return value === "" ? "" : Number(value);
@@ -29,15 +26,16 @@ export function FieldSourceChip({ source }: FieldSourceChipProps) {
   if (!source) return null;
   const timestamp = source.importedAt || source.updatedAt;
   const date = timestamp ? new Date(timestamp) : null;
-  const dateLabel = date && Number.isFinite(date.getTime())
-    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
-    : "";
+  const dateLabel =
+    date && Number.isFinite(date.getTime())
+      ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)
+      : "";
   const label = formatFieldSourceLabel(source.source);
   const accessibleLabel = dateLabel ? `${label}. Last updated ${dateLabel}` : label;
   return (
-    <em className={`profile-source-chip source-${source.source}`} aria-label={accessibleLabel}>
+    <span className={styles.sourceChip} data-source={source.source} aria-label={accessibleLabel}>
       {label}
-    </em>
+    </span>
   );
 }
 
@@ -51,7 +49,9 @@ export function Toast({ message, onClose }: ToastProps) {
   return (
     <div className="profile-toast" role="status">
       <span>{message}</span>
-      <button type="button" onClick={onClose} aria-label="Dismiss notification"><X size={14} /></button>
+      <button type="button" onClick={onClose} aria-label="Dismiss notification">
+        <Icon name="close" size="xs" aria-hidden="true" />
+      </button>
     </div>
   );
 }
@@ -64,7 +64,9 @@ export function buildProfileCopySummary(profile: CharacterProfile): string {
     `Combat: ${Number(profile.levels.combat || 0).toLocaleString()}`,
     `Location: ${profile.location?.name || "Not imported"}`,
     profile.guild?.tag ? `Guild: ${profile.guild.tag}` : "",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export interface ProfileNumberFieldProps {
@@ -75,6 +77,7 @@ export interface ProfileNumberFieldProps {
   step?: string;
   min?: number;
   max?: number;
+  badge?: string;
   hint?: ReactNode;
   source?: ProfileFieldSource;
 }
@@ -87,18 +90,29 @@ export function ProfileNumberField({
   step = "1",
   min,
   max,
+  badge,
   hint,
   source,
 }: ProfileNumberFieldProps) {
+  const inputId = useId();
+  const isDecimal = step !== "1" && step.includes(".");
+
   return (
-    <label className="profile-field">
-      <span className="profile-field-labelrow">
-        <span>{label}</span>
-        <FieldSourceChip source={source} />
-      </span>
+    <div className={styles.field}>
+      <div className={styles.labelRow}>
+        <label htmlFor={inputId} className={styles.labelText} title={label}>
+          {label}
+        </label>
+        <span className={styles.labelMetaGroup}>
+          {badge && <span className={styles.ascChip}>{badge}</span>}
+          <FieldSourceChip source={source} />
+        </span>
+      </div>
       <input
-        className="control-input"
+        id={inputId}
+        className={styles.numberInput}
         type="number"
+        inputMode={isDecimal ? "decimal" : "numeric"}
         step={step}
         min={min}
         max={max}
@@ -106,8 +120,8 @@ export function ProfileNumberField({
         onChange={(event) => onChange(numberFromInput(event.target.value))}
         onBlur={onBlur}
       />
-      {hint && <small>{hint}</small>}
-    </label>
+      {hint && <p className={styles.fieldHint}>{hint}</p>}
+    </div>
   );
 }
 
@@ -127,19 +141,20 @@ export function ProfileTextField({
   source,
 }: ProfileTextFieldProps) {
   return (
-    <label className="profile-field">
-      <span className="profile-field-labelrow">
-        <span>{label}</span>
-        <FieldSourceChip source={source} />
-      </span>
-      <input
-        className="control-input"
-        type="text"
+    <div className={styles.field}>
+      <div className={styles.labelRow}>
+        <span className={styles.labelText}>{label}</span>
+        <span className={styles.labelMetaGroup}>
+          <FieldSourceChip source={source} />
+        </span>
+      </div>
+      <TextInput
+        aria-label={label}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
-    </label>
+    </div>
   );
 }
 
@@ -180,10 +195,15 @@ export function ProfilePicker<T>({
   source,
 }: ProfilePickerProps<T>) {
   const [query, setQuery] = useState("");
-  const [menuMetrics, setMenuMetrics] = useState({ placement: "down" as "down" | "up", maxHeight: 320 });
   const open = openId === id;
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const selectedImageClass = selected?.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined;
+  const hasVisualAssets = useMemo(
+    () => Boolean(selected?.image || options.some((option) => Boolean(option.image))),
+    [options, selected?.image],
+  );
+  const selectedImageClass =
+    selected?.title === "Dead Wyrmshadow" ? styles.imageUpsideDown : undefined;
+
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return options.slice(0, 90);
@@ -191,68 +211,28 @@ export function ProfilePicker<T>({
   }, [options, query]);
   const capped = visible.length < options.length;
 
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setOpenId(null);
-      setQuery("");
-      window.requestAnimationFrame(() => triggerRef.current?.focus());
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, setOpenId]);
-
-  useEffect(() => {
-    if (!open) return;
-    const updateMenuMetrics = () => {
-      const trigger = triggerRef.current;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const mobilePicker = window.matchMedia("(max-width: 620px)").matches;
-      if (mobilePicker) {
-        const next = { placement: "down" as const, maxHeight: Math.max(260, window.innerHeight - 96) };
-        setMenuMetrics((current) => current.placement === next.placement && current.maxHeight === next.maxHeight ? current : next);
-        return;
-      }
-      const gap = 10;
-      const preferredHeight = 448;
-      const minimumUsefulHeight = 280;
-      const below = window.innerHeight - rect.bottom - gap;
-      const above = rect.top - gap;
-      const placement = below < minimumUsefulHeight && above > below ? "up" as const : "down" as const;
-      const available = placement === "up" ? above : below;
-      const maxHeight = Math.max(220, Math.min(preferredHeight, Math.floor(available)));
-      setMenuMetrics((current) => current.placement === placement && current.maxHeight === maxHeight ? current : { placement, maxHeight });
-    };
-
-    updateMenuMetrics();
-    window.addEventListener("resize", updateMenuMetrics);
-    window.addEventListener("scroll", updateMenuMetrics, true);
-    return () => {
-      window.removeEventListener("resize", updateMenuMetrics);
-      window.removeEventListener("scroll", updateMenuMetrics, true);
-    };
-  }, [open]);
-
-  const pickerMenuStyle = {
-    "--profile-picker-menu-max-height": `${menuMetrics.maxHeight}px`,
-  } as CSSProperties & Record<"--profile-picker-menu-max-height", string>;
+  const handleClose = () => {
+    setOpenId(null);
+    setQuery("");
+  };
 
   return (
-    <div className={`profile-picker ${open ? "open" : ""}`}>
-      <span className="profile-picker-label profile-field-labelrow">
-        <span>{label}</span>
-        <FieldSourceChip source={source} />
-      </span>
+    <div className={`${styles.field} profile-picker`}>
+      <div className={styles.labelRow}>
+        <span className={styles.labelText} title={label}>
+          {label}
+        </span>
+        <span className={styles.labelMetaGroup}>
+          <FieldSourceChip source={source} />
+        </span>
+      </div>
+
       <button
         type="button"
         ref={triggerRef}
-        className="profile-picker-button"
+        className={styles.pickerTrigger}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls={open ? `profile-picker-menu-${id}` : undefined}
         aria-label={`${label}: ${selected?.title || placeholder}`}
         onClick={() => {
           if (disabled) return;
@@ -261,72 +241,104 @@ export function ProfilePicker<T>({
         }}
         disabled={disabled}
       >
-        <span className="profile-picker-image">
-          {selected?.image ? <img src={selected.image} alt="" className={selectedImageClass} /> : <Package size={16} />}
+        <span className={styles.pickerTriggerMain}>
+          {hasVisualAssets && (
+            <span className={styles.pickerThumb}>
+              {selected?.image ? (
+                <GameImage
+                  src={selected.image}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className={selectedImageClass}
+                />
+              ) : (
+                <Icon name="items" size="sm" aria-hidden="true" />
+              )}
+            </span>
+          )}
+
+          <span className={styles.pickerCopy}>
+            <strong>{selected?.title || placeholder}</strong>
+            <small>{selected?.subtitle || "Select option"}</small>
+          </span>
         </span>
-        <span className="profile-picker-text">
-          <strong>{selected?.title || placeholder}</strong>
-          <small>{selected?.subtitle || "Select from database"}</small>
+
+        <span className={styles.pickerRight} aria-hidden="true">
+          {selected?.badge ? (
+            <span className={styles.pickerOptionMeta}>{selected.badge}</span>
+          ) : (
+            <span className={styles.pickerOptionMeta}>{selected?.value ? "Change" : "Choose"}</span>
+          )}
+          <Icon name="chevronDown" size="sm" />
         </span>
-        {selected?.badge && <em>{selected.badge}</em>}
-        <ChevronDown size={16} />
       </button>
-      {open && (
-        <div
-          className={`profile-picker-menu ${menuMetrics.placement === "up" ? "drop-up" : ""}`}
-          id={`profile-picker-menu-${id}`}
-          role="dialog"
-          aria-label={`${label} picker`}
-          style={pickerMenuStyle}
-        >
-          <div className="profile-picker-menu-head">
-            <span>Choose {label}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setOpenId(null);
-                setQuery("");
-              }}
-              aria-label={`Close ${label.toLowerCase()} picker`}
-            >
-              <X size={15} />
-            </button>
-          </div>
-          <label className="profile-picker-search">
-            <Search size={16} />
-            <input value={query} placeholder={`Search ${label.toLowerCase()}...`} aria-label={`Search ${label.toLowerCase()}`} onChange={(event) => setQuery(event.target.value)} autoFocus />
-          </label>
-          <div className="profile-picker-options custom-scrollbar">
+
+      <ModalSheet
+        isOpen={open}
+        onClose={handleClose}
+        title={`Choose ${label}`}
+        maxWidth="md"
+      >
+        <div className={styles.pickerModalBody}>
+          <TextInput
+            value={query}
+            placeholder={`Search ${label.toLowerCase()}...`}
+            aria-label={`Search ${label.toLowerCase()}`}
+            leftIcon={<Icon name="search" size="sm" aria-hidden="true" />}
+            onChange={(event) => setQuery(event.target.value)}
+            autoFocus
+          />
+
+          <div className={`${styles.pickerOptions} custom-scrollbar`}>
             {capped && (
-              <div className="profile-picker-limit-note" role="note">
-                Showing first {visible.length.toLocaleString()} of {options.length.toLocaleString()}. Search to narrow.
+              <div className={styles.pickerLimitNote} role="note">
+                Showing first {visible.length.toLocaleString()} of {options.length.toLocaleString()}. Type to filter.
               </div>
             )}
-            {visible.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`profile-picker-option ${option.muted ? "muted" : ""}`}
-                onClick={() => {
-                  onSelect(option.value);
-                  setOpenId(null);
-                  setQuery("");
-                }}
-              >
-                <span className="profile-picker-image">
-                  {option.image ? <img src={option.image} alt="" className={option.title === "Dead Wyrmshadow" ? "profile-image-upside-down" : undefined} /> : <Package size={16} />}
-                </span>
-                <span>
-                  <strong>{option.title}</strong>
-                  {option.subtitle && <small>{option.subtitle}</small>}
-                </span>
-                {option.badge && <em>{option.badge}</em>}
-              </button>
-            ))}
-            {!visible.length && <div className="profile-picker-empty">No matches</div>}
+
+            {visible.map((option) => {
+              const isSelected = selected?.id === option.id && option.value !== null;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`${styles.pickerOption} ${!hasVisualAssets ? styles.pickerOptionTextOnly : ""} ${
+                    option.muted ? styles.pickerOptionMuted : ""
+                  } ${isSelected ? styles.pickerOptionSelected : ""}`}
+                  onClick={() => {
+                    onSelect(option.value);
+                    handleClose();
+                  }}
+                >
+                  {hasVisualAssets && (
+                    <span className={styles.pickerThumb}>
+                      {option.image ? (
+                        <GameImage
+                          src={option.image}
+                          alt=""
+                          width={36}
+                          height={36}
+                          className={option.title === "Dead Wyrmshadow" ? styles.imageUpsideDown : undefined}
+                        />
+                      ) : (
+                        <Icon name="items" size="sm" aria-hidden="true" />
+                      )}
+                    </span>
+                  )}
+                  <span className={styles.pickerOptionText}>
+                    <strong>{option.title}</strong>
+                    {option.subtitle && <small>{option.subtitle}</small>}
+                  </span>
+                  {option.badge && <em className={styles.pickerOptionMeta}>{option.badge}</em>}
+                </button>
+              );
+            })}
+
+            {!visible.length && <div className={styles.pickerEmpty}>No matching options found</div>}
           </div>
         </div>
-      )}
+      </ModalSheet>
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   type ProfileItemRecord,
 } from "@/lib/profile-calculations";
 import { getProfileStorageKey } from "@/lib/profile-storage";
-import { useModalA11y } from "@/lib/use-modal-a11y";
 import {
   getProfileBaseIdleActionHours,
 } from "@/lib/housing";
@@ -27,6 +26,8 @@ import {
   type DungeonItemModifierSelections,
   type ReadinessFilter,
   type ValuedDungeonRow,
+  calculateDungeonEvMetrics,
+  formatBonusMasteryLabel,
   getConfirmedDungeonItemModifiers,
   getDungeonKey,
   getDungeonLengthMinutes,
@@ -45,7 +46,8 @@ import {
 export function useDungeonState() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { marketData, staticData, allItemsDb } = useData();
+  const { marketData, staticData, allItemsDb, loading } = useData();
+  const isLoading = loading && (!staticData?.dungeons || !marketData || !allItemsDb);
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
   const { openItemByName, prefetchItem } = useItemModal();
@@ -331,9 +333,10 @@ export function useDungeonState() {
         };
       });
       const shardCount = Number(dungeon.shards || 0);
-      const shardValuePerUnit = shardCount > 0 ? entryCost / shardCount : 0;
-      const shardEv = shardCount > 0 ? entryCost : 0;
-      const totalEv = lootEv + shardEv;
+      const evMetrics = calculateDungeonEvMetrics(lootEv, entryCost, shardCount);
+      const shardValuePerUnit = evMetrics.shardValue;
+      const shardEv = evMetrics.shardEv;
+      const totalEv = evMetrics.ev;
 
       const durationMins = getDungeonLengthMinutes(dungeon);
       const durationHours = durationMins / 60;
@@ -341,7 +344,7 @@ export function useDungeonState() {
       const effectiveDurationHours = effectiveDurationMins / 60;
       const housingDungeonHours = getHousingDungeonHoursForDungeon(activeProfile, dungeon);
       const idleActionLimitHours = getProfileIdleActionHoursForDungeon(activeProfile, dungeon, preferences.membership);
-      const netProfitPerRun = totalEv - entryCost;
+      const netProfitPerRun = evMetrics.netProfitPerRun;
       const runsToDrop = combinedDropChance > 0 ? 1 / combinedDropChance : Infinity;
       const requiredDungeonStats = Math.ceil(Number(dungeon.difficulty || 0) * 0.7);
       const statGap = Math.max(0, requiredDungeonStats - profileDungeonStats);
@@ -361,6 +364,16 @@ export function useDungeonState() {
       const completionRequirement = Number(dungeon.completion_requirement || 0);
       const completedRuns = Number(completedRunsByDungeon[getDungeonKey(dungeon)] || 0);
       const completionMagicFindActive = completionRequirement > 0 && completedRuns >= completionRequirement;
+
+      const rawSkills = dungeon.experience?.skills || {};
+      const bonusMasteryExp = Object.entries(rawSkills)
+        .filter(([skill]) => skill !== "combat" && skill !== "dungeoneering" && Number(rawSkills[skill]) > 0)
+        .map(([skill, amount]) => ({
+          skill: formatBonusMasteryLabel(skill),
+          amount: Number(amount || 0),
+        }));
+      const isSeasonal = Boolean(dungeon.is_seasonal || Number(dungeon.id) > 18);
+      const eventActive = dungeon.event_active !== false;
 
       calculated.push({
         ...dungeon,
@@ -415,8 +428,11 @@ export function useDungeonState() {
         equippedSpecialName: equippedDungeonSpecial?.name || "",
         dungeonMagicFindItemName: selectedDungeonMagicFindItem?.name || "",
         includeMagicFindEv,
-        combatExp: Number(dungeon.experience?.skills?.combat || 0),
-        dungeoneeringExp: Number(dungeon.experience?.skills?.dungeoneering || 0),
+        combatExp: Number(rawSkills.combat || 0),
+        dungeoneeringExp: Number(rawSkills.dungeoneering || 0),
+        bonusMasteryExp,
+        isSeasonal,
+        eventActive,
       });
     }
 
@@ -492,7 +508,11 @@ export function useDungeonState() {
     return rows.find((row) => getDungeonKey(row) === selectedDungeonKey) ?? null;
   }, [rows, selectedDungeonKey]);
 
-  const dungeonDialogRef = useModalA11y<HTMLDivElement>(Boolean(selectedDungeon), () => setSelectedDungeonKey(null));
+  const resetFilters = () => {
+    setSearchTerm("");
+    setReadinessFilter("all");
+    setMinimumProfit("");
+  };
 
   const autoOpenedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -596,6 +616,7 @@ export function useDungeonState() {
 
   return {
     activeProfile,
+    isLoading,
     router,
     searchParams,
     rows,
@@ -603,9 +624,9 @@ export function useDungeonState() {
     selectedDungeonKey,
     setSelectedDungeonKey,
     selectedDungeon,
-    dungeonDialogRef,
     openDungeon,
     closeDungeon,
+    resetFilters,
     sortCol,
     setSortCol,
     sortDesc,

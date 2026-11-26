@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import postcss from "postcss";
 import { describe, expect, it } from "vitest";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import {
     BASE_MOVEMENT_SPEED,
     DEFAULT_RELEVANT_TELEPORT_LEVEL,
@@ -27,13 +27,13 @@ describe("bosses architecture and modularization contracts", () => {
     const bossesDir = path.join(process.cwd(), "src", "app", "bosses");
     const pagePath = path.join(bossesDir, "page.tsx");
     const hookPath = path.join(bossesDir, "hooks", "useBossState.ts");
+    const cssPath = path.join(bossesDir, "Bosses.module.css");
     const componentsDir = path.join(bossesDir, "components");
 
-    it("orchestrator page.tsx is under 200 lines", () => {
-        expect(existsSync(pagePath)).toBe(true);
-        const content = readFileSync(pagePath, "utf-8");
-        const lines = content.split(/\r?\n/).length;
-        expect(lines).toBeLessThan(200);
+    it("passes strict Zenith clean-route architectural contract", () => {
+        assertCleanMigratedRoute({ routeSubpath: "bosses", maxPageLines: 200 });
+        expect(existsSync(path.join(componentsDir, "BossStyles.tsx"))).toBe(false);
+        expect(existsSync(cssPath)).toBe(true);
     });
 
     it("exports dedicated custom hook useBossState", () => {
@@ -45,14 +45,13 @@ describe("bosses architecture and modularization contracts", () => {
         expect(content).toContain("getValueBreakdown");
     });
 
-    it("contains all 6 required feature components", () => {
+    it("contains all modular feature components", () => {
         const requiredComponents = [
             "BossHeader.tsx",
             "BossCard.tsx",
             "BossDetailsModal.tsx",
             "WorldBossRoutinePlanner.tsx",
             "WorldBossItemEffectPicker.tsx",
-            "BossStyles.tsx",
         ];
 
         for (const comp of requiredComponents) {
@@ -65,110 +64,72 @@ describe("bosses architecture and modularization contracts", () => {
         const pageContent = readFileSync(pagePath, "utf-8");
         expect(pageContent).toContain('contain: "layout"');
         expect(pageContent).toMatch(/minHeight:\s*["']520px["']/);
+        expect(pageContent).toContain("BackToTop");
     });
 
-    it("BossHeader includes view switcher, search input, phase filter pills, and sort controls", () => {
+    it("BossHeader includes SegmentedControl view switcher, SearchInput, phase filter pills, and live radar", () => {
         const headerPath = path.join(componentsDir, "BossHeader.tsx");
         const content = readFileSync(headerPath, "utf-8");
-        expect(content).toContain("boss-view-switch");
-        expect(content).toContain("boss-phase-filters");
-        expect(content).toContain("boss-phase-pill");
-        expect(content).toContain("boss-search-control");
-        expect(content).toContain("boss-radar");
+        expect(content).toContain("SegmentedControl");
+        expect(content).toContain("SearchInput");
+        expect(content).toContain("PHASE_FILTERS");
+        expect(content).toContain("WorldBossItemEffectPicker");
+        expect(content).toContain("radarCard");
     });
 
-    it("BossCard includes live respawn timer, phase badge, and expected loot value preview", () => {
+    it("BossCard includes live respawn timer, phase badge, GameImage, and GoldIcon preview", () => {
         const cardPath = path.join(componentsDir, "BossCard.tsx");
         const content = readFileSync(cardPath, "utf-8");
-        expect(content).toContain("boss-mobile-card");
-        expect(content).toContain("boss-phase");
-        expect(content).toContain("m-roi");
+        expect(content).toContain("mobileBossCard");
+        expect(content).toContain("Badge");
+        expect(content).toContain("GoldIcon");
+        expect(content).toContain("GameImage");
         expect(content).toContain("formatCountdown");
         expect(content).toContain("BossTableRow");
     });
 
-    it("BossDetailsModal includes drop table inspector, magic find scaling, value breakdown, and liquidity notes", () => {
+    it("BossDetailsModal uses ModalSheet, QualityText, drop table inspector, upcoming spawns, and LoreThreadPanel", () => {
         const modalPath = path.join(componentsDir, "BossDetailsModal.tsx");
         const content = readFileSync(modalPath, "utf-8");
-        expect(content).toContain("boss-modal");
-        expect(content).toContain("boss-loot-list");
-        expect(content).toContain("boss-drop-rate");
-        expect(content).toContain("boss-loot-value");
-        expect(content).toContain("boss-stat-grid");
-        expect(content).toContain("upcoming-spawns-section");
+        expect(content).toContain("ModalSheet");
+        expect(content).toContain("QualityText");
+        expect(content).toContain("lootList");
+        expect(content).toContain("spawnsGrid");
         expect(content).toContain("LoreThreadPanel");
     });
 
-    it("WorldBossRoutinePlanner includes movement speed controls, teleport level adjustments, travel mode toggles, and step-by-step route schedule", () => {
+    it("WorldBossRoutinePlanner includes SegmentedControl travel mode, batch boss actions, and timeline schedule", () => {
         const plannerPath = path.join(componentsDir, "WorldBossRoutinePlanner.tsx");
         const content = readFileSync(plannerPath, "utf-8");
-        expect(content).toContain("boss-routine-planner");
-        expect(content).toContain("routine-timeline");
-        expect(content).toContain("routine-leg");
-        expect(content).toContain("routine-segmented");
-        expect(content).toContain("routine-toggle");
-        expect(content).toContain("routine-boss-picker");
-        expect(content).toContain("routine-location-trigger");
+        expect(content).toContain("routinePanel");
+        expect(content).toContain("SegmentedControl");
+        expect(content).toContain("timelineList");
+        expect(content).toContain("timelineLeg");
+        expect(content).toContain("selectAllRoutineBosses");
+        expect(content).toContain("routineStartLocation");
     });
 
-    it("WorldBossItemEffectPicker includes modifier selector modal and accessible keyboard navigation", () => {
+    it("WorldBossItemEffectPicker includes accessible listbox and keyboard navigation", () => {
         const pickerPath = path.join(componentsDir, "WorldBossItemEffectPicker.tsx");
         const content = readFileSync(pickerPath, "utf-8");
-        expect(content).toContain("world-boss-effect-picker");
-        expect(content).toContain("world-boss-effect-trigger");
-        expect(content).toContain("world-boss-effect-menu");
-        expect(content).toContain("role=\"listbox\"");
-        expect(content).toContain("role=\"option\"");
+        expect(content).toContain("pickerTrigger");
+        expect(content).toContain("pickerMenu");
+        expect(content).toContain('role="listbox"');
+        expect(content).toContain('role="option"');
         expect(content).toContain("handleTriggerKeyDown");
         expect(content).toContain("handleOptionKeyDown");
     });
 
-    it("BossStyles has 100% scoped selectors preventing global CSS leakage", () => {
-        const stylesPath = path.join(componentsDir, "BossStyles.tsx");
-        const content = readFileSync(stylesPath, "utf-8");
-        const match = content.match(/<style jsx global>\{`([\s\S]*?)`\}<\/style>/);
-        expect(match).not.toBeNull();
-        const rawCss = match ? match[1] : "";
-        const root = postcss.parse(rawCss);
-
-        const unscoped: string[] = [];
-        root.walkRules((rule) => {
-            if (rule.parent?.type === "atrule" && "name" in rule.parent && rule.parent.name === "keyframes") {
-                return;
-            }
-            for (const sel of rule.selectors) {
-                const trimmed = sel.trim();
-                if (!trimmed.startsWith(".bosses-page")) {
-                    unscoped.push(trimmed);
-                }
-            }
-        });
-
-        expect(unscoped).toEqual([]);
-    });
-
-    it("enforces >= 44px touch targets on interactive button classes in BossStyles", () => {
-        const stylesPath = path.join(componentsDir, "BossStyles.tsx");
-        const content = readFileSync(stylesPath, "utf-8");
-        expect(content).toMatch(/\.bosses-page \.boss-sort-button\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.boss-phase-pill\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.routine-location-trigger\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.routine-location-menu button\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.routine-segmented button\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.routine-toggle\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.routine-boss-picker button\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.world-boss-effect-trigger\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.world-boss-effect-option\s*\{[^}]*min-height:\s*44px/);
-        expect(content).toMatch(/\.bosses-page \.close-btn\s*\{[^}]*min-height:\s*44px/);
-    });
-
-    it("preserves desktop radar stats grid and card styling outside media queries", () => {
-        const stylesPath = path.join(componentsDir, "BossStyles.tsx");
-        const content = readFileSync(stylesPath, "utf-8");
-        expect(content).toMatch(/\.bosses-page \.boss-radar-stats\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(7rem,\s*1fr\)\)/);
-        expect(content).toMatch(/\.bosses-page \.boss-radar-stats div\s*\{[^}]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.03\)/);
-        expect(content).toMatch(/\.bosses-page \.boss-radar-stats span\s*\{[^}]*display:\s*block/);
-        expect(content).toMatch(/\.bosses-page \.boss-radar-stats strong\s*\{[^}]*display:\s*block/);
+    it("Bosses.module.css enforces >= 44px touch targets and focus-visible rings", () => {
+        const cssContent = readFileSync(cssPath, "utf-8");
+        expect(cssContent).toMatch(/\.phasePill\s*\{[^}]*min-height:\s*44px/);
+        expect(cssContent).toMatch(/\.pickerTrigger\s*\{[^}]*min-height:\s*44px/);
+        expect(cssContent).toMatch(/\.pickerOption\s*\{[^}]*min-height:\s*44px/);
+        expect(cssContent).toMatch(/\.discountToggle\s*\{[^}]*min-height:\s*44px/);
+        expect(cssContent).toMatch(/\.sortButton\s*\{[^}]*min-height:\s*44px/);
+        expect(cssContent).toMatch(/\.routineBossToggle\s*\{[^}]*min-height:\s*4[48]px/);
+        expect(cssContent).toContain("--border-focus");
+        expect(cssContent).toContain("prefers-reduced-motion");
     });
 
     describe("strict game math and calculation invariance", () => {
@@ -524,11 +485,12 @@ describe("bosses architecture and modularization contracts", () => {
     });
 
     describe("accessibility, mobile ergonomics, and live state contracts", () => {
-        it("preserves native table row semantics in BossTableRow without invalid role='button'", () => {
+        it("preserves table row semantics in BossTableRow without invalid role='button'", () => {
             const cardPath = path.join(componentsDir, "BossCard.tsx");
             const content = readFileSync(cardPath, "utf-8");
             expect(content).not.toMatch(/<tr[^>]*role="button"/);
-            expect(content).toMatch(/<tr[^>]*className="clickable-row"/);
+            expect(content).not.toMatch(/<TableRow[^>]*role="button"/);
+            expect(content).toMatch(/className="clickable-row"/);
         });
 
         it("provides accessible aria-label on routine start location listbox", () => {

@@ -2,13 +2,14 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import Image from "next/image";
-import { Check, ChevronDown } from "lucide-react";
+import { GameImage } from "@/components/GameImage";
 import QualityText from "@/components/QualityText";
+import { Icon } from "@/components/ui";
 import {
   type DungeonItemModifier,
   getDungeonItemModifierSummary,
 } from "../types";
+import styles from "../Dungeons.module.css";
 
 export interface DungeonItemEffectPickerProps {
   ariaLabel: string;
@@ -120,68 +121,117 @@ export function DungeonItemEffectPicker({
   }, [open]);
 
   return (
-    <div className={`dungeon-effect-picker ${open ? "open" : ""} ${menuPlacement === "up" ? "drop-up" : ""}`} ref={pickerRef}>
-      <button
-        type="button"
-        ref={triggerRef}
-        className="dungeon-effect-trigger"
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        aria-controls={open ? listboxId : undefined}
-        onClick={() => setOpen((current) => !current)}
-        onKeyDown={handleTriggerKeyDown}
-      >
-        <span>
-          <small>{label}</small>
-          <strong>{selected?.name || emptyLabel}</strong>
-          <em>{selected ? getDungeonItemModifierSummary(selected) : "No item effect applied."}</em>
+    <div className={styles.controlField} ref={pickerRef}>
+      <span className={styles.fieldLabel}>
+        <span>{label}</span>
+        <span className={styles.fieldMeta}>
+          {selected ? getDungeonItemModifierSummary(selected) : `${options.length} available`}
         </span>
-        <ChevronDown size={16} />
-      </button>
-      {open && (
-        <div id={listboxId} className="dungeon-effect-menu" role="listbox" aria-label={ariaLabel}>
-          <button
-            type="button"
-            ref={(node) => { optionRefs.current[0] = node; }}
-            className={`dungeon-effect-option ${!value ? "active" : ""}`}
-            role="option"
-            aria-selected={!value}
-            onKeyDown={(event) => handleOptionKeyDown(event, 0)}
-            onClick={() => selectOption("")}
-          >
-            <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />
-            <span>
-              <strong>{emptyLabel}</strong>
-              <small>Use only the profile/manual field.</small>
+      </span>
+
+      <div className={styles.pickerWrap}>
+        <button
+          type="button"
+          ref={triggerRef}
+          className={styles.pickerTrigger}
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          aria-controls={open ? listboxId : undefined}
+          onClick={() => setOpen((current) => !current)}
+          onKeyDown={handleTriggerKeyDown}
+        >
+          <span className={styles.pickerTriggerContent}>
+            <span className={styles.pickerIcon} aria-hidden="true">
+              {selected?.imageUrl ? (
+                <GameImage
+                  src={selected.imageUrl}
+                  alt=""
+                  width={24}
+                  height={24}
+                  sizes="24px"
+                  fallback={<Icon name="magic" size="xs" />}
+                />
+              ) : (
+                <Icon name="magic" size="xs" />
+              )}
             </span>
-            {!value && <Check size={14} />}
-          </button>
-          {options.map((option, index) => {
-            const active = option.name === value;
-            return (
-              <button
-                type="button"
-                ref={(node) => { optionRefs.current[index + 1] = node; }}
-                className={`dungeon-effect-option ${active ? "active" : ""}`}
-                key={option.name}
-                role="option"
-                aria-selected={active}
-                onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
-                onClick={() => selectOption(option.name)}
-              >
-                {option.imageUrl ? <Image src={option.imageUrl} alt="" width={30} height={30} unoptimized /> : <span className="dungeon-effect-icon-placeholder" aria-hidden="true" />}
-                <span>
-                  <strong>{option.name}</strong>
-                  <small><QualityText value={option.quality}>{option.quality}</QualityText> {option.type}</small>
+            <span className={styles.pickerText}>
+              <span className={styles.pickerPrimary}>{selected?.name || emptyLabel}</span>
+              <span className={styles.pickerSecondary}>
+                {selected ? getDungeonItemModifierSummary(selected) : "Profile / manual only"}
+              </span>
+            </span>
+          </span>
+          <Icon name="chevronDown" size="sm" aria-hidden="true" />
+        </button>
+
+        {open && (
+          <div
+            id={listboxId}
+            className={`${styles.pickerMenu} ${menuPlacement === "up" ? styles.pickerMenuUp : ""}`.trim()}
+            role="listbox"
+            aria-label={ariaLabel}
+          >
+            <button
+              type="button"
+              ref={(node) => { optionRefs.current[0] = node; }}
+              className={`${styles.pickerOption} ${!value ? styles.pickerOptionActive : ""}`.trim()}
+              role="option"
+              aria-selected={!value}
+              onKeyDown={(event) => handleOptionKeyDown(event, 0)}
+              onClick={() => selectOption("")}
+            >
+              <span className={styles.pickerOptionMain}>
+                <span className={styles.pickerIcon} aria-hidden="true">
+                  <Icon name="minus" size="xs" />
                 </span>
-                <em>{getDungeonItemModifierSummary(option)}</em>
-                {active && <Check size={14} />}
-              </button>
-            );
-          })}
-        </div>
-      )}
+                <span className={styles.pickerText}>
+                  <span className={styles.pickerPrimary}>{emptyLabel}</span>
+                  <span className={styles.pickerOptionMeta}>Profile / manual only</span>
+                </span>
+              </span>
+              {!value && <Icon name="check" size="xs" aria-hidden="true" />}
+            </button>
+
+            {options.map((option, index) => {
+              const active = option.name === value;
+              return (
+                <button
+                  type="button"
+                  ref={(node) => { optionRefs.current[index + 1] = node; }}
+                  className={`${styles.pickerOption} ${active ? styles.pickerOptionActive : ""}`.trim()}
+                  key={option.name}
+                  role="option"
+                  aria-selected={active}
+                  onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
+                  onClick={() => selectOption(option.name)}
+                >
+                  <span className={styles.pickerOptionMain}>
+                    <span className={styles.pickerIcon} aria-hidden="true">
+                      <GameImage
+                        src={option.imageUrl}
+                        alt=""
+                        width={24}
+                        height={24}
+                        sizes="24px"
+                        fallback={<Icon name="magic" size="xs" />}
+                      />
+                    </span>
+                    <span className={styles.pickerText}>
+                      <span className={styles.pickerPrimary}>{option.name}</span>
+                      <span className={styles.pickerOptionMeta}>
+                        <QualityText value={option.quality}>{option.quality}</QualityText> • {getDungeonItemModifierSummary(option)}
+                      </span>
+                    </span>
+                  </span>
+                  {active && <Icon name="check" size="xs" aria-hidden="true" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

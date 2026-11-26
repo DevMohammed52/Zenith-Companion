@@ -1,20 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import {
-  Clock,
-  Coins,
-  ExternalLink,
-  MapPin,
-  PackageOpen,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  X,
-  Zap,
-} from "lucide-react";
-import QualityText from "@/components/QualityText";
 import LoreThreadPanel from "@/components/LoreThreadPanel";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon, ShardIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
+import { Badge, Banner, Icon, ModalSheet, type BadgeVariant } from "@/components/ui";
 import { formatGoldUnit, formatHours, formatNumber, formatSignedGold } from "@/lib/format";
 import type { DungeonState } from "../hooks/useDungeonState";
 import {
@@ -23,6 +13,13 @@ import {
   getReadinessText,
   getValuePathLabel,
 } from "../types";
+import styles from "../Dungeons.module.css";
+
+function getReadinessVariant(ready: boolean, hasProfile: boolean): BadgeVariant {
+  if (ready) return "success";
+  if (hasProfile) return "warning";
+  return "neutral";
+}
 
 export interface DungeonDetailsModalProps {
   state: DungeonState;
@@ -32,7 +29,6 @@ export function DungeonDetailsModal({ state }: DungeonDetailsModalProps) {
   const {
     selectedDungeon,
     closeDungeon,
-    dungeonDialogRef,
     activeProfile,
     selectedDungeonLoreNames,
     openLoreThread,
@@ -40,337 +36,377 @@ export function DungeonDetailsModal({ state }: DungeonDetailsModalProps) {
     prefetchItem,
   } = state;
 
-  if (!selectedDungeon) return null;
+  const sortedLoot = selectedDungeon
+    ? [...(selectedDungeon.lootDetails || [])].sort((a: any, b: any) => (b.expectedVal || 0) - (a.expectedVal || 0))
+    : [];
 
   return (
-    <div className="modal-overlay dungeon-modal-overlay" onClick={closeDungeon}>
-      <div
-        aria-labelledby="dungeon-details-title"
-        aria-modal="true"
-        className="modal-content dungeon-modal"
-        onClick={(event) => event.stopPropagation()}
-        ref={dungeonDialogRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <div className="modal-header">
-          <div className="dungeon-modal-title">
-            {selectedDungeon.image_url && (
-              <Image src={selectedDungeon.image_url} alt="" width={52} height={52} unoptimized />
-            )}
-            <div>
-              <h2 id="dungeon-details-title">{selectedDungeon.name}</h2>
-              <div className="dungeon-modal-tags">
-                <span><MapPin size={12} /> {selectedDungeon.location?.name || "Unknown"}</span>
-                <span><Zap size={12} /> Difficulty {selectedDungeon.difficulty}</span>
-                <span><Clock size={12} /> {selectedDungeon.durationMins}m</span>
-              </div>
-            </div>
-          </div>
-          <button
-            className="close-btn"
-            type="button"
-            aria-label="Close dungeon details"
-            onClick={closeDungeon}
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="modal-body">
-          <div className="stats-grid dungeon-modal-stats">
-            <div className="stat-card">
-              <div className="stat-label">Entry Cost</div>
-              <div className="stat-value" style={{ color: "#f87171" }}>
-                -{formatGoldUnit(selectedDungeon.entryCost)}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">EV / Run</div>
-              <div
-                className="stat-value"
-                style={{ color: selectedDungeon.netProfitPerRun >= 0 ? "var(--text-success)" : "#f87171" }}
-              >
-                {formatSignedGold(selectedDungeon.netProfitPerRun)}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-label">Gold / Shard</div>
-              <div className="stat-value">
-                {selectedDungeon.shardValue > 0 ? formatGoldUnit(selectedDungeon.shardValue) : "-"}
-              </div>
-            </div>
-            <div className="stat-card highlight">
-              <div className="stat-label">Action Net</div>
-              <div
-                className="stat-value"
-                style={{ color: selectedDungeon.idleActionNetProfit >= 0 ? "var(--text-success)" : "#f87171" }}
-              >
-                {formatSignedGold(selectedDungeon.idleActionNetProfit)}
-              </div>
+    <ModalSheet
+      isOpen={Boolean(selectedDungeon)}
+      onClose={closeDungeon}
+      title={selectedDungeon?.name || "Dungeon Details"}
+      description={
+        selectedDungeon
+          ? `${selectedDungeon.location?.name || "Unknown"} • Difficulty ${selectedDungeon.difficulty || 0} • ${selectedDungeon.durationMins}m`
+          : undefined
+      }
+      maxWidth="xl"
+    >
+      {selectedDungeon ? (
+        <div className={styles.modalBodyStack}>
+          <div className={styles.modalHero}>
+            <span className={styles.modalAvatar} aria-hidden="true">
+              <GameImage
+                src={selectedDungeon.image_url}
+                alt=""
+                width={50}
+                height={50}
+                sizes="50px"
+                fallback={<Icon name="dungeon" size="xl" />}
+              />
+            </span>
+            <div className={styles.modalTags}>
+              <span>
+                <Icon name="mapPin" size="xs" aria-hidden="true" />{" "}
+                {selectedDungeon.location?.name || "Unknown"}
+              </span>
+              <Badge size="sm" variant="neutral">
+                Difficulty {selectedDungeon.difficulty || 0}
+              </Badge>
+              <Badge size="sm" variant="neutral">
+                Lv. {selectedDungeon.level_required || 0}
+              </Badge>
+              <Badge size="sm" variant={getReadinessVariant(selectedDungeon.profileReady, Boolean(activeProfile))}>
+                {getReadinessText(selectedDungeon, Boolean(activeProfile))}
+              </Badge>
+              {selectedDungeon.isSeasonal && (
+                <Badge size="sm" variant="neutral">
+                  {selectedDungeon.eventActive ? "Event active" : "Seasonal event"}
+                </Badge>
+              )}
             </div>
           </div>
 
-          <div className="dungeon-modal-grid">
-            <section className="dungeon-modal-panel">
-              <h3><ShieldCheck size={15} /> Profile Readiness</h3>
-              <div className="dungeon-detail-row">
+          {selectedDungeon.isSeasonal && (
+            <Banner variant="info" icon="info">
+              Seasonal event dungeon{selectedDungeon.eventActive ? " (live right now)" : " (currently off-season)"}.{" "}
+              Rare mythic drops can rotate across campaign reruns.
+            </Banner>
+          )}
+
+          <div className={styles.modalStatStrip}>
+            <div className={styles.statCell}>
+              <span className={styles.statLabel}>Entry Cost</span>
+              <strong className={`${styles.statValue} ${styles.profitNegative}`}>
+                <GoldIcon size={13} />
+                <span>-{formatGoldUnit(selectedDungeon.entryCost)}</span>
+              </strong>
+              <span className={styles.statHint}>Per run fee</span>
+            </div>
+            <div className={styles.statCell}>
+              <span className={styles.statLabel}>EV / Run</span>
+              <strong
+                className={`${styles.statValue} ${
+                  selectedDungeon.netProfitPerRun >= 0 ? styles.profitPositive : styles.profitNegative
+                }`}
+              >
+                <GoldIcon size={13} />
+                <span>{formatSignedGold(selectedDungeon.netProfitPerRun)}</span>
+              </strong>
+              <span className={styles.statHint}>After entry fee</span>
+            </div>
+            <div className={styles.statCell}>
+              <span className={styles.statLabel}>Entry / Shard</span>
+              <strong className={styles.statValue}>
+                {selectedDungeon.shardCount > 0 && selectedDungeon.shardValue > 0 ? (
+                  <>
+                    <GoldIcon size={13} />
+                    <span>{formatGoldUnit(selectedDungeon.shardValue)}</span>
+                  </>
+                ) : (
+                  <span className={styles.fieldMeta}>No shards</span>
+                )}
+              </strong>
+              <span className={styles.statHint}>
+                {selectedDungeon.shardCount > 0 ? `${formatNumber(selectedDungeon.shardCount)} shards/run` : "Lv 1–65 give none"}
+              </span>
+            </div>
+            <div className={styles.statCell}>
+              <span className={styles.statLabel}>Action Net</span>
+              <strong
+                className={`${styles.statValue} ${
+                  selectedDungeon.idleActionNetProfit >= 0 ? styles.profitPositive : styles.profitNegative
+                }`}
+              >
+                <GoldIcon size={13} />
+                <span>{formatSignedGold(selectedDungeon.idleActionNetProfit)}</span>
+              </strong>
+              <span className={styles.statHint}>{selectedDungeon.runsInIdleAction} queued runs</span>
+            </div>
+          </div>
+
+          <div className={styles.detailGrid}>
+            <section className={styles.detailGroup}>
+              <h3 className={styles.detailGroupHeading}>
+                <Icon name="defense" size="sm" aria-hidden="true" />
+                <span>Profile Readiness</span>
+              </h3>
+              <div className={styles.detailRow}>
                 <span>Status</span>
                 <strong>{getReadinessText(selectedDungeon, Boolean(activeProfile))}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Profile stats</span>
+              <div className={styles.detailRow}>
+                <span>Profile combat stats</span>
                 <strong>{formatNumber(selectedDungeon.profileDungeonStats)}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Required stats</span>
+              <div className={styles.detailRow}>
+                <span>Required stats (70% min)</span>
                 <strong>{formatNumber(selectedDungeon.requiredDungeonStats)}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Dungeoneering</span>
-                <strong>{selectedDungeon.profileDungeoneering || 0} / {selectedDungeon.level_required || 0}</strong>
+              <div className={styles.detailRow}>
+                <span>Dungeoneering level</span>
+                <strong>
+                  {selectedDungeon.profileDungeoneering || 0} / {selectedDungeon.level_required || 0}
+                </strong>
               </div>
             </section>
 
-            <section className="dungeon-modal-panel">
-              <h3><Target size={15} /> Idle Action Plan</h3>
-              <div className="dungeon-detail-row">
+            <section className={styles.detailGroup}>
+              <h3 className={styles.detailGroupHeading}>
+                <Icon name="timer" size="sm" aria-hidden="true" />
+                <span>Idle Action Plan</span>
+              </h3>
+              <div className={styles.detailRow}>
                 <span>Action limit</span>
                 <strong>{selectedDungeon.idleActionLimitHours.toFixed(1)}h</strong>
               </div>
-              <div className="dungeon-detail-row">
+              <div className={styles.detailRow}>
                 <span>Housing bonus</span>
                 <strong>{formatHours(selectedDungeon.housingDungeonHours || 0)}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Playtime</span>
-                <strong>{selectedDungeon.playtimeHours.toFixed(1)}h/day</strong>
-              </div>
-              <div className="dungeon-detail-row">
+              <div className={styles.detailRow}>
                 <span>Runs fit</span>
-                <strong>{selectedDungeon.runsInIdleAction}</strong>
+                <strong>
+                  {selectedDungeon.runsInIdleAction} ({selectedDungeon.dailyRunsByPlaytime}/day cap)
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Daily repeat capacity</span>
-                <strong>{selectedDungeon.dailyRunsByPlaytime} runs in {selectedDungeon.actionsNeededForDailyRuns} actions</strong>
+              <div className={styles.detailRow}>
+                <span>Effective / base time</span>
+                <strong>
+                  {selectedDungeon.idleActionEffectiveHours.toFixed(1)}h /{" "}
+                  {selectedDungeon.idleActionBaseHours.toFixed(1)}h
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Base time used</span>
-                <strong>{selectedDungeon.idleActionBaseHours.toFixed(1)}h</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Effective time used</span>
-                <strong>{selectedDungeon.idleActionEffectiveHours.toFixed(1)}h</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Action gap</span>
+              <div className={styles.detailRow}>
+                <span>Unused gap</span>
                 <strong>{selectedDungeon.idleActionGapHours.toFixed(1)}h</strong>
               </div>
             </section>
 
-            <section className="dungeon-modal-panel">
-              <h3><Sparkles size={15} /> Rewards</h3>
-              <div className="dungeon-detail-row">
-                <span>Combat EXP</span>
-                <strong>{formatNumber(selectedDungeon.combatExp)}</strong>
+            <section className={styles.detailGroup}>
+              <h3 className={styles.detailGroupHeading}>
+                <Icon name="magic" size="sm" aria-hidden="true" />
+                <span>XP, Shards &amp; Modifiers</span>
+              </h3>
+              <div className={styles.detailRow}>
+                <span>Combat / Dungeoneering XP</span>
+                <strong>
+                  {formatNumber(selectedDungeon.combatExp)} / {formatNumber(selectedDungeon.dungeoneeringExp)}
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Dungeoneering EXP</span>
-                <strong>{formatNumber(selectedDungeon.dungeoneeringExp)}</strong>
+              {selectedDungeon.bonusMasteryExp?.map((bonus) => (
+                <div className={styles.detailRow} key={bonus.skill}>
+                  <span>{bonus.skill} XP</span>
+                  <strong>{formatNumber(bonus.amount)}</strong>
+                </div>
+              ))}
+              <div className={styles.detailRow}>
+                <span>Shards per run</span>
+                <strong style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                  {selectedDungeon.shardCount > 0 ? (
+                    <>
+                      <ShardIcon size={13} />
+                      <span>{formatNumber(selectedDungeon.shardCount)}</span>
+                    </>
+                  ) : (
+                    <span>None</span>
+                  )}
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Shards</span>
-                <strong>{formatNumber(selectedDungeon.shardCount)}</strong>
+              <div className={styles.detailRow}>
+                <span>Completion progress</span>
+                <strong>
+                  {selectedDungeon.completedRuns || 0} / {selectedDungeon.completionRequirement || 0} (
+                  {selectedDungeon.completionMagicFindActive ? "+1% active" : "locked"})
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Gold / shard</span>
-                <strong>{selectedDungeon.shardValue > 0 ? `${formatGoldUnit(selectedDungeon.shardValue)} each` : "-"}</strong>
-              </div>
-              <p className="dungeon-model-note">Gold per shard = entry cost / shards from dungeon data.</p>
-              <div className="dungeon-detail-row">
-                <span>Completion requirement</span>
-                <strong>{selectedDungeon.completedRuns || 0} / {selectedDungeon.completionRequirement || 0}</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>This dungeon MF</span>
-                <strong>{selectedDungeon.completionMagicFindActive ? "+1% active" : "Not active"}</strong>
-              </div>
-              <div className="dungeon-detail-row">
+              <div className={styles.detailRow}>
                 <span>Total completion MF</span>
-                <strong>+{selectedDungeon.completedDungeonBonus}%</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Limited-time MF</span>
-                <strong>+{selectedDungeon.eventCompletionMagicFindBonus || 0}%</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Item speed</span>
                 <strong>
-                  {selectedDungeon.itemEfficiencyBonus > 0
-                    ? `+${selectedDungeon.itemEfficiencyBonus}%${selectedDungeon.dungeonEfficiencyItemName ? ` (${selectedDungeon.dungeonEfficiencyItemName})` : ""}`
-                    : "None"}
+                  +{selectedDungeon.completedDungeonBonus}% (+{selectedDungeon.eventCompletionMagicFindBonus || 0}%
+                  event)
                 </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Temporary item MF</span>
+              <div className={styles.detailRow}>
+                <span>Active item speed / MF</span>
                 <strong>
-                  {selectedDungeon.itemMagicFindBonus > 0
-                    ? `+${selectedDungeon.itemMagicFindBonus}%${selectedDungeon.dungeonMagicFindItemName ? ` (${selectedDungeon.dungeonMagicFindItemName})` : ""}`
-                    : "None"}
-                </strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Equipped special MF</span>
-                <strong>
-                  {selectedDungeon.equippedSpecialMagicFindBonus > 0
-                    ? `+${selectedDungeon.equippedSpecialMagicFindBonus}%${selectedDungeon.equippedSpecialName ? ` (${selectedDungeon.equippedSpecialName})` : ""}`
-                    : "None"}
+                  +{selectedDungeon.itemEfficiencyBonus}% / +{selectedDungeon.itemMagicFindBonus + selectedDungeon.equippedSpecialMagicFindBonus}%
                 </strong>
               </div>
             </section>
 
-            <section className="dungeon-modal-panel">
-              <h3><Coins size={15} /> Cost Model</h3>
-              <p className="dungeon-model-note">Craft paths are modeled value and may require your own skill/materials or a trusted service.</p>
-              {selectedDungeon.marketSensitiveDropCount > 0 && (
-                <p className="dungeon-model-note risk">
-                  This EV includes {selectedDungeon.marketSensitiveDropCount} sensitive drop{selectedDungeon.marketSensitiveDropCount === 1 ? "" : "s"}; modeled market value may not sell quickly.
-                </p>
-              )}
-              <div className="dungeon-detail-row">
-                <span>Queued action entry cost</span>
+            <section className={styles.detailGroup}>
+              <h3 className={styles.detailGroupHeading}>
+                <Icon name="gold" size="sm" aria-hidden="true" />
+                <span>Cost Model</span>
+              </h3>
+              <div className={styles.detailRow}>
+                <span>Queued action cost</span>
                 <strong>{formatGoldUnit(selectedDungeon.idleActionCost)}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Drop value mode</span>
+              <div className={styles.detailRow}>
+                <span>Drop valuation mode</span>
                 <strong>{DROP_VALUATION_LABELS[selectedDungeon.dropValuationMode as DungeonDropValuationMode]}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Sensitive drops</span>
-                <strong>{selectedDungeon.marketSensitiveDropCount > 0 ? `${selectedDungeon.marketSensitiveDropCount} checked` : "None"}</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Loot EV / run</span>
-                <strong>{formatGoldUnit(selectedDungeon.lootEv)}</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Shard EV / run</span>
+              <div className={styles.detailRow}>
+                <span>Loot EV / Entry Cost</span>
                 <strong>
-                  {selectedDungeon.shardValue > 0
-                    ? `${formatGoldUnit(selectedDungeon.shardEv)} (${formatGoldUnit(selectedDungeon.entryCost)} / ${formatNumber(selectedDungeon.shardCount)} shards)`
-                    : "-"}
+                  {formatGoldUnit(selectedDungeon.lootEv)} / {formatGoldUnit(selectedDungeon.entryCost)}
                 </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Gross EV / run</span>
-                <strong>{formatGoldUnit(selectedDungeon.ev)}</strong>
+              <div className={styles.detailRow}>
+                <span>Effective speed / MF</span>
+                <strong>
+                  {selectedDungeon.dungeonEfficiency}% /{" "}
+                  {selectedDungeon.includeMagicFindEv ? `${selectedDungeon.dungeonMagicFind}%` : "Off"}
+                </strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Dungeon MF in EV</span>
-                <strong>{selectedDungeon.includeMagicFindEv ? `${selectedDungeon.dungeonMagicFind}%` : "Off"}</strong>
+              <div className={styles.detailRow}>
+                <span>Runs per drop</span>
+                <strong>{selectedDungeon.runsToDrop === Infinity ? "—" : selectedDungeon.runsToDrop.toFixed(1)}</strong>
               </div>
-              <div className="dungeon-detail-row">
-                <span>Effective speed</span>
-                <strong>{selectedDungeon.dungeonEfficiency}%</strong>
-              </div>
-              <div className="dungeon-detail-row">
-                <span>Runs / any drop</span>
-                <strong>{selectedDungeon.runsToDrop === Infinity ? "-" : selectedDungeon.runsToDrop.toFixed(1)}</strong>
-              </div>
+              <p className={styles.detailNote}>
+                Shards are bonus rewards on top of gold EV and are not counted as gold. Craft paths use modeled market
+                output minus material cost.
+              </p>
             </section>
           </div>
 
-          <LoreThreadPanel names={selectedDungeonLoreNames} title="Dungeon Lore Thread" onOpenThread={openLoreThread} />
+          {selectedDungeon.marketSensitiveDropCount > 0 && (
+            <Banner variant="warning" icon="warning">
+              This EV includes {selectedDungeon.marketSensitiveDropCount} low-volume gear or mythic{" "}
+              {selectedDungeon.marketSensitiveDropCount === 1 ? "drop" : "drops"}; modeled market value may sell slowly.
+            </Banner>
+          )}
 
-          <h3 className="dungeon-loot-heading"><PackageOpen size={16} /> Loot Table</h3>
-          <div className="dungeon-loot-list">
-            {[...(selectedDungeon.lootDetails || [])]
-              .sort((a: any, b: any) => (b.expectedVal || 0) - (a.expectedVal || 0))
-              .map((drop: any, index: number) => (
-                <button
-                  key={`${drop.name}-${index}`}
-                  type="button"
-                  className="dungeon-loot-row"
-                  onClick={() => openItemByName(drop.name)}
-                  onMouseEnter={() => prefetchItem(drop.name)}
-                >
-                  <div className="dungeon-loot-main">
-                    {drop.image_url && <Image src={drop.image_url} alt="" width={34} height={34} unoptimized />}
-                    <div>
-                      <strong>
+          <LoreThreadPanel
+            names={selectedDungeonLoreNames}
+            title="Dungeon Lore Thread"
+            onOpenThread={openLoreThread}
+          />
+
+          <h3 className={styles.lootHeading}>
+            <Icon name="items" size="sm" aria-hidden="true" />
+            <span>Loot Table ({sortedLoot.length})</span>
+          </h3>
+
+          <div className={styles.lootList}>
+            {sortedLoot.map((drop: any, index: number) => (
+              <button
+                key={`${drop.name}-${index}`}
+                type="button"
+                className={styles.lootRowBtn}
+                onClick={() => openItemByName(drop.name)}
+                onMouseEnter={() => prefetchItem(drop.name)}
+              >
+                <div className={styles.lootTopRow}>
+                  <div className={styles.lootMain}>
+                    <span className={styles.lootIcon} aria-hidden="true">
+                      <GameImage
+                        src={drop.image_url}
+                        alt=""
+                        width={30}
+                        height={30}
+                        sizes="30px"
+                        fallback={<Icon name="items" size="sm" />}
+                      />
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div className={styles.pickerPrimary}>
                         {drop.name}
-                        {(Number(drop.quantity) || 1) > 1 && <span> x{drop.quantity}</span>}
-                      </strong>
-                      <small>
-                        {drop.adjustedChancePercent !== drop.baseChancePercent
-                          ? `${drop.baseChancePercent}% -> ${drop.adjustedChancePercent.toFixed(2)}%`
-                          : `${drop.chance}% drop`}{" "}
-                        - <QualityText value={drop.quality}>{drop.quality || "Unknown"}</QualityText>
-                      </small>
+                        {(Number(drop.quantity) || 1) > 1 && ` x${drop.quantity}`}
+                      </div>
+                      <div className={styles.cellSubline}>
+                        <span>
+                          {drop.adjustedChancePercent !== drop.baseChancePercent
+                            ? `${drop.baseChancePercent}% → ${drop.adjustedChancePercent.toFixed(2)}%`
+                            : `${drop.chance}% drop`}
+                        </span>
+                        <span>•</span>
+                        <QualityText value={drop.quality}>{drop.quality || "Unknown"}</QualityText>
+                      </div>
                     </div>
                   </div>
-                  <div className="dungeon-loot-value">
-                    <strong>{formatGoldUnit(drop.expectedVal || 0)}</strong>
-                    <span>
-                      {getValuePathLabel(drop.valueBreakdown?.chosenPath)} {formatGoldUnit(drop.trueValue || 0)}
-                      {drop.marketPriceInfo?.adjusted ? " safe" : ""} <ExternalLink size={10} />
+
+                  <div className={styles.lootValueCol}>
+                    <span className={styles.currencyReadout} style={{ color: "var(--text-accent)" }}>
+                      <GoldIcon size={13} />
+                      <span>{formatGoldUnit(drop.expectedVal || 0)} EV</span>
+                    </span>
+                    <span className={styles.cellSubline}>
+                      <span>
+                        {getValuePathLabel(drop.valueBreakdown?.chosenPath)} {formatGoldUnit(drop.trueValue || 0)}
+                        {drop.marketPriceInfo?.adjusted ? " safe" : ""}
+                      </span>
+                      <Icon name="externalLink" size="xs" aria-hidden="true" />
                     </span>
                     {(drop.marketSensitive || drop.chestAdjusted) && (
-                      <small className={`dungeon-market-note ${drop.manualMissingValue ? "risk" : drop.marketLiquidity?.tone || "none"}`}>
+                      <span className={styles.detailNote} style={{ marginTop: 0 }}>
                         {drop.valuationModeApplied || drop.chestAdjusted
                           ? `${drop.valuationLabel}. ${drop.valuationNote || "Sensitive loot value adjusted."}`
                           : drop.valuationNote}
-                      </small>
+                      </span>
                     )}
                     {drop.valueBreakdown?.recipe && !drop.valuationModeApplied && (
-                      <small>
-                        Crafted item value: {formatGoldUnit(drop.valueBreakdown.recipe.resultValue)}
-                        {" - "}
-                        material cost {formatGoldUnit(drop.valueBreakdown.recipe.materialCost)}
-                      </small>
-                    )}
-                    {drop.valueBreakdown?.chest && (
-                      <small>
-                        Chest contents EV: {formatGoldUnit(drop.valueBreakdown.chest.expectedValue)}
-                      </small>
+                      <span className={styles.detailNote} style={{ marginTop: 0 }}>
+                        Output {formatGoldUnit(drop.valueBreakdown.recipe.resultValue)} − Mats{" "}
+                        {formatGoldUnit(drop.valueBreakdown.recipe.materialCost)}
+                      </span>
                     )}
                   </div>
-                  {drop.valueBreakdown?.chest && (
-                    <div className="dungeon-chest-breakdown" onClick={(event) => event.stopPropagation()}>
-                      <div className="dungeon-chest-summary">
-                        <span>
-                          <strong>Alchemy chest breakdown</strong>
-                          <small>Each row is chance x quantity x best item value.</small>
-                        </span>
-                        <em>{formatGoldUnit(drop.valueBreakdown.chest.expectedValue)} total</em>
-                      </div>
-                      {[...drop.valueBreakdown.chest.drops]
-                        .sort((a: any, b: any) => (b.expectedValue || 0) - (a.expectedValue || 0))
-                        .slice(0, 6)
-                        .map((chestDrop: any) => (
-                          <div className="dungeon-chest-row" key={`${drop.name}-${chestDrop.name}`}>
-                            <span>
-                              <strong>{chestDrop.name}</strong>
-                              <small>
-                                {getValuePathLabel(chestDrop.path)}
-                                {chestDrop.valuationModeApplied ? ` - ${chestDrop.valuationLabel}` : ""}
-                              </small>
-                            </span>
-                            <span>
-                              <em>{formatGoldUnit(chestDrop.expectedValue)}</em>
-                              <small>
-                                {Number(chestDrop.chance || 0)}% x {(Number(chestDrop.quantity) || 1) > 1 ? `${chestDrop.quantity} x ` : ""}{formatGoldUnit(chestDrop.value || 0)}
-                              </small>
-                            </span>
-                          </div>
-                        ))}
+                </div>
+
+                {drop.valueBreakdown?.chest && (
+                  <div className={styles.chestBreakdown}>
+                    <div className={styles.chestRow}>
+                      <strong style={{ color: "var(--text-primary)" }}>Alchemy chest breakdown</strong>
+                      <strong>{formatGoldUnit(drop.valueBreakdown.chest.expectedValue)} total</strong>
                     </div>
-                  )}
-                </button>
-              ))}
+                    {[...drop.valueBreakdown.chest.drops]
+                      .sort((a: any, b: any) => (b.expectedValue || 0) - (a.expectedValue || 0))
+                      .slice(0, 6)
+                      .map((chestDrop: any) => (
+                        <div className={styles.chestRow} key={`${drop.name}-${chestDrop.name}`}>
+                          <span>
+                            {chestDrop.name}{" "}
+                            <small style={{ color: "var(--text-muted)" }}>
+                              ({getValuePathLabel(chestDrop.path)})
+                            </small>
+                          </span>
+                          <span>
+                            {formatGoldUnit(chestDrop.expectedValue)} ({Number(chestDrop.chance || 0)}% ×{" "}
+                            {formatGoldUnit(chestDrop.value || 0)})
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </ModalSheet>
   );
 }
 

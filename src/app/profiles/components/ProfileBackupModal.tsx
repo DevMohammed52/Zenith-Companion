@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { Download, Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { ModalSheet } from "@/components/ui/ModalSheet";
+import { TextArea } from "@/components/ui/TextArea";
+import styles from "../Profiles.module.css";
 
 export interface ProfileBackupDetailsProps {
   transferText: string;
@@ -17,20 +21,48 @@ export function ProfileBackupDetails({
   onImport,
 }: ProfileBackupDetailsProps) {
   return (
-    <details id="profile-backup" className="profile-json-transfer" tabIndex={-1}>
-      <summary>Backup or restore local profiles</summary>
-      <p>This is only for moving Zenith profiles between browsers. It is separate from IdleMMO character import.</p>
-      <div className="profile-inline-actions">
-        <button type="button" onClick={onExport}><Download size={15} /> Copy backup JSON</button>
-        <button type="button" onClick={onImport}><Upload size={15} /> Restore from JSON</button>
+    <details id="profile-backup" className={styles.accordionCard} tabIndex={-1}>
+      <summary className={styles.accordionSummary}>
+        <span className={styles.accordionTitleGroup}>
+          <strong>Backup or restore local profiles</strong>
+          <span>Click to export or paste browser profile JSON backups</span>
+        </span>
+        <span className={styles.accordionCue}>
+          <span>JSON transfer</span>
+          <Icon name="chevronDown" size="sm" className={styles.accordionChevron} aria-hidden="true" />
+        </span>
+      </summary>
+      <div className={styles.accordionBody}>
+        <p className="text-muted" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.45 }}>
+          Use this to move Zenith profiles between browsers. This stays local and is separate from IdleMMO character sync.
+        </p>
+        <div className={styles.actionRow}>
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Icon name="download" size="sm" aria-hidden="true" />}
+            onClick={onExport}
+          >
+            Copy backup JSON
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Icon name="upload" size="sm" aria-hidden="true" />}
+            onClick={onImport}
+          >
+            Restore from JSON
+          </Button>
+        </div>
+        <TextArea
+          aria-label="Profile backup JSON"
+          isDataImport
+          minRows={5}
+          value={transferText}
+          placeholder="Paste a Zenith profile backup JSON here..."
+          onChange={(event) => setTransferText(event.target.value)}
+        />
       </div>
-      <textarea
-        aria-label="Profile backup JSON"
-        className="control-input profile-transfer"
-        value={transferText}
-        placeholder="Paste a Zenith profile backup JSON here..."
-        onChange={(event) => setTransferText(event.target.value)}
-      />
     </details>
   );
 }
@@ -58,34 +90,28 @@ export function ProfileConfirmModal({
   confirmDialogRef: React.RefObject<HTMLDivElement | null>;
   cancelRef: React.RefObject<HTMLButtonElement | null>;
 }) {
-  if (!confirmDetails) return null;
-
   return (
-    <div className="modal-overlay profile-confirm-overlay" role="presentation" onClick={onClose}>
-      <div
-        className="modal-content profile-confirm-modal"
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="profile-confirm-title"
-        aria-describedby="profile-confirm-copy"
-        ref={confirmDialogRef}
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="modal-header">
-          <h2 id="profile-confirm-title">{confirmDetails.title}</h2>
-          <button className="close-btn" type="button" aria-label="Close confirmation" onClick={onClose}>
-            <X size={18} aria-hidden="true" />
-          </button>
-        </div>
-        <div className="modal-body">
-          <p className="profile-confirm-copy" id="profile-confirm-copy">{confirmDetails.body}</p>
-          <div className="profile-confirm-actions">
-            <button type="button" ref={cancelRef} className="profile-action" onClick={onClose}>Cancel</button>
-            <button type="button" className="profile-action danger" onClick={confirmDetails.onConfirm}>{confirmDetails.action}</button>
+    <ModalSheet
+      isOpen={Boolean(confirmDetails)}
+      onClose={onClose}
+      title={confirmDetails?.title || ""}
+      maxWidth="sm"
+      footer={
+        confirmDetails ? (
+          <div className={styles.confirmFooter}>
+            <Button ref={cancelRef} variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDetails.onConfirm}>
+              {confirmDetails.action}
+            </Button>
           </div>
-        </div>
+        ) : undefined
+      }
+    >
+      <div ref={confirmDialogRef} tabIndex={-1}>
+        <p className={styles.confirmBody}>{confirmDetails?.body || ""}</p>
       </div>
-    </div>
+    </ModalSheet>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
-import { ProfileHeader, ProfileListPanel } from "./components/ProfileHeader";
+import { BackToTop } from "@/components/ui/BackToTop";
+import { Icon } from "@/components/ui/Icon";
+import styles from "./Profiles.module.css";
+import { ProfileHeader, ProfileListPanel, ProfileSectionNav } from "./components/ProfileHeader";
 import { ProfileIdentitySection } from "./components/ProfileIdentitySection";
 import { ProfileLevelsSection } from "./components/ProfileLevelsSection";
 import { ProfileSkillsSection } from "./components/ProfileSkillsSection";
@@ -17,14 +19,7 @@ import { ProfilesLoadingShell } from "./components/ProfilesLoadingShell";
 import { useProfileState } from "./hooks/useProfileState";
 import { useLiveProfileImport } from "./hooks/useLiveProfileImport";
 
-export {
-  LIVE_IMPORT_STEPS,
-  formatWaitTime,
-  getPollAfterMs,
-  getRetryAfterMs,
-  isRecord,
-  resolveLiveImportStep,
-} from "./hooks/useLiveProfileImport";
+export { LIVE_IMPORT_STEPS, formatWaitTime, getPollAfterMs, getRetryAfterMs, isRecord, resolveLiveImportStep } from "./hooks/useLiveProfileImport";
 
 export default function ProfilesPage() {
   const ps = useProfileState();
@@ -44,23 +39,16 @@ export default function ProfilesPage() {
 
   if (!profile) {
     return (
-      <main className="container profiles-page">
-        <div className="header">
-          <h1 className="header-title">
-            <ZenithIcon name="profile" size={24} style={{ color: "var(--text-accent)" }} /> Profiles
-          </h1>
-        </div>
+      <main className={`container ${styles.page}`}>
+        <h1 className="header-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Icon name="profileSwitch" size="lg" /> Profiles
+        </h1>
       </main>
     );
   }
 
   return (
-    <main
-      className="container profiles-page"
-      onClick={(event) => {
-        if (!(event.target as HTMLElement).closest(".profile-picker")) ps.setOpenPicker(null);
-      }}
-    >
+    <main className={`container ${styles.page}`}>
       <ProfileHeader
         profilesCount={state.profiles.length}
         activeProfileSection={ps.activeProfileSection}
@@ -75,14 +63,23 @@ export default function ProfilesPage() {
         lastImportedOrRefreshedAt={profile.importSource.importedAt || profile.importSource.refreshedAt}
       />
 
-      <section className="profile-layout" aria-label="Profile manager">
+      <section className={`${styles.layout} profile-layout`} aria-label="Profile manager">
         <ProfileListPanel
           profiles={state.profiles}
           activeProfileId={profile.id}
           onSelectProfile={ps.setActiveProfile}
+          backupDue={ps.backupDue}
+          lastBackupAt={ps.lastBackupAt}
+          lastImportedOrRefreshedAt={profile.importSource.importedAt || profile.importSource.refreshedAt}
+          onOpenImport={ps.activeProfileSection !== "transfer" ? () => ps.openProfileSection("transfer") : undefined}
         />
 
-        <div className="profile-editor" style={{ minHeight: "560px", contain: "layout" }}>
+        <ProfileSectionNav
+          activeProfileSection={ps.activeProfileSection}
+          openProfileSection={ps.openProfileSection}
+        />
+
+        <div className={`${styles.editor} profile-editor`} style={{ minHeight: "560px", contain: "layout" }}>
           {ps.activeProfileSection === "identity" && (
             <ProfileIdentitySection
               profile={profile}
@@ -100,7 +97,7 @@ export default function ProfilesPage() {
           )}
 
           {ps.activeProfileSection === "levels" && (
-            <section id="profile-levels" className="profile-panel" tabIndex={-1}>
+            <section id="profile-levels" className={styles.panel} tabIndex={-1}>
               <ProfileLevelsSection
                 levels={profile.levels}
                 onChangeLevel={(key, value) => ps.updateNested("levels", key, value)}
@@ -180,7 +177,7 @@ export default function ProfilesPage() {
           )}
 
           {ps.activeProfileSection === "transfer" && (
-            <section id="profile-transfer" className="profile-panel" tabIndex={-1}>
+            <section id="profile-transfer" className={styles.panel} tabIndex={-1}>
               <ProfileLiveImportModal
                 profile={profile}
                 liveImport={liveImport}
@@ -206,6 +203,8 @@ export default function ProfilesPage() {
         confirmDialogRef={ps.confirmDialogRef}
         cancelRef={ps.confirmCancelRef}
       />
+
+      <BackToTop />
     </main>
   );
 }

@@ -1,177 +1,218 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Check, ChevronDown } from "lucide-react";
-import QualityText from "@/components/QualityText";
-import { type WorldBossItemModifier, getWorldBossItemModifierSummary } from "../types";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
+import { GameImage } from "@/components/GameImage";
+import { Icon } from "@/components/ui";
+import {
+    formatWorldBossModifierDuration,
+    getWorldBossItemModifierSummary,
+    type WorldBossItemModifier,
+} from "../types";
+import styles from "../Bosses.module.css";
 
-export interface WorldBossItemEffectPickerProps {
-    ariaLabel: string;
-    emptyLabel: string;
-    label: string;
-    onChange: (value: string) => void;
+type WorldBossItemEffectPickerProps = {
     options: WorldBossItemModifier[];
     value: string;
-}
+    onChange: (itemName: string) => void;
+    compact?: boolean;
+};
 
 export function WorldBossItemEffectPicker({
-    ariaLabel,
-    emptyLabel,
-    label,
-    onChange,
     options,
     value,
+    onChange,
 }: WorldBossItemEffectPickerProps) {
     const [open, setOpen] = useState(false);
-    const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
-    const pickerRef = useRef<HTMLDivElement | null>(null);
+    const rootRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-    const selected = options.find((option) => option.name === value) || null;
+    const listboxId = useId();
+    const labelId = useId();
+
+    const selectedOption = useMemo(
+        () => options.find((option) => option.name === value) || null,
+        [options, value],
+    );
 
     const focusOption = (index: number) => {
-        window.requestAnimationFrame(() => {
-            optionRefs.current[index]?.focus();
-        });
+        const count = options.length + 1;
+        const normalized = ((index % count) + count) % count;
+        window.requestAnimationFrame(() => optionRefs.current[normalized]?.focus());
     };
 
-    const selectOption = (nextValue: string) => {
-        onChange(nextValue);
+    const selectAndClose = (itemName: string) => {
+        onChange(itemName);
         setOpen(false);
         triggerRef.current?.focus();
     };
 
-    const selectedIndex = Math.max(0, options.findIndex((option) => option.name === value) + 1);
-
-    const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-        if (!["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) return;
-        event.preventDefault();
-        setOpen(true);
-        focusOption(event.key === "ArrowUp" ? options.length : selectedIndex);
+    const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            setOpen(true);
+            const selectedIdx = selectedOption ? options.findIndex((opt) => opt.name === selectedOption.name) + 1 : 0;
+            focusOption(event.key === "ArrowDown" ? selectedIdx : 0);
+        } else if (event.key === "Escape" && open) {
+            event.preventDefault();
+            setOpen(false);
+        }
     };
 
-    const handleOptionKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
-        const optionCount = options.length + 1;
-        if (event.key === "Escape") {
+    const handleOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number, itemName: string) => {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            focusOption(index + 1);
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            focusOption(index - 1);
+        } else if (event.key === "Home") {
+            event.preventDefault();
+            focusOption(0);
+        } else if (event.key === "End") {
+            event.preventDefault();
+            focusOption(options.length);
+        } else if (event.key === "Escape") {
             event.preventDefault();
             setOpen(false);
             triggerRef.current?.focus();
-            return;
-        }
-        if (event.key === "ArrowDown") {
+        } else if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            focusOption((index + 1) % optionCount);
-            return;
-        }
-        if (event.key === "ArrowUp") {
-            event.preventDefault();
-            focusOption((index - 1 + optionCount) % optionCount);
-            return;
-        }
-        if (event.key === "Home") {
-            event.preventDefault();
-            focusOption(0);
-            return;
-        }
-        if (event.key === "End") {
-            event.preventDefault();
-            focusOption(optionCount - 1);
+            selectAndClose(itemName);
         }
     };
 
     useEffect(() => {
         if (!open) return;
-        const updatePlacement = () => {
-            const triggerRect = triggerRef.current?.getBoundingClientRect();
-            if (!triggerRect) return;
-            const spaceBelow = window.innerHeight - triggerRect.bottom;
-            const spaceAbove = triggerRect.top;
-            setMenuPlacement(spaceBelow < 320 && spaceAbove > spaceBelow ? "up" : "down");
-        };
-        updatePlacement();
         const handlePointer = (event: PointerEvent) => {
-            if (pickerRef.current?.contains(event.target as Node)) return;
-            setOpen(false);
+            if (!rootRef.current?.contains(event.target as Node)) {
+                setOpen(false);
+            }
         };
-        const handleKey = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setOpen(false);
-        };
-        window.addEventListener("resize", updatePlacement);
-        window.addEventListener("scroll", updatePlacement, true);
-        document.addEventListener("pointerdown", handlePointer);
-        document.addEventListener("keydown", handleKey);
-        return () => {
-            window.removeEventListener("resize", updatePlacement);
-            window.removeEventListener("scroll", updatePlacement, true);
-            document.removeEventListener("pointerdown", handlePointer);
-            document.removeEventListener("keydown", handleKey);
-        };
+        window.addEventListener("pointerdown", handlePointer);
+        return () => window.removeEventListener("pointerdown", handlePointer);
     }, [open]);
 
     return (
-        <div className={`world-boss-effect-picker ${open ? "open" : ""} ${menuPlacement === "up" ? "drop-up" : ""}`} ref={pickerRef}>
-            <button
-                type="button"
-                ref={triggerRef}
-                className="world-boss-effect-trigger"
-                aria-expanded={open}
-                aria-haspopup="listbox"
-                aria-label={ariaLabel}
-                onClick={() => setOpen((current) => !current)}
-                onKeyDown={handleTriggerKeyDown}
-            >
-                <span>
-                    <small>{label}</small>
-                    <strong>{selected?.name || emptyLabel}</strong>
-                    <em>{selected ? getWorldBossItemModifierSummary(selected) : "Use profile MF or special gear from Profiles."}</em>
+        <div className={styles.controlField} ref={rootRef}>
+            <span id={labelId} className={styles.fieldLabel}>
+                <span>WB Consumable / Scroll</span>
+                <span className={styles.fieldMeta}>
+                    {selectedOption ? `+${selectedOption.magicFind}% MF` : `${options.length} available`}
                 </span>
-                <ChevronDown size={16} />
-            </button>
-            {open && (
-                <div className="world-boss-effect-menu" role="listbox" aria-label={ariaLabel}>
-                    <button
-                        type="button"
-                        ref={(node) => { optionRefs.current[0] = node; }}
-                        className={`world-boss-effect-option ${!value ? "active" : ""}`}
-                        role="option"
-                        aria-selected={!value}
-                        onKeyDown={(event) => handleOptionKeyDown(event, 0)}
-                        onClick={() => selectOption("")}
-                    >
-                        <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />
-                        <span>
-                            <strong>{emptyLabel}</strong>
-                            <small>Use profile MF or special gear from Profiles.</small>
+            </span>
+
+            <div className={styles.pickerWrap}>
+                <button
+                    ref={triggerRef}
+                    type="button"
+                    aria-expanded={open}
+                    aria-haspopup="listbox"
+                    aria-controls={open ? listboxId : undefined}
+                    aria-labelledby={labelId}
+                    className={styles.pickerTrigger}
+                    onClick={() => setOpen((current) => !current)}
+                    onKeyDown={handleTriggerKeyDown}
+                >
+                    <span className={styles.pickerTriggerContent}>
+                        <span className={styles.pickerTriggerIcon} aria-hidden="true">
+                            {selectedOption?.imageUrl ? (
+                                <GameImage
+                                    src={selectedOption.imageUrl}
+                                    alt=""
+                                    width={22}
+                                    height={22}
+                                    sizes="22px"
+                                    fallback={<Icon name="magic" size="sm" />}
+                                />
+                            ) : (
+                                <Icon name="magic" size="sm" />
+                            )}
                         </span>
-                        {!value && <Check size={14} />}
-                    </button>
-                    {options.map((option, index) => {
-                        const active = option.name === value;
-                        return (
-                            <button
-                                type="button"
-                                ref={(node) => { optionRefs.current[index + 1] = node; }}
-                                className={`world-boss-effect-option ${active ? "active" : ""}`}
-                                key={option.name}
-                                role="option"
-                                aria-selected={active}
-                                onKeyDown={(event) => handleOptionKeyDown(event, index + 1)}
-                                onClick={() => selectOption(option.name)}
-                            >
-                                {option.imageUrl ? <img src={option.imageUrl} alt="" /> : <span className="world-boss-effect-icon-placeholder" aria-hidden="true" />}
-                                <span>
-                                    <strong>{option.name}</strong>
-                                    <small><QualityText value={option.quality}>{option.quality}</QualityText> {option.type}</small>
+                        <span className={styles.pickerTriggerText}>
+                            <span className={styles.pickerPrimary}>
+                                {selectedOption ? selectedOption.name : "No WB item modifier"}
+                            </span>
+                            <span className={styles.pickerSecondary}>
+                                {selectedOption
+                                    ? getWorldBossItemModifierSummary(selectedOption)
+                                    : "Preview scroll or potion MF"}
+                            </span>
+                        </span>
+                    </span>
+                    <Icon name="chevronDown" size="sm" aria-hidden="true" />
+                </button>
+
+                {open && (
+                    <div
+                        id={listboxId}
+                        role="listbox"
+                        aria-labelledby={labelId}
+                        className={styles.pickerMenu}
+                    >
+                        <button
+                            ref={(el) => {
+                                optionRefs.current[0] = el;
+                            }}
+                            type="button"
+                            role="option"
+                            aria-selected={value === ""}
+                            className={`${styles.pickerOption} ${value === "" ? styles.pickerOptionSelected : ""}`.trim()}
+                            onClick={() => selectAndClose("")}
+                            onKeyDown={(event) => handleOptionKeyDown(event, 0, "")}
+                        >
+                            <span className={styles.pickerOptionMain}>
+                                <span className={styles.pickerTriggerIcon} aria-hidden="true">
+                                    <Icon name="minus" size="sm" />
                                 </span>
-                                <em>{getWorldBossItemModifierSummary(option)}</em>
-                                {active && <Check size={14} />}
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+                                <span className={styles.pickerOptionText}>
+                                    <span className={styles.pickerPrimary}>No WB item modifier</span>
+                                    <span className={styles.pickerOptionMeta}>Base / profile MF only</span>
+                                </span>
+                            </span>
+                            {value === "" && <Icon name="check" size="sm" aria-hidden="true" />}
+                        </button>
+
+                        {options.map((option, index) => {
+                            const selected = option.name === value;
+                            return (
+                                <button
+                                    key={option.name}
+                                    ref={(el) => {
+                                        optionRefs.current[index + 1] = el;
+                                    }}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={selected}
+                                    className={`${styles.pickerOption} ${selected ? styles.pickerOptionSelected : ""}`.trim()}
+                                    onClick={() => selectAndClose(option.name)}
+                                    onKeyDown={(event) => handleOptionKeyDown(event, index + 1, option.name)}
+                                >
+                                    <span className={styles.pickerOptionMain}>
+                                        <span className={styles.pickerTriggerIcon} aria-hidden="true">
+                                            <GameImage
+                                                src={option.imageUrl}
+                                                alt=""
+                                                width={22}
+                                                height={22}
+                                                sizes="22px"
+                                                fallback={<Icon name="magic" size="sm" />}
+                                            />
+                                        </span>
+                                        <span className={styles.pickerOptionText}>
+                                            <span className={styles.pickerPrimary}>{option.name}</span>
+                                            <span className={styles.pickerOptionMeta}>
+                                                +{option.magicFind}% MF • {formatWorldBossModifierDuration(option.durationMs)}
+                                            </span>
+                                        </span>
+                                    </span>
+                                    {selected && <Icon name="check" size="sm" aria-hidden="true" />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
-export default WorldBossItemEffectPicker;
