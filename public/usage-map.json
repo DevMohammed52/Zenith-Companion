@@ -754,7 +754,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 10
       },
       {
@@ -1361,7 +1361,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 30
       },
       {
@@ -3963,7 +3963,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 3
       },
       {
@@ -4003,7 +4003,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Soulguard Armor Recipe",
+        "name": "Soulguard Armour Recipe",
         "amount": 50
       },
       {
@@ -4058,7 +4058,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 10
       },
       {
@@ -4480,7 +4480,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Soulguard Armor Recipe",
+        "name": "Soulguard Armour Recipe",
         "amount": 10
       },
       {
@@ -5715,7 +5715,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 5
       },
       {
@@ -5907,7 +5907,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Soulguard Armor Recipe",
+        "name": "Soulguard Armour Recipe",
         "amount": 8
       },
       {
@@ -8821,7 +8821,7 @@
     "shops": [],
     "recipe_yield": {
       "item_name": "Essenceweave Shield",
-      "uses": "Infinite"
+      "uses": 1
     }
   },
   "Sunfire Recipe": {
@@ -10168,7 +10168,11 @@
       }
     ],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "recipe_yield": {
+      "item_name": "Dreadbane Armour",
+      "uses": 1
+    }
   },
   "Phoenix Greaves Recipe": {
     "dropped_by": [
@@ -10650,7 +10654,11 @@
       }
     ],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "recipe_yield": {
+      "item_name": "Soulguard Armour",
+      "uses": 1
+    }
   },
   "Whisperstep Greaves Recipe": {
     "dropped_by": [
@@ -17674,10 +17682,41 @@
       ]
     }
   },
-  "Dreadbane Armor": {
+  "Dreadbane Armour": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "skill": "Forge",
+      "level": 80,
+      "recipe_name": "Dreadbane Armour Recipe",
+      "materials": [
+        {
+          "name": "Undying Crest",
+          "amount": 5
+        },
+        {
+          "name": "Boar Tusk",
+          "amount": 10
+        },
+        {
+          "name": "Vial of Wraith Ectoplasm",
+          "amount": 3
+        },
+        {
+          "name": "Moose Antler",
+          "amount": 10
+        },
+        {
+          "name": "Cursed Talisman",
+          "amount": 30
+        },
+        {
+          "name": "Uranium Bar",
+          "amount": 150
+        }
+      ]
+    }
   },
   "Echosteel Breastplate": {
     "dropped_by": [],
@@ -18095,10 +18134,33 @@
       ]
     }
   },
-  "Soulguard Armor": {
+  "Soulguard Armour": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "skill": "Forge",
+      "level": 93,
+      "recipe_name": "Soulguard Armour Recipe",
+      "materials": [
+        {
+          "name": "Arcane Starstone",
+          "amount": 8
+        },
+        {
+          "name": "Stoneheart Core",
+          "amount": 10
+        },
+        {
+          "name": "Vial of Wraith Ectoplasm",
+          "amount": 50
+        },
+        {
+          "name": "Mystic Bar",
+          "amount": 3200
+        }
+      ]
+    }
   },
   "Starfire Plate": {
     "dropped_by": [],
@@ -24681,6 +24743,18 @@
         "name": "Banyan Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Weak Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Robust Plank",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24738,6 +24812,12 @@
         "name": "Birch Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Weak Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24770,6 +24850,12 @@
         "name": "Mahogany Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Strong Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24787,6 +24873,12 @@
         "name": "Maple Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Robust Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24834,6 +24926,12 @@
         "name": "Mystical Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Strong Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24866,6 +24964,12 @@
         "name": "Oak Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Weak Plank",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -24930,6 +25034,18 @@
         "name": "Willow Bow",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Robust Beam",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Strong Plank",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": []
@@ -26260,6 +26376,12 @@
         "name": "Iron Gauntlets",
         "amount": 10,
         "source": "DEFAULT_FORGE"
+      },
+      {
+        "type": "CONSTRUCTION",
+        "name": "Iron Fitting",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
       }
     ],
     "shops": [],
@@ -26934,7 +27056,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Soulguard Armor Recipe",
+        "name": "Soulguard Armour Recipe",
         "amount": 3200
       },
       {
@@ -27303,7 +27425,7 @@
       },
       {
         "type": "FORGE",
-        "name": "Dreadbane Armor Recipe",
+        "name": "Dreadbane Armour Recipe",
         "amount": 150
       },
       {
@@ -27984,62 +28106,229 @@
   "Brick": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Clay",
+          "item_name": "Clay",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Clay": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "CONSTRUCTION",
+        "name": "Brick",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
+      }
+    ],
     "shops": []
   },
   "Glass": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Limestone",
+          "item_name": "Limestone",
+          "amount": 3
+        },
+        {
+          "name": "Sand",
+          "item_name": "Sand",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Iron Fitting": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 10,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Iron Bar",
+          "item_name": "Iron Bar",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Limestone": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "CONSTRUCTION",
+        "name": "Glass",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
+      }
+    ],
     "shops": []
   },
   "Robust Beam": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 45,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Maple Log",
+          "item_name": "Maple Log",
+          "amount": 3
+        },
+        {
+          "name": "Willow Log",
+          "item_name": "Willow Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Robust Plank": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 30,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Banyan Log",
+          "item_name": "Banyan Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Sand": {
     "dropped_by": [],
-    "required_for": [],
+    "required_for": [
+      {
+        "type": "CONSTRUCTION",
+        "name": "Glass",
+        "amount": 3,
+        "source": "DEFAULT_CONSTRUCTION"
+      }
+    ],
     "shops": []
   },
   "Strong Beam": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 75,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Mahogany Log",
+          "item_name": "Mahogany Log",
+          "amount": 3
+        },
+        {
+          "name": "Mystical Log",
+          "item_name": "Mystical Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Strong Plank": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 65,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Willow Log",
+          "item_name": "Willow Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Weak Beam": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 15,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Birch Log",
+          "item_name": "Birch Log",
+          "amount": 3
+        },
+        {
+          "name": "Banyan Log",
+          "item_name": "Banyan Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Weak Plank": {
     "dropped_by": [],
     "required_for": [],
-    "shops": []
+    "shops": [],
+    "produced_from": {
+      "source": "DEFAULT_CONSTRUCTION",
+      "skill": "CONSTRUCTION",
+      "level": 1,
+      "recipe_name": null,
+      "recipe_label": "Default Construction craft",
+      "materials": [
+        {
+          "name": "Oak Log",
+          "item_name": "Oak Log",
+          "amount": 3
+        }
+      ]
+    }
   },
   "Cooked Cod": {
     "dropped_by": [],
@@ -30525,15 +30814,6 @@
       "uses": "Infinite"
     }
   },
-  "Dreadbane Armor Recipe": {
-    "dropped_by": [],
-    "required_for": [],
-    "shops": [],
-    "recipe_yield": {
-      "item_name": "Dreadbane Armour",
-      "uses": 1
-    }
-  },
   "Earthcore Infusion Recipe": {
     "dropped_by": [],
     "required_for": [],
@@ -31108,15 +31388,6 @@
     "recipe_yield": {
       "item_name": "Shieldbearer's Infusion",
       "uses": "Infinite"
-    }
-  },
-  "Soulguard Armor Recipe": {
-    "dropped_by": [],
-    "required_for": [],
-    "shops": [],
-    "recipe_yield": {
-      "item_name": "Soulguard Armour",
-      "uses": 1
     }
   },
   "Spicefinder Essence Crystal Recipe": {
@@ -32298,68 +32569,14 @@
     "required_for": [],
     "shops": []
   },
-  "Dreadbane Armour": {
+  "Nightwood Broom": {
     "dropped_by": [],
     "required_for": [],
-    "shops": [],
-    "produced_from": {
-      "skill": "Forge",
-      "level": 80,
-      "recipe_name": "Dreadbane Armor Recipe",
-      "materials": [
-        {
-          "name": "Undying Crest",
-          "amount": 5
-        },
-        {
-          "name": "Boar Tusk",
-          "amount": 10
-        },
-        {
-          "name": "Vial of Wraith Ectoplasm",
-          "amount": 3
-        },
-        {
-          "name": "Moose Antler",
-          "amount": 10
-        },
-        {
-          "name": "Cursed Talisman",
-          "amount": 30
-        },
-        {
-          "name": "Uranium Bar",
-          "amount": 150
-        }
-      ]
-    }
+    "shops": []
   },
-  "Soulguard Armour": {
+  "Moon Fragment": {
     "dropped_by": [],
     "required_for": [],
-    "shops": [],
-    "produced_from": {
-      "skill": "Forge",
-      "level": 93,
-      "recipe_name": "Soulguard Armor Recipe",
-      "materials": [
-        {
-          "name": "Arcane Starstone",
-          "amount": 8
-        },
-        {
-          "name": "Stoneheart Core",
-          "amount": 10
-        },
-        {
-          "name": "Vial of Wraith Ectoplasm",
-          "amount": 50
-        },
-        {
-          "name": "Mystic Bar",
-          "amount": 3200
-        }
-      ]
-    }
+    "shops": []
   }
 }
