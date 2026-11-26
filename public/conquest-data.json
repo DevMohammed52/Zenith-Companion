@@ -1,22 +1,22 @@
 {
   "meta": {
-    "generated_at": "2026-11-26T03:42:29.933Z",
-    "fetched_at": "2026-11-26T03:42:13.421Z",
+    "generated_at": "2026-11-26T04:35:26.123Z",
+    "fetched_at": "2026-11-26T04:35:09.785Z",
     "season_number": null,
-    "endpoint_updates_at": "2026-11-26T03:47:14+00:00",
+    "endpoint_updates_at": "2026-11-26T04:40:11+00:00",
     "rate_profile": "scraper",
     "delay_ms": 1500,
     "stats": {
       "completed": 11,
       "estimated_total": 11,
-      "elapsed_ms": 16512
+      "elapsed_ms": 16338
     },
     "totals": {
       "zones": 10,
       "active_assaults": 3,
       "leaderboard_rows": 31,
       "contribution_rows": 231,
-      "guilds_observed": 25
+      "guilds_observed": 26
     }
   },
   "zones": [
@@ -2637,10 +2637,24 @@
       "kills": 363497,
       "experience": 1670510,
       "guilds_count": 5,
-      "active_assaults_count": 0,
+      "active_assaults_count": 1,
       "leaderboard_count": 5,
       "contribution_count": 28,
-      "active_assaults": [],
+      "active_assaults": [
+        {
+          "kills": 0,
+          "experience": 0,
+          "starts_at": "2026-11-26T04:34:00+00:00",
+          "ends_at": "2026-11-26T05:34:00+00:00",
+          "guild": {
+            "id": 1131,
+            "name": "maum",
+            "tag": null,
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQK5452EQ13YASQDA59V4VG.png",
+            "background_url": null
+          }
+        }
+      ],
       "guild_leaderboard": [
         {
           "id": 172262,
@@ -3009,7 +3023,7 @@
           "character": {
             "hashed_id": "gBq1boWYel1AaNkJ3rXa",
             "name": "PartaUkko",
-            "total_level": 1096,
+            "total_level": 1097,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/AvmqCS6z9CxjP7vKdqGN8XbkE5oR0u-metaVmFuZGVsbGlhbiAocmVwbGFjZSB0aGUgb2xkIG9uZSkucG5n-.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/kE6uRPOTqCsK9MYA9kSPdHgCbLsPV0-metaYmFja2dyb3VuZDEucG5n-.png"
           }
@@ -3109,7 +3123,7 @@
           "character": {
             "hashed_id": "Zbym56qLxkMg5YBRp7Ee",
             "name": "P2PLord",
-            "total_level": 1019,
+            "total_level": 1020,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XPA842FC3WWCTRRFHA1MA.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWXFN8BMDZZKEFP3J5H46.jpg"
           }
@@ -3149,7 +3163,7 @@
           "character": {
             "hashed_id": "joPWKDkLXm73qQ06ZOX7",
             "name": "ArcCore",
-            "total_level": 1235,
+            "total_level": 1237,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HXVFPD6BHAKSDRS7ZRZE9KFS.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
           }
@@ -3283,26 +3297,13 @@
       "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=400,format=auto/uploaded/skins/PNDDB8wtLp0diTQGJMMwKm1gIiA3qS-metaZmxvYXRpbmcgZ2FyZGVucy5wbmc=-.png",
       "status": "DOMINATED",
       "colour": "#ff00ff",
-      "kills": 1282025,
-      "experience": 6363357,
+      "kills": 1314605,
+      "experience": 6537500,
       "guilds_count": 6,
-      "active_assaults_count": 2,
+      "active_assaults_count": 1,
       "leaderboard_count": 6,
       "contribution_count": 50,
       "active_assaults": [
-        {
-          "kills": 188009,
-          "experience": 1039587,
-          "starts_at": "2026-11-25T14:00:00+00:00",
-          "ends_at": "2026-11-26T04:00:00+00:00",
-          "guild": {
-            "id": 937,
-            "name": "Lacuna",
-            "tag": "LAC",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-            "background_url": null
-          }
-        },
         {
           "kills": 0,
           "experience": 0,
@@ -3321,8 +3322,8 @@
         {
           "id": 171927,
           "position": 1,
-          "kills": 771580,
-          "experience": 4177472,
+          "kills": 804160,
+          "experience": 4351615,
           "contributions": null,
           "guild": {
             "id": 937,
@@ -3405,10 +3406,30 @@
       ],
       "top_contributors": [
         {
+          "id": 172155,
+          "guild_conquest_progress_id": 171927,
+          "kills": 49735,
+          "experience": 387158,
+          "guild": {
+            "id": 937,
+            "name": "Lacuna",
+            "tag": "LAC",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+          },
+          "character": {
+            "hashed_id": "kK49j1VN9j3DnYq6B2do",
+            "name": "Vioz",
+            "total_level": 2114,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VAW0DV1HNNB0W0GVMTEYN.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+          }
+        },
+        {
           "id": 172148,
           "guild_conquest_progress_id": 171927,
-          "kills": 49000,
-          "experience": 370892,
+          "kills": 50310,
+          "experience": 376132,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -3419,7 +3440,7 @@
           "character": {
             "hashed_id": "jEaOeBkLag6nJNlGwxVP",
             "name": "Amyra",
-            "total_level": 2153,
+            "total_level": 2154,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/lRslji6ISRflnCftiRMRZL1DyncjZamRp4HKUNmj.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
           }
@@ -3525,26 +3546,6 @@
           }
         },
         {
-          "id": 172155,
-          "guild_conquest_progress_id": 171927,
-          "kills": 35335,
-          "experience": 271958,
-          "guild": {
-            "id": 937,
-            "name": "Lacuna",
-            "tag": "LAC",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-          },
-          "character": {
-            "hashed_id": "kK49j1VN9j3DnYq6B2do",
-            "name": "Vioz",
-            "total_level": 2113,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VAW0DV1HNNB0W0GVMTEYN.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
-          }
-        },
-        {
           "id": 172098,
           "guild_conquest_progress_id": 171878,
           "kills": 41529,
@@ -3607,8 +3608,8 @@
         {
           "id": 172486,
           "guild_conquest_progress_id": 171927,
-          "kills": 45570,
-          "experience": 209850,
+          "kills": 47179,
+          "experience": 213068,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -3622,6 +3623,26 @@
             "total_level": 1434,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
+          }
+        },
+        {
+          "id": 172482,
+          "guild_conquest_progress_id": 171927,
+          "kills": 46936,
+          "experience": 210185,
+          "guild": {
+            "id": 937,
+            "name": "Lacuna",
+            "tag": "LAC",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+          },
+          "character": {
+            "hashed_id": "v5g4z1dQnddg9Yqy32jp",
+            "name": "HHES6",
+            "total_level": 1756,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6HKRPDGXP7VR3K0ZZ4SK2.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg"
           }
         },
         {
@@ -3645,26 +3666,6 @@
           }
         },
         {
-          "id": 172482,
-          "guild_conquest_progress_id": 171927,
-          "kills": 45325,
-          "experience": 207905,
-          "guild": {
-            "id": 937,
-            "name": "Lacuna",
-            "tag": "LAC",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-          },
-          "character": {
-            "hashed_id": "v5g4z1dQnddg9Yqy32jp",
-            "name": "HHES6",
-            "total_level": 1756,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6HKRPDGXP7VR3K0ZZ4SK2.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg"
-          }
-        },
-        {
           "id": 172145,
           "guild_conquest_progress_id": 171927,
           "kills": 43953,
@@ -3685,10 +3686,30 @@
           }
         },
         {
+          "id": 172455,
+          "guild_conquest_progress_id": 171927,
+          "kills": 39030,
+          "experience": 185744,
+          "guild": {
+            "id": 937,
+            "name": "Lacuna",
+            "tag": "LAC",
+            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+          },
+          "character": {
+            "hashed_id": "GXBy7a4LbDWX9N0Pw6Vd",
+            "name": "Navy95",
+            "total_level": 1477,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9WFMM220XK5BBP8HZA6G7M.png"
+          }
+        },
+        {
           "id": 172182,
           "guild_conquest_progress_id": 171927,
-          "kills": 47082,
-          "experience": 169687,
+          "kills": 49451,
+          "experience": 174425,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -3705,10 +3726,10 @@
           }
         },
         {
-          "id": 172455,
+          "id": 172167,
           "guild_conquest_progress_id": 171927,
-          "kills": 32574,
-          "experience": 159920,
+          "kills": 39922,
+          "experience": 164493,
           "guild": {
             "id": 937,
             "name": "Lacuna",
@@ -3717,11 +3738,11 @@
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
           },
           "character": {
-            "hashed_id": "GXBy7a4LbDWX9N0Pw6Vd",
-            "name": "Navy95",
-            "total_level": 1476,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9WFMM220XK5BBP8HZA6G7M.png"
+            "hashed_id": "rz9RZnWN7WAXANKAp0Md",
+            "name": "Gruff",
+            "total_level": 2160,
+            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/JQpKzD5QhvgSDb1EgeRtppYGZydUg2-metaZWFydGggNC5wbmc=-.png",
+            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XF49331HVQMBKEVF8Q2X.png"
           }
         },
         {
@@ -3762,26 +3783,6 @@
             "total_level": 2089,
             "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
             "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg"
-          }
-        },
-        {
-          "id": 172167,
-          "guild_conquest_progress_id": 171927,
-          "kills": 35097,
-          "experience": 146850,
-          "guild": {
-            "id": 937,
-            "name": "Lacuna",
-            "tag": "LAC",
-            "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-          },
-          "character": {
-            "hashed_id": "rz9RZnWN7WAXANKAp0Md",
-            "name": "Gruff",
-            "total_level": 2160,
-            "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/JQpKzD5QhvgSDb1EgeRtppYGZydUg2-metaZWFydGggNC5wbmc=-.png",
-            "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XF49331HVQMBKEVF8Q2X.png"
           }
         },
         {
@@ -5506,10 +5507,35 @@
       }
     },
     {
+      "id": 172155,
+      "guild_conquest_progress_id": 171927,
+      "kills": 49735,
+      "experience": 387158,
+      "guild": {
+        "id": 937,
+        "name": "Lacuna",
+        "tag": "LAC",
+        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+      },
+      "character": {
+        "hashed_id": "kK49j1VN9j3DnYq6B2do",
+        "name": "Vioz",
+        "total_level": 2114,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VAW0DV1HNNB0W0GVMTEYN.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 172148,
       "guild_conquest_progress_id": 171927,
-      "kills": 49000,
-      "experience": 370892,
+      "kills": 50310,
+      "experience": 376132,
       "guild": {
         "id": 937,
         "name": "Lacuna",
@@ -5520,7 +5546,7 @@
       "character": {
         "hashed_id": "jEaOeBkLag6nJNlGwxVP",
         "name": "Amyra",
-        "total_level": 2153,
+        "total_level": 2154,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/lRslji6ISRflnCftiRMRZL1DyncjZamRp4HKUNmj.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01K7PH3HBF1RSFHWW3452YPPWC.jpg"
       },
@@ -5806,31 +5832,6 @@
       }
     },
     {
-      "id": 172155,
-      "guild_conquest_progress_id": 171927,
-      "kills": 35335,
-      "experience": 271958,
-      "guild": {
-        "id": 937,
-        "name": "Lacuna",
-        "tag": "LAC",
-        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-      },
-      "character": {
-        "hashed_id": "kK49j1VN9j3DnYq6B2do",
-        "name": "Vioz",
-        "total_level": 2113,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9VAW0DV1HNNB0W0GVMTEYN.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/W4HzEU4FAFsEK6yePyvyY9wAdffxrr-metabmlnaHQtMS5qcGc=-.jpg"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
-      }
-    },
-    {
       "id": 172026,
       "guild_conquest_progress_id": 171808,
       "kills": 41624,
@@ -6108,8 +6109,8 @@
     {
       "id": 172486,
       "guild_conquest_progress_id": 171927,
-      "kills": 45570,
-      "experience": 209850,
+      "kills": 47179,
+      "experience": 213068,
       "guild": {
         "id": 937,
         "name": "Lacuna",
@@ -6123,6 +6124,31 @@
         "total_level": 1434,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7ESRXMVP1XB95HGVH0JZRT.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JK5XWKKD3JJ1BWJ7QWF5WV84.jpg"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
+      "id": 172482,
+      "guild_conquest_progress_id": 171927,
+      "kills": 46936,
+      "experience": 210185,
+      "guild": {
+        "id": 937,
+        "name": "Lacuna",
+        "tag": "LAC",
+        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+      },
+      "character": {
+        "hashed_id": "v5g4z1dQnddg9Yqy32jp",
+        "name": "HHES6",
+        "total_level": 1756,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6HKRPDGXP7VR3K0ZZ4SK2.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg"
       },
       "zone": {
         "id": 7,
@@ -6148,31 +6174,6 @@
         "total_level": 2230,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JY1MJEPFTMN7VWFZ0TRK0P2D.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01J30AEB2JT331ZXDBZJR2JJG5.jpg"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
-      }
-    },
-    {
-      "id": 172482,
-      "guild_conquest_progress_id": 171927,
-      "kills": 45325,
-      "experience": 207905,
-      "guild": {
-        "id": 937,
-        "name": "Lacuna",
-        "tag": "LAC",
-        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-      },
-      "character": {
-        "hashed_id": "v5g4z1dQnddg9Yqy32jp",
-        "name": "HHES6",
-        "total_level": 1756,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JRG6HKRPDGXP7VR3K0ZZ4SK2.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/LGaWmxfPOyThkGfWJrQXvphfToFubL-metac3BhY2UtMS5qcGc=-.jpg"
       },
       "zone": {
         "id": 7,
@@ -6281,10 +6282,35 @@
       }
     },
     {
+      "id": 172455,
+      "guild_conquest_progress_id": 171927,
+      "kills": 39030,
+      "experience": 185744,
+      "guild": {
+        "id": 937,
+        "name": "Lacuna",
+        "tag": "LAC",
+        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+      },
+      "character": {
+        "hashed_id": "GXBy7a4LbDWX9N0Pw6Vd",
+        "name": "Navy95",
+        "total_level": 1477,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9WFMM220XK5BBP8HZA6G7M.png"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 172182,
       "guild_conquest_progress_id": 171927,
-      "kills": 47082,
-      "experience": 169687,
+      "kills": 49451,
+      "experience": 174425,
       "guild": {
         "id": 937,
         "name": "Lacuna",
@@ -6381,6 +6407,31 @@
       }
     },
     {
+      "id": 172167,
+      "guild_conquest_progress_id": 171927,
+      "kills": 39922,
+      "experience": 164493,
+      "guild": {
+        "id": 937,
+        "name": "Lacuna",
+        "tag": "LAC",
+        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
+      },
+      "character": {
+        "hashed_id": "rz9RZnWN7WAXANKAp0Md",
+        "name": "Gruff",
+        "total_level": 2160,
+        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/JQpKzD5QhvgSDb1EgeRtppYGZydUg2-metaZWFydGggNC5wbmc=-.png",
+        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XF49331HVQMBKEVF8Q2X.png"
+      },
+      "zone": {
+        "id": 7,
+        "key": "floating-gardens-of-aetheria",
+        "name": "Floating Gardens of Aetheria"
+      }
+    },
+    {
       "id": 173204,
       "guild_conquest_progress_id": 172985,
       "kills": 32911,
@@ -6403,31 +6454,6 @@
         "id": 2,
         "key": "whispering-woods",
         "name": "Whispering Woods"
-      }
-    },
-    {
-      "id": 172455,
-      "guild_conquest_progress_id": 171927,
-      "kills": 32574,
-      "experience": 159920,
-      "guild": {
-        "id": 937,
-        "name": "Lacuna",
-        "tag": "LAC",
-        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-      },
-      "character": {
-        "hashed_id": "GXBy7a4LbDWX9N0Pw6Vd",
-        "name": "Navy95",
-        "total_level": 1476,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/7dWkSMBekaGH1FMaPvMUeJBmO6hLx8-metaQXN0YXJvdGgucG5n-.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01KY9WFMM220XK5BBP8HZA6G7M.png"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
       }
     },
     {
@@ -6523,31 +6549,6 @@
         "total_level": 2089,
         "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21WJNBFY28A3QPT9H0TAKR.png",
         "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01JF7EECDS46QDBTQDES5XK0JD.jpg"
-      },
-      "zone": {
-        "id": 7,
-        "key": "floating-gardens-of-aetheria",
-        "name": "Floating Gardens of Aetheria"
-      }
-    },
-    {
-      "id": 172167,
-      "guild_conquest_progress_id": 171927,
-      "kills": 35097,
-      "experience": 146850,
-      "guild": {
-        "id": 937,
-        "name": "Lacuna",
-        "tag": "LAC",
-        "icon_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HQQJV939YW1AA7M76BW0BWN6.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=500,height=500,format=auto/uploaded/skins/01K7PH32W5DQR8GH6R44D1BZ2T.jpg"
-      },
-      "character": {
-        "hashed_id": "rz9RZnWN7WAXANKAp0Md",
-        "name": "Gruff",
-        "total_level": 2160,
-        "image_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/JQpKzD5QhvgSDb1EgeRtppYGZydUg2-metaZWFydGggNC5wbmc=-.png",
-        "background_url": "https://cdn.idle-mmo.com/cdn-cgi/image/width=100,height=100,format=auto/uploaded/skins/01HP21XF49331HVQMBKEVF8Q2X.png"
       },
       "zone": {
         "id": 7,
