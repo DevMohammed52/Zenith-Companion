@@ -1,8 +1,10 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 import {
   D1_RETENTION_POLICIES,
+  buildMarkdownHealthReport,
   computeImportTrendBars,
   countryCodeToFlagEmoji,
   deriveOperationalHealth,
@@ -442,6 +444,19 @@ describe("Admin Import Health dashboard logic & normalization", () => {
     expect(tab5Html).toContain('id="tabpanel-database"');
     expect(tab5Html).toContain("usage_events");
     expect(tab5Html).toContain("minute_budgets");
+
+    const markdown = buildMarkdownHealthReport(health, "30d");
+    expect(markdown).toContain("Operations Snapshot");
+    expect(markdown).toContain("/alchemy");
+  });
+
+  it("enforces clean migrated route architecture (page < 150 lines, scoped CSS, no StateBlock or direct lucide imports)", () => {
+    assertCleanMigratedRoute({
+      routeSubpath: "admin/import-health",
+      maxPageLines: 150,
+      allowStateBlock: false,
+      allowDirectLucide: false,
+    });
   });
 });
 

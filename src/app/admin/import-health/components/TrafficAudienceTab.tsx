@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import {
-  Activity,
-  BarChart3,
-  Clock,
-  Compass,
-  Globe2,
-  Layers,
-  Smartphone,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import styles from "../AdminDashboard.module.css";
+  ProgressBar,
+  SearchInput,
+  SegmentedControl,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui";
 import {
   formatCountryDisplay,
   formatNumber,
@@ -22,46 +22,16 @@ import {
   type TimeframeKey,
   type UsageFrame,
 } from "../types";
-import { EmptyBlock, MetricCard, Panel } from "./DashboardPrimitives";
+import {
+  EmptyBlock,
+  KpiStrip,
+  Panel,
+  ShareBreakdownList,
+} from "./DashboardPrimitives";
+import { TrafficDualChart } from "./InteractiveCharts";
+import styles from "../AdminDashboard.module.css";
 
-function ShareBreakdownList({
-  items,
-  emptyText,
-}: {
-  items: Array<{ key: string; label: string; users: number; extra?: string }>;
-  emptyText: string;
-}) {
-  if (!items.length) return <EmptyBlock text={emptyText} />;
-  const totalUsers = Math.max(1, items.reduce((sum, item) => sum + item.users, 0));
-  const maxUsers = Math.max(1, ...items.map((item) => item.users));
-
-  return (
-    <div className={styles.rankList}>
-      {items.map((item) => {
-        const sharePct = Math.round((item.users / totalUsers) * 1000) / 10;
-        const barWidth = item.users > 0 ? Math.max(3, (item.users / maxUsers) * 100) : 0;
-        return (
-          <div key={item.key} className={styles.rankItem}>
-            <div className={styles.rankHeader}>
-              <span className={styles.rankLabel} title={item.label}>
-                {item.label}
-              </span>
-              <span className={styles.rankMeta}>
-                {formatNumber(item.users)} users · {formatPercent(sharePct)}
-                {item.extra ? ` (${item.extra})` : ""}
-              </span>
-            </div>
-            <div className={styles.shareBarWrap}>
-              <div className={styles.shareTrack}>
-                <div className={styles.shareFill} style={{ width: `${barWidth}%` }} />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+type RouteSortKey = "views" | "users" | "ratio";
 
 export function TrafficAudienceTab({
   health,
@@ -82,6 +52,9 @@ export function TrafficAudienceTab({
     frame: TimeframeKey;
     mode: "hourly" | "daily";
   } | null>(null);
+  const [routeQuery, setRouteQuery] = useState("");
+  const [routeSort, setRouteSort] = useState<RouteSortKey>("views");
+
   const trendMode =
     manualTrendMode && manualTrendMode.frame === selectedFrame
       ? manualTrendMode.mode
@@ -91,45 +64,62 @@ export function TrafficAudienceTab({
     trendMode === "daily" ? health.usage.daily : health.usage.hourly
   ).slice(trendMode === "daily" ? -30 : -24);
   const maxViews = Math.max(1, ...trendRows.map((r) => Number(r.pageviews || 0)));
-  const maxUsers = Math.max(1, ...trendRows.map((r) => Number(r.users || 0)));
 
   const totalPageViews = Math.max(
     1,
     health.usage.topPages.reduce((sum, p) => sum + p.views, 0),
   );
 
+  const normalizedQuery = routeQuery.trim().toLowerCase();
+  const visiblePages = health.usage.topPages
+    .filter((page) => !normalizedQuery || page.path.toLowerCase().includes(normalizedQuery))
+    .slice()
+    .sort((a, b) => {
+      if (routeSort === "users") return b.users - a.users || b.views - a.views;
+      if (routeSort === "ratio") {
+        const ra = a.users > 0 ? a.views / a.users : 0;
+        const rb = b.users > 0 ? b.views / b.users : 0;
+        return rb - ra || b.views - a.views;
+      }
+      return b.views - a.views;
+    });
+
   const countryItems = health.usage.countries.map((row) => {
     const formatted = formatCountryDisplay(row.country);
     return {
       key: row.country,
       label: formatted.fullLabel,
-      users: row.users,
-      extra: `${formatNumber(row.events)} ev`,
+      value: row.users,
+      valueText: `${formatNumber(row.users)} users | ${formatNumber(row.events)} ev`,
     };
   });
 
   const referrerItems = health.usage.referrers.map((row) => ({
     key: row.host,
     label: row.host || "Direct / None",
-    users: row.users,
+    value: row.users,
+    valueText: `${formatNumber(row.users)} users`,
   }));
 
   const deviceItems = health.usage.devices.map((row) => ({
     key: row.type,
     label: row.type,
-    users: row.users,
+    value: row.users,
+    valueText: `${formatNumber(row.users)} users`,
   }));
 
   const browserItems = health.usage.browsers.map((row) => ({
     key: row.family,
     label: row.family,
-    users: row.users,
+    value: row.users,
+    valueText: `${formatNumber(row.users)} users`,
   }));
 
   const timezoneItems = health.usage.timezones.map((row) => ({
     key: row.timezone,
     label: row.timezone,
-    users: row.users,
+    value: row.users,
+    valueText: `${formatNumber(row.users)} users`,
   }));
 
   return (
@@ -139,95 +129,70 @@ export function TrafficAudienceTab({
       role="tabpanel"
       aria-labelledby="tab-traffic"
     >
-      <Panel
-        icon={Users}
-        title="Traffic Telemetry Summary"
-        subtitle={`Selected window: ${selectedLabel}`}
-      >
-        <div className={styles.grid6}>
-          <MetricCard
-            icon={Users}
-            label="Unique Users"
-            value={formatNumber(usageFrame.users)}
-            detail={`All-time: ${formatNumber(health.usage.uniqueUsersAllTime)}`}
-          />
-          <MetricCard
-            icon={Activity}
-            label="Active 15m"
-            value={formatNumber(health.usage.activeUsers15m)}
-            detail={`Active 1h: ${formatNumber(health.usage.activeUsers1h)}`}
-            tone={health.usage.activeUsers15m > 0 ? "good" : "neutral"}
-          />
-          <MetricCard
-            icon={Layers}
-            label="Sessions"
-            value={formatNumber(usageFrame.sessions)}
-            detail={`30d sessions: ${formatNumber(health.usage.sessions30d)}`}
-          />
-          <MetricCard
-            icon={BarChart3}
-            label="Pageviews"
-            value={formatNumber(usageFrame.pageviews)}
-            detail={`${formatNumber(usageFrame.events)} total pings`}
-          />
-          <MetricCard
-            icon={Clock}
-            label="Heartbeats"
-            value={formatNumber(usageFrame.heartbeats)}
-            detail="Active tab presence pings"
-          />
-          <MetricCard
-            icon={TrendingUp}
-            label="Views / Session"
-            value={formatNumber(usageFrame.pageviewsPerSession)}
-            detail={`24h avg: ${formatNumber(health.usage.pageviewsPerSession24h)}`}
-          />
-        </div>
-      </Panel>
+      <KpiStrip
+        ariaLabel={`Traffic summary for ${selectedLabel}`}
+        items={[
+          {
+            label: `Unique Users (${selectedLabel})`,
+            value: formatNumber(usageFrame.users),
+            sublabel: `All-time: ${formatNumber(health.usage.uniqueUsersAllTime)}`,
+            icon: "guilds",
+          },
+          {
+            label: "Active Now",
+            value: formatNumber(health.usage.activeUsers15m),
+            sublabel: `1h active: ${formatNumber(health.usage.activeUsers1h)}`,
+            tone: health.usage.activeUsers15m > 0 ? "good" : "neutral",
+            icon: "cataclysm",
+          },
+          {
+            label: "Sessions",
+            value: formatNumber(usageFrame.sessions),
+            sublabel: `30d total: ${formatNumber(health.usage.sessions30d)}`,
+            icon: "archiveLayers",
+          },
+          {
+            label: "Pageviews",
+            value: formatNumber(usageFrame.pageviews),
+            sublabel: `${formatNumber(usageFrame.heartbeats)} heartbeats | ${formatNumber(usageFrame.events)} pings`,
+            icon: "barChart",
+          },
+          {
+            label: "Views / Session",
+            value: formatNumber(usageFrame.pageviewsPerSession),
+            sublabel: `24h avg: ${formatNumber(health.usage.pageviewsPerSession24h)}`,
+            icon: "skillProfit",
+          },
+        ]}
+      />
 
       <Panel
-        icon={BarChart3}
+        icon="barChart"
         title="Traffic Trend (Pageviews &amp; Unique Users)"
         subtitle={
           trendMode === "daily"
-            ? "Daily visitor & pageview volume (30-day rolling window)"
-            : "Hourly visitor & pageview volume (24-hour rolling window)"
+            ? "Interactive 30-day visitor and pageview volume"
+            : "Interactive 24-hour visitor and pageview volume"
         }
         action={
-          <div className={styles.segmentedGroup} role="group" aria-label="Traffic trend granularity">
-            <button
-              type="button"
-              className={`${styles.toggleBtn} ${trendMode === "hourly" ? styles.toggleBtnActive : ""}`}
-              aria-pressed={trendMode === "hourly"}
-              onClick={() => setManualTrendMode({ frame: selectedFrame, mode: "hourly" })}
-            >
-              Hourly (24h)
-            </button>
-            <button
-              type="button"
-              className={`${styles.toggleBtn} ${trendMode === "daily" ? styles.toggleBtnActive : ""}`}
-              aria-pressed={trendMode === "daily"}
-              onClick={() => setManualTrendMode({ frame: selectedFrame, mode: "daily" })}
-            >
-              Daily (30d)
-            </button>
-          </div>
+          <SegmentedControl
+            ariaLabel="Traffic trend granularity"
+            size="sm"
+            options={[
+              { value: "hourly", label: "Hourly (24h)" },
+              { value: "daily", label: "Daily (30d)" },
+            ]}
+            value={trendMode}
+            onChange={(mode) =>
+              setManualTrendMode({ frame: selectedFrame, mode: mode as "hourly" | "daily" })
+            }
+          />
         }
       >
         {trendRows.length > 0 ? (
-          <div className={styles.trendContainer}>
-            <div className={styles.trendLegend}>
-              <span className={styles.legendItem}>
-                <i className={`${styles.legendSwatch} ${styles.swatchAccent}`} />
-                Pageviews
-              </span>
-              <span className={styles.legendItem}>
-                <i className={`${styles.legendSwatch} ${styles.swatchGood}`} />
-                Unique Users
-              </span>
-            </div>
-
-            <div className={styles.trendList}>
+          <>
+            <TrafficDualChart rows={trendRows} />
+            <div className={styles.trendBucketGrid}>
               {trendRows.map((row) => {
                 const rawBucket = row.day || row.hour || "";
                 const bucketLabel = row.day
@@ -235,127 +200,131 @@ export function TrafficAudienceTab({
                   : String(row.hour || "").slice(11, 16) || rawBucket;
                 const views = Number(row.pageviews || 0);
                 const users = Number(row.users || 0);
-                const viewsPct = views > 0 ? Math.min(100, Math.max(2, (views / maxViews) * 100)) : 0;
-                const usersPct = users > 0 ? Math.min(100, Math.max(2, (users / maxUsers) * 100)) : 0;
+                const viewsPct = views > 0 ? Math.min(100, Math.max(3, (views / maxViews) * 100)) : 0;
 
                 return (
-                  <div key={rawBucket} className={styles.trendRow}>
-                    <span className={styles.trendBucket}>{bucketLabel}</span>
-                    <div className={styles.dualBarStack}>
-                      <div className={styles.dualBarTrack} title={`${views} pageviews`}>
-                        <div className={styles.dualBarViews} style={{ width: `${viewsPct}%` }} />
-                      </div>
-                      <div className={styles.dualBarTrack} title={`${users} unique users`}>
-                        <div className={styles.dualBarUsers} style={{ width: `${usersPct}%` }} />
-                      </div>
+                  <div key={rawBucket} className={styles.trendBucketRow}>
+                    <span className={styles.mono}>{bucketLabel}</span>
+                    <div className={styles.trendTrackMini} title={`${views} pageviews, ${users} unique users`}>
+                      <div className={styles.trendSegOther} style={{ width: `${viewsPct}%` }} />
                     </div>
-                    <div className={styles.trendNumbers}>
+                    <div className={styles.trendNumbersCompact}>
                       <span>{formatNumber(views)} views</span>
-                      <span>·</span>
-                      <span className={styles.chip + " " + styles.toneGood}>
-                        {formatNumber(users)} users
-                      </span>
+                      <span className={styles.toneGood}>{formatNumber(users)} users</span>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </>
         ) : (
           <EmptyBlock text="No traffic trend data recorded for this window." />
         )}
       </Panel>
 
       <Panel
-        icon={Activity}
-        title="Top Pages (30d)"
-        subtitle="Route traffic ranking with pageviews, unique users, and traffic share"
+        icon="route"
+        title="Route Analytics (30d)"
+        subtitle="Filter any route path (for example /crafting, /bis, /alchemy) to inspect visits and repeat engagement"
       >
         {health.usage.topPages.length > 0 ? (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Route Path</th>
-                  <th>Pageviews</th>
-                  <th>Unique Users</th>
-                  <th>Traffic Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {health.usage.topPages.map((page) => {
-                  const sharePct = Math.round((page.views / totalPageViews) * 1000) / 10;
-                  return (
-                    <tr key={page.path}>
-                      <td className={styles.mono}>{page.path}</td>
-                      <td className={styles.mono}>{formatNumber(page.views)}</td>
-                      <td className={styles.mono}>{formatNumber(page.users)}</td>
-                      <td>
-                        <div className={styles.shareBarWrap}>
-                          <div className={styles.shareTrack}>
-                            <div
-                              className={styles.shareFill}
-                              style={{ width: `${Math.max(2, sharePct)}%` }}
+          <>
+            <div className={styles.filterToolbar}>
+              <div className={styles.filterSearch}>
+                <SearchInput
+                  value={routeQuery}
+                  onChange={setRouteQuery}
+                  placeholder="Filter routes (e.g. /crafting, /bis)..."
+                  showShortcutHint={false}
+                />
+              </div>
+              <SegmentedControl
+                ariaLabel="Sort routes"
+                size="sm"
+                options={[
+                  { value: "views", label: "Most Views" },
+                  { value: "users", label: "Most Users" },
+                  { value: "ratio", label: "Views / User" },
+                ]}
+                value={routeSort}
+                onChange={(val) => setRouteSort(val as RouteSortKey)}
+              />
+            </div>
+
+            {visiblePages.length > 0 ? (
+              <TableContainer>
+                <Table density="compact" aria-label="Route traffic ranking">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Route Path</TableHead>
+                      <TableHead align="right">Pageviews</TableHead>
+                      <TableHead align="right">Unique Users</TableHead>
+                      <TableHead align="right">Views / User</TableHead>
+                      <TableHead>Traffic Share</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visiblePages.map((page) => {
+                      const sharePct = Math.round((page.views / totalPageViews) * 1000) / 10;
+                      const perUser = page.users > 0 ? page.views / page.users : 0;
+                      return (
+                        <TableRow key={page.path}>
+                          <TableCell className={styles.mono}>{page.path}</TableCell>
+                          <TableCell align="right" className={styles.mono}>
+                            {formatNumber(page.views)}
+                          </TableCell>
+                          <TableCell align="right" className={styles.mono}>
+                            {formatNumber(page.users)}
+                          </TableCell>
+                          <TableCell align="right" className={styles.mono}>
+                            {formatNumber(perUser)}
+                          </TableCell>
+                          <TableCell>
+                            <ProgressBar
+                              value={sharePct}
+                              min={0}
+                              max={100}
+                              size="sm"
+                              valueText={formatPercent(sharePct)}
+                              ariaLabel={`${page.path} traffic share ${sharePct}%`}
                             />
-                          </div>
-                          <span className={styles.mono}>{formatPercent(sharePct)}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <EmptyBlock text={`No routes match "${routeQuery}".`} />
+            )}
+          </>
         ) : (
           <EmptyBlock text="No pageview telemetry recorded yet." />
         )}
       </Panel>
 
       <div className={styles.grid2}>
-        <Panel
-          icon={Globe2}
-          title="Countries (30d)"
-          subtitle="ISO region codes resolved with Intl.DisplayNames and flag indicators"
-        >
-          <ShareBreakdownList items={countryItems} emptyText="No country telemetry yet." />
+        <Panel icon="globe" title="Countries (30d)" subtitle="Resolved ISO regions">
+          <ShareBreakdownList items={countryItems} emptyTitle="No country telemetry yet." />
         </Panel>
 
-        <Panel
-          icon={TrendingUp}
-          title="External Referrers (30d)"
-          subtitle="Top referring domains by unique visitors"
-        >
-          <ShareBreakdownList
-            items={referrerItems}
-            emptyText="No external referrers recorded in the last 30 days."
-          />
+        <Panel icon="skillProfit" title="External Referrers (30d)" subtitle="Top referring hosts">
+          <ShareBreakdownList items={referrerItems} emptyTitle="No external referrers recorded in 30d." />
         </Panel>
       </div>
 
       <div className={styles.grid3}>
-        <Panel
-          icon={Smartphone}
-          title="Devices (30d)"
-          subtitle="Form factor distribution"
-        >
-          <ShareBreakdownList items={deviceItems} emptyText="No device telemetry yet." />
+        <Panel icon="device" title="Devices (30d)">
+          <ShareBreakdownList items={deviceItems} emptyTitle="No device telemetry yet." />
         </Panel>
 
-        <Panel
-          icon={Compass}
-          title="Browsers (30d)"
-          subtitle="User-Agent family breakdown"
-        >
-          <ShareBreakdownList items={browserItems} emptyText="No browser telemetry yet." />
+        <Panel icon="map" title="Browsers (30d)">
+          <ShareBreakdownList items={browserItems} emptyTitle="No browser telemetry yet." />
         </Panel>
 
-        <Panel
-          icon={Clock}
-          title="Timezones (30d)"
-          subtitle="Top client IANA timezones"
-        >
-          <ShareBreakdownList items={timezoneItems} emptyText="No timezone telemetry yet." />
+        <Panel icon="timer" title="Timezones (30d)">
+          <ShareBreakdownList items={timezoneItems} emptyTitle="No timezone telemetry yet." />
         </Panel>
       </div>
     </div>

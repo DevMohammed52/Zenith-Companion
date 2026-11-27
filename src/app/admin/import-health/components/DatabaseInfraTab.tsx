@@ -1,22 +1,42 @@
 "use client";
 
-import { Database, HardDrive, Layers, ShieldCheck } from "lucide-react";
-import styles from "../AdminDashboard.module.css";
+import { useState } from "react";
+import {
+  Badge,
+  ProgressBar,
+  SegmentedControl,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui";
 import {
   D1_RETENTION_POLICIES,
   formatNumber,
   formatPercent,
   type ImportHealth,
 } from "../types";
-import { MetricCard, Panel } from "./DashboardPrimitives";
+import { KpiStrip, Panel } from "./DashboardPrimitives";
+import styles from "../AdminDashboard.module.css";
+
+type CategoryFilter = "All" | "Telemetry" | "Import Engine" | "Rate Limiting";
 
 export function DatabaseInfraTab({ health }: { health: ImportHealth }) {
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("All");
   const { databaseStats, service } = health;
 
   const tableRows = D1_RETENTION_POLICIES.map((policy) => ({
     ...policy,
     count: Number(databaseStats[policy.table] || 0),
   }));
+
+  const filteredRows =
+    categoryFilter === "All"
+      ? tableRows
+      : tableRows.filter((row) => row.category === categoryFilter);
 
   const totalRows = tableRows.reduce((sum, item) => sum + item.count, 0);
   const maxTableCount = Math.max(1, ...tableRows.map((item) => item.count));
@@ -36,63 +56,66 @@ export function DatabaseInfraTab({ health }: { health: ImportHealth }) {
       role="tabpanel"
       aria-labelledby="tab-database"
     >
-      <div className={styles.grid4}>
-        <MetricCard
-          icon={Database}
-          label="Total D1 Rows"
-          value={formatNumber(totalRows)}
-          detail="Across all 8 operational tables"
-        />
-        <MetricCard
-          icon={Layers}
-          label="Telemetry Rows"
-          value={formatNumber(telemetryRows)}
-          detail="usage_events, visitors, vitals, errors"
-        />
-        <MetricCard
-          icon={HardDrive}
-          label="Import Engine Rows"
-          value={formatNumber(importEngineRows)}
-          detail={`${formatNumber(databaseStats.import_events)} events · ${formatNumber(databaseStats.import_jobs)} jobs`}
-        />
-        <MetricCard
-          icon={ShieldCheck}
-          label="Rate-Limit Store"
-          value={formatNumber(rateLimitRows)}
-          detail={`Store: ${service.rateLimitStore || "d1-minute-budgets"}`}
-        />
-      </div>
+      <KpiStrip
+        ariaLabel="Cloudflare D1 database inventory"
+        items={[
+          {
+            label: "Total D1 Rows",
+            value: formatNumber(totalRows),
+            sublabel: "Across all 8 tables",
+            icon: "database",
+          },
+          {
+            label: "Telemetry Rows",
+            value: formatNumber(telemetryRows),
+            sublabel: "usage, visitors, vitals, errors",
+            icon: "archiveLayers",
+          },
+          {
+            label: "Import Engine Rows",
+            value: formatNumber(importEngineRows),
+            sublabel: `${formatNumber(databaseStats.import_events)} events | ${formatNumber(databaseStats.import_jobs)} jobs`,
+            icon: "hardDrive",
+          },
+          {
+            label: "Rate-Limit Store",
+            value: formatNumber(rateLimitRows),
+            sublabel: service.rateLimitStore || "d1-minute-budgets",
+            icon: "defense",
+          },
+        ]}
+      />
 
       <Panel
-        icon={Database}
-        title="D1 Table Row Count Gauges"
-        subtitle="Live row count inventory and relative storage share across all 8 Cloudflare D1 tables"
+        icon="database"
+        title="D1 Table Row Inventory"
+        subtitle="Relative row share across all 8 Cloudflare D1 tables (keeps growth visible within free-tier storage)"
       >
-        <div className={styles.grid8}>
+        <div className={styles.grid4}>
           {tableRows.map((row) => {
             const shareOfTotal = totalRows > 0 ? Math.round((row.count / totalRows) * 1000) / 10 : 0;
-            const barWidth = row.count > 0 ? Math.max(3, (row.count / maxTableCount) * 100) : 0;
             return (
-              <div key={row.table} className={styles.vitalCard}>
+              <div key={row.table} className={styles.vitalTile}>
                 <div className={styles.vitalTop}>
                   <span className={styles.vitalName}>{row.label}</span>
-                  <span className={`${styles.chip} ${styles.toneNeutral}`}>{row.category}</span>
+                  <Badge variant="neutral" size="sm">
+                    {row.category}
+                  </Badge>
                 </div>
 
                 <div>
-                  <div className={styles.vitalP75}>{formatNumber(row.count)}</div>
-                  <span className={styles.panelSubtitle}>rows stored</span>
+                  <div className={styles.vitalBig}>{formatNumber(row.count)}</div>
+                  <div className={styles.vitalSub}>rows stored</div>
                 </div>
 
-                <div className={styles.vitalFooter}>
-                  <div className={styles.vitalSubRow}>
-                    <span>DB Share</span>
-                    <span className={styles.mono}>{formatPercent(shareOfTotal)}</span>
-                  </div>
-                  <div className={styles.shareTrack}>
-                    <div className={styles.shareFill} style={{ width: `${barWidth}%` }} />
-                  </div>
-                </div>
+                <ProgressBar
+                  value={row.count}
+                  min={0}
+                  max={maxTableCount}
+                  size="sm"
+                  valueText={`Share ${formatPercent(shareOfTotal)}`}
+                  ariaLabel={`${row.label} D1 storage share`}
+                />
               </div>
             );
           })}
@@ -100,40 +123,58 @@ export function DatabaseInfraTab({ health }: { health: ImportHealth }) {
       </Panel>
 
       <Panel
-        icon={HardDrive}
+        icon="hardDrive"
         title="Storage &amp; Retention Policy Matrix"
-        subtitle="Operational role, TTL window, and automated cleanup mechanism per D1 table"
+        subtitle="Operational role, TTL window, and automated cron cleanup per table"
+        action={
+          <SegmentedControl
+            ariaLabel="Filter tables by subsystem"
+            size="sm"
+            options={[
+              { value: "All", label: "All" },
+              { value: "Telemetry", label: "Telemetry" },
+              { value: "Import Engine", label: "Import Engine" },
+              { value: "Rate Limiting", label: "Rate Limiting" },
+            ]}
+            value={categoryFilter}
+            onChange={(val) => setCategoryFilter(val as CategoryFilter)}
+          />
+        }
       >
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Table Name</th>
-                <th>Subsystem</th>
-                <th>Live Rows</th>
-                <th>Operational Role</th>
-                <th>TTL / Retention Policy</th>
-                <th>Cleanup Mechanism</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableRows.map((row) => (
-                <tr key={row.table}>
-                  <td className={styles.mono}>
+        <TableContainer>
+          <Table density="compact" aria-label="D1 table retention policies">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Table</TableHead>
+                <TableHead>Subsystem</TableHead>
+                <TableHead align="right">Rows</TableHead>
+                <TableHead>Operational Role</TableHead>
+                <TableHead>TTL / Retention</TableHead>
+                <TableHead>Cleanup Mechanism</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRows.map((row) => (
+                <TableRow key={row.table}>
+                  <TableCell className={styles.mono}>
                     <strong>{row.label}</strong>
-                  </td>
-                  <td>
-                    <span className={`${styles.chip} ${styles.toneNeutral}`}>{row.category}</span>
-                  </td>
-                  <td className={styles.mono}>{formatNumber(row.count)}</td>
-                  <td>{row.role}</td>
-                  <td className={styles.mono}>{row.ttlPolicy}</td>
-                  <td>{row.cleanupMechanism}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="neutral" size="sm">
+                      {row.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell align="right" className={styles.mono}>
+                    {formatNumber(row.count)}
+                  </TableCell>
+                  <TableCell>{row.role}</TableCell>
+                  <TableCell className={styles.mono}>{row.ttlPolicy}</TableCell>
+                  <TableCell>{row.cleanupMechanism}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Panel>
     </div>
   );
