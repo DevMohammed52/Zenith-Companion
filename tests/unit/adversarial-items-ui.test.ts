@@ -483,9 +483,9 @@ describe('adversarial-items-ui: item search, filtering, and calculation invarian
       const matchType = selectedType === 'ALL' || item.type === selectedType;
       const matchQuality = selectedQuality === 'ALL' || item.quality === selectedQuality;
       const matchLocation = selectedLocation === 'ALL' || item.dropLocationKeys.includes(selectedLocation);
-      const matchMarketVisibility =
+      const matchTradeableVisibility =
         !hideNonMarket
-        || item.hasMarket
+        || item.tradeable
         || (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0)
         || (selectedSignal === 'UNTRADABLE' && !item.tradeable)
         || (selectedSignal === 'LEGACY' && item.isLegacy);
@@ -505,7 +505,7 @@ describe('adversarial-items-ui: item search, filtering, and calculation invarian
         || (selectedSignal === 'EFFECTS' && item.hasEffects)
         || (selectedSignal === 'LORE' && item.hasLore);
 
-      return matchSearch && matchType && matchQuality && matchLocation && matchMarketVisibility && matchSignal;
+      return matchSearch && matchType && matchQuality && matchLocation && matchTradeableVisibility && matchSignal;
     }
 
     it('filters accurately across all 13 signal tag types', () => {
@@ -540,15 +540,19 @@ describe('adversarial-items-ui: item search, filtering, and calculation invarian
       expect(matchesItemFilters(createMockEnrichedItem({ ...base, hasLore: true }), { selectedSignal: 'LORE' })).toBe(true);
     });
 
-    it('hideNonMarket preserves items when specific tags are selected', () => {
-      const nonMarketItem = createMockEnrichedItem({ hasMarket: false, merchantBuyPrice: 20 });
-      expect(matchesItemFilters(nonMarketItem, { hideNonMarket: true, selectedSignal: 'ALL' })).toBe(false);
-      expect(matchesItemFilters(nonMarketItem, { hideNonMarket: true, selectedSignal: 'VENDOR' })).toBe(true);
+    it('Tradeable only keeps tradeable items without active market price (e.g. Bunny Ears) and preserves tag overrides', () => {
+      const zeroMarketTradeable = createMockEnrichedItem({ name: 'Bunny Ears', tradeable: true, hasMarket: false, merchantBuyPrice: 0 });
+      expect(matchesItemFilters(zeroMarketTradeable, { hideNonMarket: true, selectedSignal: 'ALL' })).toBe(true);
+      expect(matchesItemFilters(zeroMarketTradeable, { hideNonMarket: true, selectedSignal: 'MARKET' })).toBe(false);
+
+      const nonTradeableVendorItem = createMockEnrichedItem({ tradeable: false, hasMarket: false, merchantBuyPrice: 20 });
+      expect(matchesItemFilters(nonTradeableVendorItem, { hideNonMarket: true, selectedSignal: 'ALL' })).toBe(false);
+      expect(matchesItemFilters(nonTradeableVendorItem, { hideNonMarket: true, selectedSignal: 'VENDOR' })).toBe(true);
 
       const untradableItem = createMockEnrichedItem({ hasMarket: false, tradeable: false });
       expect(matchesItemFilters(untradableItem, { hideNonMarket: true, selectedSignal: 'UNTRADABLE' })).toBe(true);
 
-      const legacyItem = createMockEnrichedItem({ hasMarket: false, isLegacy: true });
+      const legacyItem = createMockEnrichedItem({ hasMarket: false, tradeable: false, isLegacy: true });
       expect(matchesItemFilters(legacyItem, { hideNonMarket: true, selectedSignal: 'LEGACY' })).toBe(true);
     });
   });

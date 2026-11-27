@@ -79,61 +79,61 @@ function ItemsArchiveContent() {
         />
       )}
 
-      {!state.loadError && (state.loading || state.index.length === 0) && (
-        <div className={styles.skeletonSection} aria-busy="true" aria-label="Loading item catalog">
-          <div className={styles.skeletonCardsGrid}>
-            {Array.from({ length: 9 }).map((_, idx) => (
-              <Skeleton key={idx} variant="rectangular" height={148} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!state.loadError && state.index.length > 0 && state.filteredItems.length === 0 && (
-        <EmptyState
-          variant="search-empty"
-          title="No items match the current filters"
-          description="Clear the search, market-only view, or advanced filters to widen the catalog."
-          action={{
-            label: 'Reset filters',
-            variant: 'primary',
-            onClick: state.resetFilters,
-          }}
-        />
-      )}
-
-      {!state.loadError && state.filteredItems.length > 0 && (
+      {!state.loadError && (
         <div className={styles.resultsStage} style={{ minHeight: '640px', contain: 'layout' }}>
-          <div className={styles.resultMeta}>
-            <span>{metaCountText}</span>
-            <span>Sorted by {state.currentSortLabel}</span>
-          </div>
-
-          {state.showTableLayout && (
-            <ItemsTable
-              items={state.pageItems}
-              sortBy={state.sortBy}
-              sortDesc={state.sortDesc}
-              onSort={state.handleSort}
-              onOpenItem={state.openItemById}
+          {(state.loading || state.index.length === 0) ? (
+            <div className={styles.skeletonSection} aria-busy="true" aria-label="Loading item catalog">
+              <div className={styles.skeletonCardsGrid}>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <Skeleton key={idx} variant="rectangular" height={112} />
+                ))}
+              </div>
+            </div>
+          ) : state.filteredItems.length === 0 ? (
+            <EmptyState
+              variant="search-empty"
+              title="No items match the current filters"
+              description="Clear the search, tradable filter, or advanced filters to widen the catalog."
+              action={{
+                label: 'Reset filters',
+                variant: 'primary',
+                onClick: state.resetFilters,
+              }}
             />
-          )}
+          ) : (
+            <>
+              <div className={styles.resultMeta}>
+                <span>{metaCountText}</span>
+                <span>Sorted by {state.currentSortLabel}</span>
+              </div>
 
-          {state.showCardLayout && (
-            <ItemsCardGrid
-              items={state.pageItems}
-              onOpenItem={state.openItemById}
-            />
-          )}
+              {state.showTableLayout && (
+                <ItemsTable
+                  items={state.pageItems}
+                  sortBy={state.sortBy}
+                  sortDesc={state.sortDesc}
+                  onSort={state.handleSort}
+                  onOpenItem={state.openItemById}
+                />
+              )}
 
-          <ItemsPagination
-            currentPage={state.currentPage}
-            totalPages={state.totalPages}
-            pageSize={state.pageSize}
-            totalItems={state.filteredItems.length}
-            onPageChange={state.handlePageChange}
-            onPageSizeChange={state.handlePageSizeChange}
-          />
+              {state.showCardLayout && (
+                <ItemsCardGrid
+                  items={state.pageItems}
+                  onOpenItem={state.openItemById}
+                />
+              )}
+
+              <ItemsPagination
+                currentPage={state.currentPage}
+                totalPages={state.totalPages}
+                pageSize={state.pageSize}
+                totalItems={state.filteredItems.length}
+                onPageChange={state.handlePageChange}
+                onPageSizeChange={state.handlePageSizeChange}
+              />
+            </>
+          )}
         </div>
       )}
 
@@ -146,10 +146,10 @@ export default function ItemsPage() {
   return (
     <Suspense
       fallback={(
-        <main className={styles.page} aria-busy="true" aria-label="Loading item directory">
-          <Skeleton variant="rectangular" height={88} />
-          <Skeleton variant="rectangular" height={206} />
-          <Skeleton variant="rectangular" height={760} />
+        <main className={`container items-db-page ${styles.page}`} aria-busy="true" aria-label="Loading item directory">
+          <Skeleton variant="rectangular" height={72} />
+          <Skeleton variant="rectangular" height={184} />
+          <Skeleton variant="rectangular" height={640} />
         </main>
       )}
     >

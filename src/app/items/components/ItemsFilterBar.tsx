@@ -80,6 +80,7 @@ const TAG_GUIDE_ITEMS: Array<{ label: string; tone?: 'success' | 'warning' | 'ne
 
 export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
   const [showTagGuide, setShowTagGuide] = useState(false);
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
 
   const activeCount =
     state.activeAdvancedFilterCount ??
@@ -143,7 +144,7 @@ export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
             size="md"
             icon={<Icon name="gold" size={15} />}
             aria-pressed={state.hideNonMarket}
-            title="Filter to tradeable items with active market price data"
+            title="Filter to tradeable items (including items without recent market sales)"
             onClick={() => state.setHideNonMarket((prev) => !prev)}
           >
             Tradeable only
@@ -181,11 +182,17 @@ export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
           />
         </div>
 
-        <details
+        <div
           className={styles.advancedFilterPanel}
-          open={!state.isCompactViewport ? true : undefined}
+          data-expanded={mobileFiltersExpanded ? 'true' : 'false'}
         >
-          <summary className={styles.advancedFilterSummary}>
+          <button
+            type="button"
+            className={styles.advancedFilterSummary}
+            aria-expanded={mobileFiltersExpanded}
+            aria-controls="items-advanced-filters-grid"
+            onClick={() => setMobileFiltersExpanded((prev) => !prev)}
+          >
             <span className={styles.summaryLeft}>
               <Icon name="filter" size={15} />
               <span>Filters</span>
@@ -194,9 +201,9 @@ export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
               ) : null}
             </span>
             <Icon name="chevronDown" size={15} className={styles.filterPanelChevron} />
-          </summary>
+          </button>
 
-          <div className={styles.advancedFilterGrid}>
+          <div id="items-advanced-filters-grid" className={styles.advancedFilterGrid}>
             <div className={styles.controlGroup}>
               <span className={styles.controlLabel}>Type</span>
               <Select
@@ -237,7 +244,7 @@ export function ItemsFilterBar({ state }: { state: ItemsFilterBarState }) {
               />
             </div>
           </div>
-        </details>
+        </div>
       </section>
 
       <ModalSheet

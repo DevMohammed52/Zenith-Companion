@@ -112,9 +112,9 @@ export function useItemsFilter({
       const matchType = selectedType === 'ALL' || item.type === selectedType;
       const matchQuality = selectedQuality === 'ALL' || item.quality === selectedQuality;
       const matchLocation = selectedLocation === 'ALL' || item.dropLocationKeys.includes(selectedLocation);
-      const matchMarketVisibility =
+      const matchTradeableVisibility =
         !hideNonMarket
-        || item.hasMarket
+        || item.tradeable
         || (selectedSignal === 'VENDOR' && item.merchantBuyPrice > 0)
         || (selectedSignal === 'UNTRADABLE' && !item.tradeable)
         || (selectedSignal === 'LEGACY' && item.isLegacy);
@@ -134,7 +134,7 @@ export function useItemsFilter({
         || (selectedSignal === 'EFFECTS' && item.hasEffects)
         || (selectedSignal === 'LORE' && item.hasLore);
 
-      return matchSearch && matchType && matchQuality && matchLocation && matchMarketVisibility && matchSignal;
+      return matchSearch && matchType && matchQuality && matchLocation && matchTradeableVisibility && matchSignal;
     });
 
     return filtered.sort((a, b) => {

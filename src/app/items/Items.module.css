@@ -143,6 +143,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: 0;
   min-height: 44px;
   padding: 0 0.25rem;
   border-radius: 6px;
@@ -188,7 +191,7 @@
   transition: transform 0.2s ease;
 }
 
-.advancedFilterPanel[open] .filterPanelChevron {
+.advancedFilterPanel[data-expanded="true"] .filterPanelChevron {
   transform: rotate(180deg);
 }
 
@@ -197,6 +200,22 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.65rem;
   padding-top: 0.5rem;
+}
+
+@media (max-width: 820px) {
+  .advancedFilterPanel[data-expanded="false"] .advancedFilterGrid {
+    display: none;
+  }
+}
+
+@media (min-width: 821px) {
+  .advancedFilterSummary {
+    display: none;
+  }
+
+  .advancedFilterGrid {
+    padding-top: 0.15rem;
+  }
 }
 
 /* Tag Guide Modal Content */
@@ -680,9 +699,7 @@
 .skeletonSection {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  min-height: 760px;
-  contain: layout;
+  gap: 0.65rem;
 }
 
 .skeletonCardsGrid {
