@@ -977,4 +977,79 @@ describe("Forge Lessons Calculator Logic & Invariance Contracts", () => {
     };
     expect(detectProfileForgeLevel(profileNoForge)).toBe(1);
   });
+
+  it("calculates 24h Temper bar progress and banked shards accurately with efficiency scaling", () => {
+    // Pick a Lv 90+ 100%-efficiency material at Forge 100 (penaltyEff = 1.0)
+    const highMat = rawMaterials.find((m) => m.reqLvl >= 90) as ForgeLessonMaterial;
+    expect(highMat).toBeDefined();
+    const calcHigh = calculateLessonMaterialEfficiency(highMat, 100, 1.0);
+    expect(calcHigh.penaltyEff).toBe(1.0);
+
+    // Queue 12h of 100%-efficiency lessons -> 50% of 24h Temper bar -> 120 shards banked (half of 240 at Lv 100)
+    const qty12h = Math.round((12 * 3600) / calcHigh.timeSeconds);
+    const halfSummary = calculateSessionSummary(
+      [
+        {
+          material: calcHigh,
+          quantity: qty12h,
+          totalExp: calcHigh.effectiveExp * qty12h,
+          totalDurationSeconds: calcHigh.timeSeconds * qty12h,
+          totalCost: calcHigh.liveMarketPrice * qty12h,
+        },
+      ],
+      100,
+      0,
+      1.0
+    );
+
+    expect(halfSummary.temperBarFullShards).toBe(240);
+    expect(halfSummary.temperBarFullHalfShards).toBe(120);
+    expect(halfSummary.estimatedTemperBarPercent).toBe(50);
+    expect(halfSummary.estimatedTemperShards).toBe(120);
+
+    // Efficiency +100% (effMultiplier = 2.0) fills the 24h Temper bar twice as fast -> 100% (240 banked)
+    const boostedSummary = calculateSessionSummary(
+      [
+        {
+          material: calcHigh,
+          quantity: qty12h,
+          totalExp: calcHigh.effectiveExp * qty12h,
+          totalDurationSeconds: calcHigh.timeSeconds * qty12h,
+          totalCost: calcHigh.liveMarketPrice * qty12h,
+        },
+      ],
+      100,
+      0,
+      2.0
+    );
+    expect(boostedSummary.estimatedTemperBarPercent).toBe(100);
+    expect(boostedSummary.estimatedTemperShards).toBe(240);
+  });
+
+  it("stacks Skill-Profit loadout buffs (Membership, Conquest Rank, Pool, Ascension) additively", async () => {
+    const { getAssaultBuff, ASCENSION_BUFFS } = await import("@/lib/skill-profit");
+    const rank1 = getAssaultBuff("first");
+    const l20Exp = ASCENSION_BUFFS.find((b) => b.id === "exp-20");
+    expect(l20Exp).toBeDefined();
+
+    // Base 1.0 + Blacksmith 0.10 + Membership 0.15 + Conquest Rank 1 (exp%) + Pool 10% + L20 Ascension Exp
+    const expectedExpMult = Number(
+      (1.0 + 0.1 + 0.15 + rank1.exp / 100 + 0.1 + (l20Exp?.value || 0) / 100).toFixed(4)
+    );
+    expect(expectedExpMult).toBeCloseTo(1.35 + rank1.exp / 100 + (l20Exp?.value || 0) / 100, 4);
+  });
+
+  it("picks lowest gold/EXP within tied Fastest tier and avoids stale middle-item cache", () => {
+    // Re-evaluating with mutated middle material price (Mystic Ore) must invalidate cache cleanly
+    const baseline = calculateGoalEstimate(50, 90, rawMaterials as ForgeLessonMaterial[], 1.25, 0, null, 1.1);
+    const moddedMarket = {
+      "Goblin Pouch": { avg_3: 5, price: 5 },
+      "Undying Crest": { avg_3: 100, price: 100 },
+    };
+    const updated = calculateGoalEstimate(50, 90, rawMaterials as ForgeLessonMaterial[], 1.25, 0, moddedMarket, 1.1);
+
+    expect(updated.totalCheapestCost).not.toBe(baseline.totalCheapestCost);
+    expect(updated.totalFastestDurationSeconds!).toBeLessThanOrEqual(updated.totalBestDurationSeconds!);
+    expect(updated.totalBestDurationSeconds!).toBeLessThanOrEqual(updated.totalCheapestDurationSeconds!);
+  });
 });

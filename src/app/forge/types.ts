@@ -189,6 +189,11 @@ export interface LessonSessionSummary {
   queuedItems: QueuedLessonItem[];
   totalForgeExp: number;
   totalStrengthExp: number;
+  temperBarFullShards: number;
+  temperBarFullHalfShards: number;
+  temperBarExact: boolean;
+  estimatedTemperBarPercent: number;
+  estimatedTemperShards: number;
   totalDurationSeconds: number;
   totalCost: number;
   projectedLevel: number;

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ArrowRight, CheckCircle2, Compass, DollarSign, FastForward, Layers, Sparkles } from "lucide-react";
-import { formatGold } from "@/lib/format";
+import { useEffect, useRef, useState } from "react";
+import { Badge, Button, Card, EmptyState, Icon, NumberInput, type CardAccent } from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
 import { GoldIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
+import { formatGold } from "@/lib/format";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
 import type { GoalProgressionStep } from "../../types";
+import styles from "../../Forge.module.css";
 
 function formatLongDuration(totalSeconds: number): string {
   if (totalSeconds <= 0) return "0m";
@@ -15,10 +18,9 @@ function formatLongDuration(totalSeconds: number): string {
   const remainingMinutes = totalMinutes % 60;
 
   if (days > 0) {
-    if (remainingMinutes > 0) {
-      return `${days}d ${remainingHours}h ${remainingMinutes}m`;
-    }
-    return `${days}d ${remainingHours}h`;
+    return remainingMinutes > 0
+      ? `${days}d ${remainingHours}h ${remainingMinutes}m`
+      : `${days}d ${remainingHours}h`;
   }
   if (remainingHours > 0) {
     return `${remainingHours}h ${remainingMinutes}m`;
@@ -40,6 +42,7 @@ export function LessonTargetGoalCard({
     goalEstimate,
     addToQueue,
     addBatchToQueue,
+    replaceQueue,
   } = lessons;
 
   const {
@@ -59,20 +62,12 @@ export function LessonTargetGoalCard({
   } = goalEstimate;
 
   const isMaxLevel = forgeLevel >= 100;
-
-  const [rawTargetStr, setRawTargetStr] = useState(String(targetGoalLevel));
   const [queuedRouteKey, setQueuedRouteKey] = useState<string | null>(null);
-  const queuedTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    setRawTargetStr(String(targetGoalLevel));
-  }, [targetGoalLevel]);
+  const queuedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (queuedTimerRef.current) {
-        clearTimeout(queuedTimerRef.current);
-      }
+      if (queuedTimerRef.current) clearTimeout(queuedTimerRef.current);
     };
   }, []);
 
@@ -84,7 +79,9 @@ export function LessonTargetGoalCard({
       }
     }
     if (Object.keys(batch).length > 0) {
-      if (typeof addBatchToQueue === "function") {
+      if (typeof replaceQueue === "function") {
+        replaceQueue(batch);
+      } else if (typeof addBatchToQueue === "function") {
         addBatchToQueue(batch);
       } else {
         for (const [name, qty] of Object.entries(batch)) {
@@ -92,44 +89,50 @@ export function LessonTargetGoalCard({
         }
       }
       setQueuedRouteKey(routeKey);
-      if (queuedTimerRef.current) {
-        clearTimeout(queuedTimerRef.current);
-      }
-      queuedTimerRef.current = setTimeout(() => {
-        setQueuedRouteKey(null);
-      }, 3000);
+      if (queuedTimerRef.current) clearTimeout(queuedTimerRef.current);
+      queuedTimerRef.current = setTimeout(() => setQueuedRouteKey(null), 3000);
     }
   };
 
-  const routes = [
+  const routes: Array<{
+    key: "cheapest" | "best" | "fastest";
+    badgeVariant: "success" | "refined" | "warning";
+    accent: CardAccent;
+    title: string;
+    subtitle: string;
+    option: typeof cheapestOption;
+    steps: GoalProgressionStep[];
+    totalCost: number;
+    totalDurationSeconds: number;
+  }> = [
     {
-      key: "cheapest" as const,
-      tagClass: "cheap",
-      icon: DollarSign,
+      key: "cheapest",
+      badgeVariant: "success",
+      accent: "success",
       title: "Cheapest Route",
-      subtitle: "Lowest Gold Cost",
+      subtitle: "Lowest gold cost",
       option: cheapestOption,
       steps: cheapestSteps,
       totalCost: totalCheapestCost || cheapestOption?.totalCost || 0,
       totalDurationSeconds: totalCheapestDurationSeconds || cheapestOption?.totalDurationSeconds || 0,
     },
     {
-      key: "best" as const,
-      tagClass: "best",
-      icon: Sparkles,
+      key: "best",
+      badgeVariant: "refined",
+      accent: "refined",
       title: "Balanced Route",
-      subtitle: "Optimal Speed & Cost",
+      subtitle: "Speed and gold balance",
       option: bestOption || cheapestOption,
       steps: bestSteps.length > 0 ? bestSteps : cheapestSteps,
       totalCost: totalBestCost || bestOption?.totalCost || totalCheapestCost || 0,
       totalDurationSeconds: totalBestDurationSeconds || bestOption?.totalDurationSeconds || totalCheapestDurationSeconds || 0,
     },
     {
-      key: "fastest" as const,
-      tagClass: "fast",
-      icon: FastForward,
+      key: "fastest",
+      badgeVariant: "warning",
+      accent: "warning",
       title: "Fastest Route",
-      subtitle: "Maximum EXP Speed",
+      subtitle: "Maximum EXP rate",
       option: fastestOption,
       steps: fastestSteps,
       totalCost: totalFastestCost || fastestOption?.totalCost || 0,
@@ -138,190 +141,113 @@ export function LessonTargetGoalCard({
   ];
 
   return (
-    <section className="lesson-target-goal-card" aria-label="Level target estimator">
-      <div className="goal-card-topbar">
-        <div className="goal-title-group">
-          <span className="panel-kicker"><Compass size={14} aria-hidden="true" /> Progression Routes <span className="sr-only">Level Target Estimator</span></span>
-          <h2>Training Plan: Lv. {forgeLevel} to {targetGoalLevel}</h2>
-        </div>
-
-        {!isMaxLevel && (
-          <div className="target-stepper-wrap">
-            <div className="target-direct-group">
-              <label htmlFor="target-level-input" className="target-label">Target Lv:</label>
-              <div className="stepper-wrap compact">
-                <button
-                  type="button"
-                  className="stepper-btn mini"
-                  onClick={() => {
-                    const next = Math.max(forgeLevel + 1, targetGoalLevel - 1);
-                    setTargetGoalLevel(next);
-                    setRawTargetStr(String(next));
-                  }}
-                  disabled={targetGoalLevel <= forgeLevel + 1}
-                  aria-label="Decrease target level"
-                >
-                  -
-                </button>
-                <div className="number-display-wrap compact">
-                  <span className="level-prefix">Lv.</span>
-                  <input
-                    id="target-level-input"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    autoComplete="off"
-                    value={rawTargetStr}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/[^0-9]/g, "");
-                      setRawTargetStr(raw);
-                      if (raw !== "") {
-                        const parsed = parseInt(raw, 10);
-                        if (!Number.isNaN(parsed)) {
-                          const clamped = Math.min(100, parsed);
-                          if (clamped >= forgeLevel + 1) {
-                            setTargetGoalLevel(clamped);
-                          }
-                        }
-                      }
-                    }}
-                    onBlur={() => {
-                      const parsed = parseInt(rawTargetStr, 10);
-                      const clamped = Number.isNaN(parsed) || parsed < forgeLevel + 1
-                        ? Math.min(100, forgeLevel + 1)
-                        : Math.min(100, parsed);
-                      setRawTargetStr(String(clamped));
-                      setTargetGoalLevel(clamped);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const parsed = parseInt(rawTargetStr, 10);
-                        const clamped = Number.isNaN(parsed) || parsed < forgeLevel + 1
-                          ? Math.min(100, forgeLevel + 1)
-                          : Math.min(100, parsed);
-                        setRawTargetStr(String(clamped));
-                        setTargetGoalLevel(clamped);
-                      }
-                    }}
-                    className="direct-number-input compact"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="stepper-btn mini"
-                  onClick={() => {
-                    const next = Math.min(100, targetGoalLevel + 1);
-                    setTargetGoalLevel(next);
-                    setRawTargetStr(String(next));
-                  }}
-                  disabled={targetGoalLevel >= 100}
-                  aria-label="Increase target level"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+    <section className={styles.queueList} aria-label="Level target estimator">
+      <Card padding="md">
+        <div className={styles.sectionTopRow} style={{ alignItems: "center" }}>
+          <div>
+            <span className={styles.kicker}>
+              <Icon name="map" size="xs" aria-hidden="true" /> Progression Routes{" "}
+              <span className="sr-only">Level Target Estimator</span>
+            </span>
+            <h2 className={styles.sectionTitle}>
+              {isMaxLevel ? "Forge Level 100 Reached" : `Lv. ${forgeLevel} → Lv. ${targetGoalLevel}`}
+            </h2>
+            <p className={styles.syncText} style={{ margin: "0.25rem 0 0" }}>
+              {isMaxLevel ? "Maximum Forge skill level reached." : `${expNeeded.toLocaleString()} EXP required`}
+            </p>
           </div>
-        )}
-      </div>
 
-      <div className="goal-exp-banner">
-        <div className="exp-metric-block">
-          <span className="metric-label">EXP Required</span>
-          <strong>{isMaxLevel ? "Cap Reached" : `${expNeeded.toLocaleString()} EXP`}</strong>
+          {!isMaxLevel && (
+            <div style={{ width: "176px" }}>
+              <NumberInput
+                label="Target Level"
+                prefix="Lv."
+                min={Math.min(100, forgeLevel + 1)}
+                max={100}
+                value={targetGoalLevel}
+                onChange={(val) => setTargetGoalLevel(val)}
+              />
+            </div>
+          )}
         </div>
-        <div className="level-jump-badge">
-          <span>Lv. {forgeLevel}</span>
-          <ArrowRight size={14} aria-hidden="true" />
-          <strong>{isMaxLevel ? "MAX (100)" : `Lv. ${targetGoalLevel}`}</strong>
-        </div>
-      </div>
+      </Card>
 
       {isMaxLevel ? (
-        <div className="max-level-reached-banner">
-          <CheckCircle2 size={24} className="good-val" aria-hidden="true" />
-          <div>
-            <strong>Maximum Forge Level Reached</strong>
-            <p>Your Forge mastery is at the Level 100 cap.</p>
-          </div>
-        </div>
+        <EmptyState
+          variant="default"
+          icon="checkCircle"
+          title="Maximum Forge Level Reached"
+          description="Your Forge mastery is already at the Level 100 cap."
+        />
       ) : (
-        <div className="goal-routes-grid">
+        <div className={styles.routesGrid}>
           {routes.map((route) => {
-            const Icon = route.icon;
-            const option = route.option;
-            if (!option) return null;
+            if (!route.option) return null;
+            const isQueued = queuedRouteKey === route.key;
 
             return (
-              <div key={route.key} className={`route-card ${route.key}-route`}>
-                <div className="route-header">
-                  <div className="route-tag-group">
-                    <span className={`route-tag ${route.tagClass}`}>
-                      <Icon size={13} aria-hidden="true" />
-                      <span>{route.title}</span>
-                    </span>
-                    <span className="route-subtitle">{route.subtitle}</span>
-                  </div>
-                  <div className="route-cost-wrap">
-                    <span className="route-cost-val">
+              <Card
+                key={route.key}
+                padding="md"
+                accent={route.accent}
+                title={
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                    <Badge variant={route.badgeVariant} size="sm">{route.title}</Badge>
+                    <span className={styles.statValue}>
                       {formatGold(route.totalCost)}
-                      <GoldIcon size={13} />
+                      <GoldIcon size={12} />
                     </span>
+                  </div>
+                }
+                subtitle={
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "0.2rem" }}>
+                    <span>{route.subtitle}</span>
                     {route.totalDurationSeconds > 0 && (
-                      <span className="route-time-val">{formatLongDuration(route.totalDurationSeconds)}</span>
+                      <span>{formatLongDuration(route.totalDurationSeconds)}</span>
                     )}
                   </div>
-                </div>
-
-                <div className="route-body">
-                  <div className="bracket-steps-container">
-                    <div className="bracket-list">
-                      {route.steps.map((step, idx) => (
-                        <div key={idx} className="bracket-item">
-                          <span className="bracket-level-range">Lv. {step.fromLevel}&ndash;{step.toLevel}</span>
-                          <span className="bracket-material-name">{step.material.name}</span>
-                          <span className="bracket-qty"><strong>{step.quantityNeeded.toLocaleString()}x</strong></span>
-                          <span className="bracket-cost">
-                            {formatGold(step.cost)}
-                            <GoldIcon size={11} />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="route-actions-row">
-                  <button
-                    type="button"
-                    className={`route-action-btn ${queuedRouteKey === route.key ? "queued" : ""}`}
-                    onClick={() => applyPathToQueue(route.steps, route.key)}
-                    aria-label={`Queue entire ${route.title}`}
-                  >
-                    {queuedRouteKey === route.key ? (
-                      <>
-                        <CheckCircle2 size={14} aria-hidden="true" />
-                        <span>✓ Queued to Training!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Layers size={14} aria-hidden="true" />
-                        <span>Queue {route.title}</span>
-                      </>
-                    )}
-                  </button>
-                  {queuedRouteKey === route.key && onSwitchSubView && (
-                    <button
-                      type="button"
-                      className="route-go-to-queue-btn"
-                      onClick={() => onSwitchSubView("session")}
-                      title="View queued materials in Session Queue"
+                }
+                footer={
+                  <div className={styles.actionsCluster} style={{ width: "100%", justifyContent: "space-between" }}>
+                    <Button
+                      variant={isQueued ? "secondary" : "primary"}
+                      size="md"
+                      fullWidth={!isQueued || !onSwitchSubView}
+                      icon={<Icon name={isQueued ? "checkCircle" : "archiveLayers"} size="sm" aria-hidden="true" />}
+                      onClick={() => applyPathToQueue(route.steps, route.key)}
                     >
-                      <span>Go to Session Queue →</span>
-                    </button>
-                  )}
+                      {isQueued ? "Route Queued" : `Queue ${route.title}`}
+                    </Button>
+                    {isQueued && onSwitchSubView && (
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        iconTrailing={<Icon name="arrowRight" size="xs" aria-hidden="true" />}
+                        onClick={() => onSwitchSubView("session")}
+                      >
+                        Session Queue
+                      </Button>
+                    )}
+                  </div>
+                }
+              >
+                <div>
+                  {route.steps.map((step, idx) => (
+                    <div key={`${step.fromLevel}-${step.material.name}-${idx}`} className={styles.stepRow}>
+                      <span className={styles.stepLevelRange}>Lv. {step.fromLevel}&ndash;{step.toLevel}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", minWidth: 0 }}>
+                        <GameImage src={step.material.imageUrl} alt="" width={22} height={22} />
+                        <QualityText value={step.material.quality}>{step.material.name}</QualityText>
+                      </div>
+                      <span className={styles.stepQty}>{step.quantityNeeded.toLocaleString()}x</span>
+                      <span className={styles.stepCost}>
+                        {formatGold(step.cost)}
+                        <GoldIcon size={11} />
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

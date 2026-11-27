@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Check, Copy, ReceiptText, ShoppingCart } from "lucide-react";
+import { Badge, Button, Card, Icon, NumberInput, type BadgeVariant } from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
 import QualityText from "@/components/QualityText";
 import { formatGold } from "@/lib/format";
-import { GoldIcon } from "@/components/GoldIcon";
-import { getTrustedGameImageUrl } from "@/lib/trusted-image";
 import type {
   ForgeMaterialNeed,
   ForgePlannerOwnedMaterials,
@@ -13,7 +13,7 @@ import type {
   ForgeRecipeNeed,
   ForgeState,
 } from "../../types";
-import { NumberField } from "./ForgeControls";
+import styles from "../../Forge.module.css";
 
 export function NeedTable({
   title,
@@ -37,52 +37,69 @@ export function NeedTable({
   onOpenItem: (name: string) => void;
 }) {
   return (
-    <section aria-label={title}>
-      <div className="section-heading">
+    <Card padding="md" aria-label={title}>
+      <div className={styles.sectionTopRow} style={{ marginBottom: "0.75rem" }}>
         <div>
-          <p className="panel-kicker">{icon}<span>{title}</span></p>
-          <h2>{rows.filter((row) => row.missing > 0).length} missing types</h2>
+          <span className={styles.kicker}>{icon}<span>{title}</span></span>
+          <h2 className={styles.sectionTitle}>{rows.filter((row) => row.missing > 0).length} missing types</h2>
         </div>
       </div>
-      <div className="need-list">
+
+      <div>
         {rows.map((row) => (
-          <div className="need-row" key={row.name}>
-            <button type="button" className="need-name" aria-label={`Open item details for ${row.name}`} onClick={() => onOpenItem(row.name)}>
-              <img
-                src={getTrustedGameImageUrl(row.imageUrl) || "/favicon.ico"}
-                alt=""
-                width={40}
-                height={40}
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
-                }}
-              />
-              <span>
-                <strong>{row.name}</strong>
-                <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
-              </span>
-            </button>
-            <div className="need-stat"><span>Required</span><strong>{row.required.toLocaleString()}</strong></div>
-            <NumberField
-              label="Owned"
-              ariaLabel={`Owned quantity for ${row.name}`}
-              value={ownedMaterials[row.name] || ""}
-              onChange={(value) => onOwnedChange(row.name, value)}
-            />
-            <div className="need-stat"><span>Missing</span><strong>{row.missing.toLocaleString()}</strong></div>
-            <div className="need-stat">
-              <span>Cost</span>
-              <strong className="cost-with-coin">
-                {formatGold(row.totalCost)}
-                <GoldIcon size={11} />
-              </strong>
+          <div className={styles.needTableRow} key={row.name}>
+            <div className={styles.needCardTop}>
+              <button
+                type="button"
+                className={styles.itemTitleBtn}
+                aria-label={`Open item details for ${row.name}`}
+                onClick={() => onOpenItem(row.name)}
+              >
+                <GameImage src={row.imageUrl} alt="" width={28} height={28} />
+                <span className={styles.matCellText}>
+                  <QualityText value={row.quality}>{row.name}</QualityText>
+                  <small className={styles.matCellMeta}>
+                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge> · {row.source}
+                  </small>
+                </span>
+              </button>
+
+              <div className={styles.costCell}>
+                <span className={styles.statLabel}>Cost</span>
+                <strong className={styles.statValue}>
+                  {formatGold(row.totalCost)}
+                  <GoldIcon size={11} />
+                </strong>
+              </div>
+            </div>
+
+            <div className={styles.needCardBottom}>
+              <div className={styles.needMetricsInline}>
+                <div className={styles.costCell} style={{ textAlign: "left" }}>
+                  <span className={styles.statLabel}>Required</span>
+                  <strong>{row.required.toLocaleString()}</strong>
+                </div>
+                <div className={styles.costCell} style={{ textAlign: "left" }}>
+                  <span className={styles.statLabel}>Missing</span>
+                  <strong>{row.missing.toLocaleString()}</strong>
+                </div>
+              </div>
+
+              <div style={{ width: "164px" }}>
+                <NumberInput
+                  label="Owned"
+                  min={0}
+                  max={999999}
+                  value={ownedMaterials[row.name] || 0}
+                  onChange={(val) => onOwnedChange(row.name, String(val))}
+                  aria-label={`Owned quantity for ${row.name}`}
+                />
+              </div>
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -102,47 +119,68 @@ export function RecipeNeedTable({
   onOpenItem: (name: string) => void;
 }) {
   return (
-    <section aria-label={title}>
-      <div className="section-heading">
+    <Card padding="md" aria-label={title}>
+      <div className={styles.sectionTopRow} style={{ marginBottom: "0.75rem" }}>
         <div>
-          <p className="panel-kicker"><ReceiptText size={16} /> <span>{title}</span></p>
-          <h2>{rows.reduce((sum, row) => sum + row.missingCopies, 0).toLocaleString()} copies missing</h2>
+          <span className={styles.kicker}>
+            <Icon name="scroll" size="xs" aria-hidden="true" /> <span>{title}</span>
+          </span>
+          <h2 className={styles.sectionTitle}>
+            {rows.reduce((sum, row) => sum + row.missingCopies, 0).toLocaleString()} copies missing
+          </h2>
         </div>
       </div>
-      <div className="need-list">
+
+      <div>
         {rows.map((row) => (
-          <div className="need-row" key={row.recipeName}>
-            <button type="button" className="need-name" aria-label={`Open item details for ${row.recipeName}`} onClick={() => onOpenItem(row.recipeName)}>
-              <img
-                src={getTrustedGameImageUrl(row.imageUrl) || "/favicon.ico"}
-                alt=""
-                width={40}
-                height={40}
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
-                }}
-              />
-              <span>
-                <strong>{row.recipeName}</strong>
-                <small><QualityText value={row.quality}>{row.quality}</QualityText> | {row.source}</small>
-              </span>
-            </button>
-            <div className="need-stat"><span>Needed</span><strong>{row.copiesNeeded.toLocaleString()}</strong></div>
-            <div className="need-stat"><span>Owned</span><strong>{row.ownedCopies.toLocaleString()}</strong></div>
-            <div className="need-stat"><span>Missing</span><strong>{row.missingCopies.toLocaleString()}</strong></div>
-            <div className="need-stat">
-              <span>Cost</span>
-              <strong className="cost-with-coin">
-                {formatGold(row.totalCost)}
-                <GoldIcon size={11} />
-              </strong>
+          <div className={styles.recipeNeedRow} key={row.recipeName}>
+            <div className={styles.needCardTop}>
+              <button
+                type="button"
+                className={styles.itemTitleBtn}
+                aria-label={`Open item details for ${row.recipeName}`}
+                onClick={() => onOpenItem(row.recipeName)}
+              >
+                <GameImage src={row.imageUrl} alt="" width={28} height={28} />
+                <span className={styles.matCellText}>
+                  <QualityText value={row.quality}>{row.recipeName}</QualityText>
+                  <small className={styles.matCellMeta}>
+                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge> · {row.source}
+                  </small>
+                </span>
+              </button>
+
+              <div className={styles.costCell}>
+                <span className={styles.statLabel}>Cost</span>
+                <strong className={styles.statValue}>
+                  {formatGold(row.totalCost)}
+                  <GoldIcon size={11} />
+                </strong>
+              </div>
+            </div>
+
+            <div className={styles.recipeNeedStats}>
+              <div className={styles.costCell} style={{ textAlign: "left" }}>
+                <span className={styles.statLabel}>Needed</span>
+                <strong>{row.copiesNeeded.toLocaleString()}</strong>
+              </div>
+              <div className={styles.costCell} style={{ textAlign: "left" }}>
+                <span className={styles.statLabel}>Owned</span>
+                <strong>{row.ownedCopies.toLocaleString()}</strong>
+              </div>
+              <div className={styles.costCell} style={{ textAlign: "left" }}>
+                <span className={styles.statLabel}>Missing</span>
+                <strong>{row.missingCopies.toLocaleString()}</strong>
+              </div>
+              <div className={styles.costCell} style={{ textAlign: "left" }}>
+                <span className={styles.statLabel}>Unit</span>
+                <strong>{formatGold(row.unitPrice)}g</strong>
+              </div>
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -180,32 +218,38 @@ export function ForgeShoppingSection({ state }: { state: ForgeState }) {
   };
 
   return (
-    <section className="shopping-layout" aria-label="Shopping lists and missing requirements">
-      <div className="shopping-header-bar">
-        <div className="shopping-title-group">
-          <p className="panel-kicker"><ShoppingCart size={14} aria-hidden="true" /> Shopping Requirements</p>
-          <span className="shopping-subtext">
-            {plan.materialNeeds.filter((m) => m.missing > 0).length} missing materials · {formatGold(plan.totalMissingCost)}g required
+    <section className={styles.queueList} aria-label="Shopping lists and missing requirements">
+      <div className={styles.sectionTopRow} style={{ alignItems: "center" }}>
+        <div>
+          <span className={styles.kicker}>
+            <Icon name="market" size="xs" aria-hidden="true" /> Shopping Requirements
           </span>
+          <p className={styles.syncText} style={{ margin: "0.2rem 0 0" }}>
+            {plan.materialNeeds.filter((m) => m.missing > 0).length} missing materials ·{" "}
+            {formatGold(plan.totalMissingCost)}g required
+          </p>
         </div>
-        <button
-          type="button"
-          className="copy-shopping-btn"
+
+        <Button
+          variant={copied ? "primary" : "secondary"}
+          size="sm"
+          icon={<Icon name={copied ? "check" : "copy"} size="xs" aria-hidden="true" />}
           onClick={handleCopyList}
           aria-label="Copy shopping list to clipboard"
         >
-          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
-          <span>{copied ? "Copied to Clipboard" : "Copy Shopping List"}</span>
-        </button>
+          {copied ? "Copied to Clipboard" : "Copy Shopping List"}
+        </Button>
       </div>
+
       <NeedTable
         title="Missing Materials"
-        icon={<ShoppingCart size={16} />}
+        icon={<Icon name="market" size="xs" aria-hidden="true" />}
         rows={plan.materialNeeds}
         ownedMaterials={draft.ownedMaterials}
         onOwnedChange={setOwnedMaterial}
         onOpenItem={openItemByName}
       />
+
       <RecipeNeedTable
         title="Recipe Copies"
         rows={plan.recipeNeeds}

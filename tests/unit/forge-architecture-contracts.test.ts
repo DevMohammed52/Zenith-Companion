@@ -16,14 +16,7 @@ import { useForgeState } from "@/app/forge/hooks/useForgeState";
 import { ForgeHeader } from "@/app/forge/components/ForgeHeader";
 import { ForgeTabs } from "@/app/forge/components/ForgeTabs";
 import { ForgeLessonsTab } from "@/app/forge/components/ForgeLessonsTab";
-import { ForgeStyles } from "@/app/forge/components/ForgeStyles";
 import { CraftItemTab } from "@/app/forge/components/craft/CraftItemTab";
-import {
-  CustomPicker,
-  Metric,
-  NumberField,
-  Stat,
-} from "@/app/forge/components/craft/ForgeControls";
 import { ForgeRecipeBuilder } from "@/app/forge/components/craft/ForgeRecipeBuilder";
 import { ForgePlanSection } from "@/app/forge/components/craft/ForgePlanSection";
 import {
@@ -31,6 +24,7 @@ import {
   NeedTable,
   RecipeNeedTable,
 } from "@/app/forge/components/craft/ForgeShoppingSection";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 
 describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
   const rootDir = process.cwd();
@@ -41,13 +35,19 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
   const componentsDir = path.join(forgeDir, "components");
   const craftComponentsDir = path.join(componentsDir, "craft");
   const lessonComponentsDir = path.join(componentsDir, "lessons");
+  const cssPath = path.join(forgeDir, "Forge.module.css");
 
-  it("orchestrator page.tsx is strictly under 200 lines and acts as a clean coordinator", () => {
+  it("enforces clean migrated route architecture across /forge, /forge/lessons, and /forge/craft", () => {
+    assertCleanMigratedRoute({ routeSubpath: "forge", maxPageLines: 60 });
+    expect(readFileSync(path.join(forgeDir, "lessons", "page.tsx"), "utf-8")).toContain("Forge.module.css");
+    expect(readFileSync(path.join(forgeDir, "craft", "page.tsx"), "utf-8")).toContain("Forge.module.css");
+  });
+
+  it("orchestrator page.tsx is strictly under 60 lines and acts as a clean coordinator", () => {
     expect(existsSync(pagePath)).toBe(true);
     const content = readFileSync(pagePath, "utf-8");
     const lines = content.split(/\r?\n/).length;
-    expect(lines).toBeLessThan(200);
-    expect(lines).toBeLessThanOrEqual(45);
+    expect(lines).toBeLessThanOrEqual(60);
   });
 
   it("types.ts defines top-level tabs with Lessons as default active tab", () => {
@@ -75,6 +75,8 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
       resultName: "Mythic Broadsword",
       quality: "MYTHIC" as ForgeQuality,
       levelRequired: 85,
+      forgeExpEach: 50000,
+      strengthExpEach: 2500,
       materials: [{ name: "Mythic Ore", quantity: 5, imageUrl: "", quality: "MYTHIC", sourceSummary: "" }],
       maxUses: 10,
       imageUrl: "",
@@ -103,20 +105,18 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
     expect(content).toContain("FORGE_PLANNER_STORAGE_KEY");
   });
 
-  it("contains all required feature components in components/, components/craft/, and components/lessons/", () => {
-    const rootComponents = [
-      "ForgeHeader.tsx",
-      "ForgeTabs.tsx",
-      "ForgeLessonsTab.tsx",
-      "ForgeStyles.tsx",
-    ];
+  it("retires legacy ForgeStyles and ForgeControls while keeping all modular components", () => {
+    expect(existsSync(path.join(componentsDir, "ForgeStyles.tsx"))).toBe(false);
+    expect(existsSync(path.join(craftComponentsDir, "ForgeControls.tsx"))).toBe(false);
+    expect(existsSync(cssPath)).toBe(true);
+
+    const rootComponents = ["ForgeHeader.tsx", "ForgeTabs.tsx", "ForgeLessonsTab.tsx"];
     for (const comp of rootComponents) {
       expect(existsSync(path.join(componentsDir, comp)), `Missing component: ${comp}`).toBe(true);
     }
 
     const craftComponents = [
       "CraftItemTab.tsx",
-      "ForgeControls.tsx",
       "ForgeRecipeBuilder.tsx",
       "ForgePlanSection.tsx",
       "ForgeShoppingSection.tsx",
@@ -131,6 +131,7 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
       "LessonQueueReview.tsx",
       "MaterialCatalogPicker.tsx",
       "InventoryOptimizer.tsx",
+      "MaterialCard.tsx",
     ];
     for (const comp of lessonComponents) {
       expect(existsSync(path.join(lessonComponentsDir, comp)), `Missing lesson component: ${comp}`).toBe(true);
@@ -141,12 +142,7 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
     expect(typeof ForgeHeader).toBe("function");
     expect(typeof ForgeTabs).toBe("function");
     expect(typeof ForgeLessonsTab).toBe("function");
-    expect(typeof ForgeStyles).toBe("function");
     expect(typeof CraftItemTab).toBe("function");
-    expect(typeof Metric).toBe("function");
-    expect(typeof Stat).toBe("function");
-    expect(typeof NumberField).toBe("function");
-    expect(typeof CustomPicker).toBe("function");
     expect(typeof ForgeRecipeBuilder).toBe("function");
     expect(typeof ForgePlanSection).toBe("function");
     expect(typeof NeedTable).toBe("function");
@@ -168,9 +164,7 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
       path.join(componentsDir, "ForgeHeader.tsx"),
       path.join(componentsDir, "ForgeTabs.tsx"),
       path.join(componentsDir, "ForgeLessonsTab.tsx"),
-      path.join(componentsDir, "ForgeStyles.tsx"),
       path.join(craftComponentsDir, "CraftItemTab.tsx"),
-      path.join(craftComponentsDir, "ForgeControls.tsx"),
       path.join(craftComponentsDir, "ForgeRecipeBuilder.tsx"),
       path.join(craftComponentsDir, "ForgePlanSection.tsx"),
       path.join(craftComponentsDir, "ForgeShoppingSection.tsx"),
@@ -179,6 +173,7 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
       path.join(lessonComponentsDir, "LessonQueueReview.tsx"),
       path.join(lessonComponentsDir, "MaterialCatalogPicker.tsx"),
       path.join(lessonComponentsDir, "InventoryOptimizer.tsx"),
+      path.join(lessonComponentsDir, "MaterialCard.tsx"),
     ];
 
     for (const file of allFiles) {
@@ -206,49 +201,25 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
     expect(craftContent).toContain('aria-labelledby="forge-tab-craft"');
   });
 
-  it("mobile touch ergonomics: tab buttons enforce >= 44px min-height", () => {
-    const stylesContent = readFileSync(path.join(componentsDir, "ForgeStyles.tsx"), "utf-8");
-    expect(stylesContent).toMatch(/\.forge-page\s+\.forge-tabs\s+button\s*\{[^}]*min-height:\s*44px/);
-  });
-
-  it("validates ForgeStyles CSS completeness for all interactive UI controls via PostCSS", () => {
-    const stylesContent = readFileSync(path.join(componentsDir, "ForgeStyles.tsx"), "utf-8");
-    const openQuote = stylesContent.indexOf("{\`");
-    const closeQuote = stylesContent.lastIndexOf("\`}");
-    expect(openQuote).toBeGreaterThan(-1);
-    expect(closeQuote).toBeGreaterThan(openQuote);
-    const css = stylesContent.slice(openQuote + 2, closeQuote);
-
+  it("validates Forge.module.css via PostCSS, touch targets >= 44px, tokens, and zero raw hex colors", () => {
+    const css = readFileSync(cssPath, "utf-8");
     expect(() => postcss.parse(css)).not.toThrow();
 
-    // Verify critical interactive control selectors are fully styled
-    expect(css).toContain(".forge-page .craft-item-tab");
-    expect(css).toContain(".forge-page .forge-lessons-tab");
-    expect(css).toContain(".forge-page .filter-picker");
-    expect(css).toContain(".forge-page .filter-picker-button");
-    expect(css).toContain(".forge-page .filter-picker-menu");
-    expect(css).toContain(".forge-page .forge-context-chips");
-    expect(css).toContain(".forge-page .plan-summary-pills");
-    expect(css).toContain(".forge-page .selected-recipe-card");
-    expect(css).toContain(".forge-page .selected-recipe-title");
-    expect(css).toContain(".forge-page .forge-undo-toast");
-    expect(css).toContain(".forge-page .plan-shell.no-side");
-    expect(css).toContain("@media (max-width: 620px)");
+    expect(css).toMatch(/\.primaryTabButton\s*\{[^}]*min-height:\s*44px/);
+    expect(css).toContain("var(--border-subtle)");
+    expect(css).toContain("var(--text-muted)");
+    expect(css).toContain("var(--text-accent)");
+    expect(css).toContain("var(--bg-panel)");
+    expect(css).toContain("var(--bg-card)");
+    expect(css).toContain("@media (max-width: 768px)");
     expect(css).toContain("@media (prefers-reduced-motion: reduce)");
-  });
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
 
-  it("verifies ForgeStyles adheres to design tokens with zero raw hex color literals", () => {
-    const stylesPath = path.join(componentsDir, "ForgeStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    expect(content).toContain("var(--border-subtle)");
-    expect(content).toContain("var(--text-muted)");
-    expect(content).toContain("var(--text-accent)");
-    expect(content).toContain("var(--quality-refined)");
-    expect(content).toContain("var(--bg-panel)");
-    expect(content).toContain("var(--bg-card)");
-
-    // Raw hex colors check: should not contain any hex color literals
-    expect(content).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    const tabsMatch = css.match(/\.primaryTabsBar\s*\{[^}]*z-index:\s*(\d+)/);
+    const paramMatch = css.match(/\.parameterStrip\s*\{[^}]*z-index:\s*(\d+)/);
+    expect(tabsMatch).not.toBeNull();
+    expect(paramMatch).not.toBeNull();
+    expect(Number(tabsMatch![1])).toBeGreaterThan(Number(paramMatch![1]));
   });
 
   it("statically renders ForgeLessonsTab with accessible structure and zero crashes", () => {
@@ -261,17 +232,5 @@ describe("Gate 1: Forge Architecture & Modularization Contracts", () => {
     expect(markup).toContain("Material Catalog");
     expect(markup).toContain("Inventory Optimizer");
     expect(markup).toContain("Show EXP per item");
-  });
-
-  it("verifies sticky forge-tabs has a higher z-index than lesson-header-controls preventing occlusion on scroll", () => {
-    const stylesPath = path.join(componentsDir, "ForgeStyles.tsx");
-    const content = readFileSync(stylesPath, "utf-8");
-    const tabsMatch = content.match(/\.forge-page\s+\.forge-tabs\s*\{[^}]*z-index:\s*(\d+)/);
-    const headerMatch = content.match(/\.forge-page\s+\.lesson-header-controls\s*\{[^}]*z-index:\s*(\d+)/);
-    expect(tabsMatch).not.toBeNull();
-    expect(headerMatch).not.toBeNull();
-    const tabsZ = Number(tabsMatch![1]);
-    const headerZ = Number(headerMatch![1]);
-    expect(tabsZ).toBeGreaterThan(headerZ);
   });
 });

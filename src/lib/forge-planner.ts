@@ -16,7 +16,12 @@ export type ForgeDbItem = {
     skill?: string;
     level_required?: number;
     max_uses?: number;
-    experience?: number;
+    experience?:
+      | number
+      | {
+          skills?: { forge?: number };
+          stats?: { strength?: number };
+        };
     materials?: Array<{
       hashed_item_id?: string;
       item_name?: string;
@@ -65,6 +70,8 @@ export type ForgeRecipeOption = {
   quality: ForgeQuality;
   levelRequired: number;
   maxUses: number;
+  forgeExpEach: number;
+  strengthExpEach: number;
   imageUrl: string;
   resultImageUrl: string;
   resultType: string;
@@ -118,6 +125,8 @@ export type ForgePlanEntry = {
   ownedRecipes: number;
   recipeCopiesNeeded: number;
   recipeCopiesMissing: number;
+  forgeExpTotal: number;
+  strengthExpTotal: number;
   materialCost: number;
   recipeCost: number;
   totalMissingCost: number;
@@ -136,6 +145,8 @@ export type ForgePlannerSummary = {
   materialNeeds: ForgeMaterialNeed[];
   recipeNeeds: ForgeRecipeNeed[];
   totalCrafts: number;
+  totalForgeExp: number;
+  totalStrengthExp: number;
   totalMissingCost: number;
   totalOutputValue: number;
   projectedNet: number;
@@ -205,12 +216,23 @@ export function buildForgeRecipeOptions(items: ForgeItemLookup | null | undefine
       const sourceSummary = summarizeSources(recipeItem);
       const resultType = resultItem.type || "";
       const quality = recipeItem.quality || resultItem.quality || "STANDARD";
+      const rawExp = recipeItem.recipe?.experience;
+      const forgeExpEach =
+        typeof rawExp === "number"
+          ? Number(rawExp) || 0
+          : Number(rawExp?.skills?.forge || 0) || 0;
+      const strengthExpEach =
+        typeof rawExp === "number"
+          ? Math.floor(forgeExpEach * 0.05)
+          : Number(rawExp?.stats?.strength || 0) || 0;
       return {
         recipeName: recipeItem.name || "",
         resultName,
         quality,
         levelRequired: Number(recipeItem.recipe?.level_required || 0),
         maxUses: Math.max(1, Number(recipeItem.recipe?.max_uses || 1)),
+        forgeExpEach,
+        strengthExpEach,
         imageUrl: recipeItem.image_url || "",
         resultImageUrl: resultItem.image_url || recipeItem.image_url || "",
         resultType,
@@ -341,6 +363,8 @@ export function calculateForgePlanner(
       ownedRecipes: line.ownedRecipes,
       recipeCopiesNeeded: copiesNeeded,
       recipeCopiesMissing: copiesMissing,
+      forgeExpTotal: (recipe.forgeExpEach || 0) * line.quantity,
+      strengthExpTotal: (recipe.strengthExpEach || 0) * line.quantity,
       materialCost,
       recipeCost,
       totalMissingCost: materialCost + recipeCost,
@@ -393,6 +417,8 @@ export function calculateForgePlanner(
     materialNeeds,
     recipeNeeds: recipeRows,
     totalCrafts: entries.reduce((sum, entry) => sum + entry.quantity, 0),
+    totalForgeExp: entries.reduce((sum, entry) => sum + entry.forgeExpTotal, 0),
+    totalStrengthExp: entries.reduce((sum, entry) => sum + entry.strengthExpTotal, 0),
     totalMissingCost,
     totalOutputValue,
     projectedNet: totalOutputValue - totalMissingCost,

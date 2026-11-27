@@ -35,8 +35,34 @@ export function useForgeState(): ForgeState {
   const { preferences } = usePreferences();
   const { activeProfile } = useProfiles();
 
-  const [activeTab, setActiveTab] = useState<ForgeTab>("lessons");
+  const [activeTab, setActiveTabState] = useState<ForgeTab>("lessons");
   const tabButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paramTab = params.get("tab");
+    if (paramTab === "craft" || paramTab === "lessons") {
+      setActiveTabState(paramTab);
+    }
+  }, []);
+
+  const setActiveTab = (tab: ForgeTab) => {
+    setActiveTabState(tab);
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path === "/forge" || path === "/forge/") {
+        const url = new URL(window.location.href);
+        if (tab === "lessons") {
+          url.searchParams.delete("tab");
+        } else {
+          url.searchParams.set("tab", tab);
+          url.searchParams.delete("view");
+        }
+        window.history.replaceState(null, "", url.toString());
+      }
+    }
+  };
 
   const pickerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);

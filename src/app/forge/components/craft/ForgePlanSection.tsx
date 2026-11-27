@@ -1,11 +1,21 @@
 "use client";
 
-import { AlertTriangle, Layers, Package, ReceiptText, Trash2 } from "lucide-react";
+import {
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  Icon,
+  NumberInput,
+  type BadgeVariant,
+} from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
 import QualityText from "@/components/QualityText";
 import { formatGold } from "@/lib/format";
-import { getTrustedGameImageUrl } from "@/lib/trusted-image";
 import type { ForgeState } from "../../types";
-import { NumberField, Stat } from "./ForgeControls";
+import styles from "../../Forge.module.css";
 
 export function ForgePlanSection({ state }: { state: ForgeState }) {
   const {
@@ -14,150 +24,190 @@ export function ForgePlanSection({ state }: { state: ForgeState }) {
     focusedEntryKey,
     setFocusedEntryKey,
     setStatusMessage,
-    draft,
     updateLine,
     removeLine,
     openItemByName,
     prefetchItem,
-    selectedEntry,
     warningCount,
   } = state;
 
   return (
-    <section className={`plan-shell ${selectedEntry ? "" : "no-side"}`} id="forge-plan" aria-label="Planned forge crafts">
-      <div className="plan-main">
-        <div className="section-heading">
-          <div>
-            <p className="panel-kicker"><Layers size={15} /> Planned crafts</p>
-            <h2>{plan.entries.length ? `${plan.entries.length} recipe${plan.entries.length === 1 ? "" : "s"}` : "No recipes planned"}</h2>
-          </div>
-          <div className="plan-summary-pills" aria-label="Forge plan health">
-            <span>{recipes.length.toLocaleString()} recipes indexed</span>
-            <span>{plan.missingMaterialTypes.toLocaleString()} material gaps</span>
-            <span className={warningCount > 0 ? "warn" : ""}>{warningCount.toLocaleString()} warnings</span>
-          </div>
+    <section className={styles.queueList} id="forge-plan" aria-label="Planned forge crafts">
+      <div className={styles.sectionTopRow}>
+        <div>
+          <span className={styles.kicker}>
+            <Icon name="archiveLayers" size="xs" aria-hidden="true" /> Planned crafts
+          </span>
+          <h2 className={styles.sectionTitle}>
+            {plan.entries.length
+              ? `${plan.entries.length} ${plan.entries.length === 1 ? "recipe" : "recipes"}`
+              : "No recipes planned"}
+          </h2>
         </div>
 
-        {plan.entries.length === 0 ? (
-          <div className="empty-panel">
-            <ReceiptText size={24} />
-            <strong>Add a saved recipe to start planning.</strong>
-            <p>Use this for stored legendary/mythic recipes, limited-use copies, and bulk material gathering before you craft.</p>
-          </div>
-        ) : (
-          <div className="entry-list">
-            {plan.entries.map((entry) => (
-              <article
+        <div className={styles.actionsCluster} aria-label="Forge plan health">
+          <Badge variant="neutral" size="sm">{recipes.length.toLocaleString()} recipes indexed</Badge>
+          {plan.missingMaterialTypes > 0 && (
+            <Badge variant="neutral" size="sm">{plan.missingMaterialTypes.toLocaleString()} missing</Badge>
+          )}
+          {warningCount > 0 && (
+            <Badge variant="warning" size="sm">{warningCount.toLocaleString()} warnings</Badge>
+          )}
+        </div>
+      </div>
+
+      {plan.entries.length === 0 ? (
+        <EmptyState
+          variant="no-data"
+          icon="scroll"
+          title="Add a saved recipe to start planning."
+          description="Pick any Forge recipe above to calculate exact recipe copies, missing materials, XP yield, and output value."
+        />
+      ) : (
+        <div className={styles.queueList}>
+          {plan.entries.map((entry) => {
+            const isFocused = focusedEntryKey === entry.recipe.recipeName;
+            const rarityVariant = entry.recipe.quality.toLowerCase() as BadgeVariant;
+
+            return (
+              <Card
                 key={entry.key}
-                className={`plan-entry ${focusedEntryKey === entry.recipe.recipeName ? "focused" : ""}`}
+                padding="md"
+                variant={isFocused ? "elevated" : "default"}
+                accent={entry.warnings.length > 0 ? "warning" : undefined}
                 onMouseEnter={() => prefetchItem(entry.recipe.resultName)}
               >
                 {entry.warnings.length > 0 && (
-                  <div className="warning-row">
-                    <AlertTriangle size={15} />
-                    <div>
-                      <strong>Check before bulk crafting</strong>
-                      <p>{entry.warnings.slice(0, 2).join(" | ")}</p>
-                    </div>
+                  <div style={{ marginBottom: "0.65rem" }}>
+                    <Banner variant="warning">
+                      <strong>Check before bulk crafting:</strong> {entry.warnings.slice(0, 2).join(" | ")}
+                    </Banner>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  className="entry-title"
-                  onClick={() => {
-                    setFocusedEntryKey(entry.recipe.recipeName);
-                    setStatusMessage(`${entry.recipe.resultName} details updated below.`);
-                  }}
-                >
-                  <img
-                    src={getTrustedGameImageUrl(entry.recipe.resultImageUrl || entry.recipe.imageUrl) || "/favicon.ico"}
-                    alt=""
-                    width={42}
-                    height={42}
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
-                    }}
-                  />
-                  <span>
-                    <strong>{entry.recipe.resultName}</strong>
-                    <small><QualityText value={entry.recipe.quality}>{entry.recipe.quality}</QualityText> | Lv.{entry.recipe.levelRequired} | {entry.recipe.resultType || "Forge result"}</small>
-                  </span>
-                </button>
+                <div className={styles.queueItemTop}>
+                  <div className={styles.matCellIdentity}>
+                    <div className={styles.itemThumb}>
+                      <GameImage
+                        src={entry.recipe.resultImageUrl || entry.recipe.imageUrl}
+                        alt=""
+                        width={28}
+                        height={28}
+                      />
+                    </div>
+                    <div className={styles.matCellText}>
+                      <div className={styles.actionsCluster}>
+                        <button
+                          type="button"
+                          className={styles.itemTitleBtn}
+                          onClick={() => {
+                            setFocusedEntryKey(isFocused ? "" : entry.recipe.recipeName);
+                            setStatusMessage(`${entry.recipe.resultName} details toggled.`);
+                          }}
+                        >
+                          <QualityText value={entry.recipe.quality}>{entry.recipe.resultName}</QualityText>
+                        </button>
+                        <Badge variant={rarityVariant} size="sm">{entry.recipe.quality}</Badge>
+                        <span className={styles.syncText}>
+                          Lv. {entry.recipe.levelRequired} · {entry.recipe.resultType || "Forge"}
+                        </span>
+                      </div>
+                      <div className={styles.matCellMeta}>
+                        <span>{entry.recipe.sourceSummary}</span>
+                        <span>·</span>
+                        <span>{entry.liquidity.label}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="entry-controls">
-                  <NumberField
+                  <div className={styles.actionsCluster}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="items" size="xs" aria-hidden="true" />}
+                      aria-label={`Open result item details for ${entry.recipe.resultName}`}
+                      onClick={() => openItemByName(entry.recipe.resultName)}
+                    >
+                      Result
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="scroll" size="xs" aria-hidden="true" />}
+                      aria-label={`Open recipe item details for ${entry.recipe.recipeName}`}
+                      onClick={() => openItemByName(entry.recipe.recipeName)}
+                    >
+                      Recipe
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={<Icon name="trash" size="xs" aria-hidden="true" />}
+                      aria-label={`Remove ${entry.recipe.resultName} from forge plan`}
+                      onClick={() => removeLine(entry.recipe.recipeName)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+
+                <div className={styles.entryControlsGrid}>
+                  <NumberInput
                     label="Crafts"
-                    ariaLabel={`Craft quantity for ${entry.recipe.recipeName}`}
-                    value={entry.quantity ?? ""}
-                    onChange={(value) => updateLine(entry.recipe.recipeName, "quantity", value)}
+                    min={0}
+                    max={999999}
+                    value={entry.quantity === 0 ? 0 : entry.quantity || 0}
+                    onChange={(val) => updateLine(entry.recipe.recipeName, "quantity", String(val))}
+                    aria-label={`Craft quantity for ${entry.recipe.recipeName}`}
                   />
-                  <NumberField
+                  <NumberInput
                     label="Owned recipes"
-                    ariaLabel={`Owned recipe copies for ${entry.recipe.recipeName}`}
-                    value={entry.ownedRecipes ?? ""}
-                    onChange={(value) => updateLine(entry.recipe.recipeName, "ownedRecipes", value)}
+                    min={0}
+                    max={999999}
+                    value={entry.ownedRecipes === 0 ? 0 : entry.ownedRecipes || 0}
+                    onChange={(val) => updateLine(entry.recipe.recipeName, "ownedRecipes", String(val))}
+                    aria-label={`Owned recipe copies for ${entry.recipe.recipeName}`}
                   />
                 </div>
 
-                <div className="entry-stats">
-                  <Stat label="Recipe copies" value={`${entry.recipeCopiesMissing}/${entry.recipeCopiesNeeded} missing`} />
-                  <Stat label="Missing materials" value={`${entry.materials.filter((row) => row.missing > 0).length} types`} />
-                  <Stat label="Missing cost" value={`${formatGold(entry.totalMissingCost)}g`} />
-                  <Stat label="Output value" value={`${formatGold(entry.outputValueTotal)}g`} />
+                <div className={styles.statStrip} style={{ marginTop: "0.65rem" }}>
+                  <div className={styles.statStripCell}>
+                    <span className={styles.statLabel}>Recipes Needed</span>
+                    <strong className={styles.statValue}>
+                      {entry.recipeCopiesMissing}/{entry.recipeCopiesNeeded} missing
+                    </strong>
+                  </div>
+                  <div className={styles.statStripCell}>
+                    <span className={styles.statLabel}>Missing Cost</span>
+                    <strong className={styles.statValue}>
+                      {formatGold(entry.totalMissingCost)}
+                      <GoldIcon size={11} />
+                    </strong>
+                  </div>
+                  <div className={styles.statStripCell}>
+                    <span className={styles.statLabel}>Output ({entry.outputSource})</span>
+                    <strong className={styles.statValue}>
+                      {formatGold(entry.outputValueTotal)}
+                      <GoldIcon size={11} />
+                    </strong>
+                    <span className={styles.statSub}>{formatGold(entry.outputValueEach)} ea</span>
+                  </div>
+                  {entry.forgeExpTotal > 0 && (
+                    <div className={styles.statStripCell}>
+                      <span className={styles.statLabel}>EXP Yield</span>
+                      <strong className={`${styles.statValue} ${styles.statValueGood}`}>
+                        +{entry.forgeExpTotal.toLocaleString()} Forge
+                      </strong>
+                      {entry.strengthExpTotal > 0 && (
+                        <span className={styles.statSub}>+{entry.strengthExpTotal.toLocaleString()} Str</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-
-                <div className="entry-actions">
-                  <button type="button" aria-label={`Open result item details for ${entry.recipe.resultName}`} onClick={() => openItemByName(entry.recipe.resultName)}>
-                    <Package size={15} /> Result
-                  </button>
-                  <button type="button" aria-label={`Open recipe item details for ${entry.recipe.recipeName}`} onClick={() => openItemByName(entry.recipe.recipeName)}>
-                    <ReceiptText size={15} /> Recipe
-                  </button>
-                  <button type="button" className="danger" aria-label={`Remove ${entry.recipe.resultName} from forge plan`} onClick={() => removeLine(entry.recipe.recipeName)}>
-                    <Trash2 size={15} /> Remove
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {selectedEntry && (
-        <aside className="plan-side" aria-label="Selected forge details">
-          <div className="detail-card hero-detail">
-            <img
-              src={getTrustedGameImageUrl(selectedEntry.recipe.resultImageUrl || selectedEntry.recipe.imageUrl) || "/favicon.ico"}
-              alt=""
-              width={56}
-              height={56}
-              loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/favicon.ico";
-              }}
-            />
-            <div>
-              <p><QualityText value={selectedEntry.recipe.quality}>{selectedEntry.recipe.quality}</QualityText></p>
-              <h3>{selectedEntry.recipe.resultName}</h3>
-              <span>{selectedEntry.recipe.description || "Forge recipe result"}</span>
-            </div>
-          </div>
-          <div className="detail-card">
-            <h3>Recipe source</h3>
-            <p>{selectedEntry.recipe.sourceSummary}</p>
-          </div>
-          <div className="detail-card">
-            <h3>Sell reference</h3>
-            <div className="side-stat"><span>Best output value</span><strong>{formatGold(selectedEntry.outputValueEach)}g ea</strong></div>
-            <div className="side-stat"><span>Path</span><strong>{selectedEntry.outputSource}</strong></div>
-            <div className="side-stat"><span>Liquidity</span><strong>{selectedEntry.liquidity.label}</strong></div>
-            <p className="muted">{selectedEntry.liquidity.note}</p>
-          </div>
-        </aside>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </section>
   );

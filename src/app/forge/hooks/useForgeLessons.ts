@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import rawMaterials from "@/data/normalized-forge-materials.json";
 import rawXpLevels from "@/data/skill-xp-levels.json";
 import { getProfileSkillLevel, isStarterProfile, useProfiles } from "@/lib/profiles";
+import { getProfileConquestRank } from "@/lib/profile-calculations";
 import { usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
 import { getSafeMarketPrice } from "@/lib/market-pricing";
 import { getProfileStorageKey } from "@/lib/profile-storage";
+import { ASCENSION_BUFFS, getAssaultBuff, type AssaultRank } from "@/lib/skill-profit";
 import {
   FORGE_OWNED_STORAGE_KEY,
   FORGE_OWNED_SYNC_EVENT,
@@ -24,6 +26,7 @@ import {
 import {
   calculateDynamicMaterialYield,
   getForgeHourlyRate,
+  getTemperShardBonus,
   QUALITY_SPEED_MULTIPLIERS,
 } from "@/lib/forge-lesson-math";
 
@@ -109,22 +112,27 @@ export function calculateProjectedLevel(
 export function calculateSessionSummary(
   queuedItems: QueuedLessonItem[],
   playerLevel: number = 1,
-  currentLevelXp: number = 0
+  currentLevelXp: number = 0,
+  effMultiplier: number = 1.0
 ): LessonSessionSummary {
   let totalForgeExp = 0;
   let totalDurationSeconds = 0;
   let totalCost = 0;
-  let weightedEffSum = 0;
+  let weightedTemperHours = 0;
 
   for (const item of queuedItems) {
     totalForgeExp += item.totalExp;
     totalDurationSeconds += item.totalDurationSeconds;
     totalCost += item.totalCost;
-    weightedEffSum += item.material.penaltyEff * item.totalDurationSeconds;
+    // Temper fills at ~100 per 24h at 100% penaltyEff (scales with efficiency multiplier & material fit)
+    weightedTemperHours += (item.totalDurationSeconds / 3600) * Math.max(0.1, effMultiplier) * item.material.penaltyEff;
   }
 
   totalForgeExp = Math.floor(totalForgeExp);
   const totalStrengthExp = Math.floor(totalForgeExp * 0.05);
+  const temperBonus = getTemperShardBonus(playerLevel);
+  const estimatedTemperBarPercent = Math.min(100, Math.round((weightedTemperHours / 24) * 100));
+  const estimatedTemperShards = Math.floor(temperBonus.shards * (estimatedTemperBarPercent / 100));
 
   const { projectedLevel, progressPercent } = calculateProjectedLevel(playerLevel, currentLevelXp, totalForgeExp);
 
@@ -138,6 +146,11 @@ export function calculateSessionSummary(
     queuedItems,
     totalForgeExp,
     totalStrengthExp,
+    temperBarFullShards: temperBonus.shards,
+    temperBarFullHalfShards: temperBonus.halfShards,
+    temperBarExact: temperBonus.isExactMilestone,
+    estimatedTemperBarPercent,
+    estimatedTemperShards,
     totalDurationSeconds,
     totalCost,
     projectedLevel,
@@ -148,11 +161,9 @@ export function calculateSessionSummary(
   };
 }
 
-// Persistent cache across level changes (invalidated only when market prices or buff multiplier change)
-const levelSolutionCache = new Map<string, CalculatedLessonMaterial>();
-
+// Per-estimation local solver cache avoids stale cross-price collisions
 export function clearGoalEstimateCache(): void {
-  levelSolutionCache.clear();
+  // No-op kept for API compatibility; calculateGoalEstimate now uses scoped per-call memoization.
 }
 
 export function calculateGoalEstimate(
@@ -190,12 +201,13 @@ export function calculateGoalEstimate(
     };
   }
 
-  // Progressive level consideration for multi-level journeys
+  const safeEffMult = Math.max(0.1, effMultiplier);
+
+  // Progressive level consideration for multi-level fallback references
   const effectiveClimbLevel = targetLevel > currentLevel
     ? Math.min(targetLevel, Math.max(currentLevel, Math.floor((currentLevel + targetLevel) / 2)))
     : currentLevel;
 
-  // Pre-resolve prices once to eliminate thousands of repeated lookups
   const priceMap = new Map<string, number>();
   for (const m of allMaterials) {
     const safePrice = marketData ? getSafeMarketPrice(marketData[m.name]).value : 0;
@@ -207,51 +219,74 @@ export function calculateGoalEstimate(
     return calculateLessonMaterialEfficiency(m, effectiveClimbLevel, buffMultiplier, livePrice);
   });
 
-  const firstPrice = priceMap.get(allMaterials[0]?.name || "") || 0;
-  const lastPrice = priceMap.get(allMaterials[allMaterials.length - 1]?.name || "") || 0;
-  const priceSig = `${firstPrice}_${lastPrice}_${priceMap.size}`;
+  const scopedCache = new Map<string, CalculatedLessonMaterial>();
 
   const getBestAtLevel = (lvl: number, mode: "cheapest" | "fastest" | "best"): CalculatedLessonMaterial => {
-    const cacheKey = `${lvl}_${mode}_${buffMultiplier.toFixed(2)}_${effMultiplier.toFixed(2)}_${priceSig}`;
-    const cached = levelSolutionCache.get(cacheKey);
+    const cacheKey = `${lvl}_${mode}`;
+    const cached = scopedCache.get(cacheKey);
     if (cached) return cached;
 
-    let bestMat: CalculatedLessonMaterial | null = null;
-    let bestMetric = mode === "cheapest" ? Infinity : -Infinity;
-
-    for (const m of allMaterials) {
+    const evaluated = allMaterials.map((m) => {
       const livePrice = priceMap.get(m.name) || m.marketPrice;
       const calc = calculateLessonMaterialEfficiency(m, lvl, buffMultiplier, livePrice);
-      const effectiveBurnTime = Math.max(0.1, calc.timeSeconds / effMultiplier);
-      const effectiveExpPerSec = effectiveBurnTime > 0 ? calc.effectiveExp / effectiveBurnTime : 0;
+      const effectiveBurnTime = Math.max(0.1, calc.timeSeconds / safeEffMult);
+      // Unrounded EXP/sec removes 0.01-EXP rounding jitter within identical speed tiers
+      const rawExpPerSec = effectiveBurnTime > 0 ? calc.effectiveExp / effectiveBurnTime : 0;
+      return { calc, livePrice, rawExpPerSec };
+    });
 
-      let metric: number;
-      if (mode === "cheapest") {
-        metric = calc.goldPerExp;
-        if (metric < bestMetric) {
-          bestMetric = metric;
-          bestMat = calc;
+    const pricedPool = evaluated.filter((item) => item.livePrice > 0);
+    const pool = pricedPool.length > 0 ? pricedPool : evaluated;
+
+    let selected = pool[0]?.calc || calculated[0];
+
+    if (mode === "cheapest") {
+      let bestCost = Infinity;
+      let bestSpeed = -1;
+      for (const { calc, rawExpPerSec } of pool) {
+        if (
+          calc.goldPerExp < bestCost - 0.005 ||
+          (Math.abs(calc.goldPerExp - bestCost) <= 0.005 && rawExpPerSec > bestSpeed)
+        ) {
+          bestCost = calc.goldPerExp;
+          bestSpeed = rawExpPerSec;
+          selected = calc;
         }
-      } else if (mode === "fastest") {
-        metric = effectiveExpPerSec;
-        if (metric > bestMetric) {
-          bestMetric = metric;
-          bestMat = calc;
+      }
+    } else if (mode === "fastest") {
+      const maxSpeed = pool.reduce((max, item) => Math.max(max, item.rawExpPerSec), 0);
+      // Items within 0.35% of peak speed belong to the exact same theoretical speed tier; break ties by lowest gold/EXP
+      const speedTierThreshold = maxSpeed * 0.9965;
+      let bestTierCost = Infinity;
+      let bestTierSpeed = -1;
+      for (const { calc, rawExpPerSec } of pool) {
+        if (rawExpPerSec >= speedTierThreshold) {
+          if (
+            calc.goldPerExp < bestTierCost - 0.005 ||
+            (Math.abs(calc.goldPerExp - bestTierCost) <= 0.005 && rawExpPerSec > bestTierSpeed)
+          ) {
+            bestTierCost = calc.goldPerExp;
+            bestTierSpeed = rawExpPerSec;
+            selected = calc;
+          }
         }
-      } else {
-        // "best": Pareto efficiency score = effectiveExpPerSec / sqrt(max(0.2, goldPerExp))
-        metric = effectiveExpPerSec / Math.sqrt(Math.max(0.2, calc.goldPerExp));
-        if (calc.hasPenalty) metric *= 0.5;
-        if (metric > bestMetric) {
-          bestMetric = metric;
-          bestMat = calc;
+      }
+    } else {
+      // "best" (Balanced): Pareto tradeoff weighting speed vs gold/EXP with smooth penalty curve
+      let bestScore = -Infinity;
+      for (const { calc, rawExpPerSec } of pool) {
+        const penaltyWeight =
+          calc.warningType === "TOO_ADVANCED" ? 0.5 : Math.pow(Math.max(0.1, calc.penaltyEff), 1.5);
+        const score = (rawExpPerSec / Math.sqrt(Math.max(0.2, calc.goldPerExp))) * penaltyWeight;
+        if (score > bestScore) {
+          bestScore = score;
+          selected = calc;
         }
       }
     }
 
-    const result = bestMat || calculated[0];
-    levelSolutionCache.set(cacheKey, result);
-    return result;
+    scopedCache.set(cacheKey, selected);
+    return selected;
   };
 
   const solveBracketPath = (mode: "cheapest" | "fastest" | "best"): GoalProgressionStep[] => {
@@ -259,37 +294,49 @@ export function calculateGoalEstimate(
     let currBracketStart = currentLevel;
     let currMat = getBestAtLevel(currentLevel, mode);
     let bracketQtyAcc = 0;
+    let prevEffExp = currMat.effectiveExp;
+    let carryExp = 0;
 
     for (let lvl = currentLevel; lvl < targetLevel; lvl++) {
       const lvlEntry = xpTable[String(lvl)] || { expForNextLevel: 139 };
-      const xpForThisLvl = lvl === currentLevel ? Math.max(0, lvlEntry.expForNextLevel - currentLevelXp) : lvlEntry.expForNextLevel;
+      const rawXpForLvl =
+        lvl === currentLevel ? Math.max(0, lvlEntry.expForNextLevel - currentLevelXp) : lvlEntry.expForNextLevel;
+      const xpForThisLvl = Math.max(0, rawXpForLvl - carryExp);
+      carryExp = Math.max(0, carryExp - rawXpForLvl);
+
       const bestMatAtThisLvl = getBestAtLevel(lvl, mode);
 
       if (bestMatAtThisLvl.name !== currMat.name && lvl > currBracketStart) {
         const qty = Math.ceil(bracketQtyAcc);
-        const itemDuration = Math.max(0.1, currMat.timeSeconds / effMultiplier);
-        steps.push({
-          fromLevel: currBracketStart,
-          toLevel: lvl,
-          material: currMat,
-          quantityNeeded: qty,
-          cost: qty * currMat.liveMarketPrice,
-          durationSeconds: Math.round(qty * itemDuration),
-        });
+        if (qty > 0) {
+          const itemDuration = Math.max(0.1, currMat.timeSeconds / safeEffMult);
+          steps.push({
+            fromLevel: currBracketStart,
+            toLevel: lvl,
+            material: currMat,
+            quantityNeeded: qty,
+            cost: qty * currMat.liveMarketPrice,
+            durationSeconds: Math.round(qty * itemDuration),
+          });
+          carryExp += Math.max(0, qty - bracketQtyAcc) * Math.max(0.1, prevEffExp);
+        }
         currBracketStart = lvl;
         currMat = bestMatAtThisLvl;
         bracketQtyAcc = 0;
       }
 
-      const livePrice = priceMap.get(currMat.name) || currMat.marketPrice;
-      const matAtLvl = calculateLessonMaterialEfficiency(currMat, lvl, buffMultiplier, livePrice);
-      const qtyAtLvl = xpForThisLvl / Math.max(0.1, matAtLvl.effectiveExp);
-      bracketQtyAcc += qtyAtLvl;
+      if (xpForThisLvl > 0) {
+        const livePrice = priceMap.get(currMat.name) || currMat.marketPrice;
+        const matAtLvl = calculateLessonMaterialEfficiency(currMat, lvl, buffMultiplier, livePrice);
+        prevEffExp = matAtLvl.effectiveExp;
+        const qtyAtLvl = xpForThisLvl / Math.max(0.1, matAtLvl.effectiveExp);
+        bracketQtyAcc += qtyAtLvl;
+      }
     }
 
     if (bracketQtyAcc > 0 && currBracketStart < targetLevel) {
       const qty = Math.ceil(bracketQtyAcc);
-      const itemDuration = Math.max(0.1, currMat.timeSeconds / effMultiplier);
+      const itemDuration = Math.max(0.1, currMat.timeSeconds / safeEffMult);
       steps.push({
         fromLevel: currBracketStart,
         toLevel: targetLevel,
@@ -638,8 +685,9 @@ export function useForgeLessons() {
     return detectProfileForgeAscension(activeProfile);
   }, [activeProfile]);
 
-  // 2. Buff toggles & inputs
-  // Automatically detect membership from user preferences if available
+  // 2. Buff toggles & Skill-Profit-aligned Loadout inputs (SSR-safe hydration, load persisted overrides in useEffect)
+  const [buffsHydrated, setBuffsHydrated] = useState(false);
+
   const membershipFromPrefs = Boolean(preferences?.membership);
   const [hasMembershipBuff, setHasMembershipBuff] = useState<boolean>(membershipFromPrefs);
 
@@ -649,19 +697,110 @@ export function useForgeLessons() {
     }
   }, [preferences?.membership]);
 
+  const [conquestRank, setConquestRank] = useState<AssaultRank>("none");
+  const [energizingPoolExp, setEnergizingPoolExp] = useState<number>(0);
+  const [ascensionBuffIds, setAscensionBuffIds] = useState<string[]>([]);
+  const [manualClassBonus, setManualClassBonus] = useState<boolean>(false);
   const [hasCampaignBuff, setHasCampaignBuff] = useState<boolean>(false);
   const [shrineBuffPercent, setShrineBuffPercent] = useState<number>(0);
   const [hasDailyBlessing, setHasDailyBlessing] = useState<boolean>(false);
   const [customBuffPercent, setCustomBuffPercent] = useState<number>(0);
-  // Uncapped Extra EXP and Efficiency inputs
   const [extraExpBuffPercent, setExtraExpBuffPercent] = useState<number>(0);
   const [extraEffBuffPercent, setExtraEffBuffPercent] = useState<number>(0);
+
+  // Load saved buffs + profile Conquest defaults strictly on client effect (avoids hydration mismatch)
+  useEffect(() => {
+    const nextSaved = readScopedStorage<{
+      conquestRank?: AssaultRank;
+      energizingPoolExp?: number;
+      ascensionBuffIds?: string[];
+      manualClassBonus?: boolean;
+      hasCampaignBuff?: boolean;
+      hasDailyBlessing?: boolean;
+      extraExpBuffPercent?: number;
+      extraEffBuffPercent?: number;
+    }>(FORGE_LESSON_BUFFS_STORAGE_KEY, activeProfileId, {});
+    const profileConquest = activeProfile ? (getProfileConquestRank(activeProfile) as AssaultRank) : "none";
+    setConquestRank(nextSaved.conquestRank ?? profileConquest);
+    setEnergizingPoolExp(Number(nextSaved.energizingPoolExp) || 0);
+    setAscensionBuffIds(Array.isArray(nextSaved.ascensionBuffIds) ? nextSaved.ascensionBuffIds.slice(0, 5) : []);
+    setManualClassBonus(Boolean(nextSaved.manualClassBonus));
+    setHasCampaignBuff(Boolean(nextSaved.hasCampaignBuff));
+    setHasDailyBlessing(Boolean(nextSaved.hasDailyBlessing));
+    setExtraExpBuffPercent(Number(nextSaved.extraExpBuffPercent) || 0);
+    setExtraEffBuffPercent(Number(nextSaved.extraEffBuffPercent) || 0);
+    setBuffsHydrated(true);
+  }, [activeProfileId, activeProfile]);
+
+  // Persist Forge buff loadout per active profile after hydration load completes
+  useEffect(() => {
+    if (!buffsHydrated || typeof window === "undefined") return;
+    try {
+      const key = getProfileStorageKey(FORGE_LESSON_BUFFS_STORAGE_KEY, activeProfileId);
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          conquestRank,
+          energizingPoolExp,
+          ascensionBuffIds,
+          manualClassBonus,
+          hasCampaignBuff,
+          hasDailyBlessing,
+          extraExpBuffPercent,
+          extraEffBuffPercent,
+        })
+      );
+    } catch {}
+  }, [
+    buffsHydrated,
+    activeProfileId,
+    conquestRank,
+    energizingPoolExp,
+    ascensionBuffIds,
+    manualClassBonus,
+    hasCampaignBuff,
+    hasDailyBlessing,
+    extraExpBuffPercent,
+    extraEffBuffPercent,
+  ]);
+
+  const toggleAscensionBuff = useCallback((id: string) => {
+    setAscensionBuffIds((current) => {
+      if (current.includes(id)) return current.filter((item) => item !== id);
+      if (current.length >= 5) return current;
+      return [...current, id];
+    });
+  }, []);
+
+  const clearAscensionBuffs = useCallback(() => {
+    setAscensionBuffIds([]);
+  }, []);
 
   // Detect Cursed/Forsaken penalty or Blacksmith (+10% EXP, +10% Eff) bonuses
   const profileClassName = String(activeProfile?.className || (activeProfile as any)?.class || "").trim();
   const normalizedClass = profileClassName.toLowerCase();
   const isCursedOrForsaken = normalizedClass.includes("cursed") || normalizedClass.includes("forsaken");
-  const isBlacksmith = normalizedClass.includes("blacksmith");
+  const isBlacksmith = profileClassName ? normalizedClass.includes("blacksmith") : manualClassBonus;
+
+  const selectedAscensionBuffs = useMemo(
+    () =>
+      ascensionBuffIds
+        .map((id) => ASCENSION_BUFFS.find((b) => b.id === id))
+        .filter((b): b is (typeof ASCENSION_BUFFS)[number] => Boolean(b)),
+    [ascensionBuffIds]
+  );
+
+  const ascensionExpPercent = useMemo(
+    () => selectedAscensionBuffs.filter((b) => b.type === "Exp").reduce((sum, b) => sum + b.value, 0),
+    [selectedAscensionBuffs]
+  );
+
+  const ascensionEffPercent = useMemo(
+    () => selectedAscensionBuffs.filter((b) => b.type === "Eff").reduce((sum, b) => sum + b.value, 0),
+    [selectedAscensionBuffs]
+  );
+
+  const assaultBuff = useMemo(() => getAssaultBuff(conquestRank), [conquestRank]);
 
   const totalBuffMultiplier = useMemo(() => {
     // Base EXP multiplier: Cursed & Forsaken have a default -50% primary EXP penalty (0.50x)
@@ -669,20 +808,37 @@ export function useForgeLessons() {
     if (isBlacksmith) mult += 0.10;
     if (hasMembershipBuff) mult += 0.15;
     if (hasCampaignBuff) mult += 0.15;
-    if (shrineBuffPercent > 0) mult += shrineBuffPercent / 100;
     if (hasDailyBlessing) mult += 0.05;
+    if (assaultBuff.exp > 0) mult += assaultBuff.exp / 100;
+    if (energizingPoolExp > 0) mult += Math.min(15, Math.max(0, energizingPoolExp)) / 100;
+    if (ascensionExpPercent > 0) mult += ascensionExpPercent / 100;
+    if (shrineBuffPercent > 0) mult += shrineBuffPercent / 100;
     if (customBuffPercent > 0) mult += customBuffPercent / 100;
     if (extraExpBuffPercent > 0) mult += extraExpBuffPercent / 100;
     return Number(mult.toFixed(4));
-  }, [isCursedOrForsaken, isBlacksmith, hasMembershipBuff, hasCampaignBuff, shrineBuffPercent, hasDailyBlessing, customBuffPercent, extraExpBuffPercent]);
+  }, [
+    isCursedOrForsaken,
+    isBlacksmith,
+    hasMembershipBuff,
+    hasCampaignBuff,
+    hasDailyBlessing,
+    assaultBuff.exp,
+    energizingPoolExp,
+    ascensionExpPercent,
+    shrineBuffPercent,
+    customBuffPercent,
+    extraExpBuffPercent,
+  ]);
 
   const totalEffMultiplier = useMemo(() => {
     let mult = 1.0;
     if (isBlacksmith) mult += 0.10;
     if (hasMembershipBuff) mult += 0.10;
+    if (assaultBuff.efficiency > 0) mult += assaultBuff.efficiency / 100;
+    if (ascensionEffPercent > 0) mult += ascensionEffPercent / 100;
     if (extraEffBuffPercent > 0) mult += extraEffBuffPercent / 100;
-    return mult;
-  }, [isBlacksmith, hasMembershipBuff, extraEffBuffPercent]);
+    return Number(mult.toFixed(4));
+  }, [isBlacksmith, hasMembershipBuff, assaultBuff.efficiency, ascensionEffPercent, extraEffBuffPercent]);
 
   // 3. Duration planner (Hours & Minutes, NO sliders) with smart defaults and localStorage persistence
   const getInitialDuration = useCallback(() => {
@@ -959,6 +1115,22 @@ export function useForgeLessons() {
     });
   }, [persistQueue]);
 
+  const replaceQueue = useCallback((batch: Record<string, number>) => {
+    setLessonQueue((prev) => {
+      if (Object.keys(prev).length > 0) {
+        setLastReplacedQueue(prev);
+      }
+      const next: Record<string, number> = {};
+      for (const [name, count] of Object.entries(batch)) {
+        if (count > 0) {
+          next[name] = Math.ceil(count);
+        }
+      }
+      persistQueue(next);
+      return next;
+    });
+  }, [persistQueue]);
+
   const setQueueQuantity = useCallback((name: string, count: number) => {
     setLessonQueue((prev) => {
       let next: Record<string, number>;
@@ -1064,8 +1236,8 @@ export function useForgeLessons() {
   }, [lessonQueue, materialsByName]);
 
   const sessionSummary = useMemo<LessonSessionSummary>(() => {
-    return calculateSessionSummary(queuedItems, forgeLevel, currentLevelXp);
-  }, [queuedItems, forgeLevel, currentLevelXp]);
+    return calculateSessionSummary(queuedItems, forgeLevel, currentLevelXp, totalEffMultiplier);
+  }, [queuedItems, forgeLevel, currentLevelXp, totalEffMultiplier]);
 
   // 11. Quick action: Fill session duration with a single material
   const fillSessionWithMaterial = useCallback((materialName: string) => {
@@ -1148,6 +1320,16 @@ export function useForgeLessons() {
     setForgeLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
+    conquestRank,
+    setConquestRank,
+    energizingPoolExp,
+    setEnergizingPoolExp,
+    ascensionBuffIds,
+    selectedAscensionBuffs,
+    toggleAscensionBuff,
+    clearAscensionBuffs,
+    manualClassBonus,
+    setManualClassBonus,
     hasCampaignBuff,
     setHasCampaignBuff,
     shrineBuffPercent,
@@ -1194,6 +1376,7 @@ export function useForgeLessons() {
     undoFillQueue,
     addToQueue,
     addBatchToQueue,
+    replaceQueue,
     setQueueQuantity,
     removeFromQueue,
     clearQueue,

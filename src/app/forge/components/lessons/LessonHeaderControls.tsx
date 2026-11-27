@@ -1,32 +1,72 @@
 "use client";
 
-import { useEffect, useId, useState, useRef, useCallback } from "react";
-import { ChevronDown, Clock, Flame, Shield, Sparkles, Zap } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import {
+  Badge,
+  Button,
+  Drawer,
+  Icon,
+  NumberInput,
+  Select,
+  Switch,
+  Tag,
+} from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon, ShardIcon } from "@/components/GoldIcon";
+import { formatGold } from "@/lib/format";
+import { ASCENSION_BUFFS, ASSAULT_OPTIONS, getAssaultBuff, type AssaultRank } from "@/lib/skill-profit";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
+import styles from "../../Forge.module.css";
 
 const COMMON_DURATIONS = [
-  { label: "30 min", totalMinutes: 30 },
-  { label: "1 hour", totalMinutes: 60 },
-  { label: "1 hr 30 min", totalMinutes: 90 },
-  { label: "2 hours", totalMinutes: 120 },
-  { label: "2 hr 30 min", totalMinutes: 150 },
-  { label: "3 hours", totalMinutes: 180 },
-  { label: "4 hours", totalMinutes: 240 },
-  { label: "6 hours", totalMinutes: 360 },
-  { label: "8 hours", totalMinutes: 480 },
-  { label: "10 hours", totalMinutes: 600 },
-  { label: "12 hours", totalMinutes: 720 },
+  { value: "30", label: "30 min" },
+  { value: "60", label: "1 hour" },
+  { value: "90", label: "1 hr 30 min" },
+  { value: "120", label: "2 hours" },
+  { value: "150", label: "2 hr 30 min" },
+  { value: "180", label: "3 hours" },
+  { value: "240", label: "4 hours" },
+  { value: "360", label: "6 hours" },
+  { value: "480", label: "8 hours" },
+  { value: "600", label: "10 hours" },
+  { value: "720", label: "12 hours" },
 ];
 
-export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsReturn }) {
+const GROUPED_ASCENSION_BUFFS = {
+  Eff: ASCENSION_BUFFS.filter((b) => b.type === "Eff"),
+  Exp: ASCENSION_BUFFS.filter((b) => b.type === "Exp"),
+};
+
+export function LessonHeaderControls({
+  lessons,
+  onOpenQueueTab,
+}: {
+  lessons: UseForgeLessonsReturn;
+  onOpenQueueTab?: () => void;
+}) {
   const {
     forgeLevel,
     setForgeLevel,
+    forgeAscensionLevel = 0,
     profileForgeLevel = 1,
-    isProfileLevelSynced = true,
     resetToProfileLevel,
     hasMembershipBuff,
     setHasMembershipBuff,
+    conquestRank = "none",
+    setConquestRank,
+    energizingPoolExp = 0,
+    setEnergizingPoolExp,
+    ascensionBuffIds = [],
+    selectedAscensionBuffs = [],
+    toggleAscensionBuff,
+    clearAscensionBuffs,
+    manualClassBonus = false,
+    setManualClassBonus,
+    hasCampaignBuff = false,
+    setHasCampaignBuff,
+    hasDailyBlessing = false,
+    setHasDailyBlessing,
     extraExpBuffPercent = 0,
     setExtraExpBuffPercent,
     extraEffBuffPercent = 0,
@@ -40,467 +80,415 @@ export function LessonHeaderControls({ lessons }: { lessons: UseForgeLessonsRetu
     isCursedOrForsaken,
     isBlacksmith,
     profileClassName,
+    activeProfile,
+    allCalculatedMaterials,
+    fillSessionWithMaterial,
+    clearQueue,
+    sessionSummary,
   } = lessons;
 
-  const levelInputId = useId();
-  const durationSelectId = useId();
-  const extraExpInputId = useId();
-  const extraEffInputId = useId();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const forgeAscensionLevel = lessons.forgeAscensionLevel || 0;
-
-  // Local level state for instant 120fps input feedback during rapid arrow stepping or typing
-  const [localLevel, setLocalLevel] = useState(forgeLevel);
-  const [rawLevelInput, setRawLevelInput] = useState<string>(String(forgeLevel));
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isInteractingRef = useRef<boolean>(false);
-  const [durationMenuOpen, setDurationMenuOpen] = useState(false);
-  const [highlightedDurationIndex, setHighlightedDurationIndex] = useState<number>(-1);
-  const durationMenuRef = useRef<HTMLDivElement>(null);
-  const durationTriggerRef = useRef<HTMLButtonElement>(null);
-  const durationOptionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  const openDurationMenu = useCallback(() => {
-    const activeIdx = COMMON_DURATIONS.findIndex((d) => d.totalMinutes === (targetHours * 60 + targetMinutes));
-    const initialIdx = activeIdx >= 0 ? activeIdx : 0;
-    setHighlightedDurationIndex(initialIdx);
-    setDurationMenuOpen(true);
-  }, [targetHours, targetMinutes]);
-
-  const closeDurationMenu = useCallback((focusTrigger: boolean = true) => {
-    setDurationMenuOpen(false);
-    setHighlightedDurationIndex(-1);
-    if (focusTrigger) {
-      durationTriggerRef.current?.focus();
-    }
-  }, []);
-
-  // Auto-scroll highlighted option into view
-  useEffect(() => {
-    if (durationMenuOpen && highlightedDurationIndex >= 0) {
-      const el = durationOptionRefs.current[highlightedDurationIndex];
-      if (el) {
-        el.scrollIntoView({ block: "nearest" });
-      }
-    }
-  }, [durationMenuOpen, highlightedDurationIndex]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (durationMenuRef.current && !durationMenuRef.current.contains(e.target as Node)) {
-        closeDurationMenu(false);
-      }
-    }
-    if (durationMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [durationMenuOpen, closeDurationMenu]);
-
-  // Reset interaction state and sync immediately when active profile switches
-  useEffect(() => {
-    isInteractingRef.current = false;
-    setLocalLevel(forgeLevel);
-    setRawLevelInput(String(forgeLevel));
-  }, [lessons.activeProfile?.id]);
-
-  // Sync external changes only when user is not actively interacting
-  useEffect(() => {
-    if (!isInteractingRef.current) {
-      setLocalLevel(forgeLevel);
-      setRawLevelInput(String(forgeLevel));
-    }
-  }, [forgeLevel]);
-
-  const commitLevel = useCallback((val: number) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-    isInteractingRef.current = false;
-    const clamped = Math.min(100, Math.max(1, Math.floor(val)));
-    setLocalLevel(clamped);
-    setRawLevelInput(String(clamped));
-    setForgeLevel(clamped);
-  }, [setForgeLevel]);
-
-  const handleLevelChange = (val: number, immediate: boolean = false) => {
-    const clamped = Math.min(100, Math.max(1, Math.floor(val)));
-    setLocalLevel(clamped);
-    setRawLevelInput(String(clamped));
-    isInteractingRef.current = true;
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    if (immediate) {
-      commitLevel(clamped);
-    } else {
-      debounceTimerRef.current = setTimeout(() => {
-        commitLevel(clamped);
-      }, 150);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
-  const totalExpPercent = Math.round((totalBuffMultiplier - 1) * 100);
-  const totalEffPercent = Math.round((totalEffMultiplier - 1) * 100);
-
-  // Unified Duration Calculation
   const totalSessionMinutes = targetHours * 60 + targetMinutes;
+  const totalExpPercent = Math.round((totalBuffMultiplier - 1.0) * 100);
+  const totalEffPercent = Math.round((totalEffMultiplier - 1.0) * 100);
+  const assaultBonus = getAssaultBuff(conquestRank as AssaultRank);
 
-  const handleDurationSelect = (mins: number) => {
-    const clampedMins = Math.min(720, Math.max(15, mins));
-    const h = Math.floor(clampedMins / 60);
-    const m = clampedMins % 60;
-    setTargetHours(h);
-    setTargetMinutes(m);
+  const activeModifierCount =
+    (hasMembershipBuff ? 1 : 0) +
+    (hasCampaignBuff ? 1 : 0) +
+    (hasDailyBlessing ? 1 : 0) +
+    (conquestRank !== "none" ? 1 : 0) +
+    (energizingPoolExp > 0 ? 1 : 0) +
+    ascensionBuffIds.length +
+    (isBlacksmith || (!isCursedOrForsaken && manualClassBonus) ? 1 : 0) +
+    (extraExpBuffPercent > 0 ? 1 : 0) +
+    (extraEffBuffPercent > 0 ? 1 : 0);
+
+  const applyDurationMinutes = (mins: number) => {
+    const clamped = Math.max(30, Math.min(720, Math.round(mins)));
+    setTargetHours(Math.floor(clamped / 60));
+    setTargetMinutes(clamped % 60);
   };
 
-  const stepDuration = (deltaMinutes: number) => {
-    handleDurationSelect(totalSessionMinutes + deltaMinutes);
-  };
+  const durationValue = COMMON_DURATIONS.some((d) => Number(d.value) === totalSessionMinutes)
+    ? String(totalSessionMinutes)
+    : "";
 
-  const handleDurationTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      if (!durationMenuOpen) {
-        openDurationMenu();
-      } else {
-        const delta = e.key === "ArrowDown" ? 1 : -1;
-        setHighlightedDurationIndex((prev) => {
-          const next = (prev + delta + COMMON_DURATIONS.length) % COMMON_DURATIONS.length;
-          return next;
-        });
-      }
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (!durationMenuOpen) {
-        openDurationMenu();
-      } else if (highlightedDurationIndex >= 0 && highlightedDurationIndex < COMMON_DURATIONS.length) {
-        handleDurationSelect(COMMON_DURATIONS[highlightedDurationIndex].totalMinutes);
-        closeDurationMenu(true);
-      }
-    } else if (e.key === "Escape" && durationMenuOpen) {
-      e.preventDefault();
-      closeDurationMenu(true);
-    } else if (e.key === "Home" && durationMenuOpen) {
-      e.preventDefault();
-      setHighlightedDurationIndex(0);
-    } else if (e.key === "End" && durationMenuOpen) {
-      e.preventDefault();
-      setHighlightedDurationIndex(COMMON_DURATIONS.length - 1);
-    } else if (e.key === "Tab" && durationMenuOpen) {
-      closeDurationMenu(false);
-    }
-  };
+  const recommendedCheapest = [...allCalculatedMaterials]
+    .filter((m) => !m.hasPenalty && m.displayedEff >= 100)
+    .sort((a, b) => a.goldPerExp - b.goldPerExp)[0]
+    || [...allCalculatedMaterials].sort((a, b) => a.goldPerExp - b.goldPerExp)[0]
+    || null;
+
+  const hasQueuedItems = sessionSummary.queuedItems.length > 0;
+
+  const modifierDrawerBody: ReactNode = (
+    <div className={styles.drawerBody}>
+      <div className={styles.drawerSyncRow}>
+        <div>
+          <strong>{activeProfile?.name || "Global loadout"}</strong>
+          {forgeAscensionLevel > 0 ? ` · Asc. ${forgeAscensionLevel}` : ""}
+          {profileClassName ? ` · ${profileClassName}` : ""}
+        </div>
+        <Link href="/profiles" className={styles.profileJumpLink}>
+          <span>Profiles</span>
+          <Icon name="arrowRight" size="xs" aria-hidden="true" />
+        </Link>
+      </div>
+
+      {isCursedOrForsaken && (
+        <Badge variant="danger" size="sm">
+          {profileClassName || "Cursed/Forsaken"} applies -50% Forging EXP
+        </Badge>
+      )}
+
+      <section className={styles.drawerSection} aria-label="Account and seasonal boosts">
+        <h3 className={styles.drawerSectionTitle}>
+          <Icon name="membership" size="sm" aria-hidden="true" />
+          <span>Account &amp; Active Boosts</span>
+        </h3>
+
+        <Switch
+          label="Membership (+15% EXP, +10% Eff)"
+          description="Also updates market sale fee estimate to 12% (vs. 15% non-member)"
+          checked={hasMembershipBuff}
+          onChange={(e) => setHasMembershipBuff(e.target.checked)}
+        />
+        {!isBlacksmith && !isCursedOrForsaken && (
+          <Switch
+            label="Blacksmith Class (+10% EXP)"
+            description="Toggle manually when not synced from your active character"
+            checked={manualClassBonus}
+            onChange={(e) => setManualClassBonus?.(e.target.checked)}
+          />
+        )}
+        <Switch
+          label="Campaign Buff (+15% EXP)"
+          description="Active world campaign forging bonus"
+          checked={hasCampaignBuff}
+          onChange={(e) => setHasCampaignBuff?.(e.target.checked)}
+        />
+        <Switch
+          label="Daily Blessing (+5% EXP)"
+          description="Active daily blessing bonus"
+          checked={hasDailyBlessing}
+          onChange={(e) => setHasDailyBlessing?.(e.target.checked)}
+        />
+      </section>
+
+      <section className={styles.drawerSection} aria-label="Guild Conquest and Energizing Pool">
+        <h3 className={styles.drawerSectionTitle}>
+          <Icon name="defense" size="sm" aria-hidden="true" />
+          <span>Guild Conquest &amp; Energizing Pool</span>
+        </h3>
+
+        <div className={styles.drawerTwoCol}>
+          <div className={styles.drawerField}>
+            <span className={styles.drawerFieldLabel}>Guild Conquest Rank</span>
+            <Select
+              ariaLabel="Guild Conquest Rank"
+              options={ASSAULT_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+              value={conquestRank}
+              onChange={(val) => setConquestRank?.(val as AssaultRank)}
+            />
+            <span className={styles.syncText}>
+              {conquestRank === "none"
+                ? "No Conquest bonus"
+                : `+${assaultBonus.exp}% EXP · +${assaultBonus.efficiency}% Eff`}
+            </span>
+          </div>
+
+          <div className={styles.drawerField}>
+            <NumberInput
+              label="Energizing Pool EXP (%)"
+              min={0}
+              max={15}
+              value={energizingPoolExp}
+              onChange={(val) => setEnergizingPoolExp?.(val)}
+              suffix="%"
+              helperText="0% to 15%"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.drawerSection} aria-label="Ascension perks">
+        <div className={styles.sectionTopRow}>
+          <h3 className={styles.drawerSectionTitle}>
+            <Icon name="xp" size="sm" aria-hidden="true" />
+            <span>Ascension Perks ({selectedAscensionBuffs.length}/5)</span>
+          </h3>
+          {selectedAscensionBuffs.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => clearAscensionBuffs?.()}>
+              Clear all
+            </Button>
+          )}
+        </div>
+
+        {selectedAscensionBuffs.length > 0 && (
+          <div className={styles.chipGroup}>
+            {selectedAscensionBuffs.map((buff) => (
+              <Tag
+                key={buff.id}
+                label={`${buff.label.replace("Lvl ", "L")} +${buff.value}% ${buff.type}`}
+                selected
+                onRemove={() => toggleAscensionBuff?.(buff.id)}
+                removeAriaLabel={`Remove ${buff.label}`}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className={styles.buffGroups}>
+          {(["Eff", "Exp"] as const).map((type) => (
+            <div key={type}>
+              <div className={styles.buffGroupTitle}>{type === "Eff" ? "Efficiency" : "Experience"}</div>
+              <div className={styles.buffRail}>
+                {GROUPED_ASCENSION_BUFFS[type].map((buff) => {
+                  const selected = ascensionBuffIds.includes(buff.id);
+                  const disabled = !selected && ascensionBuffIds.length >= 5;
+                  return (
+                    <button
+                      key={buff.id}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={disabled}
+                      onClick={() => toggleAscensionBuff?.(buff.id)}
+                      className={`${styles.buffButton} ${selected ? styles.buffSelected : ""}`}
+                    >
+                      <span>{buff.label.replace("Lvl ", "L")}</span>
+                      <strong>+{buff.value}%</strong>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.drawerSection} aria-label="Extra modifiers">
+        <h3 className={styles.drawerSectionTitle}>
+          <Icon name="filter" size="sm" aria-hidden="true" />
+          <span>Extra Modifiers</span>
+        </h3>
+
+        <div className={styles.drawerTwoCol}>
+          <NumberInput
+            label="Extra EXP (%)"
+            min={0}
+            max={500}
+            value={extraExpBuffPercent}
+            onChange={(val) => setExtraExpBuffPercent?.(val)}
+            suffix="%"
+            helperText="Scrolls or unlisted EXP boosts"
+          />
+          <NumberInput
+            label="Extra Efficiency (%)"
+            min={0}
+            max={500}
+            value={extraEffBuffPercent}
+            onChange={(val) => setExtraEffBuffPercent?.(val)}
+            suffix="%"
+            helperText="Additional speed modifiers"
+          />
+        </div>
+      </section>
+    </div>
+  );
 
   return (
-    <section className="lesson-header-controls" aria-label="Forge lesson parameters">
-      <div className="controls-unified-bar">
-        {/* Section 1: Player Level (Clean Stepper, No Pills) */}
-        <div className="toolbar-section level-section">
-          <div className="toolbar-section-header">
-            <span className="panel-kicker">
-              <Flame size={14} aria-hidden="true" /> Forge Skill
-            </span>
-            {profileForgeLevel > 0 && localLevel !== profileForgeLevel ? (
-              <button
-                type="button"
-                className="reset-to-profile-btn"
-                onClick={() => {
-                  commitLevel(profileForgeLevel);
-                }}
-                title={`Reset to profile level ${profileForgeLevel}`}
-                aria-label={`Reset to profile level ${profileForgeLevel}`}
-              >
-                Reset to Lv. {profileForgeLevel}
-              </button>
-            ) : (
-              <span className="toolbar-subtext">
-                {forgeAscensionLevel > 0 ? `Synced (Asc. ${forgeAscensionLevel})` : "Synced to Profile"}
-              </span>
-            )}
-          </div>
-          <div className="stepper-wrap compact">
-            <button
-              type="button"
-              className="stepper-btn mini"
-              onClick={() => handleLevelChange(localLevel - 1, false)}
-              disabled={localLevel <= 1}
-              aria-label="Decrease forge level"
-            >
-              -
-            </button>
-            <div className="number-display-wrap compact">
-              <label htmlFor={levelInputId} className="sr-only">Forge Level</label>
-              <span className="level-prefix">Lv.</span>
-              <input
-                id={levelInputId}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="off"
-                value={rawLevelInput}
-                onChange={(e) => {
-                  isInteractingRef.current = true;
-                  const raw = e.target.value.replace(/[^0-9]/g, "");
-                  setRawLevelInput(raw);
-                  if (raw !== "") {
-                    const parsed = parseInt(raw, 10);
-                    if (!Number.isNaN(parsed)) {
-                      const clamped = Math.min(100, Math.max(1, parsed));
-                      handleLevelChange(clamped, false);
-                    }
-                  }
-                }}
-                onBlur={() => {
-                  const val = parseInt(rawLevelInput, 10);
-                  const clamped = Number.isNaN(val) || val < 1 ? localLevel : Math.min(100, val);
-                  commitLevel(clamped);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const val = parseInt(rawLevelInput, 10);
-                    const clamped = Number.isNaN(val) || val < 1 ? localLevel : Math.min(100, val);
-                    commitLevel(clamped);
-                  }
-                }}
-                className="direct-number-input compact"
-              />
-              {forgeAscensionLevel > 0 && localLevel >= 100 && (
-                <span className="ascension-pill" title={`Ascension Level ${forgeAscensionLevel}`}>
-                  +{forgeAscensionLevel} Asc
+    <section className={styles.parameterStrip} aria-label="Forge lesson parameters">
+      {/* Left Spotlight Zone: Active Queue Summary OR Quick Auto-Fill Recommendation */}
+      <div className={styles.spotlightZone}>
+        {hasQueuedItems ? (
+          <>
+            <div className={styles.spotlightIdentity}>
+              <div className={styles.spotlightThumb}>
+                <GameImage
+                  src={sessionSummary.queuedItems[0].material.imageUrl}
+                  alt=""
+                  width={30}
+                  height={30}
+                />
+              </div>
+              <div className={styles.spotlightMeta}>
+                <span className={styles.paramLabel}>
+                  Active Queue ({sessionSummary.queuedItems.length})
                 </span>
-              )}
+                <span className={styles.spotlightTitle}>
+                  +{sessionSummary.totalForgeExp.toLocaleString()} Forge XP
+                </span>
+                <span className={styles.spotlightSub}>
+                  <span>~{sessionSummary.estimatedTemperBarPercent}% Temper (~{sessionSummary.estimatedTemperShards}</span>
+                  <ShardIcon size={11} />
+                  <span>)</span>
+                  <span>·</span>
+                  <span>{formatGold(sessionSummary.totalCost)}</span>
+                  <GoldIcon size={11} />
+                </span>
+              </div>
             </div>
-            <button
-              type="button"
-              className="stepper-btn mini"
-              onClick={() => handleLevelChange(localLevel + 1, false)}
-              disabled={localLevel >= 100}
-              aria-label="Increase forge level"
-            >
-              +
-            </button>
+
+            <div className={styles.actionsCluster}>
+              {onOpenQueueTab && (
+                <Button variant="secondary" size="sm" onClick={onOpenQueueTab}>
+                  Edit Queue
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="trash" size="xs" aria-hidden="true" />}
+                onClick={() => clearQueue()}
+                aria-label="Clear Queue"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={styles.spotlightIdentity}>
+              <div className={styles.spotlightThumb}>
+                {recommendedCheapest ? (
+                  <GameImage src={recommendedCheapest.imageUrl} alt="" width={30} height={30} />
+                ) : (
+                  <Icon name="critDamage" size="sm" aria-hidden="true" />
+                )}
+              </div>
+              <div className={styles.spotlightMeta}>
+                <span className={styles.paramLabel}>Best Value (Lv. {forgeLevel})</span>
+                <span className={styles.spotlightTitle}>
+                  {recommendedCheapest ? recommendedCheapest.name : "Select material"}
+                </span>
+                <span className={styles.spotlightSub}>
+                  {recommendedCheapest ? (
+                    <>
+                      <span>{recommendedCheapest.goldPerExp.toFixed(2)}g/EXP</span>
+                      <span>·</span>
+                      <span>~{Math.round(recommendedCheapest.expPerSecond * 3600).toLocaleString()} XP/hr</span>
+                    </>
+                  ) : (
+                    <span>Browse catalog below</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {recommendedCheapest && (
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Icon name="speed" size="xs" aria-hidden="true" />}
+                onClick={() => fillSessionWithMaterial(recommendedCheapest.name)}
+              >
+                Fill Session
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Right Inline Controls Zone */}
+      <div className={styles.controlsZone}>
+        <div className={styles.controlCell}>
+          <span className={styles.paramLabel}>
+            <Icon name="critDamage" size="xs" aria-hidden="true" /> Forge Skill
+          </span>
+          <div className={styles.controlCellRow}>
+            <div style={{ width: "160px" }}>
+              <NumberInput
+                value={forgeLevel}
+                min={1}
+                max={100}
+                prefix="Lv."
+                onChange={(val) => setForgeLevel(val)}
+                aria-label="Forge Level"
+              />
+            </div>
+            {profileForgeLevel > 0 && forgeLevel !== profileForgeLevel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="undo" size="xs" aria-hidden="true" />}
+                onClick={resetToProfileLevel}
+                aria-label={`Reset to profile level ${profileForgeLevel}`}
+                title={`Reset to profile Lv. ${profileForgeLevel}`}
+              />
+            )}
           </div>
         </div>
 
-        {/* Section 2: Unified Session Target (Single accessible picker, No Pills) */}
-        <div className="toolbar-section duration-section">
-          <div className="toolbar-section-header">
-            <span className="panel-kicker">
-              <Clock size={14} aria-hidden="true" /> Session Duration <span className="sr-only">Offline Session Target</span>
-            </span>
-            <span className="toolbar-subtext">{targetHours}h {targetMinutes > 0 ? `${targetMinutes}m` : ""}</span>
-          </div>
-          <div className="unified-duration-control">
-            <button
-              type="button"
-              className="stepper-btn mini duration-step-btn"
-              onClick={() => stepDuration(-30)}
+        <div className={styles.controlCell}>
+          <span className={styles.paramLabel}>
+            <Icon name="timer" size="xs" aria-hidden="true" /> Session{" "}
+            <span className="sr-only">Offline Session Target</span>
+          </span>
+          <div className={styles.controlCellRow}>
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={totalSessionMinutes <= 30}
+              onClick={() => applyDurationMinutes(totalSessionMinutes - 30)}
               aria-label="Decrease duration 30 minutes"
             >
               -30m
-            </button>
-            <div className={`duration-select-wrapper ${durationMenuOpen ? "open" : ""}`} ref={durationMenuRef}>
-              <button
-                ref={durationTriggerRef}
-                id={durationSelectId}
-                type="button"
-                className={`duration-trigger-btn ${durationMenuOpen ? "open" : ""}`}
-                onClick={() => {
-                  if (durationMenuOpen) {
-                    closeDurationMenu(false);
-                  } else {
-                    openDurationMenu();
-                  }
-                }}
-                onKeyDown={handleDurationTriggerKeyDown}
-                role="combobox"
-                aria-haspopup="listbox"
-                aria-expanded={durationMenuOpen}
-                aria-controls="duration-popover-listbox"
-                aria-activedescendant={
-                  durationMenuOpen && highlightedDurationIndex >= 0
-                    ? `duration-opt-${highlightedDurationIndex}`
-                    : undefined
-                }
-                aria-label="Select session duration"
-              >
-                <span className="duration-val">
-                  {COMMON_DURATIONS.find((d) => d.totalMinutes === totalSessionMinutes)?.label ||
-                    `${targetHours}h ${targetMinutes > 0 ? `${targetMinutes}m` : ""}`}
-                </span>
-                <ChevronDown size={14} className={`chevron-icon ${durationMenuOpen ? "flipped" : ""}`} />
-              </button>
-
-              {durationMenuOpen && (
-                <div
-                  id="duration-popover-listbox"
-                  className="duration-popover-menu"
-                  role="listbox"
-                  aria-label="Available session durations"
-                >
-                  {COMMON_DURATIONS.map((d, idx) => {
-                    const isSelected = d.totalMinutes === totalSessionMinutes;
-                    const isHighlighted = idx === highlightedDurationIndex;
-                    return (
-                      <button
-                        key={d.totalMinutes}
-                        ref={(el) => {
-                          durationOptionRefs.current[idx] = el;
-                        }}
-                        id={`duration-opt-${idx}`}
-                        type="button"
-                        className={`duration-option-btn ${isSelected ? "active" : ""} ${isHighlighted ? "highlighted" : ""}`}
-                        onMouseEnter={() => setHighlightedDurationIndex(idx)}
-                        onClick={() => {
-                          handleDurationSelect(d.totalMinutes);
-                          closeDurationMenu(true);
-                        }}
-                        role="option"
-                        aria-selected={isSelected}
-                      >
-                        <span>{d.label}</span>
-                        {isSelected && <span className="active-dot" aria-hidden="true">•</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+            </Button>
+            <div className={styles.durationSelectBox}>
+              <Select
+                options={COMMON_DURATIONS}
+                value={durationValue || String(totalSessionMinutes)}
+                placeholder={`${targetHours}h ${targetMinutes > 0 ? `${targetMinutes}m` : ""}`}
+                onChange={(val) => applyDurationMinutes(Number(val) || 360)}
+                ariaLabel="Select session duration"
+              />
             </div>
-            <button
-              type="button"
-              className="stepper-btn mini duration-step-btn"
-              onClick={() => stepDuration(30)}
+            <Button
+              variant="secondary"
+              size="sm"
               disabled={totalSessionMinutes >= 720}
+              onClick={() => applyDurationMinutes(totalSessionMinutes + 30)}
               aria-label="Increase duration 30 minutes"
             >
               +30m
-            </button>
+            </Button>
           </div>
         </div>
 
-        {/* Section 3: EXP & Efficiency Buffs */}
-        <div className="toolbar-section buffs-section">
-          <div className="toolbar-section-header">
-            <span className="panel-kicker">
-              <Sparkles size={14} aria-hidden="true" /> EXP & Efficiency Buffs
-            </span>
-            <div className={`buff-active-badge-group ${totalExpPercent !== 0 || totalEffPercent !== 0 ? "active" : ""}`}>
-              {isCursedOrForsaken && (
-                <span className="buff-badge-pill penalty-tag" title="Cursed / Forsaken class -50% base EXP penalty">
-                  {profileClassName || "Cursed"}
-                </span>
-              )}
-              {isBlacksmith && (
-                <span className="buff-badge-pill exp" title="Blacksmith class +10% Forge EXP & +10% Efficiency">
-                  Blacksmith (+10%)
-                </span>
-              )}
-              <span
-                className={`buff-badge-pill ${totalExpPercent < 0 ? "penalty" : "exp"}`}
-                title={`${totalExpPercent >= 0 ? "+" : ""}${totalExpPercent}% Forge Experience modifier`}
-              >
-                <Zap size={10} aria-hidden="true" />
-                <strong>{totalExpPercent >= 0 ? `+${totalExpPercent}%` : `${totalExpPercent}%`}</strong> EXP
-              </span>
-              <span className="buff-badge-dot" aria-hidden="true">·</span>
-              <span className="buff-badge-pill eff" title={`+${totalEffPercent}% Smithing Efficiency bonus`}>
-                <Clock size={10} aria-hidden="true" />
-                <strong>+{totalEffPercent}%</strong> Eff
-              </span>
-            </div>
-          </div>
-
-          <div className="buff-inputs-grid">
-            {/* Membership Status Toggle */}
-            <button
-              type="button"
-              className={`membership-pill-btn ${hasMembershipBuff ? "active" : ""}`}
-              onClick={() => setHasMembershipBuff(!hasMembershipBuff)}
-              aria-pressed={hasMembershipBuff}
-              title="Membership grants +15% EXP and +10% Efficiency"
+        <div className={styles.controlCell}>
+          <span className={styles.paramLabel}>
+            <Icon name="xp" size="xs" aria-hidden="true" /> Active Buffs
+          </span>
+          <div className={styles.buffTriggerCluster}>
+            <Badge variant={totalExpPercent < 0 ? "danger" : "neutral"} size="sm">
+              {totalExpPercent >= 0 ? `+${totalExpPercent}%` : `${totalExpPercent}%`} EXP
+            </Badge>
+            <Badge variant="neutral" size="sm">+{totalEffPercent}% Eff</Badge>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Icon name="filter" size="xs" aria-hidden="true" />}
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Configure EXP and Efficiency buffs"
             >
-              <Shield size={13} aria-hidden="true" />
-              <span>{hasMembershipBuff ? "Membership (+15% EXP · +10% Eff)" : "No Membership"}</span>
-            </button>
-
-            {/* Bonus EXP and Bonus Efficiency Inputs */}
-            <div className="buff-extra-inputs-row">
-              <div className="buff-field-group" title="Bonus Forge Experience %">
-                <label htmlFor={extraExpInputId} className="buff-field-label">
-                  <Zap size={11} aria-hidden="true" />
-                  <span>+EXP %</span>
-                </label>
-                <input
-                  id={extraExpInputId}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  autoComplete="off"
-                  value={extraExpBuffPercent === 0 ? "" : extraExpBuffPercent}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "");
-                    if (raw === "") {
-                      setExtraExpBuffPercent?.(0);
-                      return;
-                    }
-                    const val = parseInt(raw, 10);
-                    if (!Number.isNaN(val)) {
-                      setExtraExpBuffPercent?.(Math.min(500, Math.max(0, val)));
-                    }
-                  }}
-                  className="buff-number-field"
-                  aria-label="Bonus EXP percentage"
-                />
-              </div>
-
-              <div className="buff-field-group" title="Bonus Smithing Efficiency %">
-                <label htmlFor={extraEffInputId} className="buff-field-label">
-                  <Clock size={11} aria-hidden="true" />
-                  <span>+Eff %</span>
-                </label>
-                <input
-                  id={extraEffInputId}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  autoComplete="off"
-                  value={extraEffBuffPercent === 0 ? "" : extraEffBuffPercent}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, "");
-                    if (raw === "") {
-                      setExtraEffBuffPercent?.(0);
-                      return;
-                    }
-                    const val = parseInt(raw, 10);
-                    if (!Number.isNaN(val)) {
-                      setExtraEffBuffPercent?.(Math.min(500, Math.max(0, val)));
-                    }
-                  }}
-                  className="buff-number-field"
-                  aria-label="Bonus Efficiency percentage"
-                />
-              </div>
-            </div>
+              Loadout &amp; Boosts ({activeModifierCount})
+            </Button>
           </div>
         </div>
       </div>
+
+      <Drawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Loadout & Boosts"
+        description="Select Membership, Class, Guild Conquest, Energizing Pool, Ascension perks, and extra bonuses."
+        side="right"
+      >
+        {modifierDrawerBody}
+      </Drawer>
     </section>
   );
 }

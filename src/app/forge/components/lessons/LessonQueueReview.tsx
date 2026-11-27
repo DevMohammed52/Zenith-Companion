@@ -1,79 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { AlertTriangle, ArrowRight, ChevronDown, ChevronUp, Flame, Play, Sparkles, Trash2, X, Zap } from "lucide-react";
+import { useState } from "react";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Icon,
+  NumberInput,
+  ProgressBar,
+  type BadgeVariant,
+} from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon, ShardIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
 import { formatGold } from "@/lib/format";
-import { GoldIcon } from "@/components/GoldIcon";
+import { useItemModal } from "@/context/ItemModalContext";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
-import { MAX_OFFLINE_SECONDS } from "../../hooks/useForgeLessons";
+import styles from "../../Forge.module.css";
 
-function QueueItemQtyField({
-  materialName,
-  quantity,
-  onChangeQuantity,
-}: {
-  materialName: string;
-  quantity: number;
-  onChangeQuantity: (name: string, val: number) => void;
-}) {
-  const [raw, setRaw] = useState(String(quantity));
-  useEffect(() => {
-    setRaw(String(quantity));
-  }, [quantity]);
-
-  const commit = (val: number) => {
-    const clamped = Math.min(100000, Math.max(1, val));
-    setRaw(String(clamped));
-    onChangeQuantity(materialName, clamped);
-  };
-
-  return (
-    <input
-      id={`queue-qty-${materialName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
-      name={`queue-qty-${materialName}`}
-      type="text"
-      inputMode="numeric"
-      pattern="[0-9]*"
-      autoComplete="off"
-      value={raw}
-      onChange={(e) => {
-        const text = e.target.value.replace(/[^0-9]/g, "");
-        setRaw(text);
-        if (text !== "") {
-          const parsed = parseInt(text, 10);
-          if (!Number.isNaN(parsed)) {
-            const clamped = Math.min(100000, Math.max(1, parsed));
-            onChangeQuantity(materialName, clamped);
-          }
-        }
-      }}
-      onBlur={() => {
-        const parsed = parseInt(raw, 10);
-        const clamped = Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(100000, parsed);
-        commit(clamped);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          const parsed = parseInt(raw, 10);
-          const clamped = Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(100000, parsed);
-          commit(clamped);
-        }
-      }}
-      className="qty-input"
-      aria-label={`${materialName} quantity`}
-    />
-  );
+function useSafeItemModal() {
+  try {
+    return useItemModal();
+  } catch {
+    return { openItemByName: () => {}, prefetchItem: () => {} };
+  }
 }
 
 function formatDurationHms(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
-
-  const hh = String(hours).padStart(2, "0");
-  const mm = String(minutes).padStart(2, "0");
-  const ss = String(seconds).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatDurationSmart(totalSeconds: number): string {
@@ -82,12 +40,8 @@ function formatDurationSmart(totalSeconds: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
 
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m ${seconds}s`;
 }
 
@@ -96,8 +50,9 @@ export function LessonQueueReview({
   onSwitchSubView,
 }: {
   lessons: UseForgeLessonsReturn;
-  onSwitchSubView?: (view: "session" | "planner" | "catalog" | "inventory") => void;
+  onSwitchSubView?: (view: "catalog" | "planner" | "session" | "inventory") => void;
 }) {
+  const { openItemByName, prefetchItem } = useSafeItemModal();
   const {
     forgeLevel,
     queuedItems,
@@ -115,18 +70,22 @@ export function LessonQueueReview({
     undoFillQueue,
   } = lessons;
 
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(true);
+  const [breakdownOpen, setBreakdownOpen] = useState(true);
 
   const {
     totalForgeExp,
     totalStrengthExp,
+    temperBarFullShards,
+    temperBarFullHalfShards,
+    temperBarExact,
+    estimatedTemperBarPercent,
+    estimatedTemperShards,
     totalDurationSeconds,
     totalCost,
     projectedLevel,
     projectedLevelProgress,
   } = sessionSummary;
 
-  // Level-appropriate training material recommendations (no rare drops, no outgrown penalty)
   const trainingPool = (allCalculatedMaterials || visibleMaterials).filter(
     (m) =>
       m.reqLvl <= forgeLevel + 10 &&
@@ -138,20 +97,19 @@ export function LessonQueueReview({
         m.quality === "REFINED")
   );
 
-  const candidates = trainingPool.length > 0
-    ? trainingPool
-    : (allCalculatedMaterials || visibleMaterials).filter((m) => m.reqLvl <= forgeLevel + 10 && m.displayedEff >= 100);
+  const candidates =
+    trainingPool.length > 0
+      ? trainingPool
+      : (allCalculatedMaterials || visibleMaterials).filter(
+          (m) => m.reqLvl <= forgeLevel + 10 && m.displayedEff >= 100
+        );
 
-  const cheapestRec = candidates.length > 0
-    ? [...candidates].sort((a, b) => a.goldPerExp - b.goldPerExp)[0]
-    : null;
-
-  const fastestRec = candidates.length > 0
-    ? [...candidates].sort((a, b) => b.expPerSecond - a.expPerSecond)[0]
-    : null;
+  const cheapestRec =
+    candidates.length > 0 ? [...candidates].sort((a, b) => a.goldPerExp - b.goldPerExp)[0] : null;
+  const fastestRec =
+    candidates.length > 0 ? [...candidates].sort((a, b) => b.expPerSecond - a.expPerSecond)[0] : null;
 
   const totalOwnedCount = Object.values(ownedMaterials || {}).reduce((acc, q) => acc + q, 0);
-
   const sessionSeconds = totalTargetDurationSeconds > 0 ? totalTargetDurationSeconds : 6 * 3600;
   const targetHours = Math.floor(sessionSeconds / 3600);
   const targetMins = Math.floor((sessionSeconds % 3600) / 60);
@@ -160,328 +118,279 @@ export function LessonQueueReview({
 
   if (queuedItems.length === 0) {
     return (
-      <section className="lesson-queue-shell empty-queue" aria-label="Smithing lesson queue">
-        <div className="empty-queue-content">
-          <Flame size={32} className="empty-icon" aria-hidden="true" />
-          <h2>No Materials Queued for Lesson</h2>
-          <p>
-            Select materials from the Materials tab, or pick a recommended training material to fill your offline session.
-          </p>
-          <div className="empty-actions-row">
-            {onSwitchSubView && (
-              <button
-                type="button"
-                className="browse-catalog-action-btn"
-                onClick={() => onSwitchSubView("catalog")}
-                title="Browse all 91 smithing lesson materials in the catalog"
-              >
-                <span>Browse Materials (91) →</span>
-              </button>
-            )}
-            {cheapestRec && (
-              <button
-                type="button"
-                className="primary-action-btn"
-                onClick={() => fillSessionWithMaterial(cheapestRec.name)}
-                title={`Fill session with ${cheapestRec.name} (Cheapest at ${cheapestRec.goldPerExp.toFixed(2)}g/EXP)`}
-              >
-                <Zap size={14} aria-hidden="true" />
-                <span>Fill with {cheapestRec.name} (Cheapest)</span>
-              </button>
-            )}
-            {fastestRec && fastestRec.name !== cheapestRec?.name && (
-              <button
-                type="button"
-                className="secondary-action-btn"
-                onClick={() => fillSessionWithMaterial(fastestRec.name)}
-                title={`Fill session with ${fastestRec.name} (Fastest at ${(fastestRec.expPerSecond * 60).toFixed(0)} EXP/min)`}
-              >
-                <Zap size={14} aria-hidden="true" />
-                <span>Fill with {fastestRec.name} (Fastest)</span>
-              </button>
-            )}
-            <button
-              type="button"
-              className="ghost-action-btn"
-              onClick={() => queueAllOwned()}
-              disabled={totalOwnedCount <= 0}
-              title={totalOwnedCount > 0 ? "Queue all tracked items from your inventory" : "No owned items tracked in Inventory Optimizer"}
-            >
-              <span>Queue All Owned {totalOwnedCount > 0 ? `(${totalOwnedCount.toLocaleString()})` : ""}</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      <Card padding="md" variant="elevated" aria-label="Smithing lesson queue">
+        <EmptyState
+          variant="no-data"
+          icon="critDamage"
+          title="Session Queue Empty"
+          description="Click Fill or + on any material on the left, or auto-fill with optimal training stock for your target window."
+          action={
+            cheapestRec
+              ? {
+                  label: `Fill Cheapest (${cheapestRec.name})`,
+                  icon: "speed",
+                  onClick: () => fillSessionWithMaterial(cheapestRec.name),
+                }
+              : undefined
+          }
+          secondaryAction={
+            fastestRec && fastestRec.name !== cheapestRec?.name
+              ? {
+                  label: `Fill Fastest (${fastestRec.name})`,
+                  onClick: () => fillSessionWithMaterial(fastestRec.name),
+                }
+              : totalOwnedCount > 0
+              ? {
+                  label: `Queue Owned (${totalOwnedCount.toLocaleString()})`,
+                  onClick: () => queueAllOwned(),
+                }
+              : undefined
+          }
+        >
+          {totalOwnedCount > 0 && fastestRec && fastestRec.name !== cheapestRec?.name && (
+            <div className={styles.actionsCluster} style={{ marginTop: "0.65rem", justifyContent: "center" }}>
+              <Button variant="ghost" size="sm" onClick={() => queueAllOwned()}>
+                Queue Owned ({totalOwnedCount.toLocaleString()})
+              </Button>
+            </div>
+          )}
+          {onSwitchSubView && (
+            <div className={styles.actionsCluster} style={{ marginTop: "0.5rem", justifyContent: "center" }}>
+              <Button variant="secondary" size="sm" onClick={() => onSwitchSubView("catalog")}>
+                Browse Materials ({allCalculatedMaterials.length})
+              </Button>
+            </div>
+          )}
+        </EmptyState>
+      </Card>
     );
   }
 
   return (
-    <section className="lesson-queue-shell active-queue" aria-label="Smithing lesson queue">
-      <div className="queue-header-bar">
-        <div className="queue-title-stack">
-          <span className="panel-kicker"><Flame size={14} aria-hidden="true" /> Active Training Queue</span>
-          <h2>{queuedItems.length} {queuedItems.length === 1 ? "Item" : "Items"} in Queue</h2>
-        </div>
-        <div className="queue-quick-actions">
-          {lastReplacedQueue && (
-            <button
-              type="button"
-              className="ghost-action-btn"
-              onClick={() => undoFillQueue()}
-              style={{ marginRight: "0.5rem" }}
-            >
-              Undo Fill
-            </button>
-          )}
-          <button
-            type="button"
-            className="clear-queue-btn"
-            onClick={() => clearQueue()}
-            aria-label="Clear Queue"
-          >
-            <Trash2 size={13} aria-hidden="true" />
-            <span>Clear Queue</span>
-          </button>
-        </div>
-      </div>
+    <Card padding="md" variant="elevated" aria-label="Smithing lesson queue">
+      <div className={styles.queueList}>
+        <div className={styles.sectionTopRow}>
+          <div>
+            <span className={styles.kicker}>
+              <Icon name="critDamage" size="xs" aria-hidden="true" /> Session Queue
+            </span>
+            <h2 className={styles.sectionTitle}>
+              {queuedItems.length} {queuedItems.length === 1 ? "item" : "items"} · ~{totalSessionsCount}{" "}
+              {totalSessionsCount === 1 ? "session" : "sessions"} ({formatDurationSmart(totalDurationSeconds)})
+            </h2>
+          </div>
 
-      {/* Progression Roadmap Overview Strip */}
-      <div className="queue-roadmap-strip">
-        <span className="roadmap-label">
-          Progression Roadmap: <strong>{queuedItems.length} {queuedItems.length === 1 ? "Material" : "Materials"}</strong> · <strong>~{totalSessionsCount} {totalSessionsCount === 1 ? "Session" : "Sessions"}</strong> ({formatDurationSmart(totalDurationSeconds)})
-        </span>
-      </div>
-
-      {/* Queued item list */}
-      <div className="queue-items-list" aria-label="Queued materials">
-        {queuedItems.map((item, idx) => {
-          const { material, quantity, totalExp, totalDurationSeconds: itemDuration } = item;
-          const itemPerSession = Math.max(1, Math.floor(sessionSeconds / material.timeSeconds));
-          const itemSessions = Math.ceil(itemDuration / sessionSeconds);
-          const ownedCount = ownedMaterials[material.name] || 0;
-
-          return (
-            <article key={material.name} className={`queue-item-card ${material.hasPenalty ? "has-penalty" : ""}`}>
-              {material.imageUrl && (
-                <img
-                  src={material.imageUrl}
-                  alt=""
-                  width={34}
-                  height={34}
-                  loading="lazy"
-                  decoding="async"
-                  className="queue-item-icon"
-                />
-              )}
-              <div className="item-card-left">
-                <div className="item-name-row">
-                  <span className="step-badge">Step {idx + 1}</span>
-                  <strong className="item-title">{material.name}</strong>
-                  {material.hasPenalty && (
-                    <span className="overlevel-pill" title={`Material req level ${material.reqLvl} exceeds grace level ${forgeLevel + 10}`}>
-                      <AlertTriangle size={12} aria-hidden="true" />
-                      <span>Over-level</span>
-                    </span>
-                  )}
-                  <span className={`quality-badge ${material.quality.toLowerCase()}`}>
-                    {material.quality}
-                  </span>
-                  <span className={`queue-stock-pill ${ownedCount > 0 ? "has-stock" : "zero"}`} title={`Tracked inventory stock: ${ownedCount.toLocaleString()}`}>
-                    Stock: <strong>{ownedCount.toLocaleString()}</strong>
-                  </span>
-                  {ownedCount > 0 && ownedCount !== quantity && (
-                    <button
-                      type="button"
-                      className="use-stock-inline-btn"
-                      onClick={() => setQueueQuantity(material.name, ownedCount)}
-                      title={`Set queue quantity to owned stock (${ownedCount.toLocaleString()})`}
-                    >
-                      Use Stock
-                    </button>
-                  )}
-                </div>
-
-                <div className="item-stepper-row">
-                  <span className="stepper-label">Count:</span>
-                  <button
-                    type="button"
-                    className="step-quick-pill"
-                    aria-label={`Subtract 100 ${material.name}`}
-                    onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 100))}
-                    disabled={quantity <= 1}
-                    title={`Subtract 100 ${material.name}`}
-                  >
-                    -100
-                  </button>
-                  <button
-                    type="button"
-                    className="step-quick-pill"
-                    aria-label={`Subtract 10 ${material.name}`}
-                    onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 10))}
-                    disabled={quantity <= 1}
-                    title={`Subtract 10 ${material.name}`}
-                  >
-                    -10
-                  </button>
-                  <button
-                    type="button"
-                    className="qty-btn"
-                    onClick={() => setQueueQuantity(material.name, quantity - 1)}
-                    disabled={quantity <= 1}
-                    aria-label={`Decrease ${material.name} quantity`}
-                  >
-                    -
-                  </button>
-                  <label htmlFor={`queue-qty-${material.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}`} className="sr-only">
-                    {material.name} quantity
-                  </label>
-                  <QueueItemQtyField
-                    materialName={material.name}
-                    quantity={quantity}
-                    onChangeQuantity={setQueueQuantity}
-                  />
-                  <button
-                    type="button"
-                    className="qty-btn"
-                    onClick={() => setQueueQuantity(material.name, quantity + 1)}
-                    aria-label={`Increase ${material.name} quantity`}
-                  >
-                    +
-                  </button>
-                  <button
-                    type="button"
-                    className="step-quick-pill"
-                    aria-label={`Add 10 ${material.name}`}
-                    onClick={() => setQueueQuantity(material.name, quantity + 10)}
-                  >
-                    +10
-                  </button>
-                  <button
-                    type="button"
-                    className="step-quick-pill"
-                    aria-label={`Add 100 ${material.name}`}
-                    onClick={() => setQueueQuantity(material.name, quantity + 100)}
-                  >
-                    +100
-                  </button>
-                </div>
-
-                <div className="item-metric-badges">
-                  <div className="metric-badge session-badge">
-                    <span>Sessions</span>
-                    <strong>~{itemSessions} ({targetSessionLabel})</strong>
-                  </div>
-                  <div className="metric-badge">
-                    <span>Total EXP</span>
-                    <strong>{Math.floor(totalExp).toLocaleString()}</strong>
-                  </div>
-                  <div className={`metric-badge ${material.hasPenalty ? "warn" : ""}`}>
-                    <span>Efficiency</span>
-                    <strong>{material.displayedEff}%</strong>
-                  </div>
-                  <div className="metric-badge">
-                    <span>EXP / item</span>
-                    <strong>{material.effectiveExp.toFixed(2)}</strong>
-                  </div>
-                  <div className="metric-badge">
-                    <span>Duration</span>
-                    <span>{itemDuration >= 86400 ? formatDurationSmart(itemDuration) : formatDurationHms(itemDuration)}</span>
-                  </div>
-                  <div className="metric-badge">
-                    <span>Est. Cost</span>
-                    <strong>
-                      {formatGold(item.totalCost)}
-                      <GoldIcon size={11} />
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="item-card-right">
-                <button
-                  type="button"
-                  className="remove-item-btn"
-                  onClick={() => removeFromQueue(material.name)}
-                  aria-label={`Remove ${material.name} from lesson`}
-                >
-                  <X size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {/* Session Summary Drawer */}
-      <div className="advanced-drawer-card">
-        <button
-          type="button"
-          className="advanced-toggle-bar"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          aria-expanded={showAdvanced}
-        >
-          <span>Session Summary</span>
-          {showAdvanced ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-        </button>
-
-        {showAdvanced && (
-          <div className="advanced-drawer-body">
-            {/* Top Stat Row */}
-            <div className="summary-stat-grid">
-              <div className="summary-stat-box">
-                <span className="stat-label">Forge EXP</span>
-                <strong className="stat-value highlight">+{totalForgeExp.toLocaleString()}</strong>
-              </div>
-              <div className="summary-stat-box">
-                <span className="stat-label">Strength EXP (5%)</span>
-                <strong className="stat-value">+{totalStrengthExp.toLocaleString()}</strong>
-              </div>
-              <div className="summary-stat-box">
-                <span className="stat-label">Total Time &amp; Sessions</span>
-                <strong className="stat-value">
-                  {totalDurationSeconds >= 86400
-                    ? formatDurationSmart(totalDurationSeconds)
-                    : `${formatDurationHms(totalDurationSeconds)} / ${formatDurationHms(totalTargetDurationSeconds)}`}
-                  <small className="sessions-sub"> (~{totalSessionsCount} sessions)</small>
-                </strong>
-              </div>
-              <div className="summary-stat-box">
-                <span className="stat-label">Est. Session Cost</span>
-                <strong className="stat-value">
-                  {formatGold(totalCost)}
-                  <GoldIcon size={13} />
-                </strong>
-              </div>
-            </div>
-
-            {/* Level Progression Progress Bar */}
-            <div className="level-progression-panel">
-              <div className="level-progression-labels">
-                <span className="panel-sub-label">Projected Level</span>
-                <div className="level-jump-text">
-                  <span>Lv. {forgeLevel}</span>
-                  <ArrowRight size={13} aria-hidden="true" />
-                  <strong>Lv. {projectedLevel}</strong>
-                  <span className="progress-hint">({projectedLevelProgress}% to next)</span>
-                </div>
-              </div>
-              <div
-                className="level-progress-track"
-                role="progressbar"
-                aria-label="Forge level progress"
-                aria-valuenow={projectedLevelProgress}
-                aria-valuemin={0}
-                aria-valuemax={100}
+          <div className={styles.actionsCluster}>
+            {lastReplacedQueue && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="undo" size="xs" aria-hidden="true" />}
+                onClick={() => undoFillQueue()}
               >
+                Undo Fill
+              </Button>
+            )}
+            <Button
+              variant="danger"
+              size="sm"
+              icon={<Icon name="trash" size="xs" aria-hidden="true" />}
+              onClick={() => clearQueue()}
+              aria-label="Clear Queue"
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+
+        {/* Compact Summary Metrics Strip */}
+        <div className={styles.statStrip}>
+          <div className={styles.statStripCell}>
+            <span className={styles.statLabel}>Forge EXP</span>
+            <strong className={`${styles.statValue} ${styles.statValueGood}`}>
+              +{totalForgeExp.toLocaleString()}
+            </strong>
+            <span className={styles.statSub}>Str (5%): +{totalStrengthExp.toLocaleString()}</span>
+          </div>
+
+          <div className={styles.statStripCell}>
+            <span className={styles.statLabel}>Duration</span>
+            <strong className={styles.statValue}>
+              {totalDurationSeconds >= 86400
+                ? formatDurationSmart(totalDurationSeconds)
+                : formatDurationHms(totalDurationSeconds)}
+            </strong>
+            <span className={styles.statSub}>Window: {targetSessionLabel}</span>
+          </div>
+
+          <div className={styles.statStripCell}>
+            <span className={styles.statLabel}>Est. Cost</span>
+            <strong className={styles.statValue}>
+              {formatGold(totalCost)}
+              <GoldIcon size={12} />
+            </strong>
+            <span className={styles.statSub}>Market value</span>
+          </div>
+        </div>
+
+        {/* Temper Bar Estimation (24h meter at 100% eff) */}
+        <div className={styles.temperNoteBox}>
+          <span>
+            24h Temper bar: <strong>~{estimatedTemperBarPercent}%</strong> (~{estimatedTemperShards}{" "}
+            <ShardIcon size={12} /> banked)
+          </span>
+          <span>
+            Full: {temperBarExact ? "" : "~"}{temperBarFullShards} · Half claim: ~{Math.floor(temperBarFullHalfShards * 0.75)}
+          </span>
+        </div>
+
+        <ProgressBar
+          value={projectedLevelProgress}
+          min={0}
+          max={100}
+          label={`Projected Forge Level: Lv. ${forgeLevel} → Lv. ${projectedLevel}`}
+          valueText={`${projectedLevelProgress}% to next`}
+          variant="success"
+          size="md"
+        />
+
+        <div className={styles.sectionTopRow} style={{ paddingTop: "0.25rem" }}>
+          <span className={styles.kicker}>Queued Materials</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-expanded={breakdownOpen}
+            onClick={() => setBreakdownOpen((prev) => !prev)}
+            iconTrailing={<Icon name={breakdownOpen ? "chevronUp" : "chevronDown"} size="xs" aria-hidden="true" />}
+          >
+            {breakdownOpen ? "Collapse items" : `Show items (${queuedItems.length})`}
+          </Button>
+        </div>
+
+        {breakdownOpen && (
+          <div className={styles.queueList} aria-label="Queued materials">
+            {queuedItems.map((item, idx) => {
+              const { material, quantity, totalExp, totalDurationSeconds: itemDuration } = item;
+              const itemSessions = Math.ceil(itemDuration / sessionSeconds);
+              const ownedCount = ownedMaterials[material.name] || 0;
+              const rarityVariant = material.quality.toLowerCase() as BadgeVariant;
+
+              return (
                 <div
-                  className="level-progress-fill"
-                  style={{ width: `${projectedLevelProgress}%` }}
-                />
-              </div>
-            </div>
+                  key={material.name}
+                  className={`${styles.queueItemCard} ${material.hasPenalty ? styles.warn : ""}`}
+                >
+                  <div className={styles.queueItemTop}>
+                    <div className={styles.matCellIdentity}>
+                      <div className={styles.itemThumb}>
+                        <GameImage src={material.imageUrl} alt={material.name} width={28} height={28} />
+                      </div>
+                      <div className={styles.matCellText}>
+                        <div className={styles.actionsCluster}>
+                          <Badge variant="neutral" size="sm">#{idx + 1}</Badge>
+                          <button
+                            type="button"
+                            className={styles.itemTitleBtn}
+                            onMouseEnter={() => prefetchItem(material.name)}
+                            onClick={() => openItemByName(material.name)}
+                          >
+                            <QualityText value={material.quality}>{material.name}</QualityText>
+                            <Icon name="externalLink" size="xs" aria-hidden="true" />
+                          </button>
+                          <Badge variant={rarityVariant} size="sm">{material.quality}</Badge>
+                          {material.hasPenalty && (
+                            <Badge variant="warning" size="sm">
+                              {material.warningType === "TOO_BASIC" ? "Outgrown" : "Over-level"} ({material.displayedEff}%)
+                            </Badge>
+                          )}
+                        </div>
+                        <div className={styles.matCellMeta}>
+                          <span>Lv. {material.reqLvl}</span>
+                          <span>·</span>
+                          <span>+{Math.floor(totalExp).toLocaleString()} EXP</span>
+                          <span>·</span>
+                          <span>{formatGold(item.totalCost)}g</span>
+                          <span>·</span>
+                          <span>~{itemSessions} {itemSessions === 1 ? "ses" : "ses"}</span>
+                          {ownedCount > 0 && (
+                            <>
+                              <span>·</span>
+                              <span>Stock: {ownedCount.toLocaleString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Icon name="close" size="sm" aria-hidden="true" />}
+                      onClick={() => removeFromQueue(material.name)}
+                      aria-label={`Remove ${material.name} from lesson`}
+                    />
+                  </div>
+
+                  <div className={styles.queueQtyBar}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={quantity <= 1}
+                      aria-label={`Subtract 100 ${material.name}`}
+                      onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 100))}
+                    >
+                      -100
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={quantity <= 1}
+                      aria-label={`Subtract 10 ${material.name}`}
+                      onClick={() => setQueueQuantity(material.name, Math.max(1, quantity - 10))}
+                    >
+                      -10
+                    </Button>
+                    <div style={{ width: "144px" }}>
+                      <NumberInput
+                        value={quantity}
+                        min={1}
+                        max={100000}
+                        onChange={(val) => setQueueQuantity(material.name, val)}
+                        aria-label={`${material.name} quantity`}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={`Add 10 ${material.name}`}
+                      onClick={() => setQueueQuantity(material.name, quantity + 10)}
+                    >
+                      +10
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      aria-label={`Add 100 ${material.name}`}
+                      onClick={() => setQueueQuantity(material.name, quantity + 100)}
+                    >
+                      +100
+                    </Button>
+                    {ownedCount > 0 && ownedCount !== quantity && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setQueueQuantity(material.name, ownedCount)}
+                      >
+                        Use Stock
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

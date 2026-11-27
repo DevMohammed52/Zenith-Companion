@@ -1,47 +1,69 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  ExternalLink,
-  Flame,
-  LayoutGrid,
-  LayoutList,
-  Package,
-  Plus,
-  RotateCcw,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  X,
-  Zap,
-} from "lucide-react";
+  Badge,
+  Button,
+  EmptyState,
+  Icon,
+  Pagination,
+  SearchInput,
+  SegmentedControl,
+  Select,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  type BadgeVariant,
+  type ItemRarity,
+} from "@/components/ui";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
 import { formatGold } from "@/lib/format";
 import { useItemModal } from "@/context/ItemModalContext";
 import type { UseForgeLessonsReturn } from "../../hooks/useForgeLessons";
 import {
   FORGE_LESSON_CATEGORIES,
   FORGE_LESSON_SORTS,
-  type CalculatedLessonMaterial,
   type ForgeLessonCategory,
   type ForgeLessonSort,
 } from "../../types";
 import { MaterialCard } from "./MaterialCard";
+import styles from "../../Forge.module.css";
 
-const QUALITY_OPTIONS = ["ALL", "STANDARD", "REFINED", "PREMIUM", "EPIC", "LEGENDARY", "MYTHIC"] as const;
+const QUALITY_OPTIONS: Array<{ value: string; label: string; rarity?: ItemRarity }> = [
+  { value: "ALL", label: "All tiers" },
+  { value: "STANDARD", label: "Standard", rarity: "standard" },
+  { value: "REFINED", label: "Refined", rarity: "refined" },
+  { value: "PREMIUM", label: "Premium", rarity: "premium" },
+  { value: "EPIC", label: "Epic", rarity: "epic" },
+  { value: "LEGENDARY", label: "Legendary", rarity: "legendary" },
+  { value: "MYTHIC", label: "Mythic", rarity: "mythic" },
+];
+
+const PAGE_SIZE = 20;
 
 function useSafeItemModal() {
   try {
     return useItemModal();
   } catch {
-    return { openItemByName: () => {}, prefetchItem: () => {} } as any;
+    return { openItemByName: () => {}, prefetchItem: () => {} };
   }
 }
 
-export function MaterialCatalogPicker({ lessons }: { lessons: UseForgeLessonsReturn }) {
-  const { openItemByName } = useSafeItemModal();
+export function MaterialCatalogPicker({
+  lessons,
+}: {
+  lessons: UseForgeLessonsReturn;
+  onOpenQueueTab?: () => void;
+}) {
+  const { openItemByName, prefetchItem } = useSafeItemModal();
   const {
     categoryFilter,
     setCategoryFilter,
@@ -59,31 +81,25 @@ export function MaterialCatalogPicker({ lessons }: { lessons: UseForgeLessonsRet
     fillSessionWithMaterial,
     lessonQueue,
     ownedMaterials,
-    updateOwnedMaterial,
     forgeLevel,
   } = lessons;
 
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [usableOnly, setUsableOnly] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "cards">("list");
-  const [visibleCount, setVisibleCount] = useState<number>(24);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const sortMenuRef = useRef<HTMLDivElement>(null);
-  const qualityMenuRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Restore saved view mode preference
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("zenith_forge_catalog_view");
-      if (saved === "list" || saved === "cards") {
+      if (saved === "table" || saved === "cards") {
         setViewMode(saved);
+      } else if (saved === "list") {
+        setViewMode("table");
       }
     }
   }, []);
 
-  const handleSetViewMode = (mode: "list" | "cards") => {
+  const handleSetViewMode = (mode: "table" | "cards") => {
     setViewMode(mode);
     if (typeof window !== "undefined") {
       try {
@@ -92,35 +108,8 @@ export function MaterialCatalogPicker({ lessons }: { lessons: UseForgeLessonsRet
     }
   };
 
-  // Click outside and Escape key listener for dropdowns
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
-        setSortMenuOpen(false);
-      }
-      if (qualityMenuRef.current && !qualityMenuRef.current.contains(event.target as Node)) {
-        setQualityMenuOpen(false);
-      }
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setSortMenuOpen(false);
-        setQualityMenuOpen(false);
-      }
-    }
-    if (sortMenuOpen || qualityMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [sortMenuOpen, qualityMenuOpen]);
-
-  // Reset pagination count whenever filters change
-  useEffect(() => {
-    setVisibleCount(24);
+    setCurrentPage(1);
   }, [searchQuery, categoryFilter, qualityFilter, usableOnly, sortBy]);
 
   const categoryCounts = useMemo(() => {
@@ -131,38 +120,21 @@ export function MaterialCatalogPicker({ lessons }: { lessons: UseForgeLessonsRet
     return counts;
   }, [allCalculatedMaterials]);
 
-  // Usable materials count: players can burn right now with 100% full efficiency
   const usableCount = useMemo(() => {
     return allCalculatedMaterials.filter((m) => m.reqLvl <= forgeLevel && !m.hasPenalty).length;
   }, [allCalculatedMaterials, forgeLevel]);
 
-  // Apply "Usable at My Level" filter if toggled
   const displayMaterials = useMemo(() => {
     if (!usableOnly) return visibleMaterials;
     return visibleMaterials.filter((m) => m.reqLvl <= forgeLevel && !m.hasPenalty);
   }, [visibleMaterials, usableOnly, forgeLevel]);
 
-  // Progressive pagination
+  const totalPages = Math.max(1, Math.ceil(displayMaterials.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
   const paginatedMaterials = useMemo(() => {
-    return displayMaterials.slice(0, visibleCount);
-  }, [displayMaterials, visibleCount]);
-
-  useEffect(() => {
-    if (visibleCount >= displayMaterials.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) => Math.min(displayMaterials.length, prev + 24));
-        }
-      },
-      { rootMargin: "250px" }
-    );
-    const node = sentinelRef.current;
-    if (node) observer.observe(node);
-    return () => {
-      if (node) observer.unobserve(node);
-    };
-  }, [visibleCount, displayMaterials.length]);
+    const start = (safePage - 1) * PAGE_SIZE;
+    return displayMaterials.slice(start, start + PAGE_SIZE);
+  }, [displayMaterials, safePage]);
 
   const hasActiveFilters = searchQuery.length > 0 || categoryFilter !== "ALL" || qualityFilter !== "ALL" || usableOnly;
 
@@ -173,276 +145,266 @@ export function MaterialCatalogPicker({ lessons }: { lessons: UseForgeLessonsRet
     setUsableOnly(false);
   };
 
+  const renderCards = (
+    <div className={styles.materialsGrid} aria-label="Materials catalog cards">
+      {paginatedMaterials.map((mat) => (
+        <MaterialCard
+          key={mat.name}
+          mat={mat}
+          ownedCount={ownedMaterials[mat.name] || 0}
+          inQueueCount={lessonQueue[mat.name] || 0}
+          showExpPerItem={showExpPerItem}
+          onOpenItem={openItemByName}
+          onAddToQueue={addToQueue}
+          onFillSession={fillSessionWithMaterial}
+        />
+      ))}
+    </div>
+  );
+
   return (
-    <section className="material-catalog-section" aria-label="Forge lesson material catalog">
-      <div className="catalog-header-bar">
-        <div className="catalog-title-group">
-          <span className="panel-kicker">
-            <SlidersHorizontal size={14} aria-hidden="true" /> Lesson Materials{" "}
-            <span className="sr-only">Material Catalog</span>
-          </span>
-          <h2>Catalog ({displayMaterials.length} items)</h2>
+    <section className={styles.queueList} aria-label="Forge lesson material catalog">
+      <div className={styles.filterBar}>
+        <div className={styles.filterPrimaryRow}>
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onClear={() => setSearchQuery("")}
+            placeholder="Search material, enemy, or source..."
+            ariaLabel="Search material catalog"
+            showShortcutHint={false}
+          />
+
+          <Select
+            options={FORGE_LESSON_SORTS.map((s) => ({ value: s.id, label: s.label }))}
+            value={sortBy}
+            onChange={(val) => setSortBy(val as ForgeLessonSort)}
+            ariaLabel="Sort lesson materials by"
+          />
+
+          <Select
+            options={QUALITY_OPTIONS}
+            value={qualityFilter}
+            onChange={(val) => setQualityFilter(val)}
+            ariaLabel="Filter by material quality"
+          />
+
+          <div className={styles.desktopOnlyTable}>
+            <SegmentedControl
+              ariaLabel="Catalog view mode"
+              value={viewMode}
+              onChange={(val) => handleSetViewMode(val as "table" | "cards")}
+              size="sm"
+              options={[
+                { value: "table", label: "Table", icon: <Icon name="menu" size="xs" aria-hidden="true" /> },
+                { value: "cards", label: "Cards", icon: <Icon name="archiveLayers" size="xs" aria-hidden="true" /> },
+              ]}
+            />
+          </div>
         </div>
 
-        <div className="catalog-header-actions">
-          {/* View mode toggle */}
-          <div className="view-mode-toggle" role="group" aria-label="Catalog view mode">
-            <button
-              type="button"
-              className={`view-mode-btn ${viewMode === "list" ? "active" : ""}`}
-              onClick={() => handleSetViewMode("list")}
-              title="Compact list view"
-              aria-label="List view"
-              aria-pressed={viewMode === "list"}
-            >
-              <LayoutList size={15} aria-hidden="true" />
-              <span>List</span>
-            </button>
-            <button
-              type="button"
-              className={`view-mode-btn ${viewMode === "cards" ? "active" : ""}`}
-              onClick={() => handleSetViewMode("cards")}
-              title="Card grid view"
-              aria-label="Cards view"
-              aria-pressed={viewMode === "cards"}
-            >
-              <LayoutGrid size={15} aria-hidden="true" />
-              <span>Cards</span>
-            </button>
+        <div className={styles.filterSecondaryRow}>
+          <div className={styles.chipGroup} role="group" aria-label="Material categories">
+            <span className="sr-only">Material Catalog</span>
+            {FORGE_LESSON_CATEGORIES.map((cat) => (
+              <Tag
+                key={cat.id}
+                label={cat.label}
+                count={categoryCounts[cat.id] || 0}
+                selected={categoryFilter === cat.id}
+                onSelect={() => setCategoryFilter(cat.id as ForgeLessonCategory)}
+              />
+            ))}
+            <Tag
+              label={`Usable (Lv. ${forgeLevel})`}
+              count={usableCount}
+              selected={usableOnly}
+              onSelect={() => setUsableOnly((prev) => !prev)}
+            />
           </div>
 
-          {/* Show EXP per item toggle (accessible & preserved for contract test) */}
-          <label className="show-exp-toggle-wrap">
-            <input
-              type="checkbox"
+          <div className={styles.actionsCluster}>
+            <Switch
+              label="Show EXP per item"
               checked={showExpPerItem}
               onChange={(e) => setShowExpPerItem(e.target.checked)}
-              className="toggle-checkbox"
             />
-            <span className="toggle-label">Show EXP per item</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Streamlined 2-Row Filter & Search Controls */}
-      <div className="catalog-filters-bar">
-        {/* Row 1: Search, Sort Dropdown, and Quality Dropdown */}
-        <div className="filter-controls-row">
-          <div className="catalog-search-wrap">
-            <Search size={15} className="search-icon" aria-hidden="true" />
-            <input
-              type="search"
-              placeholder="Search material, enemy, or source..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="catalog-search-input"
-              aria-label="Search material catalog"
-            />
-            {searchQuery.length > 0 && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear material search"
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
-          <div className="catalog-dropdowns-group">
-            {/* Sort Picker */}
-            <div className="catalog-sort-wrap" ref={sortMenuRef}>
-              <div className="custom-sort-dropdown">
-                <button
-                  type="button"
-                  className={`sort-trigger-btn ${sortMenuOpen ? "open" : ""}`}
-                  onClick={() => setSortMenuOpen(!sortMenuOpen)}
-                  aria-haspopup="listbox"
-                  aria-label="Sort lesson materials by"
-                  aria-expanded={sortMenuOpen}
-                >
-                  <span className="dropdown-label">Sort:</span>
-                  <span className="dropdown-val">
-                    {FORGE_LESSON_SORTS.find((s) => s.id === sortBy)?.label || "Sort"}
-                  </span>
-                  <ChevronDown size={14} className={`chevron-icon ${sortMenuOpen ? "flipped" : ""}`} />
-                </button>
-                {sortMenuOpen && (
-                  <div className="sort-popover-menu" role="listbox">
-                    {FORGE_LESSON_SORTS.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className={`sort-option-btn ${sortBy === s.id ? "active" : ""}`}
-                        onClick={() => {
-                          setSortBy(s.id);
-                          setSortMenuOpen(false);
-                        }}
-                        role="option"
-                        aria-selected={sortBy === s.id}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Compact Quality Picker */}
-            <div className="catalog-sort-wrap" ref={qualityMenuRef}>
-              <div className="custom-sort-dropdown quality-dropdown">
-                <button
-                  type="button"
-                  className={`sort-trigger-btn ${qualityMenuOpen ? "open" : ""} ${qualityFilter !== "ALL" ? "filtered" : ""}`}
-                  onClick={() => setQualityMenuOpen(!qualityMenuOpen)}
-                  aria-haspopup="listbox"
-                  aria-label="Filter by material quality"
-                  aria-expanded={qualityMenuOpen}
-                >
-                  <span className="dropdown-label">Tier:</span>
-                  <span className="dropdown-val">{qualityFilter}</span>
-                  <ChevronDown size={14} className={`chevron-icon ${qualityMenuOpen ? "flipped" : ""}`} />
-                </button>
-                {qualityMenuOpen && (
-                  <div className="sort-popover-menu" role="listbox">
-                    {QUALITY_OPTIONS.map((q) => (
-                      <button
-                        key={q}
-                        type="button"
-                        className={`sort-option-btn ${qualityFilter === q ? "active" : ""}`}
-                        onClick={() => {
-                          setQualityFilter(q);
-                          setQualityMenuOpen(false);
-                        }}
-                        role="option"
-                        aria-selected={qualityFilter === q}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Category Chips & "Usable (Lv. X)" Quick Filter */}
-        <div className="filter-chips-row">
-          <div className="category-chips-row" role="radiogroup" aria-label="Material categories">
-            {FORGE_LESSON_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`filter-chip ${categoryFilter === cat.id ? "active" : ""}`}
-                onClick={() => setCategoryFilter(cat.id)}
-                aria-checked={categoryFilter === cat.id}
-                role="radio"
-              >
-                <span>{cat.label}</span>
-                <small className="chip-count">({categoryCounts[cat.id] || 0})</small>
-              </button>
-            ))}
-          </div>
-
-          <div className="secondary-filters-row">
-            {/* Usable at Current Level Button */}
-            <button
-              type="button"
-              className={`usable-filter-btn ${usableOnly ? "active" : ""}`}
-              onClick={() => setUsableOnly(!usableOnly)}
-              title="Show only materials you can burn right now with 100% full EXP efficiency"
-              aria-pressed={usableOnly}
-            >
-              <Sparkles size={13} aria-hidden="true" />
-              <span>Usable (Lv. {forgeLevel})</span>
-              <small className="usable-count-pill">{usableCount}</small>
-            </button>
-
             {hasActiveFilters && (
-              <button
-                type="button"
-                className="reset-filters-btn"
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="undo" size="xs" aria-hidden="true" />}
                 onClick={handleResetFilters}
-                title="Reset all filters and search"
                 aria-label="Reset all filters"
               >
-                <RotateCcw size={12} aria-hidden="true" />
-                <span>Reset</span>
-              </button>
+                Reset
+              </Button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Materials List or Grid Display */}
-      <div
-        className={viewMode === "list" ? "materials-list" : "materials-grid"}
-        aria-label="Materials catalog list"
-      >
-        {displayMaterials.length === 0 ? (
-          <div className="no-matches-box">
-            <p>No materials match your current category, quality, or search criteria.</p>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                className="reset-search-btn"
-                onClick={handleResetFilters}
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
-        ) : (
-          paginatedMaterials.map((mat) => (
-            <MaterialCard
-              key={mat.name}
-              mat={mat}
-              ownedCount={ownedMaterials[mat.name] || 0}
-              inQueueCount={lessonQueue[mat.name] || 0}
-              showExpPerItem={showExpPerItem}
-              viewMode={viewMode}
-              onOpenItem={openItemByName}
-              onAddToQueue={addToQueue}
-              onFillSession={fillSessionWithMaterial}
-              onUpdateOwned={updateOwnedMaterial}
-            />
-          ))
-        )}
-      </div>
+      {displayMaterials.length === 0 ? (
+        <EmptyState
+          variant="search-empty"
+          title="No matching materials"
+          description="Try clearing the rarity, usable-level, or search filters."
+          action={
+            hasActiveFilters
+              ? {
+                  label: "Clear Filters",
+                  onClick: handleResetFilters,
+                }
+              : undefined
+          }
+        />
+      ) : viewMode === "cards" ? (
+        renderCards
+      ) : (
+        <>
+          <div className={styles.desktopOnlyTable}>
+            <TableContainer ariaLabel="Forge lesson material catalog table">
+              <Table density="compact" hoverable>
+                <TableHeader sticky={false}>
+                  <TableRow>
+                    <TableHead>Material ({displayMaterials.length})</TableHead>
+                    <TableHead align="right">EXP / hr</TableHead>
+                    <TableHead align="right">Gold / EXP</TableHead>
+                    <TableHead align="right">{showExpPerItem ? "Market · EXP/ea" : "Market"}</TableHead>
+                    <TableHead align="right">Burn · Eff</TableHead>
+                    <TableHead align="right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedMaterials.map((mat, rowIndex) => {
+                    const hourlyExp = Math.round(mat.expPerSecond * 3600);
+                    const ownedCount = ownedMaterials[mat.name] || 0;
+                    const inQueueCount = lessonQueue[mat.name] || 0;
+                    const rarityVariant = mat.quality.toLowerCase() as BadgeVariant;
+                    const rowClass = inQueueCount > 0
+                      ? styles.tableRowQueued
+                      : mat.hasPenalty
+                      ? styles.tableRowPenalized
+                      : "";
 
-      {/* Sentinel for infinite scroll */}
-      {visibleCount < displayMaterials.length && (
-        <div ref={sentinelRef} className="catalog-sentinel" aria-hidden="true" style={{ height: "1px" }} />
+                    return (
+                      <TableRow key={`mat-row-${rowIndex}`} className={rowClass} selected={inQueueCount > 0}>
+                        <TableCell>
+                          <div className={styles.matCellIdentity}>
+                            <div className={styles.itemThumb}>
+                              <GameImage src={mat.imageUrl} alt={mat.name} width={28} height={28} />
+                            </div>
+                            <div className={styles.matCellText}>
+                              <div className={styles.actionsCluster}>
+                                <button
+                                  type="button"
+                                  className={styles.itemTitleBtn}
+                                  onMouseEnter={() => prefetchItem(mat.name)}
+                                  onClick={() => openItemByName(mat.name)}
+                                >
+                                  <QualityText value={mat.quality}>{mat.name}</QualityText>
+                                </button>
+                                <Badge variant={rarityVariant} size="sm">{mat.quality}</Badge>
+                                {inQueueCount > 0 && (
+                                  <Badge variant="success" size="sm">{inQueueCount.toLocaleString()} queued</Badge>
+                                )}
+                              </div>
+                              <div className={styles.matCellMeta}>
+                                <span>Lv. {mat.reqLvl}</span>
+                                <span>·</span>
+                                <span>{mat.mob || mat.category.replace("_", " ")}</span>
+                                {ownedCount > 0 && (
+                                  <>
+                                    <span>·</span>
+                                    <span>{ownedCount.toLocaleString()} in stock</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        <TableCell align="right" numeric>
+                          <strong>~{hourlyExp.toLocaleString()}</strong>
+                        </TableCell>
+
+                        <TableCell align="right" numeric>
+                          <span className={mat.goldPerExp <= 2.5 ? styles.numGood : ""}>
+                            {mat.goldPerExp.toFixed(2)}
+                            <GoldIcon size={11} />
+                          </span>
+                        </TableCell>
+
+                        <TableCell align="right" numeric>
+                          <span>
+                            {formatGold(mat.liveMarketPrice)}
+                            <GoldIcon size={11} />
+                          </span>
+                          {showExpPerItem && (
+                            <span className={styles.syncText}> · {mat.effectiveExp.toFixed(1)} EXP</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell align="right" numeric>
+                          <span className={mat.hasPenalty ? styles.numWarn : ""}>
+                            {mat.timeSeconds.toFixed(1).replace(/\.0$/, "")}s · {mat.displayedEff}%
+                          </span>
+                        </TableCell>
+
+                        <TableCell align="right">
+                          <div className={styles.tableActionPair}>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => fillSessionWithMaterial(mat.name)}
+                              aria-label={`Fill session with ${mat.name}`}
+                            >
+                              Fill
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => addToQueue(mat.name, 100)}
+                              aria-label={`Add 100 ${mat.name} to queue`}
+                            >
+                              +100
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
+
+          <div className={styles.mobileOnlyCards} aria-label="Mobile materials catalog cards">
+            {paginatedMaterials.map((mat) => (
+              <MaterialCard
+                key={mat.name}
+                mat={mat}
+                ownedCount={ownedMaterials[mat.name] || 0}
+                inQueueCount={lessonQueue[mat.name] || 0}
+                showExpPerItem={showExpPerItem}
+                onOpenItem={openItemByName}
+                onAddToQueue={addToQueue}
+                onFillSession={fillSessionWithMaterial}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Progressive load more controls */}
-      {displayMaterials.length > 24 && (
-        <div className="catalog-pagination-bar">
-          <span className="pagination-status">
-            Showing <strong>{Math.min(visibleCount, displayMaterials.length)}</strong> of <strong>{displayMaterials.length}</strong> materials
-          </span>
-          {visibleCount < displayMaterials.length && (
-            <div className="pagination-actions">
-              <button
-                type="button"
-                className="load-more-btn"
-                onClick={() => setVisibleCount((prev) => Math.min(displayMaterials.length, prev + 24))}
-              >
-                Load More (+{Math.min(24, displayMaterials.length - visibleCount)})
-              </button>
-              <button
-                type="button"
-                className="show-all-btn"
-                onClick={() => setVisibleCount(displayMaterials.length)}
-              >
-                Show All ({displayMaterials.length})
-              </button>
-            </div>
-          )}
-        </div>
+      {displayMaterials.length > PAGE_SIZE && (
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={displayMaterials.length}
+          pageSize={PAGE_SIZE}
+          itemLabel="materials"
+        />
       )}
     </section>
   );

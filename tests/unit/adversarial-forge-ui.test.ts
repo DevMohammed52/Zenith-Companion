@@ -20,8 +20,9 @@ import {
   SORT_OPTIONS,
   type ForgeState,
 } from "@/app/forge/types";
+import { Select } from "@/components/ui";
+import { getTemperShardBonus } from "@/lib/forge-lesson-math";
 import { CraftItemTab } from "@/app/forge/components/craft/CraftItemTab";
-import { CustomPicker } from "@/app/forge/components/craft/ForgeControls";
 import { ForgeHeader } from "@/app/forge/components/ForgeHeader";
 import { ForgeTabs } from "@/app/forge/components/ForgeTabs";
 
@@ -167,6 +168,8 @@ describe("Gate 2: Adversarial Forge UI & Planner Stress Harness", () => {
         resultName: "Refined Bar",
         quality: "REFINED",
         levelRequired: 10,
+        forgeExpEach: 0,
+        strengthExpEach: 0,
         materials: [{ name: "Ore", quantity: 2, imageUrl: "", quality: "REFINED", sourceSummary: "" }],
         maxUses: 10,
         imageUrl: "",
@@ -183,6 +186,8 @@ describe("Gate 2: Adversarial Forge UI & Planner Stress Harness", () => {
         resultName: "Mythic Blade",
         quality: "MYTHIC",
         levelRequired: 90,
+        forgeExpEach: 50000,
+        strengthExpEach: 2500,
         materials: [
           { name: "Mythic Ore", quantity: 5, imageUrl: "", quality: "MYTHIC", sourceSummary: "" },
           { name: "Crucible", quantity: 1, imageUrl: "", quality: "MYTHIC", sourceSummary: "" },
@@ -623,68 +628,67 @@ describe("Gate 2: Adversarial Forge UI & Planner Stress Harness", () => {
   });
 
   // =========================================================================
-  // Dimension 6: Interactive Controls, CustomPicker & Combobox Navigation Limits
+  // Dimension 6: Interactive Controls, UI Select, Temper Shards & Recipe XP
   // =========================================================================
-  describe("Dimension 6: Interactive Controls, CustomPicker & Combobox Navigation Limits", () => {
-    it("renders CustomPicker safely with empty options and open states without throwing", () => {
-      const setOpenPicker = vi.fn();
-      const onChange = vi.fn();
-
-      // Empty options should render fallback without throwing
-      const emptyMarkup = renderToStaticMarkup(
-        createElement(CustomPicker, {
-          label: "Quality",
-          options: [],
-          value: "",
-          onChange,
-          pickerKey: "quality",
-          openPicker: "",
-          setOpenPicker,
-        }),
-      );
-      expect(emptyMarkup).toContain("Quality");
-      expect(emptyMarkup).toContain("Choose");
-      expect(emptyMarkup).toContain('aria-haspopup="listbox"');
-      expect(emptyMarkup).not.toContain("aria-controls=");
-
-      // Open state with options renders listbox and option roles
-      const openMarkup = renderToStaticMarkup(
-        createElement(CustomPicker, {
-          label: "Sort",
+  describe("Dimension 6: Interactive Controls, UI Select, Temper Shards & Recipe XP", () => {
+    it("renders shared Select primitive cleanly for Quality and Sort pickers", () => {
+      const markup = renderToStaticMarkup(
+        createElement(Select, {
+          ariaLabel: "Sort recipes",
           options: [
-            { id: "value", label: "Value" },
-            { id: "level", label: "Level" },
+            { value: "value", label: "Value" },
+            { value: "level", label: "Level" },
           ],
           value: "value",
-          onChange,
-          pickerKey: "sort",
-          openPicker: "sort",
-          setOpenPicker,
         }),
       );
-      expect(openMarkup).toContain('role="listbox"');
-      expect(openMarkup).toContain('role="option"');
-      expect(openMarkup).toContain('aria-selected="true"');
-      expect(openMarkup).toContain("aria-controls=");
-      expect(openMarkup).toContain("aria-activedescendant=");
+      expect(markup).toContain("Value");
+      expect(markup).toContain('aria-haspopup="listbox"');
+    });
 
-      // Open state with empty-string ID option (e.g. "All" or "None" filter)
-      const emptyIdMarkup = renderToStaticMarkup(
-        createElement(CustomPicker, {
-          label: "Filter",
-          options: [
-            { id: "", label: "All Items" },
-            { id: "refined", label: "Refined" },
-          ],
-          value: "",
-          onChange,
-          pickerKey: "quality",
-          openPicker: "quality",
-          setOpenPicker,
-        }),
+    it("verifies Temper Shard bonus milestones match post-v0.88.0-PB 2x wiki rates", () => {
+      expect(getTemperShardBonus(1)).toEqual({ shards: 12, halfShards: 6, isExactMilestone: true });
+      expect(getTemperShardBonus(25)).toEqual({ shards: 28, halfShards: 14, isExactMilestone: true });
+      expect(getTemperShardBonus(50)).toEqual({ shards: 60, halfShards: 30, isExactMilestone: true });
+      expect(getTemperShardBonus(75)).toEqual({ shards: 120, halfShards: 60, isExactMilestone: true });
+      expect(getTemperShardBonus(100)).toEqual({ shards: 240, halfShards: 120, isExactMilestone: true });
+    });
+
+    it("extracts synced Forge and Strength XP from live recipe experience schema", () => {
+      const mockDb: ForgeItemLookup = {
+        "Sample Armor Recipe": {
+          name: "Sample Armor Recipe",
+          type: "RECIPE",
+          quality: "LEGENDARY",
+          recipe: {
+            skill: "Forge",
+            level_required: 71,
+            max_uses: 1,
+            experience: {
+              skills: { forge: 6600 },
+              stats: { strength: 330 },
+            },
+            materials: [{ item_name: "Mercury Bar", quantity: 10 }],
+            result: { item_name: "Sample Armor" },
+          },
+        },
+        "Sample Armor": { name: "Sample Armor", type: "CHESTPLATE", quality: "LEGENDARY", vendor_price: 500 },
+        "Mercury Bar": { name: "Mercury Bar", type: "BAR", quality: "PREMIUM", vendor_price: 20 },
+      };
+      const options = buildForgeRecipeOptions(mockDb);
+      expect(options[0].forgeExpEach).toBe(6600);
+      expect(options[0].strengthExpEach).toBe(330);
+
+      const summary = calculateForgePlanner(
+        [{ recipeName: "Sample Armor Recipe", quantity: 2, ownedRecipes: 1 }],
+        {},
+        options,
+        {},
+        mockDb,
+        {},
       );
-      expect(emptyIdMarkup).toContain("All Items");
-      expect(emptyIdMarkup).toContain('aria-selected="true"');
+      expect(summary.totalForgeExp).toBe(13200);
+      expect(summary.totalStrengthExp).toBe(660);
     });
 
     it("verifies tab navigation cycle contracts for keyboard events", () => {

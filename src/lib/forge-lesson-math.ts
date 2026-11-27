@@ -357,3 +357,37 @@ export function calculateDynamicMaterialYield(
     expPerSecond,
   };
 }
+
+/**
+ * Post-v0.88.0-PB Temper Shard bonus tiers from IdleMMO Forge wiki (2026-11-23).
+ * Milestones at Lv 1/25/50/75/100 are exact; intermediate levels are linearly interpolated.
+ */
+export const TEMPER_SHARD_ANCHORS: ReadonlyArray<{ level: number; shards: number }> = [
+  { level: 1, shards: 12 },
+  { level: 25, shards: 28 },
+  { level: 50, shards: 60 },
+  { level: 75, shards: 120 },
+  { level: 100, shards: 240 },
+];
+
+export function getTemperShardBonus(playerLevel: number): {
+  shards: number;
+  halfShards: number;
+  isExactMilestone: boolean;
+} {
+  const clamped = Math.max(1, Math.min(100, Math.floor(playerLevel || 1)));
+  const exact = TEMPER_SHARD_ANCHORS.find((a) => a.level === clamped);
+  if (exact) {
+    return { shards: exact.shards, halfShards: Math.floor(exact.shards * 0.5), isExactMilestone: true };
+  }
+  for (let i = 0; i < TEMPER_SHARD_ANCHORS.length - 1; i++) {
+    const low = TEMPER_SHARD_ANCHORS[i];
+    const high = TEMPER_SHARD_ANCHORS[i + 1];
+    if (clamped >= low.level && clamped <= high.level) {
+      const ratio = (clamped - low.level) / (high.level - low.level);
+      const shards = Math.round(low.shards + ratio * (high.shards - low.shards));
+      return { shards, halfShards: Math.floor(shards * 0.5), isExactMilestone: false };
+    }
+  }
+  return { shards: 12, halfShards: 6, isExactMilestone: false };
+}

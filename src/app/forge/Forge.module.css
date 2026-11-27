@@ -1,0 +1,1073 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 4rem;
+  min-width: 0;
+}
+
+.tabViewport {
+  min-height: 960px;
+  contain: layout;
+  min-width: 0;
+}
+
+/* --- Borderless Header Bar (matches /skill-profit pattern) --- */
+.headerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pageTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.heroMetricsStrip {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  padding: 0.3rem 0.65rem;
+}
+
+.inlineMetric {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.inlineMetric + .inlineMetric {
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.inlineMetric strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* --- Compact Primary Mode Switcher (Lessons | Craft Item) --- */
+.primaryTabsBar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.primaryTabList {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.primaryTabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.4rem 0.85rem;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 100ms ease;
+}
+
+.primaryTabButton:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+.primaryTabButton:active {
+  transform: scale(0.98);
+}
+
+.primaryTabButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.primaryTabButton[aria-selected="true"] {
+  background: var(--control-active-bg);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.skillProfitLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0 0.65rem;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.skillProfitLink:hover {
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+/* --- Lessons Workspace Layout (full-width 1-pane matching /skill-profit) --- */
+.lessonsWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 960px;
+  min-width: 0;
+}
+
+/* --- Unified Session & Parameter Card (.parameterStrip mirrors .spotlightCard) --- */
+.parameterStrip {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(250px, 1.05fr) minmax(0, 1.95fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 96px;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: visible;
+}
+
+.spotlightZone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  min-height: 56px;
+  min-width: 0;
+  padding-right: 0.65rem;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.spotlightIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.spotlightThumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.spotlightMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.spotlightTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlightSub {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.controlsZone {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.controlCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding-left: 0.65rem;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.controlCell:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.controlCellRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.paramLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.durationSelectBox {
+  width: 102px;
+}
+
+.buffTriggerCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* --- Full-Width Navigation Tabs (single scrollable line on mobile) --- */
+.subTabsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.subTabsContainer {
+  flex: 1;
+  min-width: 0;
+}
+
+.subTabsList {
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+.subTabsList::-webkit-scrollbar {
+  display: none;
+}
+
+.subTabPanel[hidden] {
+  display: none;
+}
+
+/* --- Filter Toolbar & Material Table --- */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.filterPrimaryRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(170px, 0.85fr) minmax(140px, 0.65fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.filterSecondaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chipGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* --- Compact Desktop Table Cells (fits 7+ rows above the fold on 1440x900) --- */
+.matCellIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 210px;
+}
+
+.itemThumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.matCellText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.itemTitleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.itemTitleBtn:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.itemTitleBtn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.matCellMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.tableActionPair {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+}
+
+.tableRowPenalized {
+  background: color-mix(in srgb, var(--status-warn) 5%, transparent);
+}
+
+.tableRowQueued {
+  background: color-mix(in srgb, var(--status-good) 6%, transparent);
+}
+
+.numGood {
+  color: var(--status-good);
+  font-weight: 700;
+}
+
+.numWarn {
+  color: var(--status-warn);
+  font-weight: 700;
+}
+
+.materialsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 0.65rem;
+}
+
+.desktopOnlyTable {
+  display: block;
+}
+
+.mobileOnlyCards {
+  display: none;
+}
+
+.matCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* --- Stat Strip (internal 1px vertical dividers, compact) --- */
+.statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 0.35rem 0;
+  background: var(--bg-panel);
+  border-radius: 10px;
+  padding: 0.55rem 0.25rem;
+}
+
+.statStripCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.1rem 0.65rem;
+  min-width: 0;
+}
+
+.statStripCell + .statStripCell {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.statValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.statValueGood {
+  color: var(--status-good);
+}
+
+.statValueWarn {
+  color: var(--status-warn);
+}
+
+.statSub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* --- Shared Section Helpers --- */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sectionTitle {
+  margin: 0.15rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.sectionTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.actionsCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.syncText {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+/* --- Queue View (full-width list & Temper breakdown) --- */
+.queueList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.queueItemCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.queueItemCard.warn {
+  border-color: color-mix(in srgb, var(--status-warn) 45%, var(--border-subtle));
+}
+
+.queueItemTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.queueQtyBar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.temperNoteBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.75rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* --- Goal Planner 3-Column Comparison Grid --- */
+.routesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.stepRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 55%, transparent);
+  font-size: 0.82rem;
+}
+
+.stepRow:last-child {
+  border-bottom: 0;
+}
+
+.stepLevelRange {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stepQty {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stepCost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Inventory Add & Rows --- */
+.inventoryAddForm {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.4fr) minmax(150px, 0.75fr) auto;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.inventoryRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+/* --- Loadout Drawer Controls --- */
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.drawerSyncRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.profileJumpLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.profileJumpLink:hover {
+  text-decoration: underline;
+}
+
+.drawerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.drawerSectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.drawerField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.drawerFieldLabel {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.drawerTwoCol {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.buffGroups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.buffGroupTitle {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.buffRail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.buffButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  min-height: 36px;
+  padding: 0.3rem 0.5rem;
+  border-radius: 7px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.buffButton:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.buffButton:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.buffButton:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.buffSelected {
+  background: var(--control-active-bg);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+/* --- Craft Item Workspace --- */
+.craftWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.craftWorkspace > :first-child {
+  position: relative;
+  z-index: 25;
+}
+
+.builderRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(135px, 0.75fr) minmax(135px, 0.75fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.comboboxWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.comboboxMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--bg-base) 82%, transparent);
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.comboboxOption {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.comboboxOption:hover,
+.comboboxOptionActive {
+  background: var(--control-active-bg);
+}
+
+.craftSplitGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.craftShoppingRail {
+  position: sticky;
+  top: 4.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.entryControlsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 180px));
+  gap: 0.55rem;
+  margin-top: 0.55rem;
+}
+
+.needTableRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 50%, transparent);
+}
+
+.needTableRow:last-child {
+  border-bottom: 0;
+}
+
+.needCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.needCardBottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.needMetricsInline {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.recipeNeedRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 50%, transparent);
+}
+
+.recipeNeedRow:last-child {
+  border-bottom: 0;
+}
+
+.recipeNeedStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 7px;
+  background: var(--bg-panel);
+}
+
+.costCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+}
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+/* --- Responsive Breakpoints --- */
+@media (max-width: 1180px) {
+  .parameterStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .spotlightZone {
+    padding-right: 0;
+    padding-bottom: 0.65rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .routesGrid,
+  .craftSplitGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .craftShoppingRail {
+    position: static;
+  }
+
+  .filterPrimaryRow,
+  .builderRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .controlsZone {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .controlCell {
+    padding-left: 0;
+    padding-top: 0.5rem;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .controlCell:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .controlCellRow {
+    flex-wrap: wrap;
+  }
+
+  .desktopOnlyTable {
+    display: none;
+  }
+
+  .mobileOnlyCards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .filterPrimaryRow,
+  .builderRow,
+  .inventoryAddForm,
+  .inventoryRow,
+  .entryControlsGrid,
+  .buffGroups {
+    grid-template-columns: 1fr;
+  }
+
+  .costCell {
+    text-align: left;
+  }
+
+  .statStripCell + .statStripCell {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-subtle) 50%, transparent);
+    padding-top: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryTabButton,
+  .skillProfitLink,
+  .buffButton {
+    transition: none;
+  }
+}
