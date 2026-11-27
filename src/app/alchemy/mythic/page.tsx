@@ -1,88 +1,146 @@
 "use client";
 
-import React from "react";
-import { useMythicAlchemyState } from "./hooks/useMythicAlchemyState";
+import { Suspense } from "react";
+import { BackToTop, Skeleton, Tab, TabList, Tabs } from "@/components/ui";
+import { MythicCatalogPanel } from "./components/MythicCatalogPanel";
 import { MythicHeader } from "./components/MythicHeader";
-import { MythicStatusTiles } from "./components/MythicStatusTiles";
-import { MythicLabSummary } from "./components/MythicLabSummary";
-import { MythicRecommendedRail } from "./components/MythicRecommendedRail";
-import { MythicEmptyBench } from "./components/MythicEmptyBench";
-import { MythicProjectCard } from "./components/MythicProjectCard";
+import { MythicLoadoutDrawer } from "./components/MythicLoadoutDrawer";
+import { MythicPinnedPanel } from "./components/MythicPinnedPanel";
+import { useMythicAlchemyState } from "./hooks/useMythicAlchemyState";
+import type { MythicWorkspaceTab } from "./types";
 import styles from "./page.module.css";
 
-export default function MythicAlchemyPage() {
+function MythicAlchemyContent() {
   const state = useMythicAlchemyState();
 
   return (
-    <main className={`container ${styles.container}`} aria-labelledby="mythic-lab-page-title">
+    <main className={`container ${styles.pageShell}`} aria-labelledby="mythic-lab-page-title">
       <MythicHeader
-        activeProfile={state.activeProfile}
-        taxNetPercent={state.taxNetPercent}
+        isLoading={state.isLoading}
+        activeProfileName={state.activeProfileName}
+        hasConfiguredProfile={state.hasConfiguredProfile}
+        hasProfileAlchemyLevel={state.hasProfileAlchemyLevel}
+        profileAlchemyLevel={state.profileAlchemyLevel}
+        effectiveMembership={state.effectiveMembership}
+        taxRate={state.taxRate}
+        buffTotals={state.buffTotals}
+        hasWhatIfOverrides={state.hasWhatIfOverrides}
         mythicCraftTimeSeconds={state.mythicCraftTimeSeconds}
-        isSearchOpen={state.isSearchOpen}
-        setIsSearchOpen={state.setIsSearchOpen}
-        searchRef={state.searchRef}
-        searchTriggerRef={state.searchTriggerRef}
-        availableMythics={state.availableMythics}
-        searchTerm={state.searchTerm}
-        setSearchTerm={state.setSearchTerm}
-        activeRecipeIndex={state.activeRecipeIndex}
-        setActiveRecipeIndex={state.setActiveRecipeIndex}
-        activeRecipeOptionId={state.activeRecipeOptionId}
-        handleRecipeSearchKeyDown={state.handleRecipeSearchKeyDown}
-        addToLab={state.addToLab}
         mythicRecipesCount={state.mythicRecipes.length}
-      />
-
-      <MythicStatusTiles
         activeRowsCount={state.activeRows.length}
         labStats={state.labStats}
-        mythicRecipesCount={state.mythicRecipes.length}
-      />
-
-      <MythicLabSummary
         labSummary={state.labSummary}
-        activeRowsCount={state.activeRows.length}
-        mythicRecipesCount={state.mythicRecipes.length}
-        recipeCostMode={state.recipeCostMode}
-        setRecipeCostMode={state.setRecipeCostMode}
+        queuedTotalUnits={state.queuedTotalUnits}
+        staleMarket={state.staleMarket}
+        dataAgeMinutes={state.dataAgeMinutes}
+        onOpenDrawer={() => state.setDrawerOpen(true)}
+        onSelectTab={state.switchTab}
+        onOpenItem={state.openItemByName}
       />
 
-      {state.activeRows.length > 0 && state.recommendedPreview.length > 0 && (
-        <MythicRecommendedRail
-          recommendedPreview={state.recommendedPreview}
-          addToLab={state.addToLab}
-        />
-      )}
+      <Tabs
+        value={state.activeTab}
+        onValueChange={(val) => state.switchTab(val as MythicWorkspaceTab)}
+        sharedPanelId="mythic-workspace-panel"
+        className={styles.workspaceTabs}
+      >
+        <TabList aria-label="Mythic Lab sections">
+          <Tab value="catalog">All 21 Recipes ({state.allCatalogRows.length})</Tab>
+          <Tab value="pinned">Pinned Projects ({state.activeRows.length})</Tab>
+        </TabList>
+      </Tabs>
 
-      <div className={styles.labGrid}>
-        {state.activeRows.length === 0 ? (
-          <MythicEmptyBench
-            onOpenSearch={() => state.setIsSearchOpen(true)}
-            recommendedRecipes={state.recommendedRecipes}
-            recommendedPreview={state.recommendedPreview}
-            addToLab={state.addToLab}
+      <section id="mythic-workspace-panel" aria-label="Mythic Lab workspace">
+        {state.isLoading ? (
+          <div className={styles.skeletonStack} aria-busy="true">
+            <Skeleton height="92px" variant="rectangular" />
+            <Skeleton height="560px" variant="rectangular" />
+          </div>
+        ) : state.activeTab === "catalog" ? (
+          <MythicCatalogPanel
+            rows={state.filteredCatalogRows}
+            totalCount={state.allCatalogRows.length}
+            categoryCounts={state.categoryCounts}
+            category={state.catalogCategory}
+            onCategoryChange={state.setCatalogCategory}
+            search={state.catalogSearch}
+            onSearchChange={state.setCatalogSearch}
+            sortCol={state.catalogSortCol}
+            sortDesc={state.catalogSortDesc}
+            onSort={state.handleCatalogSort}
+            onSortSelect={state.handleCatalogSortSelect}
+            onToggleSortDirection={state.toggleCatalogSortDirection}
+            viewMode={state.catalogViewMode}
+            onViewModeChange={state.setCatalogViewMode}
+            includeScrollCost={state.catalogIncludeScrollCost}
+            onToggleIncludeScrollCost={state.setCatalogIncludeScrollCost}
+            onlyProfitable={state.catalogOnlyProfitable}
+            onToggleOnlyProfitable={() => state.setCatalogOnlyProfitable((prev) => !prev)}
+            hideMissing={state.catalogHideMissing}
+            onToggleHideMissing={() => state.setCatalogHideMissing((prev) => !prev)}
+            hasActiveFilters={state.hasActiveCatalogFilters}
+            onResetFilters={state.resetCatalogFilters}
+            onPinRecipe={(recipe) => state.addToLab(recipe, false)}
+            onRemovePinned={state.removeFromLab}
+            onOpenItem={state.openItemByName}
+            onPrefetchItem={state.prefetchItem}
           />
         ) : (
-          state.activeRows.map((row) => (
-            <MythicProjectCard
-              key={row.recipe.resultName}
-              row={row}
-              isProjectExpanded={state.expandedProjectNames.includes(row.recipe.resultName)}
-              taxNetPercent={state.taxNetPercent}
-              taxRate={state.taxRate}
-              profileBarteringBoost={state.profileBarteringBoost}
-              onRemove={state.removeFromLab}
-              onToggleDetails={state.toggleProjectDetails}
-              onOpenItem={state.openItemByName}
-              onUpdateRecipePrice={state.updateRecipePrice}
-              onUpdateMaterialPrice={state.updateMaterialPrice}
-              onUpdateSellPrice={state.updateSellPrice}
-              onSetRecipeUses={state.setRecipeUses}
-            />
-          ))
+          <MythicPinnedPanel
+            activeRows={state.activeRows}
+            recommendedPreview={state.recommendedPreview}
+            labSummary={state.labSummary}
+            recipeCostMode={state.recipeCostMode}
+            setRecipeCostMode={state.setRecipeCostMode}
+            expandedProjectNames={state.expandedProjectNames}
+            taxNetPercent={state.taxNetPercent}
+            taxRate={state.taxRate}
+            effectiveBartering={state.effectiveBartering}
+            onBrowseCatalog={() => state.switchTab("catalog")}
+            onPinRecipe={(recipe) => state.addToLab(recipe, true)}
+            onRemoveProject={state.removeFromLab}
+            onToggleDetails={state.toggleProjectDetails}
+            onOpenItem={state.openItemByName}
+            onUpdateRecipePrice={state.updateRecipePrice}
+            onUpdateMaterialPrice={state.updateMaterialPrice}
+            onUpdateSellPrice={state.updateSellPrice}
+            onSetRecipeUses={state.setRecipeUses}
+          />
         )}
-      </div>
+      </section>
+
+      <MythicLoadoutDrawer
+        isOpen={state.drawerOpen}
+        onClose={() => state.setDrawerOpen(false)}
+        hasConfiguredProfile={state.hasConfiguredProfile}
+        activeProfileName={state.activeProfileName}
+        profileClassName={state.profileClassName}
+        profileAlchemyLevel={state.profileAlchemyLevel}
+        effectiveBartering={state.effectiveBartering}
+        profileBartering={state.profileBarteringBoost}
+        effectiveMembership={state.effectiveMembership}
+        preferencesMembership={state.preferencesMembership}
+        profileConquestRank={state.profileConquestRank}
+        loadout={state.loadout}
+        onUpdateLoadout={state.setLoadout}
+        onToggleAscension={state.toggleAscensionBuff}
+        baseIdleHours={state.baseIdleHours}
+        housingAlchemyHours={state.housingAlchemyHours}
+        defaultSessionHours={state.defaultSessionHours}
+        sessionHoursSource={state.sessionHoursSource}
+        hasWhatIfOverrides={state.hasWhatIfOverrides}
+        onResetLoadout={state.resetLoadoutToProfile}
+        buffTotals={state.buffTotals}
+      />
+      <BackToTop />
     </main>
+  );
+}
+
+export default function MythicAlchemyPage() {
+  return (
+    <Suspense fallback={<main className={`container ${styles.pageShell}`}><Skeleton height="360px" variant="rectangular" /></main>}>
+      <MythicAlchemyContent />
+    </Suspense>
   );
 }

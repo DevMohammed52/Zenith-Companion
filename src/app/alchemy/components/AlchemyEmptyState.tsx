@@ -1,32 +1,44 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { EmptyState, Icon } from "@/components/ui";
+import styles from "../page.module.css";
 
 export function AlchemyEmptyState({
   mythicSearchMatches,
+  onReset,
 }: {
   mythicSearchMatches: string[];
+  onReset: () => void;
 }) {
-  return (
-    <div className="alchemy-empty-state">
-      <Search size={28} />
-      <h3>No alchemy strategies match those filters</h3>
-      {mythicSearchMatches.length > 0 ? (
-        <>
-          <p>
-            {mythicSearchMatches.slice(0, 2).join(", ")} matches level 90 mythic alchemy instead.
-          </p>
-          <Link className="alchemy-empty-link" href="/alchemy/mythic">
-            Open Mythic Lab
+  if (mythicSearchMatches.length > 0) {
+    return (
+      <EmptyState
+        icon={<Icon name="xp" size="xl" aria-hidden="true" />}
+        title="Level 90 Mythic recipes live in Mythic Lab"
+        description={`${mythicSearchMatches.slice(0, 2).join(", ")} is a Level 90 Mythic recipe with 30-use scroll charges. Open Mythic Lab to optimize those runs.`}
+        action={{
+          label: "Reset Filters",
+          onClick: onReset,
+        }}
+        secondaryAction={
+          <Link href="/alchemy/mythic" className={styles.navPillLink}>
+            <span>Open Mythic Lab</span>
           </Link>
-        </>
-      ) : (
-        <p>
-          Relax the profit, volume, liquidity, level, or search filters to bring recipes back.
-        </p>
-      )}
-    </div>
+        }
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      icon={<Icon name="searchEmpty" size="xl" aria-hidden="true" />}
+      title="No alchemy recipes match those filters"
+      description="Clear search or relax the level, profit, liquidity, or volume filters to bring recipes back."
+      action={{
+        label: "Reset Filters",
+        onClick: onReset,
+      }}
+    />
   );
 }

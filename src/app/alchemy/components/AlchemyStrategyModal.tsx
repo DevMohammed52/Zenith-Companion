@@ -1,429 +1,522 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { AlertTriangle, Eye, Info, Target, X } from "lucide-react";
-import { useModalA11y } from "@/lib/use-modal-a11y";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Icon,
+  ModalSheet,
+  NumberInput,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+} from "@/components/ui";
+import {
+  calculateCraftingBreakEven,
+  formatDuration,
+  formatGold,
+  formatSignedGold,
+  getActionLabel,
+} from "@/lib/alchemy-profit";
 import type { AlchemyRow } from "../types";
-import { formatDuration, formatGold, formatSignedGold } from "../utils/alchemy-helpers";
-import { PathBadge } from "./AlchemyBadges";
+import { getActionVariant } from "../utils/alchemy-helpers";
+import styles from "../page.module.css";
 
-export function AlchemyStrategyModal({
-  row,
-  marketTaxRate,
-  activeHours,
-  ownedCostMode,
-  onClose,
-  onOpenItem,
-  onToggleOwned,
-}: {
-  row: AlchemyRow;
+interface AlchemyStrategyModalProps {
+  row: AlchemyRow | null;
   marketTaxRate: number;
-  activeHours: number;
+  sessionHours: number;
   ownedCostMode: boolean;
   onClose: () => void;
   onOpenItem: (name: string) => void;
   onToggleOwned: (materialName: string) => void;
-}) {
-  const dialogRef = useModalA11y<HTMLDivElement>(true, onClose);
-  const backdropPointerStarted = useRef(false);
+  onAddToQueue: (name: string, qty: number) => void;
+}
+
+export function AlchemyStrategyModal({
+  row,
+  marketTaxRate,
+  sessionHours,
+  ownedCostMode,
+  onClose,
+  onOpenItem,
+  onToggleOwned,
+  onAddToQueue,
+}: AlchemyStrategyModalProps) {
+  const [activeTab, setActiveTab] = useState("inputs");
   const [targetGoldPerHour, setTargetGoldPerHour] = useState("");
-  const target = Number(targetGoldPerHour);
-  const targetPerCraft =
-    Number.isFinite(target) && target > 0 && row.craftsPerHour > 0
-      ? target / row.craftsPerHour
-      : null;
-  const sharedInputs = row.ingredientCosts
-    .map((ingredient) => {
-      const usedTotal = ownedCostMode && ingredient.owned ? 0 : ingredient.totalPrice;
-      return { ingredient, usedTotal };
-    })
-    .filter(({ ingredient, usedTotal }) => ingredient.unitPrice > 0 && usedTotal > 0);
-  const sharedInputCost = sharedInputs.reduce((sum, entry) => sum + entry.usedTotal, 0);
-  const sharedFixedCost = row.cost - sharedInputCost;
-  const sharedBreakEvenBudget = row.bestRevenue - sharedFixedCost;
-  const sharedTargetBudget =
-    targetPerCraft === null ? null : row.bestRevenue - sharedFixedCost - targetPerCraft;
-  const sharedBreakEvenRatio =
-    sharedInputCost > 0 && sharedBreakEvenBudget > 0
-      ? sharedBreakEvenBudget / sharedInputCost
-      : null;
-  const sharedTargetRatio =
-    sharedInputCost > 0 && sharedTargetBudget !== null && sharedTargetBudget > 0
-      ? sharedTargetBudget / sharedInputCost
-      : null;
-  const sharedBreakEvenLabel =
-    sharedBreakEvenRatio === null
-      ? "No margin"
-      : sharedBreakEvenRatio >= 1
-        ? `+${Math.round((sharedBreakEvenRatio - 1) * 100)}% room`
-        : `${Math.round((1 - sharedBreakEvenRatio) * 100)}% lower`;
+  const [batchQty, setBatchQty] = useState<number>(10);
+
+  useEffect(() => {
+    if (!row) return;
+    setActiveTab("inputs");
+    setTargetGoldPerHour("");
+    setBatchQty(Math.max(1, row.craftsPerSession || Math.round(row.craftsPerHour) || 10));
+  }, [row?.name, row?.craftsPerHour, row?.craftsPerSession]);
+
+  if (!row) {
+    return (
+      <ModalSheet isOpen={false} onClose={onClose} title="Alchemy Strategy" maxWidth="lg">
+        {null}
+      </ModalSheet>
+    );
+  }
+
+  const parsedTarget = targetGoldPerHour.trim() === "" ? null : Number(targetGoldPerHour);
+  const breakEven = calculateCraftingBreakEven(row, ownedCostMode, parsedTarget);
+
+  const hourPresetQty = Math.max(1, Math.round(row.craftsPerHour) || 1);
+  const sessionPresetQty = Math.max(1, row.craftsPerSession || hourPresetQty);
+  const batchCost = (row.cost - row.vialCost) * batchQty + row.vialCost * batchQty;
+  const batchProfit = row.profit * batchQty;
+  const batchAlchemyExp = Math.round(row.alchemyExpEach * batchQty);
+  const batchSpeedExp = Math.round(row.baseSpeedExp * batchQty);
+  const batchHours = (row.time * batchQty) / 3600;
 
   return (
-    <div
-      className="modal-overlay alchemy-strategy-overlay"
-      onClick={(event) => {
-        if (event.target === event.currentTarget && backdropPointerStarted.current) {
-          onClose();
-        }
-        backdropPointerStarted.current = false;
-      }}
-      onPointerDown={(event) => {
-        backdropPointerStarted.current = event.target === event.currentTarget;
-      }}
-    >
-      <div
-        aria-labelledby="alchemy-strategy-title"
-        aria-modal="true"
-        className="modal-content alchemy-strategy-modal"
-        onClick={(event) => event.stopPropagation()}
-        ref={dialogRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <div className="modal-header">
-          <h2 id="alchemy-strategy-title">
+    <ModalSheet
+      isOpen={Boolean(row)}
+      onClose={onClose}
+      maxWidth="lg"
+      title={
+        <div className={styles.modalHeaderTitle}>
+          <div className={styles.itemThumbLg}>
+            {row.imageUrl ? (
+              <GameImage src={row.imageUrl} alt={row.name} width={34} height={34} sizes="34px" />
+            ) : (
+              <Icon name="alchemy" size="md" aria-hidden="true" />
+            )}
+          </div>
+          <div className={styles.recipeMeta}>
             <button
-              aria-label={`Open ${row.name} item details`}
-              onClick={() => onOpenItem(row.name)}
-              style={{
-                background: "none",
-                border: 0,
-                color: "inherit",
-                cursor: "pointer",
-                font: "inherit",
-                padding: 0,
-                textAlign: "left",
-              }}
               type="button"
+              className={styles.recipeNameBtn}
+              onClick={() => onOpenItem(row.name)}
+              aria-label={`Open ${row.name} item details`}
             >
-              {row.name} Strategy
+              <QualityText value={row.quality}>{row.name}</QualityText>
             </button>
-          </h2>
-          <button
-            aria-label="Close alchemy strategy"
-            className="close-btn"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="modal-body">
-          <div className="alchemy-modal-kpi-grid">
-            <div>
-              <span>Cost</span>
-              <strong className="mono">{formatGold(row.cost)}g</strong>
-            </div>
-            <div>
-              <span>Return</span>
-              <strong className="mono">{formatGold(row.bestRevenue)}g</strong>
-            </div>
-            <div>
-              <span>Profit / pc</span>
-              <strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>
-                {formatSignedGold(row.profit)}
-              </strong>
-            </div>
-            <div>
-              <span>Profit / hr</span>
-              <strong
-                className={`mono ${row.profitPerHour >= 0 ? "success-value" : "danger-value"}`}
-              >
-                {formatSignedGold(row.profitPerHour)}
-              </strong>
+            <div className={styles.inlineGroup}>
+              <span className={styles.recipeSubline}>Lv {row.level}</span>
+              <span className={styles.hairlineDivider} aria-hidden="true" />
+              <span className={styles.recipeSubline}>{formatDuration(row.time)} / craft</span>
+              <span className={styles.hairlineDivider} aria-hidden="true" />
+              <span className={styles.recipeSubline}>Tap name for item details</span>
             </div>
           </div>
-          <div className="alchemy-modal-grid">
-            <section className="alchemy-modal-panel">
-              <div className="alchemy-modal-panel-title">
-                <Target size={16} /> Inputs
-              </div>
-              <label className="alchemy-target-profit-field">
-                <span>Target profit / hr</span>
-                <input
-                  aria-label="Target alchemy profit per hour"
-                  inputMode="numeric"
+        </div>
+      }
+    >
+      <div className={styles.modalBody}>
+        <div className={styles.modalSummaryStrip}>
+          <div className={styles.modalSummaryCell}>
+            <span className={styles.cardMetricLabel}>Cost</span>
+            <strong className={styles.cardMetricVal}>
+              <GoldIcon size={12} />
+              {formatGold(row.cost, 1)}g
+            </strong>
+          </div>
+          <div className={styles.modalSummaryCell}>
+            <span className={styles.cardMetricLabel}>Best Return</span>
+            <strong className={styles.cardMetricVal}>
+              <GoldIcon size={12} />
+              {formatGold(row.bestRevenue, 1)}g
+            </strong>
+          </div>
+          <div className={styles.modalSummaryCell}>
+            <span className={styles.cardMetricLabel}>Profit / pc</span>
+            <strong
+              className={`${styles.cardMetricVal} ${
+                row.profit >= 0 ? styles.positive : styles.negative
+              }`}
+            >
+              {formatSignedGold(row.profit, 1)}
+            </strong>
+          </div>
+          <div className={styles.modalSummaryCell}>
+            <span className={styles.cardMetricLabel}>Profit / Hr</span>
+            <strong
+              className={`${styles.cardMetricVal} ${
+                row.profitPerHour >= 0 ? styles.positive : styles.negative
+              }`}
+            >
+              {formatSignedGold(row.profitPerHour)}
+            </strong>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
+          <TabList aria-label="Strategy details sections">
+            <Tab value="inputs">Inputs</Tab>
+            <Tab value="paths">Paths &amp; EXP</Tab>
+            <Tab value="batch">Batch Queue</Tab>
+          </TabList>
+
+          <TabPanel value="inputs">
+            <div className={styles.modalPanel}>
+              <div className={styles.popoverRow}>
+                <NumberInput
+                  label="Target Profit / Hr (gold)"
+                  prefix={<GoldIcon size={13} />}
                   min={0}
-                  placeholder="Optional"
-                  type="number"
-                  value={targetGoldPerHour}
-                  onChange={(event) => setTargetGoldPerHour(event.target.value)}
+                  step={500}
+                  showSteppers={false}
+                  value={parsedTarget ?? 0}
+                  onChange={(val) => setTargetGoldPerHour(val > 0 ? String(val) : "")}
                 />
-              </label>
-              {targetPerCraft !== null && (
-                <div className="alchemy-target-profit-note">
-                  {formatGold(targetPerCraft)}g target profit per craft.
+                <div className={styles.fieldBlock}>
+                  <span className={styles.fieldLabel}>Crafting Break-Even Target</span>
+                  <div className={styles.noteBlock}>
+                    Solving against max craft return ({formatGold(breakEven.craftRevenue, 1)}g from{" "}
+                    {row.marketNet >= row.vendorNet ? "Market net" : "Vendor"}).
+                  </div>
                 </div>
-              )}
-              {sharedInputs.length > 1 && (
-                <div className="alchemy-shared-scenario">
-                  <div className="alchemy-shared-header">
-                    <div>
-                      <strong>Combined materials</strong>
-                      <span>Total input cost: {formatGold(sharedInputCost, 3)}g</span>
-                    </div>
-                    <small>{sharedBreakEvenLabel}</small>
-                  </div>
-                  <div className="alchemy-shared-summary">
-                    <div>
-                      <span>Break-even total</span>
-                      <strong className={sharedBreakEvenBudget > 0 ? "" : "danger-value"}>
-                        {sharedBreakEvenBudget > 0
-                          ? `${formatGold(sharedBreakEvenBudget, 3)}g`
-                          : "Not profitable"}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>Target total</span>
-                      <strong
-                        className={
-                          sharedTargetBudget === null || sharedTargetBudget > 0
-                            ? ""
-                            : "danger-value"
-                        }
-                      >
-                        {sharedTargetBudget === null
-                          ? "Set target"
-                          : sharedTargetBudget > 0
-                            ? `${formatGold(sharedTargetBudget, 3)}g`
-                            : "Not possible"}
-                      </strong>
-                    </div>
-                  </div>
-                  <div className="alchemy-shared-grid">
-                    {sharedInputs.map(({ ingredient }) => {
-                      const breakEvenUnit =
-                        sharedBreakEvenRatio === null
-                          ? null
-                          : Math.floor(ingredient.unitPrice * sharedBreakEvenRatio);
-                      const targetUnit =
-                        sharedTargetRatio === null
-                          ? null
-                          : Math.floor(ingredient.unitPrice * sharedTargetRatio);
-                      return (
-                        <div key={ingredient.name} className="alchemy-break-even-line">
-                          <span>{ingredient.name}</span>
-                          <strong
-                            className={
-                              breakEvenUnit !== null && breakEvenUnit > 0 ? "" : "danger-value"
-                            }
-                          >
-                            {breakEvenUnit !== null && breakEvenUnit > 0
-                              ? `${formatGold(breakEvenUnit)}g ea`
-                              : "No room"}
-                          </strong>
-                          {targetPerCraft !== null && (
-                            <em
-                              className={
-                                targetUnit !== null && targetUnit > 0 ? "" : "danger-value"
-                              }
-                            >
-                              Target{" "}
-                              {targetUnit !== null && targetUnit > 0
-                                ? `${formatGold(targetUnit)}g ea`
-                                : "not possible"}
-                            </em>
+              </div>
+
+              <div className={styles.ingredientList}>
+                {breakEven.perIngredient.map(
+                  ({ ingredient, maxUnitForBreakEven, maxUnitForTarget }) => (
+                    <div key={ingredient.name} className={styles.ingredientRow}>
+                      <div className={styles.ingredientIdentity}>
+                        <Checkbox
+                          aria-label={`Mark ${ingredient.name} as owned`}
+                          label={<span className={styles.srOnly}>Owned</span>}
+                          checked={ingredient.owned}
+                          onChange={() => onToggleOwned(ingredient.name)}
+                        />
+                        <div className={styles.itemThumb}>
+                          {ingredient.imageUrl ? (
+                            <GameImage
+                              src={ingredient.imageUrl}
+                              alt={ingredient.name}
+                              width={24}
+                              height={24}
+                              sizes="24px"
+                            />
+                          ) : (
+                            <Icon name="items" size="xs" aria-hidden="true" />
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              <div className="alchemy-material-list">
-                {row.ingredientCosts.map((ingredient) => {
-                  const quantity = Math.max(ingredient.quantity, 1);
-                  const ingredientCostUsed =
-                    ownedCostMode && ingredient.owned ? 0 : ingredient.totalPrice;
-                  const otherCost = row.cost - ingredientCostUsed;
-                  const maxUnitForBreakEven = Math.floor((row.bestRevenue - otherCost) / quantity);
-                  const maxUnitForTarget =
-                    targetPerCraft === null
-                      ? null
-                      : Math.floor((row.bestRevenue - otherCost - targetPerCraft) / quantity);
-                  return (
-                    <div key={ingredient.name} className="alchemy-material-card">
-                      <div className="alchemy-material-row">
-                        <span className="alchemy-material-name">
-                          <label className="alchemy-owned-check">
-                            <input
-                              aria-label={`Mark ${ingredient.name} as owned`}
-                              type="checkbox"
-                              checked={ingredient.owned}
-                              onChange={() => onToggleOwned(ingredient.name)}
-                            />
-                            <span>{ingredient.quantity}x</span>
-                          </label>{" "}
+                        <div className={styles.recipeMeta}>
                           <button
                             type="button"
-                            className="alchemy-material-button hover-underline"
+                            className={styles.recipeNameBtn}
                             onClick={() => onOpenItem(ingredient.name)}
                           >
-                            {ingredient.name}
+                            {ingredient.quantity}x{" "}
+                            <QualityText value={ingredient.quality || "STANDARD"}>
+                              {ingredient.name}
+                            </QualityText>
                           </button>
-                        </span>
-                        <span className="alchemy-material-price mono">
-                          <span>{formatGold(ingredient.unitPrice, 3)} ea</span>
-                          <span>{"->"}</span>
-                          <strong>
-                            {ownedCostMode && ingredient.owned
-                              ? "Owned"
-                              : `${formatGold(ingredient.totalPrice, 3)}g`}
-                          </strong>
-                        </span>
-                      </div>
-                      <div className="alchemy-break-even-grid">
-                        <div className="alchemy-break-even-line">
-                          <span>Break-even max</span>
-                          <strong className={maxUnitForBreakEven > 0 ? "" : "danger-value"}>
-                            {maxUnitForBreakEven > 0
-                              ? `${formatGold(maxUnitForBreakEven)}g ea`
-                              : "Not profitable"}
-                          </strong>
-                        </div>
-                        {maxUnitForTarget !== null && (
-                          <div className="alchemy-break-even-line">
-                            <span>Target max</span>
-                            <strong className={maxUnitForTarget > 0 ? "" : "danger-value"}>
-                              {maxUnitForTarget > 0
-                                ? `${formatGold(maxUnitForTarget)}g ea`
-                                : "Not possible"}
-                            </strong>
+                          <div className={styles.inlineGroup}>
+                            <span className={styles.recipeSubline}>
+                              Break-even:{" "}
+                              <strong className={maxUnitForBreakEven > 0 ? undefined : styles.negative}>
+                                {maxUnitForBreakEven > 0
+                                  ? `${formatGold(maxUnitForBreakEven)}g ea`
+                                  : "Not profitable"}
+                              </strong>
+                            </span>
+                            {maxUnitForTarget !== null && (
+                              <>
+                                <span className={styles.hairlineDivider} aria-hidden="true" />
+                                <span className={styles.recipeSubline}>
+                                  Target:{" "}
+                                  <strong className={maxUnitForTarget > 0 ? undefined : styles.negative}>
+                                    {maxUnitForTarget > 0
+                                      ? `${formatGold(maxUnitForTarget)}g ea`
+                                      : "Not possible"}
+                                  </strong>
+                                </span>
+                              </>
+                            )}
                           </div>
-                        )}
+                        </div>
+                      </div>
+
+                      <div className={styles.ingredientNumbers}>
+                        <span className={styles.moneyValue}>
+                          <GoldIcon size={12} />
+                          {ownedCostMode && ingredient.owned
+                            ? "0g (Owned)"
+                            : `${formatGold(ingredient.totalPrice, 1)}g`}
+                        </span>
+                        <span className={styles.cellSub}>
+                          {formatGold(ingredient.unitPrice, 1)}g ea ({ingredient.source})
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
-                <div className="alchemy-modal-total">
-                  <span>Material cost</span>
-                  <strong className="mono">{formatGold(row.materialCost, 3)}g</strong>
-                </div>
-                <div className="alchemy-modal-total">
-                  <span>Cash material cost</span>
-                  <strong className="mono">{formatGold(row.cashMaterialCost, 3)}g</strong>
-                </div>
-                <div className="alchemy-modal-total">
-                  <span>Vial cost</span>
-                  <strong className="mono">{formatGold(row.vialCost)}g</strong>
-                </div>
-                {row.recipeCostShare > 0 && (
-                  <div className="alchemy-modal-total">
-                    <span>Recipe cost share</span>
-                    <strong className="mono">{formatGold(row.recipeCostShare, 3)}g</strong>
-                  </div>
+                  ),
                 )}
-              </div>
-            </section>
 
-            <section className="alchemy-modal-panel">
-              <div className="alchemy-modal-panel-title">
-                <Info size={16} /> Sale Options
+                <div className={styles.ingredientRow}>
+                  <div className={styles.ingredientIdentity}>
+                    <div className={styles.itemThumb}>
+                      {row.vialImageUrl ? (
+                        <GameImage
+                          src={row.vialImageUrl}
+                          alt={row.vialName}
+                          width={24}
+                          height={24}
+                          sizes="24px"
+                        />
+                      ) : (
+                        <Icon name="vendor" size="xs" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className={styles.recipeMeta}>
+                      <strong>1x {row.vialName}</strong>
+                      <span className={styles.recipeSubline}>General Goods merchant</span>
+                    </div>
+                  </div>
+                  <div className={styles.ingredientNumbers}>
+                    <span className={styles.moneyValue}>
+                      <GoldIcon size={12} />
+                      {formatGold(row.vialCost)}g
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="alchemy-math-list">
-                <div className="alchemy-math-row">
+
+              {breakEven.sharedInputs.length > 1 && (
+                <div className={styles.mathList}>
+                  <div className={styles.mathRow}>
+                    <span>Combined buy budget (break-even)</span>
+                    <strong className={breakEven.sharedBreakEvenBudget > 0 ? undefined : styles.negative}>
+                      <GoldIcon size={12} />
+                      {breakEven.sharedBreakEvenBudget > 0
+                        ? `${formatGold(breakEven.sharedBreakEvenBudget, 1)}g total`
+                        : "Not profitable"}
+                    </strong>
+                  </div>
+                  {breakEven.sharedInputs.map((entry) => (
+                    <div key={entry.ingredient.name} className={styles.mathRow}>
+                      <span>{entry.ingredient.name}</span>
+                      <strong>
+                        {entry.breakEvenUnit !== null && entry.breakEvenUnit > 0
+                          ? `${formatGold(entry.breakEvenUnit)}g ea`
+                          : "No room"}
+                        {entry.targetUnit !== null && entry.targetUnit > 0
+                          ? ` (Target ${formatGold(entry.targetUnit)}g)`
+                          : ""}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabPanel>
+
+          <TabPanel value="paths">
+            <div className={styles.modalPanel}>
+              <div className={styles.mathList}>
+                <div className={styles.mathRow}>
                   <span>Market gross</span>
-                  <strong className="mono">{formatGold(row.marketGross, 3)}g</strong>
+                  <strong>
+                    <GoldIcon size={12} />
+                    {formatGold(row.marketGross, 1)}g
+                  </strong>
                 </div>
-                <div className="alchemy-math-row">
+                <div className={styles.mathRow}>
                   <span>Market tax ({Math.round(marketTaxRate * 100)}%)</span>
-                  <strong className="mono">-{formatGold(row.marketTax, 3)}g</strong>
+                  <strong>-{formatGold(row.marketTax, 1)}g</strong>
                 </div>
-                <div className="alchemy-math-row">
+                <div className={styles.mathRow}>
                   <span>Market net</span>
-                  <strong className="mono">{formatGold(row.marketNet, 3)}g</strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Vendor net</span>
-                  <strong className="mono">{formatGold(row.vendorNet, 3)}g</strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Raw materials net</span>
-                  <strong className="mono">{formatGold(row.liquidationNet, 3)}g</strong>
-                </div>
-                <div className="alchemy-math-divider"></div>
-                <div className="alchemy-math-row">
-                  <span>Best path</span>
-                  <PathBadge action={row.action} />
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Best revenue</span>
-                  <strong className="mono accent-value">
-                    {formatGold(row.bestRevenue, 3)}g
-                  </strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Cost used</span>
-                  <strong className="mono">{formatGold(row.cost, 3)}g</strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Profit / pc</span>
-                  <strong className={`mono ${row.profit >= 0 ? "success-value" : "danger-value"}`}>
-                    {formatSignedGold(row.profit, 3)}
-                  </strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Opportunity profit</span>
-                  <strong
-                    className={`mono ${
-                      row.opportunityProfit >= 0 ? "success-value" : "danger-value"
-                    }`}
-                  >
-                    {formatSignedGold(row.opportunityProfit, 3)}
-                  </strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Craft time</span>
-                  <strong className="mono">
-                    {formatDuration(row.time)}
-                    {row.efficiencyBonus > 0
-                      ? ` (${formatDuration(row.baseTime)} base, +${row.efficiencyBonus}% efficiency)`
-                      : ""}
-                  </strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Crafts/hr</span>
-                  <strong className="mono">{row.craftsPerHour.toFixed(2)}</strong>
-                </div>
-                <div className="alchemy-math-row">
-                  <span>Daily profit ({activeHours}h)</span>
-                  <strong
-                    className={`mono ${row.dailyProfit >= 0 ? "success-value" : "danger-value"}`}
-                  >
-                    {formatSignedGold(row.dailyProfit, 2)}
-                  </strong>
-                </div>
-                <div className="alchemy-formula-line">{row.formula}</div>
-                <div className="alchemy-liquidity-row">
-                  <span>Stable liquidity</span>
                   <strong>
-                    {formatGold(row.stableVol_3)} <small>sold pace</small>
+                    <GoldIcon size={12} />
+                    {formatGold(row.marketNet, 1)}g
                   </strong>
                 </div>
-                <div className="alchemy-liquidity-row">
-                  <span>Raw 3-day sold</span>
+                <div className={styles.mathRow}>
+                  <span>Vendor net (with Bartering)</span>
                   <strong>
-                    {formatGold(row.vol_3)} <small>sold</small>
+                    <GoldIcon size={12} />
+                    {formatGold(row.vendorNet, 1)}g
                   </strong>
                 </div>
-                {row.sellThroughRisk && (
-                  <p className="alchemy-reason">
-                    <AlertTriangle size={14} /> {row.sellThroughNote}
-                  </p>
-                )}
-                {row.liquidityRisk && (
-                  <p className="alchemy-reason">
-                    <AlertTriangle size={14} /> {row.liquidityNote}
-                  </p>
-                )}
-                <p className="alchemy-reason">
-                  <Eye size={14} /> {row.reason}
-                </p>
+                <div className={styles.mathRow}>
+                  <span>Sell raw inputs net</span>
+                  <strong>
+                    <GoldIcon size={12} />
+                    {formatGold(row.liquidationNet, 1)}g
+                  </strong>
+                </div>
+                <div className={styles.mathDivider} />
+                <div className={styles.mathRow}>
+                  <span>Recommended path</span>
+                  <Badge size="sm" variant={getActionVariant(row.action)}>
+                    {getActionLabel(row.action)}
+                  </Badge>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Crafting profit (vs opportunity cost)</span>
+                  <strong className={row.opportunityProfit >= 0 ? styles.positive : styles.negative}>
+                    {formatSignedGold(row.opportunityProfit, 1)}
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Craft duration</span>
+                  <strong>
+                    <span>{formatDuration(row.time)}</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>{row.craftsPerHour.toFixed(1)}/hr</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>{row.efficiencyBonus >= 0 ? `+${row.efficiencyBonus}%` : `${row.efficiencyBonus}%`} eff</span>
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Alchemy EXP</span>
+                  <strong>
+                    <span>+{formatGold(Math.round(row.alchemyExpEach))} / craft</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>{formatGold(Math.round(row.expPerHour))}/hr</span>
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Base Speed EXP</span>
+                  <strong>
+                    <span>+{row.baseSpeedExp} / craft</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>{formatGold(Math.round(row.speedExpPerHour))}/hr</span>
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>
+                    {sessionHours}h session yield ({row.craftsPerSession} crafts)
+                  </span>
+                  <strong className={row.sessionProfit >= 0 ? styles.positive : styles.negative}>
+                    <span>{formatSignedGold(Math.round(row.sessionProfit))}</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>{formatGold(row.sessionExp)} XP</span>
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Stable vs Raw 3d volume</span>
+                  <strong>
+                    {formatGold(row.stableVol_3)} stable / {formatGold(row.vol_3)} raw
+                  </strong>
+                </div>
               </div>
-            </section>
-          </div>
-        </div>
+
+              {row.sellThroughNote && (
+                <div className={styles.noteBlock}>
+                  <Icon name="warning" size="sm" aria-hidden="true" />
+                  <span>{row.sellThroughNote}</span>
+                </div>
+              )}
+              {row.liquidityRisk && (
+                <div className={styles.noteBlock}>
+                  <Icon name="warning" size="sm" aria-hidden="true" />
+                  <span>{row.liquidityNote}</span>
+                </div>
+              )}
+              <div className={styles.noteBlock}>
+                <Icon name="info" size="sm" aria-hidden="true" />
+                <span>{row.reason}</span>
+              </div>
+            </div>
+          </TabPanel>
+
+          <TabPanel value="batch">
+            <div className={styles.modalPanel}>
+              <div className={styles.popoverRow}>
+                <NumberInput
+                  label="Batch Quantity"
+                  min={1}
+                  max={999999}
+                  value={batchQty}
+                  onChange={(val) => setBatchQty(Math.max(1, Math.floor(val || 1)))}
+                />
+                <div className={styles.fieldBlock}>
+                  <span className={styles.fieldLabel}>Quick Presets</span>
+                  <div className={styles.batchPresetRow}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setBatchQty(hourPresetQty)}
+                    >
+                      1 hr ({hourPresetQty})
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setBatchQty(sessionPresetQty)}
+                    >
+                      {sessionHours}h session ({sessionPresetQty})
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setBatchQty(100)}>
+                      100x
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.mathList}>
+                <div className={styles.mathRow}>
+                  <span>Estimated craft duration</span>
+                  <strong>{batchHours.toFixed(1)} hours</strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Total batch cost</span>
+                  <strong>
+                    <GoldIcon size={12} />
+                    {formatGold(Math.round(batchCost))}g
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Projected batch profit</span>
+                  <strong className={batchProfit >= 0 ? styles.positive : styles.negative}>
+                    {formatSignedGold(Math.round(batchProfit))}
+                  </strong>
+                </div>
+                <div className={styles.mathRow}>
+                  <span>Total EXP earned</span>
+                  <strong>
+                    <span>+{formatGold(batchAlchemyExp)} Alchemy XP</span>
+                    <span className={styles.hairlineDivider} aria-hidden="true" />
+                    <span>+{formatGold(batchSpeedExp)} Speed XP</span>
+                  </strong>
+                </div>
+                <div className={styles.mathDivider} />
+                {row.ingredientCosts.map((ing) => (
+                  <div key={ing.name} className={styles.mathRow}>
+                    <span>{ing.name} needed</span>
+                    <strong>{formatGold(ing.quantity * batchQty)}x</strong>
+                  </div>
+                ))}
+                <div className={styles.mathRow}>
+                  <span>{row.vialName} needed</span>
+                  <strong>
+                    {formatGold(batchQty)}x ({formatGold(row.vialCost * batchQty)}g merchant)
+                  </strong>
+                </div>
+              </div>
+
+              <div className={styles.popoverActions}>
+                <Link href="/crafting" className={styles.navPillLink}>
+                  <Icon name="market" size="xs" aria-hidden="true" />
+                  <span>Open Crafting Queue</span>
+                </Link>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => onAddToQueue(row.name, batchQty)}
+                >
+                  <Icon name="plus" size="sm" aria-hidden="true" />
+                  <span>Add {formatGold(batchQty)}x to Queue</span>
+                </Button>
+              </div>
+            </div>
+          </TabPanel>
+        </Tabs>
       </div>
-    </div>
+    </ModalSheet>
   );
 }

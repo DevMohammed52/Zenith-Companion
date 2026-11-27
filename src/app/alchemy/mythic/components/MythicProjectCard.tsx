@@ -1,25 +1,49 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import QualityText from "@/components/QualityText";
 import {
-  AlertTriangle,
-  ChevronDown,
-  DollarSign,
-  Hammer,
-  TrendingUp,
-  X,
-} from "lucide-react";
+  Badge,
+  Banner,
+  Button,
+  Card,
+  Icon,
+  NumberInput,
+} from "@/components/ui";
 import type { MythicProjectRow, MythicRecipe } from "../types";
-import { formatGold, formatSignedGold, formatSource } from "../utils/mythic-helpers";
+import {
+  formatCraftWindow,
+  formatGold,
+  formatSignedGold,
+  formatSource,
+  getBestPathLabel,
+  getBestPathVariant,
+  getLiquidityBadgeVariant,
+} from "../utils/mythic-helpers";
 import styles from "../page.module.css";
+
+interface MythicProjectCardProps {
+  row: MythicProjectRow;
+  isProjectExpanded: boolean;
+  taxNetPercent: number;
+  taxRate: number;
+  effectiveBartering: number;
+  onRemove: (resultName: string) => void;
+  onToggleDetails: (resultName: string) => void;
+  onOpenItem: (name: string) => void;
+  onUpdateRecipePrice: (resultName: string, raw: string) => void;
+  onUpdateMaterialPrice: (resultName: string, materialName: string, raw: string) => void;
+  onUpdateSellPrice: (resultName: string, raw: string) => void;
+  onSetRecipeUses: (recipe: MythicRecipe, value: string | number) => void;
+}
 
 export function MythicProjectCard({
   row,
   isProjectExpanded,
   taxNetPercent,
   taxRate,
-  profileBarteringBoost,
+  effectiveBartering,
   onRemove,
   onToggleDetails,
   onOpenItem,
@@ -27,330 +51,335 @@ export function MythicProjectCard({
   onUpdateMaterialPrice,
   onUpdateSellPrice,
   onSetRecipeUses,
-}: {
-  row: MythicProjectRow;
-  isProjectExpanded: boolean;
-  taxNetPercent: number;
-  taxRate: number;
-  profileBarteringBoost: number;
-  onRemove: (resultName: string) => void;
-  onToggleDetails: (resultName: string) => void;
-  onOpenItem: (name: string) => void;
-  onUpdateRecipePrice: (resultName: string, raw: string) => void;
-  onUpdateMaterialPrice: (resultName: string, materialName: string, raw: string) => void;
-  onUpdateSellPrice: (resultName: string, raw: string) => void;
-  onSetRecipeUses: (recipe: MythicRecipe, raw: string) => void;
-}) {
+}: MythicProjectCardProps) {
   const detailsId = `mythic-project-${row.recipe.resultName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")}-details`;
 
   return (
-    <article
-      className={`${styles.mythicCard} ${isProjectExpanded ? styles.projectExpanded : ""}`}
-    >
-      <button
-        className={styles.removeBtn}
-        onClick={() => onRemove(row.recipe.resultName)}
-        aria-label={`Remove ${row.recipe.resultName} project`}
-        type="button"
-      >
-        <X size={18} />
-      </button>
-
-      <div className={styles.cardHeader}>
-        {row.recipe.imageUrl && (
-          <Image
-            className={styles.resultArt}
-            src={row.recipe.imageUrl}
-            alt=""
-            width={64}
-            height={64}
-            loading="lazy"
-            decoding="async"
-          />
-        )}
-        <div className={styles.titleArea}>
-          <button
-            type="button"
-            className={styles.titleButton}
-            onClick={() => onOpenItem(row.recipe.resultName)}
-          >
-            {row.recipe.resultName}
-          </button>
-          <button
-            type="button"
-            className={styles.recipeLink}
-            onClick={() => onOpenItem(row.recipe.recipeName)}
-          >
-            {row.recipe.recipeName}
-          </button>
-          <div className={styles.metaPills}>
-            <span>Lvl {row.recipe.level}</span>
-            <span>{row.recipe.resultQuality}</span>
-            <span>{row.recipe.maxUses} uses</span>
-            <span>{row.vol_3.toLocaleString()} 3d vol</span>
-            <span>{row.outputLiquidity.label}</span>
+    <Card className={`${styles.projectCard} ${isProjectExpanded ? styles.projectExpanded : ""}`}>
+      <div className={styles.projectHeader}>
+        <div className={styles.projectIdentity}>
+          {row.recipe.imageUrl && (
+            <GameImage
+              src={row.recipe.imageUrl}
+              alt={row.recipe.resultName}
+              width={48}
+              height={48}
+              className={styles.projectArt}
+            />
+          )}
+          <div className={styles.projectTitleBlock}>
+            <div className={styles.projectTitleRow}>
+              <button
+                type="button"
+                className={styles.projectTitleBtn}
+                onClick={() => onOpenItem(row.recipe.resultName)}
+              >
+                <QualityText value={row.recipe.resultQuality}>{row.recipe.resultName}</QualityText>
+              </button>
+              <button
+                type="button"
+                className={styles.projectScrollLink}
+                onClick={() => onOpenItem(row.recipe.recipeName)}
+              >
+                {row.recipe.recipeName}
+              </button>
+            </div>
+            <div className={styles.inlineGroup}>
+              <Badge size="sm" variant="mythic">
+                Lv {row.recipe.level}
+              </Badge>
+              <Badge size="sm" variant="neutral">
+                {formatCraftWindow(row.craftTimeSeconds)} / craft
+              </Badge>
+              <Badge size="sm" variant={getLiquidityBadgeVariant(row.outputLiquidity.tone)}>
+                {row.outputLiquidity.label} ({row.stableVol_3.toLocaleString()} 3d)
+              </Badge>
+              <Badge size="sm" variant="refined">
+                +{formatGold(row.alchemyExpEach)} Alchemy | +{formatGold(row.speedExpPerCraft)} Speed
+              </Badge>
+            </div>
           </div>
         </div>
-        <div
-          className={`${styles.profitBadge} ${
-            row.profitPerHour >= 0 ? styles.pos : styles.neg
-          }`}
-        >
-          <strong>{formatSignedGold(row.profitPerHour)}/hr</strong>
-          <span>{formatSignedGold(row.profit)}/craft</span>
+
+        <div className={styles.projectHeaderRight}>
+          <div className={styles.projectRateBox}>
+            <span className={`${styles.goldValue} ${row.profitPerHour >= 0 ? "text-success" : "text-danger"}`}>
+              <GoldIcon size={14} />
+              <strong>{formatSignedGold(row.profitPerHour)}/hr</strong>
+            </span>
+            <span className={styles.recipeSubline}>{formatSignedGold(row.profit)}/craft</span>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.iconSquareBtn}
+            aria-label={`Remove ${row.recipe.resultName} project`}
+            onClick={() => onRemove(row.recipe.resultName)}
+          >
+            <Icon name="close" size="sm" aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
-      <div
-        className={styles.mobileCardSummary}
-        aria-label={`${row.recipe.resultName} project summary`}
-      >
-        <div>
-          <span>Remaining</span>
-          <strong
-            className={row.totalRemainingProfit >= 0 ? "text-success" : "text-danger"}
+      <div className={styles.mobileCardSummary} aria-label={`${row.recipe.resultName} project summary`}>
+        <div className={styles.metricStripCell}>
+          <span className={styles.metricLabel}>Remaining</span>
+          <span
+            className={`${styles.metricValue} ${
+              row.totalRemainingProfit >= 0 ? "text-success" : "text-danger"
+            }`}
           >
-            {formatSignedGold(row.totalRemainingProfit)}
-          </strong>
+            <GoldIcon size={12} />
+            <span>{formatSignedGold(row.totalRemainingProfit)}</span>
+          </span>
         </div>
-        <div>
-          <span>Best path</span>
-          <strong
-            className={
-              row.bestPath === "VENDOR"
-                ? styles.pathVendor
-                : row.bestPath === "MARKET"
-                  ? styles.pathMarket
-                  : styles.pathCustom
-            }
-          >
-            {row.bestPath}
-          </strong>
+        <div className={styles.metricStripCell}>
+          <span className={styles.metricLabel}>Best Path</span>
+          <span className={styles.metricValue}>{getBestPathLabel(row.bestPath)}</span>
         </div>
-        <div>
-          <span>Warnings</span>
-          <strong>{row.marketWarnings.length}</strong>
+        <div className={styles.metricStripCell}>
+          <span className={styles.metricLabel}>EXP / Hr</span>
+          <span className={styles.metricValue}>{formatGold(row.expPerHour)}/hr</span>
         </div>
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="sm"
         className={styles.mobileDetailsToggle}
         aria-expanded={isProjectExpanded}
         aria-controls={detailsId}
         onClick={() => onToggleDetails(row.recipe.resultName)}
       >
-        <span>{isProjectExpanded ? "Hide details" : "Show details"}</span>
-        <ChevronDown size={16} aria-hidden="true" />
-      </button>
+        <span>{isProjectExpanded ? "Hide ledger & overrides" : "Edit recipe uses & prices"}</span>
+        <Icon
+          name={isProjectExpanded ? "chevronUp" : "chevronDown"}
+          size="sm"
+          aria-hidden="true"
+        />
+      </Button>
 
-      <div className={styles.cardGrid} id={detailsId}>
-        <section className={styles.cardLeft}>
-          <div className={styles.cardSection}>
-            <div className={styles.sectionLabel}>
-              <TrendingUp size={12} /> Project Overhead
-            </div>
-            <div className={styles.investmentInputGroup}>
-              <label className={styles.inputWrapper}>
-                <span>Recipe Acquisition Price</span>
-                <div className={styles.inputRow}>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    aria-label={`Recipe acquisition price for ${row.recipe.recipeName}`}
-                    placeholder={
-                      row.recipePrice > 0
-                        ? row.recipePrice.toLocaleString()
-                        : "No market data"
-                    }
-                    value={row.localRecipePrice ?? ""}
-                    onChange={(event) =>
-                      onUpdateRecipePrice(row.recipe.resultName, event.target.value)
-                    }
-                  />
-                  <span className={styles.currency}>Gold</span>
+      <div className={styles.projectDetailsCollapse} id={detailsId}>
+        <div className={styles.projectDetailsInner}>
+          <div className={styles.projectLedgerGrid}>
+            <section className={styles.projectColumn}>
+              <div className={styles.subSection}>
+                <div className={styles.subSectionHead}>
+                  <Icon name="lore" size="sm" aria-hidden="true" />
+                  <span>Recipe Overhead &amp; Uses</span>
                 </div>
-                <div className={styles.inputHintRow}>
-                  <span>{formatSource(row.recipePriceSource)}</span>
-                  <span className={styles.feeSplit}>
-                    {formatGold(row.recipeCostPerCraft, 2)}g / craft
-                  </span>
-                </div>
-              </label>
 
-              <label className={styles.usesControl}>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  max={row.recipe.maxUses}
-                  aria-label={`Uses remaining for ${row.recipe.resultName}`}
-                  value={row.usesLeft}
-                  onChange={(event) => onSetRecipeUses(row.recipe, event.target.value)}
-                />
-                <span>Uses remaining</span>
-              </label>
-            </div>
-          </div>
-
-          <div className={styles.cardSection}>
-            <div className={styles.sectionLabel}>
-              <Hammer size={12} /> Material Ledger
-            </div>
-            <div className={styles.materialsLedger}>
-              {row.materialBreakdown.map((material) => (
-                <div key={material.name} className={styles.ledgerRow}>
-                  <div className={styles.ledgerInfo}>
-                    <span className={styles.matQty}>{material.qty}x</span>
-                    <button
-                      type="button"
-                      className={styles.matName}
-                      onClick={() => onOpenItem(material.name)}
-                    >
-                      {material.name}
-                    </button>
-                  </div>
-                  <div className={styles.ledgerInput}>
-                    <div className={styles.inputSourceHint}>
-                      {formatSource(material.priceSource)}
+                <div className={styles.overheadInputsGrid}>
+                  <div className={styles.fieldBlock}>
+                    <div className={styles.fieldLabelRow}>
+                      <span className={styles.fieldLabel}>Recipe Acquisition Price</span>
+                      <Badge size="sm" variant={row.recipePrice > 0 ? "neutral" : "warning"}>
+                        {formatSource(row.recipePriceSource)}
+                      </Badge>
                     </div>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      aria-label={`Custom unit price for ${material.name}`}
-                      placeholder={
-                        material.unitPrice > 0 ? material.unitPrice.toLocaleString() : "Missing"
-                      }
-                      value={material.localPrice ?? ""}
-                      onChange={(event) =>
-                        onUpdateMaterialPrice(
-                          row.recipe.resultName,
-                          material.name,
-                          event.target.value,
-                        )
-                      }
+                    <div className={styles.inlineInputRow}>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        className={styles.inlinePriceInput}
+                        aria-label={`Recipe acquisition price for ${row.recipe.recipeName}`}
+                        placeholder={
+                          row.recipePrice > 0 ? row.recipePrice.toLocaleString() : "No market data"
+                        }
+                        value={row.localRecipePrice ?? ""}
+                        onChange={(e) => onUpdateRecipePrice(row.recipe.resultName, e.target.value)}
+                      />
+                      <span className={styles.inputUnitTag}>
+                        <GoldIcon size={12} />
+                        <span>{formatGold(row.recipeCostPerCraft, 1)}g/ea</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.usesStepperWrap}>
+                    <NumberInput
+                      label={`Uses Remaining (max ${row.recipe.maxUses})`}
+                      min={1}
+                      max={row.recipe.maxUses}
+                      step={1}
+                      showSteppers
+                      ariaLabel={`Uses remaining for ${row.recipe.resultName}`}
+                      value={row.usesLeft}
+                      onChange={(val) => onSetRecipeUses(row.recipe, val)}
                     />
-                    <div className={styles.ledgerTotal}>{formatGold(material.total, 2)}g</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.cardRight}>
-          <div className={styles.cardSection}>
-            <div className={styles.sectionLabel}>
-              <DollarSign size={12} /> Revenue Strategy
-            </div>
-            {row.marketWarnings.length > 0 && (
-              <div
-                className={`${styles.marketWarningRow} ${
-                  row.outputLiquidity.tone === "active"
-                    ? styles.active
-                    : row.outputLiquidity.tone === "steady"
-                      ? styles.steady
-                      : ""
-                }`}
-              >
-                <AlertTriangle size={14} aria-hidden="true" />
-                <div className={styles.marketWarningCopy}>
-                  <span>{row.marketWarnings.join(" - ")}</span>
-                  <small>{row.outputLiquidity.note}</small>
-                </div>
               </div>
-            )}
-            <div className={styles.revenueManager}>
-              <label className={styles.marketRevenueBox}>
-                <span>Gross Sell Price</span>
-                <div className={`${styles.inputRow} ${styles.compact}`}>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    aria-label={`Gross sell price for ${row.recipe.resultName}`}
-                    placeholder={
-                      row.marketGross > 0
-                        ? row.marketGross.toLocaleString()
-                        : "No market data"
-                    }
-                    value={row.localSellPrice ?? ""}
-                    onChange={(event) =>
-                      onUpdateSellPrice(row.recipe.resultName, event.target.value)
-                    }
-                  />
-                  <span className={styles.currency}>g</span>
-                </div>
-                <div className={styles.marketMeta}>
-                  <span>{formatSource(row.marketPriceSource)}</span>
-                  <span>
-                    {taxNetPercent}% Net: <b>{formatGold(row.revenue)}g</b>
+
+              <div className={styles.subSection}>
+                <div className={styles.subSectionHead}>
+                  <Icon name="items" size="sm" aria-hidden="true" />
+                  <span>Material Ledger</span>
+                  <span className={styles.subSectionTotal}>
+                    <GoldIcon size={12} />
+                    <span>{formatGold(row.materialCost, 1)}g / craft</span>
                   </span>
                 </div>
-              </label>
 
-              <div
-                className={`${styles.vendorRevenueBox} ${
-                  row.bestPath === "VENDOR" ? styles.highlight : ""
-                }`}
-              >
-                <div>
-                  <div className={styles.vendorLabel}>
-                    Vendor path (+{profileBarteringBoost}% profile bartering)
+                <div className={styles.materialsList}>
+                  {row.materialBreakdown.map((material) => (
+                    <div key={material.name} className={styles.materialRow}>
+                      <div className={styles.materialIdentity}>
+                        {material.imageUrl && (
+                          <GameImage
+                            src={material.imageUrl}
+                            alt={material.name}
+                            width={28}
+                            height={28}
+                            className={styles.materialThumb}
+                          />
+                        )}
+                        <span className={styles.materialQty}>{material.qty}x</span>
+                        <button
+                          type="button"
+                          className={styles.tableItemBtn}
+                          onClick={() => onOpenItem(material.name)}
+                        >
+                          <QualityText value={material.quality || "STANDARD"}>
+                            {material.name}
+                          </QualityText>
+                        </button>
+                      </div>
+
+                      <div className={styles.materialPriceControls}>
+                        <Badge size="sm" variant={material.unitPrice > 0 ? "neutral" : "warning"}>
+                          {formatSource(material.priceSource)}
+                        </Badge>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          className={styles.materialPriceInput}
+                          aria-label={`Custom unit price for ${material.name}`}
+                          placeholder={
+                            material.unitPrice > 0 ? material.unitPrice.toLocaleString() : "Missing"
+                          }
+                          value={material.localPrice ?? ""}
+                          onChange={(e) =>
+                            onUpdateMaterialPrice(row.recipe.resultName, material.name, e.target.value)
+                          }
+                        />
+                        <span className={styles.materialSubtotal}>
+                          <GoldIcon size={12} />
+                          <span>{formatGold(material.total, 1)}g</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.projectColumn}>
+              <div className={styles.subSection}>
+                <div className={styles.subSectionHead}>
+                  <Icon name="gold" size="sm" aria-hidden="true" />
+                  <span>Revenue &amp; Yield</span>
+                </div>
+
+                {row.marketWarnings.length > 0 && (
+                  <Banner variant="warning">
+                    <strong>{row.marketWarnings.join(", ")}:</strong> {row.outputLiquidity.note}
+                  </Banner>
+                )}
+
+                <div className={styles.revenueGrid}>
+                  <div className={styles.revenueBox}>
+                    <div className={styles.fieldLabelRow}>
+                      <span className={styles.fieldLabel}>Gross Sell Price</span>
+                      <Badge size="sm" variant={row.marketGross > 0 ? "neutral" : "warning"}>
+                        {formatSource(row.marketPriceSource)}
+                      </Badge>
+                    </div>
+                    <div className={styles.inlineInputRow}>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        className={styles.inlinePriceInput}
+                        aria-label={`Gross sell price for ${row.recipe.resultName}`}
+                        placeholder={
+                          row.marketGross > 0 ? row.marketGross.toLocaleString() : "No market data"
+                        }
+                        value={row.localSellPrice ?? ""}
+                        onChange={(e) => onUpdateSellPrice(row.recipe.resultName, e.target.value)}
+                      />
+                      <span className={styles.inputUnitTag}>
+                        <GoldIcon size={12} />
+                        <span>{taxNetPercent}% net: {formatGold(row.revenue)}g</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className={styles.vendorNote}>
-                    Market tax is {Math.round(taxRate * 100)}%
+
+                  <div
+                    className={`${styles.vendorBox} ${
+                      row.bestPath === "VENDOR" ? styles.vendorOptimal : ""
+                    }`}
+                  >
+                    <div className={styles.vendorMeta}>
+                      <span className={styles.fieldLabel}>
+                        Vendor (+{effectiveBartering.toFixed(1).replace(/\.0$/, "")}% bartering)
+                      </span>
+                      <span className={styles.recipeSubline}>
+                        Market tax is {Math.round(taxRate * 100)}%
+                      </span>
+                    </div>
+                    <span className={styles.goldValue}>
+                      <GoldIcon size={13} />
+                      <strong>{formatGold(row.vendorRevenue)}g</strong>
+                    </span>
                   </div>
                 </div>
-                <div className={styles.vendorVal}>{formatGold(row.vendorRevenue)}g</div>
-              </div>
-            </div>
-          </div>
 
-          <div className={styles.footerStatsModern}>
-            <div className={styles.statGroup}>
-              <span className={styles.label}>Best Path</span>
-              <span
-                className={`${styles.value} ${
-                  row.bestPath === "VENDOR"
-                    ? styles.pathVendor
-                    : row.bestPath === "MARKET"
-                      ? styles.pathMarket
-                      : styles.pathCustom
-                }`}
-              >
-                {row.bestPath}
-              </span>
-            </div>
-            <div className={styles.statGroup}>
-              <span className={styles.label}>ROI</span>
-              <span
-                className={`${styles.value} ${
-                  row.roi >= 0 ? "text-success" : "text-danger"
-                }`}
-              >
-                {row.roi.toFixed(1)}%
-              </span>
-            </div>
-            <div className={`${styles.statGroup} ${styles.highlight}`}>
-              <span className={styles.label}>
-                Remaining Project Gain ({row.usesLeft} crafts)
-              </span>
-              <span
-                className={`${styles.value} ${styles.large} ${
-                  row.totalRemainingProfit >= 0 ? "text-success" : "text-danger"
-                }`}
-              >
-                {formatSignedGold(row.totalRemainingProfit)}
-              </span>
-            </div>
+                <div className={styles.projectSummaryStrip}>
+                  <div className={styles.metricStripCell}>
+                    <span className={styles.metricLabel}>Best Path</span>
+                    <span className={styles.metricValue}>
+                      <Badge size="sm" variant={getBestPathVariant(row.bestPath)}>
+                        {getBestPathLabel(row.bestPath)}
+                      </Badge>
+                    </span>
+                  </div>
+                  <div className={styles.metricStripCell}>
+                    <span className={styles.metricLabel}>ROI</span>
+                    <span
+                      className={`${styles.metricValue} ${
+                        row.roi >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {row.roi.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className={styles.metricStripCell}>
+                    <span className={styles.metricLabel}>EXP / Hr</span>
+                    <span className={styles.metricValue}>{formatGold(row.expPerHour)}/hr</span>
+                  </div>
+                  <div className={styles.metricStripCell}>
+                    <span className={styles.metricLabel}>Remaining ({row.usesLeft} uses)</span>
+                    <span
+                      className={`${styles.metricValue} ${
+                        row.totalRemainingProfit >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      <GoldIcon size={13} />
+                      <strong>{formatSignedGold(row.totalRemainingProfit)}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </div>
-    </article>
+    </Card>
   );
 }

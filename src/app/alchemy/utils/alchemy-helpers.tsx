@@ -1,89 +1,61 @@
 import React from "react";
-import { VIAL_COSTS } from "../../../constants";
-import { getMarketLiquidity, getSafeMarketValue } from "@/lib/market-pricing";
+import {
+  formatDuration,
+  formatGold,
+  formatMinutes,
+  formatSignedGold,
+  getActionLabel,
+  getAlchemyItemPrice,
+  getCategoryLabel,
+  getCustomPrice,
+  getSellThroughNote,
+  getSignal,
+  getTrend,
+  makeSearchText,
+} from "@/lib/alchemy-profit";
 import {
   ALCHEMY_LIQUIDITY_FILTERS,
   ALCHEMY_SETTINGS_STORAGE_KEY,
   ALCHEMY_SORT_KEYS,
-  type ActionPath,
+  type AlchemyCategory,
   type AlchemyLiquidityFilter,
   type AlchemyRow,
   type AlchemySortKey,
-  type IngredientCost,
   type LiquiditySignal,
-  type MarketData,
   type PersistedAlchemySettings,
-  type Trend,
 } from "../types";
 
-export const formatGold = (value: number, digits = 0): string =>
-  value.toLocaleString(undefined, { maximumFractionDigits: digits });
-
-export const formatSignedGold = (value: number, digits = 0): string =>
-  `${value >= 0 ? "+" : ""}${formatGold(value, digits)}g`;
-
-export const formatDuration = (seconds: number): string => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "0s";
-  if (seconds < 60) return `${seconds.toFixed(0)}s`;
-  const minutes = seconds / 60;
-  return `${minutes.toFixed(minutes >= 10 ? 0 : 1)}m`;
+export {
+  formatDuration,
+  formatGold,
+  formatMinutes,
+  formatSignedGold,
+  getActionLabel,
+  getAlchemyItemPrice,
+  getCategoryLabel,
+  getCustomPrice,
+  getSellThroughNote,
+  getSignal,
+  getTrend,
+  makeSearchText,
 };
 
-export const formatMinutes = (seconds: number): string => {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "0";
-  const minutes = seconds / 60;
-  return minutes >= 10 ? minutes.toFixed(0) : minutes.toFixed(1);
+export const getSignalVariant = (
+  signal: LiquiditySignal,
+): "success" | "refined" | "warning" | "danger" | "neutral" => {
+  if (signal === "LIQUID" || signal === "VENDOR SAFE") return "success";
+  if (signal === "STEADY") return "refined";
+  if (signal === "THIN" || signal === "VOLUME SWINGS" || signal === "PRICE SWINGS") return "warning";
+  if (signal === "SPIKE RISK" || signal === "NO SALES" || signal === "MISSING") return "danger";
+  return "neutral";
 };
 
-export const getCustomPrice = (customPrices: Record<string, number>, name: string): number => {
-  const price = customPrices?.[name];
-  return typeof price === "number" && price > 0 ? price : 0;
-};
-
-export const getItemPrice = (
-  name: string,
-  marketData: Record<string, MarketData>,
-  customPrices: Record<string, number>,
-): { price: number; source: IngredientCost["source"] | "custom" | "market" } => {
-  const custom = getCustomPrice(customPrices, name);
-  if (custom > 0) return { price: custom, source: "custom" };
-
-  const market = getSafeMarketValue(marketData?.[name]);
-  if (market > 0) return { price: market, source: "market" };
-
-  const vendor = VIAL_COSTS[name] || 0;
-  if (vendor > 0) return { price: vendor, source: "vendor" };
-
-  return { price: 0, source: "missing" };
-};
-
-export const getTrend = (item?: MarketData): Trend => {
-  const avg3 = item?.avg_3 || 0;
-  const avg14 = item?.avg_14 || 0;
-  if (avg3 > 0 && avg14 > 0 && avg3 > avg14 * 1.05) return "up";
-  if (avg3 > 0 && avg14 > 0 && avg3 < avg14 * 0.95) return "down";
-  return "flat";
-};
-
-export const getSignal = (
-  action: ActionPath,
-  item: MarketData | undefined,
-  missing: boolean,
-): LiquiditySignal => {
-  if (missing) return "MISSING";
-  if (action === "VENDOR") return "VENDOR SAFE";
-  const liquidity = getMarketLiquidity(item);
-  if (liquidity.isSpikeRisk) return "SPIKE RISK";
-  if (liquidity.tone === "active") return "LIQUID";
-  if (liquidity.tone === "steady") return "STEADY";
-  if (liquidity.rawVolume3d > 0 || liquidity.stableVolume3d > 0) return "THIN";
-  return "NO SALES";
-};
-
-export const getSignalClass = (signal: LiquiditySignal): string => {
-  if (signal === "LIQUID" || signal === "VENDOR SAFE") return "action-craft";
-  if (signal === "STEADY") return "action-vendor";
-  return "action-liquidate";
+export const getActionVariant = (
+  action: AlchemyRow["action"],
+): "success" | "refined" | "warning" | "danger" | "neutral" => {
+  if (action === "MARKET") return "success";
+  if (action === "VENDOR") return "refined";
+  return "warning";
 };
 
 export const getVisibleAlchemyWarnings = (row: AlchemyRow): string[] => {
@@ -94,19 +66,6 @@ export const getVisibleAlchemyWarnings = (row: AlchemyRow): string[] => {
   return row.warnings.filter((warning) => !repeatedBySignal.has(warning));
 };
 
-export const getActionLabel = (action: ActionPath): string => {
-  if (action === "MARKET") return "Market";
-  if (action === "VENDOR") return "Vendor";
-  return "Sell inputs";
-};
-
-export const makeSearchText = (...parts: Array<string | string[] | undefined>): string =>
-  parts
-    .flatMap((part) => (Array.isArray(part) ? part : [part]))
-    .filter((part): part is string => Boolean(part))
-    .join(" ")
-    .toLowerCase();
-
 export const getAlchemyMatchHint = (row: AlchemyRow, query: string): string => {
   const normalized = query.trim().toLowerCase();
   if (!normalized || row.name.toLowerCase().includes(normalized)) return "";
@@ -115,38 +74,12 @@ export const getAlchemyMatchHint = (row: AlchemyRow, query: string): string => {
   );
   if (material) return `Uses ${material.name}`;
   if (row.vialName.toLowerCase().includes(normalized)) return `Uses ${row.vialName}`;
-  if (`recipe: ${row.name}`.toLowerCase().includes(normalized))
-    return `Recipe scroll: Recipe: ${row.name}`;
+  if (`recipe: ${row.name}`.toLowerCase().includes(normalized)) return `Recipe: ${row.name}`;
   if (getActionLabel(row.action).toLowerCase().includes(normalized))
     return `Best path: ${getActionLabel(row.action)}`;
   if (row.signal.toLowerCase().includes(normalized)) return `Liquidity: ${row.signal}`;
   const warning = row.warnings.find((item) => item.toLowerCase().includes(normalized));
   if (warning) return warning;
-  return "";
-};
-
-export const getSellThroughNote = (
-  action: ActionPath,
-  profit: number,
-  stableVolume3d: number,
-  craftsPerDay: number,
-  activeHours: number,
-  hasVolumeSwings: boolean,
-): string => {
-  if (action !== "MARKET" || profit <= 0) return "";
-  const stableDailySales = stableVolume3d / 3;
-  if (stableVolume3d <= 0) {
-    return "Market profit is based on price history, but recent sold volume is missing. Treat it as a listing target, not a fast-sale estimate.";
-  }
-  if (activeHours > 0 && craftsPerDay > stableDailySales) {
-    return `This setup can make about ${formatGold(craftsPerDay)} pcs/day while stable sold pace is about ${formatGold(stableDailySales)} pcs/day. Bulk output may need smaller batches or private buyers.`;
-  }
-  if (hasVolumeSwings) {
-    return "Recent sold volume includes unusual bulk-sale days. Use the stable sold pace instead of the raw spike before mass crafting.";
-  }
-  if (stableVolume3d < 40) {
-    return "Stable sold pace is low. This may still profit, but it can take longer to exit through the market.";
-  }
   return "";
 };
 
@@ -156,6 +89,9 @@ export const isAlchemySortKey = (value: unknown): value is AlchemySortKey =>
 export const isAlchemyLiquidityFilter = (value: unknown): value is AlchemyLiquidityFilter =>
   typeof value === "string" &&
   ALCHEMY_LIQUIDITY_FILTERS.some((filter) => filter.value === value);
+
+export const isAlchemyCategory = (value: unknown): value is AlchemyCategory =>
+  value === "all" || value === "potion" || value === "essence_crystal" || value === "stat_essence";
 
 export const highlightMatch = (text: string, query: string): React.ReactNode => {
   if (!query.trim()) return text;

@@ -1,0 +1,930 @@
+/* Scoped Astral Slate CSS Module for /alchemy */
+
+.pageShell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: calc(var(--bottom-dock-height, 64px) + env(safe-area-inset-bottom, 0px) + 2rem);
+}
+
+.hairlineDivider {
+  display: inline-block;
+  width: 1px;
+  height: 0.85em;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.inlineGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* Header & Top Spotlight */
+.headerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.1vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.drawerBtnInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.navPillLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease, transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.navPillLink:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-card-hover);
+}
+
+.navPillLink:active {
+  transform: scale(0.98);
+}
+
+.navPillLink:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Compact Spotlight Strip */
+.spotlightStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.spotlightCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 76px;
+  padding: 0.7rem 0.9rem;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  transition: background 150ms ease;
+}
+
+.spotlightCell:last-child {
+  border-right: 0;
+}
+
+.spotlightCell:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+}
+
+.spotlightCell:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.spotlightCell:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.spotlightMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.spotlightLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.spotlightLabel {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.spotlightValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.spotlightItemName {
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlightSubPair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.73rem;
+  font-family: var(--font-mono);
+  line-height: 1.35;
+}
+
+.itemThumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.itemThumbLg {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Balanced Compact Browse Toolbar */
+.toolbarCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+
+.toolbarTopRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.categoryTabs {
+  width: auto;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.toolbarControlsGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbarSearchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.searchSlot {
+  flex: 1 1 280px;
+  min-width: 200px;
+}
+
+.sortSlot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 200px;
+}
+
+.filterTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tagGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.statusMetaGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* Popover Filters Form */
+.popoverBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(320px, 84vw);
+  padding: 0.2rem;
+}
+
+.popoverRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.fieldLabel {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.popoverActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Results Table & Cells */
+.resultsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.desktopOnly {
+  display: block;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  padding: 0.15rem 0;
+  min-height: 28px;
+}
+
+.sortButton:hover,
+.sortButton:focus-visible {
+  color: var(--text-main);
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.recipeCell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 210px;
+  max-width: 310px;
+}
+
+.recipeMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.recipeTitleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.recipeNameBtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.recipeNameBtn:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.recipeNameBtn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.recipeSubline {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.metaPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.08rem 0.42rem;
+  border-radius: 5px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.matchHint {
+  color: var(--text-accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.moneyValue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cellStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.16rem;
+}
+
+.cellSub {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.positive {
+  color: var(--text-success);
+}
+
+.negative {
+  color: var(--text-danger);
+}
+
+.signalStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.clickableRow {
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.clickableRow:hover {
+  background: var(--bg-card-hover);
+}
+
+.rowMuted {
+  opacity: 0.62;
+}
+
+/* Cards View Grid */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 0.75rem;
+}
+
+.recipeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.cardIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cardMetricsStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--bg-panel);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cardMetricCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border-right: 1px solid var(--border-subtle);
+  min-width: 0;
+}
+
+.cardMetricCell:last-child {
+  border-right: 0;
+}
+
+.cardMetricLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.cardMetricVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cardFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Loadout & Boosts Drawer */
+.drawerStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.drawerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawerSection:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.drawerSectionTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.drawerRowBetween {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.drawerFooterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.drawerFooterSummary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  min-width: 0;
+  flex: 1 1 160px;
+}
+
+.drawerDoneBtn {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.profileStatusCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.profileStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.profileStatTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.profileStatLabel {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.profileStatValue {
+  color: var(--text-main);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ascensionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* Strategy Modal Sheet */
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.modalHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.modalSummaryStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--bg-panel);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.modalSummaryCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.8rem;
+  border-right: 1px solid var(--border-subtle);
+  min-width: 0;
+}
+
+.modalSummaryCell:last-child {
+  border-right: 0;
+}
+
+.modalPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ingredientList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ingredientRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+}
+
+.ingredientIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.ingredientNumbers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.mathList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+}
+
+.mathRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.mathRow span {
+  color: var(--text-muted);
+}
+
+.mathRow strong {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+}
+
+.mathDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 0.2rem 0;
+}
+
+.batchPresetRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.noteBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 900px) {
+  .spotlightStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .spotlightCell {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .spotlightCell:last-child {
+    border-bottom: 0;
+  }
+
+  .modalSummaryStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: block;
+  }
+
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .navPillLink,
+  .sortSlot {
+    min-height: 44px;
+  }
+
+  .cardActions button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .popoverRow,
+  .profileStatsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navPillLink,
+  .spotlightCell,
+  .clickableRow {
+    transition: none;
+  }
+}
