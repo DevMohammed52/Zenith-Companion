@@ -1,21 +1,22 @@
 {
   "meta": {
-    "generatedAt": "2026-11-27T00:32:46.657Z",
+    "generatedAt": "2026-11-27T13:46:38.768Z",
     "source": "https://support.idle-mmo.com/release-notes",
     "mode": "latest-page-merge",
-    "totalAvailable": 293,
-    "totalFetched": 288,
+    "totalAvailable": 294,
+    "totalFetched": 289,
     "fetchedPages": [
       1
     ],
-    "latestPatchId": 671,
+    "latestPatchId": 672,
     "oldestPatchId": 1,
-    "latestVersion": "0.88.0-PB",
+    "latestVersion": "0.88.1-PB",
     "oldestVersion": "0.1.1-CB",
     "categoryCounts": {
+      "forge": 55,
+      "items": 163,
       "world-bosses": 46,
       "conquest": 42,
-      "forge": 54,
       "mobile-ui": 117,
       "seasonal": 85,
       "bug-fixes": 212,
@@ -24,7 +25,6 @@
       "pets": 130,
       "guilds": 76,
       "economy": 135,
-      "items": 162,
       "translations": 17,
       "membership": 68,
       "map": 71,
@@ -40,6 +40,57 @@
     "note": "Generated from the public IdleMMO release notes page. Keep sourceUrl links visible in UI."
   },
   "patchNotes": [
+    {
+      "id": 672,
+      "version": "0.88.1-PB",
+      "title": "",
+      "headline": "Version 0.88.1-PB",
+      "releasedAt": "2026-11-27T10:35:00+00:00",
+      "releaseLabel": "3 hours ago",
+      "releaseDateLabel": "Nov 27, 2026",
+      "page": 1,
+      "sourceUrl": "https://support.idle-mmo.com/release-notes/version-0881",
+      "categories": [
+        "forge",
+        "items"
+      ],
+      "excerpt": "We've added the ability to queue multiple items for forging, saving you from having to start each craft manually. You can now set up a longer forging session before logging off and return to a stack of finished items...",
+      "contentBlocks": [
+        {
+          "type": "paragraph",
+          "text": "We've added the ability to queue multiple items for forging, saving you from having to start each craft manually."
+        },
+        {
+          "type": "paragraph",
+          "text": "You can now set up a longer forging session before logging off and return to a stack of finished items without having to check in after every craft."
+        },
+        {
+          "type": "paragraph",
+          "text": "This feature was introduced in Version 0.87.0 but was accidentally omitted from the patch notes."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Overview",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We've added the ability to queue multiple items for forging, saving you from having to start each craft manually."
+            },
+            {
+              "type": "paragraph",
+              "text": "You can now set up a longer forging session before logging off and return to a stack of finished items without having to check in after every craft."
+            },
+            {
+              "type": "paragraph",
+              "text": "This feature was introduced in Version 0.87.0 but was accidentally omitted from the patch notes."
+            }
+          ]
+        }
+      ],
+      "bodyText": "We've added the ability to queue multiple items for forging, saving you from having to start each craft manually.\nYou can now set up a longer forging session before logging off and return to a stack of finished items without having to check in after every craft.\nThis feature was introduced in Version 0.87.0 but was accidentally omitted from the patch notes.",
+      "searchText": "version 0.88.1-pb we've added the ability to queue multiple items for forging, saving you from having to start each craft manually. you can now set up a longer forging session before logging off and return to a stack of finished items without having to check in after every craft. this feature was introduced in version 0.87.0 but was accidentally omitted from the patch notes."
+    },
     {
       "id": 671,
       "version": "0.88.0-PB",
@@ -245,9 +296,9 @@
     },
     {
       "id": 616,
-      "version": "0.85.6",
+      "version": "0.86.6",
       "title": "Road Map",
-      "headline": "0.85.6 - Road Map",
+      "headline": "0.86.6 - Road Map",
       "releasedAt": "2026-11-11T16:18:00+00:00",
       "releaseLabel": "15 days ago",
       "releaseDateLabel": "Nov 11, 2026",
@@ -293,7 +344,7 @@
         }
       ],
       "bodyText": "Wondering what's coming to IdleMMO? We've just updated our roadmap with a look at what we're planning for the game!\nWe've covered a range of upcoming features and improvements, including farming, new content, a reworked quest system, guild improvements, and much more. This isn't exhaustive, and doesn't contain everything we have planned. But a lot of it is covered.\nCheck it out here: https://support.idle-mmo.com/roadmap",
-      "searchText": "0.85.6 - road map wondering what's coming to idlemmo? we've just updated our roadmap with a look at what we're planning for the game! we've covered a range of upcoming features and improvements, including farming, new content, a reworked quest system, guild improvements, and much more. this isn't exhaustive, and doesn't contain everything we have planned. but a lot of it is covered. check it out here: https://support.idle-mmo.com/roadmap"
+      "searchText": "0.86.6 - road map wondering what's coming to idlemmo? we've just updated our roadmap with a look at what we're planning for the game! we've covered a range of upcoming features and improvements, including farming, new content, a reworked quest system, guild improvements, and much more. this isn't exhaustive, and doesn't contain everything we have planned. but a lot of it is covered. check it out here: https://support.idle-mmo.com/roadmap"
     },
     {
       "id": 613,
@@ -667,7 +718,7 @@
       "title": "🎃 Eve of Shadows",
       "headline": "0.86.0-PB - 🎃 Eve of Shadows",
       "releasedAt": "2026-10-23T13:04:00+00:00",
-      "releaseLabel": "34 days ago",
+      "releaseLabel": "35 days ago",
       "releaseDateLabel": "Oct 23, 2026",
       "page": 1,
       "sourceUrl": "https://support.idle-mmo.com/release-notes/0860-pb-eve-of-shadows",
