@@ -1,18 +1,26 @@
 import React from "react";
-import {
-  ArrowDown,
-  Hand,
-  HardHat,
-  Layers,
-  Shield,
-  Sword,
-  Target,
-  Zap,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
+import type { BadgeVariant } from "@/components/ui/Badge";
+import type { IconConcept } from "@/lib/icons";
 import { getSafeMarketValue, type MarketPriceDatum } from "@/lib/market-pricing";
 import { formatStatName } from "@/lib/profile-calculations";
 import { getQualityRank } from "@/lib/quality";
 import type { CharacterProfile } from "@/lib/profiles";
+
+const VALID_QUALITY_BADGES = new Set<string>([
+  "standard",
+  "refined",
+  "premium",
+  "epic",
+  "legendary",
+  "mythic",
+  "unique",
+]);
+
+export function qualityBadgeVariant(quality: string | undefined): BadgeVariant {
+  const normalized = String(quality || "").trim().toLowerCase();
+  return VALID_QUALITY_BADGES.has(normalized) ? (normalized as BadgeVariant) : "neutral";
+}
 
 export type GearType =
   | "SWORD"
@@ -29,6 +37,22 @@ export type CombatStyle = "swordShield" | "dualDaggers" | "bow";
 export type SortKey = "level" | "stats" | "price" | "quality" | "name";
 export type Direction = "asc" | "desc";
 export type Priority = "balanced" | "damage" | "defence" | "speed";
+export type BisTab = "table" | "upgrades";
+export type AdvisorSortKey = "efficiency" | "gain" | "cost";
+
+export function formatCompactGold(value: number | null | undefined) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return "-";
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(num >= 100_000 ? 0 : 1)}K`;
+  return `${Math.round(num)}g`;
+}
+
+export interface UpgradeRequirement {
+  hashed_item_id: string;
+  item_name: string;
+  quantity: number;
+}
 
 export type GearItem = {
   name: string;
@@ -43,6 +67,7 @@ export type GearItem = {
   stats?: Record<string, number> | null;
   tier_modifiers?: Record<string, number> | null;
   max_tier?: number;
+  upgrade_requirements?: UpgradeRequirement[] | null;
 };
 
 export type GearView = {
@@ -77,20 +102,32 @@ export const COMBAT_TYPES = new Set<GearType>([
   "GAUNTLETS",
 ]);
 
+export const SLOT_ICON_NAMES: Record<GearType, IconConcept> = {
+  SWORD: "attackPower",
+  DAGGER: "speed",
+  BOW: "bis",
+  SHIELD: "conquest",
+  HELMET: "defense",
+  CHESTPLATE: "conquest",
+  GREAVES: "archiveLayers",
+  BOOTS: "agility",
+  GAUNTLETS: "combat",
+};
+
 export const SLOT_CONFIG: Record<GearType, { label: string; profileSlot: string; icon: React.ReactNode }> = {
-  SWORD: { label: "Sword", profileSlot: "weapon", icon: <Sword size={16} /> },
-  DAGGER: { label: "Dagger", profileSlot: "weapon", icon: <Zap size={16} /> },
-  BOW: { label: "Bow", profileSlot: "bow", icon: <Target size={16} /> },
-  SHIELD: { label: "Shield", profileSlot: "shield", icon: <Shield size={16} /> },
-  HELMET: { label: "Helmet", profileSlot: "helmet", icon: <HardHat size={16} /> },
-  CHESTPLATE: { label: "Chestplate", profileSlot: "chestplate", icon: <Shield size={16} /> },
-  GREAVES: { label: "Greaves", profileSlot: "greaves", icon: <Layers size={16} /> },
-  BOOTS: { label: "Boots", profileSlot: "boots", icon: <ArrowDown size={16} /> },
-  GAUNTLETS: { label: "Gauntlets", profileSlot: "gauntlets", icon: <Hand size={16} /> },
+  SWORD: { label: "Sword", profileSlot: "weapon", icon: <Icon name="attackPower" size="sm" aria-hidden="true" /> },
+  DAGGER: { label: "Dagger", profileSlot: "weapon", icon: <Icon name="speed" size="sm" aria-hidden="true" /> },
+  BOW: { label: "Bow", profileSlot: "bow", icon: <Icon name="bis" size="sm" aria-hidden="true" /> },
+  SHIELD: { label: "Shield", profileSlot: "shield", icon: <Icon name="conquest" size="sm" aria-hidden="true" /> },
+  HELMET: { label: "Helmet", profileSlot: "helmet", icon: <Icon name="defense" size="sm" aria-hidden="true" /> },
+  CHESTPLATE: { label: "Chestplate", profileSlot: "chestplate", icon: <Icon name="conquest" size="sm" aria-hidden="true" /> },
+  GREAVES: { label: "Greaves", profileSlot: "greaves", icon: <Icon name="archiveLayers" size="sm" aria-hidden="true" /> },
+  BOOTS: { label: "Boots", profileSlot: "boots", icon: <Icon name="agility" size="sm" aria-hidden="true" /> },
+  GAUNTLETS: { label: "Gauntlets", profileSlot: "gauntlets", icon: <Icon name="combat" size="sm" aria-hidden="true" /> },
 };
 
 export const SLOT_FILTERS: Array<{ id: "ALL" | GearType; label: string }> = [
-  { id: "ALL", label: "All gear" },
+  { id: "ALL", label: "All slots" },
   { id: "SWORD", label: "Swords" },
   { id: "DAGGER", label: "Daggers" },
   { id: "BOW", label: "Bows" },
@@ -109,17 +146,17 @@ export const STYLE_OPTIONS: Array<{ id: CombatStyle; label: string; slots: GearT
 ];
 
 export const SORT_OPTIONS: Array<{ id: SortKey; label: string }> = [
+  { id: "stats", label: "Total Stats" },
+  { id: "price", label: "Gold / Stat" },
   { id: "level", label: "Level" },
-  { id: "stats", label: "Stats" },
-  { id: "price", label: "Price" },
   { id: "quality", label: "Rarity" },
   { id: "name", label: "Name" },
 ];
 
 export const PRIORITIES: Array<{ id: Priority; label: string }> = [
-  { id: "balanced", label: "Balanced" },
+  { id: "balanced", label: "All Stats" },
   { id: "damage", label: "Damage" },
-  { id: "defence", label: "Defence" },
+  { id: "defence", label: "Defense" },
   { id: "speed", label: "Speed" },
 ];
 
@@ -132,7 +169,8 @@ export const SEARCH_ALIASES: Record<string, string[]> = {
   shoes: ["boots"],
 };
 
-export const INITIAL_VISIBLE_GEAR_ROWS = 120;
+export const EXPLORER_PAGE_SIZE = 24;
+export const ADVISOR_PAGE_SIZE = 16;
 
 export const WEIGHTS: Record<Priority, Record<string, number>> = {
   balanced: {
@@ -198,7 +236,7 @@ export function getRequirementLevel(item: GearItem) {
 
 export function formatGold(value: number | null | undefined) {
   if (!Number.isFinite(Number(value)) || Number(value) <= 0) return "-";
-  return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}g`;
+  return `${Math.round(Number(value)).toLocaleString()}g`;
 }
 
 export function evaluateScore(stats: Record<string, number>, priority: Priority) {
@@ -270,84 +308,4 @@ export function clampTier(value: number | "", maxTier: number) {
   return Math.min(Math.max(1, Number(value || 1)), Math.max(1, maxTier));
 }
 
-export type UseBisStateReturn = {
-  // Refs
-  comparePanelRef: React.RefObject<HTMLElement | null>;
-  recommendationPanelRef: React.RefObject<HTMLElement | null>;
-  gearListPanelRef: React.RefObject<HTMLDivElement | null>;
-  searchInputRef: React.RefObject<HTMLInputElement | null>;
-  slotButtonRefs: React.MutableRefObject<Partial<Record<"ALL" | GearType, HTMLButtonElement | null>>>;
-
-  // State
-  search: string;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
-  slotFilter: "ALL" | GearType;
-  setSlotFilter: React.Dispatch<React.SetStateAction<"ALL" | GearType>>;
-  usableOnly: boolean;
-  setUsableOnly: React.Dispatch<React.SetStateAction<boolean>>;
-  priority: Priority;
-  setPriority: React.Dispatch<React.SetStateAction<Priority>>;
-  sortKey: SortKey;
-  setSortKey: React.Dispatch<React.SetStateAction<SortKey>>;
-  direction: Direction;
-  setDirection: React.Dispatch<React.SetStateAction<Direction>>;
-  selectedId: string;
-  candidateTier: number | "";
-  setCandidateTier: React.Dispatch<React.SetStateAction<number | "">>;
-  compareTier: number | "";
-  setCompareTier: React.Dispatch<React.SetStateAction<number | "">>;
-  visibleGearCount: number;
-  setVisibleGearCount: React.Dispatch<React.SetStateAction<number>>;
-  mobileSelectionHint: string;
-  statusMessage: string;
-
-  // Derivations
-  activeProfile: CharacterProfile | null;
-  profileCombatLevel: number | "" | undefined;
-  profileStrength: number | "" | undefined;
-  profileDexterity: number | "" | undefined;
-  profileDefence: number | "" | undefined;
-  activeCombatStyle: CombatStyle;
-  levels: { combat: number; strength: number; dexterity: number; defence: number };
-  activeSlots: GearType[];
-  gearViews: GearView[];
-  recommendations: Partial<Record<GearType, GearView>>;
-  filteredGear: GearView[];
-  visibleGear: GearView[];
-  selected: GearView | null;
-  selectedType: GearType | undefined;
-  selectedProfileSlot: string;
-  currentProfileItem: GearItem | undefined;
-  effectiveCandidateTier: number;
-  effectiveCompareTier: number;
-  selectedMaxTier: number;
-  currentMaxTier: number;
-  candidateStats: Record<string, number>;
-  currentStats: Record<string, number>;
-  statComparison: StatComparison[];
-  totalRecommendedCost: number;
-  activeProfileName: string;
-  activeStyleLabel: string;
-  priorityLabel: string;
-  usableGearCount: number;
-  recommendedSlotCount: number;
-  recommendationReadinessLabel: string;
-  selectedDeltaTotal: number;
-  positiveDeltaCount: number;
-  negativeDeltaCount: number;
-  comparisonTone: "neutral" | "positive" | "negative";
-  comparisonSummaryLabel: string;
-  dataSourceLabel: string;
-
-  // Handlers & Actions
-  handleLevelChange: (key: "combatLevel" | "strStat" | "dexStat" | "defStat", value: string) => void;
-  setCombatStyle: (style: CombatStyle) => void;
-  changeSlotFilter: (slot: "ALL" | GearType) => void;
-  selectGear: (view: GearView) => void;
-  prefetchGearItem: (name: string) => void;
-  openItemByName: (name: string) => void;
-  saveGearToProfile: (slot: string) => void;
-  focusSearch: () => void;
-  showUsableRecommendations: () => void;
-  jumpToComparison: () => void;
-};
+export type ActiveProfileRef = CharacterProfile | null;
