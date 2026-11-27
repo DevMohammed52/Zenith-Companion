@@ -3,6 +3,7 @@ import {
   ADMIN_REALM,
   verifyAdminBasicAuth,
 } from "@/lib/admin-auth";
+
 const ERROR_PREVIEW_PATH = "/error-preview";
 const LOADING_PREVIEW_PATH = "/loading-preview";
 const BLOCKED_PUBLIC_DATA_PATHS = new Set([
@@ -14,7 +15,14 @@ const BLOCKED_PUBLIC_DATA_PATHS = new Set([
   "/scraper-priority.json",
 ]);
 
-export function proxy(request: NextRequest) {
+function applyPrivateSecurityHeaders(headers: Headers) {
+  headers.set("cache-control", "no-store");
+  headers.set("x-robots-tag", "noindex, nofollow");
+  headers.set("referrer-policy", "no-referrer");
+  headers.set("x-content-type-options", "nosniff");
+}
+
+export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === ERROR_PREVIEW_PATH) {
     if (process.env.ENABLE_ERROR_PREVIEW === "1") return NextResponse.next();
 
@@ -52,24 +60,24 @@ export function proxy(request: NextRequest) {
   const adminSecret = process.env.ADMIN_DASHBOARD_SECRET?.trim();
 
   if (!adminSecret) {
-    return new NextResponse("Not found", {
-      status: 404,
-      headers: { "cache-control": "no-store" },
-    });
+    const res = new NextResponse("Not found", { status: 404 });
+    applyPrivateSecurityHeaders(res.headers);
+    return res;
   }
 
-  if (!verifyAdminBasicAuth(request.headers.get("authorization"), adminSecret)) {
-    return new NextResponse("Authentication required", {
-      status: 401,
-      headers: {
-        "cache-control": "no-store",
-        "www-authenticate": `Basic realm="${ADMIN_REALM}", charset="UTF-8"`,
-      },
-    });
+  const authorized = await verifyAdminBasicAuth(
+    request.headers.get("authorization"),
+    adminSecret,
+  );
+  if (!authorized) {
+    const res = new NextResponse("Authentication required", { status: 401 });
+    applyPrivateSecurityHeaders(res.headers);
+    res.headers.set("www-authenticate", `Basic realm="${ADMIN_REALM}", charset="UTF-8"`);
+    return res;
   }
 
   const response = NextResponse.next();
-  response.headers.set("cache-control", "no-store");
+  applyPrivateSecurityHeaders(response.headers);
   return response;
 }
 

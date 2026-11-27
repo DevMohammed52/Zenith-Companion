@@ -157,17 +157,92 @@ export async function fetchProfileImportJson(
   }
 }
 
+const ADMIN_JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{3,80}$/;
+const ADMIN_SOURCE_PATTERN = /^[A-Za-z0-9:_-]{2,80}$/;
+const ADMIN_SCOPE_PATTERN = /^[A-Za-z0-9_-]{2,32}$/;
+const ADMIN_FINGERPRINT_PATTERN = /^[A-Za-z0-9:_-]{1,128}$/;
+
 export type AdminActionPayload =
   | { action: "process_queue" }
   | { action: "clear_coordinator"; source?: string }
   | { action: "cancel_job"; jobId: string }
-  | { action: "clear_cooldown"; scope: string; keyFingerprint: string }
-  | Record<string, unknown>;
+  | { action: "clear_cooldown"; scope: string; keyFingerprint: string };
+
+export type AdminActionValidationResult =
+  | { ok: true; payload: AdminActionPayload }
+  | { ok: false; status: number; payload: unknown };
+
+export function parseAdminActionPayload(input: unknown): AdminActionValidationResult {
+  if (!isRecord(input)) {
+    return {
+      ok: false,
+      status: 400,
+      payload: jsonError("invalid_request", "Admin action payload must be an object."),
+    };
+  }
+
+  const action = typeof input.action === "string" ? input.action.trim() : "";
+
+  if (action === "process_queue") {
+    return { ok: true, payload: { action: "process_queue" } };
+  }
+
+  if (action === "clear_coordinator") {
+    if (input.source === undefined || input.source === null || input.source === "") {
+      return { ok: true, payload: { action: "clear_coordinator" } };
+    }
+    const source = typeof input.source === "string" ? input.source.trim() : "";
+    if (!ADMIN_SOURCE_PATTERN.test(source)) {
+      return {
+        ok: false,
+        status: 400,
+        payload: jsonError("invalid_source", "Coordinator source identifier is invalid."),
+      };
+    }
+    return { ok: true, payload: { action: "clear_coordinator", source } };
+  }
+
+  if (action === "cancel_job") {
+    const jobId = typeof input.jobId === "string" ? input.jobId.trim() : "";
+    if (!ADMIN_JOB_ID_PATTERN.test(jobId)) {
+      return {
+        ok: false,
+        status: 400,
+        payload: jsonError("invalid_job_id", "Job ID must be a valid import job identifier."),
+      };
+    }
+    return { ok: true, payload: { action: "cancel_job", jobId } };
+  }
+
+  if (action === "clear_cooldown") {
+    const scope = typeof input.scope === "string" ? input.scope.trim() : "";
+    const keyFingerprint = typeof input.keyFingerprint === "string" ? input.keyFingerprint.trim() : "";
+    if (!ADMIN_SCOPE_PATTERN.test(scope) || !ADMIN_FINGERPRINT_PATTERN.test(keyFingerprint)) {
+      return {
+        ok: false,
+        status: 400,
+        payload: jsonError("invalid_cooldown", "Cooldown scope and keyFingerprint are required."),
+      };
+    }
+    return { ok: true, payload: { action: "clear_cooldown", scope, keyFingerprint } };
+  }
+
+  return {
+    ok: false,
+    status: 400,
+    payload: jsonError("invalid_action", `Unsupported admin action "${action || "empty"}".`),
+  };
+}
 
 export async function executeProfileImportAdminAction(
-  actionPayload: unknown,
+  actionPayload: AdminActionPayload | unknown,
   adminSecret: string,
 ): Promise<ProfileImportProxyResult> {
+  const validated = parseAdminActionPayload(actionPayload);
+  if (!validated.ok) {
+    return { status: validated.status, payload: validated.payload };
+  }
+
   return fetchProfileImportJson(
     "/admin/actions",
     {
@@ -176,7 +251,7 @@ export async function executeProfileImportAdminAction(
         "content-type": "application/json",
         authorization: `Bearer ${adminSecret}`,
       },
-      body: JSON.stringify(actionPayload),
+      body: JSON.stringify(validated.payload),
       cache: "no-store",
     },
     "Cloudflare returned an unreadable response.",

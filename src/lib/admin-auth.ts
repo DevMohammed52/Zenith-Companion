@@ -5,7 +5,7 @@ export function parseBasicAuth(header: string | null): { username: string; passw
   if (!header?.startsWith("Basic ")) return null;
 
   try {
-    const decoded = atob(header.slice("Basic ".length));
+    const decoded = atob(header.slice("Basic ".length).trim());
     const separator = decoded.indexOf(":");
     if (separator < 0) return null;
 
@@ -18,19 +18,51 @@ export function parseBasicAuth(header: string | null): { username: string; passw
   }
 }
 
-export function sameSecret(input: string, expected: string): boolean {
-  if (input.length !== expected.length) return false;
-
-  let mismatch = 0;
-  for (let index = 0; index < expected.length; index += 1) {
-    mismatch |= input.charCodeAt(index) ^ expected.charCodeAt(index);
+/**
+ * Constant-time string comparison via fixed-length SHA-256 digests so
+ * secret length cannot be inferred from timing differences.
+ */
+export async function sameSecret(input: string, expected: string): Promise<boolean> {
+  if (!input || !expected) return false;
+  const subtle = globalThis.crypto?.subtle;
+  if (subtle) {
+    const encoder = new TextEncoder();
+    const [digestA, digestB] = await Promise.all([
+      subtle.digest("SHA-256", encoder.encode(input)),
+      subtle.digest("SHA-256", encoder.encode(expected)),
+    ]);
+    const bufA = new Uint8Array(digestA);
+    const bufB = new Uint8Array(digestB);
+    let mismatch = bufA.length ^ bufB.length;
+    for (let i = 0; i < bufA.length; i += 1) {
+      mismatch |= bufA[i] ^ bufB[i];
+    }
+    return mismatch === 0;
   }
 
+  // Fallback constant-work comparison without early return on length mismatch
+  const maxLen = Math.max(input.length, expected.length);
+  let mismatch = input.length ^ expected.length;
+  for (let i = 0; i < maxLen; i += 1) {
+    const a = i < input.length ? input.charCodeAt(i) : 0;
+    const b = i < expected.length ? expected.charCodeAt(i) : 0;
+    mismatch |= a ^ b;
+  }
   return mismatch === 0;
 }
 
-export function verifyAdminBasicAuth(authorizationHeader: string | null, adminSecret: string): boolean {
+export async function verifyAdminBasicAuth(
+  authorizationHeader: string | null,
+  adminSecret: string,
+): Promise<boolean> {
+  const expectedSecret = adminSecret.trim();
+  if (!expectedSecret) return false;
   const credentials = parseBasicAuth(authorizationHeader);
   if (!credentials) return false;
-  return credentials.username === ADMIN_USERNAME && sameSecret(credentials.password, adminSecret);
+
+  const [userOk, passOk] = await Promise.all([
+    sameSecret(credentials.username, ADMIN_USERNAME),
+    sameSecret(credentials.password, expectedSecret),
+  ]);
+  return userOk && passOk;
 }
