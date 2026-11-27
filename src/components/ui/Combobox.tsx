@@ -46,6 +46,7 @@ export function Combobox({
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxRef = useRef<HTMLUListElement>(null);
+  const skipNextFocusOpenRef = useRef(false);
 
   // Filter options based on query
   const filteredOptions = query.trim()
@@ -114,6 +115,7 @@ export function Combobox({
       setInternalValue(opt.label);
     }
     setIsOpen(false);
+    skipNextFocusOpenRef.current = true;
     inputRef.current?.focus();
   };
 
@@ -187,6 +189,10 @@ export function Combobox({
           onKeyDown={handleKeyDown}
           onFocus={() => {
             setIsFocused(true);
+            if (skipNextFocusOpenRef.current) {
+              skipNextFocusOpenRef.current = false;
+              return;
+            }
             setIsOpen(true);
           }}
           onBlur={() => setIsFocused(false)}

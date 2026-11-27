@@ -845,6 +845,17 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               </div>
 
               <div className={styles.headerActions}>
+                {(item.hashed_id || id) && (
+                  <a
+                    href={`https://web.idle-mmo.com/item/inspect/${encodeURIComponent(String(item.hashed_id || id))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.externalGameLink}
+                  >
+                    <Icon name="externalLink" size="xs" aria-hidden="true" />
+                    <span>{itemIsTradeable ? 'Buy on Market' : 'Inspect in Game'}</span>
+                  </a>
+                )}
                 {contextualToolLink && (
                   <Button
                     variant="secondary"

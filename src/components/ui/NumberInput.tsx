@@ -28,6 +28,8 @@ export interface NumberInputProps {
   showSteppers?: boolean;
   id?: string;
   name?: string;
+  ariaLabel?: string;
+  "aria-label"?: string;
   className?: string;
 }
 
@@ -48,8 +50,11 @@ export function NumberInput({
   showSteppers = true,
   id,
   name,
+  ariaLabel,
+  "aria-label": ariaLabelProp,
   className = "",
 }: NumberInputProps) {
+  const resolvedAriaLabel = ariaLabelProp ?? ariaLabel;
   const autoId = useId();
   const inputId = id || autoId;
   const effectiveError = errorMessage || error;
@@ -208,6 +213,7 @@ export function NumberInput({
             aria-valuenow={currentVal}
             aria-valuemin={min}
             aria-valuemax={max}
+            aria-label={label ? undefined : resolvedAriaLabel}
             aria-describedby={errorId || helperId}
             aria-invalid={Boolean(effectiveError)}
             value={isFocused ? rawText : currentVal.toLocaleString()}

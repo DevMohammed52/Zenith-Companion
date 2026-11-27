@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   CRAFTING_QUEUE_STORAGE_KEY,
   isCraftingQueueRecipe,
@@ -16,12 +17,15 @@ interface CraftingContextType {
   addToQueue: (name: string, qty?: number) => void;
   removeFromQueue: (name: string) => void;
   setQueueQty: (name: string, qty: number) => void;
+  replaceQueue: (nextQueue: Record<string, number>) => void;
   clearQueue: () => void;
 }
 
 const CraftingContext = createContext<CraftingContextType | undefined>(undefined);
 
 export function CraftingProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const { activeProfile } = useProfiles();
   const activeProfileId = activeProfile?.id || null;
@@ -68,17 +72,20 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
       ...prev,
       [name]: sanitizeQueueQty((prev[name] || 0) + safeQty)
     }));
-    toast.success(`Added ${safeQty}x ${name} to crafting queue.`, {
-      action: {
-        label: "View Queue",
-        onClick: () => {
-          if (typeof window !== "undefined") {
-            window.location.href = "/crafting";
-          }
-        },
-      },
-    });
-  }, [toast]);
+    toast.success(
+      `Added ${safeQty}x ${name} to crafting cart.`,
+      pathname === "/crafting"
+        ? undefined
+        : {
+            action: {
+              label: "View Cart",
+              onClick: () => {
+                router.push("/crafting");
+              },
+            },
+          },
+    );
+  }, [pathname, router, toast]);
 
   const removeFromQueue = useCallback((name: string) => {
     setQueue(prev => {
@@ -103,16 +110,21 @@ export function CraftingProvider({ children }: { children: React.ReactNode }) {
 
   const clearQueue = useCallback(() => {
     setQueue({});
-    toast.info("Crafting queue cleared.");
+    toast.info("Crafting cart cleared.");
   }, [toast]);
+
+  const replaceQueue = useCallback((nextQueue: Record<string, number>) => {
+    setQueue(sanitizeCraftingQueue(nextQueue));
+  }, []);
 
   const value = useMemo(() => ({
     queue,
     addToQueue,
     removeFromQueue,
     setQueueQty,
+    replaceQueue,
     clearQueue,
-  }), [addToQueue, clearQueue, queue, removeFromQueue, setQueueQty]);
+  }), [addToQueue, clearQueue, queue, removeFromQueue, replaceQueue, setQueueQty]);
 
   return (
     <CraftingContext.Provider value={value}>

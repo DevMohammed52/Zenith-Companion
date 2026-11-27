@@ -395,6 +395,12 @@
   flex-shrink: 0;
 }
 
+.linkActive .badge {
+  color: var(--control-active-text, #f8fafc);
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.12);
+}
+
 /* ==========================================================================
    Rail Mode (64px Collapsed State)
    ========================================================================== */

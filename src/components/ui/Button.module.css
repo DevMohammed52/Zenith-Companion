@@ -106,6 +106,7 @@
 .label {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2, 8px);
   line-height: 1.35;
   max-width: 100%;
   overflow: hidden;
