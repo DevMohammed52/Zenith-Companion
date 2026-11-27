@@ -11,6 +11,7 @@ export interface ProgressBarProps {
   min?: number;
   max?: number;
   label?: string;
+  ariaLabel?: string;
   valueText?: string;
   variant?: ProgressVariant;
   size?: ProgressSize;
@@ -25,6 +26,7 @@ export function ProgressBar({
   min = 0,
   max = 100,
   label,
+  ariaLabel,
   valueText,
   variant = "default",
   size = "md",
@@ -56,11 +58,11 @@ export function ProgressBar({
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuetext={displayReadout}
-        aria-label={label}
+        aria-label={ariaLabel || label || valueText || "Progress"}
         className={`${styles.track} ${styles[`size_${size}`]}`}
       >
         <div
-          className={`${styles.fill} ${styles[`color_${variant}`]}`}
+          className={[styles.fill, styles[`color_${variant}`] || ""].filter(Boolean).join(" ")}
           style={{ transform: `scaleX(${scale})` }}
         />
       </div>

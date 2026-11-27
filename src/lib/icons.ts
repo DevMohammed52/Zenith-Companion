@@ -114,6 +114,14 @@ import {
   Utensils,
   TrendingDown,
   ArrowRight,
+  Cpu,
+  Gauge,
+  Globe2,
+  Play,
+  BarChart3,
+  Bug,
+  Ban,
+  HardDrive,
 } from "lucide-react";
 
 /**
@@ -256,6 +264,16 @@ export const CONCEPT_ICONS = {
   searchEmpty: SearchX,
   emptyInbox: Inbox,
   offline: WifiOff,
+
+  // Operations & Telemetry
+  cpu: Cpu,
+  gauge: Gauge,
+  globe: Globe2,
+  play: Play,
+  barChart: BarChart3,
+  bug: Bug,
+  ban: Ban,
+  hardDrive: HardDrive,
 } as const;
 
 export type IconConcept = keyof typeof CONCEPT_ICONS;
