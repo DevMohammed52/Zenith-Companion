@@ -272,9 +272,6 @@ function getAcquisitionPrice(
   const marketPrice = getSafeMarketPrice(marketData?.[name]);
   if (marketPrice.value > 0) return { value: marketPrice.value, source: "market", adjusted: marketPrice.adjusted };
 
-  const vendorFallback = Number(items?.[name]?.vendor_price || marketData?.[name]?.vendor_price || 0);
-  if (vendorFallback > 0) return { value: vendorFallback, source: "vendor" };
-
   return { value: 0, source: "missing" };
 }
 

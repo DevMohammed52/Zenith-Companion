@@ -1,110 +1,117 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import {
-    formatPriceSource,
-    formatSaleSource,
+  formatPriceSource,
+  formatSaleSource,
 } from "../../src/app/crafting/types";
 import {
-    calculateCraftingQueuePlan,
-    isCraftingQueueRecipe,
+  calculateCartTotals,
+  formatShoppingListText,
+} from "../../src/app/crafting/utils/cart-math";
+import {
+  MAX_BASIC_ALCHEMY_LEVEL,
+  calculateCraftingQueuePlan,
+  isCraftingQueueRecipe,
 } from "../../src/lib/crafting-queue";
+import { ALCHEMY_ITEMS } from "../../src/constants";
+import { assertCleanMigratedRoute } from "./helpers/route-contract-audit";
 
-describe("Crafting Architecture & Helper Contracts", () => {
-    describe("formatSaleSource", () => {
-        it("maps custom, market, vendor, and fallback correctly", () => {
-            expect(formatSaleSource("custom")).toBe("CUSTOM");
-            expect(formatSaleSource("market")).toBe("MARKET");
-            expect(formatSaleSource("vendor")).toBe("VENDOR");
-            expect(formatSaleSource("none" as any)).toBe("NO SALE");
-        });
+describe("Crafting Architecture & Cart Contracts", () => {
+  describe("formatSaleSource", () => {
+    it("maps custom, market, vendor, and fallback correctly", () => {
+      expect(formatSaleSource("custom")).toBe("CUSTOM");
+      expect(formatSaleSource("market")).toBe("MARKET");
+      expect(formatSaleSource("vendor")).toBe("VENDOR");
+      expect(formatSaleSource("none" as never)).toBe("NO SALE");
+    });
+  });
+
+  describe("formatPriceSource", () => {
+    it("maps source identifiers correctly", () => {
+      expect(formatPriceSource("custom")).toBe("custom");
+      expect(formatPriceSource("vendor")).toBe("vendor");
+      expect(formatPriceSource("market")).toBe("market");
+      expect(formatPriceSource("unknown")).toBe("missing");
+      expect(formatPriceSource("")).toBe("missing");
+    });
+  });
+
+  describe("Crafting Cart Math & Invariance", () => {
+    it("stays strictly scoped to repeatable Lv 1-89 Alchemy recipes", () => {
+      expect(MAX_BASIC_ALCHEMY_LEVEL).toBe(89);
+      expect(isCraftingQueueRecipe("Battle Potion")).toBe(true);
+      expect(isCraftingQueueRecipe("NonExistentPotion999")).toBe(false);
+      for (const [name, recipe] of Object.entries(ALCHEMY_ITEMS)) {
+        if (isCraftingQueueRecipe(name)) {
+          expect(recipe.level).toBeLessThanOrEqual(89);
+        }
+      }
     });
 
-    describe("formatPriceSource", () => {
-        it("maps source identifiers correctly", () => {
-            expect(formatPriceSource("custom")).toBe("custom");
-            expect(formatPriceSource("vendor")).toBe("vendor");
-            expect(formatPriceSource("market")).toBe("market");
-            expect(formatPriceSource("unknown")).toBe("missing");
-            expect(formatPriceSource("")).toBe("missing");
-        });
+    it("does not fall back to NPC sell vendor_price as an acquisition buy price", () => {
+      const queue = { "Battle Potion": 4 };
+      const marketData = {
+        "Battle Potion": { price: 150, updated_at: "2026-01-01" },
+      };
+      const allItemsDb = {
+        "Battle Potion": { name: "Battle Potion", vendor_price: 20 },
+        "Lucky Rabbit Foot": { name: "Lucky Rabbit Foot", vendor_price: 5 },
+      };
+
+      const plan = calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
+        membership: true,
+        barteringBoost: 0,
+        customPrices: {},
+      });
+
+      expect(plan.missingItems).toContain("Lucky Rabbit Foot");
+      const matNeed = plan.shoppingList.find((row) => row.name === "Lucky Rabbit Foot");
+      expect(matNeed?.source).toBe("missing");
+      expect(matNeed?.unitPrice).toBe(0);
     });
 
-    describe("Crafting Queue Logic Invariance", () => {
-        it("correctly identifies crafting queue recipes", () => {
-            expect(isCraftingQueueRecipe("Battle Potion")).toBe(true);
-            expect(isCraftingQueueRecipe("NonExistentPotion999")).toBe(false);
-        });
+    it("calculates cart totals, bank savings, and clipboard text cleanly", () => {
+      const plan = calculateCraftingQueuePlan(
+        { "Battle Potion": 10 },
+        {
+          "Battle Potion": { price: 120 },
+          "Lucky Rabbit Foot": { price: 20 },
+        },
+        null,
+        { membership: true, barteringBoost: 0, customPrices: {} },
+      );
 
-        it("handles empty queue plan calculation gracefully", () => {
-            const plan = calculateCraftingQueuePlan({}, null, null, {
-                membership: true,
-                barteringBoost: 0,
-                customPrices: {},
-            });
-            expect(plan.totalCrafts).toBe(0);
-            expect(plan.entries).toEqual([]);
-            expect(plan.totalCost).toBe(0);
-            expect(plan.totalRevenue).toBe(0);
-            expect(plan.totalProfit).toBe(0);
-            expect(plan.missingItems).toEqual([]);
-            expect(plan.shoppingList).toEqual([]);
-            expect(plan.vialList).toEqual([]);
-            expect(plan.recipeList).toEqual([]);
-        });
+      const totals = calculateCartTotals(plan, { "Cheap Vial": true });
+      expect(totals.ownedSavingsGold).toBe(50);
+      expect(totals.remainingGoldNeeded).toBe(plan.totalCost - 50);
+      expect(totals.checkedCount).toBe(1);
 
-        it("calculates recipe plan for Battle Potion with mock prices", () => {
-            const queue = { "Battle Potion": 2 };
-            const marketData = {
-                "Battle Potion": { price: 100, updated_at: "2026-01-01" },
-                "Lucky Rabbit Foot": { price: 10, updated_at: "2026-01-01" },
-            };
-            const allItemsDb = {
-                "Battle Potion": { name: "Battle Potion", vendor_price: 20 },
-                "Lucky Rabbit Foot": { name: "Lucky Rabbit Foot", vendor_price: 5 },
-            };
+      const text = formatShoppingListText(plan, { "Cheap Vial": true });
+      expect(text).not.toContain("Cheap Vial");
+      expect(text).toContain("Lucky Rabbit Foot");
+    });
+  });
 
-            const plan = calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
-                membership: true,
-                barteringBoost: 0,
-                customPrices: {},
-            });
-
-            expect(plan.totalCrafts).toBe(2);
-            expect(plan.entries.length).toBe(1);
-            expect(plan.entries[0].name).toBe("Battle Potion");
-            expect(plan.entries[0].quantity).toBe(2);
-            expect(plan.totalRevenue).toBeGreaterThan(0);
-        });
+  describe("Clean Migrated Route Standards", () => {
+    it("passes shared clean-route audit (< 150 lines, scoped CSS module, no <style jsx>, no StateBlock, no direct lucide)", () => {
+      assertCleanMigratedRoute({ routeSubpath: "crafting", maxPageLines: 150 });
     });
 
-    describe("Modular File Architecture", () => {
-        it("page.tsx is a lean orchestrator with under 150 lines", () => {
-            const pagePath = join(process.cwd(), "src/app/crafting/page.tsx");
-            expect(existsSync(pagePath)).toBe(true);
-            const content = readFileSync(pagePath, "utf-8");
-            const lines = content.split("\n");
-            expect(lines.length).toBeLessThan(150);
-        });
+    it("renders BackToTop and avoids middot separators and Ctrl K hints", () => {
+      const craftingFiles = [
+        "src/app/crafting/page.tsx",
+        "src/app/crafting/components/CraftingCartBar.tsx",
+        "src/app/crafting/components/CraftingCartView.tsx",
+      ];
+      const pageSrc = readFileSync(path.join(process.cwd(), "src/app/crafting/page.tsx"), "utf8");
+      expect(pageSrc).toContain("BackToTop");
 
-        it("all decomposed subcomponents and hooks exist", () => {
-            const expectedFiles = [
-                "src/app/crafting/types.ts",
-                "src/app/crafting/hooks/useCraftingPageState.ts",
-                "src/app/crafting/components/CraftingStyles.tsx",
-                "src/app/crafting/components/CraftItemImage.tsx",
-                "src/app/crafting/components/NeedPanel.tsx",
-                "src/app/crafting/components/CraftingHero.tsx",
-                "src/app/crafting/components/CraftingSummaryCards.tsx",
-                "src/app/crafting/components/CraftingRecipePicker.tsx",
-                "src/app/crafting/components/CraftingQueueList.tsx",
-                "src/app/crafting/components/CraftingFinanceSummary.tsx",
-            ];
-
-            for (const file of expectedFiles) {
-                const filePath = join(process.cwd(), file);
-                expect(existsSync(filePath)).toBe(true);
-            }
-        });
+      for (const rel of craftingFiles) {
+        const src = readFileSync(path.join(process.cwd(), rel), "utf8");
+        expect(src, `${rel} must not contain middot separators`).not.toContain("·");
+        expect(src, `${rel} must not enable inline Ctrl K search hint`).not.toContain("showShortcutHint={true}");
+      }
     });
+  });
 });

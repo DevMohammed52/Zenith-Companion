@@ -1,272 +1,294 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { ALCHEMY_ITEMS } from "@/constants";
-import { useItemModal } from "@/context/ItemModalContext";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useToast } from "@/components/ui";
+import { ALCHEMY_ITEMS, type Recipe } from "@/constants";
 import { useCrafting } from "@/context/CraftingContext";
-import { getMarketTaxMultiplier, usePreferences } from "@/lib/preferences";
 import { useData } from "@/context/DataContext";
-import { useProfiles } from "@/lib/profiles";
-import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { useItemModal } from "@/context/ItemModalContext";
 import {
-    calculateCraftingQueuePlan,
-    isCraftingQueueRecipe,
+  MAX_BASIC_ALCHEMY_LEVEL,
+  calculateCraftingQueuePlan,
+  isCraftingQueueRecipe,
+  type QueueItemLookup,
+  type QueueMarketData,
 } from "@/lib/crafting-queue";
-import type {
-    CraftingItemRecord,
-    RecipeOption,
-    UseCraftingPageStateReturn,
+import { usePreferences } from "@/lib/preferences";
+import { getProfileBarteringBoost } from "@/lib/profile-calculations";
+import { getProfileStorageKey } from "@/lib/profile-storage";
+import { isStarterProfile, useProfiles } from "@/lib/profiles";
+import {
+  type CartRecipeOption,
+  type UseCraftingPageStateReturn,
 } from "../types";
+import { calculateCartTotals, formatShoppingListText } from "../utils/cart-math";
+
+const CHECKED_NEEDS_STORAGE_KEY = "zenith_crafting_checked_needs_v1";
+
+function readCheckedNeeds(key: string): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const clean: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (v === true) clean[k] = true;
+    }
+    return clean;
+  } catch {
+    return {};
+  }
+}
 
 export function useCraftingPageState(): UseCraftingPageStateReturn {
-    const { openItemByName, prefetchItem } = useItemModal();
-    const { queue, setQueueQty, addToQueue, clearQueue } = useCrafting();
-    const { preferences } = usePreferences();
-    const { activeProfile } = useProfiles();
-    const { marketData, allItemsDb } = useData();
+  const { queue, addToQueue, setQueueQty, replaceQueue, clearQueue } = useCrafting();
+  const { marketData, allItemsDb, loading, refresh } = useData();
+  const { preferences } = usePreferences();
+  const { activeProfile } = useProfiles();
+  const { openItemByName, prefetchItem } = useItemModal();
+  const { toast } = useToast();
 
-    const [adding, setAdding] = useState("");
-    const [recipeSearch, setRecipeSearch] = useState("");
-    const deferredRecipeSearch = useDeferredValue(recipeSearch);
-    const [pickerOpen, setPickerOpen] = useState(false);
-    const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
-    const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({});
-    const [clearedQueue, setClearedQueue] = useState<Record<string, number> | null>(null);
+  const configuredProfile = activeProfile && !isStarterProfile(activeProfile) ? activeProfile : null;
+  const activeProfileId = configuredProfile?.id || null;
+  const checkedStorageKey = useMemo(
+    () => getProfileStorageKey(CHECKED_NEEDS_STORAGE_KEY, activeProfileId ?? undefined),
+    [activeProfileId],
+  );
 
-    const pickerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [checkedNeedNames, setCheckedNeedNames] = useState<Record<string, boolean>>({});
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
 
-    const recipeOptions = useMemo(
-        () => Object.entries(ALCHEMY_ITEMS)
-            .filter(([name]) => isCraftingQueueRecipe(name))
-            .map(([name, recipe]): RecipeOption => {
-                const materialNames = Object.keys(recipe.materials);
-                return {
-                    name,
-                    recipe,
-                    materialNames,
-                    searchText: `${name} ${recipe.vial} ${materialNames.join(" ")} lvl ${recipe.level}`.toLowerCase(),
-                };
-            })
-            .sort((a, b) => a.recipe.level - b.recipe.level || a.name.localeCompare(b.name)),
-        [],
-    );
+  const [recipeQuery, setRecipeQuery] = useState("");
+  const [selectedRecipeName, setSelectedRecipeName] = useState("");
+  const [addAmount, setAddAmount] = useState(50);
+  const [undoSnapshot, setUndoSnapshot] = useState<Record<string, number> | null>(null);
+  const [copiedList, setCopiedList] = useState(false);
 
-    const filteredRecipeOptions = useMemo(() => {
-        const q = deferredRecipeSearch.trim().toLowerCase();
-        const matches = q
-            ? recipeOptions.filter((option) => option.searchText.includes(q))
-            : recipeOptions;
-        return matches;
-    }, [deferredRecipeSearch, recipeOptions]);
+  const undoTimerRef = useRef<number | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
 
-    const selectedRecipe = useMemo(
-        () => recipeOptions.find((option) => option.name === adding) || null,
-        [adding, recipeOptions],
-    );
-    const profileBarteringBoost = activeProfile ? getProfileBarteringBoost(activeProfile) : 0;
+  useEffect(() => {
+    setCheckedNeedNames(readCheckedNeeds(checkedStorageKey));
+    setHydratedKey(checkedStorageKey);
+  }, [checkedStorageKey]);
 
-    const plan = useMemo(
-        () => calculateCraftingQueuePlan(queue, marketData, allItemsDb, {
-            ...preferences,
-            barteringBoost: profileBarteringBoost,
-        }),
-        [allItemsDb, marketData, preferences, profileBarteringBoost, queue],
-    );
+  useEffect(() => {
+    if (hydratedKey !== checkedStorageKey) return;
+    try {
+      window.localStorage.setItem(checkedStorageKey, JSON.stringify(checkedNeedNames));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [checkedNeedNames, checkedStorageKey, hydratedKey]);
 
-    const recipeTypeCount = plan.entries.length;
-    const missingItemCount = plan.missingItems.length;
-    const profitableEntryCount = plan.entries.filter((entry) => entry.totalProfit >= 0).length;
-    const warningEntryCount = plan.entries.filter((entry) => entry.warnings.length > 0).length;
-    const bestEntry = plan.entries.length > 0
-        ? plan.entries.reduce((best, entry) => (entry.totalProfit > best.totalProfit ? entry : best), plan.entries[0])
-        : null;
-    const marketNetPercent = Math.round(getMarketTaxMultiplier(preferences.membership) * 100);
-    const queueReadiness = missingItemCount > 0
-        ? `${missingItemCount.toLocaleString()} price gap${missingItemCount === 1 ? "" : "s"}`
-        : plan.entries.length > 0
-            ? "Prices ready"
-            : "Waiting for recipes";
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
-    const itemImages = useMemo(() => (allItemsDb || {}) as Record<string, CraftingItemRecord>, [allItemsDb]);
-    const getItemImage = (name: string) => itemImages[name]?.image_url || itemImages[name]?.image || "";
+  const membershipActive = Boolean(preferences.membership);
+  const taxRatePercent = membershipActive ? 12 : 15;
+  const barteringBoost =
+    Number(
+      configuredProfile ? getProfileBarteringBoost(configuredProfile) : preferences.barteringBoost || 0,
+    ) || 0;
 
-    useEffect(() => {
-        const handlePointerDown = (event: PointerEvent) => {
-            if (!pickerRef.current?.contains(event.target as Node)) {
-                setPickerOpen(false);
-            }
+  const marketLookup = useMemo(() => (marketData || null) as QueueMarketData | null, [marketData]);
+  const itemLookup = useMemo(() => (allItemsDb || null) as QueueItemLookup | null, [allItemsDb]);
+
+  const planPrefs = useMemo(
+    () => ({
+      membership: membershipActive,
+      barteringBoost,
+      customPrices: preferences.customPrices,
+    }),
+    [barteringBoost, membershipActive, preferences.customPrices],
+  );
+
+  const plan = useMemo(
+    () => calculateCraftingQueuePlan(queue, marketLookup, itemLookup, planPrefs),
+    [itemLookup, marketLookup, planPrefs, queue],
+  );
+
+  const totals = useMemo(
+    () => calculateCartTotals(plan, checkedNeedNames),
+    [checkedNeedNames, plan],
+  );
+
+  const getItemImageUrl = useCallback(
+    (name: string) => allItemsDb?.[name]?.image_url,
+    [allItemsDb],
+  );
+
+  const getItemQuality = useCallback(
+    (name: string) => String(allItemsDb?.[name]?.quality || marketData?.[name]?.quality || "STANDARD"),
+    [allItemsDb, marketData],
+  );
+
+  const recipeOptions = useMemo<CartRecipeOption[]>(() => {
+    const entries = Object.entries(ALCHEMY_ITEMS) as Array<[string, Recipe]>;
+    return entries
+      .filter(
+        ([name, recipe]) =>
+          Number(recipe?.level || 0) <= MAX_BASIC_ALCHEMY_LEVEL && isCraftingQueueRecipe(name),
+      )
+      .map(([name, recipe]) => {
+        const singlePlan = calculateCraftingQueuePlan({ [name]: 1 }, marketLookup, itemLookup, planPrefs);
+        return {
+          name,
+          recipe,
+          quality: getItemQuality(name),
+          profitEach: singlePlan.entries[0]?.profitEach || 0,
         };
+      })
+      .sort((a, b) => a.recipe.level - b.recipe.level || a.name.localeCompare(b.name));
+  }, [getItemQuality, itemLookup, marketLookup, planPrefs]);
 
-        document.addEventListener("pointerdown", handlePointerDown);
-        return () => document.removeEventListener("pointerdown", handlePointerDown);
-    }, []);
+  const starterRecipes = useMemo<CartRecipeOption[]>(() => {
+    return [...recipeOptions]
+      .sort((a, b) => b.profitEach - a.profitEach)
+      .slice(0, 3);
+  }, [recipeOptions]);
 
-    useEffect(() => {
-        setActiveRecipeIndex(0);
-    }, [deferredRecipeSearch]);
+  const selectRecipe = useCallback((name: string, label?: string) => {
+    setSelectedRecipeName(name);
+    if (label !== undefined) {
+      setRecipeQuery(label);
+    }
+  }, []);
 
-    useEffect(() => {
-        return () => {
-            if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-        };
-    }, []);
+  const handleAddSelected = useCallback(() => {
+    const exactMatch =
+      recipeOptions.find((opt) => opt.name === selectedRecipeName) ||
+      recipeOptions.find((opt) => opt.name.toLowerCase() === recipeQuery.trim().toLowerCase());
+    if (!exactMatch) return;
+    const qty = Math.max(1, Math.floor(Number(addAmount) || 1));
+    addToQueue(exactMatch.name, qty);
+    setSelectedRecipeName("");
+    setRecipeQuery("");
+  }, [addAmount, addToQueue, recipeOptions, recipeQuery, selectedRecipeName]);
 
-    const chooseRecipe = (name: string) => {
-        if (!isCraftingQueueRecipe(name)) return;
-        setAdding(name);
-        setRecipeSearch(name);
-        setPickerOpen(false);
-    };
+  const handleQuickAdd = useCallback(
+    (name: string, quantity: number) => {
+      const safeQty = Math.max(1, Math.floor(Number(quantity) || 1));
+      addToQueue(name, safeQty);
+    },
+    [addToQueue],
+  );
 
-    const clearRecipePicker = () => {
-        setAdding("");
-        setRecipeSearch("");
-        setPickerOpen(true);
-        inputRef.current?.focus();
-    };
+  const setCartQuantity = useCallback(
+    (name: string, nextQty: number) => {
+      const clamped = Math.max(1, Math.min(999999, Math.floor(Number(nextQty) || 1)));
+      setQueueQty(name, clamped);
+    },
+    [setQueueQty],
+  );
 
-    const updateRecipeSearch = (value: string) => {
-        setRecipeSearch(value);
-        setPickerOpen(true);
-        const exact = recipeOptions.find((option) => option.name.toLowerCase() === value.trim().toLowerCase());
-        setAdding(exact?.name || "");
-    };
+  const removeCartItem = useCallback(
+    (name: string) => {
+      setQueueQty(name, 0);
+    },
+    [setQueueQty],
+  );
 
-    const handleRecipeKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === "ArrowDown") {
-            event.preventDefault();
-            setPickerOpen(true);
-            setActiveRecipeIndex((index) => Math.min(index + 1, Math.max(filteredRecipeOptions.length - 1, 0)));
-            return;
-        }
+  const handleClearCart = useCallback(() => {
+    if (Object.keys(queue).length === 0) return;
+    setUndoSnapshot({ ...queue });
+    clearQueue();
+    if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = window.setTimeout(() => {
+      setUndoSnapshot(null);
+    }, 10000);
+  }, [clearQueue, queue]);
 
-        if (event.key === "ArrowUp") {
-            event.preventDefault();
-            setPickerOpen(true);
-            setActiveRecipeIndex((index) => Math.max(index - 1, 0));
-            return;
-        }
+  const handleUndoClear = useCallback(() => {
+    if (!undoSnapshot) return;
+    replaceQueue(undoSnapshot);
+    setUndoSnapshot(null);
+    if (undoTimerRef.current !== null) {
+      window.clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  }, [replaceQueue, undoSnapshot]);
 
-        if (event.key === "Home") {
-            event.preventDefault();
-            setPickerOpen(true);
-            setActiveRecipeIndex(0);
-            return;
-        }
+  const toggleNeedChecked = useCallback((name: string) => {
+    setCheckedNeedNames((prev) => {
+      const next = { ...prev };
+      if (next[name]) {
+        delete next[name];
+      } else {
+        next[name] = true;
+      }
+      return next;
+    });
+  }, []);
 
-        if (event.key === "End") {
-            event.preventDefault();
-            setPickerOpen(true);
-            setActiveRecipeIndex(Math.max(filteredRecipeOptions.length - 1, 0));
-            return;
-        }
+  const clearCheckedNeeds = useCallback(() => {
+    setCheckedNeedNames({});
+  }, []);
 
-        if (event.key === "Enter") {
-            event.preventDefault();
-            const activeOption = filteredRecipeOptions[activeRecipeIndex];
-            if (pickerOpen && activeOption && activeOption.name !== adding) {
-                chooseRecipe(activeOption.name);
-                return;
-            }
-            if (adding) {
-                addRecipe(adding);
-                return;
-            }
-            if (filteredRecipeOptions.length === 1) {
-                addRecipe(filteredRecipeOptions[0].name);
-            }
-            return;
-        }
+  const copyMarketList = useCallback(async () => {
+    const text = formatShoppingListText(plan, checkedNeedNames);
+    if (!text) {
+      toast.info("Every item in your shopping list is already checked off.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedList(true);
+      toast.success("Copied shopping list to clipboard.");
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setCopiedList(false), 2500);
+    } catch {
+      toast.error("Clipboard access failed in this browser context.");
+    }
+  }, [checkedNeedNames, plan, toast]);
 
-        if (event.key === "Escape") {
-            setPickerOpen(false);
-        }
-    };
+  const needsByGroup = useMemo(
+    () => ({
+      vials: plan.vialList,
+      ingredients: plan.shoppingList,
+    }),
+    [plan.shoppingList, plan.vialList],
+  );
 
-    const addRecipe = (name: string) => {
-        if (!name || !isCraftingQueueRecipe(name)) return;
-        addToQueue(name);
-        setAdding("");
-        setRecipeSearch("");
-        setPickerOpen(false);
-        setClearedQueue(null);
-    };
-
-    const updateQuantityDraft = (name: string, value: string) => {
-        if (!/^\d*$/.test(value)) return;
-        setQtyDrafts((current) => ({ ...current, [name]: value }));
-    };
-
-    const commitQuantityDraft = (name: string, fallback: number) => {
-        const draft = qtyDrafts[name];
-        setQtyDrafts((current) => {
-            const next = { ...current };
-            delete next[name];
-            return next;
-        });
-        if (draft === undefined || draft.trim() === "") return;
-        const parsed = Number(draft);
-        setQueueQty(name, Number.isFinite(parsed) ? parsed : fallback);
-    };
-
-    const handleClearQueue = () => {
-        const previousQueue = { ...queue };
-        if (Object.keys(previousQueue).length === 0) return;
-        clearQueue();
-        setQtyDrafts({});
-        setClearedQueue(previousQueue);
-        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-        undoTimerRef.current = setTimeout(() => setClearedQueue(null), 9000);
-    };
-
-    const undoClearQueue = () => {
-        if (!clearedQueue) return;
-        clearQueue();
-        Object.entries(clearedQueue).forEach(([name, qty]) => addToQueue(name, qty));
-        setClearedQueue(null);
-        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    };
-
-    return {
-        activeProfile,
-        marketNetPercent,
-        profileBarteringBoost,
-        queue,
-        plan,
-        recipeTypeCount,
-        missingItemCount,
-        profitableEntryCount,
-        warningEntryCount,
-        bestEntry,
-        queueReadiness,
-        adding,
-        recipeSearch,
-        pickerOpen,
-        activeRecipeIndex,
-        filteredRecipeOptions,
-        recipeOptions,
-        selectedRecipe,
-        pickerRef,
-        inputRef,
-        setPickerOpen,
-        setActiveRecipeIndex,
-        chooseRecipe,
-        clearRecipePicker,
-        updateRecipeSearch,
-        handleRecipeKeyDown,
-        addRecipe,
-        qtyDrafts,
-        setQtyDrafts,
-        updateQuantityDraft,
-        commitQuantityDraft,
-        setQueueQty,
-        clearedQueue,
-        handleClearQueue,
-        undoClearQueue,
-        openItemByName,
-        prefetchItem,
-        getItemImage,
-    };
+  return {
+    loading: Boolean(loading && !marketData),
+    hasMarketError: Boolean(!loading && !marketData),
+    retryMarketLoad: () => {
+      void refresh();
+    },
+    plan,
+    totals,
+    taxRatePercent,
+    membershipActive,
+    recipeOptions,
+    starterRecipes,
+    selectedRecipeName,
+    recipeQuery,
+    setRecipeQuery,
+    selectRecipe,
+    addAmount,
+    setAddAmount,
+    handleAddSelected,
+    handleQuickAdd,
+    setCartQuantity,
+    removeCartItem,
+    undoSnapshot,
+    handleClearCart,
+    handleUndoClear,
+    checkedNeedNames,
+    toggleNeedChecked,
+    clearCheckedNeeds,
+    copiedList,
+    copyMarketList,
+    getItemImageUrl,
+    getItemQuality,
+    inspectItem: (name: string) => openItemByName(name),
+    prefetchItem,
+    needsByGroup,
+  };
 }
