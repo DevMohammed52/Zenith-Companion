@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 300" width="1120" height="300" role="img" aria-label="Zenith Companion - Tools and calculators for IdleMMO">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07090f" />
+      <stop offset="55%" stop-color="#0d1322" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <radialGradient id="crestHalo" cx="17%" cy="50%" r="38%">
+      <stop offset="0%" stop-color="#f5b041" stop-opacity="0.16" />
+      <stop offset="45%" stop-color="#64748b" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#0a0d14" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="topRightGlow" cx="84%" cy="18%" r="42%">
+      <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#0a0d14" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ridgeBack" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#172236" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#0a0f1a" stop-opacity="0.05" />
+    </linearGradient>
+    <linearGradient id="ridgeFront" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#080c14" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="crestFrame" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#334155" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#f5b041" stop-opacity="0.45" />
+    </linearGradient>
+    <linearGradient id="crestBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#141d30" />
+      <stop offset="100%" stop-color="#0a0f1a" />
+    </linearGradient>
+    <clipPath id="bannerClip">
+      <rect x="2" y="2" width="1116" height="296" rx="22" />
+    </clipPath>
+  </defs>
+
+  <!-- Outer Card -->
+  <rect x="2" y="2" width="1116" height="296" rx="22" fill="url(#skyGrad)" stroke="#1e293b" stroke-width="1.5" />
+
+  <g clip-path="url(#bannerClip)">
+    <!-- Soft Ambient Glows -->
+    <rect x="0" y="0" width="1120" height="300" fill="url(#crestHalo)" />
+    <rect x="0" y="0" width="1120" height="300" fill="url(#topRightGlow)" />
+
+    <!-- Subtle Night Sky Stars -->
+    <circle cx="330" cy="48" r="1.4" fill="#cbd5e1" fill-opacity="0.45" />
+    <circle cx="520" cy="36" r="1.2" fill="#94a3b8" fill-opacity="0.4" />
+    <circle cx="715" cy="54" r="1.5" fill="#cbd5e1" fill-opacity="0.38" />
+    <circle cx="885" cy="40" r="2" fill="#f5b041" fill-opacity="0.65" />
+    <circle cx="995" cy="76" r="1.3" fill="#cbd5e1" fill-opacity="0.5" />
+    <circle cx="1058" cy="142" r="1.6" fill="#94a3b8" fill-opacity="0.45" />
+    <circle cx="84" cy="42" r="1.3" fill="#94a3b8" fill-opacity="0.4" />
+    <circle cx="242" cy="258" r="1.2" fill="#cbd5e1" fill-opacity="0.35" />
+
+    <!-- Minimalist Distant Mountain Silhouette (Zone Horizon) -->
+    <path d="M 0 265 L 180 218 L 360 245 L 570 198 L 760 232 L 940 184 L 1120 222 L 1120 300 L 0 300 Z" fill="url(#ridgeBack)" />
+    <path d="M 0 282 L 240 248 L 460 272 L 690 230 L 880 256 L 1120 215 L 1120 300 L 0 300 Z" fill="url(#ridgeFront)" />
+
+    <!-- Subtle Orbital Ring on Right -->
+    <circle cx="945" cy="82" r="155" fill="none" stroke="#334155" stroke-width="1" stroke-opacity="0.35" stroke-dasharray="3 8" />
+
+    <!-- Left Zenith Emblem Card -->
+    <rect x="66" y="64" width="172" height="172" rx="36" fill="url(#crestBg)" stroke="url(#crestFrame)" stroke-width="1.5" />
+    <rect x="76" y="74" width="152" height="152" rx="28" fill="none" stroke="#334155" stroke-width="1" stroke-opacity="0.35" />
+
+    <g transform="translate(80, 78) scale(0.5625)">
+      <path d="M 18 116 Q 64 42 128 34 Q 192 42 238 116 Q 192 52 128 44 Q 64 52 18 116 Z" fill="#94a3b8" />
+      <path d="M 128 10 L 136 56 L 160 66 L 136 76 L 128 104 L 120 76 L 96 66 L 120 56 Z" fill="#f5b041" />
+      <path d="M 84 102 L 212 102 L 98 204 L 26 214 L 92 172 L 164 122 L 84 122 L 52 144 Z" fill="#f8fafc" />
+      <path d="M 112 204 L 188 204 L 228 160 L 194 178 L 146 178 Z" fill="#cbd5e1" />
+    </g>
+
+    <!-- Main Typography -->
+    <text x="282" y="114" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="13" font-weight="600" letter-spacing="1.4" fill="#f5b041">
+      IDLEMMO PLAYER COMPANION
+    </text>
+    <text x="282" y="164" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="48" font-weight="800" letter-spacing="-1" fill="#f8fafc">
+      Zenith Companion
+    </text>
+    <text x="282" y="198" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="18" font-weight="400" fill="#cbd5e1">
+      Market checks, skilling profit, gear upgrades, and boss timers in one place.
+    </text>
+
+    <!-- Simple Feature Pills -->
+    <rect x="282" y="224" width="144" height="32" rx="16" fill="#0f172a" fill-opacity="0.88" stroke="#334155" stroke-width="1" />
+    <text x="354" y="244.5" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#e2e8f0">Skilling &amp; Alchemy</text>
+
+    <rect x="438" y="224" width="150" height="32" rx="16" fill="#0f172a" fill-opacity="0.88" stroke="#334155" stroke-width="1" />
+    <text x="513" y="244.5" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#e2e8f0">Best-in-Slot Gear</text>
+
+    <rect x="600" y="224" width="168" height="32" rx="16" fill="#0f172a" fill-opacity="0.88" stroke="#334155" stroke-width="1" />
+    <text x="684" y="244.5" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#e2e8f0">Bosses &amp; Conquest</text>
+
+    <rect x="780" y="224" width="152" height="32" rx="16" fill="#0f172a" fill-opacity="0.88" stroke="#334155" stroke-width="1" />
+    <text x="856" y="244.5" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="12.5" font-weight="600" fill="#e2e8f0">Character Sync</text>
+  </g>
+</svg>
