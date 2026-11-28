@@ -11,13 +11,15 @@ Updates are organized chronologically by release date.
 - **Interactive 404 Route Finder & Error Recovery**: Rebuilt the Not Found, Error, and Loading pages with closest-match URL suggestions, live route and item search, a copyable error reference code, and one-click recovery options that keep saved profiles and crafting queues intact.
 
 ### Changed
+- **Custom Contextual Icons**: Added bespoke icons across navigation, equipment slots, crafting tools, and feature headers so items and sections use clearer visual symbols.
 - **Faster Loading & Lighter Data Usage**: Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data.
+- **More Frequent Live Data Refreshes**: Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items.
 - **Zero Shell Redundancy & Plain Labels**: Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).
 
 ### Fixed
 - **Forge Planner Dashboard Count (`/`)**: Fixed the Home Dashboard showing `0 crafts` when your active character has saved craft plans in Forge Crafting.
 - **Dashboard Quick-Filter Links (`/items`, `/alchemy`, `/skill-profit`)**: Fixed clicking items or recipes from **Top Gold Routes** and **Market Movers** on `/` so Items Directory, Alchemy Profit, and Skill Profit now pre-fill the search box and filter straight to your selection.
-- **Stale Counts & Layout Shifts**: Replaced outdated pet species counts (`109` -> `47`) and placeholder status labels with live computed values, stopped initial loading jumps, and enlarged mobile touch targets for easier tapping.
+- **Site-Wide Contrast, Touch Targets & Layout Stability**: Enlarged mobile stepper and toolbar controls for easier tapping, improved badge contrast in World Boss routines, stabilized initial loading skeletons across calculators, and cleaned up inline stat separators.
 
 ## [2026-11-27]
 

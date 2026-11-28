@@ -39,13 +39,27 @@
           "items": [
             {
               "id": "2026-11-28-Changed-0",
+              "title": "Custom Contextual Icons",
+              "description": "Added bespoke icons across navigation, equipment slots, crafting tools, and feature headers so items and sections use clearer visual symbols.",
+              "subItems": [],
+              "raw": "- **Custom Contextual Icons**: Added bespoke icons across navigation, equipment slots, crafting tools, and feature headers so items and sections use clearer visual symbols."
+            },
+            {
+              "id": "2026-11-28-Changed-1",
               "title": "Faster Loading & Lighter Data Usage",
               "description": "Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data.",
               "subItems": [],
               "raw": "- **Faster Loading & Lighter Data Usage**: Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data."
             },
             {
-              "id": "2026-11-28-Changed-1",
+              "id": "2026-11-28-Changed-2",
+              "title": "More Frequent Live Data Refreshes",
+              "description": "Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items.",
+              "subItems": [],
+              "raw": "- **More Frequent Live Data Refreshes**: Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items."
+            },
+            {
+              "id": "2026-11-28-Changed-3",
               "title": "Zero Shell Redundancy & Plain Labels",
               "description": "Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).",
               "subItems": [],
@@ -72,15 +86,15 @@
             },
             {
               "id": "2026-11-28-Fixed-2",
-              "title": "Stale Counts & Layout Shifts",
-              "description": "Replaced outdated pet species counts (`109` -> `47`) and placeholder status labels with live computed values, stopped initial loading jumps, and enlarged mobile touch targets for easier tapping.",
+              "title": "Site-Wide Contrast, Touch Targets & Layout Stability",
+              "description": "Enlarged mobile stepper and toolbar controls for easier tapping, improved badge contrast in World Boss routines, stabilized initial loading skeletons across calculators, and cleaned up inline stat separators.",
               "subItems": [],
-              "raw": "- **Stale Counts & Layout Shifts**: Replaced outdated pet species counts (`109` -> `47`) and placeholder status labels with live computed values, stopped initial loading jumps, and enlarged mobile touch targets for easier tapping."
+              "raw": "- **Site-Wide Contrast, Touch Targets & Layout Stability**: Enlarged mobile stepper and toolbar controls for easier tapping, improved badge contrast in World Boss routines, stabilized initial loading skeletons across calculators, and cleaned up inline stat separators."
             }
           ]
         }
       ],
-      "totalChanges": 8
+      "totalChanges": 10
     },
     {
       "version": "2026-11-27",
@@ -774,6 +788,6 @@
       "Changed",
       "Fixed"
     ],
-    "generatedAt": "2026-11-28T07:43:06.403Z"
+    "generatedAt": "2026-11-28T13:09:57.311Z"
   }
 }
