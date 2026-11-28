@@ -221,8 +221,8 @@ export function ForgeRecipeBuilder({ state }: { state: ForgeState }) {
                     <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                       <QualityText value={recipe.quality}>{recipe.resultName}</QualityText>
                       <small style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                        {recipe.quality} · Lv.{recipe.levelRequired} · {recipe.materials.length} mats
-                        {recipe.forgeExpEach > 0 ? ` · +${recipe.forgeExpEach.toLocaleString()} XP` : ""}
+                        {recipe.quality} | Lv.{recipe.levelRequired} | {recipe.materials.length} mats
+                        {recipe.forgeExpEach > 0 ? ` | +${recipe.forgeExpEach.toLocaleString()} XP` : ""}
                       </small>
                     </span>
                   </button>
@@ -297,7 +297,7 @@ export function ForgeRecipeBuilder({ state }: { state: ForgeState }) {
           <div className={styles.statStripCell}>
             <span className={styles.statLabel}>Uses &amp; Mats</span>
             <strong className={styles.statValue}>
-              {selectedRecipe.maxUses.toLocaleString()} uses · {selectedRecipe.materials.length.toLocaleString()} mats
+              {selectedRecipe.maxUses.toLocaleString()} uses | {selectedRecipe.materials.length.toLocaleString()} mats
             </strong>
           </div>
 
@@ -306,7 +306,7 @@ export function ForgeRecipeBuilder({ state }: { state: ForgeState }) {
               <span className={styles.statLabel}>EXP per Craft</span>
               <strong className={`${styles.statValue} ${styles.statValueGood}`}>
                 +{selectedRecipe.forgeExpEach.toLocaleString()} Forge
-                {selectedRecipe.strengthExpEach > 0 ? ` · +${selectedRecipe.strengthExpEach.toLocaleString()} Str` : ""}
+                {selectedRecipe.strengthExpEach > 0 ? ` | +${selectedRecipe.strengthExpEach.toLocaleString()} Str` : ""}
               </strong>
             </div>
           )}

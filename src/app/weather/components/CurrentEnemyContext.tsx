@@ -47,7 +47,7 @@ export function CurrentEnemyContext({
         </div>
         <div className={styles.enemyInfoBottom}>
           <small>
-            {enemy.locationName} &middot; {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
+            {enemy.locationName} | {getWeatherPreferenceLabel(enemy.currentWeatherMatch)}
           </small>
           <Badge variant={tone === "favored" ? "success" : "danger"} size="sm">
             {tone === "favored" ? "Boosted" : "Penalty"}

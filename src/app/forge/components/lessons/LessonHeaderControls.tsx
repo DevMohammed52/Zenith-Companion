@@ -128,8 +128,8 @@ export function LessonHeaderControls({
       <div className={styles.drawerSyncRow}>
         <div>
           <strong>{activeProfile?.name || "Global loadout"}</strong>
-          {forgeAscensionLevel > 0 ? ` · Asc. ${forgeAscensionLevel}` : ""}
-          {profileClassName ? ` · ${profileClassName}` : ""}
+          {forgeAscensionLevel > 0 ? ` | Asc. ${forgeAscensionLevel}` : ""}
+          {profileClassName ? ` | ${profileClassName}` : ""}
         </div>
         <Link href="/profiles" className={styles.profileJumpLink}>
           <span>Profiles</span>
@@ -198,7 +198,7 @@ export function LessonHeaderControls({
             <span className={styles.syncText}>
               {conquestRank === "none"
                 ? "No Conquest bonus"
-                : `+${assaultBonus.exp}% EXP · +${assaultBonus.efficiency}% Eff`}
+                : `+${assaultBonus.exp}% EXP | +${assaultBonus.efficiency}% Eff`}
             </span>
           </div>
 
@@ -327,7 +327,7 @@ export function LessonHeaderControls({
                   <span>~{sessionSummary.estimatedTemperBarPercent}% Temper (~{sessionSummary.estimatedTemperShards}</span>
                   <ShardIcon size={11} />
                   <span>)</span>
-                  <span>·</span>
+                  <span aria-hidden="true">|</span>
                   <span>{formatGold(sessionSummary.totalCost)}</span>
                   <GoldIcon size={11} />
                 </span>
@@ -356,7 +356,7 @@ export function LessonHeaderControls({
                 {recommendedCheapest ? (
                   <GameImage src={recommendedCheapest.imageUrl} alt="" width={30} height={30} />
                 ) : (
-                  <Icon name="critDamage" size="sm" aria-hidden="true" />
+                  <Icon name="forgeHeat" size="sm" aria-hidden="true" />
                 )}
               </div>
               <div className={styles.spotlightMeta}>
@@ -368,7 +368,7 @@ export function LessonHeaderControls({
                   {recommendedCheapest ? (
                     <>
                       <span>{recommendedCheapest.goldPerExp.toFixed(2)}g/EXP</span>
-                      <span>·</span>
+                      <span aria-hidden="true">|</span>
                       <span>~{Math.round(recommendedCheapest.expPerSecond * 3600).toLocaleString()} XP/hr</span>
                     </>
                   ) : (
@@ -396,10 +396,10 @@ export function LessonHeaderControls({
       <div className={styles.controlsZone}>
         <div className={styles.controlCell}>
           <span className={styles.paramLabel}>
-            <Icon name="critDamage" size="xs" aria-hidden="true" /> Forge Skill
+            <Icon name="forgeHeat" size="xs" aria-hidden="true" /> Forge Skill
           </span>
           <div className={styles.controlCellRow}>
-            <div style={{ width: "160px" }}>
+            <div style={{ width: "min(100%, 190px)", minWidth: "168px" }}>
               <NumberInput
                 value={forgeLevel}
                 min={1}

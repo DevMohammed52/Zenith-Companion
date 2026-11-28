@@ -1,7 +1,7 @@
 "use client";
 
 import React, { type CSSProperties } from "react";
-import { Swords, Gauge, Clock, Zap } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { QUALITY_COLORS, getQualityPalette } from "@/lib/quality";
 import { Badge } from "@/components/ui/Badge";
 import type { PetRecord, StatKey } from "../types";
@@ -71,19 +71,19 @@ export function PetCard({
       <div className={styles.statsRow}>
         <div className={styles.statItem}>
           <span className={styles.statLabel}>
-            <Swords size={12} aria-hidden="true" /> Power
+            <Icon name="combat" size={12} aria-hidden="true" /> Power
           </span>
           <span className={styles.statValue}>{formatNumber(totalPower)}</span>
         </div>
         <div className={styles.statItem}>
           <span className={styles.statLabel}>
-            <Gauge size={12} aria-hidden="true" /> Speed
+            <Icon name="gauge" size={12} aria-hidden="true" /> Speed
           </span>
           <span className={styles.statValue}>{formatNumber(stats.movement_speed, 2)}m/s</span>
         </div>
         <div className={styles.statItem}>
           <span className={styles.statLabel}>
-            <Clock size={12} aria-hidden="true" /> Hunt
+            <Icon name="timer" size={12} aria-hidden="true" /> Hunt
           </span>
           <span className={styles.statValue}>{secondsToDuration(huntingTime)}</span>
         </div>
@@ -99,7 +99,7 @@ export function PetCard({
         </div>
 
         <div className={`${styles.zoneIndicator} ${battleZoneCount > 0 ? styles.zoneIndicatorActive : ""}`}>
-          <Zap size={12} aria-hidden="true" />
+          <Icon name="mapPin" size={12} aria-hidden="true" />
           <span>
             {battleZoneCount > 0
               ? `${battleZoneCount} zone${battleZoneCount === 1 ? "" : "s"}`

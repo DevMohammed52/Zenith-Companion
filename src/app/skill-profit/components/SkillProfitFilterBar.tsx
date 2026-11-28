@@ -46,6 +46,12 @@ export interface SkillProfitFilterBarProps {
   calc: UseSkillProfitCalculationsReturn;
 }
 
+const TOOL_FALLBACK_ICONS: Record<ToolSkill, "skillWoodcutting" | "skillMining" | "skillFishing"> = {
+  Woodcutting: "skillWoodcutting",
+  Mining: "skillMining",
+  Fishing: "skillFishing",
+};
+
 const SORT_SELECT_OPTIONS = [
   { value: "profitPerHour:desc", label: "Gold/hr (high–low)" },
   { value: "profitPerHour:asc", label: "Gold/hr (low–high)" },
@@ -376,17 +382,18 @@ export function SkillProfitFilterBar({ state, calc }: SkillProfitFilterBarProps)
                       value={toolValue}
                       onChange={(toolName) => patchTool(skill, toolName)}
                       onOpenChange={handleToolPickerOpenChange}
+                      fallbackIcon={TOOL_FALLBACK_ICONS[skill]}
                     />
                     <span className={styles.drawerFieldHint}>
                       {selectedTool ? (
                         <>
-                          Lv {selectedTool.level} •{" "}
+                          Lv {selectedTool.level} |{" "}
                           <QualityText value={selectedTool.quality}>{selectedTool.quality}</QualityText>
                         </>
                       ) : (
                         "No tool bonus"
                       )}
-                      {configuredProfile ? " • synced with profile" : " • global fallback"}
+                      {configuredProfile ? " | synced with profile" : " | global fallback"}
                     </span>
                   </div>
                 );
@@ -396,7 +403,7 @@ export function SkillProfitFilterBar({ state, calc }: SkillProfitFilterBarProps)
 
           <section className={styles.drawerSection} aria-label="Essence crystals">
             <h3 className={styles.drawerSectionTitle}>
-              <Icon name="xp" size="sm" aria-hidden="true" />
+              <Icon name="mythicAlchemy" size="sm" aria-hidden="true" />
               <span>Essence Crystals</span>
             </h3>
             <p className={styles.drawerFieldHint}>
@@ -424,8 +431,8 @@ export function SkillProfitFilterBar({ state, calc }: SkillProfitFilterBarProps)
                       {session?.active
                         ? session.needsPrice
                           ? "Needs market or custom price"
-                          : `${formatGold(session.costPerStart)}g/start • ${formatGold(session.costPerHour || 0)}g/hr`
-                        : `No crystal • ${formatHours(actionHours)} timer`}
+                          : `${formatGold(session.costPerStart)}g/start | ${formatGold(session.costPerHour || 0)}g/hr`
+                        : `No crystal | ${formatHours(actionHours)} timer`}
                     </span>
                   </div>
                 );

@@ -60,7 +60,7 @@ export function BackToTop({
       aria-hidden={!isVisible}
       tabIndex={isVisible ? 0 : -1}
     >
-      <Icon name="sortAsc" size="md" aria-hidden="true" />
+      <Icon name="arrowUp" size="md" aria-hidden="true" />
     </button>
   );
 }

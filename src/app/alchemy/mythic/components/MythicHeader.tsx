@@ -91,7 +91,7 @@ export function MythicHeader({
 
           <div className={styles.titleLine}>
             <span className={styles.titleIconWrap} aria-hidden="true">
-              <Icon name="xp" size="lg" />
+              <Icon name="mythicAlchemy" size="lg" />
             </span>
             <h1 className={styles.title} id="mythic-lab-page-title">
               Mythic Lab

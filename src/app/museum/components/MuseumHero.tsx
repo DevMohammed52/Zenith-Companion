@@ -65,10 +65,7 @@ export function MuseumHero({
 
       <div className={styles.heroControls}>
         {!loaded ? (
-          <>
-            <Skeleton variant="rectangular" width={132} height={44} />
-            <Skeleton variant="rectangular" width={136} height={44} />
-          </>
+          <Skeleton variant="rectangular" width={148} height={44} />
         ) : (
           <>
             {museum && (

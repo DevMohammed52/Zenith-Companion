@@ -221,7 +221,19 @@ function AlchemyContent() {
 export default function AlchemyPage() {
   return (
     <main className="container" aria-labelledby="alchemy-page-title">
-      <Suspense fallback={<Skeleton height="420px" variant="rectangular" />}>
+      <Suspense
+        fallback={
+          <div className={styles.pageShell}>
+            <Skeleton height="168px" variant="rectangular" />
+            <Skeleton height="128px" variant="rectangular" />
+            <div className={styles.skeletonList}>
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <Skeleton key={idx} height="52px" variant="rectangular" />
+              ))}
+            </div>
+          </div>
+        }
+      >
         <AlchemyContent />
       </Suspense>
     </main>

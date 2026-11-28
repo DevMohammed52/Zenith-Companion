@@ -77,6 +77,7 @@
   align-items: center;
   gap: 0.6rem;
   flex-shrink: 0;
+  min-height: 44px;
 }
 
 .heroLinkButton,
@@ -378,12 +379,17 @@
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   background: var(--bg-card);
+  min-height: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loadingWrap {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  min-height: 540px;
 }
 
 .loadingControls {

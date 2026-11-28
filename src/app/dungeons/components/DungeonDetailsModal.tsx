@@ -47,7 +47,7 @@ export function DungeonDetailsModal({ state }: DungeonDetailsModalProps) {
       title={selectedDungeon?.name || "Dungeon Details"}
       description={
         selectedDungeon
-          ? `${selectedDungeon.location?.name || "Unknown"} • Difficulty ${selectedDungeon.difficulty || 0} • ${selectedDungeon.durationMins}m`
+          ? `${selectedDungeon.location?.name || "Unknown"} | Difficulty ${selectedDungeon.difficulty || 0} | ${selectedDungeon.durationMins}m`
           : undefined
       }
       maxWidth="xl"
@@ -342,7 +342,7 @@ export function DungeonDetailsModal({ state }: DungeonDetailsModalProps) {
                             ? `${drop.baseChancePercent}% → ${drop.adjustedChancePercent.toFixed(2)}%`
                             : `${drop.chance}% drop`}
                         </span>
-                        <span>•</span>
+                        <span aria-hidden="true">|</span>
                         <QualityText value={drop.quality}>{drop.quality || "Unknown"}</QualityText>
                       </div>
                     </div>

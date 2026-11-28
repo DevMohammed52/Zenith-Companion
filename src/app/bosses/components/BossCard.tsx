@@ -56,7 +56,8 @@ export function BossCard({ row, now, activeCombatLevel, onSelect }: BossCardProp
                         <span className={styles.bossLocationLine}>
                             <Icon name="mapPin" size="xs" aria-hidden="true" />
                             <span>{row.location?.name || "Unknown"}</span>
-                            <span>• Lv. {row.level}</span>
+                            <span aria-hidden="true">|</span>
+                            <span>Lv. {row.level}</span>
                         </span>
                     </div>
                 </div>
@@ -94,7 +95,7 @@ export function BossCard({ row, now, activeCombatLevel, onSelect }: BossCardProp
                         hour: "2-digit",
                         minute: "2-digit",
                     }) || "TBA"}
-                    {row.scheduleInfo?.respawnHours ? ` • Every ${row.scheduleInfo.respawnHours}h` : ""}
+                    {row.scheduleInfo?.respawnHours ? ` | Every ${row.scheduleInfo.respawnHours}h` : ""}
                 </span>
                 <div className={styles.reviewRow}>
                     {levelTooHigh && (

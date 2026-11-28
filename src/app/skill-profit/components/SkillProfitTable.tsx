@@ -194,8 +194,8 @@ export function SkillProfitTable({
                           )}
                         </div>
                         <span className={styles.itemMeta}>
-                          {formatDurationSeconds(row.finalDuration)} • {row.itemsPerHour.toLocaleString()}/hr
-                          {row.note ? ` • ${row.note}` : ""}
+                          {formatDurationSeconds(row.finalDuration)} | {row.itemsPerHour.toLocaleString()}/hr
+                          {row.note ? ` | ${row.note}` : ""}
                         </span>
                         {matchedIngredient && (
                           <span className={styles.materialMatchHint}>Uses {matchedIngredient}</span>

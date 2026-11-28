@@ -137,7 +137,7 @@ export function OwnedPetControls({
               <strong>Source &amp; Sort</strong>
               <span className={styles.accordionPreview}>
                 {sourceFilterLabel} / {sortLabel} ({sortDirection === "asc" ? "Asc" : "Desc"})
-                {controlsModified ? ` · ${activeControlCount} active` : ` · ${visibleCount} shown`}
+                {controlsModified ? ` | ${activeControlCount} active` : ` | ${visibleCount} shown`}
               </span>
             </span>
             <span className={styles.accordionChevron} aria-hidden="true">

@@ -23,8 +23,8 @@ describe("pets architecture and modularization contracts", () => {
     assertCleanMigratedRoute({
       routeSubpath: "pets",
       maxPageLines: 150,
-      allowStateBlock: true,
-      allowDirectLucide: true,
+      allowStateBlock: false,
+      allowDirectLucide: false,
     });
   });
 

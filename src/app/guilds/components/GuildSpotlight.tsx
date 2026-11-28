@@ -81,7 +81,7 @@ function SpotlightCard({
             <div className={styles.spotlightTitleWrap}>
               <strong>{guild.name}</strong>
               <span className={styles.spotlightSub}>
-                {guild.tag ? `[${guild.tag}] · ` : ""}Lv. {formatGuildNumber(guild.level)} · {formatGuildNumber(guild.marks)} marks
+                {guild.tag ? `[${guild.tag}] | ` : ""}Lv. {formatGuildNumber(guild.level)} | {formatGuildNumber(guild.marks)} marks
               </span>
             </div>
           </div>
@@ -91,7 +91,7 @@ function SpotlightCard({
           <ProgressBar
             value={guild.member_count}
             max={guild.maxMembers}
-            label={`Roster: ${guild.member_count}/${guild.maxMembers} · Avg TL ${formatGuildNumber(guild.average_total_level)}`}
+            label={`Roster: ${guild.member_count}/${guild.maxMembers} | Avg TL ${formatGuildNumber(guild.average_total_level)}`}
             showReadout={false}
             size="sm"
           />

@@ -60,7 +60,7 @@ export const CATEGORY_META: Record<LoreEntry["category"], { label: string; tone:
   Bestiary: {
     label: "Bestiary",
     tone: "var(--text-danger, #f87171)",
-    icon: <Icon name="boss" size="md" aria-hidden="true" />,
+    icon: <Icon name="enemy" size="md" aria-hidden="true" />,
   },
   NPC: {
     label: "NPC",

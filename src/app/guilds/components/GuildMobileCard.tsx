@@ -52,7 +52,7 @@ export function GuildMobileCard({ guild, onInspect }: GuildMobileCardProps) {
               <strong>{guild.name}</strong>
               <span>
                 #{guild.id}
-                {guild.tag ? ` · [${guild.tag}]` : ""}
+                {guild.tag ? ` [${guild.tag}]` : ""}
               </span>
             </div>
           </div>

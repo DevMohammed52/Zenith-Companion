@@ -67,7 +67,7 @@ export function DungeonCard({
               )}
             </span>
             <span className={styles.cellSubline}>
-              {row.location?.name || "Unknown"} • {Math.round(row.effectiveDurationMins)}m
+              {row.location?.name || "Unknown"} | {Math.round(row.effectiveDurationMins)}m
             </span>
           </span>
         </button>
@@ -183,8 +183,10 @@ export function DungeonTableRow({
             </button>
             <div className={styles.cellSubline}>
               <span>Lv {row.level_required || 0}</span>
-              <span>• {Math.round(row.effectiveDurationMins)}m</span>
-              <span>• {row.dropsCount} drops</span>
+              <span aria-hidden="true">|</span>
+              <span>{Math.round(row.effectiveDurationMins)}m</span>
+              <span aria-hidden="true">|</span>
+              <span>{row.dropsCount} drops</span>
               {row.isSeasonal && (
                 <Badge size="sm" variant="neutral">
                   Event
@@ -192,7 +194,7 @@ export function DungeonTableRow({
               )}
               {row.shardCount > 0 && (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-                  • <ShardIcon size={12} /> {formatNumber(row.shardCount)}
+                  <span aria-hidden="true">|</span> <ShardIcon size={12} /> {formatNumber(row.shardCount)}
                 </span>
               )}
             </div>

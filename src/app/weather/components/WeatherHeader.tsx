@@ -53,31 +53,6 @@ export function WeatherHeader({
 
   return (
     <header className={styles.pageHeader}>
-      {magicStormAlert && (
-        <div className={styles.stormAlertSlot}>
-          <Banner
-            variant="announcement"
-            title={
-              magicStormAlert.type === "active"
-                ? `Magic Storm active in ${magicStormAlert.location.name}`
-                : `Magic Storm upcoming in ${magicStormAlert.location.name}`
-            }
-            action={
-              <Link
-                href={`/map?location=${encodeURIComponent(magicStormAlert.location.key)}`}
-                className={styles.stormActionLink}
-              >
-                View on map
-              </Link>
-            }
-          >
-            {magicStormAlert.type === "active"
-              ? "+25% Battle MF, +20% Dungeon MF, and +20% World Boss MF currently active."
-              : `Magic Storm upcoming in ${magicStormAlert.location.name}.`}
-          </Banner>
-        </div>
-      )}
-
       <div className={styles.headerText}>
         <div className={styles.eyebrowRow}>
           <span className={styles.eyebrow}>
@@ -136,6 +111,31 @@ export function WeatherHeader({
           ariaLabel="IdleMMO weather types"
         />
       </div>
+
+      {magicStormAlert && (
+        <div className={styles.stormAlertSlot}>
+          <Banner
+            variant="announcement"
+            title={
+              magicStormAlert.type === "active"
+                ? `Magic Storm active in ${magicStormAlert.location.name}`
+                : `Magic Storm upcoming in ${magicStormAlert.location.name}`
+            }
+            action={
+              <Link
+                href={`/map?location=${encodeURIComponent(magicStormAlert.location.key)}`}
+                className={styles.stormActionLink}
+              >
+                View on map
+              </Link>
+            }
+          >
+            {magicStormAlert.type === "active"
+              ? "+25% Battle MF, +20% Dungeon MF, and +20% World Boss MF currently active."
+              : `Magic Storm upcoming in ${magicStormAlert.location.name}.`}
+          </Banner>
+        </div>
+      )}
     </header>
   );
 }

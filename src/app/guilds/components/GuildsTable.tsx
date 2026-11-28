@@ -180,8 +180,8 @@ export function GuildsTable({
                             </div>
                             <span className={styles.guildSubLine}>
                               #{guild.id}
-                              {guild.tag ? ` · [${guild.tag}]` : ""}
-                              {" · "}
+                              {guild.tag ? ` [${guild.tag}]` : ""}
+                              {" | "}
                               {GUILD_TIER_LABELS[guild.refresh_tier]}
                             </span>
                           </div>

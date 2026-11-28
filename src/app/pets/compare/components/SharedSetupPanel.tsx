@@ -119,7 +119,7 @@ export function SharedSetupPanel({
             <span className={styles.setupTriggerTitle}>Setup Controls</span>
             <span className={styles.setupTriggerMeta}>
               {scenarioSummary}
-              {scenarioModified ? " · Custom" : ""}
+              {scenarioModified ? " | Custom" : ""}
             </span>
           </span>
           <span className={`${styles.setupChevron} ${isOpen ? styles.setupChevronOpen : ""}`}>

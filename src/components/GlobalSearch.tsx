@@ -595,7 +595,7 @@ export default function GlobalSearch({ hotkeyEnabled = true }: GlobalSearchProps
         data-open={open ? "true" : "false"}
       >
         <Icon name="search" size={14} />
-        <span>Search</span>
+        <span className="global-search-label">Search</span>
         <kbd>Ctrl K</kbd>
       </button>
 

@@ -85,7 +85,7 @@ export function ProfilePetSection({
         return {
           id: `owned-${ownedPet.id}`,
           title,
-          subtitle: `${sourceLabel} · ${ownedPet.species} · Lv. ${ownedPet.level || 1} · Evo ${ownedPet.evolution || 0}`,
+          subtitle: `${sourceLabel} | ${ownedPet.species} | Lv. ${ownedPet.level || 1} | Evo ${ownedPet.evolution || 0}`,
           image: ownedPet.imageUrl || databasePet?.imageUrl,
           badge: ownedPet.equipped || ownedPet.active ? "Active" : "Owned",
           searchText: [
@@ -108,7 +108,7 @@ export function ProfilePetSection({
         subtitle: (
           <>
             <QualityText value={pet.quality || "UNKNOWN"}>{pet.quality || "UNKNOWN"}</QualityText>
-            {pet.acquisition?.[0]?.boss ? ` · ${pet.acquisition[0].boss}` : ""}
+            {pet.acquisition?.[0]?.boss ? ` | ${pet.acquisition[0].boss}` : ""}
           </>
         ),
         image: pet.imageUrl,
@@ -152,6 +152,7 @@ export function ProfilePetSection({
           setOpenId={setOpenPicker}
           onSelect={selectPet}
           source={fieldSource("pet.species")}
+          fallbackIcon="pets"
         />
         <ProfileTextField
           label="Quality"
@@ -199,22 +200,22 @@ export function ProfilePetSection({
                   <>
                     <QualityText value={selectedOwnedPet.quality || "UNKNOWN"}>
                       {selectedOwnedPet.quality || "Unknown quality"}
-                    </QualityText>{" "}
-                    · {selectedOwnedPet.source === "imported" ? "Imported owned snapshot" : "Owned snapshot"}
+                    </QualityText>{" | "}
+                    {selectedOwnedPet.source === "imported" ? "Imported owned snapshot" : "Owned snapshot"}
                   </>
                 ) : (
                   <>
                     <QualityText value={selectedPet?.quality || "UNKNOWN"}>
                       {selectedPet?.quality || "Unknown quality"}
-                    </QualityText>{" "}
-                    · {selectedPet?.acquisition?.[0]?.boss || "Pet Database"}
+                    </QualityText>{" | "}
+                    {selectedPet?.acquisition?.[0]?.boss || "Pet Database"}
                   </>
                 )}
               </p>
               <small>
                 {PET_STAT_FIELDS.slice(0, 6)
                   .map(([key, label]) => `${label}: ${profile.pet.stats[key] || 0}`)
-                  .join(" · ")}
+                  .join(" | ")}
               </small>
             </div>
           </div>

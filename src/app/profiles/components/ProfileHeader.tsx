@@ -17,11 +17,11 @@ import { PROFILE_SECTIONS, type ProfileSectionId } from "../types";
 
 const SECTION_ICONS: Record<ProfileSectionId, IconConcept> = {
   identity: "profile",
-  levels: "skillProfit",
+  levels: "barChart",
   combat: "combat",
   magic: "magic",
   pet: "pets",
-  gear: "forge",
+  gear: "slotChestplate",
   housing: "housing",
   transfer: "download",
 };
@@ -206,7 +206,7 @@ export function ProfileListPanel({
               <span className={styles.profileItemText}>
                 <strong>{item.name || "Unnamed Character"}</strong>
                 <small>
-                  {item.kind === "main" ? "Main" : "Alt"} · {item.className} · TL{" "}
+                  {item.kind === "main" ? "Main" : "Alt"} | {item.className} | TL{" "}
                   {(item.levels.totalLevel || 0).toLocaleString()}
                 </small>
               </span>

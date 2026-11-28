@@ -315,7 +315,7 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
         formattedTime: formatDate(release.date || release.version),
         variant: isLatest ? "success" : "default",
         status: isLatest
-          ? `Latest • ${release.totalChanges} ${release.totalChanges === 1 ? "update" : "updates"}`
+          ? `Latest | ${release.totalChanges} ${release.totalChanges === 1 ? "update" : "updates"}`
           : `${release.totalChanges} ${release.totalChanges === 1 ? "update" : "updates"}`,
         title: (
           <button
@@ -449,7 +449,12 @@ export default function WhatsNewClient({ initialData }: WhatsNewClientProps) {
                 </Badge>
               )}
             </div>
-            <h1 className={styles.title}>What&apos;s New in Zenith</h1>
+            <div className={styles.titleLine}>
+              <span className={styles.titleIcon} aria-hidden="true">
+                <Icon name="whatsNew" size="lg" />
+              </span>
+              <h1 className={styles.title}>What&apos;s New in Zenith</h1>
+            </div>
             <p className={styles.subtitle}>
               Recent features, tools, and fixes for Zenith Companion. Official game changes live in{" "}
               <Link href="/patch-notes" className={styles.inlineLink}>

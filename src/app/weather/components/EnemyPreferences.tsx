@@ -52,7 +52,7 @@ function EnemyPreferenceGroup({
             <div className={styles.enemyPrefText}>
               <strong>{enemy.name}</strong>
               <small>
-                {enemy.locationName} &middot; Lv.{enemy.level}
+                {enemy.locationName} (Lv.{enemy.level})
               </small>
             </div>
             <Icon name="externalLink" size="xs" />

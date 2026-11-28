@@ -76,7 +76,7 @@ export function ForgeLessonsTab({ lessons: externalLessons }: { lessons?: UseFor
             </Tab>
             <Tab
               value="session"
-              icon={<Icon name="critDamage" size="sm" aria-hidden="true" />}
+              icon={<Icon name="craftingQueue" size="sm" aria-hidden="true" />}
               badge={queuedCount > 0 ? queuedCount : undefined}
             >
               Session Queue

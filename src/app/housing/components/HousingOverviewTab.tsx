@@ -113,7 +113,7 @@ export function HousingOverviewTab({ state }: { state: HousingState }) {
             <>
               <span className={housing.guestHostName ? "done" : ""}><Icon name="guilds" size="sm" aria-hidden="true" /> Host {guestHostLabel}</span>
               <span className={summary.availableAnywhere ? "done" : ""}><Icon name="map" size="sm" aria-hidden="true" /> {summary.availableAnywhere ? "Remote Conduit active" : `Local to ${housing.location || "host location"}`}</span>
-              <span className={guestBlockedClass ? "" : "done"}><Icon name="defense" size="sm" aria-hidden="true" /> {guestBlockedClass ? `${guestBlockedClass} cannot be a guest` : "Class can use guest access"}</span>
+              <span className={guestBlockedClass ? "" : "done"}><Icon name={guestBlockedClass ? "warning" : "check"} size="sm" aria-hidden="true" /> {guestBlockedClass ? `${guestBlockedClass} cannot be a guest` : "Class can use guest access"}</span>
               <span><Icon name="timer" size="sm" aria-hidden="true" /> Host repair and decay status is manual</span>
             </>
           ) : (
@@ -121,8 +121,8 @@ export function HousingOverviewTab({ state }: { state: HousingState }) {
               <span className={housing.foundationBuilt ? "done" : ""}><Icon name="check" size="sm" aria-hidden="true" /> Foundation {housing.foundationBuilt ? "built" : `${formatGoldUnit(foundationComponent?.goldCost || 25000)} / 6h`}</span>
               <span><Icon name="timer" size="sm" aria-hidden="true" /> Repair cycle {repairDecayDays} days after repair</span>
               <span className={summary.remoteConduit ? "done" : ""}><Icon name="map" size="sm" aria-hidden="true" /> Remote Conduit {summary.remoteConduit ? "active" : "not active"}</span>
-              <span className={summary.petQuarters ? "done" : ""}><Icon name="xp" size="sm" aria-hidden="true" /> Pet Quarters {summary.petQuarters ? "active" : "not active"}</span>
-              <span className={summary.houseLedger ? "done" : ""}><Icon name="defense" size="sm" aria-hidden="true" /> House Ledger {summary.houseLedger ? "active" : "not active"}</span>
+              <span className={summary.petQuarters ? "done" : ""}><Icon name="pets" size="sm" aria-hidden="true" /> Pet Quarters {summary.petQuarters ? "active" : "not active"}</span>
+              <span className={summary.houseLedger ? "done" : ""}><Icon name="scroll" size="sm" aria-hidden="true" /> House Ledger {summary.houseLedger ? "active" : "not active"}</span>
             </>
           )}
         </div>

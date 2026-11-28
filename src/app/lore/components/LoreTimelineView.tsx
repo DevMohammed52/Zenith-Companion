@@ -374,7 +374,7 @@ export function LoreTimelineView({
 
                   {isExpanded && previewSnippet && (
                     <div className={styles.timelineQuickRead} role="region" aria-label={`Archive excerpt from ${firstEntry?.title}`}>
-                      <span className={styles.timelineQuickReadLabel}>Archive Excerpt &middot; {firstEntry?.title}:</span>
+                      <span className={styles.timelineQuickReadLabel}>Archive Excerpt: {firstEntry?.title}</span>
                       <p>&ldquo;{previewSnippet}&rdquo;</p>
                     </div>
                   )}

@@ -178,7 +178,7 @@ export function CraftingCartView({
       <Card padding="md" className={styles.cartCard}>
         <div className={styles.cardHeaderRow}>
           <h2 className={styles.cardTitle}>
-            <Icon name="alchemy" size="sm" aria-hidden="true" />
+            <Icon name="craftingQueue" size="sm" aria-hidden="true" />
             <span>Recipes ({plan.entries.length})</span>
           </h2>
           <Button

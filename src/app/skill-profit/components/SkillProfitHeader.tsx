@@ -6,10 +6,22 @@ import { GoldIcon } from "@/components/GoldIcon";
 import { Badge, Button, Icon, Tab, TabList, Tabs } from "@/components/ui";
 import { formatGold } from "@/lib/format";
 import { formatHours } from "@/lib/housing";
+import type { IconConcept } from "@/lib/icons";
 import { SKILLS, type SkillName, type SkillProfitRow } from "@/lib/skill-profit";
 import styles from "../page.module.css";
 import { Metric } from "./SkillProfitControls";
 import { getDisplayProfitPerHour, type RateMode } from "../types";
+
+const SKILL_TAB_ICONS: Record<SkillName, IconConcept> = {
+  Woodcutting: "skillWoodcutting",
+  Mining: "skillMining",
+  Fishing: "skillFishing",
+  Alchemy: "alchemy",
+  Smelting: "skillSmelting",
+  Cooking: "skillCooking",
+  Construction: "skillConstruction",
+  Forge: "forge",
+};
 
 export interface SkillProfitHeaderProps {
   profileLabel: string;
@@ -87,7 +99,7 @@ export function SkillProfitHeader({
           <span className={styles.eyebrow}>
             <Icon name="skillProfit" size="sm" aria-hidden="true" />
             <span>
-              {profileLabel} • {rowsCount.toLocaleString()} routes
+              {profileLabel} | {rowsCount.toLocaleString()} routes
             </span>
           </span>
           <h1 className={styles.title}>Skill Profit Planner</h1>
@@ -146,7 +158,7 @@ export function SkillProfitHeader({
                   <span>
                     {topRoute.skill} Lv {topRoute.level}
                   </span>
-                  <span>•</span>
+                  <span aria-hidden="true">|</span>
                   <GoldIcon size={12} />
                   <strong>{spotlightProfitLabel}</strong>
                 </>
@@ -217,7 +229,12 @@ export function SkillProfitTabs({
             All
           </Tab>
           {SKILLS.map((skill) => (
-            <Tab key={skill} value={skill} badge={counts?.get(skill)}>
+            <Tab
+              key={skill}
+              value={skill}
+              icon={<Icon name={SKILL_TAB_ICONS[skill]} size="xs" />}
+              badge={counts?.get(skill)}
+            >
               {skill}
             </Tab>
           ))}

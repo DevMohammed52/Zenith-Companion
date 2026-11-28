@@ -82,7 +82,7 @@ export function EnemyModal({
       isOpen={true}
       onClose={onClose}
       title={enemy.name}
-      description={`${enemy.locationName} · Level ${enemy.level}`}
+      description={`${enemy.locationName} (Level ${enemy.level})`}
       maxWidth="lg"
       footer={
         <div className={styles.footerRow}>
@@ -119,7 +119,7 @@ export function EnemyModal({
               width={52}
               height={52}
               className={styles.avatarImg}
-              fallback={<Icon name="boss" size="xl" aria-hidden="true" />}
+              fallback={<Icon name="enemy" size="xl" aria-hidden="true" />}
             />
           </div>
           <div className={styles.identity}>
@@ -201,7 +201,7 @@ export function EnemyModal({
             </Badge>
           </div>
           <p className={styles.summaryCopy}>
-            Current weather: <strong>{enemy.currentWeather?.name || "Unknown"}</strong> · Favorable window:{" "}
+            Current weather: <strong>{enemy.currentWeather?.name || "Unknown"}</strong> | Favorable window:{" "}
             <strong>{formatFavorableWindow(enemy)}</strong>
           </p>
           {prefGroups.length > 0 && (

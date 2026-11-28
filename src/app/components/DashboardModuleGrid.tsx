@@ -108,7 +108,7 @@ export function DashboardModuleGrid({
 
           <Link href="/forge/lessons" className={styles.quickRowLink}>
             <span className={styles.quickRowLeft}>
-              <Icon name="scroll" size="sm" aria-hidden="true" />
+              <Icon name="forgeLessons" size="sm" aria-hidden="true" />
               <span>Forge Lessons</span>
             </span>
             <span className={styles.quickRowValue}>Lv. 1 to 100 costs</span>
@@ -116,7 +116,7 @@ export function DashboardModuleGrid({
 
           <Link href="/alchemy/mythic" className={styles.quickRowLink}>
             <span className={styles.quickRowLeft}>
-              <Icon name="xp" size="sm" aria-hidden="true" />
+              <Icon name="mythicAlchemy" size="sm" aria-hidden="true" />
               <span>Mythic Lab</span>
             </span>
             <span className={styles.quickRowValue}>

@@ -344,7 +344,7 @@ export function usePetsState() {
     battleProfitMode !== "withSleep" ||
     foodPolicy !== "standard" ||
     beastmaster;
-  const scenarioLabel = `Lv ${petLevel} · Mastery ${masteryLevel} · Evo ${evolutionStage}`;
+  const scenarioLabel = `Lv ${petLevel} | Mastery ${masteryLevel} | Evo ${evolutionStage}`;
   const resultAnnouncement = petRows.length
     ? `Showing ${paginatedRows.length} of ${petRows.length} pets (Page ${safeCurrentPage} of ${totalPages}).`
     : "No pets match the current filters.";

@@ -213,7 +213,7 @@ export function LessonTargetGoalCard({
                       variant={isQueued ? "secondary" : "primary"}
                       size="md"
                       fullWidth={!isQueued || !onSwitchSubView}
-                      icon={<Icon name={isQueued ? "checkCircle" : "archiveLayers"} size="sm" aria-hidden="true" />}
+                      icon={<Icon name={isQueued ? "checkCircle" : "craftingQueue"} size="sm" aria-hidden="true" />}
                       onClick={() => applyPathToQueue(route.steps, route.key)}
                     >
                       {isQueued ? "Route Queued" : `Queue ${route.title}`}

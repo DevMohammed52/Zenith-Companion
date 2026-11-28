@@ -35,7 +35,7 @@ export default function ConquestRewardsModal({
                 <strong>{tier.rankLabel}</strong>
                 <span>+{tier.primaryExpPercent}% Primary / Dungeon / WB / Combat / Hunt / Slayer EXP</span>
                 <small>
-                  +{tier.primaryEffPercent}% Eff · +{tier.dungeonMagicFindPercent}% Dungeon &amp; WB MF
+                  +{tier.primaryEffPercent}% Eff, +{tier.dungeonMagicFindPercent}% Dungeon &amp; WB MF
                 </small>
               </div>
             ))}

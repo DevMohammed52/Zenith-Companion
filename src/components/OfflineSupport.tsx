@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Wifi, WifiOff, X } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import styles from "./OfflineSupport.module.css";
 
 type NetworkStatus = "online" | "offline" | "restored";
@@ -142,7 +142,7 @@ export default function OfflineSupport() {
     return (
       <aside className={styles.banner} data-status="update" role="status" aria-live="polite">
         <span className={styles.iconShell} aria-hidden="true">
-          <RefreshCw size={18} />
+          <Icon name="refresh" size={18} />
         </span>
         <span className={styles.copy}>
           <strong>Update available</strong>
@@ -158,7 +158,7 @@ export default function OfflineSupport() {
             onClick={() => setWaitingWorker(null)}
             aria-label="Dismiss update available message"
           >
-            <X size={16} />
+            <Icon name="close" size={16} />
           </button>
         </span>
       </aside>
@@ -168,12 +168,11 @@ export default function OfflineSupport() {
   if (status === "online") return null;
 
   const isOffline = status === "offline";
-  const Icon = isOffline ? WifiOff : Wifi;
 
   return (
     <aside className={styles.banner} data-status={status} role="status" aria-live="polite">
       <span className={styles.iconShell} aria-hidden="true">
-        <Icon size={18} />
+        <Icon name={isOffline ? "offline" : "wifi"} size={18} />
       </span>
       <span className={styles.copy}>
         <strong>{isOffline ? "Offline mode" : "Back online"}</strong>

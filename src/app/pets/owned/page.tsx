@@ -46,7 +46,7 @@ export default function OwnedPetsPage() {
 
       {state.loaded && state.activeProfile && warningParts.length > 0 && (
         <Banner variant="warning" title="Import notice">
-          {warningParts.join(" · ")}
+          {warningParts.join(" | ")}
         </Banner>
       )}
 

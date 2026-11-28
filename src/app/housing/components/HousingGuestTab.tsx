@@ -188,7 +188,7 @@ export function HousingGuestTab({ state }: { state: HousingState }) {
           aria-pressed={housing.guestHouseLedger}
           onClick={() => saveHousing({ guestHouseLedger: !housing.guestHouseLedger })}
         >
-          <Icon name="defense" size="md" aria-hidden="true" />
+          <Icon name="scroll" size="md" aria-hidden="true" />
           <span className="guest-special-copy">
             <strong>House Ledger</strong>
             <small>Tracked only. Ledger benefits are not two-way.</small>

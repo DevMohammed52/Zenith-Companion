@@ -71,7 +71,7 @@ export function ActivePetSpotlight({
           <h2 className={styles.spotlightTitle}>
             {displayName}
             <span className={styles.spotlightSub}>
-              Lv. {ownedPet.level || 1} &middot; Evo {ownedPet.evolution || 0} / {ownedPet.evolutionMax || 5}
+              Lv. {ownedPet.level || 1} | Evo {ownedPet.evolution || 0} / {ownedPet.evolutionMax || 5}
             </span>
           </h2>
         </div>

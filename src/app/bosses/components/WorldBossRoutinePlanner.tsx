@@ -350,7 +350,7 @@ export function WorldBossRoutinePlanner({ state }: WorldBossRoutinePlannerProps)
                                     <span style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
                                         <span className={styles.routineBossName}>{boss.name}</span>
                                         <span className={styles.routineBossSub}>
-                                            Lv. {boss.level} • ~{formatGold(boss.ev)}g
+                                            Lv. {boss.level} | ~{formatGold(boss.ev)}g
                                         </span>
                                     </span>
                                 </span>

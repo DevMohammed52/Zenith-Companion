@@ -32,6 +32,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  flex: 1 1 200px;
   min-width: 0;
 }
 
@@ -39,11 +40,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+
+.eyebrow span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pageTitle {

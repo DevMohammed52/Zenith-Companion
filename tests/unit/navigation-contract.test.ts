@@ -1,8 +1,13 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
+import ZenithIcon from "@/components/icons/ZenithIcon";
+import { Icon } from "@/components/ui/Icon";
 import { NAV_GROUPS, getActiveNavGroup, isNavItemActive } from "@/lib/navigation";
+import { mapNavIconToConcept } from "@/lib/route-recovery";
 
 const navItems = NAV_GROUPS.flatMap((group) => group.items.map((item) => ({ group, item })));
 
@@ -35,5 +40,16 @@ describe("navigation contract", () => {
     expect(isNavItemActive("/items/abc123", itemsRoute!)).toBe(true);
     expect(isNavItemActive("/settings/privacy", settingsRoute!)).toBe(false);
     expect(getActiveNavGroup("/alchemy/mythic")?.label).toBe("Planning Tools");
+  });
+
+  it("renders unique, context-specific icons across ZenithIcon and mapNavIconToConcept for every route", () => {
+    for (const { item } of navItems) {
+      const concept = mapNavIconToConcept(item.icon);
+      expect(concept, `${item.href} (${item.icon}) fell back to generic globe`).not.toBe("globe");
+      const zenithMarkup = renderToStaticMarkup(createElement(ZenithIcon, { name: item.icon }));
+      const conceptMarkup = renderToStaticMarkup(createElement(Icon, { name: concept }));
+      expect(zenithMarkup).toContain("<svg");
+      expect(conceptMarkup).toContain("<svg");
+    }
   });
 });

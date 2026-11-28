@@ -139,7 +139,7 @@ function MythicAlchemyContent() {
 
 export default function MythicAlchemyPage() {
   return (
-    <Suspense fallback={<main className={`container ${styles.pageShell}`}><Skeleton height="360px" variant="rectangular" /></main>}>
+    <Suspense fallback={<main className={`container ${styles.pageShell}`}><Skeleton height="1000px" variant="rectangular" /></main>}>
       <MythicAlchemyContent />
     </Suspense>
   );

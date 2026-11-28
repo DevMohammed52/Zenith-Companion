@@ -54,6 +54,7 @@ export function DashboardPriorityTools({
             <Skeleton height={48} />
             <Skeleton height={48} />
             <Skeleton height={48} />
+            <Skeleton height={48} />
           </SkeletonContainer>
         ) : (
           <>

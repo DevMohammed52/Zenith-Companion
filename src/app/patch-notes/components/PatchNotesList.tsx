@@ -236,7 +236,7 @@ export function PatchNotesList({
       <Timeline
         items={timelineItems}
         aria-label="Filtered IdleMMO patch notes"
-        directionNotice="Order: Newest patches first • Official IdleMMO UTC release dates"
+        directionNotice="Order: Newest patches first | Official IdleMMO UTC release dates"
       />
 
       {totalPages > 1 && (

@@ -11,6 +11,7 @@ import {
 } from "@/lib/profile-calculations";
 import QualityText from "@/components/QualityText";
 import { Icon } from "@/components/ui/Icon";
+import type { IconConcept } from "@/lib/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import styles from "../Profiles.module.css";
 import { ProfileNumberField, ProfilePicker, type PickerOption } from "./ProfileControls";
@@ -22,6 +23,25 @@ export const ARMOR_GEAR_FIELDS: Array<[string, string, string[]]> = [
   ["boots", "Boots", ["BOOTS"]],
   ["gauntlets", "Gauntlets", ["GAUNTLETS"]],
 ];
+
+const GEAR_SLOT_FALLBACK_ICONS: Record<string, IconConcept> = {
+  helmet: "slotHelmet",
+  chestplate: "slotChestplate",
+  greaves: "slotGreaves",
+  boots: "slotBoots",
+  gauntlets: "slotGauntlets",
+  special: "slotSpecial",
+  weapon: "slotSword",
+  offhandWeapon: "slotDagger",
+  bow: "slotBow",
+  shield: "slotShield",
+};
+
+const TOOL_SLOT_FALLBACK_ICONS: Record<string, IconConcept> = {
+  woodcutting: "skillWoodcutting",
+  mining: "skillMining",
+  fishing: "skillFishing",
+};
 
 export const COMBAT_STYLE_OPTIONS: Array<{ value: CombatStyle; label: string; hint: string }> = [
   { value: "swordShield", label: "Sword + Shield", hint: "One sword, optional shield" },
@@ -86,9 +106,9 @@ export function ProfileGearSection({
     title: item.name || "Unknown item",
     subtitle: (
       <>
-        <QualityText value={item.quality || "UNKNOWN"}>{item.quality || "UNKNOWN"}</QualityText> ·{" "}
+        <QualityText value={item.quality || "UNKNOWN"}>{item.quality || "UNKNOWN"}</QualityText>{" | "}
         {String(item.type || "").replace(/_/g, " ")}
-        {getItemRequirementLevel(item) ? ` · Lv. ${getItemRequirementLevel(item)}` : ""}
+        {getItemRequirementLevel(item) ? ` | Lv. ${getItemRequirementLevel(item)}` : ""}
       </>
     ),
     image: item.image_url,
@@ -118,6 +138,11 @@ export function ProfileGearSection({
     } as CharacterProfile;
     const stats = calculateProfileSecondaryStats(previewProfile, itemByName);
 
+    const resolvedFallbackIcon: IconConcept =
+      key === "weapon" && profile.combatStyle === "dualDaggers"
+        ? "slotDagger"
+        : GEAR_SLOT_FALLBACK_ICONS[key] || "items";
+
     return (
       <div key={key} className={styles.gearSlotRow}>
         <div className={tiered ? styles.gearSlotInputs : undefined}>
@@ -134,6 +159,7 @@ export function ProfileGearSection({
             setOpenId={setOpenPicker}
             disabled={disabled}
             source={fieldSource(`gear.${key}`)}
+            fallbackIcon={resolvedFallbackIcon}
             onSelect={(item) => {
               const next = item as ProfileItemRecord | null;
               patchActive({
@@ -174,7 +200,7 @@ export function ProfileGearSection({
             {selected.tier_modifiers && <span>Tier gain: {formatShortStats(selected.tier_modifiers, 3)}</span>}
             {tiered && (
               <span>
-                AP {stats.attackPower} · Prot {stats.protection} · Agi {stats.agility} · Acc {stats.accuracy}
+                AP {stats.attackPower} | Prot {stats.protection} | Agi {stats.agility} | Acc {stats.accuracy}
               </span>
             )}
           </div>
@@ -217,7 +243,7 @@ export function ProfileGearSection({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        <Icon name="defense" size="sm" aria-hidden="true" />
+        <Icon name="slotChestplate" size="sm" aria-hidden="true" />
         <h3 style={{ margin: 0, fontSize: "0.96rem", fontWeight: 800 }}>Combat Equipment</h3>
       </div>
 
@@ -278,6 +304,7 @@ export function ProfileGearSection({
                 ]}
                 openId={openPicker}
                 setOpenId={setOpenPicker}
+                fallbackIcon={TOOL_SLOT_FALLBACK_ICONS[key] || "craftTool"}
                 source={fieldSource(`tools.${key}`)}
                 onSelect={(item) => {
                   const next = item as ProfileItemRecord | null;

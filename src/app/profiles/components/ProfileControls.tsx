@@ -4,6 +4,7 @@ import React, { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CharacterProfile, ProfileFieldSource } from "@/lib/profiles";
 import { GameImage } from "@/components/GameImage";
 import { Icon } from "@/components/ui/Icon";
+import type { IconConcept } from "@/lib/icons";
 import { ModalSheet } from "@/components/ui/ModalSheet";
 import { TextInput } from "@/components/ui/TextInput";
 import styles from "../Profiles.module.css";
@@ -180,6 +181,7 @@ export interface ProfilePickerProps<T> {
   onSelect: (value: T | null) => void;
   disabled?: boolean;
   source?: ProfileFieldSource;
+  fallbackIcon?: IconConcept;
 }
 
 export function ProfilePicker<T>({
@@ -193,6 +195,7 @@ export function ProfilePicker<T>({
   onSelect,
   disabled,
   source,
+  fallbackIcon = "items",
 }: ProfilePickerProps<T>) {
   const [query, setQuery] = useState("");
   const open = openId === id;
@@ -253,7 +256,7 @@ export function ProfilePicker<T>({
                   className={selectedImageClass}
                 />
               ) : (
-                <Icon name="items" size="sm" aria-hidden="true" />
+                <Icon name={fallbackIcon} size="sm" aria-hidden="true" />
               )}
             </span>
           )}

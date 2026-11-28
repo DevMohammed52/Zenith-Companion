@@ -70,7 +70,7 @@ export function InventoryOptimizer({
     return allCalculatedMaterials.map((mat) => ({
       id: mat.name,
       label: mat.name,
-      description: `Lv. ${mat.reqLvl} · ${mat.mob || mat.category.replace("_", " ")} · ${mat.goldPerExp.toFixed(2)}g/EXP`,
+      description: `Lv. ${mat.reqLvl} | ${mat.mob || mat.category.replace("_", " ")} | ${mat.goldPerExp.toFixed(2)}g/EXP`,
       meta: formatGold(mat.liveMarketPrice) + "g",
       rarity: mat.quality.toLowerCase(),
       icon: <GameImage src={mat.imageUrl} alt="" width={20} height={20} />,
@@ -159,7 +159,7 @@ export function InventoryOptimizer({
             <Button
               variant="primary"
               size="sm"
-              icon={<Icon name="critDamage" size="xs" aria-hidden="true" />}
+              icon={<Icon name="forgeHeat" size="xs" aria-hidden="true" />}
               onClick={() => {
                 queueAllOwned();
                 onSwitchSubView?.("catalog");
@@ -281,12 +281,12 @@ export function InventoryOptimizer({
                       </div>
                       <div className={styles.matCellMeta}>
                         <span>+{Math.floor(row.itemExp).toLocaleString()} EXP</span>
-                        <span>·</span>
+                        <span aria-hidden="true">|</span>
                         <span>
                           Net Sale: <strong>{formatGold(row.netValue)}</strong>
                           <GoldIcon size={11} />
                         </span>
-                        <span>·</span>
+                        <span aria-hidden="true">|</span>
                         <span>Eff: {row.mat.displayedEff}%</span>
                       </div>
                     </div>

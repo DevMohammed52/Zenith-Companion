@@ -321,7 +321,7 @@ export function IntelGrid({
                     onClick={() => setActiveForecastKey(expanded ? null : forecastKey)}
                   >
                     <span>
-                      Enemy reactions ({crosscheck.favored.length} favored · {crosscheck.penalized.length} penalized)
+                      Enemy reactions ({crosscheck.favored.length} favored, {crosscheck.penalized.length} penalized)
                     </span>
                     <Icon
                       name="chevronDown"
@@ -471,7 +471,7 @@ export function IntelGrid({
                           {resource.kind}
                           {resource.marketValue > 0 && (
                             <>
-                              {" · "}
+                              {" | "}
                               <GoldIcon size={11} />
                               {" "}
                               {formatGold(resource.marketValue)}
@@ -522,7 +522,7 @@ export function IntelGrid({
                         <span className={styles.itemName}>{drop.name}</span>
                         <small className={styles.itemMeta}>
                           {formatCount(drop.count, "source")}
-                          {formatChance(drop.bestChance) ? ` · ${formatChance(drop.bestChance)}` : ""}
+                          {formatChance(drop.bestChance) ? ` | ${formatChance(drop.bestChance)}` : ""}
                         </small>
                       </span>
                       <span className={styles.itemGoldRight}>
@@ -579,13 +579,13 @@ export function IntelGrid({
                       { value: "skilling", label: `Skill Buffs (${skillingWindowsCount})`, disabled: skillingWindowsCount === 0 },
                     ]}
                   />
-                  <span className={styles.tabLeadNote}>Local time windows · click any enemy chip for full stats and loot.</span>
+                  <span className={styles.tabLeadNote}>Local time windows. Click any enemy chip for full stats and loot.</span>
                 </div>
 
                 {timelineItems.length > 0 ? (
                   <Timeline
                     headingLevel="h3"
-                    directionNotice="Order: Current window first • Local timezone"
+                    directionNotice="Order: Current window first | Local timezone"
                     items={timelineItems}
                   />
                 ) : (

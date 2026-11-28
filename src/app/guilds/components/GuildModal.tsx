@@ -93,7 +93,7 @@ export function GuildModal({
       isOpen={true}
       onClose={onClose}
       title={guild.name}
-      description={`#${guild.id}${guild.tag ? ` · [${guild.tag}]` : ""} · ${GUILD_TIER_LABELS[guild.refresh_tier]}`}
+      description={`#${guild.id}${guild.tag ? ` [${guild.tag}]` : ""} | ${GUILD_TIER_LABELS[guild.refresh_tier]}`}
       maxWidth="xl"
     >
       <div className={styles.modalStack}>
@@ -154,7 +154,7 @@ export function GuildModal({
                 {guild.tag && <span className={styles.modalTagPill}>[{guild.tag}]</span>}
               </div>
               <p className={styles.modalBannerSub}>
-                Guild Level {formatGuildNumber(guild.level)} · Max Roster {guild.maxMembers} members
+                Guild Level {formatGuildNumber(guild.level)} | Max Roster {guild.maxMembers} members
               </p>
             </div>
           </div>

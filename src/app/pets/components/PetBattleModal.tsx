@@ -1,14 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Clock,
-  Coins,
-  HeartPulse,
-  Package,
-  Swords,
-  Zap,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { ModalSheet } from "@/components/ui/ModalSheet";
 import {
   type BattleDrop,
@@ -48,7 +41,7 @@ export function PetBattleModal({
     <ModalSheet
       isOpen={true}
       onClose={onClose}
-      title={`${pet.name} · ${zone.zone}`}
+      title={`${pet.name} | ${zone.zone}`}
       maxWidth="md"
     >
       <div className={styles.modalContent}>
@@ -65,7 +58,7 @@ export function PetBattleModal({
         <div className={styles.metricsGrid}>
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <Clock size={12} aria-hidden="true" /> Battle Time
+              <Icon name="timer" size={12} aria-hidden="true" /> Battle Time
             </span>
             <span className={styles.metricBoxValue}>
               {secondsToDuration(zone.battleTimeSeconds)}
@@ -74,7 +67,7 @@ export function PetBattleModal({
 
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <Swords size={12} aria-hidden="true" /> Enemies
+              <Icon name="combat" size={12} aria-hidden="true" /> Enemies
             </span>
             <span className={styles.metricBoxValue}>
               {formatNumber(zone.enemiesBattled)}
@@ -83,7 +76,7 @@ export function PetBattleModal({
 
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <Coins size={12} aria-hidden="true" /> Profit / Hour
+              <Icon name="gold" size={12} aria-hidden="true" /> Profit / Hour
             </span>
             <span className={`${styles.metricBoxValue} ${styles.metricBoxGold}`}>
               {formatGold(getZoneProfitValue(zone, battleProfitMode, foodPolicy))}
@@ -92,7 +85,7 @@ export function PetBattleModal({
 
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <HeartPulse size={12} aria-hidden="true" /> Food Cost / Hr
+              <Icon name="health" size={12} aria-hidden="true" /> Food Cost / Hr
             </span>
             <span className={styles.metricBoxValue}>
               {formatGold(zone.foodCostPerHourCheapest)}
@@ -101,7 +94,7 @@ export function PetBattleModal({
 
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <Zap size={12} aria-hidden="true" /> Drain / Battle
+              <Icon name="stamina" size={12} aria-hidden="true" /> Drain / Battle
             </span>
             <span className={styles.metricBoxValue}>
               {formatNumber(zone.cycle?.staminaDrainPerBattle)} stamina
@@ -110,7 +103,7 @@ export function PetBattleModal({
 
           <div className={styles.metricBox}>
             <span className={styles.metricBoxLabel}>
-              <Package size={12} aria-hidden="true" /> Total Drops
+              <Icon name="items" size={12} aria-hidden="true" /> Total Drops
             </span>
             <span className={styles.metricBoxValue}>
               {formatNumber(zone.lootPieces)}

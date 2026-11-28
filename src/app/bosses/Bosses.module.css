@@ -1249,10 +1249,10 @@
   color: #cbd5e1;
 }
 
-.routineBossBadgeNeutral {
-  background: rgba(10, 13, 20, 0.55);
+.routineBossToggle.routineBossToggleSelected .routineBossBadgeNeutral {
+  background: rgba(10, 13, 20, 0.78);
   color: #e2e8f0;
-  border-color: rgba(148, 163, 184, 0.35);
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
 /* Routine Timeline */

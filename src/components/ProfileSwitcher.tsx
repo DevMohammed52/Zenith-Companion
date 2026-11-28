@@ -126,7 +126,7 @@ export default function ProfileSwitcher({ compact = false }: ProfileSwitcherProp
                         {profile.name || "Unnamed profile"}
                       </span>
                       <span className={styles.optionMeta}>
-                        {profile.kind === "main" ? "Main" : "Alt"} · {profile.className || "Adventurer"} · TL {profile.levels.totalLevel || 0}
+                        {profile.kind === "main" ? "Main" : "Alt"} | {profile.className || "Adventurer"} | TL {profile.levels.totalLevel || 0}
                       </span>
                     </div>
 

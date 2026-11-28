@@ -116,7 +116,7 @@ export function PatchNotesToolbar({
         <div className={styles.resultsSummary}>
           <span className={styles.resultsStrong}>{filteredCount}</span> matching patch{" "}
           {filteredCount === 1 ? "note" : "notes"}
-          {visibleRangeLabel ? ` • ${visibleRangeLabel}` : ""}
+          {visibleRangeLabel ? ` | ${visibleRangeLabel}` : ""}
         </div>
 
         <div className={styles.bulkActions}>

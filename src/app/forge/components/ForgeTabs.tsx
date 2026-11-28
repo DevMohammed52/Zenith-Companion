@@ -78,7 +78,7 @@ export function ForgeTabs({ state, activeTab: explicitTab, onTabChange }: ForgeT
       <div className={styles.primaryTabList} role="tablist" aria-label="Forge sections" aria-orientation="horizontal">
         {FORGE_TABS.map((tab, tabIndex) => {
           const isActive = effectiveTab === tab.id;
-          const iconConcept = tab.id === "lessons" ? "archiveLayers" : "craftTool";
+          const iconConcept = tab.id === "lessons" ? "forgeLessons" : "craftTool";
           return (
             <button
               key={tab.id}

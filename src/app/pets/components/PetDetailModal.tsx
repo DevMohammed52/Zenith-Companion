@@ -1,16 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Coins,
-  Egg,
-  ExternalLink,
-  Gauge,
-  Search,
-  Shield,
-  Swords,
-  Zap,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { ModalSheet } from "@/components/ui/ModalSheet";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -94,21 +85,21 @@ export function PetDetailModal({
         <div className={styles.metricsGrid}>
           <div className={styles.metricTile}>
             <span className={styles.metricLabel}>
-              <Swords size={13} aria-hidden="true" /> Total Power
+              <Icon name="combat" size={13} aria-hidden="true" /> Total Power
             </span>
             <span className={styles.metricValue}>{formatNumber(selectedRow.totalPower)}</span>
           </div>
 
           <div className={styles.metricTile}>
             <span className={styles.metricLabel}>
-              <Gauge size={13} aria-hidden="true" /> Movement
+              <Icon name="gauge" size={13} aria-hidden="true" /> Movement
             </span>
             <span className={styles.metricValue}>{formatNumber(selectedRow.stats.movement_speed, 2)}m/s</span>
           </div>
 
           <div className={styles.metricTile}>
             <span className={styles.metricLabel}>
-              <Search size={13} aria-hidden="true" /> Hunt Duration
+              <Icon name="timer" size={13} aria-hidden="true" /> Hunt Duration
             </span>
             <span className={styles.metricValue}>{secondsToDuration(selectedRow.huntingTime)}</span>
           </div>
@@ -117,7 +108,7 @@ export function PetDetailModal({
         {/* 3. Combat Stats (All 9 Core Attributes) */}
         <section className={styles.section} aria-label="Combat statistics">
           <h3 className={styles.sectionTitle}>
-            <Shield size={14} aria-hidden="true" /> Combat Attributes
+            <Icon name="combat" size={14} aria-hidden="true" /> Combat Attributes
           </h3>
           <div className={styles.statGrid}>
             {(Object.keys(STAT_LABELS) as StatKey[]).map((key) => (
@@ -138,7 +129,7 @@ export function PetDetailModal({
         {/* 4. Acquisition & Egg Bridge */}
         <section className={styles.section} aria-label="Acquisition and egg details">
           <h3 className={styles.sectionTitle}>
-            <Egg size={14} aria-hidden="true" /> Acquisition & Egg
+            <Icon name="egg" size={14} aria-hidden="true" /> Acquisition & Egg
           </h3>
 
           {pet.egg ? (
@@ -159,7 +150,7 @@ export function PetDetailModal({
                   width={34}
                   height={34}
                   sizes="34px"
-                  fallback={<Egg size={18} />}
+                  fallback={<Icon name="egg" size={18} />}
                 />
                 <div>
                   <div className={styles.eggName}>{pet.egg.name}</div>
@@ -168,7 +159,7 @@ export function PetDetailModal({
                   </div>
                 </div>
               </div>
-              <ExternalLink size={14} style={{ color: "var(--text-tertiary)" }} />
+              <Icon name="externalLink" size={14} style={{ color: "var(--text-tertiary)" }} />
             </button>
           ) : (
             <p style={{ color: "var(--text-tertiary)", fontSize: 13, margin: 0 }}>
@@ -184,7 +175,7 @@ export function PetDetailModal({
                     {entry.boss || entry.location || "World Encounter"}
                   </span>
                   <span className={styles.acquisitionDetail}>
-                    {entry.chancePercent ? `${entry.chancePercent}% drop chance` : "Chance pending"} · {entry.levelRequirement || "No level requirement"}
+                    {entry.chancePercent ? `${entry.chancePercent}% drop chance` : "Chance pending"} | {entry.levelRequirement || "No level requirement"}
                   </span>
                 </div>
               ))}
@@ -195,7 +186,7 @@ export function PetDetailModal({
         {/* 5. Companion Exchange Marketplace */}
         <section className={styles.section} aria-label="Exchange market data">
           <h3 className={styles.sectionTitle}>
-            <Coins size={14} aria-hidden="true" /> Companion Exchange
+            <Icon name="gold" size={14} aria-hidden="true" /> Companion Exchange
           </h3>
           <div className={styles.exchangeGrid}>
             <div className={styles.exchangeBox}>
@@ -220,7 +211,7 @@ export function PetDetailModal({
         {/* 6. Battle Combat Preview */}
         <section className={styles.section} aria-label="Combat zone analysis">
           <h3 className={styles.sectionTitle}>
-            <Zap size={14} aria-hidden="true" /> Combat Zones
+            <Icon name="mapPin" size={14} aria-hidden="true" /> Combat Zones
           </h3>
           {pet.battle?.zones?.length ? (
             <div className={styles.battleCard}>
@@ -235,7 +226,7 @@ export function PetDetailModal({
                   <Button
                     variant="secondary"
                     size="sm"
-                    icon={<Zap size={13} />}
+                    icon={<Icon name="combat" size={13} />}
                     onClick={() => {
                       onClose();
                       onSelectBattle({ pet, zone: bestZone });

@@ -96,7 +96,7 @@ export function HousingComponentsTab({ state }: { state: HousingState }) {
 
           {slotOverage > 0 && (
             <div className="slot-warning">
-              <Icon name="defense" size="md" aria-hidden="true" />
+              <Icon name="warning" size="md" aria-hidden="true" />
               <span>This setup is {slotOverage} slot{slotOverage === 1 ? "" : "s"} over capacity. Remove components or build more slots.</span>
             </div>
           )}
@@ -131,7 +131,7 @@ export function HousingComponentsTab({ state }: { state: HousingState }) {
             </div>
           </div>
           <div className="repair-data-note">
-            <Icon name="defense" size="md" aria-hidden="true" />
+            <Icon name="craftTool" size="md" aria-hidden="true" />
             <span>Set each component condition below. Repair planning uses the 90-day decay cycle for repaired components.</span>
           </div>
           <div className="setup-cost-panel">
@@ -173,7 +173,7 @@ export function HousingComponentsTab({ state }: { state: HousingState }) {
             <div className="selected-material-breakdown setup-breakdown repair-breakdown">
               <span>
                 <span className="breakdown-label">
-                  <Icon name="defense" size="xs" aria-hidden="true" />
+                  <Icon name="craftTool" size="xs" aria-hidden="true" />
                   <span>Repair total</span>
                 </span>
                 <strong className={selectedRepairEstimate.missingMaterials.length ? "needs-data-text" : "inline-gold-value"}>
@@ -362,7 +362,7 @@ export function HousingComponentsTab({ state }: { state: HousingState }) {
                     <div className="selected-material-breakdown repair-requirement-breakdown">
                       <span>
                         <span className="breakdown-label">
-                          <Icon name="defense" size="xs" aria-hidden="true" />
+                          <Icon name="craftTool" size="xs" aria-hidden="true" />
                           <span>Repair materials</span>
                         </span>
                         <strong>{repairCost.materials.length ? `${repairCost.materials.length} types` : "None"}</strong>

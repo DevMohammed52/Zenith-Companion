@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObjec
 import { GameImage } from "@/components/GameImage";
 import QualityText from "@/components/QualityText";
 import { Icon, TableHead } from "@/components/ui";
+import type { IconConcept } from "@/lib/icons";
 import { formatGold } from "@/lib/format";
 import { formatEssenceBuff, type getEssenceOptionsForSkill } from "@/lib/essences";
 import { SKILL_TOOLS, type SkillProfitSortKey, type ToolSkill } from "@/lib/skill-profit";
@@ -176,6 +177,7 @@ export function ToolPicker({
   onOpenChange,
   allItemsDb,
   ariaLabel = "Equipped tool",
+  fallbackIcon = "craftTool",
 }: {
   options: typeof SKILL_TOOLS[ToolSkill];
   value: string;
@@ -183,6 +185,7 @@ export function ToolPicker({
   onOpenChange?: (open: boolean) => void;
   allItemsDb?: Record<string, any> | null;
   ariaLabel?: string;
+  fallbackIcon?: IconConcept;
 }) {
   const [open, setOpen] = usePickerOpen(onOpenChange);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -214,7 +217,7 @@ export function ToolPicker({
               width={22}
               height={22}
               sizes="22px"
-              fallback={<Icon name="craftTool" size="xs" />}
+              fallback={<Icon name={fallbackIcon} size="xs" />}
             />
           </span>
           <span className={styles.triggerText}>
@@ -266,13 +269,13 @@ export function ToolPicker({
                       width={22}
                       height={22}
                       sizes="22px"
-                      fallback={<Icon name="craftTool" size="xs" />}
+                      fallback={<Icon name={fallbackIcon} size="xs" />}
                     />
                   </span>
                   <span className={styles.optionText}>
                     <strong>{option.name}</strong>
                     <small>
-                      Lv {option.level} • <QualityText value={option.quality}>{option.quality}</QualityText>
+                      Lv {option.level} | <QualityText value={option.quality}>{option.quality}</QualityText>
                     </small>
                   </span>
                 </span>
@@ -368,7 +371,7 @@ export function EssencePicker({
             const buffSummary = formatEssenceBuff(option.buff);
             const cleanMeta = [option.level !== null ? `Lv ${option.level}` : "", buffSummary]
               .filter(Boolean)
-              .join(" • ");
+              .join(" | ");
             const sourceTag =
               option.price.value > 0
                 ? option.price.source === "custom"

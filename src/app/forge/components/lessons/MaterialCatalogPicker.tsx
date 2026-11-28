@@ -270,8 +270,8 @@ export function MaterialCatalogPicker({
                     <TableHead>Material ({displayMaterials.length})</TableHead>
                     <TableHead align="right">EXP / hr</TableHead>
                     <TableHead align="right">Gold / EXP</TableHead>
-                    <TableHead align="right">{showExpPerItem ? "Market · EXP/ea" : "Market"}</TableHead>
-                    <TableHead align="right">Burn · Eff</TableHead>
+                    <TableHead align="right">{showExpPerItem ? "Market | EXP/ea" : "Market"}</TableHead>
+                    <TableHead align="right">Burn | Eff</TableHead>
                     <TableHead align="right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -311,11 +311,11 @@ export function MaterialCatalogPicker({
                               </div>
                               <div className={styles.matCellMeta}>
                                 <span>Lv. {mat.reqLvl}</span>
-                                <span>·</span>
+                                <span aria-hidden="true">|</span>
                                 <span>{mat.mob || mat.category.replace("_", " ")}</span>
                                 {ownedCount > 0 && (
                                   <>
-                                    <span>·</span>
+                                    <span aria-hidden="true">|</span>
                                     <span>{ownedCount.toLocaleString()} in stock</span>
                                   </>
                                 )}
@@ -341,13 +341,13 @@ export function MaterialCatalogPicker({
                             <GoldIcon size={11} />
                           </span>
                           {showExpPerItem && (
-                            <span className={styles.syncText}> · {mat.effectiveExp.toFixed(1)} EXP</span>
+                            <span className={styles.syncText}> | {mat.effectiveExp.toFixed(1)} EXP</span>
                           )}
                         </TableCell>
 
                         <TableCell align="right" numeric>
                           <span className={mat.hasPenalty ? styles.numWarn : ""}>
-                            {mat.timeSeconds.toFixed(1).replace(/\.0$/, "")}s · {mat.displayedEff}%
+                            {mat.timeSeconds.toFixed(1).replace(/\.0$/, "")}s | {mat.displayedEff}%
                           </span>
                         </TableCell>
 

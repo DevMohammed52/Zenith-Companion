@@ -172,10 +172,10 @@ export function LessonQueueReview({
         <div className={styles.sectionTopRow}>
           <div>
             <span className={styles.kicker}>
-              <Icon name="critDamage" size="xs" aria-hidden="true" /> Session Queue
+              <Icon name="craftingQueue" size="xs" aria-hidden="true" /> Session Queue
             </span>
             <h2 className={styles.sectionTitle}>
-              {queuedItems.length} {queuedItems.length === 1 ? "item" : "items"} · ~{totalSessionsCount}{" "}
+              {queuedItems.length} {queuedItems.length === 1 ? "item" : "items"} | ~{totalSessionsCount}{" "}
               {totalSessionsCount === 1 ? "session" : "sessions"} ({formatDurationSmart(totalDurationSeconds)})
             </h2>
           </div>
@@ -240,7 +240,7 @@ export function LessonQueueReview({
             <ShardIcon size={12} /> banked)
           </span>
           <span>
-            Full: {temperBarExact ? "" : "~"}{temperBarFullShards} · Half claim: ~{Math.floor(temperBarFullHalfShards * 0.75)}
+            Full: {temperBarExact ? "" : "~"}{temperBarFullShards} | Half claim: ~{Math.floor(temperBarFullHalfShards * 0.75)}
           </span>
         </div>
 
@@ -306,15 +306,15 @@ export function LessonQueueReview({
                         </div>
                         <div className={styles.matCellMeta}>
                           <span>Lv. {material.reqLvl}</span>
-                          <span>·</span>
+                          <span aria-hidden="true">|</span>
                           <span>+{Math.floor(totalExp).toLocaleString()} EXP</span>
-                          <span>·</span>
+                          <span aria-hidden="true">|</span>
                           <span>{formatGold(item.totalCost)}g</span>
-                          <span>·</span>
+                          <span aria-hidden="true">|</span>
                           <span>~{itemSessions} {itemSessions === 1 ? "ses" : "ses"}</span>
                           {ownedCount > 0 && (
                             <>
-                              <span>·</span>
+                              <span aria-hidden="true">|</span>
                               <span>Stock: {ownedCount.toLocaleString()}</span>
                             </>
                           )}

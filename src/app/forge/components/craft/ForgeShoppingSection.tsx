@@ -59,7 +59,8 @@ export function NeedTable({
                 <span className={styles.matCellText}>
                   <QualityText value={row.quality}>{row.name}</QualityText>
                   <small className={styles.matCellMeta}>
-                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge> · {row.source}
+                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge>
+                    <span>{row.source}</span>
                   </small>
                 </span>
               </button>
@@ -145,7 +146,8 @@ export function RecipeNeedTable({
                 <span className={styles.matCellText}>
                   <QualityText value={row.quality}>{row.recipeName}</QualityText>
                   <small className={styles.matCellMeta}>
-                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge> · {row.source}
+                    <Badge variant={row.quality.toLowerCase() as BadgeVariant} size="sm">{row.quality}</Badge>
+                    <span>{row.source}</span>
                   </small>
                 </span>
               </button>
@@ -225,7 +227,7 @@ export function ForgeShoppingSection({ state }: { state: ForgeState }) {
             <Icon name="market" size="xs" aria-hidden="true" /> Shopping Requirements
           </span>
           <p className={styles.syncText} style={{ margin: "0.2rem 0 0" }}>
-            {plan.materialNeeds.filter((m) => m.missing > 0).length} missing materials ·{" "}
+            {plan.materialNeeds.filter((m) => m.missing > 0).length} missing materials |{" "}
             {formatGold(plan.totalMissingCost)}g required
           </p>
         </div>

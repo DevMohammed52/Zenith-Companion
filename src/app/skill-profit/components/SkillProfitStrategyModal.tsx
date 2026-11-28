@@ -269,7 +269,7 @@ export function SkillProfitStrategyModal({
       isOpen
       onClose={onClose}
       title={activeRow.name}
-      description={`${activeRow.skill} Lv ${activeRow.level} • ${durationLabel} per action (${activeRow.itemsPerHour.toLocaleString()}/hr)`}
+      description={`${activeRow.skill} Lv ${activeRow.level} | ${durationLabel} per action (${activeRow.itemsPerHour.toLocaleString()}/hr)`}
       maxWidth="xl"
     >
       <div className={styles.modalBodyStack}>
@@ -376,7 +376,7 @@ export function SkillProfitStrategyModal({
                     activeRow.priceSwingRisk ? activeRow.priceSwingNote : "",
                   ]
                     .filter(Boolean)
-                    .join(" • ")}
+                    .join(" | ")}
                 </Banner>
               )}
 
@@ -510,7 +510,7 @@ export function SkillProfitStrategyModal({
                                   {ingredient.quantity}x {ingredient.name}
                                 </strong>
                                 <small>
-                                  {formatGold(ingredient.unitPrice)}g ea • {formatPriceSource(ingredient.source)}
+                                  {formatGold(ingredient.unitPrice)}g ea | {formatPriceSource(ingredient.source)}
                                 </small>
                               </span>
                             </span>

@@ -2,13 +2,14 @@
 
 import React, { Suspense } from "react";
 import { BackToTop } from "@/components/ui/BackToTop";
-import { ErrorState, LoadingState } from "@/components/StateBlock";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { usePetsState } from "./hooks/usePetsState";
 import { PetHero } from "./components/PetHero";
 import { PetFilters } from "./components/PetFilters";
 import { PetGrid } from "./components/PetGrid";
 import { PetDetailModal } from "./components/PetDetailModal";
 import { PetBattleModal } from "./components/PetBattleModal";
+import { PetsGridSkeleton, PetsShellFallback } from "./components/PetsLoadingState";
 import styles from "./Pets.module.css";
 
 function PetsContent() {
@@ -68,15 +69,15 @@ function PetsContent() {
       />
 
       {state.loadError && (
-        <ErrorState title="Pet database unavailable" description={state.loadError} />
-      )}
-
-      {!state.database && !state.loadError && (
-        <LoadingState
-          title="Loading pet database"
-          description="Preparing companion stats, evolution formulas, and exchange prices."
+        <EmptyState
+          variant="error"
+          title="Pet database unavailable"
+          description={state.loadError}
+          action={{ label: "Reload page", onClick: () => window.location.reload() }}
         />
       )}
+
+      {!state.database && !state.loadError && <PetsGridSkeleton />}
 
       {state.database && (
         <>
@@ -124,7 +125,7 @@ function PetsContent() {
 
 export default function PetsPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PetsShellFallback />}>
       <PetsContent />
     </Suspense>
   );

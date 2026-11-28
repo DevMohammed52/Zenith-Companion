@@ -84,7 +84,7 @@ export default function ConquestZoneGrid({
         const statusLabel = isHistoricalSeason
           ? historicalStatusLabel
           : firstAssaultCountdown
-            ? `Assault • ${firstAssaultCountdown}`
+            ? `Assault | ${firstAssaultCountdown}`
             : getPressureLabel(zone);
         const statusTone = isHistoricalSeason ? historicalTone : getPressureTone(zone);
 
@@ -146,7 +146,7 @@ export default function ConquestZoneGrid({
                       <span>
                         {guild
                           ? guild.tag
-                            ? `${guild.tag} · Leading guild`
+                            ? `[${guild.tag}] Leading guild`
                             : "Leading guild"
                           : "No public leader"}
                       </span>

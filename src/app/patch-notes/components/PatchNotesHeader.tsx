@@ -28,7 +28,7 @@ export function PatchNotesHeader({ meta, totalCount }: PatchNotesHeaderProps) {
               Latest game version: {latestVersion}
             </Badge>
             <span className={styles.metaSummary}>
-              {totalCount > 0 ? `${totalCount} patch notes` : "Loading archive..."} • Since {oldestVersion} • Synced{" "}
+              {totalCount > 0 ? `${totalCount} patch notes` : "Loading archive..."} | Since {oldestVersion} | Synced{" "}
               {updatedLabel}
             </span>
           </div>

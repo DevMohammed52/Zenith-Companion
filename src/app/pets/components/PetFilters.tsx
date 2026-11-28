@@ -1,16 +1,7 @@
 "use client";
 
 import React, { type Dispatch, type SetStateAction } from "react";
-import {
-  ArrowDownUp,
-  ChevronDown,
-  ChevronsUpDown,
-  RotateCcw,
-  SlidersHorizontal,
-  Sparkles,
-  User,
-  X,
-} from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Select";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -182,7 +173,7 @@ export function PetFilters({
               onClick={() => setSortDesc((prev) => !prev)}
               aria-label={`Toggle sort direction, currently ${sortDesc ? "descending" : "ascending"}`}
               title={`Sort direction: ${sortDesc ? "Descending" : "Ascending"}`}
-              icon={<ArrowDownUp size={16} />}
+              icon={<Icon name="sort" size={16} aria-hidden="true" />}
               className={styles.sortDirectionButton}
             >
               {sortDesc ? "Desc" : "Asc"}
@@ -195,7 +186,7 @@ export function PetFilters({
               size="md"
               onClick={resetPetControls}
               aria-label="Reset filters and sorting"
-              icon={<RotateCcw size={14} />}
+              icon={<Icon name="undo" size={14} aria-hidden="true" />}
             >
               Reset
             </Button>
@@ -224,7 +215,7 @@ export function PetFilters({
               aria-label={`Remove search filter: ${searchTerm}`}
             >
               <span>Search: "{searchTerm}"</span>
-              <X size={12} aria-hidden="true" />
+              <Icon name="close" size={12} aria-hidden="true" />
             </button>
           )}
 
@@ -236,7 +227,7 @@ export function PetFilters({
               aria-label={`Remove quality filter: ${qualityLabel(qualityFilter)}`}
             >
               <span>Quality: {qualityLabel(qualityFilter)}</span>
-              <X size={12} aria-hidden="true" />
+              <Icon name="close" size={12} aria-hidden="true" />
             </button>
           )}
 
@@ -248,7 +239,7 @@ export function PetFilters({
               aria-label={`Remove source filter`}
             >
               <span>Source: {SOURCE_OPTIONS.find((o) => o.value === sourceFilter)?.label || sourceFilter}</span>
-              <X size={12} aria-hidden="true" />
+              <Icon name="close" size={12} aria-hidden="true" />
             </button>
           )}
 
@@ -273,20 +264,20 @@ export function PetFilters({
         >
           <div className={styles.setupHeaderTitle}>
             <div className={styles.setupIcon}>
-              <SlidersHorizontal size={16} />
+              <Icon name="filter" size={16} aria-hidden="true" />
             </div>
             <div className={styles.setupTitleText}>
               <span className={styles.setupTitleMain}>Pet Simulator Setup</span>
               <span className={styles.setupTitleSub}>
                 {scenarioLabel}
                 {scenarioIsModified && (
-                  <span className={styles.setupTitleModified}> · Custom Setup Active</span>
+                  <span className={styles.setupTitleModified}>Custom Setup Active</span>
                 )}
               </span>
             </div>
           </div>
           <div className={`${styles.setupChevron} ${isSetupOpen ? styles.setupChevronOpen : ""}`}>
-            <ChevronDown size={18} />
+            <Icon name="chevronDown" size={18} aria-hidden="true" />
           </div>
         </button>
 
@@ -376,7 +367,7 @@ export function PetFilters({
                   <Button
                     variant="ghost"
                     size="sm"
-                    icon={<User size={14} />}
+                    icon={<Icon name="profile" size={14} aria-hidden="true" />}
                     onClick={applyProfilePet}
                   >
                     Use my pet's setup
@@ -386,7 +377,7 @@ export function PetFilters({
                   <Button
                     variant="ghost"
                     size="sm"
-                    icon={<RotateCcw size={14} />}
+                    icon={<Icon name="undo" size={14} aria-hidden="true" />}
                     onClick={() => {
                       setPetLevel(100);
                       setMasteryLevel(100);

@@ -83,7 +83,7 @@ export function OwnedPetTable({
                         <strong>{displayName}</strong>
                         <span>
                           {formatSourceMode(ownedPet.source)}
-                          {isActive ? " · Equipped" : ""}
+                          {isActive ? " | Equipped" : ""}
                         </span>
                       </div>
                     </div>

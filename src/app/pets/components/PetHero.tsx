@@ -2,7 +2,7 @@
 
 import React from "react";
 import ZenithIcon from "@/components/icons/ZenithIcon";
-import { Sparkles } from "lucide-react";
+import { Icon } from "@/components/ui/Icon";
 import styles from "../Pets.module.css";
 import type { PetDatabase } from "../types";
 
@@ -43,7 +43,7 @@ export function PetHero({
         </span>
 
         <span className={styles.metaPill}>
-          <Sparkles size={12} className={styles.setupIcon} />
+          <Icon name="crown" size={12} className={styles.setupIcon} aria-hidden="true" />
           <span>Mastery Boost:</span>
           <strong>+{masteryBonus}%</strong>
         </span>

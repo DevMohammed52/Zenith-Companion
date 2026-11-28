@@ -26,7 +26,7 @@ export default function HousingPage() {
         </div>
       ) : !activeProfile ? (
         <section className="housing-panel empty-panel">
-          <Icon name="dungeon" size="xl" aria-hidden="true" />
+          <Icon name="housing" size="xl" aria-hidden="true" />
           <h2>Create or select a profile first</h2>
           <p>Housing is stored per character profile so alts and mains do not share house setups.</p>
         </section>

@@ -372,7 +372,7 @@ export function useMapState() {
       formatCount(selectedLocation.enemies.length, "enemy", "enemies"),
       formatCount(selectedLocation.dungeons.length, "dungeon"),
       formatCount(selectedLocation.bosses.length, "boss", "bosses"),
-    ].join(" · ")
+    ].join(", ")
     : "No sources selected";
 
   useEffect(() => {

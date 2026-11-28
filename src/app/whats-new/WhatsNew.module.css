@@ -61,6 +61,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+.titleLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-accent, #cbd5e1);
+  flex-shrink: 0;
+}
+
 .title {
   font-size: 1.625rem;
   font-weight: 700;

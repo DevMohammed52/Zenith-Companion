@@ -20,11 +20,11 @@ export type {
 export const CATEGORY_ICONS: Record<MuseumCategory | "ALL", IconConcept> = {
   ALL: "museum",
   SKINS: "profile",
-  BACKGROUNDS: "weather",
-  GUILD_ICONS: "conquest",
+  BACKGROUNDS: "atlasMap",
+  GUILD_ICONS: "guilds",
   PETS: "pets",
   COLLECTIBLES: "items",
-  BESTIARY: "lore",
+  BESTIARY: "enemy",
 };
 
 export const SORT_OPTIONS: Array<{ key: MuseumSortKey; label: string }> = [

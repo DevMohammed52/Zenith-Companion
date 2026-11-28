@@ -28,7 +28,7 @@ export function Timeline({
   items,
   title,
   headingLevel = "h3",
-  directionNotice = "Order: Newest updates first • Server Time (UTC)",
+  directionNotice = "Order: Newest updates first | Server Time (UTC)",
   className,
   "aria-label": ariaLabel,
 }: TimelineProps) {

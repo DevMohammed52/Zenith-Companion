@@ -79,9 +79,9 @@ export function OwnedPetDetailModal({
                 </Badge>
               </div>
               <p className={styles.cardSubtitle}>
-                Lv. {ownedPet.level || 1} &middot; Evo {ownedPet.evolution || 0}
+                Lv. {ownedPet.level || 1} | Evo {ownedPet.evolution || 0}
                 {ownedPet.nickname && ownedPet.nickname !== ownedPet.species
-                  ? ` · ${ownedPet.species}`
+                  ? ` | ${ownedPet.species}`
                   : ""}
               </p>
             </div>

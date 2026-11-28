@@ -14,7 +14,7 @@ export function AlchemyEmptyState({
   if (mythicSearchMatches.length > 0) {
     return (
       <EmptyState
-        icon={<Icon name="xp" size="xl" aria-hidden="true" />}
+        icon={<Icon name="mythicAlchemy" size="xl" aria-hidden="true" />}
         title="Level 90 Mythic recipes live in Mythic Lab"
         description={`${mythicSearchMatches.slice(0, 2).join(", ")} is a Level 90 Mythic recipe with 30-use scroll charges. Open Mythic Lab to optimize those runs.`}
         action={{

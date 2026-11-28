@@ -136,7 +136,7 @@ export function ProfileIdentitySection({
               )}
             </div>
             <div className={styles.heroSubline}>
-              {profile.className} · Total Lv. {(profile.levels.totalLevel || 0).toLocaleString()} ·{" "}
+              {profile.className} | Total Lv. {(profile.levels.totalLevel || 0).toLocaleString()} |{" "}
               {profile.location?.name || "No location imported"}
             </div>
           </div>

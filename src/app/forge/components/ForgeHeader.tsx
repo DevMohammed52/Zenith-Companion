@@ -43,7 +43,7 @@ export function ForgeHeader({
           <span className={styles.eyebrow}>
             <ZenithIcon name="forge" size={14} aria-hidden="true" />
             <span>
-              {profileName} · {totalItemsLabel}
+              {profileName} | {totalItemsLabel}
             </span>
           </span>
           <h1 id="forge-page-title" className={styles.pageTitle}>

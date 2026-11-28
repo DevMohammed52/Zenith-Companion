@@ -236,7 +236,7 @@ export const MODULE_GROUPS: ModuleGroup[] = [
       navLink("/pets", "Pet Database", "pets"),
       navLink("/patch-notes", "IdleMMO Patch Notes", "patchNotes"),
       navLink("/lore", "Lore Wiki", "lore"),
-      navLink("/whats-new", "What's New", "spark"),
+      navLink("/whats-new", "What's New", "whatsNew"),
     ],
   },
 ];

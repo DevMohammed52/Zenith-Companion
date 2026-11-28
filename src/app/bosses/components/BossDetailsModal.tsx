@@ -70,7 +70,7 @@ export function BossDetailsModal({ state }: BossDetailsModalProps) {
             title={selectedBossData?.name || "World Boss Details"}
             description={
                 selectedBossData
-                    ? `${selectedBossData.location?.name || "Unknown"} • Level ${selectedBossData.level}`
+                    ? `${selectedBossData.location?.name || "Unknown"} | Level ${selectedBossData.level}`
                     : undefined
             }
             maxWidth="lg"
@@ -238,7 +238,7 @@ export function BossDetailsModal({ state }: BossDetailsModalProps) {
                                                     {drop.adjustedChance.toFixed(drop.adjustedChance >= 10 ? 1 : 2)}%
                                                     adjusted
                                                 </span>
-                                                {magicFind > 0 && <span>• {drop.baseChance}% base</span>}
+                                                {magicFind > 0 && <span>| {drop.baseChance}% base</span>}
                                             </div>
                                         </div>
                                     </div>
@@ -250,7 +250,7 @@ export function BossDetailsModal({ state }: BossDetailsModalProps) {
                                         </span>
                                         <span className={styles.lootSourceText}>
                                             <span>
-                                                {getBossDropSourceLabel(drop)} • {formatGold(drop.trueValue)}g ea
+                                                {getBossDropSourceLabel(drop)} | {formatGold(drop.trueValue)}g ea
                                             </span>
                                             <Icon name="externalLink" size="xs" aria-hidden="true" />
                                         </span>

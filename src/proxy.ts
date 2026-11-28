@@ -6,6 +6,7 @@ import {
 
 const ERROR_PREVIEW_PATH = "/error-preview";
 const LOADING_PREVIEW_PATH = "/loading-preview";
+const UI_PREVIEW_PATH = "/ui-preview";
 const BLOCKED_PUBLIC_DATA_PATHS = new Set([
   "/guild-members.json",
   "/guild-database.json",
@@ -37,6 +38,20 @@ export async function proxy(request: NextRequest) {
 
   if (request.nextUrl.pathname === LOADING_PREVIEW_PATH) {
     if (process.env.ENABLE_LOADING_PREVIEW === "1") return NextResponse.next();
+
+    return new NextResponse("Not found", {
+      status: 404,
+      headers: {
+        "cache-control": "no-store",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    });
+  }
+
+  if (request.nextUrl.pathname === UI_PREVIEW_PATH) {
+    if (process.env.NODE_ENV !== "production" || process.env.ENABLE_UI_PREVIEW === "1") {
+      return NextResponse.next();
+    }
 
     return new NextResponse("Not found", {
       status: 404,
@@ -93,5 +108,6 @@ export const config = {
     "/scraper-priority.json",
     "/error-preview",
     "/loading-preview",
+    "/ui-preview",
   ],
 };

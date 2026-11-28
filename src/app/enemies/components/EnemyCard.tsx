@@ -43,7 +43,7 @@ export function EnemyCard({
           height={48}
           priority={index < 8}
           className={styles.enemySprite}
-          fallback={<Icon name="boss" size="xl" className={styles.enemyCardFallback} aria-hidden="true" />}
+          fallback={<Icon name="enemy" size="xl" className={styles.enemyCardFallback} aria-hidden="true" />}
         />
       </span>
 

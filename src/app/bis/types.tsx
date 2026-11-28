@@ -103,27 +103,27 @@ export const COMBAT_TYPES = new Set<GearType>([
 ]);
 
 export const SLOT_ICON_NAMES: Record<GearType, IconConcept> = {
-  SWORD: "attackPower",
-  DAGGER: "speed",
-  BOW: "bis",
-  SHIELD: "conquest",
-  HELMET: "defense",
-  CHESTPLATE: "conquest",
-  GREAVES: "archiveLayers",
-  BOOTS: "agility",
-  GAUNTLETS: "combat",
+  SWORD: "slotSword",
+  DAGGER: "slotDagger",
+  BOW: "slotBow",
+  SHIELD: "slotShield",
+  HELMET: "slotHelmet",
+  CHESTPLATE: "slotChestplate",
+  GREAVES: "slotGreaves",
+  BOOTS: "slotBoots",
+  GAUNTLETS: "slotGauntlets",
 };
 
 export const SLOT_CONFIG: Record<GearType, { label: string; profileSlot: string; icon: React.ReactNode }> = {
-  SWORD: { label: "Sword", profileSlot: "weapon", icon: <Icon name="attackPower" size="sm" aria-hidden="true" /> },
-  DAGGER: { label: "Dagger", profileSlot: "weapon", icon: <Icon name="speed" size="sm" aria-hidden="true" /> },
-  BOW: { label: "Bow", profileSlot: "bow", icon: <Icon name="bis" size="sm" aria-hidden="true" /> },
-  SHIELD: { label: "Shield", profileSlot: "shield", icon: <Icon name="conquest" size="sm" aria-hidden="true" /> },
-  HELMET: { label: "Helmet", profileSlot: "helmet", icon: <Icon name="defense" size="sm" aria-hidden="true" /> },
-  CHESTPLATE: { label: "Chestplate", profileSlot: "chestplate", icon: <Icon name="conquest" size="sm" aria-hidden="true" /> },
-  GREAVES: { label: "Greaves", profileSlot: "greaves", icon: <Icon name="archiveLayers" size="sm" aria-hidden="true" /> },
-  BOOTS: { label: "Boots", profileSlot: "boots", icon: <Icon name="agility" size="sm" aria-hidden="true" /> },
-  GAUNTLETS: { label: "Gauntlets", profileSlot: "gauntlets", icon: <Icon name="combat" size="sm" aria-hidden="true" /> },
+  SWORD: { label: "Sword", profileSlot: "weapon", icon: <Icon name="slotSword" size="sm" aria-hidden="true" /> },
+  DAGGER: { label: "Dagger", profileSlot: "weapon", icon: <Icon name="slotDagger" size="sm" aria-hidden="true" /> },
+  BOW: { label: "Bow", profileSlot: "bow", icon: <Icon name="slotBow" size="sm" aria-hidden="true" /> },
+  SHIELD: { label: "Shield", profileSlot: "shield", icon: <Icon name="slotShield" size="sm" aria-hidden="true" /> },
+  HELMET: { label: "Helmet", profileSlot: "helmet", icon: <Icon name="slotHelmet" size="sm" aria-hidden="true" /> },
+  CHESTPLATE: { label: "Chestplate", profileSlot: "chestplate", icon: <Icon name="slotChestplate" size="sm" aria-hidden="true" /> },
+  GREAVES: { label: "Greaves", profileSlot: "greaves", icon: <Icon name="slotGreaves" size="sm" aria-hidden="true" /> },
+  BOOTS: { label: "Boots", profileSlot: "boots", icon: <Icon name="slotBoots" size="sm" aria-hidden="true" /> },
+  GAUNTLETS: { label: "Gauntlets", profileSlot: "gauntlets", icon: <Icon name="slotGauntlets" size="sm" aria-hidden="true" /> },
 };
 
 export const SLOT_FILTERS: Array<{ id: "ALL" | GearType; label: string }> = [

@@ -36,7 +36,7 @@ export function ForgePlanSection({ state }: { state: ForgeState }) {
       <div className={styles.sectionTopRow}>
         <div>
           <span className={styles.kicker}>
-            <Icon name="archiveLayers" size="xs" aria-hidden="true" /> Planned crafts
+            <Icon name="craftingQueue" size="xs" aria-hidden="true" /> Planned crafts
           </span>
           <h2 className={styles.sectionTitle}>
             {plan.entries.length
@@ -109,12 +109,12 @@ export function ForgePlanSection({ state }: { state: ForgeState }) {
                         </button>
                         <Badge variant={rarityVariant} size="sm">{entry.recipe.quality}</Badge>
                         <span className={styles.syncText}>
-                          Lv. {entry.recipe.levelRequired} · {entry.recipe.resultType || "Forge"}
+                          Lv. {entry.recipe.levelRequired} | {entry.recipe.resultType || "Forge"}
                         </span>
                       </div>
                       <div className={styles.matCellMeta}>
                         <span>{entry.recipe.sourceSummary}</span>
-                        <span>·</span>
+                        <span aria-hidden="true">|</span>
                         <span>{entry.liquidity.label}</span>
                       </div>
                     </div>

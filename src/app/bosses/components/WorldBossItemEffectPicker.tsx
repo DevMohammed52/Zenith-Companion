@@ -202,7 +202,7 @@ export function WorldBossItemEffectPicker({
                                         <span className={styles.pickerOptionText}>
                                             <span className={styles.pickerPrimary}>{option.name}</span>
                                             <span className={styles.pickerOptionMeta}>
-                                                +{option.magicFind}% MF • {formatWorldBossModifierDuration(option.durationMs)}
+                                                +{option.magicFind}% MF | {formatWorldBossModifierDuration(option.durationMs)}
                                             </span>
                                         </span>
                                     </span>

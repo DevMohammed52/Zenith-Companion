@@ -162,8 +162,8 @@ export function HousingSetupTab({ state }: { state: HousingState }) {
 
           <div className="flag-grid">
             <span className={summary.remoteConduit ? "enabled" : ""}><Icon name="map" size="sm" aria-hidden="true" /> Remote Conduit</span>
-            <span className={summary.petQuarters ? "enabled" : ""}><Icon name="xp" size="sm" aria-hidden="true" /> Pet Quarters</span>
-            <span className={summary.houseLedger ? "enabled" : ""}><Icon name="defense" size="sm" aria-hidden="true" /> House Ledger</span>
+            <span className={summary.petQuarters ? "enabled" : ""}><Icon name="pets" size="sm" aria-hidden="true" /> Pet Quarters</span>
+            <span className={summary.houseLedger ? "enabled" : ""}><Icon name="scroll" size="sm" aria-hidden="true" /> House Ledger</span>
           </div>
         </div>
       </section>

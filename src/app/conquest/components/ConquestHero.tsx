@@ -42,7 +42,7 @@ export default function ConquestHero({
       value: "current",
       label: currentSeasonNum ? `Season ${currentSeasonNum} (Current)` : "Current Season",
       description: currentSummary
-        ? `${formatConquestNumber(currentSummary.zones_count)} zones · Live`
+        ? `${formatConquestNumber(currentSummary.zones_count)} zones (Live)`
         : "Live season standings",
     },
     ...(seasonIndex?.seasons ?? [])

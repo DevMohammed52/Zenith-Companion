@@ -221,7 +221,7 @@ export function DungeonItemEffectPicker({
                     <span className={styles.pickerText}>
                       <span className={styles.pickerPrimary}>{option.name}</span>
                       <span className={styles.pickerOptionMeta}>
-                        <QualityText value={option.quality}>{option.quality}</QualityText> • {getDungeonItemModifierSummary(option)}
+                        <QualityText value={option.quality}>{option.quality}</QualityText> | {getDungeonItemModifierSummary(option)}
                       </span>
                     </span>
                   </span>

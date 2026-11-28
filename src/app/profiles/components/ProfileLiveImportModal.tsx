@@ -217,8 +217,8 @@ export function ProfileLiveImportModal({
                   </div>
                   <p>
                     {cachedImportMatch.characterCount}{" "}
-                    {cachedImportMatch.characterCount === 1 ? "character" : "characters"} ·{" "}
-                    {cachedImportMatch.classes.join(", ") || "Saved draft"} · {formatCacheAge(cachedImportMatch.timestamp)}
+                    {cachedImportMatch.characterCount === 1 ? "character" : "characters"} |{" "}
+                    {cachedImportMatch.classes.join(", ") || "Saved draft"} | {formatCacheAge(cachedImportMatch.timestamp)}
                   </p>
                 </div>
                 <div className={styles.actionRow}>

@@ -76,7 +76,7 @@ export function BossHeader({ state }: BossHeaderProps) {
         equippedSpecialMagicFindBonus > 0 ? `+${equippedSpecialMagicFindBonus}% special` : "",
     ]
         .filter(Boolean)
-        .join(" • ");
+        .join(" | ");
 
     const handleMfKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Enter") {

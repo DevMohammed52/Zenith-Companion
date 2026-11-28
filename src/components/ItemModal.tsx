@@ -730,7 +730,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
               : null,
       ]
         .filter(Boolean)
-        .join(' · ')
+        .join(' | ')
     : undefined;
 
   const sourcesCount =
@@ -1013,7 +1013,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                       <div className={styles.tierPanel}>
                         <div className={styles.tierHeader}>
                           <h3 className={styles.sectionTitle}>
-                            <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                            <Icon name="combat" size="sm" className={styles.sectionIcon} aria-hidden="true" />
                             <span>Stats &amp; Tier Scaling</span>
                           </h3>
                           <Badge variant={selectedTier > 0 ? 'refined' : 'neutral'} size="sm">
@@ -1080,7 +1080,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                     ) : (
                       <>
                         <h3 className={styles.sectionTitle}>
-                          <Icon name="conquest" size="sm" className={styles.sectionIcon} aria-hidden="true" />
+                          <Icon name="combat" size="sm" className={styles.sectionIcon} aria-hidden="true" />
                           <span>Combat Attributes</span>
                         </h3>
                         <div className={styles.attributesGrid}>
@@ -1732,7 +1732,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               </span>
                               {Boolean(src.location) && (
                                 <>
-                                  <span>·</span>
+                                  <span>|</span>
                                   <Icon name="mapPin" size="xs" aria-hidden="true" />
                                   <span>{String(src.location)}</span>
                                 </>
@@ -1768,7 +1768,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               <span>World Boss</span>
                               {Boolean(src.location) && (
                                 <>
-                                  <span>·</span>
+                                  <span>|</span>
                                   <Icon name="mapPin" size="xs" aria-hidden="true" />
                                   <span>{String(src.location)}</span>
                                 </>
@@ -1804,7 +1804,7 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
                               <span>{formatSourceType(src.type)}</span>
                               {Boolean(src.location) && (
                                 <>
-                                  <span>·</span>
+                                  <span>|</span>
                                   <Icon name="mapPin" size="xs" aria-hidden="true" />
                                   <span>{String(src.location)}</span>
                                 </>

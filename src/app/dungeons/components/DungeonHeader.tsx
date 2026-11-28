@@ -73,7 +73,7 @@ export function DungeonHeader({ state }: DungeonHeaderProps) {
           <span className={styles.eyebrow}>
             <Icon name="dungeon" size="sm" aria-hidden="true" />
             <span>
-              {activeProfile ? `${activeProfile.name} • ` : ""}
+              {activeProfile ? `${activeProfile.name} | ` : ""}
               {rows.length} {rows.length === 1 ? "dungeon" : "dungeons"} shown
             </span>
           </span>
@@ -390,7 +390,7 @@ export function DungeonHeader({ state }: DungeonHeaderProps) {
                     <span className={styles.insetGroupTitle}>Dungeon Item Effects</span>
                     <span className={styles.insetGroupNote}>
                       {itemEfficiencyBonus > 0 || totalItemMf > 0
-                        ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} • ${totalItemMf > 0 ? `+${totalItemMf}% MF` : "No MF"}`
+                        ? `${itemEfficiencyBonus > 0 ? `+${itemEfficiencyBonus}% speed` : "No speed"} | ${totalItemMf > 0 ? `+${totalItemMf}% MF` : "No MF"}`
                         : "No item effect active"}
                     </span>
                   </div>

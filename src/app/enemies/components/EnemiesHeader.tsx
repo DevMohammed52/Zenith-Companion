@@ -19,7 +19,7 @@ export function EnemiesHeader({
       <header className={styles.hero}>
         <div className={styles.heroContent}>
           <h1 id="enemy-db-page-title" className={styles.heroTitle}>
-            <Icon name="boss" size="xl" className={styles.heroIcon} aria-hidden="true" />
+            <Icon name="enemy" size="xl" className={styles.heroIcon} aria-hidden="true" />
             <span>Enemy Database</span>
           </h1>
           <p className={styles.subtitle}>
