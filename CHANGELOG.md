@@ -3,7 +3,22 @@
 All notable changes to Zenith Companion will be documented in this file.
 Updates are organized chronologically by release date.
 
-## [Unreleased]
+## [2026-11-28]
+
+### Added
+- **Scenic Character Spotlight with Membership Styling (`/`)**: Rebuilt `/` around a borderless character showcase over your IdleMMO background vista with gold gradient membership names and badge icons, equipped pet sprites scaled proportionally beside your hero, Gear/Pets/Museum quick counts, and a compact aligned **Top Gold Routes** leaderboard.
+- **Rotating Zone Weather & Scenic World Boss**: Paired **World Boss** countdowns with native location backgrounds and hovering boss sprites, alongside a **Current Weather** card that rotates smoothly from **Bluebell Hollow** through **The Citadel** with live particle animations, zone artwork, and active buffs.
+- **Interactive 404 Route Finder & Error Recovery**: Rebuilt the Not Found, Error, and Loading pages with closest-match URL suggestions, live route and item search, a copyable error reference code, one-click page reload, and safe browser cache clearing that keeps saved profiles and crafting queues intact.
+
+### Changed
+- **Faster Page Loads & Leaner Styles**: Removed unused legacy styles across the site so pages stay snappy and lightweight across desktop and mobile.
+- **Faster Item Inspection & Lighter Data Usage**: Precomputed dungeon and chest recipe drop links so inspecting items no longer triggers slow runtime scans or unnecessary bulk catalog downloads when an item lookup misses, and added conditional `304` responses (`ETag`) for instant repeat lookups.
+- **Stronger API Gateway & Free-Tier Protection**: Unified all API and telemetry proxies with edge payload validation, request timeout handling, HTTPS cookie hardening, and lighter Cloudflare Worker database cleanup cadence to stay well within Vercel and Cloudflare free-tier limits.
+- **Zero Shell Redundancy & Plain Labels**: Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).
+
+### Fixed
+- **Dashboard Quick-Filter Links (`/items`, `/alchemy`, `/skill-profit`)**: Fixed clicking items or recipes from **Top Gold Routes** and **Market Movers** on `/` so Items Directory, Alchemy Profit, and Skill Profit now pre-fill the search box and filter straight to your selection.
+- **Stale Counts & Hydration Shifts**: Replaced outdated hardcoded species counts (`109` -> `47`) and placeholder status labels with live computed values, eliminated pre-hydration setup banner layout shifts (`CLS <= 0.1`), and enforced `>= 44px` mobile touch targets.
 
 ## [2026-11-27]
 

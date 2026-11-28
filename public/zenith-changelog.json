@@ -3,6 +3,93 @@
   "description": "All notable changes to Zenith Companion will be documented in this file. Updates are organized chronologically by release date.",
   "releases": [
     {
+      "version": "2026-11-28",
+      "date": "2026-11-28",
+      "rawHeading": "## [2026-11-28]",
+      "isUnreleased": false,
+      "sections": [
+        {
+          "category": "Added",
+          "items": [
+            {
+              "id": "2026-11-28-Added-0",
+              "title": "Scenic Character Spotlight with Membership Styling (`/`)",
+              "description": "Rebuilt `/` around a borderless character showcase over your IdleMMO background vista with gold gradient membership names and badge icons, equipped pet sprites scaled proportionally beside your hero, Gear/Pets/Museum quick counts, and a compact aligned **Top Gold Routes** leaderboard.",
+              "subItems": [],
+              "raw": "- **Scenic Character Spotlight with Membership Styling (`/`)**: Rebuilt `/` around a borderless character showcase over your IdleMMO background vista with gold gradient membership names and badge icons, equipped pet sprites scaled proportionally beside your hero, Gear/Pets/Museum quick counts, and a compact aligned **Top Gold Routes** leaderboard."
+            },
+            {
+              "id": "2026-11-28-Added-1",
+              "title": "Rotating Zone Weather & Scenic World Boss",
+              "description": "Paired **World Boss** countdowns with native location backgrounds and hovering boss sprites, alongside a **Current Weather** card that rotates smoothly from **Bluebell Hollow** through **The Citadel** with live particle animations, zone artwork, and active buffs.",
+              "subItems": [],
+              "raw": "- **Rotating Zone Weather & Scenic World Boss**: Paired **World Boss** countdowns with native location backgrounds and hovering boss sprites, alongside a **Current Weather** card that rotates smoothly from **Bluebell Hollow** through **The Citadel** with live particle animations, zone artwork, and active buffs."
+            },
+            {
+              "id": "2026-11-28-Added-2",
+              "title": "Interactive 404 Route Finder & Error Recovery",
+              "description": "Rebuilt the Not Found, Error, and Loading pages with closest-match URL suggestions, live route and item search, a copyable error reference code, one-click page reload, and safe browser cache clearing that keeps saved profiles and crafting queues intact.",
+              "subItems": [],
+              "raw": "- **Interactive 404 Route Finder & Error Recovery**: Rebuilt the Not Found, Error, and Loading pages with closest-match URL suggestions, live route and item search, a copyable error reference code, one-click page reload, and safe browser cache clearing that keeps saved profiles and crafting queues intact."
+            }
+          ]
+        },
+        {
+          "category": "Changed",
+          "items": [
+            {
+              "id": "2026-11-28-Changed-0",
+              "title": "Faster Page Loads & Leaner Styles",
+              "description": "Removed unused legacy styles across the site so pages stay snappy and lightweight across desktop and mobile.",
+              "subItems": [],
+              "raw": "- **Faster Page Loads & Leaner Styles**: Removed unused legacy styles across the site so pages stay snappy and lightweight across desktop and mobile."
+            },
+            {
+              "id": "2026-11-28-Changed-1",
+              "title": "Faster Item Inspection & Lighter Data Usage",
+              "description": "Precomputed dungeon and chest recipe drop links so inspecting items no longer triggers slow runtime scans or unnecessary bulk catalog downloads when an item lookup misses, and added conditional `304` responses (`ETag`) for instant repeat lookups.",
+              "subItems": [],
+              "raw": "- **Faster Item Inspection & Lighter Data Usage**: Precomputed dungeon and chest recipe drop links so inspecting items no longer triggers slow runtime scans or unnecessary bulk catalog downloads when an item lookup misses, and added conditional `304` responses (`ETag`) for instant repeat lookups."
+            },
+            {
+              "id": "2026-11-28-Changed-2",
+              "title": "Stronger API Gateway & Free-Tier Protection",
+              "description": "Unified all API and telemetry proxies with edge payload validation, request timeout handling, HTTPS cookie hardening, and lighter Cloudflare Worker database cleanup cadence to stay well within Vercel and Cloudflare free-tier limits.",
+              "subItems": [],
+              "raw": "- **Stronger API Gateway & Free-Tier Protection**: Unified all API and telemetry proxies with edge payload validation, request timeout handling, HTTPS cookie hardening, and lighter Cloudflare Worker database cleanup cadence to stay well within Vercel and Cloudflare free-tier limits."
+            },
+            {
+              "id": "2026-11-28-Changed-3",
+              "title": "Zero Shell Redundancy & Plain Labels",
+              "description": "Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).",
+              "subItems": [],
+              "raw": "- **Zero Shell Redundancy & Plain Labels**: Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**)."
+            }
+          ]
+        },
+        {
+          "category": "Fixed",
+          "items": [
+            {
+              "id": "2026-11-28-Fixed-0",
+              "title": "Dashboard Quick-Filter Links (`/items`, `/alchemy`, `/skill-profit`)",
+              "description": "Fixed clicking items or recipes from **Top Gold Routes** and **Market Movers** on `/` so Items Directory, Alchemy Profit, and Skill Profit now pre-fill the search box and filter straight to your selection.",
+              "subItems": [],
+              "raw": "- **Dashboard Quick-Filter Links (`/items`, `/alchemy`, `/skill-profit`)**: Fixed clicking items or recipes from **Top Gold Routes** and **Market Movers** on `/` so Items Directory, Alchemy Profit, and Skill Profit now pre-fill the search box and filter straight to your selection."
+            },
+            {
+              "id": "2026-11-28-Fixed-1",
+              "title": "Stale Counts & Hydration Shifts",
+              "description": "Replaced outdated hardcoded species counts (`109` -> `47`) and placeholder status labels with live computed values, eliminated pre-hydration setup banner layout shifts (`CLS <= 0.1`), and enforced `>= 44px` mobile touch targets.",
+              "subItems": [],
+              "raw": "- **Stale Counts & Hydration Shifts**: Replaced outdated hardcoded species counts (`109` -> `47`) and placeholder status labels with live computed values, eliminated pre-hydration setup banner layout shifts (`CLS <= 0.1`), and enforced `>= 44px` mobile touch targets."
+            }
+          ]
+        }
+      ],
+      "totalChanges": 9
+    },
+    {
       "version": "2026-11-27",
       "date": "2026-11-27",
       "rawHeading": "## [2026-11-27]",
@@ -685,23 +772,15 @@
       "totalChanges": 5
     }
   ],
-  "unreleased": {
-    "version": "Unreleased",
-    "date": null,
-    "rawHeading": "## [Unreleased]",
-    "isUnreleased": true,
-    "sections": [],
-    "totalChanges": 0
-  },
   "meta": {
-    "totalReleases": 7,
-    "latestVersion": "2026-11-27",
-    "latestDate": "2026-11-27",
+    "totalReleases": 8,
+    "latestVersion": "2026-11-28",
+    "latestDate": "2026-11-28",
     "categories": [
       "Added",
       "Changed",
       "Fixed"
     ],
-    "generatedAt": "2026-11-27T16:09:59.330Z"
+    "generatedAt": "2026-11-28T07:26:56.965Z"
   }
 }
