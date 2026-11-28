@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { playZenithSound } from "@/lib/audio";
 import styles from "./Drawer.module.css";
 
 export type DrawerSide = "left" | "right";
@@ -36,6 +37,7 @@ export function Drawer({
   const [isClosing, setIsClosing] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const previousOpenRef = useRef(isOpen);
 
   const titleId = useId();
   const descriptionId = useId();
@@ -43,6 +45,13 @@ export function Drawer({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (previousOpenRef.current !== isOpen) {
+      previousOpenRef.current = isOpen;
+      playZenithSound(isOpen ? "open" : "close");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {

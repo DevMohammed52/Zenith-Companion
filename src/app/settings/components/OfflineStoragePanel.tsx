@@ -176,7 +176,7 @@ export default function OfflineStoragePanel() {
 
   return (
     <div
-      className={`settings-offline-cache ${styles.audioPanel}`}
+      className={`settings-offline-cache ${styles.storagePanel}`}
       aria-live="polite"
       style={{ marginTop: "1rem" }}
     >

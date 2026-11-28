@@ -116,7 +116,6 @@ describe("provider, storage safety, and navigation contracts", () => {
           assaultRank: "grandmaster",
           customPrices: ["not", "a", "map"],
           skillTools: null,
-          audioVolume: 999,
         }),
       );
       invalidatePreferencesCache();
@@ -127,7 +126,6 @@ describe("provider, storage safety, and navigation contracts", () => {
       expect(sanitized.desktopNavigationStyle).toBe("sidebar");
       expect(sanitized.assaultRank).toBe("none");
       expect(sanitized.customPrices).toEqual({});
-      expect(sanitized.audioVolume).toBe(100);
       // Even without calling invalidatePreferencesCache(), replacing valid JSON with malformed JSON falls back to DEFAULT_PREFERENCES
       store.set(PREFERENCE_STORAGE_KEY, JSON.stringify({ theme: "arcane" }));
       expect(readPreferences().theme).toBe("arcane");

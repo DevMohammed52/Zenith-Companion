@@ -30,10 +30,6 @@ export type Preferences = {
   mobileNavigationStyle: MobileNavigationStyle;
   mobileCommandTriggerSide: MobileCommandTriggerSide;
   inAppNotifications: boolean;
-  soundEffects: boolean;
-  notificationSounds: boolean;
-  ambientMusic: boolean;
-  audioVolume: number;
   mobileHaptics: boolean;
   mobileDockTabs: string[];
 };
@@ -59,10 +55,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   mobileNavigationStyle: "standard",
   mobileCommandTriggerSide: "left",
   inAppNotifications: true,
-  soundEffects: true,
-  notificationSounds: true,
-  ambientMusic: false,
-  audioVolume: 35,
   mobileHaptics: true,
   mobileDockTabs: [],
 };
@@ -164,7 +156,11 @@ export const readPreferences = (): Preferences => {
         next.assaultRank = VALID_ASSAULT_RANKS.has(parsed.assaultRank as AssaultRank)
           ? (parsed.assaultRank as AssaultRank)
           : DEFAULT_PREFERENCES.assaultRank;
-        next.audioVolume = Math.max(0, Math.min(100, Number(parsed.audioVolume ?? DEFAULT_PREFERENCES.audioVolume) || 0));
+        // Strip legacy removed audio preference keys if present in older localStorage payloads.
+        delete (next as Record<string, unknown>).soundEffects;
+        delete (next as Record<string, unknown>).notificationSounds;
+        delete (next as Record<string, unknown>).ambientMusic;
+        delete (next as Record<string, unknown>).audioVolume;
         next.skillTools = isPlainObject(parsed.skillTools)
           ? {
               Woodcutting: typeof parsed.skillTools.Woodcutting === "string" ? parsed.skillTools.Woodcutting : DEFAULT_TOOL_SELECTIONS.Woodcutting,

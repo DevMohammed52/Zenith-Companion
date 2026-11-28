@@ -46,20 +46,27 @@
             },
             {
               "id": "2026-11-28-Changed-1",
+              "title": "Refined Interface Audio & Tactile Haptics",
+              "description": "Replaced generic legacy audio files (and removed unused background music bloat) with a compact Web Audio micro-earcon sprite and toast/action vibration patterns on supported mobile devices.",
+              "subItems": [],
+              "raw": "- **Refined Interface Audio & Tactile Haptics**: Replaced generic legacy audio files (and removed unused background music bloat) with a compact Web Audio micro-earcon sprite and toast/action vibration patterns on supported mobile devices."
+            },
+            {
+              "id": "2026-11-28-Changed-2",
               "title": "Faster Loading & Lighter Data Usage",
               "description": "Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data.",
               "subItems": [],
               "raw": "- **Faster Loading & Lighter Data Usage**: Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data."
             },
             {
-              "id": "2026-11-28-Changed-2",
+              "id": "2026-11-28-Changed-3",
               "title": "More Frequent Live Data Refreshes",
               "description": "Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items.",
               "subItems": [],
               "raw": "- **More Frequent Live Data Refreshes**: Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items."
             },
             {
-              "id": "2026-11-28-Changed-3",
+              "id": "2026-11-28-Changed-4",
               "title": "Zero Shell Redundancy & Plain Labels",
               "description": "Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).",
               "subItems": [],
@@ -94,7 +101,7 @@
           ]
         }
       ],
-      "totalChanges": 10
+      "totalChanges": 11
     },
     {
       "version": "2026-11-27",
@@ -788,6 +795,6 @@
       "Changed",
       "Fixed"
     ],
-    "generatedAt": "2026-11-28T13:25:20.853Z"
+    "generatedAt": "2026-11-28T16:06:26.165Z"
   }
 }

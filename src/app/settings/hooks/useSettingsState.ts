@@ -95,12 +95,6 @@ export function useSettingsState(): UseSettingsStateReturn {
     setItemSearchOpen(false);
   };
 
-  const setAudioVolume = (value: number) => {
-    setPreferences({
-      audioVolume: Math.max(0, Math.min(100, Math.round(value))),
-    });
-  };
-
   const removeCustomPrice = (name: string) => {
     const next = { ...preferences.customPrices };
     delete next[name];
@@ -245,7 +239,6 @@ export function useSettingsState(): UseSettingsStateReturn {
     itemCount,
     profileLabel,
     saveCustomPrice,
-    setAudioVolume,
     removeCustomPrice,
     closeItemSearch,
     selectCustomItem,

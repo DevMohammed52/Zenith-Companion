@@ -19,9 +19,9 @@ This document establishes the UI sound design principles, mobile tactile haptics
 ## 2. Accessibility & Non-Exclusivity (WCAG 2.2 Standards)
 * **Sound Non-Exclusivity (SC 1.4.1)**: Audio and haptics must never serve as the sole indicator of any event, status change, or user action. Every sound must duplicate an explicit visual state change (such as an in-place checkmark, toast banner, or inline error text). Zenith must remain 100% functional, informative, and understandable when completely muted.
 * **Audio Control & Autoplay Prevention (SC 1.4.2 & Advisory Technique G171)**:
-  * Audio plays strictly in response to an intentional, direct user gesture (tap or click).
+  * Audio plays strictly in response to an intentional, direct user gesture (tap, click, or keyboard activation).
   * Never play audio on page load, route transition, or ambient background polling.
-  * Zenith provides dedicated user toggles in Settings: Master Sound Effects toggle (`preferences.soundEffects`), Master Haptics toggle (`preferences.mobileHaptics`), and Volume slider (`preferences.audioVolume`).
+  * Zenith uses a fixed, calibrated master output level (`CALIBRATED_MASTER_GAIN = 0.28`) with steep low-pass filtering (`2.5 kHz`) rather than exposing sound volume or mute toggles in Settings, while providing a dedicated Master Haptics toggle (`preferences.mobileHaptics`) for mobile touch feedback.
   * Respect system accessibility settings and media playback state.
 * **Screen Reader Coexistence**: Micro-sounds must not interfere with screen reader speech synthesizers (NVDA, JAWS, VoiceOver, TalkBack). Sound cues must feature immediate decay (sub-250ms), gentle attacks, and zero lingering reverb so screen reader announcements remain intelligible.
 
@@ -46,8 +46,8 @@ To prevent user annoyance, the following sound triggers are strictly forbidden:
   * **use-sound / Howler.js**: Excellent React hook abstraction (`useSound`) built on top of Howler. If adopted in future iterations, audio sprites (`sprite` map) must be used to bundle all sounds into a single file, and leading silence must be trimmed to 0ms to eliminate tap-to-audio latency.
   * **Tone.js**: Powerful synthesis and scheduling library, but introduces substantial bundle weight (~150 KB minified). For 5 short utility earcons, synthesized Tone.js oscillators are disproportionate and unnecessary.
 * **Gain Nodes & Volume Envelope**:
-  * Route all playback through a master `GainNode` bound directly to `preferences.audioVolume` (0% to 100%).
-  * Apply a 5ms linear attack ramp (`gainNode.gain.linearRampToValueAtTime`) on playback initiation to prevent audible DC-offset speaker clicks or popping transients.
+  * Route all playback through a shared `2.5 kHz` low-pass `BiquadFilterNode` into a calibrated master `GainNode` (`0.28`).
+  * Apply a 5ms linear attack and release ramp (`gainNode.gain.linearRampToValueAtTime`) on playback initiation and termination to prevent audible DC-offset speaker clicks or popping transients.
 * **Rate Limiting & Debounce Guard**:
   * Enforce an 80ms acoustic debounce window per sound key. If a player rapidly clicks ten item prices or copy buttons in a second, subsequent triggers within the window are dropped silently to prevent acoustic clipping and audio fatigue.
 * **Pitch & Polarity**:
@@ -58,8 +58,8 @@ To prevent user annoyance, the following sound triggers are strictly forbidden:
 ## 5. Mobile Tactile Haptics (`navigator.vibrate`)
 On touch-enabled mobile devices (Android / PWA), haptic vibrations provide tactile confirmation matching physical hardware clicks.
 * **Hardware Availability & User Consent**:
-  * Check `'vibrate' in navigator` before invocation.
-  * Gate execution behind `preferences.mobileHaptics && preferences.soundEffects`.
+  * Check `typeof navigator.vibrate === 'function'` before invocation.
+  * Gate execution behind `preferences.mobileHaptics` independently so muted mobile users still receive tactile feedback when enabled.
 * **Standard Vibration Patterns**:
   * **Light Selection** (segmented control, dock tab): `[10]` (single 10ms crisp tap).
   * **Affirmation / Copy** (clipboard copy, quick save): `[12, 40, 12]` (two micro-pulses).

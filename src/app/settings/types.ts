@@ -128,7 +128,6 @@ export type UseSettingsStateReturn = {
 
   // Actions
   saveCustomPrice: () => void;
-  setAudioVolume: (value: number) => void;
   removeCustomPrice: (name: string) => void;
   closeItemSearch: () => void;
   selectCustomItem: (name: string) => void;

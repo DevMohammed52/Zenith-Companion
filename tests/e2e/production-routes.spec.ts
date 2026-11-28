@@ -24,11 +24,8 @@ async function seedProductionState(context: BrowserContext) {
     window.localStorage.setItem(
       "zenith_preferences",
       JSON.stringify({
-        ambientMusic: false,
         desktopNavigationStyle: "dock",
         inAppNotifications: false,
-        notificationSounds: false,
-        soundEffects: false,
         theme: "ember",
       }),
     );

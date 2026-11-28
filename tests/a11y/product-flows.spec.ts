@@ -1,13 +1,10 @@
 import { expect, type BrowserContext, type Page, test } from "@playwright/test";
 
 type PreferenceSeed = {
-  ambientMusic?: boolean;
   desktopNavigationStyle?: "sidebar" | "dock";
   inAppNotifications?: boolean;
   mobileCommandTriggerSide?: "left" | "right";
   mobileNavigationStyle?: "standard" | "command";
-  notificationSounds?: boolean;
-  soundEffects?: boolean;
   theme?: "ember" | "forest" | "arcane" | "frost";
 };
 
@@ -24,11 +21,8 @@ type WindowWithZenithInstallPrompt = Window & {
 };
 
 const defaultPreferenceSeed: PreferenceSeed = {
-  ambientMusic: false,
   desktopNavigationStyle: "sidebar",
   inAppNotifications: false,
-  notificationSounds: false,
-  soundEffects: false,
   theme: "ember",
 };
 

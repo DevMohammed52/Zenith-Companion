@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { playZenithSound } from "@/lib/audio";
 import styles from "./ModalSheet.module.css";
 
 export type ModalSheetMaxWidth = "sm" | "md" | "lg" | "xl";
@@ -36,6 +37,7 @@ export function ModalSheet({
   const [isClosing, setIsClosing] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const previousOpenRef = useRef(isOpen);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -48,6 +50,13 @@ export function ModalSheet({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (previousOpenRef.current !== isOpen) {
+      previousOpenRef.current = isOpen;
+      playZenithSound(isOpen ? "open" : "close");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {

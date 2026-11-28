@@ -41,7 +41,7 @@ export default function AppearancePanel({
       }
       subtitle={
         <p className={styles.cardSubtitle}>
-          Customise mobile navigation tabs, touch haptics, and interaction audio cues.
+          Customise mobile navigation tabs, touch haptics, and in-app guidance tips.
         </p>
       }
     >
@@ -101,29 +101,6 @@ export default function AppearancePanel({
           options={[
             { value: "subtle", label: "Subtle Haptics" },
             { value: "off", label: "Off" },
-          ]}
-          fullWidth
-        />
-      </div>
-
-      <div className={styles.settingGroup}>
-        <span className={styles.settingLabel}>
-          <Icon name="audio" size={14} className={styles.headerAccentIcon} />
-          Interaction Sounds
-        </span>
-        <SegmentedControl
-          ariaLabel="Interface audio cues"
-          value={preferences.soundEffects ? "enabled" : "muted"}
-          onChange={(val) => {
-            const enabled = val === "enabled";
-            setPreferences({
-              soundEffects: enabled,
-              notificationSounds: enabled,
-            });
-          }}
-          options={[
-            { value: "enabled", label: "Enabled" },
-            { value: "muted", label: "Muted" },
           ]}
           fullWidth
         />

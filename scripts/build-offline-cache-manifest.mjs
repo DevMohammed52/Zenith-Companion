@@ -8,7 +8,7 @@ const OUTPUT_NAME = "offline-cache-manifest.json";
 const OUTPUT_PATH = path.join(PUBLIC_DIR, OUTPUT_NAME);
 
 const DATA_EXTENSIONS = new Set([".json", ".webmanifest"]);
-const ASSET_EXTENSIONS = new Set([".png", ".svg", ".ico"]);
+const ASSET_EXTENSIONS = new Set([".png", ".svg", ".ico", ".webm", ".mp3"]);
 const BLOCKED_PUBLIC_PATHS = new Set([
   "/guild-members.json",
   "/guild-database.json",

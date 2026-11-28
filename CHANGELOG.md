@@ -12,6 +12,7 @@ Updates are organized chronologically by release date.
 
 ### Changed
 - **Custom Contextual Icons**: Added bespoke icons across navigation, equipment slots, crafting tools, and feature headers so items and sections use clearer visual symbols.
+- **Refined Interface Audio & Tactile Haptics**: Replaced generic legacy audio files (and removed unused background music bloat) with a compact Web Audio micro-earcon sprite and toast/action vibration patterns on supported mobile devices.
 - **Faster Loading & Lighter Data Usage**: Streamlined page styles and item data loading across the site so pages and item popups open quicker while using less mobile data.
 - **More Frequent Live Data Refreshes**: Accelerated Conquest, Market Price, and active Guild refreshes alongside automated catalog checks for newly added IdleMMO items.
 - **Zero Shell Redundancy & Plain Labels**: Removed duplicate profile dropdowns, filter tabs, vague weather counts, `Idle cap` text, and the blocking first-run setup popup in favor of simpler headings (**Top Gold Routes**, **World Boss**, **Current Weather**, **Market Movers**, **Gear & Tools**, **Recent & Notes**).

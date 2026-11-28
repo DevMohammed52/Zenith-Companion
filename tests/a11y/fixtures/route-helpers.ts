@@ -149,7 +149,7 @@ export async function seedPopulatedProfile(
       if (customPrices && Object.keys(customPrices).length > 0) {
         window.localStorage.setItem(
           "zenith_preferences",
-          JSON.stringify({ customPrices, soundEffects: false, notificationSounds: false }),
+          JSON.stringify({ customPrices }),
         );
       }
     },
