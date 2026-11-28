@@ -2,7 +2,6 @@
 
 import type { ComponentType, SVGProps } from "react";
 import {
-  Anvil,
   Bell,
   BookOpen,
   Calculator,
@@ -17,7 +16,6 @@ import {
   Heart,
   HelpCircle,
   Landmark,
-  Layers,
   LayoutDashboard,
   LucideProps,
   Map,
@@ -26,16 +24,23 @@ import {
   Scale,
   ScrollText,
   Settings,
-  Shield,
   Skull,
-  Sparkles,
   Swords,
-  Target,
   TrendingUp,
   User,
   Users,
   Warehouse,
 } from "lucide-react";
+import {
+  BisCrestIcon,
+  ConquestBannerIcon,
+  CraftingQueueIcon,
+  EnemyMonsterIcon,
+  ForgeAnvilIcon,
+  MythicFlaskIcon,
+  SlotShieldIcon,
+  WhatsNewIcon,
+} from "./CustomIcons";
 
 export type ZenithIconName =
   | "alchemy"
@@ -63,6 +68,7 @@ export type ZenithIconName =
   | "map"
   | "market"
   | "museum"
+  | "mythicAlchemy"
   | "patchNotes"
   | "petCompare"
   | "pets"
@@ -74,6 +80,7 @@ export type ZenithIconName =
   | "skillProfit"
   | "spark"
   | "weather"
+  | "whatsNew"
   | "world";
 
 type ZenithIconProps = Omit<SVGProps<SVGSVGElement>, "name"> & {
@@ -87,11 +94,12 @@ const iconRegistry: Record<ZenithIconName, ComponentType<LucideProps>> = {
   dashboard: LayoutDashboard,
   profile: User,
   settings: Settings,
+  whatsNew: WhatsNewIcon,
 
   // Databases & Lore
   database: Database,
   items: Package,
-  enemy: Swords,
+  enemy: EnemyMonsterIcon,
   pets: PawPrint,
   petsOwned: Heart,
   petCompare: Scale,
@@ -104,16 +112,17 @@ const iconRegistry: Record<ZenithIconName, ComponentType<LucideProps>> = {
   // Planning Tools & Calculators
   calculator: Calculator,
   alchemy: FlaskConical,
+  mythicAlchemy: MythicFlaskIcon,
   skill: TrendingUp,
-  skillProfit: Coins,
-  spark: Sparkles,
-  crafting: Layers,
-  craftingQueue: Layers,
+  skillProfit: TrendingUp,
+  spark: WhatsNewIcon,
+  crafting: CraftingQueueIcon,
+  craftingQueue: CraftingQueueIcon,
   forgeLessons: GraduationCap,
   forgeCraft: Hammer,
-  forge: Anvil,
+  forge: ForgeAnvilIcon,
   housing: Warehouse,
-  bis: Target,
+  bis: BisCrestIcon,
 
   // World & Encounters
   world: Compass,
@@ -121,11 +130,11 @@ const iconRegistry: Record<ZenithIconName, ComponentType<LucideProps>> = {
   weather: CloudSun,
   castle: Castle,
   boss: Skull,
-  conquest: Shield,
+  conquest: ConquestBannerIcon,
 
   // General & Utility
   combat: Swords,
-  shield: Shield,
+  shield: SlotShieldIcon,
   bell: Bell,
   market: Coins,
   economy: TrendingUp,

@@ -23,7 +23,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/", label: "Dashboard", icon: "dashboard" },
       { href: "/profiles", label: "Profiles", icon: "profile" },
-      { href: "/whats-new", label: "What's New", icon: "spark" },
+      { href: "/whats-new", label: "What's New", icon: "whatsNew" },
       { href: "/settings", label: "Settings", icon: "settings" },
     ],
   },
@@ -50,7 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/alchemy", label: "Alchemy Profit", icon: "alchemy" },
       { href: "/skill-profit", label: "Skill Profit Finder", icon: "skillProfit" },
-      { href: "/alchemy/mythic", label: "Mythic Lab", icon: "spark", badge: "LVL 90" },
+      { href: "/alchemy/mythic", label: "Mythic Lab", icon: "mythicAlchemy", badge: "LVL 90" },
       { href: "/crafting", label: "Crafting Queue", icon: "craftingQueue" },
       { href: "/forge/lessons", label: "Forge Lessons", icon: "forgeLessons" },
       { href: "/forge/craft", label: "Forge Crafting", icon: "forgeCraft" },

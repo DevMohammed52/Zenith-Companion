@@ -37,7 +37,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   REFINED: {
     color: "#4d76d6",
-    textColor: "#5e87e6",
+    textColor: "#729df7",
     border: "#4d76d64d",
     background: "#152951",
   },
@@ -49,7 +49,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   EPIC: {
     color: "#c0392b",
-    textColor: "#ef5344",
+    textColor: "#ff6b5b",
     border: "#c0392b4d",
     background: "#421d25",
   },
@@ -69,7 +69,7 @@ export const QUALITY_PALETTE: Record<QualityName, QualityPaletteEntry> = {
   },
   UNIQUE: {
     color: "#b417f4",
-    textColor: "#c952f9",
+    textColor: "#df8dfd",
     border: "#7e22ce4d",
     background: "#4e2760",
     textGradient: "linear-gradient(0deg, rgb(128, 6, 181), rgb(180, 23, 244))",
