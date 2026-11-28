@@ -403,7 +403,7 @@ async function rebuild() {
       })
   ];
 
-  fs.writeFileSync(path.join(PUBLIC_DIR, 'usage-map.json'), JSON.stringify(usageMap, null, 2));
+  fs.writeFileSync(path.join(PUBLIC_DIR, 'usage-map.json'), JSON.stringify(usageMap));
   fs.writeFileSync(path.join(PUBLIC_DIR, 'search-index.json'), JSON.stringify(searchIndex));
   fs.writeFileSync(path.join(PUBLIC_DIR, 'global-search-index.json'), JSON.stringify(globalSearchIndex));
   
