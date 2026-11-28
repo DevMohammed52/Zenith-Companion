@@ -26,6 +26,7 @@ import {
   mergeDiscoveredItemIntoCatalog,
   normalizeCatalogSearchParams,
 } from "../../scripts/discover-idlemmo-catalog.mjs";
+import { shouldSkipVercelBuild } from "../../scripts/vercel-ignore-build.mjs";
 
 const ROOT = process.cwd();
 
@@ -297,12 +298,17 @@ describe("GitHub Actions schedule de-collision and budget contracts", () => {
     expect(guildYml).toContain('github.event.schedule }}" = "35 0 * * *"');
 
     // Generated-data commits skip duplicate GitHub Actions runs while still publishing public data to Vercel,
-    // and vercel.json skips non-app doc/test/workflow commits without blocking data updates.
+    // and vercel.json delegates to scripts/vercel-ignore-build.mjs within Vercel's 256-char schema limit.
     expect(dataYml).toContain("[skip ci]");
     expect(guildYml).toContain("[skip ci]");
-    expect(vercelConfig.ignoreCommand).toContain("vercel");
-    expect(vercelConfig.ignoreCommand).toContain("ROADMAP.md");
-    expect(vercelConfig.ignoreCommand).not.toContain("[skip ci]");
+    expect(vercelConfig.ignoreCommand).toBe("node scripts/vercel-ignore-build.mjs");
+    expect(vercelConfig.ignoreCommand.length).toBeLessThanOrEqual(256);
+
+    expect(shouldSkipVercelBuild({ commitMessage: "docs: update notes [vercel skip]", runGitDiff: () => 1 }).skip).toBe(true);
+    expect(shouldSkipVercelBuild({ commitMessage: "chore: auto-update [skip ci]", previousSha: "aaa", currentSha: "bbb", runGitDiff: () => 1 }).skip).toBe(false);
+    expect(shouldSkipVercelBuild({ commitMessage: "docs: update roadmap", previousSha: "aaa", currentSha: "bbb", runGitDiff: () => 0 }).skip).toBe(true);
+    // Missing/unreachable git parent exits non-zero (128) and must fail open so Vercel proceeds with build
+    expect(shouldSkipVercelBuild({ commitMessage: "feat: build", previousSha: "", currentSha: "HEAD", runGitDiff: () => 128 }).skip).toBe(false);
 
     const allSlots = [
       ...dataCrons.flatMap(expandCronHoursAndDays),

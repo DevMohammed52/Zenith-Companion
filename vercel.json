@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "sh -c 'if echo \"$VERCEL_GIT_COMMIT_MESSAGE\" | grep -qiE \"\\[(vercel[[:space:]]+skip|skip[[:space:]]+vercel)\\]\"; then exit 0; fi; if [ \"$(git rev-parse --verify HEAD^ 2>/dev/null)\" != \"\" ] && git diff --quiet HEAD^ HEAD -- . \":!docs/\" \":!tests/\" \":!.github/\" \":!.agents/\" \":!ROADMAP.md\" \":!README.md\" \":!DESIGN.md\" \":!AGENTS.md\"; then exit 0; fi; exit 1'"
+  "ignoreCommand": "node scripts/vercel-ignore-build.mjs"
 }
