@@ -327,7 +327,7 @@ async function discoverGuildsByIdRange(guildsById, endpointStatuses, infoEnvelop
 
 async function main() {
   console.log(`Writing guild intelligence to ${outDir}`);
-  console.log(`Rate profile: ${rateProfile}. Delay: ${delayMs}ms between requests. This stays under the 60 req/min API limit.`);
+  console.log(`Rate profile: ${rateProfile}. Delay: ${delayMs}ms between requests. This stays within the 80 req/min API limit.`);
   console.log(`Discovery sources: ${[...sourceModes].join(", ")}`);
   if (shouldScanGuildIds) {
     console.log("Guild-first mode: scanning guild IDs, then fetching members for valid guilds.");

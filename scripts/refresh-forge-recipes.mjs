@@ -14,7 +14,7 @@ const isDryRun = Boolean(args["dry-run"]);
 const fishOnly = Boolean(args["fish-only"]);
 const includeAlchemy = Boolean(args["include-alchemy"]);
 const limit = Number(args.limit || 0);
-const delayMs = Math.max(750, Number(args.delay || 950));
+const delayMs = Math.max(750, Number(args.delay || 900));
 const targetHash = args.hash ? String(args.hash).trim() : null;
 const skipDerivatives = Boolean(args["skip-derivatives"]);
 

@@ -261,9 +261,9 @@ const refreshPlan = {
     generated_at: database.meta.generated_at,
     source_fetched_at: fetchedAt,
     rate_limit_strategy: {
-      isolated_requests_per_minute: 54,
-      shared_requests_per_minute: 40,
-      note: "Use isolated rate only when API workflows are serialized. Use shared rate when a user-triggered fetch can overlap another API job.",
+      isolated_requests_per_minute: 68,
+      shared_requests_per_minute: 60,
+      note: "Uses the 80 req/min API tier with 12-20 req/min headroom for concurrent Cloudflare user imports and probes.",
     },
   },
   tiers: {

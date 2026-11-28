@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync, execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { DEFAULT_ALCHEMY_RECIPES } from './src/lib/default-alchemy-recipes.mjs';
+import { computeRateLimitWaitMs } from './scripts/idlemmo-fetch-utils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,15 +12,25 @@ const __dirname = path.dirname(__filename);
 
 const API_KEY = process.env.IDLEMMO_API_KEY || "";
 const BASE_URL = "https://api.idle-mmo.com/v1";
-const API_DELAY_MS = Math.max(readPositiveNumber(process.env.IDLEMMO_API_DELAY_MS, 1500), 1500); // Reserve budget around 40 req/min even if env is set lower.
+const CLI_DELAY_MS = (() => {
+    const flag = process.argv.find((arg) => arg.startsWith('--delay-ms='));
+    return flag ? Number(flag.slice('--delay-ms='.length)) : undefined;
+})();
+// Upgraded API key supports 80 req/min; shared default 1000ms (60 req/min) leaves 20 req/min headroom for live user imports & probes.
+const API_DELAY_MS = Math.max(readPositiveNumber(CLI_DELAY_MS ?? process.env.IDLEMMO_API_DELAY_MS, 1000), 850);
 const API_MAX_RETRIES = Math.floor(readPositiveNumber(process.env.IDLEMMO_API_MAX_RETRIES, 5));
 const API_MAX_BACKOFF_MS = readPositiveNumber(process.env.IDLEMMO_API_MAX_BACKOFF_MS, 5 * 60 * 1000);
 const SCRAPE_INTERVAL_MS = Number(process.env.SCRAPE_INTERVAL_MS || 6 * 60 * 60 * 1000);
+const ZERO_HISTORY_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+const LISTINGS_ORDERS_RECHECK_MS = 12 * 60 * 60 * 1000;
 const DATA_FILE = path.join(__dirname, 'public', 'market-data.json');
 const STATIC_DATA_FILE = path.join(__dirname, 'public', 'static-data.json');
 const PET_DATABASE_FILE = path.join(__dirname, 'public', 'pet-database.json');
 const WORLD_LOCATIONS_FILE = path.join(__dirname, 'public', 'world-locations.json');
 const CONQUEST_DATA_FILE = path.join(__dirname, 'public', 'conquest-data.json');
+const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
+const STATUS_FILE = path.join(__dirname, 'public', 'scraper-status.json');
+const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
 const MARKET_SPIKE_MULTIPLIER = 3;
 const MARKET_SPIKE_MIN_DELTA = 25;
 const MARKET_SPIKE_MIN_RATIO = 1.5;
@@ -34,20 +46,12 @@ const IS_PRIORITY_ONLY = process.argv.includes('--priority');
 const IS_PETS_ONLY = process.argv.includes('--pets-only');
 const IS_WORLD_LOCATIONS_ONLY = process.argv.includes('--world-locations-only');
 const IS_CONQUEST_ONLY = process.argv.includes('--conquest-only');
+const IS_FORCE_FULL_MARKET = process.argv.includes('--force-full-market');
 const IS_SCRAPE_ONCE = process.env.SCRAPE_ONCE === "true" || process.argv.includes('--once');
-const PRIORITY_FILE = path.join(__dirname, 'public', 'scraper-priority.json');
+const SHOULD_RUN_DISCOVERY = process.argv.includes('--discover');
 
-const itemsToFetch = new Set();
 const itemLookupByName = new Map();
-
-// 1. Always add Alchemy-related items (Highest priority)
-for (const [potion, data] of Object.entries(ALCHEMY_ITEMS)) {
-    itemsToFetch.add(potion);
-    itemsToFetch.add(`Recipe: ${potion}`); // Add the recipe item itself
-    for (const mat of Object.keys(data.materials)) {
-        itemsToFetch.add(mat);
-    }
-}
+let itemsArray = [];
 
 // 2. Load static and priority data
 function loadJson(filePath) {
@@ -61,8 +65,162 @@ function loadJson(filePath) {
     return null;
 }
 
-const staticData = loadJson(STATIC_DATA_FILE);
-const priorityData = loadJson(PRIORITY_FILE);
+const MARKET_MATERIAL_FIELDS = [
+    'hashed_id',
+    'image_url',
+    'price',
+    'safe_price',
+    'avg_3',
+    'avg_7',
+    'avg_14',
+    'avg_30',
+    'raw_price',
+    'raw_avg_3',
+    'raw_avg_7',
+    'raw_avg_14',
+    'raw_avg_30',
+    'price_adjusted',
+    'price_warning',
+    'price_outlier_rows',
+    'latest_sale_median',
+    'latest_sale_min',
+    'latest_sale_max',
+    'latest_sale_spread_ratio',
+    'latest_sale_sample_size',
+    'vol_3',
+    'vol_7',
+    'vol_30',
+    'stable_vol_3',
+    'daily_sales_avg_30',
+    'daily_sales_trimmed_avg_30',
+    'daily_sales_median_30',
+    'daily_sales_max_30',
+    'sales_outlier_days_30',
+    'sales_spike_ratio',
+    'liquidity_warning',
+    'vendor_price',
+];
+
+export function hasMarketItemChanged(prevEntry, nextEntry) {
+    if (!prevEntry || typeof prevEntry !== 'object') return true;
+    if (!nextEntry || typeof nextEntry !== 'object') return true;
+    for (const field of MARKET_MATERIAL_FIELDS) {
+        if (prevEntry[field] !== nextEntry[field]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function mergeMarketItemEntry(prevEntry, nextEntry) {
+    if (!hasMarketItemChanged(prevEntry, nextEntry)) {
+        return {
+            ...nextEntry,
+            last_updated: prevEntry.last_updated || nextEntry.last_updated,
+        };
+    }
+    return nextEntry;
+}
+
+export function shouldScrapeMarketItem(itemName, itemRecord) {
+    if (!itemName) return false;
+    if (itemRecord && itemRecord.is_tradeable === false) return false;
+    return true;
+}
+
+export function isOnCooldown(checkedAtMap, hashedId, cooldownMs, nowMs = Date.now()) {
+    if (!hashedId || !checkedAtMap || typeof checkedAtMap !== 'object') return false;
+    const rawSec = Number(checkedAtMap[hashedId]);
+    if (!Number.isFinite(rawSec) || rawSec <= 0) return false;
+    return (nowMs - (rawSec * 1000)) < cooldownMs;
+}
+
+/** @param {{ itemRecord?: { hashed_id?: string }; marketMeta?: { zero_history_checked_at?: Record<string, number> }; forceFullMarket?: boolean; nowMs?: number }} [opts] */
+export function shouldSkipZeroHistoryItem({ itemRecord, marketMeta, forceFullMarket = false, nowMs = Date.now() } = {}) {
+    if (forceFullMarket) return false;
+    if (!itemRecord?.hashed_id) return false;
+    return isOnCooldown(marketMeta?.zero_history_checked_at, itemRecord.hashed_id, ZERO_HISTORY_COOLDOWN_MS, nowMs);
+}
+
+/** @param {{ itemRecord?: { hashed_id?: string }; marketMeta?: { listings_only_checked_at?: Record<string, number> }; forceFullMarket?: boolean; nowMs?: number }} [opts] */
+export function shouldQueryOrdersFirst({ itemRecord, marketMeta, forceFullMarket = false, nowMs = Date.now() } = {}) {
+    if (forceFullMarket) return true;
+    if (!itemRecord?.hashed_id) return true;
+    return !isOnCooldown(marketMeta?.listings_only_checked_at, itemRecord.hashed_id, LISTINGS_ORDERS_RECHECK_MS, nowMs);
+}
+
+/** @param {{ alchemyItems?: Record<string, { materials?: Record<string, number> }>; staticData?: { enemies?: any[]; dungeons?: any[]; world_bosses?: any[] } | null; allItemsDb?: Record<string, any> | null; isPriorityOnly?: boolean; priorityData?: { high_priority_items?: string[] } | null }} [opts] */
+export function collectMarketCandidateNames({
+    alchemyItems = ALCHEMY_ITEMS,
+    staticData = null,
+    allItemsDb = null,
+    isPriorityOnly = false,
+    priorityData = null,
+} = {}) {
+    const itemsToFetch = new Set();
+    const lookupByName = new Map();
+
+    if (allItemsDb && typeof allItemsDb === 'object') {
+        for (const item of Object.values(allItemsDb)) {
+            if (item?.name) {
+                lookupByName.set(item.name.toLowerCase(), item);
+            }
+        }
+    }
+
+    // 1. Add Alchemy potions, materials, and ONLY real Recipe items present in all-items-db (avoids phantom search misses).
+    for (const [potion, data] of Object.entries(alchemyItems || {})) {
+        const potionLower = potion.toLowerCase();
+        if (shouldScrapeMarketItem(potion, lookupByName.get(potionLower))) {
+            itemsToFetch.add(potion);
+        }
+        const recipeName = `Recipe: ${potion}`;
+        const recipeRecord = lookupByName.get(recipeName.toLowerCase());
+        if (recipeRecord && shouldScrapeMarketItem(recipeName, recipeRecord)) {
+            itemsToFetch.add(recipeRecord.name);
+        }
+        for (const mat of Object.keys(data?.materials || {})) {
+            if (shouldScrapeMarketItem(mat, lookupByName.get(mat.toLowerCase()))) {
+                itemsToFetch.add(mat);
+            }
+        }
+    }
+
+    // 2. Add drops from enemies/dungeons/bosses
+    if (staticData) {
+        for (const entityList of [staticData.enemies, staticData.dungeons, staticData.world_bosses]) {
+            if (!Array.isArray(entityList)) continue;
+            for (const entity of entityList) {
+                if (!Array.isArray(entity?.loot)) continue;
+                for (const drop of entity.loot) {
+                    const dropName = drop?.name;
+                    if (!dropName) continue;
+                    if (isPriorityOnly && !priorityData?.high_priority_items?.includes(dropName)) continue;
+                    if (shouldScrapeMarketItem(dropName, lookupByName.get(dropName.toLowerCase()))) {
+                        itemsToFetch.add(dropName);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Add remaining tradeable items from global DB
+    if (allItemsDb && typeof allItemsDb === 'object') {
+        for (const item of Object.values(allItemsDb)) {
+            const name = item?.name;
+            if (!name) continue;
+            if (isPriorityOnly && !priorityData?.high_priority_items?.includes(name)) continue;
+            if (shouldScrapeMarketItem(name, item)) {
+                itemsToFetch.add(name);
+            }
+        }
+    }
+
+    return {
+        itemsArray: Array.from(itemsToFetch),
+        itemLookupByName: lookupByName,
+    };
+}
 
 async function safeWriteJson(filePath, data) {
     const tempFile = filePath + '.tmp';
@@ -88,60 +246,29 @@ async function safeWriteJson(filePath, data) {
     return false;
 }
 
-// 3. Add drops from enemies/dungeons/bosses
-if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && !IS_CONQUEST_ONLY && staticData) {
-    const addLootItems = (entityList) => {
-        if (!entityList) return;
-        for (const entity of entityList) {
-            if (entity.loot && Array.isArray(entity.loot)) {
-                for (const drop of entity.loot) {
-                    // In priority mode, only add if it's in the priority list
-                    if (!IS_PRIORITY_ONLY || priorityData?.high_priority_items?.includes(drop.name)) {
-                        itemsToFetch.add(drop.name);
-                    }
-                }
-            }
-        }
-    };
-    addLootItems(staticData.enemies);
-    addLootItems(staticData.dungeons);
-    addLootItems(staticData.world_bosses);
-
+function initializeCatalogTargets() {
+    if (IS_PETS_ONLY || IS_WORLD_LOCATIONS_ONLY || IS_CONQUEST_ONLY) return;
+    const staticData = loadJson(STATIC_DATA_FILE);
+    const priorityData = loadJson(PRIORITY_FILE);
+    const allItemsDb = loadJson(ALL_ITEMS_DB_FILE);
+    const result = collectMarketCandidateNames({
+        alchemyItems: ALCHEMY_ITEMS,
+        staticData,
+        allItemsDb,
+        isPriorityOnly: IS_PRIORITY_ONLY,
+        priorityData,
+    });
+    itemLookupByName.clear();
+    for (const [k, v] of result.itemLookupByName.entries()) {
+        itemLookupByName.set(k, v);
+    }
+    itemsArray = result.itemsArray;
     if (IS_PRIORITY_ONLY) {
-        console.log(`Running in PRIORITY mode. Targeting ${itemsToFetch.size} velocity items.`);
+        console.log(`Running in PRIORITY mode. Targeting ${itemsArray.length} tradeable velocity items.`);
     } else {
-        console.log(`Running in FULL mode. Starting with ${itemsToFetch.size} gameplay-linked items.`);
-    }
-    console.log(`Added combat items to scrape list. Current total: ${itemsToFetch.size}`);
-}
-
-// 4. Load ALL items from global database to ensure 100% coverage
-const ALL_ITEMS_DB_FILE = path.join(__dirname, 'public', 'all-items-db.json');
-
-if (!IS_PETS_ONLY && !IS_WORLD_LOCATIONS_ONLY && !IS_CONQUEST_ONLY && fs.existsSync(ALL_ITEMS_DB_FILE)) {
-    try {
-        const allItems = JSON.parse(fs.readFileSync(ALL_ITEMS_DB_FILE, 'utf8'));
-        let addedCount = 0;
-        for (const item of Object.values(allItems)) {
-            const name = item.name;
-            if (!name) continue;
-            itemLookupByName.set(name.toLowerCase(), item);
-
-            if (!IS_PRIORITY_ONLY || priorityData?.high_priority_items?.includes(name)) {
-                if (!itemsToFetch.has(name)) {
-                    itemsToFetch.add(name);
-                    addedCount++;
-                }
-            }
-        }
-        console.log(`Added ${addedCount} items from global DB. Total items: ${itemsToFetch.size}`);
-    } catch (e) {
-        console.error("Error reading global items DB:", e.message);
+        console.log(`Running in FULL mode. Targeting ${itemsArray.length} tradeable items (skipping untradeable items).`);
     }
 }
-
-const STATUS_FILE = path.join(__dirname, 'public', 'scraper-status.json');
-const itemsArray = Array.from(itemsToFetch);
 
 const headers = {
     "Authorization": `Bearer ${API_KEY}`,
@@ -160,6 +287,7 @@ if (fs.existsSync(DATA_FILE)) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let lastApiRequestAt = 0;
+let rateLimitCooldownUntil = 0;
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
 function getRetryDelayMs(response, attempt = 0) {
@@ -366,14 +494,23 @@ function buildSafeMarketAverages(history, latestSold) {
 }
 
 async function apiFetch(url, options = {}, attempt = 0) {
-    const elapsed = Date.now() - lastApiRequestAt;
-    if (elapsed < API_DELAY_MS) {
-        await sleep(API_DELAY_MS - elapsed);
+    const targetAt = Math.max(lastApiRequestAt + API_DELAY_MS, rateLimitCooldownUntil);
+    const waitMs = targetAt - Date.now();
+    if (waitMs > 0) {
+        await sleep(waitMs);
     }
     lastApiRequestAt = Date.now();
 
     try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, {
+            ...options,
+            signal: options.signal ?? AbortSignal.timeout(20000),
+        });
+        const headerWaitMs = computeRateLimitWaitMs(response.headers, { reserveRemaining: 10 });
+        if (headerWaitMs > 0) {
+            rateLimitCooldownUntil = Math.max(rateLimitCooldownUntil, Date.now() + headerWaitMs);
+        }
+
         if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < API_MAX_RETRIES) {
             const delayMs = getRetryDelayMs(response, attempt);
             console.warn(`API returned ${response.status}. Retrying attempt ${attempt + 1}/${API_MAX_RETRIES} in ${formatDuration(delayMs)}...`);
@@ -1132,7 +1269,6 @@ async function fetchConquestData() {
         console.log(`Conquest data updated: ${zoneSummaries.length} zones, ${requestCount} requests.`);
 
         if (process.env.CONQUEST_SKIP_ARCHIVE !== "true") {
-            const { execFileSync } = require("child_process");
             try {
                 execFileSync(
                     process.execPath,
@@ -1160,9 +1296,12 @@ function formatDuration(ms) {
     return `${seconds}s`;
 }
 
-async function fetchItem(itemName, cycleHistoryCache) {
+async function fetchItem(itemName, cycleHistoryCache, marketMeta) {
     try {
         let itemRecord = itemLookupByName.get(itemName.toLowerCase());
+        if (!shouldScrapeMarketItem(itemName, itemRecord)) {
+            return null;
+        }
 
         if (!itemRecord?.hashed_id) {
             const searchRes = await apiFetch(`${BASE_URL}/item/search?query=${encodeURIComponent(itemName)}`, { headers });
@@ -1172,7 +1311,11 @@ async function fetchItem(itemName, cycleHistoryCache) {
 
             itemRecord = searchData.items.find(i => i.name.toLowerCase() === itemName.toLowerCase())
                 || searchData.items.find(i => i.vendor_price > 0 || i.vendor_price === null);
-            if (!itemRecord?.hashed_id) return null;
+            if (!itemRecord?.hashed_id || !shouldScrapeMarketItem(itemName, itemRecord)) return null;
+        }
+
+        if (shouldSkipZeroHistoryItem({ itemRecord, marketMeta, forceFullMarket: IS_FORCE_FULL_MARKET })) {
+            return null;
         }
 
         if (cycleHistoryCache.has(itemRecord.hashed_id)) {
@@ -1181,23 +1324,54 @@ async function fetchItem(itemName, cycleHistoryCache) {
 
         // Since Patch 279 (0.82.03-PB, Sep 17 2026), direct listing purchases are disabled.
         // All active market transactions execute via Purchase Orders (type=orders).
-        // We query type=orders primarily, and fallback to type=listings if an item has 0 order history.
-        let histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=orders`, { headers });
-        let histData = histRes.ok ? await histRes.json() : null;
-        let history = histData?.history_data || [];
+        // Query type=orders first (unless item recently showed 0 orders & active listings within cooldown),
+        // falling back to type=listings when orders has 0 history.
+        const ordersFirst = shouldQueryOrdersFirst({ itemRecord, marketMeta, forceFullMarket: IS_FORCE_FULL_MARKET });
+        let histRes;
+        let histData = null;
+        let history = [];
+        let fromListingsOnly = false;
 
-        if (history.length === 0) {
-            const fallbackRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
-            if (fallbackRes.ok) {
-                const fallbackData = await fallbackRes.json();
-                if (fallbackData?.history_data?.length > 0) {
-                    histData = fallbackData;
-                    history = fallbackData.history_data;
+        if (ordersFirst) {
+            histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=orders`, { headers });
+            histData = histRes.ok ? await histRes.json() : null;
+            history = histData?.history_data || [];
+
+            if (history.length === 0) {
+                const fallbackRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
+                if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData?.history_data?.length > 0) {
+                        histData = fallbackData;
+                        history = fallbackData.history_data;
+                        fromListingsOnly = true;
+                    }
                 }
+            }
+        } else {
+            histRes = await apiFetch(`${BASE_URL}/item/${itemRecord.hashed_id}/market-history?tier=0&type=listings`, { headers });
+            histData = histRes.ok ? await histRes.json() : null;
+            history = histData?.history_data || [];
+            if (history.length > 0) {
+                fromListingsOnly = true;
             }
         }
 
-        if (history.length === 0) return null;
+        const nowSec = Math.floor(Date.now() / 1000);
+        if (history.length === 0) {
+            marketMeta.zero_history_checked_at[itemRecord.hashed_id] = nowSec;
+            delete marketMeta.listings_only_checked_at[itemRecord.hashed_id];
+            return null;
+        }
+
+        delete marketMeta.zero_history_checked_at[itemRecord.hashed_id];
+        if (ordersFirst) {
+            if (fromListingsOnly) {
+                marketMeta.listings_only_checked_at[itemRecord.hashed_id] = nowSec;
+            } else {
+                delete marketMeta.listings_only_checked_at[itemRecord.hashed_id];
+            }
+        }
 
         const safeMarket = buildSafeMarketAverages(history, histData.latest_sold || []);
         const liquidity = buildLiquidityMetrics(history);
@@ -1254,14 +1428,12 @@ async function fetchItem(itemName, cycleHistoryCache) {
     }
 }
 
-import { execSync } from 'child_process';
-
 async function start() {
     if (!API_KEY) {
         console.log("No IDLEMMO_API_KEY provided in .env. Scraper paused.");
         return;
     }
-    
+
     // Create public dir if missing
     const publicDir = path.dirname(DATA_FILE);
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
@@ -1287,7 +1459,16 @@ async function start() {
     }
 
     while (true) {
-        // Fetch live combat data at the start of each cycle so seasonal entities can appear without hardcoded placeholders.
+        if (SHOULD_RUN_DISCOVERY) {
+            console.log("Running catalog discovery before market scrape...");
+            try {
+                execSync('node scripts/discover-idlemmo-catalog.mjs --skip-derivatives', { stdio: 'inherit' });
+            } catch (e) {
+                console.error("Catalog discovery failed:", e.message);
+            }
+        }
+
+        // Fetch live combat data at the start of each cycle so seasonal entities appear without hardcoded placeholders.
         await fetchWorldLocations();
         await fetchLiveWorldBosses();
         await fetchLiveEnemies();
@@ -1295,37 +1476,70 @@ async function start() {
         await fetchConquestData();
         await updatePetDatabaseExchange();
 
-        const latestStaticData = loadJson(STATIC_DATA_FILE);
-        const cycleItemsArray = Array.from(new Set([
-            ...itemsArray,
-            ...collectLootItemNames(latestStaticData)
-        ]));
-        const cycleHistoryCache = new Map();
+        initializeCatalogTargets();
 
+        const latestStaticData = loadJson(STATIC_DATA_FILE);
+        const rawCycleCandidates = Array.from(new Set([
+            ...itemsArray,
+            ...collectLootItemNames(latestStaticData),
+        ]));
+        const cycleItemsArray = rawCycleCandidates.filter((itemName) =>
+            shouldScrapeMarketItem(itemName, itemLookupByName.get(String(itemName).toLowerCase()))
+        );
+
+        const cycleHistoryCache = new Map();
+        const existingMeta = marketData["_meta"] && typeof marketData["_meta"] === "object" ? marketData["_meta"] : {};
+        const marketMeta = {
+            currently_fetching: existingMeta.currently_fetching || null,
+            last_updated: existingMeta.last_updated || new Date().toISOString(),
+            zero_history_checked_at: existingMeta.zero_history_checked_at && typeof existingMeta.zero_history_checked_at === "object"
+                ? { ...existingMeta.zero_history_checked_at }
+                : {},
+            listings_only_checked_at: existingMeta.listings_only_checked_at && typeof existingMeta.listings_only_checked_at === "object"
+                ? { ...existingMeta.listings_only_checked_at }
+                : {},
+        };
+
+        let updatedCount = 0;
+        let changedCount = 0;
         for (let i = 0; i < cycleItemsArray.length; i++) {
             const item = cycleItemsArray[i];
-            
-            // Write status
-            try {
-                fs.writeFileSync(STATUS_FILE, JSON.stringify({
-                    currentItem: item,
-                    currentIndex: i + 1,
-                    totalItems: cycleItemsArray.length,
-                    timestamp: new Date().toISOString()
-                }));
-            } catch(e) {}
 
-            const data = await fetchItem(item, cycleHistoryCache);
+            if (!IS_SCRAPE_ONCE || i === 0 || i === cycleItemsArray.length - 1 || i % 50 === 0) {
+                try {
+                    fs.writeFileSync(STATUS_FILE, JSON.stringify({
+                        currentItem: item,
+                        currentIndex: i + 1,
+                        totalItems: cycleItemsArray.length,
+                        timestamp: new Date().toISOString(),
+                    }));
+                } catch {}
+            }
+
+            const data = await fetchItem(item, cycleHistoryCache, marketMeta);
             if (data) {
-                marketData[item] = data;
-                marketData["_meta"] = { currently_fetching: item, last_updated: new Date().toISOString() };
-                
-                // Batch save every 10 items or at the end
-                if (i % 10 === 0 || i === cycleItemsArray.length - 1) {
-                    await safeWriteJson(DATA_FILE, marketData);
+                const prevEntry = marketData[item];
+                const merged = mergeMarketItemEntry(prevEntry, data);
+                if (hasMarketItemChanged(prevEntry, data)) {
+                    changedCount++;
                 }
+                marketData[item] = merged;
+                updatedCount++;
+            }
+
+            const isFinalItem = i === cycleItemsArray.length - 1;
+            const shouldCheckpoint = !IS_SCRAPE_ONCE && i % 50 === 0;
+            if (isFinalItem || shouldCheckpoint) {
+                marketMeta.currently_fetching = isFinalItem ? null : item;
+                if (changedCount > 0 || !marketMeta.last_updated) {
+                    marketMeta.last_updated = new Date().toISOString();
+                }
+                marketData["_meta"] = marketMeta;
+                await safeWriteJson(DATA_FILE, marketData);
             }
         }
+
+        console.log(`Market cycle finished: ${updatedCount} priced items inspected (${changedCount} materially changed) out of ${cycleItemsArray.length} candidates.`);
 
         // --- RELATIONAL LINKER TRIGGER ---
         console.log("Full scrape cycle completed. Rebuilding usage map...");
@@ -1335,7 +1549,7 @@ async function start() {
         } catch (e) {
             console.error("Failed to rebuild usage map:", e.message);
         }
-        
+
         if (IS_SCRAPE_ONCE) {
             console.log("Process complete. Exiting.");
             return;
@@ -1346,4 +1560,12 @@ async function start() {
     }
 }
 
-start();
+export {
+    buildSafeMarketAverages,
+    buildLiquidityMetrics,
+};
+
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isDirectRun) {
+    start();
+}

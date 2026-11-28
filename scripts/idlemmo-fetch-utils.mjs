@@ -2,11 +2,56 @@ import fs from "fs";
 import path from "path";
 
 export const BASE_URL = "https://api.idle-mmo.com/v1";
-export const DEFAULT_DELAY_MS = 1050;
+export const RATE_LIMIT_KEY_RPM = 80;
+export const DEFAULT_DELAY_MS = 1000;
 export const RATE_PROFILES = {
-  isolated: 54,
-  shared: 40,
+  isolated: 68,
+  shared: 60,
 };
+
+export const ITEM_SEARCH_TYPES = Object.freeze([
+  "BAIT",
+  "BLANK_SCROLL",
+  "BOOTS",
+  "BOW",
+  "CAKE",
+  "CAMPAIGN_ITEM",
+  "CHEST",
+  "CHESTPLATE",
+  "COLLECTABLE",
+  "CONSTRUCTION_MATERIAL",
+  "CRAFTING_MATERIAL",
+  "DAGGER",
+  "EMPTY_CRYSTAL",
+  "ESSENCE_CRYSTAL",
+  "FELLING_AXE",
+  "FISH",
+  "FISHING_ROD",
+  "FOOD",
+  "GAUNTLETS",
+  "GEMSTONE",
+  "GREAVES",
+  "HELMET",
+  "LOG",
+  "MEMBERSHIP",
+  "METAL_BAR",
+  "METAMORPHITE",
+  "NAMESTONE",
+  "ORE",
+  "PET_EGG",
+  "PICKAXE",
+  "POTION",
+  "RECIPE",
+  "RELIC",
+  "RESET_STONE",
+  "SHIELD",
+  "SPECIAL",
+  "SWORD",
+  "TELEPORTATION_STONE",
+  "TOKEN",
+  "UPGRADE_STONE",
+  "VIAL",
+]);
 
 export function parseArgs(argv = process.argv.slice(2)) {
   const args = { _: [] };
@@ -98,7 +143,55 @@ export function writeJson(filePath, data) {
 export function delayMsForRequestsPerMinute(requestsPerMinute) {
   const parsed = Number(requestsPerMinute);
   if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_DELAY_MS;
-  return Math.ceil(60000 / Math.min(parsed, 59));
+  // Cap at 76 req/min on the 80 req/min API key tier to preserve clock-jitter margin.
+  return Math.ceil(60000 / Math.min(parsed, 76));
+}
+
+function getHeaderValue(headers, name) {
+  if (!headers) return null;
+  if (typeof headers.get === "function") return headers.get(name);
+  const lower = name.toLowerCase();
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === lower) return value;
+  }
+  return null;
+}
+
+export function parseRateLimitHeaders(headers) {
+  const toFiniteOrNull = (raw) => {
+    if (raw === null || raw === undefined || raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+  const limit = toFiniteOrNull(getHeaderValue(headers, "x-ratelimit-limit"));
+  const remaining = toFiniteOrNull(getHeaderValue(headers, "x-ratelimit-remaining"));
+  const resetEpochSec = toFiniteOrNull(getHeaderValue(headers, "x-ratelimit-reset"));
+  const retryAfterRaw = getHeaderValue(headers, "retry-after");
+  const retryAfterSec = toFiniteOrNull(retryAfterRaw);
+  return {
+    limit,
+    remaining,
+    resetEpochSec,
+    resetAtMs: resetEpochSec !== null ? resetEpochSec * 1000 : null,
+    retryAfterSec,
+  };
+}
+
+export function computeRateLimitWaitMs(
+  headers,
+  { reserveRemaining = 6, maxWaitMs = 75000, nowMs = Date.now() } = {},
+) {
+  const parsed = parseRateLimitHeaders(headers);
+  if (parsed.remaining === null || parsed.remaining > reserveRemaining) {
+    return 0;
+  }
+  if (parsed.resetAtMs !== null && parsed.resetAtMs > nowMs) {
+    return Math.min(parsed.resetAtMs - nowMs + 500, maxWaitMs);
+  }
+  if (parsed.retryAfterSec !== null && parsed.retryAfterSec > 0) {
+    return Math.min(parsed.retryAfterSec * 1000 + 500, maxWaitMs);
+  }
+  return Math.min(5000, maxWaitMs);
 }
 
 export function resolveRateLimitDelayMs({ explicitDelayMs, explicitRequestsPerMinute, profile } = {}) {
@@ -123,12 +216,20 @@ export function responseCount(data) {
   return undefined;
 }
 
-export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "IdleMMO" }) {
+export function createFetchQueue({
+  apiKey,
+  delayMs = DEFAULT_DELAY_MS,
+  label = "IdleMMO",
+  reserveRemaining = 8,
+  timeoutMs = 20000,
+  maxRetries = 4,
+} = {}) {
   if (!apiKey) {
     throw new Error("IDLEMMO_API_KEY is required. Put it in .env or pass it through the environment.");
   }
 
   let lastRequestAt = 0;
+  let rateLimitCooldownUntil = 0;
   let completed = 0;
   let estimatedTotal = 0;
   const startedAt = Date.now();
@@ -142,8 +243,9 @@ export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   async function waitForSlot() {
-    const elapsed = Date.now() - lastRequestAt;
-    if (elapsed < delayMs) await sleep(delayMs - elapsed);
+    const targetAt = Math.max(lastRequestAt + delayMs, rateLimitCooldownUntil);
+    const waitMs = targetAt - Date.now();
+    if (waitMs > 0) await sleep(waitMs);
     lastRequestAt = Date.now();
   }
 
@@ -159,14 +261,33 @@ export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "
     console.log(`  elapsed ${formatDuration(elapsed)} | ETA ${eta}`);
   }
 
-  async function request(name, url, metadata = {}) {
-    estimatedTotal = Math.max(estimatedTotal, completed + 1);
-    progress(name, url);
+  async function request(name, url, metadata = {}, attempt = 0) {
+    if (attempt === 0) {
+      estimatedTotal = Math.max(estimatedTotal, completed + 1);
+      progress(name, url);
+    }
     await waitForSlot();
 
     const fetchedAt = new Date().toISOString();
-    let response = await fetch(url, { headers });
-    let text = await response.text();
+    let response;
+    try {
+      response = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
+    } catch (error) {
+      if (attempt < maxRetries) {
+        const waitMs = Math.min(delayMs * (2 ** (attempt + 1)), 60000);
+        console.warn(`  request error (${error.message}); waiting ${formatDuration(waitMs)} before retry ${attempt + 1}/${maxRetries} for ${name}`);
+        await sleep(waitMs);
+        return request(name, url, metadata, attempt + 1);
+      }
+      throw error;
+    }
+
+    const headerWaitMs = computeRateLimitWaitMs(response.headers, { reserveRemaining });
+    if (headerWaitMs > 0) {
+      rateLimitCooldownUntil = Math.max(rateLimitCooldownUntil, Date.now() + headerWaitMs);
+    }
+
+    const text = await response.text();
     let data = null;
     try {
       data = text ? JSON.parse(text) : null;
@@ -174,15 +295,18 @@ export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "
       data = { raw_text: text };
     }
 
-    if (response.status === 429) {
-      const retryAfter = Number(data?.retry_after || response.headers.get("retry-after") || 60);
-      const waitMs = (retryAfter + 2) * 1000;
-      console.warn(`  rate limited; waiting ${formatDuration(waitMs)} before retrying ${name}`);
+    if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+      const retryAfter = Number(data?.retry_after || response.headers.get("retry-after") || 0);
+      const waitMs = retryAfter > 0
+        ? (retryAfter + 2) * 1000
+        : Math.max(headerWaitMs, Math.min(delayMs * (2 ** (attempt + 1)), 75000));
+      console.warn(`  HTTP ${response.status}; waiting ${formatDuration(waitMs)} before retry ${attempt + 1}/${maxRetries} for ${name}`);
       await sleep(waitMs);
-      return request(name, url, metadata);
+      return request(name, url, metadata, attempt + 1);
     }
 
     completed += 1;
+    const rateInfo = parseRateLimitHeaders(response.headers);
     console.log(`  -> HTTP ${response.status}${response.ok ? "" : " (not ok)"}`);
 
     return {
@@ -192,6 +316,7 @@ export function createFetchQueue({ apiKey, delayMs = DEFAULT_DELAY_MS, label = "
         status: response.status,
         ok: response.ok,
         endpoint_updates_at: data?.endpoint_updates_at ?? null,
+        rate_limit_remaining: rateInfo.remaining,
         count: responseCount(data),
         ...metadata,
       },

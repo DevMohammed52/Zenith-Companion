@@ -11,6 +11,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const args = parseArgs();
 
 const pathspecs = toArray(args.path || args.paths).map(String).filter(Boolean);
+const ignoreOnlyPaths = new Set(toArray(args["ignore-only"]).map((value) => normalizeRelative(String(value))).filter(Boolean));
 const commitMessage = String(args["commit-message"] || "").trim();
 const emptyMessage = String(args["empty-message"] || "No generated changes to commit");
 const retryMessage = String(args["retry-message"] || "Push failed; refreshing generated-data commit onto latest main.");
@@ -88,6 +89,21 @@ function hasStagedChanges() {
   return git(["diff", "--cached", "--quiet"], { allowFailure: true }).status !== 0;
 }
 
+function getStagedFilePaths() {
+  const result = git(["diff", "--cached", "--name-only"], { capture: true, allowFailure: true });
+  return String(result.stdout || "")
+    .split(/\r?\n/)
+    .map((line) => normalizeRelative(line.trim()))
+    .filter(Boolean);
+}
+
+function hasMeaningfulStagedChanges() {
+  if (!hasStagedChanges()) return false;
+  if (ignoreOnlyPaths.size === 0) return true;
+  const stagedFiles = getStagedFilePaths();
+  return stagedFiles.some((file) => !ignoreOnlyPaths.has(file));
+}
+
 function copyFiles(files, destinationRoot) {
   for (const relativePath of files) {
     const sourcePath = path.resolve(repoRoot, relativePath);
@@ -130,8 +146,13 @@ function publish() {
   git(["config", "--local", "user.name", "GitHub Action"]);
 
   addGeneratedFiles();
-  if (!hasStagedChanges()) {
-    console.log(emptyMessage);
+  if (!hasMeaningfulStagedChanges()) {
+    if (hasStagedChanges()) {
+      git(["restore", "--staged", "--worktree", "--", ...pathspecs]);
+      console.log("Only ignored metadata files changed; skipping commit & deploy.");
+    } else {
+      console.log(emptyMessage);
+    }
     return;
   }
 
@@ -145,8 +166,13 @@ function publish() {
 
   restoreFiles(files, generatedDir);
   addGeneratedFiles();
-  if (!hasStagedChanges()) {
-    console.log("Remote already contains the generated data.");
+  if (!hasMeaningfulStagedChanges()) {
+    if (hasStagedChanges()) {
+      git(["restore", "--staged", "--worktree", "--", ...pathspecs]);
+      console.log("Only ignored metadata files changed after rebase; skipping commit & deploy.");
+    } else {
+      console.log("Remote already contains the generated data.");
+    }
     return;
   }
 

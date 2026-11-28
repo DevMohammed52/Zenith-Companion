@@ -171,7 +171,7 @@ async function fetchItemDetails() {
 
 async function main() {
   console.log(`Writing raw API cache to ${rawDir}`);
-  console.log("This script uses one request queue and respects the 60/min IdleMMO limit.");
+  console.log("This script uses one request queue and respects the 80/min IdleMMO rate limit (shared profile).");
 
   const enemies = await fetchAndSave("combat_enemies_list", `${BASE_URL}/combat/enemies/list`);
   const dungeons = await fetchAndSave("combat_dungeons_list", `${BASE_URL}/combat/dungeons/list`);

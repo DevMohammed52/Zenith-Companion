@@ -2,8 +2,11 @@ name: Update Guild Data
 
 on:
   schedule:
-    - cron: '50 21 * * *'
-    - cron: '35 22 * * 0'
+    # Hot guilds every 2 hours on even hours (:35) cleanly after :05 market runs; once-daily new guild scan at 00:35; weekly warm Sunday 02:35.
+    - cron: '35 0 * * *'
+    - cron: '35 4,6,8,10,12,14,16,18,20,22 * * *'
+    - cron: '35 2 * * 1-6'
+    - cron: '35 2 * * 0'
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -30,7 +33,7 @@ jobs:
   update-guilds:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 85
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -54,12 +57,15 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             scope="${{ inputs.refresh_scope }}"
             discover="${{ inputs.discover_new }}"
-          elif [ "${{ github.event.schedule }}" = "35 22 * * 0" ]; then
+          elif [ "${{ github.event.schedule }}" = "35 2 * * 0" ]; then
             scope="warm"
             discover="false"
-          else
+          elif [ "${{ github.event.schedule }}" = "35 0 * * *" ]; then
             scope="hot"
             discover="true"
+          else
+            scope="hot"
+            discover="false"
           fi
 
           echo "scope=${scope}" >> "$GITHUB_OUTPUT"
