@@ -1,71 +1,105 @@
-import { Compass } from "lucide-react";
+import { Skeleton, SkeletonContainer } from "@/components/ui/Skeleton";
 import styles from "./loading.module.css";
 
 export default function Loading() {
   return (
-    <main
-      className={styles.loadingShell}
-      aria-busy="true"
-      aria-label="Loading Zenith Companion"
-      aria-live="polite"
-      role="status"
-    >
-      <section className={styles.loadingPanel}>
-        <header className={styles.loadingHeader}>
-          <div className={styles.loadingMark}>
-            <span className={styles.scanBeam} aria-hidden="true" />
-            <Compass aria-hidden="true" size={23} />
-            <span className={styles.routeTrace} aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
+    <main className={styles.page}>
+      <SkeletonContainer
+        busy
+        announcement="Loading Zenith Companion..."
+        className={styles.shellStack}
+      >
+        {/* Top Hero / Header Placeholder */}
+        <section className={styles.heroCard} aria-hidden="true">
+          <div className={styles.heroIdentity}>
+            <Skeleton width={116} height={116} />
+            <div className={styles.heroLines}>
+              <Skeleton width={210} height={28} />
+              <div className={styles.pillRow}>
+                <Skeleton variant="text" width={92} height={18} />
+                <Skeleton variant="text" width={112} height={18} />
+                <Skeleton variant="text" width={96} height={18} />
+              </div>
+            </div>
           </div>
-          <div className={styles.loadingCopy}>
-            <span>Zenith Companion</span>
-            <strong>Preparing panel</strong>
+          <div className={styles.heroTiles}>
+            <Skeleton width="100%" height={68} />
+            <Skeleton width="100%" height={68} />
+            <Skeleton width="100%" height={68} />
           </div>
-        </header>
+        </section>
 
-        <div className={styles.skeletonFrame} aria-hidden="true">
-          <div className={styles.skeletonTopline}>
-            <span className={`${styles.skeletonBlock} ${styles.titleBlock}`} />
-            <span className={`${styles.skeletonBlock} ${styles.statusPill}`} />
+        {/* Primary Split Workspace (7fr / 5fr bento cadence) */}
+        <section className={styles.splitGrid} aria-hidden="true">
+          <div className={styles.panelCard}>
+            <div className={styles.panelTop}>
+              <Skeleton width={160} height={20} />
+              <Skeleton variant="text" width={72} height={16} />
+            </div>
+            <div className={styles.ledgerStack}>
+              {[0, 1, 2, 3].map((row) => (
+                <div key={row} className={styles.ledgerRow}>
+                  <Skeleton width={28} height={28} />
+                  <div className={styles.ledgerText}>
+                    <Skeleton variant="text" width="58%" height={15} />
+                    <Skeleton variant="text" width="34%" height={12} />
+                  </div>
+                  <Skeleton variant="text" width={64} height={16} />
+                </div>
+              ))}
+            </div>
+            <div className={styles.footerTiles}>
+              <Skeleton width="100%" height={64} />
+              <Skeleton width="100%" height={64} />
+              <Skeleton width="100%" height={64} />
+            </div>
           </div>
 
-          <div className={styles.metricGrid}>
-            {[0, 1, 2].map((item) => (
-              <span className={styles.metricShell} key={item}>
-                <span className={`${styles.skeletonBlock} ${styles.metricValue}`} />
-                <span className={`${styles.skeletonBlock} ${styles.metricLabel}`} />
-              </span>
-            ))}
-          </div>
-
-          <div className={styles.contentGrid}>
-            <div className={styles.chartShell}>
-              <span className={`${styles.skeletonBlock} ${styles.chartHeader}`} />
-              <div className={styles.chartBars}>
-                {[46, 68, 38, 78, 54, 63].map((height, index) => (
-                  <span key={`${height}-${index}`} style={{ height: `${height}%` }} />
-                ))}
+          <div className={styles.sideColumn}>
+            <div className={styles.panelCard}>
+              <div className={styles.panelTop}>
+                <Skeleton width={120} height={20} />
+                <Skeleton variant="text" width={68} height={16} />
+              </div>
+              <div className={styles.sideSplit}>
+                <div className={styles.sideLines}>
+                  <Skeleton width={150} height={22} />
+                  <Skeleton variant="text" width={110} height={15} />
+                  <Skeleton variant="text" width={88} height={18} />
+                </div>
+                <Skeleton width={96} height={96} />
               </div>
             </div>
 
-            <div className={styles.rowStack}>
-              {[0, 1, 2, 3].map((item) => (
-                <span className={styles.rowShell} key={item}>
-                  <span className={styles.rowIcon} />
-                  <span className={`${styles.skeletonBlock} ${styles.rowMain}`} />
-                  <span className={`${styles.skeletonBlock} ${styles.rowMeta}`} />
-                </span>
-              ))}
+            <div className={styles.panelCard}>
+              <div className={styles.panelTop}>
+                <Skeleton width={140} height={20} />
+                <Skeleton variant="text" width={64} height={16} />
+              </div>
+              <Skeleton width="100%" height={68} />
+              <div className={styles.panelTop}>
+                <Skeleton variant="text" width={128} height={14} />
+                <Skeleton variant="text" width={140} height={14} />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <p className={styles.loadingHint}>Preparing the next Zenith panel.</p>
-      </section>
+        {/* Bottom 3-Column Reference Strip */}
+        <section className={styles.bottomGrid} aria-hidden="true">
+          {[0, 1, 2].map((card) => (
+            <div key={card} className={styles.panelCard}>
+              <div className={styles.panelTop}>
+                <Skeleton width={132} height={18} />
+                <Skeleton variant="text" width={56} height={14} />
+              </div>
+              <Skeleton width="100%" height={38} />
+              <Skeleton width="100%" height={38} />
+              <Skeleton width="84%" height={38} />
+            </div>
+          ))}
+        </section>
+      </SkeletonContainer>
     </main>
   );
 }

@@ -22,7 +22,8 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
           code="500"
           eyebrow="App shell error"
           title="Zenith could not finish loading."
-          description="The main app shell failed before the normal layout could recover. Try again, or return to the dashboard after the page reloads."
+          description="The main application layout failed to start. Reload the page to fetch fresh assets or jump back to a working tool."
+          digest={error.digest}
           reset={reset}
           fullScreen
         />
