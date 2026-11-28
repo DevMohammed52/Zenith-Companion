@@ -207,6 +207,10 @@ export function useDashboardState(): UseDashboardStateReturn {
     () => getProfileStorageKey(MYTHIC_ACTIVE_RECIPES_STORAGE_KEY, activeProfile?.id),
     [activeProfile?.id],
   );
+  const forgePlannerStorageKey = useMemo(
+    () => getProfileStorageKey(FORGE_PLANNER_STORAGE_KEY, activeProfile?.id) ?? FORGE_PLANNER_STORAGE_KEY,
+    [activeProfile?.id],
+  );
   const skillProfitStorageKey = useMemo(
     () => getProfileStorageKey(SKILL_PROFIT_STORAGE_KEY, activeProfile?.id) ?? SKILL_PROFIT_STORAGE_KEY,
     [activeProfile?.id],
@@ -238,7 +242,11 @@ export function useDashboardState(): UseDashboardStateReturn {
     );
 
     try {
-      const savedForge = localStorage.getItem(FORGE_PLANNER_STORAGE_KEY);
+      const savedForge =
+        localStorage.getItem(forgePlannerStorageKey)
+        ?? (forgePlannerStorageKey !== FORGE_PLANNER_STORAGE_KEY
+          ? localStorage.getItem(FORGE_PLANNER_STORAGE_KEY)
+          : null);
       if (!savedForge) {
         setForgeLines([]);
       } else {
@@ -254,7 +262,7 @@ export function useDashboardState(): UseDashboardStateReturn {
         ?? readSkillProfitStateFromKey(SKILL_PROFIT_STORAGE_KEY)
         ?? DEFAULT_PERSISTED_SKILL_PROFIT,
     );
-  }, [activeMythicStorageKey, skillProfitStorageKey]);
+  }, [activeMythicStorageKey, forgePlannerStorageKey, skillProfitStorageKey]);
 
   useEffect(() => {
     syncLocalDashboardStorage();
@@ -263,6 +271,7 @@ export function useDashboardState(): UseDashboardStateReturn {
         !event.key ||
         event.key === activeMythicStorageKey ||
         event.key === MYTHIC_ACTIVE_RECIPES_STORAGE_KEY ||
+        event.key === forgePlannerStorageKey ||
         event.key === FORGE_PLANNER_STORAGE_KEY ||
         event.key === skillProfitStorageKey ||
         event.key === SKILL_PROFIT_STORAGE_KEY
@@ -272,7 +281,7 @@ export function useDashboardState(): UseDashboardStateReturn {
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [activeMythicStorageKey, skillProfitStorageKey, syncLocalDashboardStorage]);
+  }, [activeMythicStorageKey, forgePlannerStorageKey, skillProfitStorageKey, syncLocalDashboardStorage]);
 
   const hasConfiguredEssence = useMemo(
     () => SUPPORTED_ESSENCE_SKILLS.some((skill) => Boolean(persistedSkillProfit.essenceBySkill?.[skill])),

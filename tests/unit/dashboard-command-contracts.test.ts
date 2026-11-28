@@ -76,11 +76,12 @@ describe("dashboard command center contracts", () => {
     expect(css).toMatch(/\.routeLedgerRow\s*\{[^}]*min-height:\s*46px/);
   });
 
-  it("wires Forge Planner to FORGE_PLANNER_STORAGE_KEY and keeps activeMythicCount separate on /alchemy/mythic", () => {
+  it("wires Forge Planner to profile-scoped FORGE_PLANNER_STORAGE_KEY and keeps activeMythicCount separate on /alchemy/mythic", () => {
     const pageContent = getDashboardFilesContent();
     const forgeCard = pageContent.match(/<Link\s+href="\/forge"[\s\S]*?<\/Link>/)?.[0] ?? "";
     const mythicCard = pageContent.match(/<Link\s+href="\/alchemy\/mythic"[\s\S]*?<\/Link>/)?.[0] ?? "";
     expect(pageContent).toContain("FORGE_PLANNER_STORAGE_KEY");
+    expect(pageContent).toContain("forgePlannerStorageKey");
     expect(pageContent).toContain("sanitizeForgePlannerLines");
     expect(forgeCard).toContain("forgeCraftsCount.toLocaleString()");
     expect(forgeCard).not.toContain("activeMythicNames");
