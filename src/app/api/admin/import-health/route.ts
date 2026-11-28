@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   executeProfileImportAdminAction,
   fetchProfileImportJson,
+  getOrCreateRequestId,
   parseAdminActionPayload,
+  readLimitedJsonBody,
 } from "@/lib/profile-import-proxy";
 import { ADMIN_REALM, verifyAdminBasicAuth } from "@/lib/admin-auth";
 
@@ -94,13 +96,18 @@ export async function GET(request: Request) {
     }
   }
 
+  const requestId = getOrCreateRequestId(request);
+  headers["x-request-id"] = requestId;
+
   const result = await fetchProfileImportJson(`/admin/import-health${search}`, {
     method: "GET",
     headers,
     cache: isFresh ? "no-store" : "default",
   }, "Cloudflare returned an unreadable response.");
 
-  const extraHeaders: Record<string, string> = {};
+  const extraHeaders: Record<string, string> = {
+    "x-request-id": requestId,
+  };
   const adminCache = result.headers?.get("x-admin-cache");
   if (adminCache) {
     extraHeaders["x-admin-cache"] = adminCache;
@@ -134,42 +141,21 @@ export async function POST(request: NextRequest | Request) {
     );
   }
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (Number.isFinite(contentLength) && contentLength > ADMIN_POST_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "request_too_large", message: "Admin action payload exceeds limit." } },
-      { status: 413, headers: privateHeaders() },
-    );
+  const parsed = await readLimitedJsonBody(request, {
+    maxBytes: ADMIN_POST_BODY_LIMIT,
+    tooLargeMessage: "Admin action payload exceeds limit.",
+    emptyMessage: "Request body must be valid JSON.",
+    invalidJsonMessage: "Request body must be valid JSON.",
+    invalidTypeMessage: "Admin action payload must be an object.",
+  });
+  if (!parsed.ok) {
+    return NextResponse.json(parsed.payload, {
+      status: parsed.status,
+      headers: privateHeaders(),
+    });
   }
 
-  let bodyText = "";
-  try {
-    bodyText = await request.text();
-  } catch {
-    return NextResponse.json(
-      { error: { code: "invalid_json", message: "Request body could not be read." } },
-      { status: 400, headers: privateHeaders() },
-    );
-  }
-
-  if (bodyText.length > ADMIN_POST_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "request_too_large", message: "Admin action payload exceeds limit." } },
-      { status: 413, headers: privateHeaders() },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = JSON.parse(bodyText);
-  } catch {
-    return NextResponse.json(
-      { error: { code: "invalid_json", message: "Request body must be valid JSON." } },
-      { status: 400, headers: privateHeaders() },
-    );
-  }
-
-  const validated = parseAdminActionPayload(body);
+  const validated = parseAdminActionPayload(parsed.data);
   if (!validated.ok) {
     return NextResponse.json(validated.payload, {
       status: validated.status,
@@ -177,10 +163,11 @@ export async function POST(request: NextRequest | Request) {
     });
   }
 
+  const requestId = getOrCreateRequestId(request);
   const result = await executeProfileImportAdminAction(validated.payload, adminSecret);
 
   return NextResponse.json(result.payload, {
     status: result.status,
-    headers: privateHeaders(),
+    headers: privateHeaders({ "x-request-id": result.requestId || requestId }),
   });
 }

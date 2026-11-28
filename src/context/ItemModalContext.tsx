@@ -104,6 +104,7 @@ export function ItemModalProvider({ children }: { children: ReactNode }) {
         if (found) id = found.id;
     }
 
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(id)) return;
     if (itemCache.has(id)) return;
     
     try {

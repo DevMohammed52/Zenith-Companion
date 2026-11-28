@@ -314,16 +314,26 @@ export default function ItemModal({ id, onClose }: ItemModalProps) {
           return;
         }
 
-        const fallback = await loadPublicItemFallback(id);
-        if (fallback && active) {
-          setItem(fallback);
-          setCachedItem(id, fallback);
-          setLoading(false);
-          return;
+        // Only download large client-side JSON fallbacks for transient 5xx/offline errors, never for 400/404.
+        if (res.status >= 500) {
+          const fallback = await loadPublicItemFallback(id);
+          if (fallback && active) {
+            setItem(fallback);
+            setCachedItem(id, fallback);
+            setLoading(false);
+            return;
+          }
         }
 
         throw new Error('Item not found');
       } catch (err: any) {
+        if (err instanceof Error && err.message === 'Item not found') {
+          if (active) {
+            setError('Item not found');
+            setLoading(false);
+          }
+          return;
+        }
         const fallback = await loadPublicItemFallback(id);
         if (fallback && active) {
           setItem(fallback);

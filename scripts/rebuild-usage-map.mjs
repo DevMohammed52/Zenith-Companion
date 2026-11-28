@@ -189,6 +189,91 @@ async function rebuild() {
     }
   });
 
+  // 2a. Precompute dungeon & dungeon-chest drop sources for RECIPE items so /api/items/[id]
+  // never has to scan chests and dungeons per request or load static-data.json at runtime.
+  const normalizeRecipeDropName = (value) =>
+    String(value || '')
+      .replace(/\s+\(Untradable\)$/i, '')
+      .trim()
+      .toLowerCase();
+
+  const dungeonsList = Array.isArray(staticData.dungeons) ? staticData.dungeons : [];
+  const dungeonDirectDropsByRecipe = new Map();
+  const chestParentDungeonByName = new Map();
+
+  for (const dungeon of dungeonsList) {
+    const lootList = Array.isArray(dungeon?.loot) ? dungeon.loot : [];
+    for (const loot of lootList) {
+      const dropName = loot?.name || loot?.item_name;
+      const dropKey = normalizeRecipeDropName(dropName);
+      if (!dropKey) continue;
+
+      if (!chestParentDungeonByName.has(dropKey)) {
+        chestParentDungeonByName.set(dropKey, dungeon);
+      }
+
+      const list = dungeonDirectDropsByRecipe.get(dropKey) || [];
+      list.push({
+        type: 'DUNGEON',
+        name: dungeon.name,
+        chance: loot?.chance ?? 'Unknown',
+        location: dungeon.location?.name || 'Dungeon',
+        source_item_name: dungeon.name,
+        note: 'Earned as a dungeon completion reward drop.',
+      });
+      dungeonDirectDropsByRecipe.set(dropKey, list);
+    }
+  }
+
+  const chestDropsByRecipe = new Map();
+  const seenChestNames = new Set();
+  for (const candidate of [...Object.values(allItemsDb), ...Object.values(itemsMap)]) {
+    if (!candidate || candidate.type !== 'CHEST' || !candidate.name) continue;
+    if (seenChestNames.has(candidate.name)) continue;
+    seenChestNames.add(candidate.name);
+
+    const parentDungeon = chestParentDungeonByName.get(normalizeRecipeDropName(candidate.name));
+    const dungeonLocation = parentDungeon
+      ? `${parentDungeon.name}${parentDungeon.location?.name ? ` (${parentDungeon.location.name})` : ''}`
+      : candidate?.where_to_find?.dungeons?.[0]?.name || 'Dungeon Chest';
+
+    const drops = [...(candidate.loot_table || []), ...(candidate.chest_drops || [])];
+    for (const drop of drops) {
+      const dropKey = normalizeRecipeDropName(drop?.item_name || drop?.name);
+      if (!dropKey) continue;
+      const list = chestDropsByRecipe.get(dropKey) || [];
+      list.push({
+        type: 'DUNGEON_CHEST',
+        name: candidate.name,
+        chance: drop?.chance ?? 'Unknown',
+        location: dungeonLocation,
+        source_item_name: candidate.name,
+        note: `Dropped inside ${candidate.name} from dungeons.`,
+      });
+      chestDropsByRecipe.set(dropKey, list);
+    }
+  }
+
+  for (const item of [...Object.values(allItemsDb), ...Object.values(itemsMap)]) {
+    if (!item || item.type !== 'RECIPE' || !item.name) continue;
+    const recipeKey = normalizeRecipeDropName(item.name);
+    if (!recipeKey) continue;
+
+    const directSources = dungeonDirectDropsByRecipe.get(recipeKey) || [];
+    const chestSources = chestDropsByRecipe.get(recipeKey) || [];
+    if (directSources.length === 0 && chestSources.length === 0) continue;
+
+    const entry = getEntry(item.name);
+    const seenKeys = new Set(entry.dropped_by.map((src) => `${src?.type || ''}:${src?.name || ''}`));
+    for (const source of [...directSources, ...chestSources]) {
+      const key = `${source.type}:${source.name}`;
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        entry.dropped_by.push(source);
+      }
+    }
+  }
+
   // 2b. Map default Alchemy crafts. These are learned by every character and do
   // not have physical recipe items in the item API, so they need explicit links.
   Object.entries(DEFAULT_ALCHEMY_RECIPES).forEach(([productName, recipe]) => {

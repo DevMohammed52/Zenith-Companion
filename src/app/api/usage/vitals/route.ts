@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { extractForwardedClientIp, fetchProfileImportJson } from "@/lib/profile-import-proxy";
+import {
+  buildProxyForwardHeaders,
+  fetchProfileImportJson,
+  getOrCreateRequestId,
+  NO_STORE_HEADERS,
+  readLimitedJsonBody,
+} from "@/lib/profile-import-proxy";
 
 export const dynamic = "force-dynamic";
 
 const VITALS_BODY_LIMIT = 8192;
-const NO_STORE_HEADERS = { "cache-control": "no-store" };
 const VITAL_METRICS = new Set(["CLS", "FCP", "INP", "LCP", "TTFB"]);
 const VITAL_RATINGS = new Set(["good", "needs-improvement", "poor"]);
 const NAVIGATION_TYPES = new Set(["navigate", "reload", "back-forward", "restore", "prerender"]);
@@ -66,34 +71,26 @@ export async function POST(request: Request) {
     return new Response(null, { status: 204, headers: NO_STORE_HEADERS });
   }
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (Number.isFinite(contentLength) && contentLength > VITALS_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "request_too_large", message: "Usage vitals event is too large." } },
-      { status: 413, headers: NO_STORE_HEADERS },
-    );
+  const parsed = await readLimitedJsonBody(request, {
+    maxBytes: VITALS_BODY_LIMIT,
+    allowArray: true,
+    emptyMessage: "Invalid usage vitals event.",
+    tooLargeMessage: "Usage vitals event is too large.",
+    invalidJsonCode: "bad_request",
+    invalidJsonMessage: "Invalid usage vitals event.",
+    invalidTypeCode: "bad_request",
+    invalidTypeMessage: "Invalid usage vitals event.",
+  });
+  if (!parsed.ok) {
+    return NextResponse.json(parsed.payload, {
+      status: parsed.status,
+      headers: NO_STORE_HEADERS,
+    });
   }
 
-  const text = await request.text().catch(() => "");
-  if (!text || text.length > VITALS_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "bad_request", message: "Invalid usage vitals event." } },
-      { status: 400, headers: NO_STORE_HEADERS },
-    );
-  }
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(text);
-  } catch {
-    return NextResponse.json(
-      { error: { code: "bad_request", message: "Invalid usage vitals event." } },
-      { status: 400, headers: NO_STORE_HEADERS },
-    );
-  }
-
+  const raw = parsed.data;
   const isArray = Array.isArray(raw);
-  if (Array.isArray(raw) && (raw.length === 0 || raw.length > 50)) {
+  if (isArray && (raw.length === 0 || raw.length > 50)) {
     return NextResponse.json(
       { error: { code: "bad_request", message: "Invalid usage vitals event." } },
       { status: 400, headers: NO_STORE_HEADERS },
@@ -144,25 +141,24 @@ export async function POST(request: Request) {
   }
 
   const body = JSON.stringify(isArray ? normalizedItems : normalizedItems[0]);
+  const requestId = getOrCreateRequestId(request);
 
-  const origin = request.headers.get("origin");
-  const clientIp = extractForwardedClientIp(request);
-  const userAgent = request.headers.get("user-agent");
-
-  const result = await fetchProfileImportJson("/usage/vitals", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${usagePingSecret}`,
-      ...(origin ? { origin } : {}),
-      ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
-      ...(userAgent ? { "user-agent": userAgent } : {}),
+  const result = await fetchProfileImportJson(
+    "/usage/vitals",
+    {
+      method: "POST",
+      headers: buildProxyForwardHeaders(request, {
+        authSecret: usagePingSecret,
+        contentType: "application/json",
+        requestId,
+      }),
+      body,
     },
-    body,
-  }, "Usage vitals service returned an unreadable response.");
+    "Usage vitals service returned an unreadable response.",
+  );
 
   return NextResponse.json(result.payload, {
     status: result.status,
-    headers: NO_STORE_HEADERS,
+    headers: { ...NO_STORE_HEADERS, "x-request-id": requestId },
   });
 }

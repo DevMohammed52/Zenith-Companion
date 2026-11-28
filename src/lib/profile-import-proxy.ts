@@ -1,6 +1,10 @@
 const PROFILE_IMPORT_PROXY_TIMEOUT_MS = 15_000;
 const PROFILE_IMPORT_START_BODY_LIMIT = 8 * 1024;
 const CHARACTER_HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9._-]{8,64}$/;
+
+export const JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{20,80}$/;
+export const NO_STORE_HEADERS: Record<string, string> = { "cache-control": "no-store" };
 
 const PROFILE_IMPORT_API_URL = (
   process.env.PROFILE_IMPORT_API_URL
@@ -14,18 +18,42 @@ export type ProfileImportProxyResult = {
   payload: unknown;
   status: number;
   headers?: Headers;
+  requestId?: string;
 };
 
 export type ProfileImportBodyResult =
   | { ok: true; body: string; originHeaders: HeadersInit }
   | { ok: false; payload: unknown; status: number };
 
+export type LimitedJsonBodyOptions = {
+  maxBytes: number;
+  allowArray?: boolean;
+  emptyMessage?: string;
+  tooLargeCode?: string;
+  tooLargeMessage?: string;
+  invalidJsonCode?: string;
+  invalidJsonMessage?: string;
+  invalidTypeCode?: string;
+  invalidTypeMessage?: string;
+};
+
+export type LimitedJsonBodyResult<T = JsonRecord> =
+  | { ok: true; data: T; rawText: string }
+  | { ok: false; status: number; payload: unknown };
+
 function isRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function jsonError(code: string, message: string) {
+export function jsonError(code: string, message: string) {
   return { error: { code, message } };
+}
+
+export function utf8ByteLength(value: string): number {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.byteLength(value, "utf8");
+  }
+  return new TextEncoder().encode(value).length;
 }
 
 export function extractForwardedClientIp(request: Request): string {
@@ -37,6 +65,37 @@ export function extractForwardedClientIp(request: Request): string {
   );
 }
 
+export function extractClientCountry(request: Request): string {
+  return (
+    request.headers.get("x-vercel-ip-country")
+    || request.headers.get("cf-ipcountry")
+    || ""
+  ).trim();
+}
+
+export function getOrCreateRequestId(request?: Request): string {
+  const incoming = request?.headers.get("x-request-id")?.trim() || "";
+  if (REQUEST_ID_PATTERN.test(incoming)) {
+    return incoming;
+  }
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function isHttpsRequest(request: Request): boolean {
+  const forwardedProto = (request.headers.get("x-forwarded-proto") || "").split(",")[0].trim().toLowerCase();
+  if (forwardedProto) {
+    return forwardedProto === "https";
+  }
+  try {
+    return new URL(request.url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function getProxyAuthSecret(): string {
   return (
     process.env.PROFILE_IMPORT_PROXY_SECRET
@@ -45,67 +104,114 @@ export function getProxyAuthSecret(): string {
   ).trim();
 }
 
-function forwardedOriginHeaders(request: Request): HeadersInit {
+export function buildProxyForwardHeaders(
+  request: Request,
+  options: {
+    authSecret?: string;
+    contentType?: string;
+    includeCountry?: boolean;
+    includeUserAgent?: boolean;
+    requestId?: string;
+    extraHeaders?: Record<string, string>;
+  } = {},
+): Record<string, string> {
   const origin = request.headers.get("origin");
   const clientIp = extractForwardedClientIp(request);
   const cfConnectingIp = request.headers.get("cf-connecting-ip");
-  const proxySecret = getProxyAuthSecret();
+  const userAgent = options.includeUserAgent === false ? null : request.headers.get("user-agent");
+  const country = options.includeCountry === false ? "" : extractClientCountry(request);
+  const authSecret = options.authSecret?.trim() || "";
+
   return {
+    ...(options.contentType ? { "content-type": options.contentType } : {}),
     ...(origin ? { origin } : {}),
     ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
     ...(cfConnectingIp ? { "cf-connecting-ip": cfConnectingIp } : {}),
-    ...(proxySecret ? { authorization: `Bearer ${proxySecret}` } : {}),
+    ...(userAgent ? { "user-agent": userAgent } : {}),
+    ...(country ? { "cf-ipcountry": country } : {}),
+    ...(authSecret ? { authorization: `Bearer ${authSecret}` } : {}),
+    ...(options.requestId ? { "x-request-id": options.requestId } : {}),
+    ...options.extraHeaders,
   };
 }
 
+export function forwardedOriginHeaders(request: Request): HeadersInit {
+  return buildProxyForwardHeaders(request, {
+    authSecret: getProxyAuthSecret(),
+  });
+}
+
+export async function readLimitedJsonBody<T = JsonRecord>(
+  request: Request,
+  options: LimitedJsonBodyOptions,
+): Promise<LimitedJsonBodyResult<T>> {
+  const {
+    maxBytes,
+    allowArray = false,
+    emptyMessage = "Request body cannot be empty.",
+    tooLargeCode = "request_too_large",
+    tooLargeMessage = "Request payload is too large.",
+    invalidJsonCode = "invalid_json",
+    invalidJsonMessage = "Request body must be valid JSON.",
+    invalidTypeCode = "invalid_request",
+    invalidTypeMessage = "Request payload has an unsupported shape.",
+  } = options;
+
+  const contentLengthHeader = request.headers.get("content-length");
+  if (contentLengthHeader !== null) {
+    const contentLength = Number(contentLengthHeader);
+    if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+      return { ok: false, status: 413, payload: jsonError(tooLargeCode, tooLargeMessage) };
+    }
+  }
+
+  let rawText = "";
+  try {
+    rawText = await request.text();
+  } catch {
+    return { ok: false, status: 400, payload: jsonError(invalidTypeCode, "Request body could not be read.") };
+  }
+
+  if (!rawText) {
+    return { ok: false, status: 400, payload: jsonError(invalidTypeCode, emptyMessage) };
+  }
+
+  if (utf8ByteLength(rawText) > maxBytes) {
+    return { ok: false, status: 413, payload: jsonError(tooLargeCode, tooLargeMessage) };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawText);
+  } catch {
+    return { ok: false, status: 400, payload: jsonError(invalidJsonCode, invalidJsonMessage) };
+  }
+
+  const validShape = allowArray
+    ? (isRecord(parsed) || Array.isArray(parsed))
+    : isRecord(parsed);
+
+  if (!validShape) {
+    return { ok: false, status: 400, payload: jsonError(invalidTypeCode, invalidTypeMessage) };
+  }
+
+  return { ok: true, data: parsed as T, rawText };
+}
+
 export async function readProfileImportStartBody(request: Request): Promise<ProfileImportBodyResult> {
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (Number.isFinite(contentLength) && contentLength > PROFILE_IMPORT_START_BODY_LIMIT) {
-    return {
-      ok: false,
-      status: 413,
-      payload: jsonError("request_too_large", "Profile import request is too large."),
-    };
+  const parsed = await readLimitedJsonBody(request, {
+    maxBytes: PROFILE_IMPORT_START_BODY_LIMIT,
+    tooLargeMessage: "Profile import request is too large.",
+    emptyMessage: "Profile import request must be valid JSON.",
+    invalidJsonMessage: "Profile import request must be valid JSON.",
+    invalidTypeMessage: "Profile import request must be an object.",
+  });
+
+  if (!parsed.ok) {
+    return { ok: false, status: parsed.status, payload: parsed.payload };
   }
 
-  let text = "";
-  try {
-    text = await request.text();
-  } catch {
-    return {
-      ok: false,
-      status: 400,
-      payload: jsonError("invalid_request", "Profile import request could not be read."),
-    };
-  }
-
-  if (text.length > PROFILE_IMPORT_START_BODY_LIMIT) {
-    return {
-      ok: false,
-      status: 413,
-      payload: jsonError("request_too_large", "Profile import request is too large."),
-    };
-  }
-
-  let payload: unknown;
-  try {
-    payload = JSON.parse(text);
-  } catch {
-    return {
-      ok: false,
-      status: 400,
-      payload: jsonError("invalid_json", "Profile import request must be valid JSON."),
-    };
-  }
-
-  if (!isRecord(payload)) {
-    return {
-      ok: false,
-      status: 400,
-      payload: jsonError("invalid_request", "Profile import request must be an object."),
-    };
-  }
-
+  const payload = parsed.data;
   const characterHash = typeof payload.characterHash === "string" ? payload.characterHash.trim() : "";
   if (!CHARACTER_HASH_PATTERN.test(characterHash)) {
     return {
@@ -132,27 +238,65 @@ export async function readProfileImportStartBody(request: Request): Promise<Prof
   };
 }
 
+function toPlainHeaders(headers?: HeadersInit): Record<string, string> {
+  const plain: Record<string, string> = {};
+  if (!headers) return plain;
+  if (headers instanceof Headers) {
+    headers.forEach((value, key) => {
+      plain[key] = value;
+    });
+    return plain;
+  }
+  if (Array.isArray(headers)) {
+    for (const [key, value] of headers) {
+      plain[key] = value;
+    }
+    return plain;
+  }
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value === "string") {
+      plain[key] = value;
+    }
+  }
+  return plain;
+}
+
 export async function fetchProfileImportJson(
   path: string,
   init: RequestInit,
   unreadableMessage: string,
 ): Promise<ProfileImportProxyResult> {
-  const { cache = "no-store", ...restInit } = init;
+  const { cache = "no-store", headers, ...restInit } = init;
+  const plainHeaders = toPlainHeaders(headers);
+  const existingRequestIdKey = Object.keys(plainHeaders).find((k) => k.toLowerCase() === "x-request-id");
+  const requestId = (existingRequestIdKey ? plainHeaders[existingRequestIdKey] : "") || getOrCreateRequestId();
+  if (!existingRequestIdKey) {
+    plainHeaders["x-request-id"] = requestId;
+  }
+
   try {
     const response = await fetch(`${PROFILE_IMPORT_API_URL}${path}`, {
       cache,
       ...restInit,
+      headers: plainHeaders,
       signal: AbortSignal.timeout(PROFILE_IMPORT_PROXY_TIMEOUT_MS),
     });
     const payload = await response.json().catch(() => (
       jsonError("bad_gateway", unreadableMessage)
     ));
 
-    return { payload, status: response.status, headers: response.headers };
-  } catch {
+    return { payload, status: response.status, headers: response.headers, requestId };
+  } catch (error) {
+    const isTimeout = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
     return {
-      status: 502,
-      payload: jsonError("bad_gateway", "Profile import service is temporarily unavailable. Try again later."),
+      status: isTimeout ? 504 : 502,
+      payload: jsonError(
+        isTimeout ? "gateway_timeout" : "bad_gateway",
+        isTimeout
+          ? "Upstream service timed out. Try again shortly."
+          : "Profile import service is temporarily unavailable. Try again later.",
+      ),
+      requestId,
     };
   }
 }

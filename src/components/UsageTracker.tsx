@@ -64,7 +64,8 @@ function getCookie(name: string): string | null {
 
 function setCookie(name: string, value: string, maxAge = 31536000): void {
   try {
-    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Max-Age=${maxAge}`;
+    const secureFlag = typeof window !== "undefined" && window.location?.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Max-Age=${maxAge}${secureFlag}`;
   } catch {}
 }
 

@@ -1,19 +1,91 @@
-const JSON_HEADERS = {
-  "content-type": "application/json; charset=utf-8",
-  "cache-control": "no-store",
+import {
+  JSON_HEADERS,
+  DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE,
+  json,
+  buildCorsHeaders,
+  isAllowedOrigin,
+  timingSafeEqualString,
+  hasBearerSecret,
+  verifyTurnstile,
+  isValidIp,
+  requesterKey,
+  isTrustedProxyRequest,
+  resetTelemetryRateLimits,
+  cleanupTelemetryRateLimits,
+  checkInMemoryRateLimit,
+  errorReportSecret,
+  checkUsagePingRateLimit,
+  checkUsageVitalsRateLimit,
+  checkErrorReportRateLimit,
+  checkImportStatusRateLimit,
+  fingerprint,
+  encryptText,
+  decryptText,
+  cryptoRandomId,
+} from "./security.mjs";
+
+import {
+  readJson,
+  readJsonBody,
+  normalizeUsagePath,
+  normalizeReferrerHost,
+  normalizeDeviceType,
+  normalizeWebVitalMetricName,
+  normalizeWebVitalValue,
+  normalizeWebVitalRating,
+  normalizeNavigationType,
+  normalizeErrorSource,
+  normalizeErrorEventType,
+  normalizeErrorDigest,
+  normalizeBrowserClass,
+  userAgentFamilyFrom,
+  cleanString,
+  cleanIso,
+  isExpiredIso,
+  safeParseJson,
+  readPositiveInt,
+  readNonNegativeInt,
+  roundMetric,
+  roundWebVitalMetric,
+  percentile75,
+  percentage,
+  secondsSince,
+  secondsBetween,
+  isPlainObject,
+  cleanNumber,
+  cleanUrl,
+  cleanDate,
+  parseMuseumEndpointPage,
+  normalizeIdleMmoProfileImport,
+} from "./normalize.mjs";
+
+export {
+  DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE,
+  timingSafeEqualString,
+  hasBearerSecret,
+  verifyTurnstile,
+  isExpiredIso,
+  isValidIp,
+  requesterKey,
+  isTrustedProxyRequest,
+  resetTelemetryRateLimits,
+  cleanupTelemetryRateLimits,
+  checkInMemoryRateLimit,
+  checkUsagePingRateLimit,
+  checkUsageVitalsRateLimit,
+  checkErrorReportRateLimit,
+  checkImportStatusRateLimit,
+  fingerprint,
 };
 
 const HASH_PATTERN = /^[A-Za-z0-9_-]{8,100}$/;
 const JOB_ID_PATTERN = /^imp_[A-Za-z0-9_-]{20,80}$/;
 const COORDINATOR_TTL_SECONDS = 90 * 60;
 const JOB_TTL_MS = 60 * 60 * 1000;
+const SCHEDULED_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 const DEFAULT_POLL_MS = 2000;
 const DEFAULT_BASELINE_REQUEST_CAP = 45;
 const DEFAULT_MUSEUM_MAX_PAGES_PER_CHARACTER = 8;
-const DEFAULT_USAGE_PING_MAX_PER_MINUTE = 120;
-const DEFAULT_USAGE_VITALS_MAX_PER_MINUTE = 80;
-const DEFAULT_ERROR_REPORT_MAX_PER_MINUTE = 30;
-export const DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE = 120;
 export const TERMINAL_STATUS_CACHE_CONTROL = "public, max-age=15, s-maxage=30, stale-while-revalidate=60";
 export const NOT_FOUND_STATUS_CACHE_CONTROL = "public, max-age=5, s-maxage=10";
 const RATE_LIMIT_COUNTER_RETENTION_MS = 2 * 60 * 60 * 1000;
@@ -48,14 +120,14 @@ const ADMIN_TIMEFRAMES = [
 ];
 const BASE_URL = "https://api.idle-mmo.com/v1";
 const USER_AGENT = "Zenith-Companion/1.0 profile-import";
-const MUSEUM_CATEGORIES = new Set([
-  "SKINS",
-  "BACKGROUNDS",
-  "GUILD_ICONS",
-  "PETS",
-  "COLLECTIBLES",
-  "BESTIARY",
-]);
+
+function errorMessageForPath(pathname) {
+  if (pathname.startsWith("/usage/")) return "Telemetry service is temporarily unavailable.";
+  if (pathname === "/error/report") return "Error reporting is temporarily unavailable.";
+  if (pathname.startsWith("/admin/")) return "Admin telemetry is temporarily unavailable.";
+  if (pathname.startsWith("/internal/")) return "Internal worker endpoint is temporarily unavailable.";
+  return "Profile imports are temporarily unavailable.";
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -125,7 +197,7 @@ export async function handleRequest(request, env, ctx = {}) {
     return json({
       error: {
         code: "internal_error",
-        message: "Profile imports are temporarily unavailable.",
+        message: errorMessageForPath(url.pathname),
       },
     }, 500, cors);
   }
@@ -544,7 +616,11 @@ async function handleUsagePing(request, env, cors) {
     );
   }
 
-  const payload = await readJson(request);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return json({ error: { code: "bad_request", message: "Invalid usage ping." } }, 400, cors);
+  }
+  const payload = parsedBody.value;
   const visitorId = cleanString(payload.visitorId, 128);
   const sessionId = cleanString(payload.sessionId, 128);
   const path = normalizeUsagePath(payload.path);
@@ -554,8 +630,10 @@ async function handleUsagePing(request, env, cors) {
 
   const eventType = ["pageview", "heartbeat"].includes(payload.eventType) ? payload.eventType : "pageview";
   const now = new Date().toISOString();
-  const visitorFingerprint = await fingerprint(visitorId, env.IMPORT_SIGNING_SECRET);
-  const sessionFingerprint = await fingerprint(`${visitorId}:${sessionId}`, env.IMPORT_SIGNING_SECRET);
+  const [visitorFingerprint, sessionFingerprint] = await Promise.all([
+    fingerprint(visitorId, env.IMPORT_SIGNING_SECRET),
+    fingerprint(`${visitorId}:${sessionId}`, env.IMPORT_SIGNING_SECRET),
+  ]);
 
   let playerFingerprint = null;
   const characterDigest = cleanString(payload.characterDigest, 128);
@@ -565,7 +643,7 @@ async function handleUsagePing(request, env, cors) {
 
   const effectiveVisitorFingerprint = playerFingerprint || visitorFingerprint;
 
-  await env.DB.prepare(`
+  const insertEvent = env.DB.prepare(`
     INSERT INTO usage_events (
       id, visitor_fingerprint, session_fingerprint, event_type, path,
       referrer_host, device_type, timezone, country, user_agent_family, created_at
@@ -584,7 +662,7 @@ async function handleUsagePing(request, env, cors) {
     now,
   ).run();
 
-  await env.DB.prepare(`
+  const upsertVisitor = env.DB.prepare(`
     INSERT INTO usage_visitors (
       visitor_fingerprint, first_seen_at, last_seen_at, total_events, total_pageviews, device_type, country
     ) VALUES (?, ?, ?, 1, ?, ?, ?)
@@ -612,6 +690,8 @@ async function handleUsagePing(request, env, cors) {
     cleanString(request.headers.get("cf-ipcountry"), 8),
   ).run().catch(() => null);
 
+  await Promise.all([insertEvent, upsertVisitor]);
+
   return json({ ok: true }, 202, cors);
 }
 
@@ -634,7 +714,11 @@ async function handleUsageVitals(request, env, cors) {
     );
   }
 
-  const payload = await readJson(request);
+  const parsedBody = await readJsonBody(request, { allowArray: true });
+  if (!parsedBody.ok) {
+    return json({ error: { code: "bad_request", message: "Invalid usage vitals event." } }, 400, cors);
+  }
+  const payload = parsedBody.value;
   const isArray = Array.isArray(payload);
   const items = isArray ? payload : (isPlainObject(payload) ? [payload] : []);
   if (!items.length || items.length > 50) {
@@ -712,7 +796,11 @@ async function handleErrorReport(request, env, cors) {
     );
   }
 
-  const payload = await readJson(request);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return json({ error: { code: "bad_request", message: "Invalid error report." } }, 400, cors);
+  }
+  const payload = parsedBody.value;
   const path = normalizeUsagePath(payload.path);
   if (!path) {
     return json({ error: { code: "bad_request", message: "Invalid error report." } }, 400, cors);
@@ -1501,7 +1589,11 @@ async function handleScraperStatus(request, env, cors) {
     return json({ error: { code: "unauthorized", message: "Unauthorized." } }, 401, cors);
   }
 
-  const payload = await readJson(request);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return json({ error: { code: "bad_request", message: "Invalid scraper status payload." } }, 400, cors);
+  }
+  const payload = parsedBody.value;
   const status = cleanString(payload.status, 24);
   const source = cleanString(payload.source, 80);
   const runId = cleanString(payload.runId, 80);
@@ -1572,7 +1664,11 @@ async function handleStartImport(request, env, cors, ctx = {}) {
   assertBindings(env);
   assertImportSecrets(env);
 
-  const payload = await readJson(request);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return json({ error: { code: "bad_request", message: "Profile import request must be valid JSON." } }, 400, cors);
+  }
+  const payload = parsedBody.value;
   const characterHash = cleanString(payload.characterHash, 100);
   if (!HASH_PATTERN.test(characterHash)) {
     return json({ error: { code: "invalid_hash", message: "Paste only the character hashed ID." } }, 400, cors);
@@ -1981,7 +2077,12 @@ function delayMsForRequestsPerMinute(requestsPerMinute) {
 }
 
 async function runScheduledWork(env) {
-  await cleanExpiredRows(env);
+  const nowMs = Date.now();
+  const lastCleanupAt = Number(env.__lastScheduledCleanupAt || 0);
+  if (!lastCleanupAt || nowMs - lastCleanupAt >= SCHEDULED_CLEANUP_INTERVAL_MS) {
+    env.__lastScheduledCleanupAt = nowMs;
+    await cleanExpiredRows(env);
+  }
   await processNextImportJob(env);
 }
 
@@ -2891,552 +2992,8 @@ function assertImportSecrets(env) {
   }
 }
 
-function buildCorsHeaders(request, env) {
-  const headers = { ...JSON_HEADERS };
-  const origin = request.headers.get("origin");
-  if (origin && isAllowedOrigin(request, env)) {
-    headers["access-control-allow-origin"] = origin;
-    headers["vary"] = "Origin";
-    headers["access-control-allow-methods"] = "GET,POST,OPTIONS";
-    headers["access-control-allow-headers"] = "content-type,authorization";
-    headers["access-control-max-age"] = "86400";
-  }
-  return headers;
-}
-
-function isAllowedOrigin(request, env) {
-  const origin = request.headers.get("origin");
-  if (!origin) return String(env.ALLOW_ORIGINLESS_IMPORTS || "").trim() === "1";
-  const allowed = String(env.ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  return allowed.includes(origin);
-}
-
-export async function timingSafeEqualString(a, b) {
-  if (typeof a !== "string" || typeof b !== "string") {
-    return false;
-  }
-  const encoder = new TextEncoder();
-  const subtle = globalThis.crypto?.subtle || crypto?.subtle;
-  const [digestA, digestB] = await Promise.all([
-    subtle.digest("SHA-256", encoder.encode(a)),
-    subtle.digest("SHA-256", encoder.encode(b)),
-  ]);
-  const bufA = new Uint8Array(digestA);
-  const bufB = new Uint8Array(digestB);
-  let mismatch = bufA.length ^ bufB.length;
-  for (let i = 0; i < bufA.length; i++) {
-    mismatch |= bufA[i] ^ bufB[i];
-  }
-  return mismatch === 0;
-}
-
-export async function hasBearerSecret(request, secret) {
-  const auth = (request?.headers?.get ? request.headers.get("authorization") : request?.headers?.authorization) || "";
-  const expected = typeof secret === "string" ? secret.trim() : "";
-  if (!expected || !auth || !auth.startsWith("Bearer ")) return false;
-  return await timingSafeEqualString(auth.slice(7).trim(), expected);
-}
-
-export async function verifyTurnstile(env, token, request = null) {
-  if (!token || typeof token !== "string") return { ok: false };
-  const body = new FormData();
-  body.set("secret", env.TURNSTILE_SECRET_KEY);
-  body.set("response", token);
-
-  const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    body,
-  });
-  const result = await response.json().catch(() => ({}));
-  return { ok: Boolean(result.success) };
-}
-
-async function readJson(request) {
-  const contentType = request.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) return {};
-  return request.json();
-}
-
-function normalizeUsagePath(value) {
-  const text = cleanString(value, 160);
-  if (!text.startsWith("/")) return "";
-  return text.split(/[?#]/)[0].slice(0, 120) || "/";
-}
-
-function normalizeReferrerHost(value) {
-  const text = cleanString(value, 260);
-  if (!text) return "";
-  try {
-    const parsed = new URL(text);
-    return cleanString(parsed.hostname.replace(/^www\./, ""), 120);
-  } catch {
-    return "";
-  }
-}
-
-function normalizeDeviceType(value) {
-  const text = cleanString(value, 24).toLowerCase();
-  return ["mobile", "tablet", "desktop"].includes(text) ? text : "unknown";
-}
-
-function normalizeWebVitalMetricName(value) {
-  const text = cleanString(value, 12).toUpperCase();
-  return ["CLS", "FCP", "INP", "LCP", "TTFB"].includes(text) ? text : "";
-}
-
-function normalizeWebVitalValue(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number) || number < 0) return null;
-  return Math.round(Math.min(number, 120000) * 1000) / 1000;
-}
-
-function normalizeWebVitalRating(value) {
-  const text = cleanString(value, 32).toLowerCase();
-  return ["good", "needs-improvement", "poor"].includes(text) ? text : "unknown";
-}
-
-function normalizeNavigationType(value) {
-  const text = cleanString(value, 32).toLowerCase();
-  return ["navigate", "reload", "back-forward", "restore", "prerender"].includes(text) ? text : "unknown";
-}
-
-function normalizeErrorSource(value) {
-  const text = cleanString(value, 24).toLowerCase();
-  return ["client", "server"].includes(text) ? text : "client";
-}
-
-function normalizeErrorEventType(value) {
-  const text = cleanString(value, 32).toLowerCase();
-  return ["route_error", "app_shell_error", "server_request_error"].includes(text) ? text : "route_error";
-}
-
-function normalizeErrorDigest(value) {
-  return cleanString(value, 128).replace(/[^A-Za-z0-9_./:-]/g, "");
-}
-
-function normalizeBrowserClass(value) {
-  const text = cleanString(value, 24).toLowerCase();
-  return ["chrome", "edge", "firefox", "safari", "bot", "other", "unknown"].includes(text) ? text : "unknown";
-}
-
-function userAgentFamilyFrom(userAgent) {
-  const ua = String(userAgent || "").toLowerCase();
-  if (ua.includes("edg/")) return "edge";
-  if (ua.includes("chrome/") || ua.includes("crios/")) return "chrome";
-  if (ua.includes("firefox/") || ua.includes("fxios/")) return "firefox";
-  if (ua.includes("safari/")) return "safari";
-  return ua ? "other" : "unknown";
-}
-
-function json(payload, status = 200, headers = JSON_HEADERS) {
-  return new Response(JSON.stringify(payload), { status, headers });
-}
-
-function cleanString(value, max) {
-  return typeof value === "string" ? value.trim().slice(0, max) : "";
-}
-
-function cleanIso(value) {
-  const text = cleanString(value, 80);
-  return text && Number.isFinite(new Date(text).getTime()) ? text : "";
-}
-
-export function isExpiredIso(value) {
-  const time = new Date(value).getTime();
-  return !value || !Number.isFinite(time) || time <= Date.now();
-}
-
-function safeParseJson(value) {
-  if (!value || typeof value !== "string") return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
-
-function readPositiveInt(value, fallback) {
-  const next = Number(value);
-  return Number.isFinite(next) && next > 0 ? Math.floor(next) : fallback;
-}
-
-function readNonNegativeInt(value, fallback) {
-  const next = Number(value);
-  return Number.isFinite(next) && next >= 0 ? Math.floor(next) : fallback;
-}
-
-function roundMetric(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? Math.round(number * 10) / 10 : 0;
-}
-
-function roundWebVitalMetric(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? Math.round(number * 1000) / 1000 : 0;
-}
-
-function percentile75(values) {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.max(0, Math.ceil(sorted.length * 0.75) - 1);
-  return roundWebVitalMetric(sorted[Math.min(index, sorted.length - 1)]);
-}
-
-function percentage(part, total) {
-  const denominator = Number(total);
-  if (!Number.isFinite(denominator) || denominator <= 0) return 0;
-  return roundMetric((Number(part || 0) / denominator) * 100);
-}
-
-function secondsSince(value, now) {
-  if (!value) return 0;
-  const started = new Date(value).getTime();
-  if (!Number.isFinite(started)) return 0;
-  return Math.max(0, Math.round((now.getTime() - started) / 1000));
-}
-
-function secondsBetween(startValue, endValue) {
-  if (!startValue) return 0;
-  const started = new Date(startValue).getTime();
-  const ended = endValue instanceof Date ? endValue.getTime() : new Date(endValue).getTime();
-  if (!Number.isFinite(started) || !Number.isFinite(ended)) return 0;
-  return Math.max(0, Math.round((ended - started) / 1000));
-}
-
 function coordinatorKey(source) {
   return `idlemmo-api-job:${source}`;
-}
-
-const IPV4_PATTERN = /^(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/;
-const IPV6_PATTERN = /^((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/;
-
-export function isValidIp(ip) {
-  if (!ip || typeof ip !== "string") return false;
-  const trimmed = ip.trim();
-  if (IPV4_PATTERN.test(trimmed)) return true;
-  return IPV6_PATTERN.test(trimmed);
-}
-
-export function requesterKey(request, isTrustedProxy = false) {
-  if (!request) return "unknown-requester";
-  const getHeader = (name) => {
-    if (typeof request.headers?.get === "function") {
-      return request.headers.get(name);
-    }
-    return request.headers?.[name] || null;
-  };
-
-  if (isTrustedProxy) {
-    const rawXff = getHeader("x-forwarded-for");
-    if (rawXff) {
-      const firstIp = rawXff.split(",")[0].trim().replace(/^\[|\]$/g, "");
-      if (isValidIp(firstIp)) {
-        return firstIp;
-      }
-    }
-  }
-
-  const cfIp = getHeader("cf-connecting-ip");
-  if (cfIp) {
-    const trimmed = cfIp.trim().replace(/^\[|\]$/g, "");
-    if (isValidIp(trimmed)) {
-      return trimmed;
-    }
-  }
-
-  return "unknown-requester";
-}
-
-export async function isTrustedProxyRequest(request, env) {
-  if (!request || !env) return false;
-  const auth = (request?.headers?.get ? request.headers.get("authorization") : request?.headers?.authorization) || "";
-  if (!auth || !auth.startsWith("Bearer ")) return false;
-  const token = auth.slice(7).trim();
-  if (!token) return false;
-
-  const candidates = [
-    env.USAGE_PING_SECRET,
-    env.ERROR_REPORT_SECRET,
-    env.ADMIN_DASHBOARD_SECRET,
-    env.SCRAPER_COORDINATOR_SECRET,
-    env.PROFILE_IMPORT_PROXY_SECRET,
-  ].filter((s) => typeof s === "string" && s.trim());
-
-  for (const secret of candidates) {
-    if (await timingSafeEqualString(token, secret.trim())) {
-      return true;
-    }
-  }
-  return false;
-}
-
-const TELEMETRY_RATE_LIMITS = new Map();
-const TELEMETRY_WINDOW_MS = 60 * 1000;
-const MAX_TELEMETRY_STORE_ENTRIES = 2000;
-let lastTelemetryCleanupAt = 0;
-
-export function resetTelemetryRateLimits(store = TELEMETRY_RATE_LIMITS) {
-  store.clear();
-  lastTelemetryCleanupAt = 0;
-}
-
-export function cleanupTelemetryRateLimits(store = TELEMETRY_RATE_LIMITS, now = Date.now()) {
-  for (const [key, entry] of store.entries()) {
-    if (entry.resetAt <= now) {
-      store.delete(key);
-    }
-  }
-  if (store.size > MAX_TELEMETRY_STORE_ENTRIES) {
-    for (const key of store.keys()) {
-      store.delete(key);
-      if (store.size <= MAX_TELEMETRY_STORE_ENTRIES) break;
-    }
-  }
-  lastTelemetryCleanupAt = now;
-}
-
-export function checkInMemoryRateLimit(key, maxPerMinute, store = TELEMETRY_RATE_LIMITS, now = Date.now()) {
-  if (!maxPerMinute || maxPerMinute <= 0) return { ok: true };
-
-  let entry = store.get(key);
-  if (entry && entry.resetAt <= now) {
-    store.delete(key);
-    entry = undefined;
-  }
-
-  if (!entry) {
-    store.set(key, { count: 1, resetAt: now + TELEMETRY_WINDOW_MS });
-    if (store.size > 500 && now - lastTelemetryCleanupAt > 5000) {
-      cleanupTelemetryRateLimits(store, now);
-    }
-    return { ok: true };
-  }
-
-  if (entry.count >= maxPerMinute) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
-    return { ok: false, retryAfterSeconds };
-  }
-
-  entry.count += 1;
-  return { ok: true };
-}
-
-function errorReportSecret(env) {
-  const dedicated = typeof env?.ERROR_REPORT_SECRET === "string" ? env.ERROR_REPORT_SECRET.trim() : "";
-  const fallback = typeof env?.USAGE_PING_SECRET === "string" ? env.USAGE_PING_SECRET.trim() : "";
-  return dedicated || fallback;
-}
-
-export async function checkUsagePingRateLimit(request, env, isTrusted = undefined) {
-  const maxPerMinute = readPositiveInt(env?.USAGE_PING_MAX_PER_MINUTE, DEFAULT_USAGE_PING_MAX_PER_MINUTE);
-  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
-  const requester = requesterKey(request, trusted);
-  const requesterFingerprint = await fingerprint(`usage:${requester}`, env?.IMPORT_SIGNING_SECRET || "usage-secret");
-  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
-  return checkInMemoryRateLimit(`usage-ping:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
-}
-
-export async function checkUsageVitalsRateLimit(request, env, isTrusted = undefined) {
-  const maxPerMinute = readPositiveInt(env?.USAGE_VITALS_MAX_PER_MINUTE, DEFAULT_USAGE_VITALS_MAX_PER_MINUTE);
-  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
-  const requester = requesterKey(request, trusted);
-  const requesterFingerprint = await fingerprint(`vitals:${requester}`, env?.IMPORT_SIGNING_SECRET || "vitals-secret");
-  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
-  return checkInMemoryRateLimit(`usage-vitals:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
-}
-
-export async function checkErrorReportRateLimit(request, env, isTrusted = undefined) {
-  const maxPerMinute = readPositiveInt(env?.ERROR_REPORT_MAX_PER_MINUTE, DEFAULT_ERROR_REPORT_MAX_PER_MINUTE);
-  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
-  const requester = requesterKey(request, trusted);
-  const requesterFingerprint = await fingerprint(`error:${requester}`, env?.IMPORT_SIGNING_SECRET || "error-secret");
-  const store = env?.__telemetryRateLimits || TELEMETRY_RATE_LIMITS;
-  return checkInMemoryRateLimit(`error-report:${requesterFingerprint.slice(0, 32)}`, maxPerMinute, store);
-}
-
-export async function checkImportStatusRateLimit(request, env, isTrusted = undefined) {
-  if (!request) return { ok: true };
-  const maxPerMinute = readPositiveInt(env?.IMPORT_STATUS_MAX_PER_MINUTE, DEFAULT_IMPORT_STATUS_MAX_PER_MINUTE);
-  const trusted = isTrusted !== undefined ? Boolean(isTrusted) : await isTrustedProxyRequest(request, env);
-  const requester = requesterKey(request, trusted);
-  const requesterFingerprint = await fingerprint(`status:${requester}`, env?.IMPORT_SIGNING_SECRET || "status-secret");
-  return await checkD1MinuteRateLimit(env, `import-status:${requesterFingerprint.slice(0, 32)}`, maxPerMinute);
-}
-
-async function checkD1MinuteRateLimit(env, source, maxPerMinute) {
-  if (!maxPerMinute || !env.DB) return { ok: true };
-
-  const now = Date.now();
-  const minuteKey = String(Math.floor(now / 60000));
-  const updatedAt = new Date(now).toISOString();
-  try {
-    const row = await env.DB.prepare(`
-      INSERT INTO minute_budgets (minute_key, source, used_requests, mode, updated_at)
-      VALUES (?, ?, 1, 'rate_limit', ?)
-      ON CONFLICT(minute_key, source) DO UPDATE SET
-        used_requests = minute_budgets.used_requests + 1,
-        mode = excluded.mode,
-        updated_at = excluded.updated_at
-      WHERE minute_budgets.used_requests < ?
-      RETURNING used_requests
-    `).bind(minuteKey, cleanString(source, 96), updatedAt, maxPerMinute).first();
-
-    if (!row) {
-      return { ok: false, retryAfterSeconds: Math.max(1, 60 - Math.floor((now % 60000) / 1000)) };
-    }
-  } catch {
-    return { ok: true };
-  }
-
-  return { ok: true };
-}
-
-const SHA256_K = [
-  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-];
-
-function rotr(n, b) {
-  return (n >>> b) | (n << (32 - b));
-}
-
-function sha256Hex(ascii) {
-  const bytes = new TextEncoder().encode(ascii);
-  const bitLen = bytes.length * 8;
-  const numBlocks = Math.ceil((bytes.length + 9) / 64);
-  const totalBytes = numBlocks * 64;
-  const padded = new Uint8Array(totalBytes);
-  padded.set(bytes);
-  padded[bytes.length] = 0x80;
-  const view = new DataView(padded.buffer);
-  view.setBigUint64(totalBytes - 8, BigInt(bitLen), false);
-
-  let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
-  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
-
-  const w = new Uint32Array(64);
-
-  for (let i = 0; i < totalBytes; i += 64) {
-    for (let j = 0; j < 16; j++) {
-      w[j] = view.getUint32(i + j * 4, false);
-    }
-    for (let j = 16; j < 64; j++) {
-      const s0 = rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3);
-      const s1 = rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10);
-      w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
-    }
-
-    let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
-
-    for (let j = 0; j < 64; j++) {
-      const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
-      const ch = (e & f) ^ ((~e) & g);
-      const temp1 = (h + s1 + ch + SHA256_K[j] + w[j]) | 0;
-      const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-      const maj = (a & b) ^ (a & c) ^ (b & c);
-      const temp2 = (s0 + maj) | 0;
-
-      h = g;
-      g = f;
-      f = e;
-      e = (d + temp1) | 0;
-      d = c;
-      c = b;
-      b = a;
-      a = (temp1 + temp2) | 0;
-    }
-
-    h0 = (h0 + a) | 0;
-    h1 = (h1 + b) | 0;
-    h2 = (h2 + c) | 0;
-    h3 = (h3 + d) | 0;
-    h4 = (h4 + e) | 0;
-    h5 = (h5 + f) | 0;
-    h6 = (h6 + g) | 0;
-    h7 = (h7 + h) | 0;
-  }
-
-  const out = new DataView(new ArrayBuffer(32));
-  out.setUint32(0, h0, false);
-  out.setUint32(4, h1, false);
-  out.setUint32(8, h2, false);
-  out.setUint32(12, h3, false);
-  out.setUint32(16, h4, false);
-  out.setUint32(20, h5, false);
-  out.setUint32(24, h6, false);
-  out.setUint32(28, h7, false);
-
-  let hex = "";
-  const u8 = new Uint8Array(out.buffer);
-  for (let i = 0; i < 32; i++) {
-    hex += u8[i].toString(16).padStart(2, "0");
-  }
-  return hex;
-}
-
-export async function fingerprint(value, secret) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
-  return base64Url(signature);
-}
-
-async function encryptText(value, secret) {
-  const keyMaterial = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
-  const key = await crypto.subtle.importKey("raw", keyMaterial, "AES-GCM", false, ["encrypt"]);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    new TextEncoder().encode(value),
-  );
-  return `${base64Url(iv)}.${base64Url(encrypted)}`;
-}
-
-async function decryptText(value, secret) {
-  const [ivText, encryptedText] = String(value || "").split(".");
-  if (!ivText || !encryptedText) throw Object.assign(new Error("Invalid encrypted hash."), { code: "invalid_job_payload" });
-  const keyMaterial = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
-  const key = await crypto.subtle.importKey("raw", keyMaterial, "AES-GCM", false, ["decrypt"]);
-  const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64UrlToBytes(ivText) },
-    key,
-    base64UrlToBytes(encryptedText),
-  );
-  return new TextDecoder().decode(decrypted);
-}
-
-function base64UrlToBytes(value) {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes;
-}
-
-function cryptoRandomId(bytes) {
-  return base64Url(crypto.getRandomValues(new Uint8Array(bytes)));
-}
-
-function base64Url(value) {
-  const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : value;
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function sleep(ms) {
@@ -3454,352 +3011,4 @@ function publicImportErrorMessage(code) {
 function extractVisibleAlts(payload) {
   const characters = isPlainObject(payload) && Array.isArray(payload.characters) ? payload.characters : [];
   return characters.filter(isPlainObject);
-}
-
-function isPlainObject(value) {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function cleanNumber(value) {
-  if (value === "") return "";
-  const next = Number(value);
-  return Number.isFinite(next) ? next : "";
-}
-
-function cleanUrl(value) {
-  const next = cleanString(value, 500);
-  return /^https?:\/\//i.test(next) ? next : "";
-}
-
-function cleanDate(value) {
-  const next = cleanString(value, 80);
-  return next && Number.isFinite(new Date(next).getTime()) ? next : undefined;
-}
-
-function normalizeMuseumCategory(value) {
-  const normalized = cleanString(value, 80)
-    .replace(/[-\s]+/g, "_")
-    .toUpperCase();
-  return MUSEUM_CATEGORIES.has(normalized) ? normalized : "";
-}
-
-function sanitizeMuseumItem(input) {
-  if (!isPlainObject(input)) return null;
-  const category = normalizeMuseumCategory(input.category || input.type || input.collection);
-  const id = input.id ?? input.item_id ?? input.itemId ?? input.key;
-  const name = cleanString(input.name || input.item_name || input.label, 120);
-  const quantity = Math.max(0, Math.floor(Number(input.quantity ?? input.count ?? 1)));
-  const imageUrl = cleanUrl(input.imageUrl || input.image_url || input.icon_url);
-  if (!category || !name || (typeof id !== "string" && typeof id !== "number")) return null;
-  return { category, id, name, quantity, imageUrl };
-}
-
-function parseMuseumEndpointPage(input) {
-  const record = isPlainObject(input) ? input : {};
-  const pagination = isPlainObject(record.pagination) ? record.pagination : {};
-  const rawItems = Array.isArray(record.items)
-    ? record.items
-    : Array.isArray(record.data)
-      ? record.data
-      : Array.isArray(record.museum)
-        ? record.museum
-        : [];
-  const currentPage = Math.max(1, Math.floor(Number(pagination.current_page || pagination.currentPage || record.current_page || 1)));
-  const lastPage = Math.max(1, Math.floor(Number(pagination.last_page || pagination.lastPage || record.last_page || currentPage)));
-  const perPage = Math.max(0, Math.floor(Number(pagination.per_page || pagination.perPage || record.per_page || rawItems.length)));
-  const total = Math.max(0, Math.floor(Number(pagination.total || record.total || rawItems.length)));
-  return {
-    items: rawItems.map(sanitizeMuseumItem).filter(Boolean),
-    currentPage,
-    lastPage,
-    perPage,
-    total,
-  };
-}
-
-const API_STAT_TO_PROFILE_STAT = {
-  agility: "agility",
-  accuracy: "accuracy",
-  protection: "protection",
-  attack_power: "attackPower",
-  movement_speed: "movementSpeed",
-  max_stamina: "maxStamina",
-  critical_damage: "criticalDamage",
-  critical_chance: "criticalChance",
-};
-
-const API_CLASS_TO_PROFILE_CLASS = {
-  WARRIOR: "Warrior",
-  SHADOWBLADE: "Shadowblade",
-  SHADOW_BLADE: "Shadowblade",
-  RANGER: "Ranger",
-  MINER: "Miner",
-  ANGLER: "Angler",
-  CHEF: "Chef",
-  LUMBERJACK: "Lumberjack",
-  SMELTER: "Smelter",
-  ALCHEMIST: "Alchemist",
-  BLACKSMITH: "Blacksmith",
-  BLACK_SMITH: "Blacksmith",
-  BUILDER: "Builder",
-  MONK: "Monk",
-  BEASTMASTER: "Beastmaster",
-  BEAST_MASTER: "Beastmaster",
-  BANISHED: "Banished",
-  FORSAKEN: "Forsaken",
-  CURSED: "Cursed",
-};
-
-const LEVEL_100_EXPERIENCE = 15_878_925;
-const ASCENSION_EXPERIENCE_STEP = 1_000_000;
-const ASCENSION_SKILL_KEYS = new Set([
-  "woodcutting",
-  "mining",
-  "fishing",
-  "alchemy",
-  "smelting",
-  "cooking",
-  "forge",
-  "construction",
-  "meditation",
-  "hunting-mastery",
-  "combat",
-  "dungeoneering",
-]);
-
-function mapApiPetStats(input) {
-  const stats = {
-    agility: "",
-    accuracy: "",
-    protection: "",
-    attackPower: "",
-    movementSpeed: "",
-    maxHealth: "",
-    maxStamina: "",
-    criticalDamage: "",
-    criticalChance: "",
-  };
-  if (!isPlainObject(input)) return stats;
-  for (const [apiKey, profileKey] of Object.entries(API_STAT_TO_PROFILE_STAT)) {
-    stats[profileKey] = cleanNumber(input[apiKey]);
-  }
-  return stats;
-}
-
-function mapApiSkillMap(input) {
-  if (!isPlainObject(input)) return {};
-  return Object.fromEntries(Object.entries(input)
-    .filter(([, value]) => isPlainObject(value))
-    .map(([key, value]) => [
-    key,
-    {
-      level: apiSkillLevel(input, key),
-      experience: cleanNumber(value.experience),
-    },
-  ]));
-}
-
-function normalizeApiClassName(value) {
-  const raw = cleanString(value, 40);
-  if (!raw) return "";
-  const lookupKey = raw.replace(/[\s-]+/g, "_").toUpperCase();
-  return API_CLASS_TO_PROFILE_CLASS[lookupKey] || raw;
-}
-
-function apiSkillLevel(skillMap, key) {
-  const record = skillMap[key];
-  if (!isPlainObject(record)) return "";
-  const baseLevel = cleanNumber(record.level);
-  if (typeof baseLevel !== "number") return baseLevel;
-  const ascensionLevel = apiAscensionLevel(record, key);
-  return baseLevel === 100 && ascensionLevel > 0
-    ? baseLevel + ascensionLevel
-    : baseLevel;
-}
-
-function apiAscensionLevel(record, skillKey) {
-  const direct = [
-    record.ascension_level,
-    record.ascensionLevel,
-    record.ascension,
-    record.ascended_level,
-    record.ascendedLevel,
-    record.level_of_ascension,
-    record.levelOfAscension,
-  ].map(cleanNumber).find((value) => typeof value === "number" && value > 0);
-  if (typeof direct === "number") return direct;
-
-  const ascension = record.ascension;
-  if (isPlainObject(ascension)) {
-    const nested = [
-      ascension.level,
-      ascension.current_level,
-      ascension.currentLevel,
-      ascension.value,
-    ].map(cleanNumber).find((value) => typeof value === "number" && value > 0);
-    if (typeof nested === "number") return nested;
-  }
-
-  if (!ASCENSION_SKILL_KEYS.has(skillKey)) return 0;
-  const experience = cleanNumber(record.experience);
-  return typeof experience === "number" && experience >= LEVEL_100_EXPERIENCE + ASCENSION_EXPERIENCE_STEP
-    ? Math.floor((experience - LEVEL_100_EXPERIENCE) / ASCENSION_EXPERIENCE_STEP)
-    : 0;
-}
-
-function mapApiMetrics(input, importedAt, endpointUpdatedAt) {
-  if (!isPlainObject(input)) return undefined;
-  return {
-    importedAt,
-    endpointUpdatedAt,
-    categories: Object.fromEntries(Object.entries(input)
-      .filter(([, value]) => isPlainObject(value))
-      .map(([category, values]) => [
-        category,
-        Object.fromEntries(Object.entries(values)
-          .map(([key, value]) => [key, Number(value)])
-          .filter(([, value]) => Number.isFinite(value))),
-      ])),
-  };
-}
-
-function mapApiOwnedPets(input, importedAt) {
-  const pets = Array.isArray(input) ? input : [];
-  return pets.filter(isPlainObject).map((pet) => {
-    const evolution = isPlainObject(pet.evolution) ? pet.evolution : {};
-    const location = isPlainObject(pet.location) ? pet.location : {};
-    const health = isPlainObject(pet.health) ? pet.health : {};
-    const battle = isPlainObject(pet.battle) ? pet.battle : {};
-    return {
-      id: `api_pet_${cleanNumber(pet.id) || cryptoRandomId(6)}`,
-      apiId: cleanNumber(pet.id) || undefined,
-      petId: cleanNumber(pet.pet_id) || undefined,
-      species: cleanString(pet.name, 80),
-      nickname: cleanString(pet.custom_name, 80),
-      imageUrl: cleanUrl(pet.image_url) || undefined,
-      quality: cleanString(pet.quality, 40),
-      level: cleanNumber(pet.level),
-      experience: cleanNumber(pet.experience),
-      totalExperience: cleanNumber(pet.total_experience),
-      evolution: cleanNumber(evolution.state),
-      evolutionMax: cleanNumber(evolution.max),
-      evolutionBonusPerStage: cleanNumber(evolution.bonus_per_stage),
-      evolutionCurrentBonus: cleanNumber(evolution.current_bonus),
-      evolutionNextBonus: cleanNumber(evolution.next_bonus),
-      evolutionCanEvolve: Boolean(evolution.can_evolve),
-      evolutionTargets: Array.isArray(evolution.targets)
-        ? evolution.targets.filter(isPlainObject).map((target) => ({
-            key: cleanString(target.key, 60),
-            label: cleanString(target.label, 80),
-          }))
-        : [],
-      active: Boolean(pet.equipped),
-      equipped: Boolean(pet.equipped),
-      source: "imported",
-      importedAt,
-      stats: mapApiPetStats(pet.stats),
-      health: {
-        current: cleanNumber(health.current),
-        maximum: cleanNumber(health.maximum),
-        percentage: cleanNumber(health.percentage),
-      },
-      battle: battle.started_at || battle.ends_at ? {
-        startedAt: cleanDate(battle.started_at),
-        endsAt: cleanDate(battle.ends_at),
-      } : undefined,
-      location: location.name || location.id ? {
-        id: cleanNumber(location.id) || undefined,
-        name: cleanString(location.name, 120),
-        locked: typeof location.locked === "boolean" ? location.locked : undefined,
-      } : undefined,
-      createdAt: cleanDate(pet.created_at),
-      notes: "",
-    };
-  });
-}
-
-function normalizeIdleMmoProfileImport(input) {
-  const importedAt = input.importedAt || new Date().toISOString();
-  const info = isPlainObject(input.information) ? input.information : {};
-  const character = isPlainObject(info.character) ? info.character : info;
-  const metricsPayload = isPlainObject(input.metrics) ? input.metrics : {};
-  const petsPayload = isPlainObject(input.pets) ? input.pets : {};
-  const equippedPet = isPlainObject(character.equipped_pet) ? character.equipped_pet : undefined;
-  const ownedPets = mapApiOwnedPets(isPlainObject(petsPayload) ? petsPayload.pets : [], importedAt);
-  const activeOwnedPet = ownedPets.find((pet) => pet.equipped);
-  const stats = mapApiSkillMap(character.stats);
-  const skills = mapApiSkillMap(character.skills);
-  const levelSources = { ...skills, ...stats };
-
-  return {
-    name: cleanString(character.name, 40),
-    className: normalizeApiClassName(character.class),
-    imageUrl: cleanUrl(character.image_url),
-    backgroundUrl: cleanUrl(character.background_url),
-    currentStatus: cleanString(character.current_status, 40),
-    location: isPlainObject(character.location) ? {
-      id: cleanNumber(character.location.id) || undefined,
-      name: cleanString(character.location.name, 120),
-    } : undefined,
-    guild: isPlainObject(character.guild) ? {
-      id: cleanNumber(character.guild.id) || undefined,
-      tag: cleanString(character.guild.tag, 24),
-      level: cleanNumber(character.guild.level),
-      position: cleanString(character.guild.position, 80),
-    } : undefined,
-    levels: {
-      totalLevel: cleanNumber(character.total_level),
-      combat: apiSkillLevel(levelSources, "combat"),
-      strength: apiSkillLevel(levelSources, "strength"),
-      defence: apiSkillLevel(levelSources, "defence"),
-      speed: apiSkillLevel(levelSources, "speed"),
-      dexterity: apiSkillLevel(levelSources, "dexterity"),
-      huntingMastery: apiSkillLevel(levelSources, "hunting-mastery"),
-      dungeoneering: apiSkillLevel(levelSources, "dungeoneering"),
-      petMastery: apiSkillLevel(levelSources, "pet-mastery"),
-    },
-    skills: {
-      ...skills,
-      ...stats,
-    },
-    pet: activeOwnedPet ? {
-      species: activeOwnedPet.species,
-      quality: activeOwnedPet.quality,
-      level: activeOwnedPet.level,
-      evolution: activeOwnedPet.evolution,
-      stats: activeOwnedPet.stats,
-      notes: activeOwnedPet.nickname ? `Imported equipped pet: ${activeOwnedPet.nickname}` : "",
-    } : equippedPet ? {
-      species: cleanString(equippedPet.name, 80),
-      quality: "",
-      level: cleanNumber(equippedPet.level),
-      evolution: "",
-      stats: mapApiPetStats({}),
-      notes: "",
-    } : undefined,
-    ownedPets,
-    museum: input.museum,
-    metricsSnapshot: mapApiMetrics(
-      isPlainObject(metricsPayload) ? metricsPayload.metrics : undefined,
-      importedAt,
-      cleanDate(metricsPayload.endpoint_updates_at),
-    ),
-    importSource: {
-      mode: "imported",
-      characterHashTail: input.hash?.slice(-12),
-      characterHashDigest: typeof input.characterHashDigest === "string" && input.characterHashDigest.trim()
-        ? input.characterHashDigest.trim().slice(0, 128)
-        : (input.hash?.trim() ? sha256Hex(input.hash.trim()) : undefined),
-      importedAt,
-      refreshedAt: importedAt,
-      importedSections: [
-        "information",
-        ...(input.metrics ? ["metrics"] : []),
-        ...(input.pets ? ["pets"] : []),
-        ...(input.museum ? ["museum"] : []),
-      ],
-      missingOrPrivate: [],
-      notes: "Saved from visible IdleMMO character details.",
-    },
-  };
 }

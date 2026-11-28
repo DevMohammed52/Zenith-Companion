@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { extractForwardedClientIp, fetchProfileImportJson } from "@/lib/profile-import-proxy";
+import {
+  buildProxyForwardHeaders,
+  fetchProfileImportJson,
+  getOrCreateRequestId,
+  NO_STORE_HEADERS,
+  readLimitedJsonBody,
+} from "@/lib/profile-import-proxy";
 
 export const dynamic = "force-dynamic";
 
 const ERROR_BODY_LIMIT = 1024;
-const NO_STORE_HEADERS = { "cache-control": "no-store" };
 
 type ErrorReportInput = {
   source?: unknown;
@@ -66,32 +71,23 @@ export async function POST(request: Request) {
     return new Response(null, { status: 204, headers: NO_STORE_HEADERS });
   }
 
-  const contentLength = Number(request.headers.get("content-length") || "0");
-  if (Number.isFinite(contentLength) && contentLength > ERROR_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "request_too_large", message: "Error report is too large." } },
-      { status: 413, headers: NO_STORE_HEADERS },
-    );
+  const parsedBody = await readLimitedJsonBody<ErrorReportInput>(request, {
+    maxBytes: ERROR_BODY_LIMIT,
+    emptyMessage: "Invalid error report.",
+    tooLargeMessage: "Error report is too large.",
+    invalidJsonCode: "bad_request",
+    invalidJsonMessage: "Invalid error report.",
+    invalidTypeCode: "bad_request",
+    invalidTypeMessage: "Invalid error report.",
+  });
+  if (!parsedBody.ok) {
+    return NextResponse.json(parsedBody.payload, {
+      status: parsedBody.status,
+      headers: NO_STORE_HEADERS,
+    });
   }
 
-  const text = await request.text().catch(() => "");
-  if (!text || text.length > ERROR_BODY_LIMIT) {
-    return NextResponse.json(
-      { error: { code: "bad_request", message: "Invalid error report." } },
-      { status: 400, headers: NO_STORE_HEADERS },
-    );
-  }
-
-  let parsed: ErrorReportInput;
-  try {
-    const raw = JSON.parse(text) as unknown;
-    parsed = isRecord(raw) ? raw : {};
-  } catch {
-    return NextResponse.json(
-      { error: { code: "bad_request", message: "Invalid error report." } },
-      { status: 400, headers: NO_STORE_HEADERS },
-    );
-  }
+  const parsed = parsedBody.data;
   const path = normalizePath(parsed.path);
   if (!path) {
     return NextResponse.json(
@@ -109,26 +105,23 @@ export async function POST(request: Request) {
     browserClass: normalizeBrowserClass(parsed.browserClass),
   });
 
-  const origin = request.headers.get("origin");
-  const clientIp = extractForwardedClientIp(request);
-  const userAgent = request.headers.get("user-agent");
-  const country = request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry");
-
-  const result = await fetchProfileImportJson("/error/report", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${secret}`,
-      ...(origin ? { origin } : {}),
-      ...(clientIp ? { "x-forwarded-for": clientIp } : {}),
-      ...(userAgent ? { "user-agent": userAgent } : {}),
-      ...(country ? { "cf-ipcountry": country } : {}),
+  const requestId = getOrCreateRequestId(request);
+  const result = await fetchProfileImportJson(
+    "/error/report",
+    {
+      method: "POST",
+      headers: buildProxyForwardHeaders(request, {
+        authSecret: secret,
+        contentType: "application/json",
+        requestId,
+      }),
+      body,
     },
-    body,
-  }, "Error reporting service returned an unreadable response.");
+    "Error reporting service returned an unreadable response.",
+  );
 
   return NextResponse.json(result.payload, {
     status: result.status,
-    headers: NO_STORE_HEADERS,
+    headers: { ...NO_STORE_HEADERS, "x-request-id": requestId },
   });
 }
