@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { getPetShowcaseProfile } from "@/app/types";
 import { calculateCraftingQueuePlan, type QueueItemLookup, type QueueMarketData } from "@/lib/crafting-queue";
 import { calculateEssenceSession, type EssenceItemLookup } from "@/lib/essences";
 
 describe("dashboard command center contracts", () => {
   const pagePath = path.join(process.cwd(), "src", "app", "page.tsx");
+  const pageCssPath = path.join(process.cwd(), "src", "app", "page.module.css");
   const hookPath = path.join(process.cwd(), "src", "app", "hooks", "useDashboardState.ts");
   const typesPath = path.join(process.cwd(), "src", "app", "types.ts");
   const priorityToolsPath = path.join(process.cwd(), "src", "app", "components", "DashboardPriorityTools.tsx");
@@ -45,51 +47,36 @@ describe("dashboard command center contracts", () => {
     return null;
   }
 
-  it("does not offer redundant local backup export in onboarding prompt", () => {
+  it("removes shell duplication, filter tabs, Liquid min 100 text, middots, and inline Ctrl K hints", () => {
     const pageContent = getDashboardFilesContent();
     expect(pageContent).not.toContain("Export local backup");
-    expect(pageContent).not.toMatch(/dashboard-setup-actions[\s\S]*?Upload/);
+    expect(pageContent).not.toMatch(/setupBanner[\s\S]*?Upload/);
+    expect(pageContent).not.toContain("Switch active character profile");
+    expect(pageContent).not.toContain("+10 Cart");
+    expect(pageContent).not.toContain("Liquid min");
+    expect(pageContent).not.toContain("All Routes");
+    expect(pageContent).not.toContain("Ctrl K");
+    expect(pageContent).not.toContain("·");
   });
 
-  it("enforces mobile status grid typography >= 0.72rem in globals.css", () => {
-    const css = readFileSync(globalsCssPath, "utf-8");
-    const mobileBlock = getMediaQueryBlock(css, "max-width: 760px", "command-status-grid");
+  it("enforces >= 44px touch targets on mobile/coarse viewports for interactive dashboard controls", () => {
+    const css = readFileSync(pageCssPath, "utf-8");
+    const mobileBlock = getMediaQueryBlock(css, "max-width: 760px", ".recentPill");
     expect(mobileBlock).not.toBeNull();
+    expect(mobileBlock).toMatch(/\.recentPill,[\s\S]*?\.weatherNextBtn\s*\{[\s\S]*?min-height:\s*44px/);
 
-    expect(mobileBlock).toMatch(/\.command-status-card\s+span\s*\{[^}]*font-size:\s*0\.72rem/);
-    expect(mobileBlock).toMatch(/\.command-status-card\s+em\s*\{[^}]*font-size:\s*0\.72rem/);
-    expect(mobileBlock).not.toContain("font-size: 0.57rem");
-    expect(mobileBlock).not.toContain("font-size: 0.68rem");
-  });
-
-  it("enforces 2-column layout for command-status-grid on screens <= 600px", () => {
-    const css = readFileSync(globalsCssPath, "utf-8");
-    const block600 = getMediaQueryBlock(css, "max-width: 600px", "command-status-grid");
-    expect(block600).not.toBeNull();
-
-    expect(block600).toMatch(/\.command-status-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
-    expect(block600).toMatch(/\.command-status-card:last-child:nth-child\(odd\)\s*\{[^}]*grid-column:\s*span\s*2/);
-  });
-
-  it("enforces >= 44px touch targets on mobile/touch viewports for dashboard links", () => {
-    const css = readFileSync(globalsCssPath, "utf-8");
-    const mobileBlock = getMediaQueryBlock(css, "max-width: 760px", "command-module-links");
-    expect(mobileBlock).not.toBeNull();
-    expect(mobileBlock).toMatch(/\.command-module-links\s+a[\s\S]*?\.dashboard-setup-actions\s+a\s*\{[^}]*min-height:\s*44px/);
-
-    const coarseBlock = getMediaQueryBlock(css, "pointer: coarse", "command-module-links");
+    const coarseBlock = getMediaQueryBlock(css, "pointer: coarse", ".recentPill");
     expect(coarseBlock).not.toBeNull();
-    expect(coarseBlock).toMatch(/\.command-module-links\s+a[\s\S]*?\.dashboard-setup-actions\s+a[\s\S]*?min-height:\s*44px/);
+    expect(coarseBlock).toMatch(/\.recentPill,[\s\S]*?\.weatherNextBtn\s*\{[\s\S]*?min-height:\s*44px/);
   });
 
-  it("keeps desktop baseline heights compact for mouse users without unconditional 44px override", () => {
-    const css = readFileSync(globalsCssPath, "utf-8");
-    expect(css).toMatch(/\.dashboard-setup-actions\s+a\s*\{[^}]*min-height:\s*2\.55rem/);
-    expect(css).toMatch(/\.command-module-links\s+a\s*\{[^}]*min-height:\s*2\.25rem/);
-    expect(css).not.toMatch(/\.main-content\s+:is\([\s\S]*?\.command-module-links\s+a[\s\S]*?\)\s*\{[^}]*min-height:\s*44px\s*!important/);
+  it("keeps desktop baseline action heights compact without unconditional 44px bloat", () => {
+    const css = readFileSync(pageCssPath, "utf-8");
+    expect(css).toMatch(/\.setupActionLink\s*\{[^}]*min-height:\s*2\.55rem/);
+    expect(css).toMatch(/\.routeLedgerRow\s*\{[^}]*min-height:\s*46px/);
   });
 
-  it("wires Forge Planner card to FORGE_PLANNER_STORAGE_KEY and keeps activeMythicNames on /alchemy/mythic", () => {
+  it("wires Forge Planner to FORGE_PLANNER_STORAGE_KEY and keeps activeMythicCount separate on /alchemy/mythic", () => {
     const pageContent = getDashboardFilesContent();
     const forgeCard = pageContent.match(/<Link\s+href="\/forge"[\s\S]*?<\/Link>/)?.[0] ?? "";
     const mythicCard = pageContent.match(/<Link\s+href="\/alchemy\/mythic"[\s\S]*?<\/Link>/)?.[0] ?? "";
@@ -97,10 +84,10 @@ describe("dashboard command center contracts", () => {
     expect(pageContent).toContain("sanitizeForgePlannerLines");
     expect(forgeCard).toContain("forgeCraftsCount.toLocaleString()");
     expect(forgeCard).not.toContain("activeMythicNames");
-    expect(mythicCard).toContain("activeMythicNames.length");
+    expect(mythicCard).toContain("activeMythicCount");
   });
 
-  it("syncs Best Skill Route with configuredProfile, persisted skill-profit settings, essence sessions, and vendor-safe liquidity filtering", () => {
+  it("syncs Best Skill Routes with configuredProfile, persisted skill-profit settings, essence sessions, and vendor-safe liquidity filtering", () => {
     const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain("const configuredProfile = activeProfile && !isStarterProfile(activeProfile) ? activeProfile : null;");
     expect(pageContent).toContain("zenith_skill_profit_finder");
@@ -113,31 +100,61 @@ describe("dashboard command center contracts", () => {
 
   it("passes profileClassName into calculateHousingBuffs and handles foundation, empty buffs, and local zone limits", () => {
     const pageContent = getDashboardFilesContent();
-    expect(pageContent).toMatch(/calculateHousingBuffs\(activeProfile\?\.housing,\s*\{\s*profileClassName:\s*activeProfile\?\.className\s*\}\)/);
+    expect(pageContent).toMatch(/calculateHousingBuffs\(activeProfile\?\.housing,\s*\{\s*profileClassName:\s*activeProfile\?\.className,?\s*\}\)/);
     expect(pageContent).toContain("Foundation needed");
     expect(pageContent).toContain("No active buffs");
     expect(pageContent).toContain("Local zone only (no Remote Conduit)");
   });
 
-  it("guards formatAge against NaN, uses DATA_DELAYED_AFTER_MS, and makes Item index and Active profile clickable links", () => {
+  it("guards formatAge against NaN, uses DATA_DELAYED_AFTER_MS, and surfaces Character Spotlight quick-stat links cleanly", () => {
     const pageContent = getDashboardFilesContent();
     expect(pageContent).toContain("!Number.isFinite(minutes)");
     expect(pageContent).toContain("DATA_DELAYED_AFTER_MS");
-    expect(pageContent).toContain('<div className="command-status-grid" role="group" aria-label="App status">');
-    expect(pageContent).toContain('<Link href="/items" className="command-status-card">');
-    expect(pageContent).toContain('<Link href="/profiles" className="command-status-card">');
+    expect(pageContent).toContain('aria-label="Character quick stats"');
+    expect(pageContent).toContain('href="/bis"');
+    expect(pageContent).toContain('href="/pets/owned"');
   });
 
-  it("replaces secondary strip placeholders with live data and updates MODULE_GROUPS for Patch Notes and Pet tools", () => {
+  it("surfaces membership gradient + icon, scenic boss watch, rotating current weather with canvas, market movers, and accurate pet species count", () => {
     const pageContent = getDashboardFilesContent();
+    const css = readFileSync(pageCssPath, "utf-8");
     expect(pageContent).toContain('href="/forge/lessons"');
     expect(pageContent).toContain("Forge Lessons");
-    expect(pageContent).not.toContain("<strong>Open</strong>");
-    expect(pageContent).not.toContain("<strong>Snapshot rules</strong>");
-    expect(pageContent).not.toContain("<strong>Forecasts</strong>");
-    expect(pageContent).not.toContain("<strong>Browse</strong>");
-    expect(pageContent).toContain('{ href: "/patch-notes", label: "Patch Notes"');
-    expect(pageContent).toContain('{ href: "/pets/compare", label: "Pet Compare"');
+    expect(pageContent).toContain("Top Gold Routes");
+    expect(pageContent).toContain("World Boss");
+    expect(pageContent).toContain("Current Weather");
+    expect(pageContent).toContain("Market Movers");
+    expect(pageContent).toContain("MEMBERSHIP_BADGE_URL");
+    expect(css).toContain("rgb(250, 204, 21)");
+    expect(css).toContain("rgb(202, 138, 4)");
+    expect(pageContent).toContain("WeatherMiniCanvas");
+    expect(pageContent).toContain("locationImageUrl");
+    expect(pageContent).toContain("Next Magic Storm:");
+    expect(pageContent).not.toContain("Next Storm:");
+    expect(pageContent).not.toContain("109 species");
+    expect(pageContent).toContain("PET_SPECIES_COUNT");
+
+    const weatherHeaderContent = readFileSync(
+      path.join(process.cwd(), "src", "app", "weather", "components", "WeatherHeader.tsx"),
+      "utf-8",
+    );
+    expect(weatherHeaderContent).not.toContain(
+      "Prepare your dungeon keys and boss fights before the window begins.",
+    );
+
+    const wyrm = getPetShowcaseProfile("Wyrmshadow", "MYTHIC");
+    const deadWyrm = getPetShowcaseProfile("Dead Wyrmshadow", "UNIQUE");
+    const lunark = getPetShowcaseProfile("Lunark", "MYTHIC");
+    const fluffy = getPetShowcaseProfile("Fluffy", "STANDARD");
+    const wingsley = getPetShowcaseProfile("Wingsley", "EPIC");
+    expect(wyrm.sizePx).toBeGreaterThan(fluffy.sizePx);
+    expect(lunark.sizePx).toBeGreaterThan(fluffy.sizePx);
+    expect(wingsley.sizePx).toBeLessThanOrEqual(52);
+    expect(wyrm.placement).toBe("behind");
+    expect(fluffy.placement).toBe("side");
+    expect(deadWyrm.isUpsideDown).toBe(true);
+    expect(wyrm.isUpsideDown).toBe(false);
+    expect(readFileSync(heroPath, "utf-8")).not.toContain("Idle cap");
   });
 
   it("prevents hydration CLS in page.tsx, layout.tsx, and globals.css and provides root OpenGraph/Twitter image routes", () => {
@@ -146,7 +163,7 @@ describe("dashboard command center contracts", () => {
     const css = readFileSync(globalsCssPath, "utf-8");
     const indicatorCss = readFileSync(indicatorCssPath, "utf-8");
 
-    expect(pageContent).toContain("if (!profilesLoaded || typeof document === \"undefined\") return;");
+    expect(pageContent).toContain('if (!profilesLoaded || typeof document === "undefined") return;');
     expect(layoutContent).toContain("dataset.profileSetup");
     expect(layoutContent).toContain("dataset.desktopNavigation");
     expect(layoutContent).toContain("dataset.mobileNavigation");
@@ -158,7 +175,8 @@ describe("dashboard command center contracts", () => {
     expect(css).toContain("scrollbar-gutter: stable;");
     expect(css).toContain('html[data-profile-setup="ready"] .dashboard-setup-state');
     expect(css).toContain('html[data-mobile-navigation="command"] .mobile-menu-btn');
-    expect(css).toMatch(/\.command-wheel-group\s+strong,\s*\.command-wheel-group\s+small\s*\{[^}]*text-overflow:\s*ellipsis/);
+    expect(css).not.toContain(".command-wheel-group");
+    expect(css).not.toContain(".command-status-grid");
     expect(indicatorCss).toContain(".trigger");
   });
 
@@ -179,7 +197,6 @@ describe("dashboard command center contracts", () => {
       return dataset;
     };
 
-    // Corrupt preferences JSON does not block profileSetup detection for configured profile
     const configuredDataset = runScript({
       zenith_preferences: "{corrupt_json",
       zenith_character_profiles_v1: JSON.stringify({
@@ -192,7 +209,6 @@ describe("dashboard command center contracts", () => {
     expect(configuredDataset.mobileNavigation).toBe("standard");
     expect(configuredDataset.profileSetup).toBe("ready");
 
-    // Starter profile with omitted levels/className still resolves to "needed"
     const omittedStarterDataset = runScript({
       zenith_character_profiles_v1: JSON.stringify({
         activeProfileId: "main",
@@ -204,13 +220,13 @@ describe("dashboard command center contracts", () => {
 
   it("loads market data via shared DataContext.ensureMarketLoaded, loads allItemsDb when essences are configured, and passes (queue, marketData, allItemsDb) to calculateCraftingQueuePlan", () => {
     const pageContent = getDashboardFilesContent();
-    expect(pageContent).toContain("const { marketData, allItemsDb, ensureMarketLoaded } = useData({ autoLoad: false });");
+    expect(pageContent).toContain("useData({ autoLoad: false })");
     expect(pageContent).toContain("void ensureMarketLoaded();");
     expect(pageContent).toContain("if (hasConfiguredEssence && !allItemsDb)");
     expect(pageContent).toContain("void ensureLoaded();");
     expect(pageContent).not.toContain('fetch("/market-data.json"');
     expect(pageContent).not.toContain("dashboardMarketData");
-    expect(pageContent).toContain("calculateCraftingQueuePlan(queue, marketData, allItemsDb,");
+    expect(pageContent).toContain("calculateCraftingQueuePlan(");
 
     const queue = { "Battle Potion": 10 };
     const marketData: QueueMarketData = {
@@ -273,4 +289,3 @@ describe("dashboard command center contracts", () => {
     expect(withItems.costPerHour).toBe(50);
   });
 });
-

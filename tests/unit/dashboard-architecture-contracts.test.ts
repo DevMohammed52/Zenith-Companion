@@ -1,14 +1,21 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ALL_NAV_ITEMS } from "@/lib/navigation";
 import {
-  formatAge,
-  getRankedProfitPerHour,
-  MODULE_GROUPS,
-  SKILL_PROFIT_STORAGE_KEY,
+  buildToolDirectoryGroups,
   DEFAULT_INDEXED_ITEMS_COUNT,
-  DELAYED_THRESHOLD_MINUTES,
   DEFAULT_PERSISTED_SKILL_PROFIT,
+  DELAYED_THRESHOLD_MINUTES,
+  deriveLiveBossPulse,
+  formatAge,
+  formatBossCountdown,
+  getRankedProfitPerHour,
+  getTotalDashboardToolCount,
+  MODULE_GROUPS,
+  PET_SPECIES_COUNT,
+  SKILL_PROFIT_STORAGE_KEY,
+  type WorldBossSummary,
 } from "../../src/app/types";
 import type { SkillProfitRow } from "@/lib/skill-profit";
 
@@ -98,10 +105,58 @@ describe("Dashboard Architecture & Helper Contracts", () => {
     });
   });
 
+  describe("Sustainable NAV_GROUPS Directory & Boss Countdown Helpers", () => {
+    it("automatically includes every non-root route from NAV_GROUPS in buildToolDirectoryGroups", () => {
+      const groups = buildToolDirectoryGroups(["/bis", "/alchemy"]);
+      const builtHrefs = new Set(groups.flatMap((g) => g.items.map((i) => i.href)));
+      const expectedHrefs = ALL_NAV_ITEMS.filter((item) => item.href !== "/").map((item) => item.href);
+
+      expect(getTotalDashboardToolCount()).toBe(expectedHrefs.length);
+      for (const href of expectedHrefs) {
+        expect(builtHrefs.has(href)).toBe(true);
+      }
+
+      const bisItem = groups.flatMap((g) => g.items).find((i) => i.href === "/bis");
+      expect(bisItem?.isRecent).toBe(true);
+    });
+
+    it("formats upcoming and live world boss countdowns safely", () => {
+      const baseNow = Date.UTC(2026, 10, 27, 12, 0, 0);
+      expect(formatBossCountdown("2026-11-27T12:15:30Z", baseNow).label).toBe("In 15m 30s");
+      expect(formatBossCountdown("2026-11-27T11:55:00Z", baseNow).label).toBe("Active now");
+
+      const bosses: WorldBossSummary[] = [
+        {
+          id: 1,
+          name: "Isadora",
+          level: 1,
+          location: { id: 1, name: "Bluebell Hollow" },
+          status: "UPCOMING",
+          battle_starts_at: "2026-11-27T13:30:00Z",
+        },
+        {
+          id: 2,
+          name: "Vorgath",
+          level: 85,
+          location: { id: 8, name: "Obsidian Reach" },
+          status: "READY_FOR_LOBBY",
+          battle_starts_at: "2026-11-27T11:58:00Z",
+          battle_ends_at: "2026-11-27T12:20:00Z",
+        },
+      ];
+
+      const pulse = deriveLiveBossPulse(bosses, baseNow);
+      expect(pulse?.name).toBe("Vorgath");
+      expect(pulse?.isActiveNow).toBe(true);
+      expect(pulse?.countdownLabel).toBe("Live now");
+    });
+  });
+
   describe("Module Groups & Storage Constants Invariance", () => {
     it("defines valid constants and default persisted state", () => {
       expect(SKILL_PROFIT_STORAGE_KEY).toBe("zenith_skill_profit_finder");
       expect(DEFAULT_INDEXED_ITEMS_COUNT).toBe(1353);
+      expect(PET_SPECIES_COUNT).toBe(47);
       expect(DELAYED_THRESHOLD_MINUTES).toBeGreaterThan(0);
       expect(DEFAULT_PERSISTED_SKILL_PROFIT.saleMode).toBe("best");
       expect(DEFAULT_PERSISTED_SKILL_PROFIT.minVolume).toBe(100);
@@ -123,18 +178,20 @@ describe("Dashboard Architecture & Helper Contracts", () => {
     });
   });
 
-  describe("Modular File Architecture", () => {
-    it("page.tsx is a lean orchestrator with under 100 lines", () => {
+  describe("Modular File Architecture & Migrated Standards", () => {
+    it("page.tsx is a lean orchestrator under 100 lines using page.module.css", () => {
       const pagePath = join(process.cwd(), "src/app/page.tsx");
       expect(existsSync(pagePath)).toBe(true);
       const content = readFileSync(pagePath, "utf-8");
       const lines = content.split("\n");
       expect(lines.length).toBeLessThan(100);
+      expect(content).toContain("page.module.css");
     });
 
-    it("all decomposed subcomponents, types, and hooks exist", () => {
+    it("all decomposed subcomponents, CSS module, types, and hooks exist without legacy imports", () => {
       const expectedFiles = [
         "src/app/types.ts",
+        "src/app/page.module.css",
         "src/app/hooks/useDashboardState.ts",
         "src/app/components/DashboardHero.tsx",
         "src/app/components/DashboardSetupReminder.tsx",
@@ -146,7 +203,13 @@ describe("Dashboard Architecture & Helper Contracts", () => {
 
       for (const file of expectedFiles) {
         const filePath = join(process.cwd(), file);
-        expect(existsSync(filePath)).toBe(true);
+        expect(existsSync(filePath), `Missing ${file}`).toBe(true);
+        if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+          const text = readFileSync(filePath, "utf-8");
+          expect(text).not.toMatch(/from\s+["']lucide-react["']/);
+          expect(text).not.toContain("@/components/StateBlock");
+          expect(text).not.toMatch(/<style\s+jsx/);
+        }
       }
     });
   });

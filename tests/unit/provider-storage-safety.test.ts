@@ -277,11 +277,8 @@ describe("provider, storage safety, and navigation contracts", () => {
       const mobileDockSrc = readSrc("src/components/MobileBottomDock.tsx");
       expect(mobileDockSrc).toContain("BottomDock");
 
-      const setupSrc = readSrc("src/components/FirstRunSetup.tsx");
-      expect(setupSrc).toContain("Import your IdleMMO character");
-      expect(setupSrc).toContain("Back up local profiles");
-      expect(setupSrc).not.toContain("Make Zenith match your character before planning.");
-      expect(setupSrc).not.toContain("Know your backup path");
+      const layoutSrc = readSrc("src/app/layout.tsx");
+      expect(layoutSrc).not.toContain("FirstRunSetup");
     });
   });
 });

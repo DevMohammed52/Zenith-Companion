@@ -206,7 +206,7 @@ export function useSkillProfitState(): UseSkillProfitStateReturn {
       if (urlSkill && (urlSkill === "All" || (SKILLS as readonly string[]).includes(urlSkill))) {
         nextActiveSkill = urlSkill as SkillName | "All";
       }
-      const urlSearch = params.get("q");
+      const urlSearch = params.get("search") || params.get("q");
       if (urlSearch !== null) nextSearchTerm = urlSearch;
       const urlSell = params.get("sell");
       if (urlSell === "best" || urlSell === "market" || urlSell === "vendor") {

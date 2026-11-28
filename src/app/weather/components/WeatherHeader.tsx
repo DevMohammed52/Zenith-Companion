@@ -73,7 +73,7 @@ export function WeatherHeader({
           >
             {magicStormAlert.type === "active"
               ? "+25% Battle MF, +20% Dungeon MF, and +20% World Boss MF currently active."
-              : "Prepare your dungeon keys and boss fights before the window begins."}
+              : `Magic Storm upcoming in ${magicStormAlert.location.name}.`}
           </Banner>
         </div>
       )}

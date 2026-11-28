@@ -1,45 +1,69 @@
 "use client";
 
+import { BackToTop } from "@/components/ui";
 import { useDashboardState } from "./hooks/useDashboardState";
 import {
   DashboardHero,
-  DashboardSetupReminder,
+  DashboardModuleGrid,
   DashboardPriorityTools,
   DashboardQuickLinks,
-  DashboardModuleGrid,
+  DashboardSetupReminder,
 } from "./components";
+import styles from "./page.module.css";
 
-export default function DashboardPage() {
+export default function Home() {
   const state = useDashboardState();
 
   return (
-    <main className="container dashboard dashboard-command">
+    <main className={styles.page}>
       <DashboardHero
-        timeSince={state.timeSince}
-        marketFreshness={state.marketFreshness}
-        registryCount={state.registryCount}
-        registryCountLabel={state.registryCountLabel}
-        activeProfileLabel={state.activeProfileLabel}
-        profileDetail={state.profileDetail}
+        hasConfiguredProfile={state.hasConfiguredProfile}
+        hasMembership={state.hasMembership}
+        activeProfileName={state.activeProfileName}
+        activeProfileClass={state.activeProfileClass}
+        activeProfileImageUrl={state.activeProfileImageUrl}
+        activeProfileBackgroundUrl={state.activeProfileBackgroundUrl}
+        guildLabel={state.guildLabel}
+        totalLevel={state.totalLevel}
+        combatLevel={state.combatLevel}
+        activePet={state.activePet}
+        equippedGearCount={state.equippedGearCount}
+        ownedPetsCount={state.ownedPetsCount}
+        museumItemCount={state.museumItemCount}
+        petSpeciesCount={state.petSpeciesCount}
       />
 
       {state.needsProfileSetup && <DashboardSetupReminder />}
 
-      <DashboardPriorityTools
-        bestSkillRoute={state.bestSkillRoute}
-        queuePlan={state.queuePlan}
-        housingLabel={state.housingLabel}
-        housingDescription={state.housingDescription}
-        forgeCraftsCount={state.forgeCraftsCount}
-        forgeLinesLength={state.forgeLines.length}
+      <section className={styles.bentoGrid} aria-label="Gold routes, world boss, and weather">
+        <DashboardPriorityTools
+          rankedRoutes={state.rankedRoutes}
+          queuedCount={state.queuedCount}
+          queueProfit={state.queueProfit}
+          queuePlanEntriesCount={state.queuePlanEntriesCount}
+          forgeCraftsCount={state.forgeCraftsCount}
+          housingStatusLabel={state.housingStatusLabel}
+          housingConduitNote={state.housingConduitNote}
+        />
+
+        <DashboardQuickLinks
+          liveBossPulse={state.liveBossPulse}
+          worldWeatherPulse={state.worldWeatherPulse}
+        />
+      </section>
+
+      <DashboardModuleGrid
+        marketMovers={state.marketMovers}
+        equippedGearCount={state.equippedGearCount}
+        ownedPetsCount={state.ownedPetsCount}
+        petSpeciesCount={state.petSpeciesCount}
+        activeMythicCount={state.activeMythicCount}
+        housingStatusLabel={state.housingStatusLabel}
+        recentTools={state.recentTools}
+        latestRelease={state.latestRelease}
       />
 
-      <DashboardQuickLinks
-        ownedPetsCount={state.activeProfile?.ownedPets?.length}
-        activeMythicNames={state.activeMythicNames}
-      />
-
-      <DashboardModuleGrid />
+      <BackToTop />
     </main>
   );
 }

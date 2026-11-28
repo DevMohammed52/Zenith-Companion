@@ -33,12 +33,12 @@ export function useItemsFilter({
     }
   };
   const idParam = getSafeParam('id');
-  const initialSearch = (!idParam ? (getSafeParam('name') || getSafeParam('q') || '') : '').trim();
+  const initialSearch = (!idParam ? (getSafeParam('search') || getSafeParam('name') || getSafeParam('q') || '') : '').trim();
   const [searchTerm, setSearchTerm] = useState(initialSearch);
 
   useEffect(() => {
     const currentId = getSafeParam('id');
-    const nameParam = getSafeParam('name') || getSafeParam('q');
+    const nameParam = getSafeParam('search') || getSafeParam('name') || getSafeParam('q');
     if (nameParam && !currentId) {
       setSearchTerm(nameParam.trim());
     }

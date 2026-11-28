@@ -1,79 +1,149 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import ZenithIcon from "@/components/icons/ZenithIcon";
-import { formatGold } from "@/lib/format";
-import type { SkillProfitRow } from "@/lib/skill-profit";
-import type { CraftingQueuePlan } from "@/lib/crafting-queue";
-import { getRankedProfitPerHour } from "../types";
+import { GameImage } from "@/components/GameImage";
+import { GoldIcon } from "@/components/GoldIcon";
+import { Skeleton, SkeletonContainer } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
+import { formatCompactNumber } from "@/lib/format";
+import type { RankedRouteDisplay } from "../types";
+import styles from "../page.module.css";
 
-export interface DashboardPriorityToolsProps {
-  bestSkillRoute: SkillProfitRow | null;
-  queuePlan: CraftingQueuePlan;
-  housingLabel: string;
-  housingDescription: string;
+interface DashboardPriorityToolsProps {
+  rankedRoutes: RankedRouteDisplay[];
+  queuedCount: number;
+  queueProfit: number;
+  queuePlanEntriesCount: number;
   forgeCraftsCount: number;
-  forgeLinesLength: number;
+  housingStatusLabel: string;
+  housingConduitNote: string;
 }
 
 export function DashboardPriorityTools({
-  bestSkillRoute,
-  queuePlan,
-  housingLabel,
-  housingDescription,
+  rankedRoutes,
+  queuedCount,
+  queueProfit,
+  queuePlanEntriesCount,
   forgeCraftsCount,
-  forgeLinesLength,
+  housingStatusLabel,
+  housingConduitNote,
 }: DashboardPriorityToolsProps) {
+  const getRouteHref = (route: RankedRouteDisplay) =>
+    route.skill === "Alchemy"
+      ? `/alchemy?search=${encodeURIComponent(route.name)}`
+      : `/skill-profit?search=${encodeURIComponent(route.name)}`;
+
   return (
-    <section className="command-primary-grid" aria-label="Priority tools">
-      <Link href="/skill-profit" className="command-priority-card command-priority-strong">
-        <div className="command-card-top">
-          <ZenithIcon name="skill" size={18} />
-          <span>Best Skill Route</span>
+    <article className={styles.bentoPanel} aria-label="Top gold routes">
+      <header className={styles.panelHeader}>
+        <div className={styles.panelTitleGroup}>
+          <Icon name="skillProfit" size="md" className={styles.panelIcon} aria-hidden="true" />
+          <h2 className={styles.panelTitle}>Top Gold Routes</h2>
         </div>
-        <strong>{bestSkillRoute?.name || "Open Finder"}</strong>
-        <p>
-          {bestSkillRoute
-            ? `${bestSkillRoute.skill} • ${formatGold(getRankedProfitPerHour(bestSkillRoute))}g/hr (${bestSkillRoute.saleSource === "vendor" ? "vendor" : "market"})`
-            : "Compare gathering and crafting routes once market data loads."}
-        </p>
-        <ArrowRight size={16} />
-      </Link>
 
-      <Link href="/crafting" className="command-priority-card">
-        <div className="command-card-top">
-          <ZenithIcon name="crafting" size={18} />
-          <span>Crafting Queue</span>
-        </div>
-        <strong>{queuePlan.totalCrafts.toLocaleString()} craft{queuePlan.totalCrafts === 1 ? "" : "s"}</strong>
-        <p>{queuePlan.entries.length > 0 ? `${queuePlan.entries.length} planned item${queuePlan.entries.length === 1 ? "" : "s"}` : "Build multi-step material lists and craft batches."}</p>
-        <ArrowRight size={16} />
-      </Link>
+        <Link href="/skill-profit" className={styles.textActionLink}>
+          View all
+          <Icon name="arrowRight" size="xs" aria-hidden="true" />
+        </Link>
+      </header>
 
-      <Link href="/housing" className="command-priority-card">
-        <div className="command-card-top">
-          <ZenithIcon name="housing" size={18} />
-          <span>Housing</span>
-        </div>
-        <strong>{housingLabel}</strong>
-        <p>{housingDescription}</p>
-        <ArrowRight size={16} />
-      </Link>
+      <div className={styles.profitStage}>
+        {rankedRoutes.length === 0 ? (
+          <SkeletonContainer busy={true}>
+            <Skeleton height={48} />
+            <Skeleton height={48} />
+            <Skeleton height={48} />
+            <Skeleton height={48} />
+          </SkeletonContainer>
+        ) : (
+          <>
+            <div className={styles.routeTableHead} aria-hidden="true">
+              <span>#</span>
+              <span />
+              <span>Activity</span>
+              <span className={styles.routeHeadRight}>Gold / hr</span>
+              <span className={styles.routeHeadRight}>EXP / hr</span>
+            </div>
 
-      <Link href="/forge" className="command-priority-card">
-        <div className="command-card-top">
-          <ZenithIcon name="forge" size={18} />
-          <span>Forge Planner</span>
-        </div>
-        <strong>{forgeCraftsCount.toLocaleString()} craft{forgeCraftsCount === 1 ? "" : "s"}</strong>
-        <p>
-          {forgeLinesLength > 0
-            ? `${forgeLinesLength} planned recipe${forgeLinesLength === 1 ? "" : "s"}. Track scroll costs and material gaps.`
-            : "Track scroll costs, material gaps, and craft margins."}
-        </p>
-        <ArrowRight size={16} />
-      </Link>
-    </section>
+            {rankedRoutes.map((row, idx) => (
+              <Link
+                key={`${row.skill}-${row.name}`}
+                href={getRouteHref(row)}
+                className={
+                  idx === 0
+                    ? `${styles.routeLedgerRow} ${styles.routeLedgerRowTop}`
+                    : styles.routeLedgerRow
+                }
+              >
+                <span className={idx === 0 ? `${styles.rankPill} ${styles.rankPillTop}` : styles.rankPill}>
+                  {idx + 1}
+                </span>
+
+                <GameImage
+                  src={row.imageUrl}
+                  alt=""
+                  width={28}
+                  height={28}
+                  loading="eager"
+                  className={styles.borderlessSprite}
+                  fallback={
+                    <Icon
+                      name={row.skill === "Alchemy" ? "alchemy" : "skillProfit"}
+                      size="sm"
+                      aria-hidden="true"
+                    />
+                  }
+                />
+
+                <span className={styles.routeMainCell}>
+                  <span className={styles.routeNameText}>{row.name}</span>
+                  <span className={styles.routeMetaText}>
+                    {row.skill} | Lv. {row.level}
+                  </span>
+                </span>
+
+                <span className={styles.routeGoldCell}>
+                  <GoldIcon size={13} />
+                  <span>{formatCompactNumber(row.profitPerHour)}</span>
+                </span>
+
+                <span className={styles.routeExpCell}>
+                  {formatCompactNumber(row.expPerHour)}
+                </span>
+              </Link>
+            ))}
+          </>
+        )}
+      </div>
+
+      <div className={styles.plannerFooterStrip}>
+        <Link href="/crafting" className={styles.plannerFooterTile}>
+          <span className={styles.plannerFooterLabel}>Crafting Queue</span>
+          <strong className={styles.plannerFooterVal}>{queuedCount.toLocaleString()} queued</strong>
+          <span className={styles.plannerFooterSub}>
+            {queuedCount > 0 ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                <GoldIcon size={12} />
+                {formatCompactNumber(queueProfit)} net | {queuePlanEntriesCount} {queuePlanEntriesCount === 1 ? "item" : "items"}
+              </span>
+            ) : (
+              "Queue empty"
+            )}
+          </span>
+        </Link>
+
+        <Link href="/forge" className={styles.plannerFooterTile}>
+          <span className={styles.plannerFooterLabel}>Forge Planner</span>
+          <strong className={styles.plannerFooterVal}>{forgeCraftsCount.toLocaleString()} crafts</strong>
+          <span className={styles.plannerFooterSub}>Saved weapon recipes</span>
+        </Link>
+
+        <Link href="/housing" className={styles.plannerFooterTile}>
+          <span className={styles.plannerFooterLabel}>Housing</span>
+          <strong className={styles.plannerFooterVal}>{housingStatusLabel}</strong>
+          <span className={styles.plannerFooterSub}>{housingConduitNote}</span>
+        </Link>
+      </div>
+    </article>
   );
 }

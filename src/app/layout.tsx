@@ -7,7 +7,6 @@ import SiteFooter from "@/components/SiteFooter";
 import shellStyles from "./Shell.module.css";
 import ZenithAudio from "@/components/ZenithAudio";
 import ZenithHaptics from "@/components/ZenithHaptics";
-import FirstRunSetup from "@/components/FirstRunSetup";
 import LocalBackupReminder from "@/components/LocalBackupReminder";
 import UsageTracker from "@/components/UsageTracker";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
@@ -168,7 +167,6 @@ export default function RootLayout({
                       <MobileBottomDock />
                       <ZenithAudio />
                       <ZenithHaptics />
-                      <FirstRunSetup />
                       <LocalBackupReminder />
                       <UsageTracker />
                       <WebVitalsReporter />

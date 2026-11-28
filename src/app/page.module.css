@@ -1,0 +1,1397 @@
+.page {
+  width: 100%;
+  max-width: 1350px;
+  margin: 0 auto;
+  padding: 1.35rem 1.5rem calc(var(--bottom-dock-height, 64px) + 3.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zone 1: Scenic Character Showcase Banner (No boxed sprite!) */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  padding: 1.05rem 1.45rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 10.75rem;
+  contain: layout;
+}
+
+.spotlightBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.56;
+  pointer-events: none;
+  filter: saturate(1.06) contrast(1.06);
+  transform: scale(1.03);
+}
+
+.spotlightScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 8% 55%, rgba(16, 21, 34, 0.14) 0%, transparent 45%),
+    linear-gradient(
+      95deg,
+      rgba(10, 13, 20, 0.84) 0%,
+      rgba(16, 21, 34, 0.48) 50%,
+      rgba(10, 13, 20, 0.86) 100%
+    );
+  pointer-events: none;
+}
+
+.spotlightIdentity {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  min-width: 0;
+}
+
+/* Borderless RPG character + companion duo stage */
+.characterStage {
+  position: relative;
+  min-width: 140px;
+  min-height: 148px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.characterStageBehindPet {
+  padding-left: 82px;
+}
+
+.characterStageSidePet {
+  padding-right: 14px;
+}
+
+.heroFigureWrap {
+  position: relative;
+  width: 140px;
+  height: 148px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.characterFloorGlow {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 102px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(203, 213, 225, 0.28) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.characterSprite {
+  position: relative;
+  z-index: 2;
+  width: 138px;
+  height: 146px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.82));
+}
+
+/* Proportionally scaled companion pet overlapping behind or hugging beside hero */
+.companionStage {
+  position: absolute;
+  bottom: 2px;
+  transform: translateY(var(--pet-hover, 0px));
+  display: grid;
+  place-items: center;
+  width: var(--pet-size, 74px);
+  height: var(--pet-size, 74px);
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.companionBehindHero {
+  left: 0;
+  z-index: 3;
+}
+
+.companionNearHero {
+  right: 0;
+  z-index: 3;
+}
+
+.companionStage:hover,
+.companionStage:focus-visible {
+  transform: translateY(calc(var(--pet-hover, 0px) - 5px)) scale(1.06);
+  outline: none;
+}
+
+.companionFloorGlow {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 78%;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(203, 213, 225, 0.24) 0%, transparent 74%);
+  pointer-events: none;
+}
+
+.companionMythicStage .companionFloorGlow {
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.36) 0%, rgba(250, 204, 21, 0.18) 50%, transparent 76%);
+  height: 16px;
+}
+
+.companionSprite {
+  position: relative;
+  z-index: 1;
+  width: var(--pet-size, 74px);
+  height: var(--pet-size, 74px);
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.9));
+}
+
+.companionBehindHero .companionSprite {
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.92));
+}
+
+.companionUpsideDown {
+  transform: rotate(180deg);
+}
+
+.identityCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+}
+
+.characterName {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.35vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--text-primary);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+.membershipNameWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  line-height: 1;
+}
+
+.membershipGradient {
+  background-image: linear-gradient(to right, rgb(250, 204, 21), rgb(202, 138, 4));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: rgba(0, 0, 0, 0);
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 10px rgba(202, 138, 4, 0.28));
+}
+
+.membershipBadgeIcon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+  transform: translateY(0.08em);
+  filter: drop-shadow(0 2px 6px rgba(250, 204, 21, 0.35));
+}
+
+.guildTag {
+  font-size: 0.74rem;
+  font-weight: 750;
+  padding: 0.16rem 0.48rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  backdrop-filter: blur(6px);
+}
+
+.classPill {
+  font-size: 0.74rem;
+  font-weight: 650;
+  padding: 0.16rem 0.52rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+.identityStatsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.78rem;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.identityStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.identityStat strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.petInlineLink {
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.petInlineLink:hover,
+.petInlineLink:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.hairlineV {
+  width: 1px;
+  height: 13px;
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+.spotlightMetrics {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 0.55rem;
+}
+
+.spotlightTile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.16rem;
+  min-width: 7.25rem;
+  min-height: 4.35rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(13, 18, 29, 0.68);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(8px);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spotlightTile:hover,
+.spotlightTile:focus-visible {
+  background: rgba(28, 36, 56, 0.82);
+  border-color: var(--border-focus);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.spotlightTileLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.spotlightTileVal {
+  font-size: 1.06rem;
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+/* Profile Setup Reminder (zero-CLS via html[data-profile-setup="ready"] .dashboard-setup-state) */
+.setupBanner {
+  background: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--text-accent), transparent 72%);
+  border-left: 3px solid var(--text-accent);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.setupEyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+  margin-bottom: 0.25rem;
+}
+
+.setupHeading {
+  margin: 0 0 0.28rem;
+  font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.setupDescription {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.48;
+  color: var(--text-muted);
+  max-width: 66ch;
+}
+
+.setupActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 15.5rem;
+}
+
+.setupActionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.55rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+.setupActionPrimary {
+  background: #cbd5e1;
+  color: #0a0d14;
+  border-color: #cbd5e1;
+}
+
+.setupActionPrimary:hover,
+.setupActionPrimary:focus-visible {
+  background: #dbe4ef;
+  border-color: #dbe4ef;
+  outline: none;
+}
+
+.setupActionLink:not(.setupActionPrimary):hover,
+.setupActionLink:not(.setupActionPrimary):focus-visible {
+  background: color-mix(in srgb, var(--text-accent), transparent 88%);
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+/* Zone 2: Asymmetric Primary Bento Grid (7 + 5 cols) */
+.bentoGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 1.05rem;
+  align-items: stretch;
+}
+
+.bentoPanel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  contain: layout;
+}
+
+.bentoSideStack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+  min-width: 0;
+}
+
+.panelHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  position: relative;
+  z-index: 3;
+}
+
+.panelTitleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panelIcon {
+  color: var(--text-accent);
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.panelSubtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Crisp Aligned 4-Row Profit Leaderboard */
+.profitStage {
+  min-height: 222px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  contain: layout;
+}
+
+.routeTableHead {
+  display: grid;
+  grid-template-columns: 28px 30px minmax(0, 1fr) 96px 88px;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.65rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim, #8494aa);
+}
+
+.routeHeadRight {
+  text-align: right;
+}
+
+.routeLedgerRow {
+  display: grid;
+  grid-template-columns: 28px 30px minmax(0, 1fr) 96px 88px;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.48rem 0.65rem;
+  min-height: 46px;
+  border-radius: 9px;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid transparent;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.routeLedgerRowTop {
+  background: rgba(255, 255, 255, 0.032);
+  border-color: var(--border-subtle);
+}
+
+.routeLedgerRow:hover,
+.routeLedgerRow:focus-visible {
+  background: rgba(255, 255, 255, 0.058);
+  border-color: var(--border-focus);
+  transform: translateX(2px);
+  outline: none;
+}
+
+.rankPill {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rankPillTop {
+  color: #f7bd1e;
+  background: rgba(247, 189, 30, 0.14);
+}
+
+.borderlessSprite {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+}
+
+.routeMainCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.routeNameText {
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.routeMetaText {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.routeGoldCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  font-size: 0.9rem;
+  font-weight: 750;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.routeExpCell {
+  text-align: right;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Planner Footer Strip inside Left Bento */
+.plannerFooterStrip {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.plannerFooterTile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  text-decoration: none;
+  transition: background 140ms ease;
+}
+
+.plannerFooterTile:hover,
+.plannerFooterTile:focus-visible {
+  background: rgba(255, 255, 255, 0.055);
+  outline: none;
+}
+
+.plannerFooterLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.plannerFooterVal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.plannerFooterSub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scenic World Boss Encounter Card (Zone Backdrop + Floating Borderless Boss!) */
+.bossSceneCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  padding: 1.05rem 1.15rem;
+  min-height: 176px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  contain: layout;
+  transition: border-color 160ms ease, transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bossSceneCard:hover,
+.bossSceneCard:focus-visible {
+  border-color: var(--border-focus);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.bossZoneBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.68;
+  pointer-events: none;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+}
+
+.bossSceneCard:hover .bossZoneBg {
+  transform: scale(1.04);
+  opacity: 0.78;
+}
+
+.bossZoneScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      95deg,
+      rgba(10, 13, 20, 0.90) 0%,
+      rgba(16, 21, 34, 0.54) 56%,
+      rgba(10, 13, 20, 0.20) 100%
+    ),
+    linear-gradient(180deg, rgba(10, 13, 20, 0.28) 0%, rgba(10, 13, 20, 0.64) 100%);
+  pointer-events: none;
+}
+
+.bossSceneBody {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 112px;
+}
+
+.bossInfoCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  min-width: 0;
+  max-width: 64%;
+}
+
+.bossTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bossName {
+  margin: 0;
+  font-size: 1.24rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.liveBadge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.22);
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  color: #34d399;
+}
+
+.bossZoneLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.bossCountdownValue {
+  font-size: 1.02rem;
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+.bossFloatWrap {
+  position: relative;
+  width: 114px;
+  height: 114px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.bossFloorGlow {
+  position: absolute;
+  bottom: 2px;
+  width: 82px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(248, 113, 113, 0.28) 0%, transparent 72%);
+}
+
+@keyframes bossHover {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.bossBorderlessSprite {
+  position: relative;
+  z-index: 1;
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.85));
+  animation: bossHover 4.2s ease-in-out infinite;
+}
+
+/* Rotating Current Weather Card */
+.weatherCard {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #121a2b 0%, #151b2b 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.05rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+  min-height: 192px;
+  contain: layout;
+}
+
+.weatherZoneBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.36;
+  pointer-events: none;
+  transition: opacity 380ms ease;
+}
+
+.weatherCanvasBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.weatherCardScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 13, 20, 0.70) 0%,
+    rgba(16, 21, 34, 0.50) 48%,
+    rgba(10, 13, 20, 0.86) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.weatherStage {
+  position: relative;
+  z-index: 3;
+  min-height: 122px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.weatherZoneLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.68rem 0.82rem;
+  border-radius: 10px;
+  background: rgba(10, 13, 20, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  backdrop-filter: blur(6px);
+  text-decoration: none;
+  color: inherit;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.weatherZoneLink:hover,
+.weatherZoneLink:focus-visible {
+  background: rgba(20, 27, 45, 0.80);
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+.weatherZoneTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.weatherZoneTitle {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+.weatherConditionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.52rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.weatherStormPill {
+  background: rgba(247, 189, 30, 0.16);
+  color: #f7bd1e;
+}
+
+.weatherBuffLine {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weatherControlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.weatherDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.weatherDotBtn {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  cursor: pointer;
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.weatherDotBtnActive {
+  width: 18px;
+  background: var(--text-primary);
+}
+
+.weatherDotBtn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.weatherNextBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 0.35rem;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(10, 13, 20, 0.54);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.weatherNextBtn:hover,
+.weatherNextBtn:focus-visible {
+  background: rgba(28, 36, 56, 0.85);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.weatherMetaFoot {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Zone 3: Bottom 3-Column Intelligence Grid */
+.intelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.05rem;
+}
+
+.moverStage {
+  min-height: 184px;
+  display: flex;
+  flex-direction: column;
+  contain: layout;
+}
+
+.moverList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.moverRow {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.58rem;
+  padding: 0.44rem 0.55rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 140ms ease;
+}
+
+.moverRow:hover,
+.moverRow:focus-visible {
+  background: rgba(255, 255, 255, 0.045);
+  outline: none;
+}
+
+.moverSprite {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.moverName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moverPrice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.deltaUp {
+  font-size: 0.76rem;
+  font-weight: 750;
+  padding: 0.14rem 0.42rem;
+  border-radius: 6px;
+  background: rgba(31, 214, 11, 0.12);
+  color: #4ade80;
+}
+
+.quickRowLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.48rem 0.6rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 140ms ease;
+}
+
+.quickRowLink:hover,
+.quickRowLink:focus-visible {
+  background: rgba(255, 255, 255, 0.045);
+  outline: none;
+}
+
+.quickRowLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.quickRowValue {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.recentPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.recentPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  padding: 0.32rem 0.68rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.recentPill:hover,
+.recentPill:focus-visible {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+.releaseBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.02);
+  text-decoration: none;
+  color: inherit;
+  transition: background 140ms ease;
+}
+
+.releaseBox:hover,
+.releaseBox:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+
+.releaseVersion {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-accent);
+}
+
+.releaseHeadline {
+  font-size: 0.83rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.inlineLinkFoot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.textActionLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.textActionLink:hover,
+.textActionLink:focus-visible {
+  color: var(--text-primary);
+  text-decoration: underline;
+  outline: none;
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1120px) {
+  .spotlight {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .spotlightMetrics {
+    flex-wrap: wrap;
+  }
+
+  .spotlightTile {
+    flex: 1 1 8.5rem;
+  }
+
+  .bentoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .intelGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .setupBanner {
+    grid-template-columns: 1fr;
+  }
+
+  .setupActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 760px) {
+  .page {
+    padding: 0.75rem 0.7rem calc(var(--bottom-dock-height, 64px) + 4.5rem);
+    gap: 0.85rem;
+  }
+
+  .bentoPanel,
+  .weatherCard,
+  .bossSceneCard {
+    padding: 0.9rem;
+  }
+
+  .spotlight {
+    padding: 1rem 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .spotlightIdentity {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.65rem;
+  }
+
+  .identityCopy {
+    align-items: center;
+  }
+
+  .nameRow {
+    justify-content: center;
+  }
+
+  .identityStatsRow {
+    justify-content: center;
+    gap: 0.3rem 0.75rem;
+  }
+
+  .identityStatsRow .hairlineV {
+    display: none;
+  }
+
+  .petInlineLink {
+    flex-basis: 100%;
+    text-align: center;
+    margin-top: 0.08rem;
+  }
+
+  .spotlightMetrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.42rem;
+  }
+
+  .spotlightTile {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.48rem 0.35rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .spotlightTileVal {
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+
+  .characterStage {
+    min-width: 126px;
+    min-height: 134px;
+  }
+
+  .characterStageBehindPet {
+    padding-left: 72px;
+  }
+
+  .characterStageSidePet {
+    padding-right: 10px;
+  }
+
+  .heroFigureWrap {
+    width: 126px;
+    height: 134px;
+  }
+
+  .characterSprite {
+    width: 124px;
+    height: 132px;
+  }
+
+  .companionStage {
+    width: calc(var(--pet-size, 64px) * 0.84);
+    height: calc(var(--pet-size, 64px) * 0.84);
+  }
+
+  .companionSprite {
+    width: calc(var(--pet-size, 64px) * 0.84);
+    height: calc(var(--pet-size, 64px) * 0.84);
+  }
+
+  .weatherBuffLine {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .weatherControlsRow {
+    flex-wrap: wrap;
+    gap: 0.45rem 0.6rem;
+  }
+
+  .weatherMetaFoot {
+    flex: 1 0 100%;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .routeLedgerRow {
+    grid-template-columns: 24px 28px minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    padding: 0.48rem 0.55rem;
+  }
+
+  .routeTableHead {
+    display: none;
+  }
+
+  .routeLedgerRow {
+    grid-template-columns: 24px 28px minmax(0, 1fr) auto;
+  }
+
+  .routeExpCell {
+    display: none;
+  }
+
+  .plannerFooterStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .intelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bossFloatWrap {
+    width: 88px;
+    height: 88px;
+  }
+
+  .bossBorderlessSprite {
+    width: 84px;
+    height: 84px;
+  }
+
+  .recentPill,
+  .setupActionLink,
+  .quickRowLink,
+  .moverRow,
+  .spotlightTile,
+  .weatherNextBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (pointer: coarse) {
+  .recentPill,
+  .setupActionLink,
+  .quickRowLink,
+  .moverRow,
+  .spotlightTile,
+  .weatherNextBtn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bossBorderlessSprite {
+    animation: none;
+  }
+
+  .spotlightTile,
+  .companionStage,
+  .setupActionLink,
+  .routeLedgerRow,
+  .bossSceneCard,
+  .bossZoneBg {
+    transition: none;
+    transform: none;
+  }
+}

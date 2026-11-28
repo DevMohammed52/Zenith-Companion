@@ -161,6 +161,11 @@ export function useAlchemyState() {
       setActiveCategory(urlTab);
     }
 
+    const urlSearch = searchParams.get("search") || searchParams.get("q");
+    if (urlSearch !== null && urlSearch.trim()) {
+      setSearchTerm(urlSearch.trim());
+    }
+
     setOwnedMaterials(
       readOwnedMaterials(ownedStorageKey, activeProfileId ? undefined : OWNED_STORAGE_KEY),
     );
